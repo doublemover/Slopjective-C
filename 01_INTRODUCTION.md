@@ -1,0 +1,62 @@
+# Objective‑C 3.0 Draft Specification (Working Draft) — Introduction
+_Last generated: 2025-12-27_
+
+## 1. What Objective‑C 3.0 is trying to be
+Objective‑C 3.0 is a modernization of Objective‑C focused on:
+
+- **Safety by default (when provable)**: eliminate the most common crash classes and logic bugs without abandoning Objective‑C’s dynamic runtime model.
+- **Composable concurrency**: upgrade from “blocks + conventions” to structured `async/await`, cancellation, and actor isolation.
+- **Ergonomics without magic**: reduce boilerplate through language-supported patterns (optionals, Result/throws, key paths, derives/macros) that still lower to transparent, testable behavior.
+- **System-library excellence**: make Apple platform “library-defined subsets” (CoreFoundation, libdispatch, XPC, IOKit/Mach handles) safer and more ergonomic through first-class annotations and diagnostics.
+- **Incremental adoption**: preserve existing ABI and interoperability, and provide an opt-in path that does not require rewriting codebases.
+
+This draft is written to be implementable primarily in **Clang/LLVM**, with minimal required runtime changes. Where runtime support is needed, it is specified as small libraries or well-defined hooks.
+
+## 2. Guiding design principles
+### 2.1 Compatibility boundaries are explicit
+Objective‑C 3.0 uses a **language mode** (and optional conformance “strictness” levels) so that:
+- existing Objective‑C remains valid without surprise behavior changes;
+- new defaults (nonnull-by-default, stricter diagnostics) are only enabled when explicitly selected.
+
+### 2.2 New syntax must map to existing concepts
+New features should lower to:
+- message sends and existing ObjC runtime rules where appropriate;
+- compiler-inserted helper calls (ARC-style) where necessary;
+- well-defined control-flow lowering (coroutines, defers, matches).
+
+### 2.3 Safety is enforced where it can be proven; escape hatches are explicit
+If the compiler can prove a property (nonnullness, non-escaping borrowed pointers, cleanup correctness), it shall enforce it in strict modes.
+If it cannot, the language must provide explicit annotations/constructs (e.g., `unsafeEscapeBorrowed`, `@unsafeSendable`, `unowned`) that make risk obvious in code review.
+
+### 2.4 “System programming” is a first-class audience
+The language shall accommodate:
+- handle-based APIs with strict cleanup requirements;
+- “retainable C families” where ARC integration exists today through headers/macros;
+- borrowed interior-pointer APIs that require careful lifetime management;
+- performance-sensitive patterns where dynamic dispatch must be controlled.
+
+### 2.5 Tooling is part of the spec
+Objective‑C 3.0 is not just grammar: it includes required diagnostics, fix-its, and a conformance test suite model. A feature that cannot be audited and migrated is not “done”.
+
+## 3. Non-goals (important)
+Objective‑C 3.0 does not aim to:
+- become Swift, Rust, or Go;
+- introduce a global borrow checker over all code;
+- remove dynamic dispatch, swizzling, forwarding, or the Objective‑C runtime;
+- require a new ABI for existing frameworks.
+
+## 4. The “big rocks” of ObjC 3.0 (high-level)
+- **Types**: nonnull-by-default regions; optionals and binding; pragmatic generics; typed key paths.
+- **Errors**: `Result<T, E>`, `throws`, and propagation (`?`) with bridging to NSError and return codes.
+- **Concurrency**: `async/await`, structured tasks, cancellation, executors, actors, sendable-like checking.
+- **System extensions**: `defer`, resource handles/cleanup contracts, retainable C families, borrowed pointers, capture lists, lifetime controls.
+- **Performance**: direct methods, `final`/`sealed`, and explicit dynamic/static boundaries.
+- **Boilerplate elimination**: derives, AST macros, property behaviors/wrappers.
+
+## 5. Document organization
+Each part is a separate Markdown file. The system-programming chapter (Part 8) is intentionally detailed because it anchors “library-defined subset” accommodation, but it is only one part of a broader specification.
+
+## 6. Open issues and expected iteration
+This is a working draft. Each part includes “Open Issues” subsections for unresolved syntax bikeshedding and deeper ABI questions. The goal is to converge by:
+- shipping implementable subsets early (nullability defaults, defer, Result/?, capture lists),
+- then layering bigger features (async/await, actors, macros).
