@@ -1,9 +1,9 @@
-# Objective‑C 3.0 — Design Decisions Log (v0.9)
+# Objective‑C 3.0 — Design Decisions Log (v0.6)
 _Last updated: 2025-12-28_
 
-This log captures explicit “ship/no‑ship” decisions made to keep Objective‑C 3.0 **ambitious but implementable** (especially under separate compilation).
+This log captures explicit “ship/no‑ship” decisions made to resolve prior open issues.
 
----
+> v0.6 note: This pass is editorial/organizational. The decisions below are unchanged; the rest of the draft is being reconciled to match them.
 
 ## D‑001: Optional chaining is reference-only in v1
 **Decision:** Optional member access (`?.`) and optional message sends (`[receiver? selector]`) are supported only when the accessed member/method returns:
@@ -14,145 +14,85 @@ This log captures explicit “ship/no‑ship” decisions made to keep Objective
 Optional chaining for scalar/struct returns is **not** supported in v1.
 
 **Rationale:**
-- Objective‑C’s historic “messaging `nil` returns 0” behavior for scalars is a major source of silent bugs.
-- Supporting scalar/struct optionals well would require a value-optional ABI and conversion rules that are too large for v1.
-- The safe alternative is explicit unwrapping/binding of the receiver (`if let` / `guard let`), which v1 supports ergonomically.
+- Objective‑C’s historic “nil messaging returns 0” behavior for scalars is a major source of silent bugs.
+- Providing scalar optionals would require introducing a new value-optional system (layout, ABI, conversions) that is larger than a v1 feature.
+- The safe alternative is explicit unwrapping/binding of the receiver, which is already ergonomically supported via `if let` / `guard let`.
 
-**Spec impact:** Part 3 §3.4.
+**Spec impact:** Part 3 §3.4 is normative; scalar/struct chaining is ill-formed in all conformance levels (permissive may still offer migration guidance).
+
+**Future direction:** Introduce `OptionalScalar<T>` (or generalized `Optional<T>`) as a v2 feature if warranted.
 
 ---
 
 ## D‑002: `throws` is untyped in v1; typed throws deferred
 **Decision:** The v1 `throws` effect is always **untyped**, with thrown values of type `id<Error>`.
 
-Typed throws syntax (e.g., `throws(E)`) is reserved for future extension but is not part of v1 grammar/semantics.
+Typed throws syntax `throws(E)` is reserved for future consideration but is not part of the v1 grammar/semantics.
 
 **Rationale:**
 - Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) favor a single error supertype.
-- Typed throws adds significant complexity to generics, bridging, and ABI/lowering.
+- Typed throws adds significant complexity to generics, bridging, and ABI/lowering, and does not unlock enough value for v1.
 
-**Spec impact:** Part 6.
+**Spec impact:** Part 6 removes typed throws from normative grammar and treats it as a future extension.
 
 ---
 
 ## D‑003: Task spawning is library-defined in v1 (no `task {}` keyword)
-**Decision:** Objective‑C 3.0 v1 does not introduce a `task { ... }` keyword expression/statement. Task creation and structured concurrency constructs are provided via the **standard library**.
+**Decision:** Objective‑C 3.0 v1 does not introduce a new `task { ... }` keyword expression/statement. Task creation and structured concurrency constructs are provided via the **standard library**, with compiler-recognized attributes to enable diagnostics and safety checks.
 
-The compiler recognizes task entry points via attributes (see D‑007 and Part 7).
+**Rationale:**
+- Avoids freezing spawn semantics in the language before the runtime model settles.
+- Keeps parsing surface small and reduces conflicts with existing code.
+- Still enables excellent ergonomics via standard library + attributes + potential macro sugar (Part 10).
 
-**Rationale:** Keeps parsing surface small; avoids freezing spawn semantics before runtime patterns stabilize.
+**Spec impact:** Part 7 §7.5 specifies a standard-library contract and new attributes (`@task_spawn`, `@task_detached`, `@task_group`) that compilers must honor for checking.
 
-**Spec impact:** Part 7 §7.5.
+**Future direction:** Provide `task { ... }` as a macro or a v2 sugar once patterns stabilize.
 
 ---
 
 ## D‑004: Executor annotations — canonical spelling and meaning (v1)
-**Decision:** Executor affinity is expressed with the canonical spelling:
+**Decision:** Executor affinity is declared using a standardized Clang-style attribute spelling:
 
 - `__attribute__((objc_executor(main)))`
 - `__attribute__((objc_executor(global)))`
 - `__attribute__((objc_executor(named("..."))))`
 
-If a declaration is annotated `objc_executor(X)`, then:
-- entering it from another executor requires an executor hop (typically by `await`ing the call), and
-- the compiler enforces the hop requirement in strict concurrency checking mode.
+These attributes may be applied to:
+- functions,
+- Objective‑C methods (instance/class),
+- Objective‑C types (classes/actors) to indicate the default executor for isolated members.
 
-**Rationale:** `__attribute__((...))` integrates into existing LLVM/Clang pipelines and is stable for module interface emission.
+**Meaning (high level):**
+- A declaration annotated with `objc_executor(X)` requires that execution occurs on executor `X`.
+- Entering such a declaration from another executor requires an async hop and therefore **must** be expressed with `await` (either explicitly or by the call being in an async context that performs the hop).
 
-**Spec impact:** Part 7 and 01B/01C.
+**Rationale:**
+- `__attribute__((...))` is implementable in existing LLVM/Clang pipelines without inventing new token-level syntax.
+- Executor affinity must be machine-checkable for diagnostics and for safe UI/main-thread isolation patterns.
 
 ---
 
-## D‑005: Optional propagation (`T?` with postfix `?`) follows carrier rules (v1)
-**Decision:** Postfix propagation `e?` is allowed on an optional `e : T?` **only** when the enclosing function returns an optional type.
+## D‑005: Optional propagation (`T?` with postfix `?`) follows Rust-style carrier rules (v1)
+**Decision:** Postfix propagation `e?` is allowed on an optional value `e : T?` **only** when the enclosing function’s early-exit carrier is also an optional (i.e., the enclosing function returns an optional type).
 
 - In an optional-returning function, `e?` yields `T` when non-`nil`, otherwise performs `return nil;`.
-- Using `e?` in a function returning `Result<…>` or `throws` is **ill‑formed** in v1 (no implicit nil→error mapping).
+- Using `e?` where the enclosing function returns `Result<…>` or is `throws` is **ill‑formed** in v1 (no implicit NullError mapping).
 
-**Rationale:** Prevents accidental “nil becomes an error” magic; keeps control-flow explicit.
-
-**Spec impact:** Part 3 and Part 6.
+**Rationale:**
+- Avoids inventing implicit “nil → error” conversions that silently change program meaning.
+- Encourages explicit conversion at boundaries (`guard let … else { throw … }`, `ok_or(...)`, etc.).
+- Matches a widely-understood mental model: `?` propagates within the same carrier kind.
 
 ---
 
 ## D‑006: Autorelease pool boundaries at suspension points (v1)
-**Decision:** On Objective‑C runtimes with autorelease semantics, each task *execution slice* (resume → next suspension or completion) runs inside an implicit autorelease pool that is drained:
-- before suspending at an `await`, and
-- when the task completes.
+**Decision:** On platforms with Objective‑C autorelease pools, each async **task execution slice** (from resume to the next suspension/completion) executes within an implicit autorelease pool that is drained:
+- immediately before the task suspends at an `await` that actually suspends, and
+- at task completion (normal return, throw, or cancellation unwind).
 
-**Rationale:** Predictable memory behavior for Foundation-heavy code; avoids autorelease buildup across long async chains.
-
-**Spec impact:** Part 7, Part 4, and 01C.
-
----
-
-## D‑007: Canonical spellings and interface emission are attribute/pragma-first (v1)
-**Decision:** Features that must survive **module interface emission** and **separate compilation** have canonical spellings defined in:
-
-- **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**
-
-Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist, but the canonical emitted form shall use the catalog spellings.
-
-**Rationale:** Keeps generated interfaces unambiguous and independent of user macro environments.
-
-**Spec impact:** 01B, Part 2, Part 12.
-
----
-
-## D‑008: Generic methods are deferred in v1
-**Decision:** v1 includes **generic types** (pragmatic, erased generics) but defers **generic methods/functions**.
+Implementations may drain at additional safe points, but must not allow unbounded autorelease pool growth across long-lived tasks that repeatedly suspend.
 
 **Rationale:**
-- Generic methods create difficult interactions with Objective‑C selector syntax, method redeclaration/overload rules, and module interface printing.
-- The majority of practical value on Apple platforms comes from generic container types and constrained protocols.
-
-**Spec impact:** Part 3 §3.5 (generic methods moved to future extensions).
-
----
-
-## D‑009: `throws` uses a stable “error-out” calling convention (v1)
-**Decision:** v1 requires a stable ABI for `throws` that supports separate compilation. The recommended (and default) convention is a trailing error-out parameter (`outError`) of type `id<Error> _Nullable * _Nullable`.
-
-**Rationale:** Matches long-standing Cocoa patterns (NSError-out) and is easy to lower in LLVM without stack unwinding.
-
-**Spec impact:** 01C and Part 6.
-
----
-
-## D‑010: `async` lowers to coroutines scheduled by executors (v1)
-**Decision:** v1 `async` semantics are implemented as coroutine state machines with suspension at `await`. Resumption is scheduled by the active executor, and the runtime/stdlib exposes enough primitives to:
-- create tasks,
-- hop executors,
-- enqueue actor-isolated work, and
-- propagate cancellation.
-
-**Rationale:** This is the most direct path to implement structured `async/await` in LLVM while preserving ARC and Objective‑C runtime behavior.
-
-**Spec impact:** 01C and Part 7.
-
-
----
-
-## D‑011: `await` is required for any potentially suspending operation (v1)
-**Decision:** In v1, `await` is not restricted to “calling explicitly-async functions.”  
-It is required for **any operation that may suspend**, including:
-
-- calls to `async` functions,
-- cross-executor entry into `objc_executor(X)` declarations when not proven already on `X`,
-- cross-actor access to actor-isolated members when not already on the actor’s executor,
-- joining tasks / iterating task-group results where suspension may occur.
-
-`await` remains permitted only in `async` contexts.
-
-**Rationale:** Executor and actor isolation are implemented by *hops* that may suspend even when the callee’s body is “logically synchronous.” Requiring `await` keeps suspension explicit at the call site while preserving ergonomic isolation.
-
-**Spec impact:** Part 7, 01C, 01D.
-
----
-
-## D‑012: Required module metadata set is normative (v1)
-**Decision:** For ObjC 3.0 semantics to survive separate compilation, the required information enumerated in **01D** is normative: a conforming toolchain shall preserve that information in module metadata and in emitted textual interfaces.
-
-**Rationale:** Without an explicit checklist, toolchains drift into “works in a single TU” but fails at module boundaries. 01D makes the “separate compilation contract” testable.
-
-**Spec impact:** 01C, 01D, Part 2, Part 12.
+- Prevents memory blowups in long-lived async tasks that create autoreleased objects between suspension points.
+- Provides predictable behavior for mixed Swift/ObjC and Foundation-heavy codebases.

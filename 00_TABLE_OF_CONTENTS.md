@@ -1,44 +1,39 @@
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents
 _Last generated: 2025-12-28_
 
-This is a working draft of an **Objective‑C 3.0** specification broken into numbered, implementable parts.  
-Each part is a separate Markdown file intended to be read independently, but the parts are cross-referenced where needed.
+This is a working draft of an **Objective‑C 3.0** specification broken into small, implementable parts. Each part is a separate Markdown file.
 
 ## Front matter
 - **00_TABLE_OF_CONTENTS.md** — This table of contents (you are here)
 - **01_INTRODUCTION.md** — Overview, goals, guiding principles, non‑goals, and cross‑cutting design choices
-- **01A_DECISIONS_LOG.md** — Explicit design decisions (ship/no‑ship) made to keep v1 implementable
-- **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md** — Canonical spellings for pragmas/attributes and module-interface emission requirements
-- **01C_LOWERING_AND_RUNTIME_CONTRACTS.md** — Implementation contracts for lowering, ABI stability, and runtime hooks
-- **01D_MODULE_METADATA_AND_ABI_TABLES.md** — Normative tables for required module metadata and ABI boundaries (implementer checklist)
+- **01A_DECISIONS_LOG.md** — Explicit “ship/no‑ship” design decisions and their rationales
 
 ## Parts
-- **02_PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md** — Baseline Objective‑C (as implemented by Clang) and the normative reference model used by this draft
-- **03_PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md** — Language versioning, feature gating, conformance levels, and migration tooling requirements
-- **04_PART_2_MODULES_NAMESPACING_API_SURFACES.md** — Modules, imports, module-qualified names, visibility, and API surface contracts
-- **05_PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md** — Nullability, nonnull-by-default, optionals, pragmatic generics, and typed key paths
-- **06_PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md** — ARC, ownership qualifiers, transfer/consumption, and interaction with retainable families
-- **07_PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md** — `defer`, `guard`, `match`, patterns, and control-flow rules
-- **08_PART_6_ERRORS_RESULTS_THROWS.md** — `throws`, `try`, `do/catch`, `Result`, propagation, and interop with NSError/return codes
-- **09_PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md** — `async/await`, executors, cancellation, tasks, and actors
-- **10_PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md** — Library-defined subsets and system programming extensions (IOKit-style ergonomics, safety, performance)
-- **11_PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md** — Direct/final/sealed controls, dynamism boundaries, and performance-oriented constraints
+- **02_PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md** — Baseline Objective‑C (as implemented by Clang) and reference model for this spec
+- **03_PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md** — Language mode gating, conformance levels, and migration tooling requirements
+- **04_PART_2_MODULES_NAMESPACING_API_SURFACES.md** — Modules, module qualification, visibility, and API surface contracts
+- **05_PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md** — Nullability-by-default, optionals/binding, pragmatic generics, typed key paths
+- **06_PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md** — ARC, ownership qualifiers, transfers/consumption, and retainable families
+- **07_PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md** — `defer`, `guard`, `match`/patterns, and cleanup ordering rules
+- **08_PART_6_ERRORS_RESULTS_THROWS.md** — `throws`, `Result`, propagation (`?`), and interoperability with NSError/return codes
+- **09_PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md** — `async/await`, executors, cancellation, actors, and sendable-like checking
+- **10_PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md** — System-library affordances: retainable C families, borrows, lifetimes, capture lists
+- **11_PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md** — Direct/final/sealed, dynamic/static boundaries, and optimization contracts
 - **12_PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md** — Derives, AST macros, property behaviors/wrappers, and safety constraints
-- **13_PART_11_INTEROPERABILITY_C_CPP_SWIFT.md** — C/ObjC/ObjC++/Swift interop rules, overlays, and ABI mapping notes
-- **14_PART_12_DIAGNOSTICS_TOOLING_TESTS.md** — Required diagnostics, fix-its, migrators, analyzers, and conformance test suites
+- **13_PART_11_INTEROPERABILITY_C_CPP_SWIFT.md** — C/ObjC/ObjC++/Swift interop rules and mapping guidance
+- **14_PART_12_DIAGNOSTICS_TOOLING_TESTS.md** — Required diagnostics, fix‑its, migrators/analyzers, and test suite structure
 
 ## How to read this draft
-1. Start with **01_INTRODUCTION.md** (goals + cross-cutting constraints).
-2. Read **Part 1** next (**03_PART_1_…**) for conformance levels and migration strategy.
-3. Then choose a “slice” (types/errors/concurrency/system/perf) depending on what you’re implementing.
+1. Start with **01_INTRODUCTION.md** (goals + cross‑cutting constraints).
+2. Read **01A_DECISIONS_LOG.md** (the “locked” decisions).
+3. Read **Part 1** next (versioning, strictness, migration).
+4. Then choose a “slice” (types/errors/concurrency/system/perf) depending on what you’re implementing.
 
 ## Status / scope note
-This draft is ambitious but implementable:
-- It prefers features that can be implemented by a Clang/LLVM toolchain without rewriting the Objective‑C runtime.
-- It keeps “strictness” opt-in via conformance levels, while providing a clear path to stricter defaults over time.
-- Where a feature affects ABI or runtime, it is documented in **01C** and cross-referenced from the relevant part.
+This draft is intentionally **ambitious but implementable**: it favors compile-time safety and explicitness, but keeps Objective‑C’s dynamic runtime model as a first-class capability.
 
-## Pass notes
-- **v0.5:** locked major decisions for optionals/errors/concurrency (D‑001…D‑006).
-- **v0.8:** adds canonical surface spellings (01B) and a lowering/ABI/runtime contract (01C), and begins tightening ABI-impacting features for separate compilation.
-- **v0.9:** adds explicit module-metadata/ABI boundary tables (01D) and tightens `await` requirements for all potentially-suspending operations across executors/actors.
+## v0.6 note
+This pass performs a **consistency and completeness sweep**:
+- Part 3 is aligned with the v0.4–v0.5 design decisions (optional chaining restrictions; conditional optional message sends).
+- Part 4’s async/autorelease discussion is aligned with the normative per-suspension pool rule in Part 7 (Decision D‑006).
+- Parts 9, 11, and 12 are expanded to remove “skeleton” gaps and to normalize numbering/cross‑references.
