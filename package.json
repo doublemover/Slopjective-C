@@ -2,11 +2,11 @@
   "name": "slopjective-c",
   "private": true,
   "devDependencies": {
-    "markdownlint-cli2": "^0.13.0",
+    "markdownlint-cli2": "^0.20.0",
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "build:spec": "python scripts/build_pages.py",
+    "build:spec": "python scripts/build_pages.py && prettier --write \"site/index.md\"",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "lint:md:all": "npm run build:spec && npm run lint:md",
     "format:md": "prettier --write \"**/*.md\"",

@@ -2,7 +2,9 @@
 title: Objective-C 3.0 Draft Specification
 layout: default
 ---
+
 <!-- BEGIN TABLE_OF_CONTENTS.md -->
+
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents <a id="toc"></a>
 
 _Last generated: 2025-12-28_
@@ -61,6 +63,7 @@ This draft is ambitious but implementable:
 ---
 
 <!-- BEGIN INTRODUCTION.md -->
+
 # Objective‑C 3.0 Draft Specification (Working Draft) — Introduction <a id="intro"></a>
 
 _Last generated: 2025-12-28_
@@ -184,6 +187,7 @@ This pass makes the draft more “engineer-ready” by tightening the boundary b
 ---
 
 <!-- BEGIN DECISIONS_LOG.md -->
+
 # Objective‑C 3.0 — Design Decisions Log (v0.10) <a id="decisions"></a>
 
 _Last updated: 2025-12-28_
@@ -361,11 +365,13 @@ It is required for **any operation that may suspend**, including:
 **Rationale:** Without an explicit checklist, toolchains drift into “works in a single TU” but fails at module boundaries. [D](#d) makes the “separate compilation contract” testable.
 
 **Spec impact:** [C](#c), [D](#d), [Part 2](#part-2), [Part 12](#part-12).
+
 <!-- END DECISIONS_LOG.md -->
 
 ---
 
 <!-- BEGIN ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
+
 # Objective‑C 3.0 — Attribute and Syntax Catalog <a id="b"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -640,11 +646,13 @@ Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 - `let`, `var`
 
 Additional reserved keywords may be added by other parts.
+
 <!-- END ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
 
 ---
 
 <!-- BEGIN LOWERING_AND_RUNTIME_CONTRACTS.md -->
+
 # Objective‑C 3.0 — Lowering, ABI, and Runtime Contracts <a id="c"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -920,6 +928,7 @@ Implementations are encouraged to provide a conformance suite that includes:
 ---
 
 <!-- BEGIN MODULE_METADATA_AND_ABI_TABLES.md -->
+
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables <a id="d"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -1038,6 +1047,7 @@ A conforming implementation’s test suite should include:
 ---
 
 <!-- BEGIN CONFORMANCE_PROFILE_CHECKLIST.md -->
+
 # Objective‑C 3.0 — Conformance Profile Checklist <a id="e"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -1268,6 +1278,7 @@ A serious conformance claim should ship with:
 ---
 
 <!-- BEGIN PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md -->
+
 # Part 0 — Baseline and Normative References <a id="part-0"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -1386,6 +1397,7 @@ Objective‑C 3.0 remains a superset of C (and compatible with Objective‑C++) 
 ---
 
 <!-- BEGIN PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
+
 # Part 1 — Versioning, Compatibility, and Conformance <a id="part-1"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -1586,11 +1598,13 @@ Profiles may:
 - restrict unsafe constructs (e.g., borrowed pointer escaping; [Part 8](#part-8)).
 
 This part defines the _hook point_ and selection mechanism; profile contents are specified in **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)**.
+
 <!-- END PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
 
 ---
 
 <!-- BEGIN PART_2_MODULES_NAMESPACING_API_SURFACES.md -->
+
 # Part 2 — Modules, Namespacing, and API Surfaces <a id="part-2"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -1752,6 +1766,7 @@ However, the format must be sufficient to support:
 ---
 
 <!-- BEGIN PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md -->
+
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths <a id="part-3"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -2374,6 +2389,7 @@ NSString* s = KeyPathGet(kp, person);
 ---
 
 <!-- BEGIN PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md -->
+
 # Part 4 — Memory Management and Ownership <a id="part-4"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -2505,6 +2521,7 @@ Retainable families (CoreFoundation-like, dispatch/xpc integration, custom refco
 ---
 
 <!-- BEGIN PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md -->
+
 # Part 5 — Control Flow and Safety Constructs <a id="part-5"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -2749,6 +2766,7 @@ Minimum diagnostics include:
 ---
 
 <!-- BEGIN PART_6_ERRORS_RESULTS_THROWS.md -->
+
 # Part 6 — Errors: Result, throws, try, and Propagation <a id="part-6"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -3157,11 +3175,13 @@ Minimum diagnostics:
 
 A future revision may introduce typed throws syntax (e.g., `throws(E)`) to restrict the set of throwable error types.
 This is explicitly **not** part of Objective‑C 3.0 v1 to keep the core error model simple and interoperable with NSError and return-code APIs.
+
 <!-- END PART_6_ERRORS_RESULTS_THROWS.md -->
 
 ---
 
 <!-- BEGIN PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md -->
+
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors <a id="part-7"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -3595,6 +3615,7 @@ Minimum diagnostics:
 ---
 
 <!-- BEGIN PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md -->
+
 # Part 8 — System Programming Extensions <a id="part-8"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -3976,6 +3997,7 @@ In strict-system mode, toolchains should:
 ---
 
 <!-- BEGIN PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md -->
+
 # Part 9 — Performance and Dynamism Controls <a id="part-9"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -4150,6 +4172,7 @@ Minimum requirements:
 ---
 
 <!-- BEGIN PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md -->
+
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors <a id="part-10"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -4307,6 +4330,7 @@ Compilers should surface these contracts in diagnostics to help developers choos
 ---
 
 <!-- BEGIN PART_11_INTEROPERABILITY_C_CPP_SWIFT.md -->
+
 # Part 11 — Interoperability: C, C++, and Swift <a id="part-11"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_
@@ -4420,6 +4444,7 @@ The mapping is implementation-defined but should preserve the core constraints.
 ---
 
 <!-- BEGIN PART_12_DIAGNOSTICS_TOOLING_TESTS.md -->
+
 # Part 12 — Diagnostics, Tooling, and Test Suites <a id="part-12"></a>
 
 _Working draft v0.10 — last updated 2025-12-28_

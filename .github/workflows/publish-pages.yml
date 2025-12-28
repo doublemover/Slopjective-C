@@ -37,12 +37,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - uses: actions/configure-pages@v5
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: Install Node dependencies
+        run: npm install
       - name: Stitch documents
-        run: python scripts/build_pages.py
+        run: npm run build:spec
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
