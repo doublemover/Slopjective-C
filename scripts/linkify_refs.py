@@ -19,8 +19,18 @@ DOC_PREFIX = {
 }
 
 
+def read_text_raw(path: Path) -> str:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return handle.read()
+
+
+def write_text_raw(path: Path, text: str) -> None:
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(text)
+
+
 def parse_toc_files() -> list[Path]:
-    text = TOC_PATH.read_text(encoding="utf-8")
+    text = read_text_raw(TOC_PATH)
     names = re.findall(r"(?m)^-\s+.*?([A-Za-z0-9_.-]+\.md)", text)
     if not names:
         raise RuntimeError("No .md entries found in TABLE_OF_CONTENTS.md")
@@ -65,9 +75,11 @@ def link_decision_only(match: re.Match[str]) -> str:
 
 
 def link_table(match: re.Match[str]) -> str:
-    table = match.group(1)
+    prefix = match.group(1) or ""
+    table = match.group(2)
     target = {"A": "d-3-1", "B": "d-3-2", "C": "d-3-3"}[table]
-    return f"[D Table {table}](#{target})"
+    label = f"{prefix}Table {table}".strip()
+    return f"[{label}](#{target})"
 
 
 def protect(text: str, pattern: str, token: str) -> tuple[str, list[str]]:
@@ -115,7 +127,7 @@ def linkify_line(line: str, file_map: dict[str, str]) -> str:
     text = re.sub(r"\b([BCDE])\.(\d+(?:\.\d+)*)\b", link_letter_section, text)
     text = re.sub(r"\bDecision\s+D[\u2011\u2013\u2014\u2012-](\d{3})\b", link_decision, text)
     text = re.sub(r"\bD[\u2011\u2013\u2014\u2012-](\d{3})\b", link_decision_only, text)
-    text = re.sub(r"\bD Table ([ABC])\b", link_table, text)
+    text = re.sub(r"\b(D\s+)?Table\s+([ABC])\b", link_table, text)
 
     text = re.sub(r"\*\*([BCDE])\*\*", lambda m: f"**[{m.group(1)}](#{m.group(1).lower()})**", text)
     text = re.sub(r"\s\((B|C|D)\)", lambda m: f" ([{m.group(1)}](#{m.group(1).lower()}))", text)
@@ -144,7 +156,7 @@ def main() -> None:
         file_map[name] = prefix
 
     for path in files:
-        text = path.read_text(encoding="utf-8")
+        text = read_text_raw(path)
         lines = text.splitlines(keepends=True)
         in_fence = False
         updated_lines: list[str] = []
@@ -160,7 +172,7 @@ def main() -> None:
 
             updated_lines.append(linkify_line(line, file_map))
 
-        path.write_text("".join(updated_lines), encoding="utf-8")
+        write_text_raw(path, "".join(updated_lines))
 
 
 if __name__ == "__main__":

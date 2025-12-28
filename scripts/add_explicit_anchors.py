@@ -19,8 +19,18 @@ DOC_PREFIX = {
 }
 
 
+def read_text_raw(path: Path) -> str:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return handle.read()
+
+
+def write_text_raw(path: Path, text: str) -> None:
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write(text)
+
+
 def parse_toc_files() -> list[Path]:
-    text = TOC_PATH.read_text(encoding="utf-8")
+    text = read_text_raw(TOC_PATH)
     names = re.findall(r"(?m)^-\s+.*?([A-Za-z0-9_.-]+\.md)", text)
     if not names:
         raise RuntimeError("No .md entries found in TABLE_OF_CONTENTS.md")
@@ -72,7 +82,7 @@ def anchor_for_heading(prefix: str, heading: str, first_heading: bool) -> str:
 
 
 def process_file(path: Path, prefix: str, used_ids: set[str]) -> None:
-    text = path.read_text(encoding="utf-8")
+    text = read_text_raw(path)
     lines = text.splitlines(keepends=True)
 
     in_fence = False
@@ -112,7 +122,7 @@ def process_file(path: Path, prefix: str, used_ids: set[str]) -> None:
 
         updated_lines.append(line)
 
-    path.write_text("".join(updated_lines), encoding="utf-8")
+    write_text_raw(path, "".join(updated_lines))
 
 
 def main() -> None:

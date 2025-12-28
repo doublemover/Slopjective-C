@@ -10,6 +10,7 @@ TOC_PATH = ROOT / "TABLE_OF_CONTENTS.md"
 OUTPUT_DIR = ROOT / "site"
 OUTPUT_PATH = OUTPUT_DIR / "index.md"
 EXCLUDE = {"README.md"}
+HEADING_ANCHOR_RE = re.compile(r"^(#{1,6})\s+(.*?)\s+\{#([A-Za-z0-9_.-]+)\}\s*$")
 
 
 def parse_toc(path: Path) -> list[str]:
@@ -50,11 +51,36 @@ def stitch(paths: list[Path]) -> str:
     sections: list[str] = []
     for path in paths:
         text = path.read_text(encoding="utf-8").rstrip("\n")
+        text = rewrite_heading_anchors(text)
         header = f"<!-- BEGIN {path.name} -->"
         footer = f"<!-- END {path.name} -->"
         sections.append(f"{header}\n{text}\n{footer}")
     return "\n\n---\n\n".join(sections) + "\n"
 
+
+def rewrite_heading_anchors(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    in_fence = False
+    updated: list[str] = []
+
+    for line in lines:
+        fence_match = re.match(r"^\s*(```|~~~)", line)
+        if fence_match:
+            in_fence = not in_fence
+            updated.append(line)
+            continue
+
+        if not in_fence:
+            match = HEADING_ANCHOR_RE.match(line.rstrip("\n"))
+            if match:
+                hashes, heading, anchor = match.groups()
+                newline = "\n" if line.endswith("\n") else ""
+                updated.append(f"{hashes} {heading} <a id=\"{anchor}\"></a>{newline}")
+                continue
+
+        updated.append(line)
+
+    return "".join(updated)
 
 def build_pages(root: Path) -> tuple[Path, int]:
     toc_path = root / "TABLE_OF_CONTENTS.md"
