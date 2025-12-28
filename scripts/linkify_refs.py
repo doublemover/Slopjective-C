@@ -6,7 +6,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TOC_PATH = ROOT / "TABLE_OF_CONTENTS.md"
+SPEC_DIR = ROOT / "spec"
+TOC_PATH = SPEC_DIR / "TABLE_OF_CONTENTS.md"
 
 DOC_PREFIX = {
     "TABLE_OF_CONTENTS.md": "toc",
@@ -34,7 +35,7 @@ def parse_toc_files() -> list[Path]:
     names = re.findall(r"(?m)^-\s+.*?([A-Za-z0-9_.-]+\.md)", text)
     if not names:
         raise RuntimeError("No .md entries found in TABLE_OF_CONTENTS.md")
-    return [ROOT / name for name in names]
+    return [SPEC_DIR / name for name in names]
 
 
 def part_prefix(name: str) -> str | None:

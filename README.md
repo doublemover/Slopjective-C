@@ -18,7 +18,8 @@ This repository contains a working draft specification for **Objective‑C 3.0**
 ## Published draft
 
 The stitched draft is published on GitHub Pages: [https://doublemover.github.io/Slopjective-C/](https://doublemover.github.io/Slopjective-C/)
-The build uses **TABLE_OF_CONTENTS.md** ordering and excludes **README.md**.
+The build uses the [Table of Contents](https://doublemover.github.io/Slopjective-C/#toc) ordering and excludes this README.
+Source markdown lives in `spec/` for local edits.
 
 ## What this spec is
 
@@ -35,43 +36,43 @@ The build uses **TABLE_OF_CONTENTS.md** ordering and excludes **README.md**.
 
 Start here:
 
-- **TABLE_OF_CONTENTS.md** — Index of all parts.
-- **INTRODUCTION.md** — Goals, non‑goals, and cross‑cutting principles.
+- [Table of Contents](https://doublemover.github.io/Slopjective-C/#toc) — Index of all parts.
+- [Introduction](https://doublemover.github.io/Slopjective-C/#intro) — Goals, non‑goals, and cross‑cutting principles.
 
 Front matter (implementation-facing):
 
-- **DECISIONS_LOG.md** — Explicit ship/no‑ship decisions to keep v1 implementable.
-- **ATTRIBUTE_AND_SYNTAX_CATALOG.md** — Canonical spellings for attributes/pragmas that must survive interface emission.
-- **LOWERING_AND_RUNTIME_CONTRACTS.md** — ABI/lowering/runtime obligations (separate compilation contract).
-- **MODULE_METADATA_AND_ABI_TABLES.md** — Normative tables for required module metadata and ABI boundaries.
-- **CONFORMANCE_PROFILE_CHECKLIST.md** — Checklists for conformance claims (Core/Strict/Strict Concurrency/Strict System + optional feature sets).
+- [Decisions Log](https://doublemover.github.io/Slopjective-C/#decisions) — Explicit ship/no‑ship decisions to keep v1 implementable.
+- [Attribute and Syntax Catalog](https://doublemover.github.io/Slopjective-C/#b) — Canonical spellings for attributes/pragmas that must survive interface emission.
+- [Lowering and Runtime Contracts](https://doublemover.github.io/Slopjective-C/#c) — ABI/lowering/runtime obligations (separate compilation contract).
+- [Module Metadata and ABI Tables](https://doublemover.github.io/Slopjective-C/#d) — Normative tables for required module metadata and ABI boundaries.
+- [Conformance Profile Checklist](https://doublemover.github.io/Slopjective-C/#e) — Checklists for conformance claims (Core/Strict/Strict Concurrency/Strict System + optional feature sets).
 
 Language parts:
 
-- **PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md** — Baseline definitions and normative terminology.
-- **PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md** — Mode selection, feature tests, strictness levels, and migration requirements.
-- **PART_2_MODULES_NAMESPACING_API_SURFACES.md** — Modules, module-qualified names, API surface contracts, interface emission.
-- **PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md** — Nullability defaults, optionals, pragmatic generics, typed key paths.
-- **PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md** — ARC baseline + ownership/transfer/lifetime rules used by other features.
-- **PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md** — `defer`, `guard`, `match`, patterns.
-- **PART_6_ERRORS_RESULTS_THROWS.md** — `throws`/`try`/`do-catch`, `Result`, propagation operator `?`, NSError/return-code bridging.
-- **PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md** — `async/await`, executors, tasks, cancellation, actors, Sendable-like checking.
-- **PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md** — Resource cleanup, retainable C families, borrowed pointers, capture lists.
-- **PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md** — direct/final/sealed intent and dynamism boundaries.
-- **PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md** — derives, AST macros, property behaviors.
-- **PART_11_INTEROPERABILITY_C_CPP_SWIFT.md** — C/C++/Swift interop expectations.
-- **PART_12_DIAGNOSTICS_TOOLING_TESTS.md** — Required diagnostics, migrators, and conformance test suite expectations.
+- [Part 0 — Baseline and Normative References](https://doublemover.github.io/Slopjective-C/#part-0) — Baseline definitions and normative terminology.
+- [Part 1 — Versioning, Compatibility, and Conformance](https://doublemover.github.io/Slopjective-C/#part-1) — Mode selection, feature tests, strictness levels, and migration requirements.
+- [Part 2 — Modules, Namespacing, and API Surfaces](https://doublemover.github.io/Slopjective-C/#part-2) — Modules, module-qualified names, API surface contracts, interface emission.
+- [Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths](https://doublemover.github.io/Slopjective-C/#part-3) — Nullability defaults, optionals, pragmatic generics, typed key paths.
+- [Part 4 — Memory Management and Ownership](https://doublemover.github.io/Slopjective-C/#part-4) — ARC baseline + ownership/transfer/lifetime rules used by other features.
+- [Part 5 — Control Flow and Safety Constructs](https://doublemover.github.io/Slopjective-C/#part-5) — `defer`, `guard`, `match`, patterns.
+- [Part 6 — Errors: Result, throws, try, and Propagation](https://doublemover.github.io/Slopjective-C/#part-6) — `throws`/`try`/`do-catch`, `Result`, propagation operator `?`, NSError/return-code bridging.
+- [Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors](https://doublemover.github.io/Slopjective-C/#part-7) — `async/await`, executors, tasks, cancellation, actors, Sendable-like checking.
+- [Part 8 — System Programming Extensions](https://doublemover.github.io/Slopjective-C/#part-8) — Resource cleanup, retainable C families, borrowed pointers, capture lists.
+- [Part 9 — Performance and Dynamism Controls](https://doublemover.github.io/Slopjective-C/#part-9) — direct/final/sealed intent and dynamism boundaries.
+- [Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors](https://doublemover.github.io/Slopjective-C/#part-10) — derives, AST macros, property behaviors.
+- [Part 11 — Interoperability: C, C++, and Swift](https://doublemover.github.io/Slopjective-C/#part-11) — C/C++/Swift interop expectations.
+- [Part 12 — Diagnostics, Tooling, and Test Suites](https://doublemover.github.io/Slopjective-C/#part-12) — Required diagnostics, migrators, and conformance test suite expectations.
 
 ## Suggested reading order
 
-1. **INTRODUCTION.md** (what the project is trying to accomplish)
-2. **PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md** (how mode/strictness/conformance works)
-3. **ATTRIBUTE_AND_SYNTAX_CATALOG / LOWERING_AND_RUNTIME_CONTRACTS / MODULE_METADATA_AND_ABI_TABLES** (the “separate compilation contract” and canonical spellings)
+1. [Introduction](https://doublemover.github.io/Slopjective-C/#intro) (what the project is trying to accomplish)
+2. [Part 1 — Versioning, Compatibility, and Conformance](https://doublemover.github.io/Slopjective-C/#part-1) (how mode/strictness/conformance works)
+3. [Attribute and Syntax Catalog](https://doublemover.github.io/Slopjective-C/#b) / [Lowering and Runtime Contracts](https://doublemover.github.io/Slopjective-C/#c) / [Module Metadata and ABI Tables](https://doublemover.github.io/Slopjective-C/#d) (the “separate compilation contract” and canonical spellings)
 4. Then pick a feature slice:
-   - Types/Optionals: **Part 3**
-   - Errors: **Part 6**
-   - Concurrency: **Part 7**
-   - System programming: **Part 8**
+   - Types/Optionals: [Part 3](https://doublemover.github.io/Slopjective-C/#part-3)
+   - Errors: [Part 6](https://doublemover.github.io/Slopjective-C/#part-6)
+   - Concurrency: [Part 7](https://doublemover.github.io/Slopjective-C/#part-7)
+   - System programming: [Part 8](https://doublemover.github.io/Slopjective-C/#part-8)
 
 ## Conformance model (quick summary)
 
@@ -82,7 +83,7 @@ A toolchain makes a conformance claim against named profiles:
 - **Strict Concurrency**: actor/executor/Sendable-like enforcement.
 - **Strict System**: resource/borrowed-pointer/capture-list enforcement.
 
-See **CONFORMANCE_PROFILE_CHECKLIST.md** for the definitive checklist.
+See the [Conformance Profile Checklist](https://doublemover.github.io/Slopjective-C/#e) for the definitive checklist.
 
 ## Contributing / feedback
 

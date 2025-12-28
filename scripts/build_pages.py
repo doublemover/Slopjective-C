@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TOC_PATH = ROOT / "TABLE_OF_CONTENTS.md"
+SPEC_DIR = ROOT / "spec"
 OUTPUT_DIR = ROOT / "site"
 OUTPUT_PATH = OUTPUT_DIR / "index.md"
 EXCLUDE = {"README.md"}
@@ -83,12 +83,13 @@ def rewrite_heading_anchors(text: str) -> str:
     return "".join(updated)
 
 def build_pages(root: Path) -> tuple[Path, int]:
-    toc_path = root / "TABLE_OF_CONTENTS.md"
+    spec_dir = root / "spec"
+    toc_path = spec_dir / "TABLE_OF_CONTENTS.md"
     output_dir = root / "site"
     output_path = output_dir / "index.md"
 
     names = parse_toc(toc_path)
-    paths = validate_files(names, root)
+    paths = validate_files(names, spec_dir)
 
     front_matter = "\n".join(
         [

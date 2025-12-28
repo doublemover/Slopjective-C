@@ -17,15 +17,21 @@ class BuildPagesTests(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
         return path
 
+    def make_spec_dir(self, root: Path) -> Path:
+        spec_dir = root / "spec"
+        spec_dir.mkdir()
+        return spec_dir
+
     def test_parse_toc_accepts_linked_entries(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            spec_dir = self.make_spec_dir(root)
             toc_text = (
                 "# TOC\n"
                 "- **[TABLE_OF_CONTENTS.md](#toc)**\n"
                 "- **[INTRODUCTION.md](#intro)**\n"
             )
-            toc_path = self.write(root, "TABLE_OF_CONTENTS.md", toc_text)
+            toc_path = self.write(spec_dir, "TABLE_OF_CONTENTS.md", toc_text)
 
             names = build_pages.parse_toc(toc_path)
 
@@ -34,13 +40,14 @@ class BuildPagesTests(unittest.TestCase):
     def test_build_pages_stitches_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            spec_dir = self.make_spec_dir(root)
             toc_text = (
                 "# TOC\n"
                 "- **[TABLE_OF_CONTENTS.md](#toc)**\n"
                 "- **[INTRODUCTION.md](#intro)**\n"
             )
-            self.write(root, "TABLE_OF_CONTENTS.md", toc_text)
-            self.write(root, "INTRODUCTION.md", "# Intro\nHello\n")
+            self.write(spec_dir, "TABLE_OF_CONTENTS.md", toc_text)
+            self.write(spec_dir, "INTRODUCTION.md", "# Intro\nHello\n")
             self.write(root, "README.md", "Ignore me\n")
 
             output_path, count = build_pages.build_pages(root)
@@ -55,12 +62,13 @@ class BuildPagesTests(unittest.TestCase):
     def test_validate_files_rejects_readme(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            self.write(root, "TABLE_OF_CONTENTS.md", "# TOC\n")
+            spec_dir = self.make_spec_dir(root)
+            self.write(spec_dir, "TABLE_OF_CONTENTS.md", "# TOC\n")
             self.write(root, "README.md", "Nope\n")
 
             with self.assertRaises(RuntimeError):
                 build_pages.validate_files(
-                    ["TABLE_OF_CONTENTS.md", "README.md"], root
+                    ["TABLE_OF_CONTENTS.md", "README.md"], spec_dir
                 )
 
 
