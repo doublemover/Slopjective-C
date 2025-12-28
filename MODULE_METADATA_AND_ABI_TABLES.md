@@ -1,24 +1,29 @@
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables {#d}
+
 _Working draft v0.10 — last updated 2025-12-28_
 
 ## D.0 Purpose {#d-0}
+
 Objective‑C 3.0 adds source-level semantics that **must survive module boundaries**:
 effects (`async`, `throws`), nullability defaults, executor/actor isolation, and dispatch controls (`objc_direct`, `objc_sealed`, etc.).
 
 This document is a **normative checklist** for what a conforming implementation must preserve in:
+
 - module metadata (binary or AST-based), and
 - any emitted textual interface ([B.7](#b-7)).
 
 It also summarizes which features are **ABI-affecting** and what ABI stability constraints apply.
 
-> This document does not mandate a specific on-disk format. It defines *required information*.
+> This document does not mandate a specific on-disk format. It defines _required information_.
 
 ## D.1 Terminology {#d-1}
+
 - **Module metadata**: any compiled representation that an importer uses instead of re-parsing raw headers (e.g., Clang module files, serialized AST, interface stubs).
 - **Textual interface**: a tool-emitted, importable text representation intended to preserve semantics for distribution ([B.7](#b-7)).
 - **ABI-affecting**: changes the calling convention, symbol shape, layout, or runtime dispatch surface such that mismatches across translation units could cause miscompilation or runtime faults.
 
 ## D.2 Module metadata requirements (normative) {#d-2}
+
 A conforming implementation shall preserve, for all exported declarations:
 
 1. **Full type information** including:
@@ -30,7 +35,7 @@ A conforming implementation shall preserve, for all exported declarations:
 2. **Effect information**:
    - whether the callable is `throws`,
    - whether the callable is `async`,
-   - and whether the callable is *potentially suspending at call sites* due to isolation ([Part 7](#part-7)).
+   - and whether the callable is _potentially suspending at call sites_ due to isolation ([Part 7](#part-7)).
 
 3. **Isolation and scheduling metadata**:
    - executor affinity (`objc_executor(...)`) ([Part 7](#part-7)),
@@ -53,51 +58,53 @@ A conforming implementation shall preserve, for all exported declarations:
 
 ### D.3.1 Table A — “must preserve across module boundaries” {#d-3-1}
 
-| Feature | Applies to | Must be recorded in module metadata | Must be emitted in textual interface | Notes |
-|---|---|---:|---:|---|
-| Nullability qualifiers (`_Nullable`, `_Nonnull`) | types, params, returns, properties | ✅ | ✅ | Includes inferred defaults where part of the public contract. |
-| Nonnull-by-default regions | headers / interface units | ✅ | ✅ | Canonical pragmas from [B.2](#b-2). |
-| Pragmatic generics parameters | class/protocol types, collections | ✅ | ✅ | ABI may erase; type checking must not. |
-| `T?`, `T!` (optional spellings) | type surface | ✅ | ✅ | Emitted form may choose canonical spellings but semantics must match. |
-| `throws` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see [Table B](#d-3-2)). |
-| `async` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see [Table B](#d-3-2)). |
-| Executor affinity `objc_executor(...)` | funcs/methods/types | ✅ | ✅ | May imply call-site `await` when crossing executors ([Part 7](#part-7)). |
-| Actor type / actor isolation | actor classes + members | ✅ | ✅ | Includes nonisolated markings. |
-| Sendable-like constraints | types, captures, params/returns | ✅ | ✅ | Importers must be able to enforce strict checks. |
-| Borrowed pointer qualifier (`borrowed T *`) | types (params/returns) | ✅ | ✅ | [Part 8](#part-8); enables escape diagnostics in strict-system. Importers must preserve the qualifier. |
-| Borrowed-return marker (`objc_returns_borrowed(owner_index=N)`) | functions/methods | ✅ | ✅ | [Part 8](#part-8); identifies the owner parameter for lifetime checking of interior pointers. |
-| Task-spawn recognition (`objc_task_spawn` etc.) | stdlib entry points | ✅ | ✅ | Needed for compiler enforcement at call sites. |
-| Direct method `objc_direct` | methods | ✅ | ✅ | Changes call legality and category interactions. |
-| Final `objc_final` | classes/methods | ✅ | ✅ | Optimization + legality constraints. |
-| Sealed `objc_sealed` | classes | ✅ | ✅ | Cross-module subclass legality. |
-| Derive/macro synthesized declarations | types/members | ✅ | ✅ | Synthesized members must be visible to importers before layout/ABI decisions. |
-| Error bridging markers (`objc_nserror`, `objc_status_code`) | funcs/methods | ✅ | ✅ | Affects lowering of `try` and wrappers. |
-| Availability / platform gates | all exported decls | ✅ | ✅ | Not a new ObjC 3.0 feature, but required for correctness. |
+| Feature                                                         | Applies to                         | Must be recorded in module metadata | Must be emitted in textual interface | Notes                                                                                                  |
+| --------------------------------------------------------------- | ---------------------------------- | ----------------------------------: | -----------------------------------: | ------------------------------------------------------------------------------------------------------ |
+| Nullability qualifiers (`_Nullable`, `_Nonnull`)                | types, params, returns, properties |                                  ✅ |                                   ✅ | Includes inferred defaults where part of the public contract.                                          |
+| Nonnull-by-default regions                                      | headers / interface units          |                                  ✅ |                                   ✅ | Canonical pragmas from [B.2](#b-2).                                                                    |
+| Pragmatic generics parameters                                   | class/protocol types, collections  |                                  ✅ |                                   ✅ | ABI may erase; type checking must not.                                                                 |
+| `T?`, `T!` (optional spellings)                                 | type surface                       |                                  ✅ |                                   ✅ | Emitted form may choose canonical spellings but semantics must match.                                  |
+| `throws` effect                                                 | functions/methods/blocks           |                                  ✅ |                                   ✅ | ABI-affecting (see [Table B](#d-3-2)).                                                                 |
+| `async` effect                                                  | functions/methods/blocks           |                                  ✅ |                                   ✅ | ABI-affecting (see [Table B](#d-3-2)).                                                                 |
+| Executor affinity `objc_executor(...)`                          | funcs/methods/types                |                                  ✅ |                                   ✅ | May imply call-site `await` when crossing executors ([Part 7](#part-7)).                               |
+| Actor type / actor isolation                                    | actor classes + members            |                                  ✅ |                                   ✅ | Includes nonisolated markings.                                                                         |
+| Sendable-like constraints                                       | types, captures, params/returns    |                                  ✅ |                                   ✅ | Importers must be able to enforce strict checks.                                                       |
+| Borrowed pointer qualifier (`borrowed T *`)                     | types (params/returns)             |                                  ✅ |                                   ✅ | [Part 8](#part-8); enables escape diagnostics in strict-system. Importers must preserve the qualifier. |
+| Borrowed-return marker (`objc_returns_borrowed(owner_index=N)`) | functions/methods                  |                                  ✅ |                                   ✅ | [Part 8](#part-8); identifies the owner parameter for lifetime checking of interior pointers.          |
+| Task-spawn recognition (`objc_task_spawn` etc.)                 | stdlib entry points                |                                  ✅ |                                   ✅ | Needed for compiler enforcement at call sites.                                                         |
+| Direct method `objc_direct`                                     | methods                            |                                  ✅ |                                   ✅ | Changes call legality and category interactions.                                                       |
+| Final `objc_final`                                              | classes/methods                    |                                  ✅ |                                   ✅ | Optimization + legality constraints.                                                                   |
+| Sealed `objc_sealed`                                            | classes                            |                                  ✅ |                                   ✅ | Cross-module subclass legality.                                                                        |
+| Derive/macro synthesized declarations                           | types/members                      |                                  ✅ |                                   ✅ | Synthesized members must be visible to importers before layout/ABI decisions.                          |
+| Error bridging markers (`objc_nserror`, `objc_status_code`)     | funcs/methods                      |                                  ✅ |                                   ✅ | Affects lowering of `try` and wrappers.                                                                |
+| Availability / platform gates                                   | all exported decls                 |                                  ✅ |                                   ✅ | Not a new ObjC 3.0 feature, but required for correctness.                                              |
 
 ### D.3.2 Table B — ABI boundary summary (v1) {#d-3-2}
 
-| Feature | ABI impact | Required stability property | Canonical/recommended ABI shape |
-|---|---|---|---|
-| `throws` | **Yes** | Caller and callee must agree on calling convention across modules | Recommended: trailing `id<Error> * _Nullable outError` ([C.4](#c-4)). |
-| `async` | **Yes** | Importers must call using the same coroutine/continuation ABI | Recommended: LLVM coroutine lowering ([C.5](#c-5)), with a task/executor context. |
-| Executor/actor isolation | Usually **no** (call-site scheduling) | Metadata must exist so importer inserts hops and requires `await` | No ABI change required for sync bodies; hop is an `await`ed scheduling operation. |
-| Optional chaining/sends | No | Semantics preserved in caller IR | Lower to conditional receiver check; args not evaluated on nil ([C.3.1](#c-3-1)). |
-| Direct methods | Sometimes (dispatch surface) | Importers must know legality + dispatch mode | Recommended: direct symbol call + omit dynamic lookup where permitted ([C.8](#c-8)). |
-| Generics (pragmatic) | No (erased) | Importers must type-check consistently | Erased in ABI; preserved in metadata/interface. |
-| Key paths | Library ABI | Standard library must define stable representation | ABI governed by stdlib; metadata must preserve `KeyPath<Root,Value>` types. |
+| Feature                  | ABI impact                            | Required stability property                                       | Canonical/recommended ABI shape                                                      |
+| ------------------------ | ------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `throws`                 | **Yes**                               | Caller and callee must agree on calling convention across modules | Recommended: trailing `id<Error> * _Nullable outError` ([C.4](#c-4)).                |
+| `async`                  | **Yes**                               | Importers must call using the same coroutine/continuation ABI     | Recommended: LLVM coroutine lowering ([C.5](#c-5)), with a task/executor context.    |
+| Executor/actor isolation | Usually **no** (call-site scheduling) | Metadata must exist so importer inserts hops and requires `await` | No ABI change required for sync bodies; hop is an `await`ed scheduling operation.    |
+| Optional chaining/sends  | No                                    | Semantics preserved in caller IR                                  | Lower to conditional receiver check; args not evaluated on nil ([C.3.1](#c-3-1)).    |
+| Direct methods           | Sometimes (dispatch surface)          | Importers must know legality + dispatch mode                      | Recommended: direct symbol call + omit dynamic lookup where permitted ([C.8](#c-8)). |
+| Generics (pragmatic)     | No (erased)                           | Importers must type-check consistently                            | Erased in ABI; preserved in metadata/interface.                                      |
+| Key paths                | Library ABI                           | Standard library must define stable representation                | ABI governed by stdlib; metadata must preserve `KeyPath<Root,Value>` types.          |
 
 ### D.3.3 Table C — Runtime hooks (minimum expectations) {#d-3-3}
+
 This table names **conceptual hooks**. Implementations may use different symbol names.
 
-| Area | Minimum required capability | Notes |
-|---|---|---|
-| Executors | Enqueue continuation onto an executor; query “current executor” | Needed for `objc_executor(...)` and for `await` resumption. |
-| Tasks | Create child/detached tasks; join; cancellation state | Standard library provides API; compiler enforces via attributes. |
-| Actors | Each actor instance maps to a serial executor; enqueue isolated work | Representation is implementation-defined (inline field or side table). |
-| Autorelease pools | Push/pop implicit pools around execution slices | Normative on ObjC runtimes ([C.7](#c-7)). |
-| Diagnostics metadata | Preserve enough source mapping for async/macro debugging | [Part 12](#part-12) requires debuggability. |
+| Area                 | Minimum required capability                                          | Notes                                                                  |
+| -------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Executors            | Enqueue continuation onto an executor; query “current executor”      | Needed for `objc_executor(...)` and for `await` resumption.            |
+| Tasks                | Create child/detached tasks; join; cancellation state                | Standard library provides API; compiler enforces via attributes.       |
+| Actors               | Each actor instance maps to a serial executor; enqueue isolated work | Representation is implementation-defined (inline field or side table). |
+| Autorelease pools    | Push/pop implicit pools around execution slices                      | Normative on ObjC runtimes ([C.7](#c-7)).                              |
+| Diagnostics metadata | Preserve enough source mapping for async/macro debugging             | [Part 12](#part-12) requires debuggability.                            |
 
 ## D.4 Conformance tests (minimum) {#d-4}
+
 A conforming implementation’s test suite should include:
 
 - Importing a module and verifying that `async`/`throws` effects survive and mismatches are diagnosed.

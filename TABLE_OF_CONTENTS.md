@@ -1,4 +1,5 @@
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents {#toc}
+
 _Last generated: 2025-12-28_
 _Working draft: v0.10_
 
@@ -6,6 +7,7 @@ This is a working draft of an **Objective‑C 3.0** specification broken into nu
 Each part is a separate Markdown file intended to be read independently, but the parts are cross-referenced where needed.
 
 ## Front matter {#toc-front-matter}
+
 - **[TABLE_OF_CONTENTS.md](#toc)** — This table of contents (you are here)
 - **[INTRODUCTION.md](#intro)** — Overview, goals, guiding principles, non‑goals, and cross‑cutting design choices
 - **[DECISIONS_LOG.md](#decisions)** — Explicit design decisions (ship/no‑ship) made to keep v1 implementable
@@ -15,7 +17,8 @@ Each part is a separate Markdown file intended to be read independently, but the
 - **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)** — Conformance profiles and implementer checklists (compiler/toolchain + optional feature sets)
 
 ## Parts {#toc-parts}
-- **[PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md](#part-0)** — Baseline Objective‑C (as implemented by Clang) and the normative reference model used by this draft     
+
+- **[PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md](#part-0)** — Baseline Objective‑C (as implemented by Clang) and the normative reference model used by this draft
 - **[PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md](#part-1)** — Language versioning, feature gating, conformance levels, and migration tooling requirements
 - **[PART_2_MODULES_NAMESPACING_API_SURFACES.md](#part-2)** — Modules, imports, module-qualified names, visibility, and API surface contracts
 - **[PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md](#part-3)** — Nullability, nonnull-by-default, optionals, pragmatic generics, and typed key paths
@@ -30,17 +33,21 @@ Each part is a separate Markdown file intended to be read independently, but the
 - **[PART_12_DIAGNOSTICS_TOOLING_TESTS.md](#part-12)** — Required diagnostics, fix-its, migrators, analyzers, and conformance test suites
 
 ## How to read this draft {#toc-how-to-read-this-draft}
-1. Start with **[INTRODUCTION.md](#intro)** (goals + cross-cutting constraints).       
+
+1. Start with **[INTRODUCTION.md](#intro)** (goals + cross-cutting constraints).
 2. Read **[Part 1](#part-1)** next (**[PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md](#part-1)**) for conformance levels and migration strategy.
 3. Then choose a “slice” (types/errors/concurrency/system/perf) depending on what you’re implementing.
 
 ## Status / scope note {#toc-status-scope-note}
+
 This draft is ambitious but implementable:
+
 - It prefers features that can be implemented by a Clang/LLVM toolchain without rewriting the Objective‑C runtime.
 - It keeps “strictness” opt-in via conformance levels, while providing a clear path to stricter defaults over time.
 - Where a feature affects ABI or runtime, it is documented in **[C](#c)** and cross-referenced from the relevant part.
 
 ## Pass notes {#toc-pass-notes}
+
 - **v0.5:** locked major decisions for optionals/errors/concurrency ([D-001](#decisions-d-001)…[D-006](#decisions-d-006)).
 - **v0.8:** adds canonical surface spellings ([B](#b)) and a lowering/ABI/runtime contract ([C](#c)), and begins tightening ABI-impacting features for separate compilation.
 - **v0.9:** adds explicit module-metadata/ABI boundary tables ([D](#d)) and tightens `await` requirements for all potentially-suspending operations across executors/actors.
