@@ -1,0 +1,8 @@
+{
+  "config": {
+    "default": true,
+    "MD009": false,
+    "MD013": false
+  },
+  "globs": ["**/*.md", "!site/_site/**", "!site/index.md", "!node_modules/**"]
+}
