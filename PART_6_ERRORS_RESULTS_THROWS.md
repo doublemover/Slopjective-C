@@ -126,7 +126,7 @@ Source-level semantics for `throws` are defined in this part.
 In addition, conforming implementations shall ensure `throws` is stable under separate compilation ([C.2](#c-2)).
 
 A conforming implementation shall:
-- record the `throws` effect in module metadata (see also [D.3.1](#d-3-1) Table A),
+- record the `throws` effect in module metadata (see also [D.3.1](#d-3-1) [Table A](#d-3-1)),
 - diagnose effect mismatches on redeclaration/import ([C.2](#c-2)),
 - and provide a stable calling convention for throwing functions/methods.
 

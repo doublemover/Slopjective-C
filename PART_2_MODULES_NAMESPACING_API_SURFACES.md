@@ -87,7 +87,7 @@ If a declaration is referenced using a module-qualified name in an emitted textu
 
 ### 2.4.0 Cross-module semantic preservation (normative) {#part-2-4-0}
 A module’s public API contract includes not only names and types, but also ObjC 3.0 semantics that affect call legality and call lowering.
-The minimum required set is enumerated in **[D.3.1](#d-3-1) Table A**.
+The minimum required set is enumerated in **[D.3.1](#d-3-1) [Table A](#d-3-1)**.
 
 
 ### 2.4.1 Public vs SPI vs private (normative) {#part-2-4-1}

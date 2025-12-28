@@ -44,7 +44,7 @@ Calling model:
 
 ### 9.2.4 Separate compilation notes (normative) {#part-9-2-4}
 Because direct methods change call legality and dispatch surfaces, the `objc_direct` attribute shall be:
-- recorded in module metadata (see [D.3.1](#d-3-1) Table A), and
+- recorded in module metadata (see [D.3.1](#d-3-1) [Table A](#d-3-1)), and
 - preserved in emitted interfaces.
 
 Effect/attribute mismatches across modules are ill-formed ([C.2](#c-2)).

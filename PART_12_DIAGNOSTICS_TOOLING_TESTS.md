@@ -43,7 +43,7 @@ A conforming implementation shall provide diagnostics that:
 - `await` applied to an expression that cannot suspend (strict: warning) (diagnostic: “unnecessary await”).
 
 ### 12.3.4 Modules and interface emission {#part-12-3-4}
-- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see [D.3.1](#d-3-1) Table A.
+- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see [D.3.1](#d-3-1) [Table A](#d-3-1).
 - Using a module-qualified name with a non-imported module: error with fix-it to add `@import`.
 - Importing an API through a mechanism that loses effects/attributes (e.g., textual header without metadata) when strictness requires them: warning with suggestion to enable modules/interface emission.
 - Emitted interface does not use canonical spellings from [B](#b): tooling warning; in “interface verification” mode, error.
@@ -102,7 +102,7 @@ A conforming implementation shall ship or publish a test suite that covers at le
 - Module-qualified name parsing (`@A.B.C`).
 
 ### 12.5.2 Type system and diagnostics {#part-12-5-2}
-- Module metadata preservation tests for each Table A item in [D](#d) (import module; verify semantics survive; verify mismatch diagnostics).
+- Module metadata preservation tests for each [Table A](#d-3-1) item in [D](#d) (import module; verify semantics survive; verify mismatch diagnostics).
 - Strict vs permissive nullability behavior.
 - Optional send restrictions (reference-only).
 - Postfix propagation carrier-preserving rules.

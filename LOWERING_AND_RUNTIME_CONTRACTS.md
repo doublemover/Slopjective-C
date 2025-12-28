@@ -34,7 +34,7 @@ A conforming implementation shall ensure:
    If a textual module interface is emitted, it shall preserve effects and attributes (see [B.7](#b-7)).
 
 ## C.2.1 Required module metadata (normative) {#c-2-1}
-A conforming implementation shall preserve in module metadata and interface emission the items listed in **[D.3.1](#d-3-1) Table A**.
+A conforming implementation shall preserve in module metadata and interface emission the items listed in **[D.3.1](#d-3-1) [Table A](#d-3-1)**.
 
 This requirement is intentionally testable: if importing a module can change whether a call requires `try`/`await`, or can change dispatch legality (`objc_direct`), the implementation is non-conforming.
 

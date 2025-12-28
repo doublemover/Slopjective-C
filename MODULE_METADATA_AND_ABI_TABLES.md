@@ -52,14 +52,15 @@ A conforming implementation shall preserve, for all exported declarations:
 ## D.3 Required metadata tables {#d-3}
 
 ### D.3.1 Table A — “must preserve across module boundaries” {#d-3-1}
+
 | Feature | Applies to | Must be recorded in module metadata | Must be emitted in textual interface | Notes |
 |---|---|---:|---:|---|
 | Nullability qualifiers (`_Nullable`, `_Nonnull`) | types, params, returns, properties | ✅ | ✅ | Includes inferred defaults where part of the public contract. |
 | Nonnull-by-default regions | headers / interface units | ✅ | ✅ | Canonical pragmas from [B.2](#b-2). |
 | Pragmatic generics parameters | class/protocol types, collections | ✅ | ✅ | ABI may erase; type checking must not. |
 | `T?`, `T!` (optional spellings) | type surface | ✅ | ✅ | Emitted form may choose canonical spellings but semantics must match. |
-| `throws` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see Table B). |
-| `async` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see Table B). |
+| `throws` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see [Table B](#d-3-2)). |
+| `async` effect | functions/methods/blocks | ✅ | ✅ | ABI-affecting (see [Table B](#d-3-2)). |
 | Executor affinity `objc_executor(...)` | funcs/methods/types | ✅ | ✅ | May imply call-site `await` when crossing executors ([Part 7](#part-7)). |
 | Actor type / actor isolation | actor classes + members | ✅ | ✅ | Includes nonisolated markings. |
 | Sendable-like constraints | types, captures, params/returns | ✅ | ✅ | Importers must be able to enforce strict checks. |
@@ -74,6 +75,7 @@ A conforming implementation shall preserve, for all exported declarations:
 | Availability / platform gates | all exported decls | ✅ | ✅ | Not a new ObjC 3.0 feature, but required for correctness. |
 
 ### D.3.2 Table B — ABI boundary summary (v1) {#d-3-2}
+
 | Feature | ABI impact | Required stability property | Canonical/recommended ABI shape |
 |---|---|---|---|
 | `throws` | **Yes** | Caller and callee must agree on calling convention across modules | Recommended: trailing `id<Error> * _Nullable outError` ([C.4](#c-4)). |
