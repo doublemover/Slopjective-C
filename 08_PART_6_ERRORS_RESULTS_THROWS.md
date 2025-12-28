@@ -1,7 +1,15 @@
 # Part 6 — Errors: Result, throws, try, and Propagation
-_Working draft v0.3 — last updated 2025-12-28_
+_Working draft v0.5 — last updated 2025-12-28_
 
 ## 6.0 Overview
+
+### v0.4 resolved decisions
+- `throws` is **untyped** in v1: thrown values are `id<Error>`.
+- Typed throws syntax `throws(E)` is reserved for future extension and is not part of v1 grammar.
+
+### v0.5 resolved decisions
+- Optional propagation (`e?` where `e` is `T?`) **only** propagates `nil` through optional-returning functions in v1; it does not implicitly throw or return `Err`.
+
 Objective‑C 3.0 standardizes a modern, explicit error model that can be used in new code while interoperating with existing Cocoa and system APIs.
 
 This part defines:
@@ -69,7 +77,7 @@ function-declaration:
     declaration-specifiers declarator throws-specifier? function-body
 
 throws-specifier:
-    'throws' ( '(' type-name ')' )?
+    'throws'
 ```
 
 The optional type parameter is a *typed throws* extension; see §6.3.5.
@@ -79,8 +87,7 @@ A `throws` function may either:
 - return normally with its declared return value, or
 - exit by throwing an error value.
 
-If the `throws` specifier is untyped:
-- the thrown value type is `id<Error>`.
+The thrown value type is `id<Error>`.
 
 ### 6.3.3 Call-site requirements
 A call to a throwing function is ill-formed unless it appears:
@@ -95,14 +102,6 @@ Throwing is part of a function’s type.
 
 A non-throwing function cannot be assigned a throwing function value without an explicit adapter.
 
-### 6.3.5 Typed throws (extension)
-If `throws(E)` is used:
-- only values of type `E` (or subtype/bridged) may be thrown.
-- callers may statically know the error type.
-
-Typed throws is optional; implementations may initially treat it as a diagnostic-only annotation that still uses `id<Error>` at ABI level.
-
-> Open issue: whether typed throws is essential for ObjC 3.0 core or should be deferred.
 
 ---
 
@@ -199,12 +198,13 @@ Mapping:
 - `throws` → `throw err;`
 - otherwise ill-formed.
 
-### 6.6.4 Semantics for optionals
-If `e` has type `T?` then `e?` yields `T` if nonnull, else early-exits.
+### 6.6.4 Semantics for optionals (v1)
+If `e` has type `T?` then `e?` yields `T` if nonnull, else early-exits **by returning `nil`** from the enclosing function.
 
-Mapping:
-- returns optional → `return nil;`
-- returns `Result` or `throws` → requires explicit NullError mapping in strict mode.
+**Restriction (normative):** `e?` where `e` is an optional is well‑formed only if the immediately enclosing function/method’s return type is an optional type compatible with `T?` (i.e., it can return `nil`).
+
+If the enclosing function/method is `throws` or returns `Result<..., ...>`, optional propagation using `?` is **ill‑formed** in v1. Use `guard let` / `if let` to unwrap and then `throw` or `return Err(...)` explicitly.
+
 
 ### 6.6.5 Diagnostics
 - Using `?` outside the follow-token restriction is ill-formed (fix-it: parenthesize).
@@ -299,6 +299,16 @@ Minimum diagnostics:
 
 ## 6.12 Open issues
 1. Exact spelling of attributes and how they map to existing toolchains.
-2. Whether typed throws is core or extension.
-3. NullError mapping rules.
+2. (Resolved in v0.4) v1 is untyped; typed throws is deferred.
+3. (Resolved in v0.5) Optional propagation does not map `nil` to errors in v1; explicit unwrap + throw/Err is required.
 4. Whether to extend postfix `?` beyond current parsing restriction.
+
+## 6.13 Future extensions (non-normative)
+
+### 6.13.0 Nil-to-error mapping sugar
+A future revision may add explicit syntax to map `nil` to an error in a concise way (e.g., `x ?? throw e`, `x ?! e`). This is intentionally excluded from v1.
+
+
+### 6.13.1 Typed throws
+A future revision may introduce typed throws syntax (e.g., `throws(E)`) to restrict the set of throwable error types.
+This is explicitly **not** part of Objective‑C 3.0 v1 to keep the core error model simple and interoperable with NSError and return-code APIs.

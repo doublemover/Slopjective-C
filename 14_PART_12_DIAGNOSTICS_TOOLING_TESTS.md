@@ -29,11 +29,21 @@ A conforming implementation shall provide diagnostics for:
 - borrowed pointer used after owner lifetime ends (diagnose with suggested `withLifetime`).
 
 ### 12.2.5 Concurrency
-- `await` outside async context (error),
+- `await` outside an async context (error),
+- calling an `async` function without `await` (error),
 - capturing non-Sendable values into concurrent tasks (strict concurrency error),
-- actor-isolated state accessed without await (error).
+- actor-isolated state accessed without required `await` (strict concurrency error),
+- cross-executor calls into `@executor(main)` isolated code without required `await` hop (strict concurrency error),
+- `@executor(main)` calls that would require a hop from non-async code (strict error; suggest explicit bridging API or making the caller async).
 
-### 12.2.6 Performance controls
+
+### 12.2.6 Errors and propagation
+- calling a throwing function without `try` (error),
+- `throw` used outside a throwing context (error),
+- postfix propagation `?` used outside the follow-token restriction (error with fix-it),
+- postfix propagation `?` applied to an optional in a non-optional-returning function (error in v1; suggest `guard let`/`if let`).
+
+### 12.2.7 Performance controls
 - direct method declared but used inconsistently (error),
 - sealed/final violations (error),
 - dynamic replacement in static regions (debug warning or strict perf error).
@@ -70,3 +80,6 @@ For features like macros and async:
 ## 12.7 Open issues
 - Standard format for reporting conformance results.
 - Whether “strict concurrency checking” is a separate conformance level or a sub-mode within strictness.
+
+### 12.2.5.1 Additional concurrency diagnostics (v0.5)
+In strict concurrency checking mode, toolchains should warn when a task handle returned from a task-spawn API is unused, to make “fire and forget” explicit.

@@ -63,3 +63,19 @@ This is a working draft. Each part includes “Open Issues” subsections for un
 
 ## v0.3 update
 This bundle expands Part 3 (types/optionals), Part 6 (errors), and Part 7 (concurrency) with concrete grammar and enforceable rules, including optional message sends (`[x? foo]`), `try`/`throw`/`do`-`catch`, and executor/actor isolation scaffolding.
+
+## v0.4 update
+This revision makes three “ship/no‑ship” decisions:
+1) Optional chaining (`?.`, `[x? foo]`) is **reference-only** in v1 (no scalar/struct chaining).
+2) `throws` is **untyped** in v1 (always `id<Error>`); typed throws is deferred.
+3) Task spawning remains **library-defined** in v1; no `task {}` keyword syntax (compiler recognition uses standardized attributes).
+
+
+## v0.5 update
+This revision tightens three previously-open areas:
+
+1) **Executor syntax**: v1 standardizes `@executor(main)` to express main-executor isolation; custom executors are deferred.
+2) **Optional propagation policy**: optional propagation `e?` (for `T?`) propagates `nil` only through optional-returning functions in v1; it does not implicitly throw or return `Err`.
+3) **Autorelease pools**: the concurrency runtime drains an implicit autorelease pool at task/job boundaries (resume/suspend/complete) to prevent unbounded autorelease growth.
+
+See **01A_DECISIONS_LOG.md** for the normative decision record.
