@@ -1,5 +1,5 @@
 # Objective‑C 3.0 — Lowering, ABI, and Runtime Contracts
-_Working draft v0.9 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 01C.0 Scope and audience
 This document is primarily **normative for implementations** (compiler + runtime + standard library).
@@ -210,7 +210,22 @@ If macro expansion or derives synthesize declarations that affect layout or vtab
 - the synthesis must occur before ABI layout is finalized for the type;
 - the synthesized declarations must appear in any emitted module interface or API dump.
 
-## 01C.10 Conformance tests (non-normative)
+## 01C.10 System programming analysis hooks (recommended)
+This section collects implementation guidance for **Part 8** features that are primarily enforced by diagnostics and analysis rather than runtime hooks.
+
+### 01C.10.1 Resources and cleanup
+`objc_resource(...)` (Part 8) should lower equivalently to a scope-exit cleanup action (similar to `cleanup(...)`), but implementations should additionally:
+- perform use-after-move and double-close diagnostics in strict-system profiles;
+- treat the “invalid sentinel” as the moved-from / reset state.
+
+### 01C.10.2 Borrowed pointers
+`borrowed T *` and `objc_returns_borrowed(owner_index=...)` (Part 8) should be represented in the AST and module metadata (01D Table A) so that:
+- call sites can enforce escape analysis in strict-system profiles;
+- importers preserve the qualifier for downstream tooling.
+
+No runtime support is required by these features in v1; the contract is primarily compile-time diagnostics and toolability.
+
+## 01C.11 Conformance tests (non-normative)
 Implementations are encouraged to provide a conformance suite that includes:
 - effect mismatch diagnostics across modules,
 - correct argument evaluation semantics for optional sends,

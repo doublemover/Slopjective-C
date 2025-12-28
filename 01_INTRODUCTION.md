@@ -1,8 +1,6 @@
 # Objective‑C 3.0 Draft Specification (Working Draft) — Introduction
 _Last generated: 2025-12-28_
-
-> Note: **01A_DECISIONS_LOG.md** is the canonical record of “ship/no‑ship” design decisions for this working draft.
-> If a part appears to conflict with a logged decision, treat it as a spec bug and prefer the decision log until reconciled.
+_Working draft: v0.10_
 
 ## 1. What Objective‑C 3.0 is trying to be
 Objective‑C 3.0 is a modernization of Objective‑C focused on:
@@ -81,8 +79,18 @@ This pass resolves:
 - the normative autorelease pool contract at suspension points (Part 7).
 
 
-## v0.6 update
-This pass is a **consistency and completeness sweep** across the whole bundle:
-- Part 3 is updated to match Decisions D‑001 (optional chaining restrictions) and D‑005 (no implicit optional→error propagation).
-- Part 4 removes the stale “per-task autorelease pool” open issue and instead references the normative per-suspension pool rule in Part 7 (Decision D‑006).
-- Parts 9, 11, and 12 are expanded and renumbered for completeness and cross‑reference consistency (without adding a conformance profile checklist yet).
+## v0.8 pass focus
+This pass tightens the specification specifically for **separate compilation** and **implementability**:
+
+- **Canonical spellings** are centralized in **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md** (attributes/pragmas that are stable for module interfaces).
+- **Lowering / ABI / runtime contracts** are centralized in **01C_LOWERING_AND_RUNTIME_CONTRACTS.md**.
+- Parts 6/7/9/11/12 are updated to cross-reference 01B/01C where semantics depend on lowering choices.
+
+This is a deliberate step toward a spec that can be implemented in Clang/LLVM with predictable behavior across modules.
+
+## v0.9 pass focus
+This pass makes the draft more “engineer-ready” by tightening the boundary between **source semantics** and **cross-module implementation reality**:
+
+- Adds **01D_MODULE_METADATA_AND_ABI_TABLES.md**: explicit tables for what must be preserved in module metadata and emitted interfaces, and which features are ABI-affecting.
+- Tightens the meaning of `await`: it is required for **any potentially suspending operation**, including cross-executor and cross-actor access (even when the callee is not explicitly `async`), aligning the surface model with implementable executor/actor hops.
+- Expands 01C with more concrete lowering obligations where separate compilation would otherwise be ambiguous.

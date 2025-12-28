@@ -1,153 +1,140 @@
 # Part 9 — Performance and Dynamism Controls
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 9.1 Purpose
-Objective‑C’s dynamic dispatch is a strength, but it inhibits optimization when everything is “open world.”
+Objective‑C’s dynamic dispatch is a strength, but “open world” dynamism can inhibit optimization and complicate reasoning about safety.
 
-Objective‑C 3.0 provides opt‑in controls that:
-- allow direct calls and devirtualization where safe,
-- communicate intent to the compiler and to reviewers,
+Objective‑C 3.0 provides **opt-in** controls that:
+- enable direct calls and devirtualization where safe,
+- communicate intent to compilers and reviewers,
 - preserve dynamic behavior by default,
-- make “this can be swizzled / overridden” vs “this is performance‑critical and closed” an explicit choice.
+- remain safe under separate compilation and across module boundaries (01C.2).
 
-This part is intentionally conservative: these features must remain safe under separate compilation and must not require whole‑program analysis to preserve correctness.
+This part is designed to accommodate both Cocoa-style dynamic patterns *and* system/library subsets where predictability and performance matter.
 
----
+## 9.2 Direct methods
 
-## 9.2 Model: dynamic by default, closed by explicit promise
-By default, Objective‑C methods:
-- are dynamically dispatched,
-- are overridable by subclasses,
-- and may be replaced by categories and runtime method replacement mechanisms.
+### 9.2.1 Concept
+A *direct method* is a method that:
+- is not dynamically dispatched by selector lookup,
+- cannot be overridden,
+- and is intended to be invoked via a direct call when statically referenced.
 
-ObjC 3.0 adds *promises* that restrict one or more of those capabilities for specific declarations. The promise enables the compiler to generate faster code, but the promise must be checkable (diagnosable) at module boundaries.
+### 9.2.2 Canonical spelling
+A direct method is declared with:
 
----
+```c
+__attribute__((objc_direct))
+```
 
-## 9.3 Direct methods
+applied to an Objective‑C method declaration.
+
+Toolchains may additionally support class-level defaults (e.g., “all members direct”) as an extension, but such defaults must be representable in emitted interfaces (01B.7).
+
+### 9.2.3 Semantics (normative)
+1. A direct method shall not be overridden in any subclass.
+2. A direct method shall not be introduced or replaced by a category with the same selector.
+3. A direct method shall not participate in message forwarding semantics (`forwardInvocation:`) as part of selector lookup.
+
+Calling model:
+- A direct method call shall be formed only by a *statically-resolved* method reference (i.e., the compiler must know it targets a direct method declaration).
+- Dynamic message sends (e.g., `objc_msgSend`, `performSelector:`) shall not be relied upon to find a direct method.
+
+**Programmer model:** “If you want dynamic, do not mark it direct.”
+
+### 9.2.4 Separate compilation notes (normative)
+Because direct methods change call legality and dispatch surfaces, the `objc_direct` attribute shall be:
+- recorded in module metadata (see 01D.3.1 Table A), and
+- preserved in emitted interfaces.
+
+Effect/attribute mismatches across modules are ill-formed (01C.2).
+
+### 9.2.5 Recommended lowering (informative)
+Recommended lowering is described in 01C.8.
+At a high level:
+- the compiler emits a callable symbol for the method implementation, and
+- calls to the method use a direct call rather than `objc_msgSend`.
+
+## 9.3 Final methods and classes
 
 ### 9.3.1 Concept
-A **direct method** is a method that:
-- cannot be overridden by subclasses, and
-- does not permit replacement by categories within the same module interface, and
-- may be called by the compiler as a direct function call (bypassing `objc_msgSend`) when the static receiver type is known.
+A *final* declaration prohibits overriding/subclassing but does not necessarily remove the declaration from dynamic dispatch.
 
-Direct methods are intended for:
-- performance-critical internals,
-- methods that are part of a “closed” implementation strategy,
-- bridging shims where dynamic dispatch is undesirable.
+Final is primarily a **reasoning and optimization** tool:
+- the compiler may devirtualize calls where it can prove the receiver type,
+- but dynamic lookup semantics remain observable unless paired with `objc_direct`.
 
-### 9.3.2 Spelling (provisional)
-This draft uses a Clang-compatible attribute spelling as the canonical form:
+### 9.3.2 Canonical spelling
+Final declarations use:
 
-```objc
-- (int)foo __attribute__((objc_direct));
+```c
+__attribute__((objc_final))
 ```
 
-Sugar spellings (e.g., `@direct`) are explicitly out of scope for v1 and may be added later.
+applied to:
+- classes, to prohibit subclassing (subject to module sealing rules), and/or
+- methods, to prohibit overriding.
 
 ### 9.3.3 Semantics (normative)
-- A direct method shall not be overridden by a method of the same selector in any subclass that is visible within the same translation unit or module.
-- A category or extension that declares a method with the same selector as a direct method on the same class is ill‑formed (at least in strict mode; permissive mode may warn with fix‑its).
+- A `objc_final` class shall not be subclassed in any translation unit that sees the declaration.
+- A `objc_final` method shall not be overridden by any subclass declaration.
 
-Dynamic message sends to a selector that names a direct method are permitted, but:
-- implementations may still choose to dispatch dynamically for such calls, and
-- optimizations are permitted only when they preserve the semantics of a direct method (i.e., no override).
+Violations are ill-formed.
 
-### 9.3.4 Interaction with runtime method replacement (informative)
-Direct methods are intended to be “not swizzled.” However, fully preventing runtime replacement is outside the language’s static control.
-
-Therefore:
-- Attempts to replace a direct method via runtime APIs are **unspecified behavior** in this draft (toolchains/runtimes may ignore replacement, trap in debug, or allow it with loss of optimization).
-- Toolchains should offer a diagnostic mode that warns on known replacement calls targeting direct methods.
-
-> Open issue: should this be strengthened to “ill‑formed, no diagnostic required” or “undefined behavior” for security/perf reasons?
-
----
-
-## 9.4 `final` methods and classes
+## 9.4 Sealed classes
 
 ### 9.4.1 Concept
-A **final method** may be dynamically dispatched but is promised not to be overridden. A **final class** may not be subclassed.
+A *sealed* class prohibits subclassing **outside** the defining module, but may allow subclassing **inside** the module.
 
-Final declarations allow:
-- devirtualization within the compilation unit,
-- better inlining and ARC optimization,
-- clearer API intent (this is not an extension point).
+This enables:
+- whole-module reasoning about the subclass set, and
+- optimization across module boundaries while still supporting internal extension points.
 
-### 9.4.2 Spelling (provisional)
-Canonical attribute spellings (provisional):
+### 9.4.2 Canonical spelling
+Sealed classes use:
 
-```objc
-- (id)parse __attribute__((objc_final));
-__attribute__((objc_final)) @interface Parser : NSObject
-@end
+```c
+__attribute__((objc_sealed))
 ```
+
+Toolchains may treat existing equivalent attributes (e.g., “subclassing restricted”) as aliases.
 
 ### 9.4.3 Semantics (normative)
-- Overriding a final method is ill‑formed.
-- Subclassing a final class is ill‑formed.
-- Categories may add methods to a final class (this does not violate finality), but categories shall not replace existing final methods (diagnosed where possible).
+- Subclassing a sealed class outside the owning module is ill-formed.
+- Whether same-module subclassing is permitted is implementation-defined unless the attribute explicitly specifies (future extension).
 
----
+At minimum, sealed shall be strong enough to support the “no external subclassing” contract.
 
-## 9.5 `sealed` declarations (module‑closed extension points)
+## 9.5 Interaction with categories, swizzling, and reflection
 
-### 9.5.1 Concept
-A **sealed class** may be subclassed only within the defining module. Outside the module, it behaves like final.
+### 9.5.1 Categories
+- Categories may add methods to any class by default (baseline Objective‑C behavior).
+- Categories shall not add or replace a `objc_direct` method selector; doing so is ill-formed.
 
-Sealed enables:
-- optimizations that rely on a closed set of subclasses within a module,
-- explicit “you may extend this, but only here” boundaries.
+### 9.5.2 Swizzling and IMP replacement (non-normative guidance)
+Swizzling is a common dynamic technique. Objective‑C 3.0 does not outlaw it, but it makes the tradeoff explicit:
+- Do not mark APIs `objc_direct` if swizzling/forwarding must be supported.
+- `objc_final` and `objc_sealed` do not prevent swizzling by themselves; they primarily constrain subclassing/overriding.
 
-### 9.5.2 Spelling (provisional)
-```objc
-__attribute__((objc_sealed)) @interface Token : NSObject
-@end
-```
+## 9.6 ABI and visibility rules (normative for implementations)
+Implementations shall ensure that direct/final/sealed remain safe under:
+- separate compilation,
+- LTO and non-LTO builds,
+- and module boundaries.
 
-### 9.5.3 Semantics (normative)
-- Within the defining module, subclassing a sealed class is permitted.
-- Outside the defining module, subclassing a sealed class is ill‑formed.
-- The defining module’s extracted interface (Part 2) must preserve sealed/final/direct intent.
+Minimum requirements:
+1. Attributes that affect dispatch legality (`objc_direct`) must be recorded in module metadata.
+2. Interface emission must preserve the attributes using canonical spellings (01B.7).
+3. Calling a method with incompatible assumptions about directness/finality across module boundaries must be diagnosed when possible (Part 12).
 
----
-
-## 9.6 Explicit dynamic boundaries
-
-### 9.6.1 Purpose
-Some code intentionally relies on dynamic features (method replacement, message forwarding, KVC/KVO). ObjC 3.0 allows authors to make that explicit.
-
-### 9.6.2 Spelling (provisional)
-A method may be marked as “force dynamic”:
-
-```objc
-- (id)valueForKey:(NSString *)key __attribute__((objc_force_dynamic));
-```
-
-### 9.6.3 Semantics (normative)
-When a declaration is marked force-dynamic:
-- the compiler shall not devirtualize or direct-call that method based solely on static type knowledge,
-- even if the method would otherwise qualify for a direct/final optimization.
-
-This attribute exists to make performance tradeoffs explicit and to support tooling (profilers, analyzers).
-
----
-
-## 9.7 Diagnostics
-A conforming implementation shall diagnose:
-- overriding a `final`/`direct` method (error in strict),
-- subclassing a `final` class (error in strict),
-- subclassing a `sealed` class from outside its defining module (error in strict),
-- duplicate category method declarations that conflict with `direct`/`final` constraints (at least warning in permissive).
-
-Toolchains should additionally warn when:
-- a `direct` method is invoked through dynamic dispatch in performance-sensitive builds (warning group),
-- a declaration is marked `direct`/`final` but is not eligible for any optimization due to signature/runtime constraints (QoI warning).
-
----
+## 9.7 Required diagnostics (minimum)
+- Declaring `objc_direct` on a method that is declared in an Objective‑C protocol and implemented dynamically: error (direct methods are not dispatchable by selector).
+- Overriding a `objc_direct` or `objc_final` method: error.
+- Declaring a category method with the same selector as a `objc_direct` method: error.
+- Attempting to subclass an `objc_final` class: error.
+- Attempting to subclass an `objc_sealed` class from another module: error.
+- In strict performance mode: warn when a direct-call-capable reference is forced through dynamic dispatch (e.g., via `performSelector:`), with note explaining semantics.
 
 ## 9.8 Open issues
-- Final surface spelling and alignment with existing Clang/Apple attributes where possible.
-- Stronger guarantees (or explicit UB) for runtime method replacement targeting `direct` methods.
-- Interaction with Swift overlays and resilience: how to preserve sealed/final intent across language boundaries.
+- Whether to standardize a class-level “all members direct” attribute as part of v1 (or leave as implementation extension).
+- Whether to standardize an attribute that *forces* dynamic dispatch (useful for debugging and swizzling-friendly APIs).

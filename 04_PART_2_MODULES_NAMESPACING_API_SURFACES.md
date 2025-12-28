@@ -1,132 +1,132 @@
 # Part 2 — Modules, Namespacing, and API Surfaces
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 2.1 Purpose
 This part defines:
+
 - module import rules and their interaction with headers,
-- module-qualified names to reduce prefix-collision pressure,
+- a **module-qualified name** mechanism to reduce global-prefix collision pressure,
 - API surface contracts: visibility, stability, and availability,
-- guidance for framework authors migrating to ObjC 3.0 APIs.
+- requirements for interface extraction/emission so ObjC 3.0 semantics survive separate compilation.
 
-Objective‑C 3.0 treats module boundaries as the unit of “API truth”: nullability completeness, ownership/error annotations, and concurrency intent should be preservable across separate compilation and distribution.
-
----
+This part is closely related to:
+- **01B** (canonical spellings for emitted interfaces),
+- **01C** (separate compilation and lowering contracts), and
+- **01D** (the normative checklist of what must be preserved in module metadata across boundaries).
 
 ## 2.2 Modules
 
 ### 2.2.1 `@import`
-Objective‑C 3.0 standardizes `@import` as the preferred import mechanism for modules.
+Objective‑C 3.0 standardizes `@import` as the preferred import mechanism.
 
 A module import shall:
-- make the imported module’s **public** declarations visible,
-- preserve the imported API’s declared **nullability** and other type modifiers (Part 3),
-- avoid “textual include hazards” where possible (e.g., macro-order dependence) by using a compiler-managed module representation.
+- make the imported module’s public declarations visible,
+- apply the module’s exported nullability metadata (Part 3),
+- apply the module’s exported availability metadata (if any),
+- make any exported “strictness recommendation” visible to tooling (Part 1).
 
-> Note: Toolchains may still support `#include`/`#import` for compatibility, but ObjC 3.0 frameworks should be distributable without requiring clients to rely on transitive textual includes.
+### 2.2.2 `#import` and mixed-mode code (non-normative)
+`#import` remains supported for compatibility with existing headers.
+However, toolchains are encouraged to treat `@import` as the semantic source of truth for:
+- nullability defaults,
+- availability,
+- and extracted interface emission.
 
-### 2.2.2 Submodules
-An implementation may support submodule imports such as:
-
-```objc
-@import Foundation.NSString;
-```
-
-If supported:
-- submodule names are resolved in the module namespace (not the C preprocessor namespace),
-- importing a submodule shall not silently change the meaning of previously-visible names without a diagnostic (at least a warning in permissive mode).
-
----
+### 2.2.3 Module maps and header ownership (implementation-defined)
+The mechanism that maps headers to modules (module maps, build system metadata, etc.) is implementation-defined.
+A conforming implementation shall behave **as if** each public declaration belongs to exactly one owning module for the purpose of:
+- API visibility,
+- interface emission,
+- and cross-module diagnostics.
 
 ## 2.3 Module-qualified names
 
 ### 2.3.1 Motivation
-Objective‑C’s traditional prefix conventions (e.g., `NS`, `UI`, `CG`) are not a robust namespacing mechanism.
+Objective‑C historically uses global prefixes (e.g., `NS`, `UI`, `CG`) to avoid collisions.
+As module ecosystems grow, prefixes are increasingly insufficient and noisy.
 
-Objective‑C 3.0 defines module qualification to:
-- disambiguate conflicting type names across modules,
-- allow frameworks to expose “clean” names without global prefix collisions,
-- make interop layers (Swift overlays, system shims) more explicit.
+Objective‑C 3.0 introduces a lightweight module-qualified name form that:
+- is unambiguous in ObjC and ObjC++,
+- does not require a global namespace feature,
+- is stable under interface emission.
 
-### 2.3.2 Syntax (provisional)
-This draft uses an illustrative syntax:
+### 2.3.2 Syntax (normative)
+A *module-qualified name* is written:
 
-- `Module::TypeName`
-- `Module::ProtocolName`
-
-where `Module` may include submodule components (e.g., `Framework.Sub`).
-
-> Open issue (surface spelling): choose a final syntax compatible with Objective‑C and ObjC++. Alternatives include `Module.Type`, `@qualified(Module, Type)`, or a keyworded form that cannot collide with C++ scope resolution.
-
-### 2.3.3 Grammar (provisional)
-```text
-module-name:
-    identifier ('.' identifier)*
-
-module-qualified-identifier:
-    module-name '::' identifier
+```objc
+@ModuleName.Identifier
+@TopLevel.Submodule.Identifier
 ```
 
-### 2.3.4 Semantics
-- **Unqualified lookup** searches the current module, then imported modules (implementation-defined import order), and shall diagnose ambiguity.
-- **Qualified lookup** resolves directly to the named module’s exported declaration.
-- If two modules export the same unqualified name, unqualified lookup shall be ambiguous and diagnosed; qualification resolves it.
+Grammar (informative):
 
----
+- `module-qualified-name` → `'@' module-path '.' identifier`
+- `module-path` → `identifier ('.' identifier)*`
+
+### 2.3.3 Where module-qualified names may appear (normative)
+Module-qualified names may appear in:
+- type positions (class names, protocol names, typedef names),
+- expression positions where an identifier would be valid (e.g., referring to a global function or global constant),
+- attribute arguments where an identifier names a type or symbol.
+
+They shall not appear in:
+- selector spelling positions (the `:`-separated selector pieces),
+- preprocessor directive names.
+
+### 2.3.4 Name resolution (normative)
+A module-qualified name resolves by:
+1. Resolving the module path to a module (or submodule) that is visible in the current translation unit.
+2. Looking up the identifier in that module’s exported declarations.
+
+If no matching declaration exists, the program is ill-formed.
+
+### 2.3.5 Interface emission (normative)
+If a declaration is referenced using a module-qualified name in an emitted textual interface, the emitter shall preserve the module-qualified form **or** emit an equivalent unqualified name together with imports that make it unambiguous.
 
 ## 2.4 API surface contracts
 
-### 2.4.1 Visibility
-Objective‑C 3.0 introduces a notion of *module-scoped* visibility for declarations.
+### 2.4.0 Cross-module semantic preservation (normative)
+A module’s public API contract includes not only names and types, but also ObjC 3.0 semantics that affect call legality and call lowering.
+The minimum required set is enumerated in **01D.3.1 Table A**.
 
-This draft uses placeholder spellings:
-- `@public`, `@internal`, `@private`
 
-> Open issue (spelling): map these to a canonical attribute form that is compatible with C/ObjC headers and does not conflict with existing Objective‑C keywords.
+### 2.4.1 Public vs SPI vs private (normative)
+A module’s API surface is partitioned into (at minimum):
+- **Public API**: visible to all importers.
+- **SPI** (system/private interface): visible only to privileged importers (mechanism implementation-defined).
+- **Private**: not visible outside the owning module.
 
-Normative semantics:
-- **public** declarations are exported from the module’s public interface.
-- **internal** declarations are visible to other files within the module but not to importers.
-- **private** declarations are visible only within the declaring file or lexical region (implementation-defined, but must be diagnosable).
+The mechanism used to mark partitions is implementation-defined (attributes, build system flags, header directory layout, etc.), but a conforming toolchain shall preserve partition metadata in module files and interface emission.
 
-Categories and extensions shall obey the same visibility rules: an internal category must not “leak” into the public interface.
+### 2.4.2 Effects and attributes are part of the API contract (normative)
+For exported functions/methods, the following are API-significant and must be preserved across module boundaries:
 
-### 2.4.2 Stability (ABI/source)
-Objective‑C 3.0 distinguishes API stability intent:
+- effects: `async`, `throws`
+- executor affinity: `objc_executor(...)`
+- task-spawn recognition attributes (when exporting concurrency entry points)
+- nullability and ownership qualifiers
+- direct/final/sealed annotations that affect call legality or dispatch (Part 9)
 
-- `@stable` declarations commit to the module’s declared compatibility policy (Part 1) with respect to source compatibility.
-- `@unstable` declarations may change without source-compatibility promises.
+## 2.5 Extracted interfaces and semantic preservation
 
-> Open issue: map stability intent to existing “SPI” mechanisms on Apple toolchains and to cross-platform visibility systems.
+### 2.5.1 Requirement (normative)
+If an implementation provides any facility that emits an interface description (textual or AST-based), then importing that interface must reconstruct:
 
-### 2.4.3 Availability and versioning
-Objective‑C 3.0 standardizes availability annotations, conceptually:
+- the same declarations and types,
+- the same effects (`async`, `throws`),
+- the same canonical attributes/pragmas needed for semantics.
 
-```objc
-@available(platform, introduced: x.y, deprecated: a.b, obsoleted: c.d)
-```
+Canonical spellings are defined in **01B**.
 
-Compilers shall diagnose availability misuse in strict modes (e.g., calling unavailable APIs without guards).
+### 2.5.2 Format (implementation-defined)
+This draft does not require a particular distribution format (text vs binary).
+However, the format must be sufficient to support:
 
----
+- strictness/migration tooling (Part 1),
+- diagnostics for effect mismatches (01C.2),
+- and cross-module concurrency checking (Part 7).
 
-## 2.5 Default nullability and strictness at module boundaries
-A module may declare:
-- a default nullability region for its public interface (Part 3), and
-- a recommended strictness level for clients (Part 1).
-
-Rules:
-- Clients may override strictness, but the **declared nullability** of imported APIs shall be preserved in type checking.
-- If an imported API omits nullability where completeness is required by the module’s policy, strict toolchains should diagnose the omission at the module boundary (Part 12).
-
----
-
-## 2.6 Documentation and extracted interface files
-A conforming toolchain should be able to emit an extracted interface description (analogous in spirit to Swift’s `.swiftinterface`) containing:
-- module exports,
-- nullability,
-- ownership and error-model annotations,
-- concurrency annotations (`async`, executor/actor isolation).
-
-This enables resilient distribution of ObjC 3.0 frameworks without shipping raw headers.
-
-> Open issue: define an “ObjC interface format” for distribution. Candidates include a stable text format or a stable serialized AST.
+## 2.6 Required diagnostics (minimum)
+- Using a module-qualified name for an unloaded/unimported module: error with fix-it to add `@import`.
+- Resolving a module-qualified name to multiple candidates (ambiguous exports): error; recommend qualification or import narrowing.
+- Redeclaring an imported API with mismatched effects/ABI-significant attributes: error (see 01C.2).

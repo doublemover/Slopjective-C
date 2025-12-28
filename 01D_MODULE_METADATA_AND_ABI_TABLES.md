@@ -1,5 +1,5 @@
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables
-_Working draft v0.9 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 01D.0 Purpose
 Objective‑C 3.0 adds source-level semantics that **must survive module boundaries**:
@@ -63,6 +63,8 @@ A conforming implementation shall preserve, for all exported declarations:
 | Executor affinity `objc_executor(...)` | funcs/methods/types | ✅ | ✅ | May imply call-site `await` when crossing executors (Part 7). |
 | Actor type / actor isolation | actor classes + members | ✅ | ✅ | Includes nonisolated markings. |
 | Sendable-like constraints | types, captures, params/returns | ✅ | ✅ | Importers must be able to enforce strict checks. |
+| Borrowed pointer qualifier (`borrowed T *`) | types (params/returns) | ✅ | ✅ | Part 8; enables escape diagnostics in strict-system. Importers must preserve the qualifier. |
+| Borrowed-return marker (`objc_returns_borrowed(owner_index=N)`) | functions/methods | ✅ | ✅ | Part 8; identifies the owner parameter for lifetime checking of interior pointers. |
 | Task-spawn recognition (`objc_task_spawn` etc.) | stdlib entry points | ✅ | ✅ | Needed for compiler enforcement at call sites. |
 | Direct method `objc_direct` | methods | ✅ | ✅ | Changes call legality and category interactions. |
 | Final `objc_final` | classes/methods | ✅ | ✅ | Optimization + legality constraints. |

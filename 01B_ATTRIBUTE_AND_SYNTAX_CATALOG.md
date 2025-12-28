@@ -1,5 +1,5 @@
 # Objective‑C 3.0 — Attribute and Syntax Catalog
-_Working draft v0.9 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 01B.0 Purpose
 Objective‑C 3.0 introduces new language **effects**, **annotations**, and a small amount of **surface syntax**.
@@ -178,10 +178,74 @@ If an implementation provides any facility that emits a textual interface for a 
 2. The emitter shall use the **canonical spellings** from this catalog (or semantically equivalent spellings defined as canonical elsewhere in the spec).
 3. The emitted interface shall not depend on user macros for semantics (macros may remain for documentation convenience, but the semantic attributes/pragmas must be explicit).
 
-## 01B.8 Reserved tokens
+## 01B.8 System programming extensions
+
+This section catalogs canonical spellings for “system programming extensions” described in **Part 8**.
+These spellings are intended to survive header/module interface emission and mixed ObjC/ObjC++ builds.
+
+### 01B.8.1 Resource cleanup on scope exit (canonical)
+
+**Variable attribute form:**
+
+```c
+__attribute__((objc_resource(close=CloseFn, invalid=InvalidExpr)))
+```
+
+- `CloseFn` is the identifier of a cleanup function.
+- `InvalidExpr` is a constant expression representing the “invalid” sentinel value for the resource type.
+
+**Semantics:** See Part 8 §8.3.2. The compiler shall treat a variable annotated with `objc_resource` as a
+*single-owner handle* for purposes of move/use-after-move diagnostics (where enabled).
+
+**Optional sugar (non-normative):**
+- `@resource(CloseFn, invalid: InvalidExpr)` as described in Part 8.
+
+### 01B.8.2 Plain cleanup hook (canonical / existing)
+
+**Variable attribute form (Clang existing):**
+
+```c
+__attribute__((cleanup(CleanupFn)))
+```
+
+**Optional sugar (non-normative):**
+- `@cleanup(CleanupFn)` as described in Part 8.
+
+### 01B.8.3 Borrowed interior pointers (canonical)
+
+**Type qualifier form (canonical):**
+
+```c
+borrowed T *
+```
+
+The `borrowed` qualifier is a contextual keyword in type grammar (Part 8 §8.7). It is not reserved as a general identifier.
+
+### 01B.8.4 Function return is borrowed from an owner (canonical)
+
+**Function/return attribute form:**
+
+```c
+__attribute__((objc_returns_borrowed(owner_index=N)))
+```
+
+- `N` is a 0-based index into the formal parameter list that identifies the “owner” parameter.
+
+**Semantics:** See Part 8 §8.7.2. Toolchains shall preserve this attribute in module metadata (01D Table A).
+
+### 01B.8.5 Block capture list contextual keywords (canonical)
+
+The capture list feature in Part 8 uses contextual keywords:
+- `weak`
+- `unowned`
+- `move`
+
+These tokens are contextual within capture list grammar only and shall not be reserved globally.
+
+## 01B.9 Reserved tokens
 Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 
-- `async`, `await`, `actor`, `nonisolated`
+- `async`, `await`, `actor`
 - `throws`, `try`, `throw`, `do`, `catch`
 - `defer`, `guard`, `match`, `case`
 - `let`, `var`

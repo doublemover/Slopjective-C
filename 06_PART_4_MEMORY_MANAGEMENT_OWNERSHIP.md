@@ -1,6 +1,5 @@
 # Part 4 — Memory Management and Ownership
-_Working draft v0.6 — last updated 2025-12-28_
-
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 4.1 Purpose
 This part defines how ObjC 3.0:
@@ -64,14 +63,31 @@ Objective‑C 3.0 introduces the concept of move for:
 - and optionally for certain object wrappers.
 
 Move semantics are explicit:
-- The standardized spellings are `take(x)` and `move x` (Part 8).
+- `take(x)` and `move x` capture list items (Part 8) are the standardized spellings.
 
 ## 4.7 Autorelease pools and bridging
 ObjC 3.0 retains autorelease pool semantics and requires that new language constructs (`defer`, `async`) preserve correctness:
 - defers execute before local releases in the same scope (Part 8).
 - `async` suspension points shall preserve pool semantics according to the concurrency runtime (Part 7).
 
-> Note: Per-task autorelease pool behavior at suspension points is specified normatively in Part 7 (§7.9.4) and recorded as Decision D‑006.
+Per-task autorelease pool behavior at suspension points is defined normatively in Part 7 and 01C (Decision D‑006).
+
+
+
+## 4.7 Async suspension and autorelease pools
+
+### 4.7.1 Normative rule (Objective‑C runtimes)
+On Objective‑C runtimes with autorelease semantics, a conforming implementation shall ensure:
+
+- Each *task execution slice* (resume → next suspension or completion) runs inside an implicit autorelease pool.
+- The pool is drained:
+  - before suspending at an `await`, and
+  - when the task completes.
+
+This rule is required to avoid unbounded autorelease growth across long async chains and to make memory behavior predictable for Foundation-heavy code.
+
+See Part 7 §7.9 and 01C.7.
+
 
 ## 4.8 Interactions with retainable C families
 Retainable families (CoreFoundation-like, dispatch/xpc integration, custom refcounted C objects) are specified in Part 8. Part 4 defines their participation in the ownership model:

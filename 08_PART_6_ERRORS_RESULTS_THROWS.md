@@ -1,7 +1,18 @@
 # Part 6 — Errors: Result, throws, try, and Propagation
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 6.0 Overview
+
+### v0.9 resolved decisions
+- The required module metadata set for preserving `throws` across module boundaries is enumerated in 01D.
+- `try`/`throw`/`throws` are explicitly specified to be compile-time effects; runtime reflection of `throws` is not required in v1.
+
+
+### v0.8 resolved decisions
+- `throws` uses an untyped error value: `id<Error>`.
+- Postfix optional propagation `e?` is carrier-preserving and is only valid in optional-returning functions (no implicit nil→error mapping).
+- Conforming implementations provide a stable calling convention for `throws` across module boundaries (01C.4).
+
 
 ### v0.5 resolved decisions
 - Optional propagation `e?` for `e : T?` is valid **only** in optional-returning functions (carrier-preserving). It is ill‑formed in `throws` or `Result` contexts (no implicit nil→error mapping).
@@ -81,7 +92,6 @@ throws-specifier:
     'throws'
 ```
 
-The optional type parameter is a *typed throws* extension; see §6.3.5.
 
 ### 6.3.2 Semantics
 A `throws` function may either:
@@ -96,12 +106,44 @@ A call to a throwing function is ill-formed unless it appears:
 - within a context that explicitly handles the error (e.g., bridging to Result).
 
 ### 6.3.4 Function and block types
+
+
+A throwing function’s type is distinct from a non-throwing function’s type.
+
+Examples (illustrative):
+- `R (^)(Args) throws` is a throwing block type.
+- `R (^)(Args)` is a non-throwing block type.
+
+**Conversion rules (normative intent):**
+- A non-throwing function/block value may be implicitly converted to a throwing type (it never throws).
+- A throwing function/block value shall not be implicitly converted to a non-throwing type.
+  Toolchains may provide an explicit adapter helper that converts a throwing callable into a non-throwing callable by handling errors (e.g., by trapping, by mapping to `Result`, or by returning an optional), but such adapters must be explicit at the call site.
+
+`async` and `throws` compose: `async throws` is a distinct combined effect set.
+
+### 6.3.5 ABI and lowering (normative for implementations)
+Source-level semantics for `throws` are defined in this part.
+In addition, conforming implementations shall ensure `throws` is stable under separate compilation (01C.2).
+
+A conforming implementation shall:
+- record the `throws` effect in module metadata (see also 01D.3.1 Table A),
+- diagnose effect mismatches on redeclaration/import (01C.2),
+- and provide a stable calling convention for throwing functions/methods.
+
+The recommended calling convention is the *trailing error-out parameter* described in 01C.4.
+
+> Note: This draft intentionally chooses an error-out convention
+
+**Reflection note (non-normative):** v1 does not require encoding `throws` in Objective‑C runtime type encodings. Toolchains may provide extended metadata as an extension.
+ rather than stack unwinding, to keep interoperability with NSError/return-code APIs straightforward and to align with existing Objective‑C runtime practices.
+
+
 Throwing is part of a function’s type.
 
 - `R (^)(Args) throws` is a throwing block type.
 - `R (^)(Args)` is non-throwing.
 
-A non-throwing function cannot be assigned a throwing function value without an explicit adapter.
+A throwing function value cannot be assigned to a non-throwing function type without an explicit adapter.
 
 
 ---
@@ -119,7 +161,6 @@ A `throw` statement is permitted only within a `throws` function or within a `ca
 
 The thrown expression must be convertible to:
 - `id<Error>` for untyped throws, or
-- the declared typed-throws error type.
 
 ### 6.4.3 Dynamic semantics
 Executing `throw e;`:
@@ -171,7 +212,7 @@ In strict mode, discarding errors should produce a warning unless explicitly mar
 The postfix propagation operator provides Rust-like ergonomics for **carrier types** without relying on exceptions:
 
 - `Result<T, E>`: unwrap or early-return error.
-- `T?`: unwrap or early-return `nil` (only from optional-returning functions in v1; see §6.6.4).
+- `T?`: unwrap or early-return `nil` (or throw) depending on surrounding function’s declared return/effects.
 
 This operator is intentionally limited to avoid conflict with C’s conditional operator `?:`.
 
@@ -270,7 +311,7 @@ Eligible if:
 - return type is `BOOL` or object pointer.
 
 ### 6.9.2 Standard attribute
-Provisional attribute: `@nserror`.
+Canonical attribute: `__attribute__((objc_nserror))` (see 01B.4.1).
 
 ### 6.9.3 `try` lowering for NSError-bridged calls
 Compiler shall:
@@ -284,7 +325,7 @@ Compiler shall:
 ## 6.10 Interoperability: return-code APIs
 
 ### 6.10.1 Status attribute
-Provisional attribute: `@status_code(success: constant, error_type: Type, mapping: Function)`.
+Canonical attribute: `__attribute__((objc_status_code(success: constant, error_type: Type, mapping: Function)))` (see 01B.4.2).
 
 ### 6.10.2 Bridging
 - Under `try`: throw on non-success.
@@ -302,10 +343,10 @@ Minimum diagnostics:
 ---
 
 ## 6.12 Open issues
-1. Exact spelling of attributes and how they map to existing toolchains.
-2. (Resolved in v0.4) v1 is untyped; typed throws is deferred.
-3. (Resolved in v0.5) v1 forbids implicit nil→error mapping; `T?` propagation with postfix `?` is allowed only in optional-returning functions.
-4. Whether to extend postfix `?` beyond current parsing restriction.
+- Whether to introduce a standard attribute or syntax for “never throws” in generic contexts (mostly redundant with absence of `throws`).
+- Whether to standardize a nil→error mapping helper (e.g., `orThrow(...)`) in the standard library rather than as language sugar.
+- Whether to add typed throws in a future revision (future extension).
+
 
 ## 6.13 Future extensions (non-normative)
 

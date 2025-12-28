@@ -1,5 +1,5 @@
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 10.1 Purpose
 Objective‑C has historically relied on:
@@ -8,132 +8,117 @@ Objective‑C has historically relied on:
 - and conventions.
 
 Objective‑C 3.0 introduces structured mechanisms that reduce boilerplate while remaining **auditable** and **toolable**:
-- derives for common conformances and synthesized members,
-- AST macros with strong safety/determinism constraints,
-- property behaviors/wrappers for reusable property semantics.
 
-This part is intentionally conservative: metaprogramming is permitted only where tooling can preserve source locations and where expansion is deterministic and cacheable.
+- **Derives** for common generated conformances and boilerplate members,
+- **AST macros** with strong safety constraints,
+- **Property behaviors/wrappers** for reusable property semantics.
 
----
+This part is constrained by:
+- interface emission requirements (01B.7),
+- ABI/layout constraints (01C.9),
+- and the principle that generated code must remain inspectable.
 
 ## 10.2 Derives
 
-### 10.2.1 Concept
-A **derive** is a declaration-level request for synthesized code with well-defined semantics, similar in spirit to “derive traits” in Rust and compiler-synthesized conformances in Swift.
+### 10.2.1 Canonical spelling
+A derive request is attached using:
 
-Derives are intended for:
-- equality/hash boilerplate,
-- Codable-like coding adapters,
-- debug/description synthesis,
-- small, predictable patterns that should not require external code generation.
-
-### 10.2.2 Syntax (provisional)
-This draft uses a lightweight attribute-like spelling:
-
-```objc
-__attribute__((objc_derive(Equatable, Hashable)))
-@interface Point : NSObject
-@property (nonatomic) int x;
-@property (nonatomic) int y;
-@end
+```c
+__attribute__((objc_derive("TraitName")))
 ```
 
-> Open issue: final surface spelling (`@derive(...)` sugar vs pure attributes).
+Multiple derives may be listed by repeating the attribute.
 
-### 10.2.3 Semantics (normative)
-- Derive expansion is a compile-time transformation that produces additional declarations as if written by the user.
-- Expansion shall be **deterministic** with respect to:
-  - the declaring type’s visible members,
-  - the derive arguments,
-  - and the imported modules’ stable interfaces.
+### 10.2.2 Semantics (normative)
+A derive request causes the compiler (or derive implementation) to synthesize declarations as if the user had written them.
 
-A toolchain shall make the expanded declarations available to:
-- type checking,
-- code completion,
-- and debugging (via source-location mapping; Part 12).
+Rules:
+1. Derives are **deterministic**: the same source must produce the same expanded declarations.
+2. Derives are **pure** with respect to the compilation: they shall not depend on network, wall-clock time, or other nondeterministic inputs.
+3. If a derive cannot be satisfied (missing requirements, ambiguous synthesis), compilation is ill-formed and shall produce diagnostics identifying the missing inputs.
 
-### 10.2.4 Conflict resolution (normative)
-If a derive would synthesize a declaration that conflicts with a user declaration:
-- in strict mode, the program is ill‑formed unless the user explicitly opts in to overriding/suppression,
-- in permissive mode, the toolchain may accept but shall diagnose and prefer the user declaration.
+### 10.2.3 ABI and interface emission (normative)
+If a derive synthesizes declarations that affect:
+- type layout,
+- exported method sets,
+- or protocol conformances,
 
-### 10.2.5 Diagnostics
-Derives shall fail with clear diagnostics if:
-- required fields are not representable,
-- cycles or unsupported types are present (for coding derives),
-- user-defined methods conflict with synthesized ones without an explicit resolution marker.
+then those synthesized declarations are part of the module’s API surface and:
+- shall be recorded in module metadata, and
+- shall appear in any emitted interface (01B.7, 01C.9).
 
----
+### 10.2.4 Standard derives (non-normative)
+A standard library may provide derives analogous to:
+- equality/hash,
+- debug formatting,
+- coding/serialization.
+
+This draft does not require a particular set in v1; it requires the *mechanism* and the interface emission guarantees.
 
 ## 10.3 AST macros
 
 ### 10.3.1 Concept
-An **AST macro** is a compile-time transformation that receives typed syntax/AST and produces additional AST nodes.
+AST macros are compile-time programs that transform syntax/AST into expanded declarations or expressions.
 
-Macros are intended for:
-- repetitive declaration patterns that are too niche for built-in derives,
-- safe wrappers around common “unsafe” APIs (e.g., checked conversions),
-- performance-oriented boilerplate that should still be inspectable.
+### 10.3.2 Canonical marker attribute
+Macro entry points may be annotated with:
 
-### 10.3.2 Safety and sandboxing (normative intent)
-Objective‑C 3.0 requires that macro execution be constrained:
+```c
+__attribute__((objc_macro))
+```
 
-- Macros shall be **pure**: no network access; no reading arbitrary files; no environment-dependent output.
-- Macro output shall be deterministic given the macro inputs and the module interfaces it depends on.
-- Toolchains should execute macros in a sandboxed process and cache results.
+The macro definition and packaging format are implementation-defined.
 
-> Open issue: the exact sandboxing contract is toolchain/runtime-specific; this draft specifies the semantic requirement (deterministic, dependency-tracked expansion).
+### 10.3.3 Safety constraints (normative)
+A conforming implementation shall provide enforcement such that macros used in trusted builds are:
+- deterministic (no nondeterministic inputs),
+- sandboxable (no arbitrary filesystem/network unless explicitly permitted by the build system),
+- and bounded (resource limits to keep builds predictable).
 
-### 10.3.3 Expansion phases (provisional)
-A typical pipeline (informative but intended):
-1. Parse source into syntax trees.
-2. Expand declaration macros that do not require type information.
-3. Type-check the module.
-4. Expand typed macros that depend on type information.
-5. Re-type-check affected declarations as needed.
+### 10.3.4 Expansion phases (normative)
+Macro expansion (and derive expansion) that introduces declarations affecting layout/ABI shall occur before:
+- type layout is finalized, and
+- code generation.
 
-### 10.3.4 Debuggability (normative)
-- Macro-generated code shall preserve source locations such that stack traces and debugger stepping can attribute execution to either:
-  - the macro expansion result, and/or
-  - the macro call site.
+This ensures ABI is computed from the *expanded* program (01C.9).
 
-Toolchains shall provide at least one mechanism to inspect macro expansions (Part 12).
-
----
+### 10.3.5 Interface emission (normative)
+If macro expansion introduces exported declarations, the emitted interface shall include the expanded declarations (or an equivalent representation that reconstructs them), not merely the macro invocation.
 
 ## 10.4 Property behaviors / wrappers
 
 ### 10.4.1 Concept
-A **property behavior** (a.k.a. wrapper) is a reusable pattern for property storage and accessors (e.g., atomicity, synchronization, validation, memoization) expressed as a first-class, toolable construct.
+A property behavior is a reusable specification of:
+- storage strategy,
+- accessors (get/set),
+- synchronization or actor isolation constraints,
+- and optional hooks (KVO/KVC integration, validation, etc.).
 
-### 10.4.2 Syntax (provisional)
-This draft uses an attribute-like spelling:
+### 10.4.2 Exported ABI restrictions (normative)
+Behaviors that affect layout or emitted ivars of exported types shall be constrained such that:
+- layout is deterministic from the expanded declarations, and
+- cross-module clients can rely on the same layout.
 
-```objc
-__attribute__((objc_property_behavior(Atomic)))
-@property (nonatomic) int counter;
-```
+In v1, implementations may restrict behaviors on exported ABI surfaces to a “safe subset” (e.g., behaviors that desugar into explicit ivars/accessors).
 
-> Open issue: whether to align with Swift-like `@Wrapper` syntax for properties in ObjC source, while retaining an attribute spelling for headers/module interfaces.
+### 10.4.3 Composition (normative)
+If multiple behaviors are applied to a property, the composition order and conflict rules must be deterministic and diagnosable.
+Ambiguous compositions are ill-formed.
 
-### 10.4.3 Lowering model (normative intent)
-Applying a property behavior conceptually rewrites the property into:
-- backing storage (possibly hidden),
-- synthesized getter/setter bodies that implement the behavior,
-- and any required helper declarations.
+### 10.4.4 Performance contracts
+Behaviors must declare whether:
+- accessors are direct-callable (eligible for inlining),
+- they require dynamic dispatch hooks,
+- they require executor/actor hops.
 
-The rewriting must:
-- be deterministic,
-- be inspectable by tooling,
-- and preserve Objective‑C runtime expectations where applicable (KVC/KVO hooks, selector names).
+Compilers should surface these contracts in diagnostics to help developers choose appropriate behaviors.
 
-### 10.4.4 Interactions (normative intent)
-- Behaviors must not silently change ARC ownership semantics without explicit annotation (Part 4).
-- Behaviors that introduce concurrency or locking must interact safely with `async`/actors (Part 7). Toolchains should diagnose behaviors that are unsafe under strict concurrency checking.
+## 10.5 Required diagnostics (minimum)
+- Derive request cannot be satisfied: error with notes listing missing members/protocol requirements.
+- Macro expansion introduces exported declarations but cannot be represented in emitted interface: error (or emit-only warning in permissive mode).
+- Property behavior composition conflict: error with explanation of conflict.
 
----
-
-## 10.5 Open issues
-- Final surface spelling for derives/macros/behaviors and compatibility with ObjC++ parsing.
-- Module distribution of macros: stable interface representation and versioning.
-- Policy for allowing user-defined macro plugins vs standard-library-only macros (security model).
+## 10.6 Open issues
+- Macro/derive packaging format (SwiftPM-like vs compiler-integrated vs build-system supplied).
+- Which derives are standardized in core vs shipped in a standard library module.
+- Whether to standardize a canonical surface syntax for behaviors beyond attributes in v1.

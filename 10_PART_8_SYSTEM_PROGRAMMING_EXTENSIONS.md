@@ -1,6 +1,5 @@
 # Part 8 — System Programming Extensions
-_Working draft v0.6 — last updated 2025-12-28_
-
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 8.0 Scope and goals
 This part defines language features and attributes designed to accommodate “library-defined subsets” and system APIs, with improved safety, ergonomics, and performance predictability:
@@ -12,6 +11,18 @@ This part defines language features and attributes designed to accommodate “li
 - Block capture patterns that commonly cause retain cycles (event handlers, callbacks).
 
 This part intentionally provides *detailed normative semantics* because system-library correctness depends on precise ordering.
+
+
+
+## 8.0.1 Canonical attribute spellings (header interoperability)
+
+**Normative note:** The canonical spellings for all attributes and pragmas used in this part are cataloged in **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**. Inline spellings here are illustrative; emitted interfaces and module metadata shall use the catalog spellings.
+Many system-facing features in this part are intended to be expressed in headers and preserved by module interfaces. Per Decision D‑007, a conforming implementation shall support canonical `__attribute__((...))` spellings for these features, so that:
+- APIs can be declared without macro folklore,
+- analyzers can reason about semantics,
+- and mixed ObjC/ObjC++ builds remain source-compatible.
+
+This part uses ergonomic `@resource(...)`/`@cleanup(...)`/`borrowed` spellings in examples; implementations may accept these as ObjC 3.0 sugar. The canonical header spellings are described inline where relevant.
 
 ---
 
@@ -54,6 +65,11 @@ A deferred body shall not contain a statement that performs a non-local exit fro
 ## 8.3 Resource values and cleanup
 
 ### 8.3.1 `@cleanup(F)`
+A local variable may be annotated with a cleanup function.
+
+**Canonical header spelling (illustrative):**
+- `__attribute__((cleanup(F)))` on the local variable.
+
 A local variable may be annotated with a cleanup function:
 
 ```objc
@@ -64,6 +80,11 @@ Semantics:
 - after successful initialization, register a scope-exit action that calls `F` with the variable’s value (or address, if applicable) at scope exit.
 
 ### 8.3.2 `@resource(F, invalid: X)`
+A `@resource` variable has a cleanup function and an invalid sentinel.
+
+**Canonical header spelling (illustrative):**
+- `__attribute__((objc_resource(close=F, invalid=X)))` on the local variable.
+
 A `@resource` variable has a cleanup function and an invalid sentinel:
 
 ```objc
@@ -177,29 +198,109 @@ Rules in strict-system mode:
 ### 8.7.2 `@returns_borrowed(owner: N)`
 Functions may declare borrowed return relationships, enabling the compiler to enforce owner lifetime.
 
+**Canonical header spelling (illustrative):**
+- `__attribute__((objc_returns_borrowed(owner_index=N)))` on the function/return.
+
+### 8.7.3 Escape analysis (normative in strict-system)
+In strict-system mode, a borrowed pointer value shall be treated as **non-escaping** unless an explicit unsafe escape is used.
+
+The following are considered *escaping uses* and are ill-formed in strict-system mode:
+- storing the borrowed pointer into a global/static variable,
+- storing it into heap storage (including Objective‑C ivars/properties) without an explicit copy/retain of the owner,
+- capturing it by an escaping block or passing it to a parameter not proven non-escaping.
+
+The compiler shall provide diagnostics that suggest:
+- extending the owner’s lifetime (`withLifetime` / `keepAlive`), or
+- copying data out of the borrowed region into an owned buffer, or
+- marking the operation explicitly unsafe.
+
+A conforming implementation may rely on a combination of front-end rules and static analysis to enforce this.
+
 ---
+
 
 ## 8.8 Block capture lists
 
 ### 8.8.1 Syntax
-Blocks may include a capture list:
+Blocks may include an explicit capture list:
 
 ```objc
 ^[weak self, move handle] { ... }
 ```
 
-Capture modifiers:
-- `weak`, `unowned`, `strong`, `move`.
+A capture list is a comma-separated list of *capture items*:
 
-### 8.8.2 Semantics
-- `weak` captures as zeroing weak under ARC.
-- `unowned` captures as unsafe unretained (explicitly unsafe).
-- `move` transfers ownership into the block capture storage; the original is treated as moved-from.
+```text
+capture-list:
+    '[' capture-item (',' capture-item)* ']'
 
-### 8.8.3 Diagnostics
-In strict-system mode, the compiler/analyzer should diagnose likely retain cycles in handler-style APIs and recommend `weak` captures.
+capture-item:
+    capture-modifier? identifier
+```
+
+Capture modifiers (v1):
+- `strong` — capture strongly (default if omitted)
+- `weak` — capture as zeroing weak under ARC
+- `unowned` — capture as unsafe unretained (explicitly unsafe)
+- `move` — move a one-time value into the block capture storage
+
+### 8.8.2 Semantics (normative)
+Capture list items are evaluated at **block creation time**, not at block invocation time.
+
+For a capture item `m x`:
+- the current value of `x` in the enclosing scope is read,
+- and stored into capture storage according to modifier `m`.
+
+Modifier semantics:
+- `strong x` stores a strong reference (ARC retain) to `x`.
+- `weak x` stores a zeroing weak reference to `x`.
+- `unowned x` stores an unsafe non-zeroing reference to `x` (may dangle).
+- `move x` transfers the current value of `x` into the block’s capture storage and treats `x` as moved-from afterward (see §8.8.4).
+
+### 8.8.3 Capture evaluation order (normative)
+Capture list entries are evaluated **left-to-right**.
+This ordering matters when later captures depend on earlier ones (or when move semantics are involved).
+
+### 8.8.4 Move capture rules
+If `x` is captured with `move`:
+- the capture stores the previous value of `x`,
+- and `x` is set to a moved-from state.
+
+For ordinary Objective‑C object pointers, “moved-from” is a safe state (typically `nil`) and use-after-move diagnostics are optional.
+For resource/handle types annotated as requiring cleanup (Part 8.3/8.3.5), strict-system mode shall diagnose:
+- use-after-move as an error, and
+- double-cleanup hazards (because a moved-from handle must not be cleaned up twice).
+
+### 8.8.5 Interaction with retain cycles
+Capture lists provide a standard spelling for the “weak‑strong dance” pattern.
+
+Example:
+```objc
+__weak typeof(self) weakSelf = self;
+[obj setHandler:^{
+  typeof(self) self = weakSelf;
+  if (!self) return;
+  [self doThing];
+}];
+```
+
+can be expressed as:
+
+```objc
+[obj setHandler:^[weak self] {
+  guard let self = self else { return; }
+  [self doThing];
+}];
+```
+
+### 8.8.6 Diagnostics
+In strict-system mode, toolchains should:
+- warn on likely retain cycles (e.g., capturing `self` strongly in long-lived handler registrations),
+- warn/error when capturing a borrowed pointer into an escaping block (Part 8.7),
+- diagnose use-after-move for resource/handle captures.
 
 ---
+
 
 ## 8.9 Conformance and migration
 - In permissive mode, most violations are warnings with fix-its.

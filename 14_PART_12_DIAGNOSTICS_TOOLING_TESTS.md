@@ -1,123 +1,129 @@
 # Part 12 — Diagnostics, Tooling, and Test Suites
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 12.1 Purpose
-Objective‑C 3.0 treats tooling requirements as part of language quality and (eventually) conformance:
+Objective‑C 3.0 treats tooling requirements as part of conformance:
 
 - diagnostics must be specific and actionable,
-- fix‑its should exist for common mechanical migrations,
-- and a test suite structure must be defined so implementations do not silently diverge.
+- fix-its must exist for common mechanical migrations,
+- and a conformance test suite must exist to prevent “whatever the compiler happens to do.”
 
-This part does **not** define the full conformance profile checklist yet; it defines minimum expectations and the shape of the eventual test suite.
+This part is cross-cutting and references:
+- **01B** for canonical spellings and interface emission requirements,
+- **01C** for separate compilation and lowering contracts.
+- **01D** for the normative checklist of required module metadata and ABI boundaries.
 
----
-
-## 12.2 Diagnostic principles (normative intent)
-A conforming implementation shall:
-- emit at least one diagnostic for every ill‑formed construct defined by this spec,
-- include the relevant source range and a short, human-readable explanation,
-- where a mechanical fix exists, provide a fix‑it hint (or a structured replacement) in strictness modes that enable fix‑its.
-
-Implementations should group diagnostics into named warning groups to support incremental adoption (e.g., `-Wobjc3-nullability`, `-Wobjc3-concurrency`, `-Wobjc3-system`).
-
----
+## 12.2 Diagnostic principles (normative)
+A conforming implementation shall provide diagnostics that:
+1. Identify the precise source range of the problem.
+2. Explain the rule being violated in terms of Objective‑C 3.0 concepts (nonnull, optional send, executor hop, etc.).
+3. Provide at least one actionable suggestion.
+4. Provide a fix-it when the transformation is mechanical and semantics-preserving.
 
 ## 12.3 Required diagnostics (minimum set)
 
-### 12.3.1 Nullability and optionals (Parts 3, 5)
-Toolchains shall diagnose:
-- incomplete nullability in exported interfaces when the module’s policy requires completeness (strict error),
-- passing nullable to nonnull without an unwrap/check (strict error),
-- dereferencing a nullable value without unwrap (strict error),
-- `guard let` / `if let` bindings where the bound expression is not optional (ill‑formed),
-- a `guard` else-block that can fall through (ill‑formed in strict).
+### 12.3.1 Nullability and optionals
+- Incomplete nullability in exported interfaces (strict mode: error).
+- Passing nullable to nonnull without check/unwrap (strict: error; permissive: warning).
+- Dereferencing nullable without unwrap (strict: error).
+- Optional message send or optional member access used on scalar/struct returns (error; v1 restriction).
+- Ordinary message send on nullable receiver in strict mode (error; fix-it suggests optional send or `guard let`).
 
-Toolchains should provide fix‑its:
-- add `nullable` / `nonnull` annotations to parameters/returns,
-- rewrite common nil-check idioms to `guard` or `if let`.
+### 12.3.2 Errors and `throws`
+- Calling a `throws` function/method without `try` (error).
+- Redeclaring a `throws` declaration without `throws` (or vice versa) across module boundaries (error; see 01C.2).
+- Using postfix propagation `e?` on `T?` in a non-optional-returning function (error; fix-it suggests `guard let` or explicit conditional).
+- Using postfix propagation `e?` expecting it to map to `throws`/`Result` (error; explain “carrier preserving” rule).
 
-### 12.3.2 Optional chaining and optional message sends (Part 3; Decision D‑001)
-Toolchains shall diagnose:
-- optional chaining (`?.` or `[x? ...]`) applied to a member/method returning a non-reference type in v1 (ill‑formed),
-- uses of optional message send where the callee returns a scalar/struct (ill‑formed),
-- suspicious patterns where optional message sends drop results unintentionally (warning in permissive; error in strict where configured).
+### 12.3.3 Concurrency (`async/await`, executors, actors)
+- Any potentially suspending operation without `await` (error), including calling an `async` function and crossing executor/actor isolation boundaries (Part 7 / D‑011).
+- Calling into an `objc_executor(X)` declaration from a different executor without an `await` hop (strict concurrency: error; permissive: warning).
+- Capturing non-Sendable-like values into a task-spawned async closure (strict concurrency: error; permissive: warning).
+- Actor-isolated member access from outside the actor without `await` when a hop may be required (strict concurrency: error).
+- `await` applied to an expression that cannot suspend (strict: warning) (diagnostic: “unnecessary await”).
 
-### 12.3.3 Errors, `throws`, and `Result` (Part 6)
-Toolchains shall diagnose:
-- `throw` outside a `throws` function (ill‑formed),
-- `try`/`try?` misuse (ill‑formed),
-- mismatch between `throws` and an API annotated as NSError-out-parameter without explicit bridging (diagnosable; strict error where configured).
+### 12.3.4 Modules and interface emission
+- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see 01D.3.1 Table A.
+- Using a module-qualified name with a non-imported module: error with fix-it to add `@import`.
+- Importing an API through a mechanism that loses effects/attributes (e.g., textual header without metadata) when strictness requires them: warning with suggestion to enable modules/interface emission.
+- Emitted interface does not use canonical spellings from 01B: tooling warning; in “interface verification” mode, error.
 
-#### 12.3.3.1 Optional propagation diagnostics (Decision D‑005)
-Toolchains shall diagnose use of postfix propagation `?` on `T?` in contexts that cannot early-exit with `nil` (non-optional return types, `throws`, `Result`, etc.), with fix‑its suggesting `guard let` or explicit conversion helpers.
+### 12.3.5 Performance/dynamism controls
+- Overriding a `objc_final` method/class: error.
+- Subclassing an `objc_final` class: error.
+- Subclassing an `objc_sealed` class from another module: error.
+- Declaring a category method that collides with a `objc_direct` selector: error.
+- Calling a `objc_direct` method via dynamic facilities (e.g., `performSelector:`) when it can be statically diagnosed: warning (or error under strict performance profile).
+### 12.3.6 System programming extensions
+A conforming implementation shall provide diagnostics (at least warnings, and errors in strict-system profiles) for:
 
-### 12.3.4 Concurrency and `async/await` (Part 7)
-Toolchains shall diagnose:
-- calling an `async` function without `await` (ill‑formed),
-- awaiting in a non-async context (ill‑formed),
-- using `try`/`await` ordering incorrectly when the grammar requires a canonical form (provide fix‑it to `try await`),
-- violations of actor isolation rules in strict concurrency checking mode (at least warning; error in strict-system where configured).
+- **Resource cleanup correctness** (Part 8 §8.3):
+  - missing required cleanup for `objc_resource(...)` or `@resource(...)` declarations (if required by the selected profile),
+  - double-close patterns detectable intra-procedurally,
+  - use-after-move / use-after-discard for moved-from resources (where move checking is enabled).
 
-#### 12.3.4.1 Task spawning diagnostics (Decision D‑003)
-In strict concurrency checking configurations, toolchains should warn when a task-spawn operation’s handle/result is unused, to force “fire and forget” to be explicit.
+- **Borrowed pointer escaping** (Part 8 §8.7):
+  - returning a `borrowed` pointer without the required `objc_returns_borrowed(owner_index=...)` marker,
+  - storing a borrowed pointer into a longer-lived location (global, ivar, heap) in strict-system profiles,
+  - passing a borrowed pointer to an `@escaping` block in strict-system profiles.
 
-### 12.3.5 System programming extensions (Part 8)
-Toolchains shall diagnose (in strict-system at minimum):
-- escaping a borrowed pointer beyond its valid lifetime region,
-- using a moved-from resource value (if the move model is enabled for that type),
-- missing cleanup when a resource type requires scope-exit cleanup and the compiler can prove it.
+- **Capture list safety** (Part 8 §8.8):
+  - suspicious strong captures of `self` in `async` contexts (if enabled by profile),
+  - `unowned` capture of potentially-nil objects without an explicit check,
+  - mixed `weak` + `move` captures that create use-after-move hazards.
 
-### 12.3.6 Performance and dynamism controls (Part 9)
-Toolchains shall diagnose:
-- overriding a `final`/`direct` method (strict error),
-- subclassing a `final` class (strict error),
-- subclassing a `sealed` class from outside its module (strict error),
-- category declarations that conflict with `direct` constraints (at least warning).
+## 12.4 Required tooling capabilities (minimum)
 
-### 12.3.7 Metaprogramming (Part 10)
-Toolchains shall diagnose:
-- non-deterministic or disallowed macro behavior according to the macro safety policy (Part 10),
-- derive expansions that conflict with user-declared members without explicit resolution,
-- macro/derive expansions that would generate ill‑formed code (with diagnostics at the macro call site and, where possible, at the generated site).
+### 12.4.1 Migrator
+A conforming toolchain shall provide (or ship) a migrator that can:
+- insert nullability annotations based on inference and usage,
+- rewrite common nullable-send patterns into optional sends or `guard let`,
+- generate `throws` wrappers for NSError-out patterns (Part 6),
+- suggest executor/actor hop fixes where statically determinable (Part 7).
 
----
+### 12.4.2 Interface emission / verification
+If the toolchain supports emitting an interface description for distribution, it shall also support a verification mode that checks:
+- semantic equivalence between the original module and the emitted interface,
+- and the use of canonical spellings from 01B.
 
-## 12.4 Fix‑its, migrators, and refactoring support (informative but intended)
-Implementations should provide automated migrations for:
-- inserting explicit nullability for exported interfaces (guided by annotations and heuristics),
-- rewriting common NSError-out-parameter patterns into `throws`/`Result` where explicitly annotated,
-- introducing `guard let` for common nil-check patterns,
-- rewriting completion-handler patterns into `async` overlays where annotated.
+### 12.4.3 Static analysis hooks
+Implementations shall expose enough information for analyzers to:
+- reason about nullability flow,
+- reason about `throws` propagation,
+- and enforce Sendable-like constraints under strict concurrency.
+- expose `borrowed` and `objc_returns_borrowed(owner_index=...)` annotations in AST dumps and module metadata for external analyzers (Part 8, 01D).
+- expose resource annotations (`objc_resource(...)`) and move-state tracking hooks where enabled by profile (Part 8).
 
----
+## 12.5 Conformance test suite (minimum expectations)
+A conforming implementation shall ship or publish a test suite that covers at least:
 
-## 12.5 Required tooling surfaces (informative but intended)
-Toolchains should support:
-- emitting extracted interfaces for modules (Part 2),
-- showing macro expansions (Part 10),
-- producing “explain why this is nullable/isolated” traces for nullability and concurrency diagnostics.
+### 12.5.1 Parsing/grammar
+- `async`/`await`/`throws` grammar interactions (`try await`, `await try`, etc.).
+- Module-qualified name parsing (`@A.B.C`).
 
----
+### 12.5.2 Type system and diagnostics
+- Module metadata preservation tests for each Table A item in 01D (import module; verify semantics survive; verify mismatch diagnostics).
+- Strict vs permissive nullability behavior.
+- Optional send restrictions (reference-only).
+- Postfix propagation carrier-preserving rules.
+- Effect mismatch diagnostics across module imports (01C.2).
 
-## 12.6 Test suite structure (informative but intended)
-The eventual conformance suite should include at least:
-- parser/grammar tests (new keywords, optional send syntax, `throws`, `async`),
-- type-checking tests (nullability, optionals, propagation operator restrictions),
-- module-boundary tests (nullability completeness and metadata preservation),
-- runtime/semantic tests where behavior depends on runtime (actors/executors/cancellation).
+### 12.5.3 Dynamic semantics
+- Optional send argument evaluation does not occur when receiver is `nil`.
+- `throws` propagation through nested `do/catch`.
+- Cancellation propagation in structured tasks.
 
-This draft intentionally leaves the exact conformance checklist to a separate step.
+### 12.5.4 Runtime contracts
+- Autorelease pool draining at suspension points (Objective‑C runtimes) (D‑006 / 01C.7).
+- Executor/actor hops preserve ordering and do not deadlock in basic scenarios.
+- Calling executor-annotated or actor-isolated *synchronous* members from outside requires `await` and schedules onto the correct executor (D‑011).
 
----
-
-## 12.7 Debuggability requirements (normative intent)
+## 12.6 Debuggability requirements (minimum)
 For features like macros and async:
-- stack traces must preserve user source locations,
-- debugging tools must be able to map generated code back to user code,
-- macro expansion views must be available at least via a compiler option.
+- stack traces must preserve source locations,
+- debugging tools must be able to map generated code back to user code (macro expansion mapping),
+- async tasks should be nameable/inspectable at least in debug builds.
 
----
-
-## 12.8 Open issues
-- Standard format for reporting conformance results.
-- Whether “strict concurrency checking” is a separate conformance level or a sub-mode within strictness.
+## 12.7 Open issues
+- Standard format for reporting conformance results across toolchains.
+- Whether “strict concurrency checking” is a separate conformance level or a strictness sub-mode.

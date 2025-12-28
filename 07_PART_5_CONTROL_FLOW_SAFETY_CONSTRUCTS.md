@@ -1,176 +1,197 @@
 # Part 5 — Control Flow and Safety Constructs
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.10 — last updated 2025-12-28_
 
 ## 5.1 Purpose
 This part defines:
-- `defer` as a core scope-exit primitive,
-- `guard` as a scope-exit conditional with optional binding,
-- `match` and pattern matching (including carrier patterns for `Result` and optionals),
-- rules that enable compilers to generate reliable cleanup, lifetimes, and diagnostics.
+- `defer` as a core control-flow primitive,
+- `guard` as a scope-exit conditional with refinement,
+- `match` and pattern matching,
+- rules that enable compilers to generate reliable cleanup and diagnostics.
 
-The intent is to make common “safety patterns” **explicit in syntax** so compilers can diagnose mistakes (e.g., missing early returns, forgetting cleanup) and optimize more aggressively.
-
----
+This part specifies syntax and high-level semantics. Precise cleanup ordering (especially for system resources) is specified in Part 8 and is normative.
 
 ## 5.2 `defer`
 
 ### 5.2.1 Syntax
 ```text
-defer-statement:
-    'defer' compound-statement
+defer compound-statement
 ```
 
 Example:
 ```objc
-defer { close(fd); }
+FILE *f = fopen(path, "r");
+defer { if (f) fclose(f); }
+
+// ... use f ...
 ```
 
 ### 5.2.2 Semantics (normative)
-- Executing a `defer` statement registers its compound statement as a **scope-exit action** for the innermost enclosing scope.
-- Scope-exit actions execute in **LIFO order** when that scope exits.
+Executing a `defer` statement registers its body as a *scope-exit action* in the innermost enclosing lexical scope.
 
-A scope exits when control leaves it by:
-- reaching the end of the scope normally,
-- `return`,
-- `throw`/`rethrow`,
-- `break`/`continue`,
-- `goto` that jumps out of the scope,
-- cancellation unwind for `async` functions (Part 7), if cancellation causes scope unwinding.
+- Scope-exit actions execute in **LIFO** order at scope exit.
+- Scope exit includes normal exit and stack unwinding (where the ABI runs cleanups).
+- `defer` bodies execute **before** implicit ARC releases of strong locals in the same scope (Part 8).
 
-`defer` does **not** execute at `await` suspension points, because suspension is not scope exit.
+### 5.2.3 Restrictions (normative)
+A deferred body shall not perform a non-local exit from the enclosing scope. The following are ill‑formed inside a `defer` body:
+- `return`, `break`, `continue`, `goto` that exits the enclosing scope,
+- `throw` that exits the enclosing scope,
+- C++ `throw` that exits the scope.
 
-### 5.2.3 Ordering relative to destructors/ARC (informative but intended)
-Within a given scope, the compiler should order cleanup such that:
-- explicit `defer` actions run before implicit end-of-scope releases of locals in the same scope, unless a specific construct requires otherwise.
-- in `async` functions, `defer` actions follow the normal unwinding rules (i.e., they run on throw/cancellation unwind).
+Rationale: defers must be reliably executed as cleanups; permitting non-local exits leads to un-auditable control flow.
 
-Where precise ordering matters for system resources and retainable C families, see Part 8.
-
-### 5.2.4 Diagnostics
-- A `defer` body that contains `return`, `throw`, `break`, `continue`, or `goto` out of the defer-body scope should be diagnosed (at least warning): it is usually a logic error.
-- Toolchains should warn if a `defer` body is provably unreachable.
-
----
+### 5.2.4 Interaction with `async`
+A `defer` body in an `async` function executes when the scope exits, even if the function suspends/resumes multiple times (Part 7 §7.9.2).
 
 ## 5.3 `guard`
 
-### 5.3.1 Syntax (provisional)
+### 5.3.1 Syntax
 ```text
 guard-statement:
-    'guard' condition-list 'else' compound-statement
-
-condition-list:
-    condition (',' condition)*
-
-condition:
-    expression
-  | 'let' identifier '=' expression
-  | 'var' identifier '=' expression
+    'guard' guard-condition-list 'else' compound-statement
 ```
 
-Examples:
-```objc
-guard x != nil else { return; }
-guard let s = maybeString else { throw SomeError(); }
-```
-
-### 5.3.2 Semantics (normative)
-A `guard` statement evaluates its conditions in source order.
-
-- If all conditions succeed, execution continues after the `guard`.
-- If any condition fails, execution transfers into the `else` block.
-
-**No-fallthrough rule:** the `else` block shall not “fall through” to the statement following the guard. It must exit the guarded scope by executing one of:
-- `return`,
-- `throw`,
-- `break` / `continue` (when the guarded scope is a loop),
-- `goto` to a label outside the guarded scope (discouraged; toolchains should warn).
-
-### 5.3.3 Optional binding via `guard let` / `guard var`
-For a condition `let x = e`:
-- `e` must have an optional type `T?` (Part 3).
-- If `e` is non-`nil`, `x` is bound to the unwrapped value of type `T` in the remainder of the guarded scope.
-- If `e` is `nil`, the guard fails and the `else` block executes.
-
-In strict nullability mode, bindings introduced by `guard let` are treated as **non-null** within the guarded scope.
-
-### 5.3.4 Diagnostics
-- If the `else` block can fall through, the program is ill‑formed (strict) or diagnosed (permissive with fix-it suggestions).
-- Toolchains should provide fix-its to convert common patterns:
-  - `if (!cond) { return; }` → `guard cond else { return; }`
-  - `id x = maybe; if (!x) return;` → `guard let x = maybe else { return; }`
-
----
-
-## 5.4 `match` and pattern matching
-
-### 5.4.1 Syntax (provisional)
-```text
-match-statement:
-    'match' '(' expression ')' '{' match-case+ '}'
-
-match-case:
-    'case' pattern ':' compound-statement
-  | 'default' ':' compound-statement
-```
+A `guard-condition-list` is a comma-separated list of:
+- boolean expressions, and/or
+- optional bindings (`let`/`var`) as defined in Part 3.
 
 Example:
 ```objc
-match (result) {
-  case Ok(let value): { use(value); }
-  case Err(let err): { return Err(err); }
+guard let user = maybeUser, user.isActive else {
+  return nil;
 }
 ```
 
-### 5.4.2 Semantics (normative)
-- The match scrutinee expression is evaluated **exactly once**.
-- Cases are tested in source order; the first matching case executes.
-- Control does not fall through between cases (unlike C `switch`). Each case body is a compound statement.
+### 5.3.2 Semantics (normative)
+- Conditions are evaluated left-to-right.
+- If all conditions succeed, execution continues after the `guard`.
+- If any condition fails, the `else` block executes.
 
-### 5.4.3 Exhaustiveness (normative, limited v1)
-If the scrutinee has one of the following types, then a `match` without a `default` shall be exhaustive (ill‑formed otherwise):
-- `Result<T, E>`
-- `T?` (optional)
+### 5.3.3 Mandatory exit (normative)
+The `else` block of a `guard` statement shall perform a control-flow exit from the current scope. Conforming exits include:
+- `return` (from the current function),
+- `throw` (from the current `throws` function),
+- `break` / `continue` (from the current loop),
+- `goto` to a label outside the current scope.
 
-Exhaustiveness means:
-- `Result`: the cases cover both `Ok(...)` and `Err(...)`.
-- `T?`: the cases cover both `nil` and the non-`nil` binding case.
+If the compiler cannot prove that all control-flow paths in the `else` block exit, the program is ill‑formed.
 
-For other types, exhaustiveness checking is implementation-defined in v1 (toolchains may provide it as a warning in strict modes).
+### 5.3.4 Refinement
+Names proven by guard conditions are *refined* after the guard:
+- Optional bindings introduce nonnull values in the following scope.
+- Null checks refine nullable variables to nonnull within the post-guard region (Part 3).
 
-### 5.4.4 Patterns (v1 set)
-Objective‑C 3.0 v1 defines a minimal pattern set focused on carriers:
+## 5.4 `match`
 
-- **Wildcard**: `_` matches anything.
-- **Binding**: `let name` binds the scrutinee (or subvalue) to a new immutable name.
-- **Nil**: `nil` matches a nil optional/object pointer.
-- **Result carriers**:
-  - `Ok(p)` matches `Result::Ok` and binds its payload with subpattern `p`.
-  - `Err(p)` matches `Result::Err` and binds its payload with subpattern `p`.
+### 5.4.1 Motivation
+Objective‑C has `switch`, but it is limited:
+- it does not compose well with `Result`/error carriers,
+- it does not bind values safely,
+- it does not support exhaustiveness checking.
 
-> Open issue: a richer pattern language (literals, ranges, tuple/struct destructuring, object type tests) is desirable but left for future drafts.
+`match` is designed to be:
+- explicit,
+- analyzable,
+- and lowerable to a switch/if-chain without allocations.
 
-### 5.4.5 Diagnostics
-- Non-exhaustive `match` over `Result`/optional without `default` is ill‑formed (strict) or diagnosed (permissive with fix‑its).
-- Unreachable cases should be warned.
-- Toolchains should offer fix-its to rewrite common `if/else` ladders on `Result` into `match`.
+### 5.4.2 Syntax (normative)
+```text
+match-statement:
+    'match' '(' expression ')' ' match-case+ match-default? '
 
----
+match-case:
+    'case' pattern ':' compound-statement
 
-## 5.5 Interactions and ordering notes
+match-default:
+    'default' ':' compound-statement
+```
 
-### 5.5.1 `defer` and `throw` / `return`
-`defer` actions execute during unwinding (return/throw), so they provide a structured alternative to `goto cleanup`.
+Notes:
+- `match` is a statement (not an expression) in v1.
+- Fallthrough is not permitted.
 
-### 5.5.2 `defer` and `async`
-`await` suspension does not trigger defers. However, if an async function unwinds due to a thrown error or cancellation, defers run as usual (Part 7).
+### 5.4.3 Evaluation order (normative)
+- The scrutinee expression in `match (expr)` shall be evaluated exactly once.
+- Case patterns are tested top-to-bottom.
+- The first matching case is selected and its body executes.
 
-### 5.5.3 Evaluation order
-The language shall specify evaluation order for `guard` conditions and `match` case testing as described above to preserve predictable side effects.
+### 5.4.4 Scoping (normative)
+Bindings introduced by a case pattern are scoped to that case body only.
 
----
+### 5.4.5 Exhaustiveness (normative)
+In strict mode, `match` must be exhaustive when the compiler can prove the matched type is a *closed set*.
 
-## 5.6 Open issues
-- Final syntax for patterns and case labels given Objective‑C’s existing `switch`.
-- Whether to support explicit `fallthrough` (recommended: no).
-- Object type-test patterns (`is KindOfClass`) that are safe and optimizable.
+The following are treated as closed sets in v1:
+- `Result<T, E>` (cases `Ok` and `Err`),
+- other library-defined closed sum types explicitly marked as closed (future extension point).
+
+For closed sets:
+- Either all cases must be present, or a `default` must be present.
+- Missing cases are an error in strict mode (warning in permissive mode).
+
+### 5.4.6 Lowering (normative)
+`match` shall lower to:
+- a switch/if-chain that preserves evaluation order and side effects,
+- with no heap allocation required by `match` itself.
+
+## 5.5 Patterns (v1)
+
+### 5.5.1 Wildcard
+`_` matches anything and binds nothing.
+
+### 5.5.2 Literal constants
+Literal constants match values of compatible type:
+- integers, characters,
+- `@"string"` for Objective‑C string objects (pointer equality is not required; matching is defined for `Result` and closed types only in v1),
+- `nil` for nullable pointer types.
+
+> Note: Rich structural matching for arbitrary objects is intentionally not part of v1.
+
+### 5.5.3 Binding pattern
+A binding pattern introduces a name:
+
+- `let name`
+- `var name`
+
+In v1:
+- `let` bindings are immutable within the case body.
+- `var` bindings are mutable within the case body.
+
+### 5.5.4 `Result` case patterns
+`Result<T, E>` participates in pattern matching (Part 6).
+
+The following case patterns are defined:
+- `.Ok(let value)`
+- `.Err(let error)`
+
+Example:
+```objc
+match (r) {
+  case .Ok(let v): { use(v); }
+  case .Err(let e): { log(e); }
+}
+```
+
+### 5.5.5 Type-test patterns (optional in v1)
+Implementations may provide a type-test pattern form:
+
+- `is Type`
+- `is Type let name` (bind as refined type)
+
+If provided:
+- For class types, it matches when the dynamic type is `Type` or a subclass.
+- For protocol types, it matches when the value conforms to the protocol.
+
+> This feature is optional in v1 because it intersects with Objective‑C runtime reflection and optimization.
+
+## 5.6 Required diagnostics
+Minimum diagnostics include:
+- non-exiting `guard else` blocks (error),
+- `defer` bodies containing non-local exits (error),
+- unreachable `match` cases (warning),
+- non-exhaustive `match` over `Result` in strict mode (error; fix-it: add missing case or `default`).
+
+## 5.7 Open issues
+- Whether `match` should also exist as an expression form (returning a value) in a future revision.
+- Whether to standardize type-test patterns and how they should lower (runtime checks vs static reasoning).
+- Whether to add guarded patterns (e.g., `case pat where condition:`) once keyword reservation is settled.
