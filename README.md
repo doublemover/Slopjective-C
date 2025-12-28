@@ -14,6 +14,10 @@ Additionally, you should consider giving me money so I can buy more slurp juice 
 
 This repository contains a working draft specification for **Objective‑C 3.0**. The draft is organized into small, implementable parts, with explicit contracts for **separate compilation**, **module metadata**, and (where needed) **ABI/runtime hooks**.
 
+## Published draft
+The stitched draft is published on GitHub Pages: https://doublemover.github.io/Slopjective-C/
+The build uses **TABLE_OF_CONTENTS.md** ordering and excludes **README.md**.
+
 ## What this spec is
 - A language-mode specification (“ObjC 3.0 mode”) layered on top of today’s de‑facto Objective‑C (Clang/LLVM + modern runtime behavior).
 - A set of **normative requirements** (RFC-style “shall/must”) intended to be testable by compilers/toolchains.
