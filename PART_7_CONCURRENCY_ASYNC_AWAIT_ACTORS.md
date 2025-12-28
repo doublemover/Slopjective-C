@@ -5,12 +5,12 @@ _Working draft v0.10 — last updated 2025-12-28_
 
 ### v0.9 resolved decisions
 - `await` is required for any potentially suspending operation, including cross-executor and cross-actor entry (Decision D‑011).
-- Required module metadata for concurrency/isolation is enumerated in 01D.
+- Required module metadata for concurrency/isolation is enumerated in D.
 
 
 ### v0.8 resolved decisions
-- Canonical attribute spellings for concurrency/executor features are defined in 01B.
-- Lowering/runtime contracts for `async/await`, executors, and actors are defined in 01C.
+- Canonical attribute spellings for concurrency/executor features are defined in B.
+- Lowering/runtime contracts for `async/await`, executors, and actors are defined in C.
 
 
 ### v0.5 resolved decisions
@@ -277,7 +277,7 @@ Rules:
 - A `nonisolated` member shall not access actor-isolated mutable state without an explicit hop.
 - Parameters and return types of `nonisolated` members that cross concurrency domains should satisfy Sendable-like checking in strict mode.
 
-> Note: Toolchains may additionally accept a contextual keyword spelling (`nonisolated`) as sugar, but emitted interfaces should use the canonical attribute spelling (01B.3.4).
+> Note: Toolchains may additionally accept a contextual keyword spelling (`nonisolated`) as sugar, but emitted interfaces should use the canonical attribute spelling (B.3.4).
 
 
 
@@ -295,7 +295,7 @@ Rules:
 - captures into concurrent tasks
 - cross-actor arguments/returns
 
-Provide `__attribute__((objc_unsafe_sendable))` escape hatch (01B.3.3).
+Provide `__attribute__((objc_unsafe_sendable))` escape hatch (B.3.3).
 
 ---
 
@@ -334,15 +334,15 @@ Implementations may drain at additional safe points, but shall not permit unboun
 ## 7.12 Lowering, ABI, and runtime hooks (normative for implementations)
 
 ### 7.12.1 Separate compilation requirements
-Conforming implementations shall satisfy the separate compilation requirements in 01C.2 and the required metadata set in 01D for all concurrency-relevant declarations, including:
+Conforming implementations shall satisfy the separate compilation requirements in C.2 and the required metadata set in D for all concurrency-relevant declarations, including:
 - `async` effects,
 - executor annotations (`objc_executor(...)`),
 - actor isolation metadata,
-- and task-spawn recognition attributes (01B.3.2).
+- and task-spawn recognition attributes (B.3.2).
 
 ### 7.12.2 Coroutine lowering model (informative summary)
 The recommended lowering model is:
-- `async` functions lower to coroutine state machines (01C.5),
+- `async` functions lower to coroutine state machines (C.5),
 - `await` lowers to a potential suspension + resumption scheduled by the current executor,
 - values that cross suspension are retained/lowered in a way that preserves ARC semantics.
 
@@ -362,7 +362,7 @@ Each actor instance shall be associated with a serial executor that:
 The concrete queue representation is implementation-defined, but the association must be observable by the runtime/stdlib to implement `await`ed cross-actor calls.
 
 ### 7.12.5 Autorelease pools at suspension points
-Autorelease pool boundaries at suspension points are required by Decision D‑006 and defined normatively in 01C.7 and §7.9.4.
+Autorelease pool boundaries at suspension points are required by Decision D‑006 and defined normatively in C.7 and §7.9.4.
 
 
 ## 7.10 Diagnostics

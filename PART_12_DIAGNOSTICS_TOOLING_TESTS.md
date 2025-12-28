@@ -9,9 +9,9 @@ Objective‑C 3.0 treats tooling requirements as part of conformance:
 - and a conformance test suite must exist to prevent “whatever the compiler happens to do.”
 
 This part is cross-cutting and references:
-- **01B** for canonical spellings and interface emission requirements,
-- **01C** for separate compilation and lowering contracts.
-- **01D** for the normative checklist of required module metadata and ABI boundaries.
+- **B** for canonical spellings and interface emission requirements,
+- **C** for separate compilation and lowering contracts.
+- **D** for the normative checklist of required module metadata and ABI boundaries.
 
 ## 12.2 Diagnostic principles (normative)
 A conforming implementation shall provide diagnostics that:
@@ -31,7 +31,7 @@ A conforming implementation shall provide diagnostics that:
 
 ### 12.3.2 Errors and `throws`
 - Calling a `throws` function/method without `try` (error).
-- Redeclaring a `throws` declaration without `throws` (or vice versa) across module boundaries (error; see 01C.2).
+- Redeclaring a `throws` declaration without `throws` (or vice versa) across module boundaries (error; see C.2).
 - Using postfix propagation `e?` on `T?` in a non-optional-returning function (error; fix-it suggests `guard let` or explicit conditional).
 - Using postfix propagation `e?` expecting it to map to `throws`/`Result` (error; explain “carrier preserving” rule).
 
@@ -43,10 +43,10 @@ A conforming implementation shall provide diagnostics that:
 - `await` applied to an expression that cannot suspend (strict: warning) (diagnostic: “unnecessary await”).
 
 ### 12.3.4 Modules and interface emission
-- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see 01D.3.1 Table A.
+- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see D.3.1 Table A.
 - Using a module-qualified name with a non-imported module: error with fix-it to add `@import`.
 - Importing an API through a mechanism that loses effects/attributes (e.g., textual header without metadata) when strictness requires them: warning with suggestion to enable modules/interface emission.
-- Emitted interface does not use canonical spellings from 01B: tooling warning; in “interface verification” mode, error.
+- Emitted interface does not use canonical spellings from B: tooling warning; in “interface verification” mode, error.
 
 ### 12.3.5 Performance/dynamism controls
 - Overriding a `objc_final` method/class: error.
@@ -84,14 +84,14 @@ A conforming toolchain shall provide (or ship) a migrator that can:
 ### 12.4.2 Interface emission / verification
 If the toolchain supports emitting an interface description for distribution, it shall also support a verification mode that checks:
 - semantic equivalence between the original module and the emitted interface,
-- and the use of canonical spellings from 01B.
+- and the use of canonical spellings from B.
 
 ### 12.4.3 Static analysis hooks
 Implementations shall expose enough information for analyzers to:
 - reason about nullability flow,
 - reason about `throws` propagation,
 - and enforce Sendable-like constraints under strict concurrency.
-- expose `borrowed` and `objc_returns_borrowed(owner_index=...)` annotations in AST dumps and module metadata for external analyzers (Part 8, 01D).
+- expose `borrowed` and `objc_returns_borrowed(owner_index=...)` annotations in AST dumps and module metadata for external analyzers (Part 8, D).
 - expose resource annotations (`objc_resource(...)`) and move-state tracking hooks where enabled by profile (Part 8).
 
 ## 12.5 Conformance test suite (minimum expectations)
@@ -102,11 +102,11 @@ A conforming implementation shall ship or publish a test suite that covers at le
 - Module-qualified name parsing (`@A.B.C`).
 
 ### 12.5.2 Type system and diagnostics
-- Module metadata preservation tests for each Table A item in 01D (import module; verify semantics survive; verify mismatch diagnostics).
+- Module metadata preservation tests for each Table A item in D (import module; verify semantics survive; verify mismatch diagnostics).
 - Strict vs permissive nullability behavior.
 - Optional send restrictions (reference-only).
 - Postfix propagation carrier-preserving rules.
-- Effect mismatch diagnostics across module imports (01C.2).
+- Effect mismatch diagnostics across module imports (C.2).
 
 ### 12.5.3 Dynamic semantics
 - Optional send argument evaluation does not occur when receiver is `nil`.
@@ -114,7 +114,7 @@ A conforming implementation shall ship or publish a test suite that covers at le
 - Cancellation propagation in structured tasks.
 
 ### 12.5.4 Runtime contracts
-- Autorelease pool draining at suspension points (Objective‑C runtimes) (D‑006 / 01C.7).
+- Autorelease pool draining at suspension points (Objective‑C runtimes) (D‑006 / C.7).
 - Executor/actor hops preserve ordering and do not deadlock in basic scenarios.
 - Calling executor-annotated or actor-isolated *synchronous* members from outside requires `await` and schedules onto the correct executor (D‑011).
 

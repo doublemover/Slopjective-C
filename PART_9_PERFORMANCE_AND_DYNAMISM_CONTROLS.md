@@ -8,7 +8,7 @@ Objective‑C 3.0 provides **opt-in** controls that:
 - enable direct calls and devirtualization where safe,
 - communicate intent to compilers and reviewers,
 - preserve dynamic behavior by default,
-- remain safe under separate compilation and across module boundaries (01C.2).
+- remain safe under separate compilation and across module boundaries (C.2).
 
 This part is designed to accommodate both Cocoa-style dynamic patterns *and* system/library subsets where predictability and performance matter.
 
@@ -29,7 +29,7 @@ __attribute__((objc_direct))
 
 applied to an Objective‑C method declaration.
 
-Toolchains may additionally support class-level defaults (e.g., “all members direct”) as an extension, but such defaults must be representable in emitted interfaces (01B.7).
+Toolchains may additionally support class-level defaults (e.g., “all members direct”) as an extension, but such defaults must be representable in emitted interfaces (B.7).
 
 ### 9.2.3 Semantics (normative)
 1. A direct method shall not be overridden in any subclass.
@@ -44,13 +44,13 @@ Calling model:
 
 ### 9.2.4 Separate compilation notes (normative)
 Because direct methods change call legality and dispatch surfaces, the `objc_direct` attribute shall be:
-- recorded in module metadata (see 01D.3.1 Table A), and
+- recorded in module metadata (see D.3.1 Table A), and
 - preserved in emitted interfaces.
 
-Effect/attribute mismatches across modules are ill-formed (01C.2).
+Effect/attribute mismatches across modules are ill-formed (C.2).
 
 ### 9.2.5 Recommended lowering (informative)
-Recommended lowering is described in 01C.8.
+Recommended lowering is described in C.8.
 At a high level:
 - the compiler emits a callable symbol for the method implementation, and
 - calls to the method use a direct call rather than `objc_msgSend`.
@@ -124,7 +124,7 @@ Implementations shall ensure that direct/final/sealed remain safe under:
 
 Minimum requirements:
 1. Attributes that affect dispatch legality (`objc_direct`) must be recorded in module metadata.
-2. Interface emission must preserve the attributes using canonical spellings (01B.7).
+2. Interface emission must preserve the attributes using canonical spellings (B.7).
 3. Calling a method with incompatible assumptions about directness/finality across module boundaries must be diagnosed when possible (Part 12).
 
 ## 9.7 Required diagnostics (minimum)

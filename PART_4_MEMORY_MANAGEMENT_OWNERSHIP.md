@@ -70,7 +70,7 @@ ObjC 3.0 retains autorelease pool semantics and requires that new language const
 - defers execute before local releases in the same scope (Part 8).
 - `async` suspension points shall preserve pool semantics according to the concurrency runtime (Part 7).
 
-Per-task autorelease pool behavior at suspension points is defined normatively in Part 7 and 01C (Decision D‑006).
+Per-task autorelease pool behavior at suspension points is defined normatively in Part 7 and C (Decision D‑006).
 
 
 
@@ -86,7 +86,7 @@ On Objective‑C runtimes with autorelease semantics, a conforming implementatio
 
 This rule is required to avoid unbounded autorelease growth across long async chains and to make memory behavior predictable for Foundation-heavy code.
 
-See Part 7 §7.9 and 01C.7.
+See Part 7 §7.9 and C.7.
 
 
 ## 4.8 Interactions with retainable C families

@@ -1,7 +1,7 @@
 # Objective‑C 3.0 — Attribute and Syntax Catalog
 _Working draft v0.10 — last updated 2025-12-28_
 
-## 01B.0 Purpose
+## B.0 Purpose
 Objective‑C 3.0 introduces new language **effects**, **annotations**, and a small amount of **surface syntax**.
 To keep separate compilation reliable and to keep module interfaces stable, this document defines the **canonical spellings** that:
 
@@ -10,16 +10,16 @@ To keep separate compilation reliable and to keep module interfaces stable, this
 
 Implementations may accept additional “sugar” spellings (keywords, pragmas, macros), but those spellings are **not** required for conformance unless explicitly stated elsewhere.
 
-## 01B.1 Canonical vs. optional spellings
+## B.1 Canonical vs. optional spellings
 
-### 01B.1.1 Canonical spellings
+### B.1.1 Canonical spellings
 The canonical spellings use forms already widely supported by LLVM/Clang-family toolchains:
 
 - C/ObjC pragmas: `#pragma ...`
 - GNU/Clang attributes: `__attribute__((...))`
 - Existing Objective‑C keywords where the feature is inherently grammatical (`async`, `await`, `try`, `throw`, etc.)
 
-### 01B.1.2 Optional sugar spellings
+### B.1.2 Optional sugar spellings
 Implementations may additionally provide sugar spellings such as:
 
 - `@`-directives (e.g., `@assume_nonnull_begin`) as aliases for pragmas.
@@ -28,9 +28,9 @@ Implementations may additionally provide sugar spellings such as:
 
 Such sugar spellings shall not change semantics.
 
-## 01B.2 Nullability defaults
+## B.2 Nullability defaults
 
-### 01B.2.1 Nonnull-by-default region pragmas (canonical)
+### B.2.1 Nonnull-by-default region pragmas (canonical)
 Objective‑C 3.0 defines a nonnull-by-default region using:
 
 ```c
@@ -41,16 +41,16 @@ Objective‑C 3.0 defines a nonnull-by-default region using:
 
 Semantics are defined in Part 3 (§3.2.4).
 
-### 01B.2.2 Optional aliases (non-normative)
+### B.2.2 Optional aliases (non-normative)
 Implementations may treat the following as aliases with identical semantics:
 
 - `#pragma clang assume_nonnull begin/end`
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
 
-## 01B.3 Concurrency and executors
+## B.3 Concurrency and executors
 
-### 01B.3.1 Executor affinity annotation (canonical)
+### B.3.1 Executor affinity annotation (canonical)
 Executor affinity is expressed with:
 
 ```c
@@ -61,7 +61,7 @@ __attribute__((objc_executor(named("com.example.myexecutor"))))
 
 Semantics are defined in Part 7 (§7.4).
 
-### 01B.3.2 Task-spawn recognition attributes (canonical)
+### B.3.2 Task-spawn recognition attributes (canonical)
 The compiler recognizes standard-library task entry points via attributes:
 
 ```c
@@ -74,7 +74,7 @@ Semantics are defined in Part 7 (§7.5).
 
 > Note: These attributes are intended to attach to **functions/methods** that take an `async` block/callback and create tasks/groups, not to arbitrary user functions.
 
-### 01B.3.3 Unsafe Sendable escape hatch (canonical)
+### B.3.3 Unsafe Sendable escape hatch (canonical)
 For strict concurrency checking, implementations shall recognize an explicit escape hatch that marks a type as “Sendable-like” by programmer promise, even if the compiler cannot prove it.
 
 Canonical attribute:
@@ -91,7 +91,7 @@ Semantics are defined in Part 7 (§7.8).
 
 > Toolchains may also provide sugar spellings (e.g., `@unsafeSendable`), but emitted interfaces must use the canonical attribute.
 
-### 01B.3.4 Actor isolation modifier: nonisolated (canonical)
+### B.3.4 Actor isolation modifier: nonisolated (canonical)
 For actor types, implementations shall support a way to mark specific members as **nonisolated**.
 
 Canonical attribute:
@@ -108,9 +108,9 @@ Semantics are defined in Part 7 (§7.7.4).
 > Toolchains may additionally support a contextual keyword spelling (`nonisolated`) as sugar, but emitted interfaces should preserve semantics and may prefer the canonical attribute spelling.
 
 
-## 01B.4 Errors
+## B.4 Errors
 
-### 01B.4.1 NSError bridging attribute (canonical)
+### B.4.1 NSError bridging attribute (canonical)
 For interop with NSError-out-parameter conventions, implementations shall recognize:
 
 ```c
@@ -119,7 +119,7 @@ __attribute__((objc_nserror))
 
 Semantics are defined in Part 6 (§6.9).
 
-### 01B.4.2 Status-code bridging attribute (canonical)
+### B.4.2 Status-code bridging attribute (canonical)
 For return-code APIs, implementations shall recognize:
 
 ```c
@@ -128,9 +128,9 @@ __attribute__((objc_status_code(/* parameters */)))
 
 Semantics are defined in Part 6 (§6.10).
 
-## 01B.5 Performance and dynamism controls
+## B.5 Performance and dynamism controls
 
-### 01B.5.1 Direct methods (canonical)
+### B.5.1 Direct methods (canonical)
 Direct method intent is expressed with:
 
 ```c
@@ -139,7 +139,7 @@ __attribute__((objc_direct))
 
 Applied to methods. (Class-wide defaults are defined in Part 9.)
 
-### 01B.5.2 Final and sealed (canonical)
+### B.5.2 Final and sealed (canonical)
 Objective‑C 3.0 uses the following canonical spellings:
 
 ```c
@@ -151,9 +151,9 @@ If a toolchain already provides an equivalent attribute (e.g., `objc_subclassing
 
 Semantics are defined in Part 9.
 
-## 01B.6 Metaprogramming
+## B.6 Metaprogramming
 
-### 01B.6.1 Derive / synthesize (canonical)
+### B.6.1 Derive / synthesize (canonical)
 Derivation requests use:
 
 ```c
@@ -162,7 +162,7 @@ __attribute__((objc_derive("TraitName")))
 
 Semantics are defined in Part 10.
 
-### 01B.6.2 Macro expansion (canonical)
+### B.6.2 Macro expansion (canonical)
 If AST macros are supported, macro entry points may be annotated with:
 
 ```c
@@ -171,19 +171,19 @@ __attribute__((objc_macro))
 
 The actual macro declaration syntax is implementation-defined (Part 10), but interface emission shall preserve the canonical attributes and any synthesized declarations.
 
-## 01B.7 Module interface emission requirements (normative)
+## B.7 Module interface emission requirements (normative)
 If an implementation provides any facility that emits a textual interface for a module (e.g., generated headers, module interface stubs, API dumps), then:
 
 1. The emitted interface shall be **semantics-preserving**: importing it must reconstruct the same declarations, effects, and attributes.
 2. The emitter shall use the **canonical spellings** from this catalog (or semantically equivalent spellings defined as canonical elsewhere in the spec).
 3. The emitted interface shall not depend on user macros for semantics (macros may remain for documentation convenience, but the semantic attributes/pragmas must be explicit).
 
-## 01B.8 System programming extensions
+## B.8 System programming extensions
 
 This section catalogs canonical spellings for “system programming extensions” described in **Part 8**.
 These spellings are intended to survive header/module interface emission and mixed ObjC/ObjC++ builds.
 
-### 01B.8.1 Resource cleanup on scope exit (canonical)
+### B.8.1 Resource cleanup on scope exit (canonical)
 
 **Variable attribute form:**
 
@@ -200,7 +200,7 @@ __attribute__((objc_resource(close=CloseFn, invalid=InvalidExpr)))
 **Optional sugar (non-normative):**
 - `@resource(CloseFn, invalid: InvalidExpr)` as described in Part 8.
 
-### 01B.8.2 Plain cleanup hook (canonical / existing)
+### B.8.2 Plain cleanup hook (canonical / existing)
 
 **Variable attribute form (Clang existing):**
 
@@ -211,7 +211,7 @@ __attribute__((cleanup(CleanupFn)))
 **Optional sugar (non-normative):**
 - `@cleanup(CleanupFn)` as described in Part 8.
 
-### 01B.8.3 Borrowed interior pointers (canonical)
+### B.8.3 Borrowed interior pointers (canonical)
 
 **Type qualifier form (canonical):**
 
@@ -221,7 +221,7 @@ borrowed T *
 
 The `borrowed` qualifier is a contextual keyword in type grammar (Part 8 §8.7). It is not reserved as a general identifier.
 
-### 01B.8.4 Function return is borrowed from an owner (canonical)
+### B.8.4 Function return is borrowed from an owner (canonical)
 
 **Function/return attribute form:**
 
@@ -231,9 +231,9 @@ __attribute__((objc_returns_borrowed(owner_index=N)))
 
 - `N` is a 0-based index into the formal parameter list that identifies the “owner” parameter.
 
-**Semantics:** See Part 8 §8.7.2. Toolchains shall preserve this attribute in module metadata (01D Table A).
+**Semantics:** See Part 8 §8.7.2. Toolchains shall preserve this attribute in module metadata (D Table A).
 
-### 01B.8.5 Block capture list contextual keywords (canonical)
+### B.8.5 Block capture list contextual keywords (canonical)
 
 The capture list feature in Part 8 uses contextual keywords:
 - `weak`
@@ -242,7 +242,7 @@ The capture list feature in Part 8 uses contextual keywords:
 
 These tokens are contextual within capture list grammar only and shall not be reserved globally.
 
-## 01B.9 Reserved tokens
+## B.9 Reserved tokens
 Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 
 - `async`, `await`, `actor`

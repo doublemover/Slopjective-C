@@ -59,7 +59,7 @@ If a declaration is annotated `objc_executor(X)`, then:
 
 **Rationale:** `__attribute__((...))` integrates into existing LLVM/Clang pipelines and is stable for module interface emission.
 
-**Spec impact:** Part 7 and 01B/01C.
+**Spec impact:** Part 7 and B/C.
 
 ---
 
@@ -82,7 +82,7 @@ If a declaration is annotated `objc_executor(X)`, then:
 
 **Rationale:** Predictable memory behavior for Foundation-heavy code; avoids autorelease buildup across long async chains.
 
-**Spec impact:** Part 7, Part 4, and 01C.
+**Spec impact:** Part 7, Part 4, and C.
 
 ---
 
@@ -95,7 +95,7 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 
 **Rationale:** Keeps generated interfaces unambiguous and independent of user macro environments.
 
-**Spec impact:** 01B, Part 2, Part 12.
+**Spec impact:** B, Part 2, Part 12.
 
 ---
 
@@ -115,7 +115,7 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 
 **Rationale:** Matches long-standing Cocoa patterns (NSError-out) and is easy to lower in LLVM without stack unwinding.
 
-**Spec impact:** 01C and Part 6.
+**Spec impact:** C and Part 6.
 
 ---
 
@@ -128,7 +128,7 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 
 **Rationale:** This is the most direct path to implement structured `async/await` in LLVM while preserving ARC and Objective‑C runtime behavior.
 
-**Spec impact:** 01C and Part 7.
+**Spec impact:** C and Part 7.
 
 
 ---
@@ -146,13 +146,13 @@ It is required for **any operation that may suspend**, including:
 
 **Rationale:** Executor and actor isolation are implemented by *hops* that may suspend even when the callee’s body is “logically synchronous.” Requiring `await` keeps suspension explicit at the call site while preserving ergonomic isolation.
 
-**Spec impact:** Part 7, 01C, 01D.
+**Spec impact:** Part 7, C, D.
 
 ---
 
 ## D‑012: Required module metadata set is normative (v1)
-**Decision:** For ObjC 3.0 semantics to survive separate compilation, the required information enumerated in **01D** is normative: a conforming toolchain shall preserve that information in module metadata and in emitted textual interfaces.
+**Decision:** For ObjC 3.0 semantics to survive separate compilation, the required information enumerated in **D** is normative: a conforming toolchain shall preserve that information in module metadata and in emitted textual interfaces.
 
-**Rationale:** Without an explicit checklist, toolchains drift into “works in a single TU” but fails at module boundaries. 01D makes the “separate compilation contract” testable.
+**Rationale:** Without an explicit checklist, toolchains drift into “works in a single TU” but fails at module boundaries. D makes the “separate compilation contract” testable.
 
-**Spec impact:** 01C, 01D, Part 2, Part 12.
+**Spec impact:** C, D, Part 2, Part 12.

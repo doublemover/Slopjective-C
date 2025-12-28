@@ -14,8 +14,8 @@ Objective‑C 3.0 introduces structured mechanisms that reduce boilerplate while
 - **Property behaviors/wrappers** for reusable property semantics.
 
 This part is constrained by:
-- interface emission requirements (01B.7),
-- ABI/layout constraints (01C.9),
+- interface emission requirements (B.7),
+- ABI/layout constraints (C.9),
 - and the principle that generated code must remain inspectable.
 
 ## 10.2 Derives
@@ -45,7 +45,7 @@ If a derive synthesizes declarations that affect:
 
 then those synthesized declarations are part of the module’s API surface and:
 - shall be recorded in module metadata, and
-- shall appear in any emitted interface (01B.7, 01C.9).
+- shall appear in any emitted interface (B.7, C.9).
 
 ### 10.2.4 Standard derives (non-normative)
 A standard library may provide derives analogous to:
@@ -80,7 +80,7 @@ Macro expansion (and derive expansion) that introduces declarations affecting la
 - type layout is finalized, and
 - code generation.
 
-This ensures ABI is computed from the *expanded* program (01C.9).
+This ensures ABI is computed from the *expanded* program (C.9).
 
 ### 10.3.5 Interface emission (normative)
 If macro expansion introduces exported declarations, the emitted interface shall include the expanded declarations (or an equivalent representation that reconstructs them), not merely the macro invocation.

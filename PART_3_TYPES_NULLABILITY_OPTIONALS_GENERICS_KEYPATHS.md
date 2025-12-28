@@ -7,7 +7,7 @@ _Working draft v0.10 — last updated 2025-12-28_
 - Optional chaining and optional message sends are **reference-only** in v1 (object/block/void only). Scalar/struct optional chaining is ill-formed.
 - Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non-`nil`.
 - Generic methods/functions are **deferred** in v1; generic *types* remain supported.
-- Canonical nullability default regions use `#pragma objc assume_nonnull begin/end` (01B).
+- Canonical nullability default regions use `#pragma objc assume_nonnull begin/end` (B).
 
 Objective‑C 3.0 improves type safety without abandoning Objective‑C’s model:
 
@@ -89,7 +89,7 @@ A translation unit in ObjC 3.0 mode may establish a nonnull-by-default region us
 - a pragma region, or
 - an explicit language directive.
 
-The canonical spelling is the pragma form (01B):
+The canonical spelling is the pragma form (B):
 
 ```c
 #pragma objc assume_nonnull begin

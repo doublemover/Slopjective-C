@@ -10,9 +10,9 @@ This part defines:
 - requirements for interface extraction/emission so ObjC 3.0 semantics survive separate compilation.
 
 This part is closely related to:
-- **01B** (canonical spellings for emitted interfaces),
-- **01C** (separate compilation and lowering contracts), and
-- **01D** (the normative checklist of what must be preserved in module metadata across boundaries).
+- **B** (canonical spellings for emitted interfaces),
+- **C** (separate compilation and lowering contracts), and
+- **D** (the normative checklist of what must be preserved in module metadata across boundaries).
 
 ## 2.2 Modules
 
@@ -87,7 +87,7 @@ If a declaration is referenced using a module-qualified name in an emitted textu
 
 ### 2.4.0 Cross-module semantic preservation (normative)
 A module’s public API contract includes not only names and types, but also ObjC 3.0 semantics that affect call legality and call lowering.
-The minimum required set is enumerated in **01D.3.1 Table A**.
+The minimum required set is enumerated in **D.3.1 Table A**.
 
 
 ### 2.4.1 Public vs SPI vs private (normative)
@@ -116,17 +116,17 @@ If an implementation provides any facility that emits an interface description (
 - the same effects (`async`, `throws`),
 - the same canonical attributes/pragmas needed for semantics.
 
-Canonical spellings are defined in **01B**.
+Canonical spellings are defined in **B**.
 
 ### 2.5.2 Format (implementation-defined)
 This draft does not require a particular distribution format (text vs binary).
 However, the format must be sufficient to support:
 
 - strictness/migration tooling (Part 1),
-- diagnostics for effect mismatches (01C.2),
+- diagnostics for effect mismatches (C.2),
 - and cross-module concurrency checking (Part 7).
 
 ## 2.6 Required diagnostics (minimum)
 - Using a module-qualified name for an unloaded/unimported module: error with fix-it to add `@import`.
 - Resolving a module-qualified name to multiple candidates (ambiguous exports): error; recommend qualification or import narrowing.
-- Redeclaring an imported API with mismatched effects/ABI-significant attributes: error (see 01C.2).
+- Redeclaring an imported API with mismatched effects/ABI-significant attributes: error (see C.2).

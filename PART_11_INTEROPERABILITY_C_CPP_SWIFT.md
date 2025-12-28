@@ -9,20 +9,20 @@ Objective‑C’s success depends on interoperability:
 
 This part defines interoperability expectations so ObjC 3.0 features can be adopted without breaking the ecosystem.
 
-This part is intentionally conservative about ABI: where a feature affects ABI or lowering, it is cross-referenced to **01C** and summarized in **01D**.
+This part is intentionally conservative about ABI: where a feature affects ABI or lowering, it is cross-referenced to **C** and summarized in **D**.
 
 ## 11.2 C interoperability
 
 ### 11.2.1 Baseline ABI compatibility
 Objective‑C 3.0 preserves baseline C ABI calling conventions for declarations that do not use new effects.
 
-For declarations that use ObjC 3.0 effects (`throws`, `async`), a conforming toolchain shall provide a stable, documented calling convention (01C.4, 01C.5).
+For declarations that use ObjC 3.0 effects (`throws`, `async`), a conforming toolchain shall provide a stable, documented calling convention (C.4, C.5).
 
 ### 11.2.2 Exporting `throws` to C (normative intent)
 When a throwing function is made visible to C, it shall be representable using a C-callable surface.
 
 Recommended representation:
-- a trailing error-out parameter (`id<Error> * _Nullable outError`) as described in 01C.4.
+- a trailing error-out parameter (`id<Error> * _Nullable outError`) as described in C.4.
 
 This aligns with Cocoa NSError patterns and enables C callers to handle errors without language support for `try`.
 
@@ -33,16 +33,16 @@ This draft does not require a single canonical signature, but a conforming imple
 - an automatically-generated completion-handler thunk, or
 - a runtime entry point that can schedule the async function and invoke a completion callback when finished.
 
-The chosen representation must be stable under separate compilation and recordable in module metadata (01C.2).
+The chosen representation must be stable under separate compilation and recordable in module metadata (C.2).
 
 ## 11.3 C++ / ObjC++ interoperability
 
 ### 11.3.1 Parsing and canonical spellings
-Canonical spellings in 01B are chosen to be compatible with ObjC++ translation units:
+Canonical spellings in B are chosen to be compatible with ObjC++ translation units:
 - `__attribute__((...))` is accepted in C++ mode,
 - `#pragma ...` is available in C++ mode.
 
-Implementations may additionally support C++11 attribute spellings (`[[...]]`) in ObjC++ as sugar, but interface emission shall use canonical spellings (01B.7).
+Implementations may additionally support C++11 attribute spellings (`[[...]]`) in ObjC++ as sugar, but interface emission shall use canonical spellings (B.7).
 
 ### 11.3.2 Exceptions
 Objective‑C exceptions (`@throw/@try/@catch`) remain distinct from ObjC 3.0 `throws`.

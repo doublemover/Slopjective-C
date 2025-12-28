@@ -42,8 +42,8 @@ If supported, the directive shall apply to the translation unit.
 Some tokens are treated as **contextual keywords** only within specific grammar positions, to reduce breakage in existing codebases.
 
 Examples include:
-- `borrowed` (type qualifier; Part 8, also cataloged in 01B.8.3)
-- `move`, `weak`, `unowned` (block capture lists; Part 8, also cataloged in 01B.8.5)
+- `borrowed` (type qualifier; Part 8, also cataloged in B.8.3)
+- `move`, `weak`, `unowned` (block capture lists; Part 8, also cataloged in B.8.5)
 
 Conforming implementations should avoid reserving these tokens globally.
 In ObjC 3.0 mode, at minimum the following tokens are reserved as keywords:
@@ -163,7 +163,7 @@ A conforming implementation shall provide a mechanism equivalent to:
 Profiles may:
 - enable additional diagnostics as errors (Part 12),
 - require particular standard modules (e.g., Concurrency; Part 7),
-- require additional module metadata preservation (01D),
+- require additional module metadata preservation (D),
 - restrict unsafe constructs (e.g., borrowed pointer escaping; Part 8).
 
 This part defines the *hook point* and selection mechanism; profile contents are specified in **CONFORMANCE_PROFILE_CHECKLIST.md**.

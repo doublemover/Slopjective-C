@@ -4,14 +4,14 @@ _Working draft v0.10 — last updated 2025-12-28_
 ## 6.0 Overview
 
 ### v0.9 resolved decisions
-- The required module metadata set for preserving `throws` across module boundaries is enumerated in 01D.
+- The required module metadata set for preserving `throws` across module boundaries is enumerated in D.
 - `try`/`throw`/`throws` are explicitly specified to be compile-time effects; runtime reflection of `throws` is not required in v1.
 
 
 ### v0.8 resolved decisions
 - `throws` uses an untyped error value: `id<Error>`.
 - Postfix optional propagation `e?` is carrier-preserving and is only valid in optional-returning functions (no implicit nil→error mapping).
-- Conforming implementations provide a stable calling convention for `throws` across module boundaries (01C.4).
+- Conforming implementations provide a stable calling convention for `throws` across module boundaries (C.4).
 
 
 ### v0.5 resolved decisions
@@ -123,14 +123,14 @@ Examples (illustrative):
 
 ### 6.3.5 ABI and lowering (normative for implementations)
 Source-level semantics for `throws` are defined in this part.
-In addition, conforming implementations shall ensure `throws` is stable under separate compilation (01C.2).
+In addition, conforming implementations shall ensure `throws` is stable under separate compilation (C.2).
 
 A conforming implementation shall:
-- record the `throws` effect in module metadata (see also 01D.3.1 Table A),
-- diagnose effect mismatches on redeclaration/import (01C.2),
+- record the `throws` effect in module metadata (see also D.3.1 Table A),
+- diagnose effect mismatches on redeclaration/import (C.2),
 - and provide a stable calling convention for throwing functions/methods.
 
-The recommended calling convention is the *trailing error-out parameter* described in 01C.4.
+The recommended calling convention is the *trailing error-out parameter* described in C.4.
 
 > Note: This draft intentionally chooses an error-out convention
 
@@ -311,7 +311,7 @@ Eligible if:
 - return type is `BOOL` or object pointer.
 
 ### 6.9.2 Standard attribute
-Canonical attribute: `__attribute__((objc_nserror))` (see 01B.4.1).
+Canonical attribute: `__attribute__((objc_nserror))` (see B.4.1).
 
 ### 6.9.3 `try` lowering for NSError-bridged calls
 Compiler shall:
@@ -325,7 +325,7 @@ Compiler shall:
 ## 6.10 Interoperability: return-code APIs
 
 ### 6.10.1 Status attribute
-Canonical attribute: `__attribute__((objc_status_code(success: constant, error_type: Type, mapping: Function)))` (see 01B.4.2).
+Canonical attribute: `__attribute__((objc_status_code(success: constant, error_type: Type, mapping: Function)))` (see B.4.2).
 
 ### 6.10.2 Bridging
 - Under `try`: throw on non-success.

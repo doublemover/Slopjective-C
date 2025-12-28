@@ -56,7 +56,7 @@ Language parts:
 
 ## Suggested reading order
 1. **INTRODUCTION.md** (what the project is trying to accomplish)
-2. **PART_1_…** (how mode/strictness/conformance works)
+2. **PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md** (how mode/strictness/conformance works)
 3. **ATTRIBUTE_AND_SYNTAX_CATALOG / LOWERING_AND_RUNTIME_CONTRACTS / MODULE_METADATA_AND_ABI_TABLES** (the “separate compilation contract” and canonical spellings)
 4. Then pick a feature slice:
    - Types/Optionals: **Part 3**
