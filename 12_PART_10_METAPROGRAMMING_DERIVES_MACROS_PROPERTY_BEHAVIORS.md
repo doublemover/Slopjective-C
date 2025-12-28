@@ -1,7 +1,10 @@
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 10.1 Purpose
+
+> See also: **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md** for canonical spellings.
+
 Objective‑C has historically relied on:
 - the C preprocessor,
 - code generation scripts,
@@ -20,16 +23,21 @@ This part defines three mechanisms:
 
 ## 10.2 Derives
 
-### 10.2.1 Syntax (provisional)
+### 10.2.1 Syntax (v1)
+Derives are requested by applying an attribute to the declaration being derived.
+
+**Canonical spelling (Decision D‑011):**
 ```objc
-@derive(Equatable, Hashable)
+__attribute__((objc_derive(Equatable, Hashable)))
 @interface Person : NSObject
 @property (readonly) NSString *name;
 @property (readonly) NSInteger age;
 @end
 ```
 
-### 10.2.2 Standard derives (v1 set)
+Toolchains may provide additional sugar (e.g., an `@derive(...)` directive), but such sugar is not required in v1 (Decision D‑010). Module interfaces shall preserve the attribute form (directly or as equivalent metadata).
+
+### 10.2.2 Standard derives (v1 set) (v1 set)
 This draft defines a minimal v1 derive set (informative names; toolchains may ship as standard library macros initially):
 
 - **Equatable / Hashable**: synthesize `-isEqual:` and `-hash`.

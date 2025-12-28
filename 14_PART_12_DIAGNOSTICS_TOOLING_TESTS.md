@@ -1,5 +1,5 @@
 # Part 12 — Diagnostics, Tooling, and Test Suites
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 12.1 Purpose
 Objective‑C 3.0 treats tooling requirements as part of conformance:
@@ -87,6 +87,19 @@ A conforming toolchain shall provide fix-its for common migrations, at least:
 - inserting `withLifetime/keepAlive` for borrowed-pointer hazards,
 - suggesting `Result`/`throws` wrappers for NSError/status-code APIs,
 - rewriting keyword collisions using raw identifiers.
+
+
+
+### 12.4.1 Canonicalization fix-its (v0.7)
+If a toolchain supports optional surface sugar that is not required in v1 (Decision D‑010), it should provide fix-its to rewrite that sugar into canonical, header-safe spellings, including:
+
+- rewriting `@final` / `@sealed` into `__attribute__((objc_final))` / `__attribute__((objc_sealed))`,
+- rewriting `@derive(...)` into `__attribute__((objc_derive(...)))`,
+- rewriting any task-spawn annotation sugar into `__attribute__((objc_task_spawn))` / `__attribute__((objc_task_detached))` / `__attribute__((objc_task_group))`,
+- rewriting nonnull-by-default region macros into the canonical pragma spelling when possible.
+
+These fix-its are particularly important when generating or stabilizing module interfaces.
+
 
 ## 12.5 Analyzer integration
 The specification requires that metadata be visible to analyzers:

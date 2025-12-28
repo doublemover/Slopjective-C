@@ -1,4 +1,4 @@
-# Objective‑C 3.0 Draft Specification (Working Draft v0.6) — Table of Contents
+# Objective‑C 3.0 Draft Specification (Working Draft v0.7) — Table of Contents
 _Last generated: 2025-12-28_
 
 This bundle contains a working draft of an **Objective‑C 3.0** specification. Each part is a separate Markdown file to keep the document modular and reviewable.
@@ -9,6 +9,7 @@ This bundle contains a working draft of an **Objective‑C 3.0** specification. 
 - **00_TABLE_OF_CONTENTS.md** — This table of contents (you are here)
 - **01_INTRODUCTION.md** — Overview, goals, guiding principles, non‑goals, and cross‑cutting design choices
 - **01A_DECISIONS_LOG.md** — Explicit design decisions (ship/no‑ship) recorded as the draft evolves
+- **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md** — Canonical spellings for attributes, pragmas, and required surface syntax
 
 ## Parts
 - **02_PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md** — Baseline Objective‑C (as implemented by Clang-family compilers) and normative reference model

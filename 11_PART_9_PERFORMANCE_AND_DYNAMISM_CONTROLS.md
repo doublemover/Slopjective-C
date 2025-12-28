@@ -1,5 +1,5 @@
 # Part 9 — Performance and Dynamism Controls
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 9.1 Purpose
 Objective‑C’s dynamic dispatch is a strength, but it inhibits optimization when everything is “open world”:
@@ -66,24 +66,26 @@ it should expose a separate selector-visible wrapper method that forwards to the
 A `final` method cannot be overridden in subclasses.
 Calls to a final method may be devirtualized by the compiler when the static type is known.
 
-Surface spelling (provisional):
+Canonical spelling (Decision D‑010):
 ```objc
-@final - (void)tick;
+- (void)tick __attribute__((objc_final));
 ```
 
-Canonical header spelling (illustrative):
-- `__attribute__((objc_final))` on the method.
+This attribute declares that overriding the method is forbidden outside the allowed boundary defined by the containing type’s rules.
 
-> Note: Some toolchains may already provide an attribute for method finality; mapping is allowed.
+> Note: A toolchain may optionally accept `@final` as sugar, but such sugar is not required in v1.
 
 ### 9.3.2 `sealed` / subclassing restrictions
 A sealed class may be subclassed only within a constrained boundary (typically the defining module).
 
-Surface spelling (provisional):
+Canonical spelling (Decision D‑010):
 ```objc
-@sealed @interface MyClass : NSObject
+__attribute__((objc_sealed))
+@interface MyClass : NSObject
 @end
 ```
+
+> Note: A toolchain may optionally accept `@sealed` as sugar, but such sugar is not required in v1.
 
 Canonical header spelling (illustrative):
 - `__attribute__((objc_subclassing_restricted))` on the class.
@@ -96,7 +98,7 @@ A future revision may allow “friend modules” for sealed classes.
 ## 9.4 `@direct_members` for bulk directness (optional)
 Framework authors often want an entire class’s methods to be direct by default.
 
-Surface spelling (provisional):
+Surface spelling (v1 spelling):
 ```objc
 @direct_members
 @interface FastThing : NSObject
@@ -118,11 +120,13 @@ Some codebases rely heavily on swizzling and forwarding; other codebases want to
 
 Objective‑C 3.0 defines region markers that allow a module or translation unit to state its intent.
 
-### 9.5.2 Region markers (provisional)
-A conforming implementation may provide pragmas:
+### 9.5.2 Region markers (optional optimization hint)
+A conforming implementation may provide pragmas to express dispatch intent for a region of code (see **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**):
 
-- `#pragma objc_region(dynamic)`
-- `#pragma objc_region(static)`
+- `#pragma objc3 dispatch dynamic`
+- `#pragma objc3 dispatch static`
+
+These pragmas are optimization hints only; correctness shall not depend on them.
 
 In a **static region**, the compiler is permitted to assume that:
 - methods/classes marked with Part 9 controls are not dynamically replaced by external code,

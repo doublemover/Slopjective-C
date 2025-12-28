@@ -1,5 +1,5 @@
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 7.0 Overview
 
@@ -87,6 +87,8 @@ Runtime shall provide:
 
 ### 7.4.3 Executor annotations (normative)
 
+> Canonical spelling is the attribute form `__attribute__((objc_executor(...)))` (Decision D‑004). No new `@MainActor`-style surface annotations are required in v1 (Decision D‑010).
+
 Objective‑C 3.0 defines executor affinity using a standardized attribute spelling.
 
 #### 7.4.3.1 Canonical spelling
@@ -140,11 +142,12 @@ Implementations should provide canonical attribute spellings so task APIs can be
 - `__attribute__((objc_task_detached))`
 - `__attribute__((objc_task_group))`
 
-ObjC 3.0 mode may additionally accept `@task_spawn` / `@task_detached` / `@task_group` as sugar.
 
 
-#### 7.5.2.1 `@task_spawn`
+#### 7.5.2.1 `objc_task_spawn`
 Applied to a function/method that creates a **child task**.
+
+**Canonical spelling:** `__attribute__((objc_task_spawn))`
 
 Requirements:
 - The spawned task shall inherit:
@@ -153,15 +156,19 @@ Requirements:
   - and (optionally) priority metadata.
 - The task is considered a child of the current task for cancellation propagation.
 
-#### 7.5.2.2 `@task_detached`
+#### 7.5.2.2 `objc_task_detached`
 Applied to a function/method that creates a **detached task**.
+
+**Canonical spelling:** `__attribute__((objc_task_detached))`
 
 Requirements:
 - Detached tasks do **not** inherit cancellation by default.
 - Executor selection is implementation-defined unless explicitly specified.
 
-#### 7.5.2.3 `@task_group`
+#### 7.5.2.3 `objc_task_group`
 Applied to a function/method that establishes a structured task group scope.
+
+**Canonical spelling:** `__attribute__((objc_task_group))`
 
 Requirements:
 - All tasks added to the group shall complete (or be cancelled) before the group scope returns.
@@ -189,7 +196,7 @@ The exact naming and Objective‑C surface syntax are implementation-defined, bu
 ### 7.5.4 Compiler checking hooks
 
 In strict concurrency checking mode:
-- The compiler shall enforce Sendable-like requirements for values captured by `@task_spawn` / `@task_detached` async blocks.
+- The compiler shall enforce Sendable-like requirements for values captured by async blocks passed to APIs annotated `__attribute__((objc_task_spawn))` / `__attribute__((objc_task_detached))`.
 - The compiler should warn when a returned task handle is unused (likely “fire and forget”); suggest using the detached API explicitly or awaiting/joining.
 
 > Note: A future revision may add `task { ... }` as sugar (possibly via macros) once patterns stabilize.
@@ -208,10 +215,10 @@ Each task has a cancellation state with at least:
 - optional implementation-defined metadata (reason, deadline, etc.).
 
 ### 7.6.2 Cancellation propagation (normative)
-- Child tasks spawned via an API annotated `@task_spawn` / `objc_task_spawn` shall **inherit** the parent’s cancellation state and shall receive cancellation requests when the parent is cancelled.
-- Detached tasks spawned via `@task_detached` / `objc_task_detached` shall **not** inherit cancellation by default.
+- Child tasks spawned via an API annotated `__attribute__((objc_task_spawn))` / `objc_task_spawn` shall **inherit** the parent’s cancellation state and shall receive cancellation requests when the parent is cancelled.
+- Detached tasks spawned via `__attribute__((objc_task_detached))` / `objc_task_detached` shall **not** inherit cancellation by default.
 
-Task groups (`@task_group` / `objc_task_group`) shall enforce:
+Task groups (`__attribute__((objc_task_group))` / `objc_task_group`) shall enforce:
 - cancellation of remaining group tasks when the group scope exits by error/throw,
 - cancellation inheritance from the creating task into tasks added to the group.
 
@@ -310,7 +317,11 @@ If the member is additionally `throws`, the canonical spelling is `try await` (P
 - captures into concurrent tasks
 - cross-actor arguments/returns
 
-Provide `@unsafeSendable` escape hatch.
+Provide an escape hatch for types/values that are intentionally shared across concurrency domains.
+
+**Canonical spelling (illustrative):** `__attribute__((objc_unsafe_sendable))` (see **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**).
+
+> Note: A toolchain may offer nicer surface sugar, but such sugar is not required in v1 (Decision D‑010).
 
 ---
 
@@ -351,7 +362,7 @@ Minimum diagnostics:
 - calling executor-annotated declarations from the wrong executor without an async hop (error in strict concurrency mode)
 - cross-actor isolated access without await (error in strict)
 - Sendable violations in strict concurrency mode (error)
-- unused task handles returned from `@task_spawn` APIs (warning in strict concurrency mode)
+- unused task handles returned from APIs annotated `__attribute__((objc_task_spawn))` (warning in strict concurrency mode)
 
 
 

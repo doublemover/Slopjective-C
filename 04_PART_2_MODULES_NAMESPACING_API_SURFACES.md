@@ -1,5 +1,5 @@
 # Part 2 — Modules, Namespacing, and API Surfaces
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 2.1 Purpose
 This part defines:
@@ -58,22 +58,31 @@ Objective‑C 3.0 defines a module qualification mechanism to:
 - allow frameworks to expose “clean” names without collisions,
 - and reduce pressure to keep long global prefixes forever.
 
-### 2.4.2 Syntax (provisional but implementable)
-This draft defines an *unambiguous* module-qualified identifier form for ObjC 3.0 mode:
+### 2.4.2 Syntax (v1)
+This draft defines an unambiguous module-qualified identifier form that is safe in both ObjC and ObjC++ translation units:
 
 ```text
-@Module.Name
+@<module-path>.<TopLevelName>
 ```
+
+Where:
+- `<module-path>` is one or more identifiers separated by `.` (modules and submodules),
+- `<TopLevelName>` is an identifier naming a top-level declaration exported by that module.
 
 Examples:
 - `@Foundation.NSString`
-- `@MyFramework.Widget`
+- `@Foundation.NSStringEncoding`
+- `@MyFramework.Submodule.Widget`
 
-Notes:
-- The leading `@` makes the qualification unambiguous in ObjC++ translation units (it does not conflict with C++ `::` scope resolution).
-- `.` is chosen because it is widely understood and does not conflict with existing type-name grammar.
+#### 2.4.2.1 Parsing rule (normative)
+The **final** identifier after the last `.` is the declaration name. All preceding components form the module path.
 
-> Alternative spellings (e.g., `Module::Name`) are possible, but this draft standardizes `@Module.Name` as the v1 spelling to avoid ObjC++ ambiguity.
+This rule allows module paths to contain dots (submodules) without introducing ambiguity.
+
+#### 2.4.2.2 Scope
+A module-qualified identifier refers only to a **top-level** declaration (type, function, constant) exported by the named module. It does not name members (e.g., methods or properties).
+
+> Rationale: member qualification is already expressed by Objective‑C member syntax, and overloading `.` would be ambiguous.
 
 ### 2.4.3 Semantics
 - **Unqualified lookup** searches the current module, then imported modules.
@@ -150,6 +159,6 @@ A module may declare:
 Clients may override strictness, but imported API metadata shall be preserved in type checking.
 
 ## 2.7 Open issues
-- Confirm the final module-qualified syntax and its interaction with tooling; this draft standardizes `@Module.Name` for v1 but may accept synonyms.
+- (Resolved: D‑013) Module-qualified identifier syntax is standardized.
 - Map `@stable/@unstable` cleanly onto existing platform availability/SPI infrastructure.
 - Define a portable interface file format and minimum required metadata fields.

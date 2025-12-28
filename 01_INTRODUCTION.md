@@ -139,3 +139,11 @@ This pass:
 - brings earlier parts into consistency with later decisions,
 - fleshes out previously skeletal parts (modules, control flow, performance controls, interop),
 - and standardizes “header-facing” attribute spellings so frameworks can adopt ObjC 3.0 features without inventing ad-hoc macros.
+
+
+## v0.7 update
+This pass locks down **canonical spellings** and removes or defers ambiguous surface syntax:
+- Nonnull-by-default regions are standardized via `#pragma objc assume_nonnull begin/end` (with recommended Clang alias support).
+- Generic methods are deferred in v1 to avoid grammar ambiguity; v1 keeps generic *types*.
+- “Nice” `@`-prefixed declaration modifiers (e.g., `@final`, `@task_spawn`, `@derive`) are not required in v1; the canonical form is `__attribute__((...))` per the Attribute and Surface Syntax Catalog.
+- A new catalog file centralizes canonical attribute spellings and required sugar syntax.

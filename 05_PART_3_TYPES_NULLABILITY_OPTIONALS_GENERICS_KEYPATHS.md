@@ -1,5 +1,5 @@
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.7 — last updated 2025-12-28_
 
 ## 3.0 Overview
 
@@ -80,22 +80,24 @@ If a type already includes an explicit nullability qualifier, the sugar form sha
 
 ### 3.2.4 Nonnull-by-default regions
 
-#### 3.2.4.1 Region introduction
-A translation unit in ObjC 3.0 mode may establish a nonnull-by-default region using one of:
+#### 3.2.4.1 Region introduction (v1 spelling)
+A translation unit in ObjC 3.0 mode may establish a nonnull-by-default region using standardized pragmas.
 
-- a module-level default (recommended for frameworks),
-- a pragma region, or
-- an explicit language directive.
-
-This draft uses the directive spelling:
-
-```objc
-@assume_nonnull_begin
+**Canonical spelling (Decision D‑008):**
+```c
+#pragma objc assume_nonnull begin
 // declarations
-@assume_nonnull_end
+#pragma objc assume_nonnull end
 ```
 
-The exact spelling is not required, but the semantics are.
+**Accepted alias (recommended for Clang-family toolchains):**
+```c
+#pragma clang assume_nonnull begin
+// declarations
+#pragma clang assume_nonnull end
+```
+
+An implementation may additionally support a module-level default (e.g., module metadata that marks exported declarations as nonnull-by-default), but the pragma mechanism above is the v1 baseline and shall be preserved in module interfaces (directly or as an equivalent metadata representation).
 
 #### 3.2.4.2 Region semantics
 Inside a nonnull-by-default region:
@@ -132,12 +134,25 @@ A type written with the suffix `?` denotes a nullable object/block pointer type.
 Examples:
 
 ```objc
-NSString*? maybeName;
+NSString *? maybeName;
 id<NSCopying>? maybeKey;
+id? maybeObject;
+Class? maybeClass;
 void (^? callback)(int);
 ```
 
-### 3.3.2 Optional binding: `if let` and `guard let`
+#### 3.3.1.1 Canonicalization (normative)
+For the purposes of type checking and module interface emission:
+
+- `T?` canonicalizes to `T _Nullable`.
+- `T!` canonicalizes to `T _Nonnull` plus “implicitly unwrapped” behavior (see §3.3.4).
+
+In particular:
+- `id?` canonicalizes to `id _Nullable`.
+- `Class?` canonicalizes to `Class _Nullable`.
+- `id<Proto>?` canonicalizes to `id<Proto> _Nullable`.
+
+### 3.3.2 Optional binding: `if let` and `guard let`: `if let` and `guard let`
 
 #### 3.3.2.1 Grammar
 ```text
@@ -372,28 +387,16 @@ A `type-constraint` may be:
 
 The constraint grammar is intentionally limited for implementability.
 
-### 3.5.3 Generic method/function declarations
+### 3.5.3 Generic method/function declarations (deferred)
+Objective‑C 3.0 v1 does **not** introduce generic parameter clauses or `where` clauses on Objective‑C methods or C/Objective‑C functions (Decision D‑009).
 
-#### 3.5.3.1 Grammar (provisional)
-```text
-generic-method-declaration:
-    method-declaration generic-parameter-clause? where-clause?
+#### 3.5.3.1 Guidance (non-normative)
+To express similar intent in v1:
+- prefer **generic types** (e.g., `Result<T,E>`, `NSArray<T>`) and protocol constraints on type parameters,
+- use `id<Proto>` for protocol-bounded “any” values,
+- or split APIs into overload families by naming convention.
 
-where-clause:
-    'where' where-requirement (',' where-requirement)*
-
-where-requirement:
-    identifier ':' type-constraint
-  | identifier '==' type-name
-```
-
-Example:
-```objc
-- (T)copyValue<T>(T value) where T : id<NSCopying>;
-```
-
-#### 3.5.3.2 Semantics
-Generic method parameters are instantiated at call sites. Instantiation is static only and does not alter runtime dispatch.
+This is a candidate for a future revision once an unambiguous method syntax is selected.
 
 ### 3.5.4 Type argument application
 Type arguments may be applied to generic types using angle brackets:
@@ -544,7 +547,7 @@ NSString* s = KeyPathGet(kp, person);
 ---
 
 ## 3.9 Open issues
-1. (Resolved: D‑001) v1 does not support scalar/struct optional chaining; `OptionalScalar<T>` (or generalized value optionals) is a future extension.
-2. Exact spelling of nonnull-by-default regions (directive vs pragma vs module metadata).
-3. Generic method syntax integration with Objective‑C method grammar.
-4. Whether to standardize `id`/`Class` optional sugar and how it maps to nullability qualifiers.
+1. (Resolved: D‑001) v1 does not support scalar/struct optional chaining. `OptionalScalar<T>` (or generalized value optionals) is a future extension.
+2. (Resolved: D‑008) Nonnull-by-default regions use standardized pragmas.
+3. (Resolved: D‑009) Generic methods are deferred in v1.
+4. (Resolved: D‑012) Optional sugar applies to `id`/`Class` and protocol-qualified `id` types via canonicalization to `_Nullable`.

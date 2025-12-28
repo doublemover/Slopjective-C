@@ -1,4 +1,4 @@
-# Objective‑C 3.0 — Design Decisions Log (v0.6)
+# Objective‑C 3.0 — Design Decisions Log (v0.7)
 _Last updated: 2025-12-28_
 
 This log captures explicit ship/no‑ship decisions that resolve prior open issues. Each decision is intended to be reflected normatively in the corresponding part(s).
@@ -31,7 +31,7 @@ Typed throws syntax `throws(E)` is reserved for future consideration but is not 
 ---
 
 ## D‑003: Task spawning is library-defined in v1 (no `task {}` keyword)
-**Decision:** Objective‑C 3.0 v1 does not introduce a `task { ... }` keyword expression/statement. Task creation and structured concurrency constructs are provided via the **standard library**, with compiler-recognized attributes to enable diagnostics and safety checks.
+**Decision:** Objective‑C 3.0 v1 does not introduce a `task { ... }` keyword or statement form. Instead, the compiler recognizes task-related APIs via standardized attributes so diagnostics and safety checks can be applied consistently.
 
 **Rationale:** Avoids freezing syntax/semantics prematurely; keeps parsing surface small; still enables strong checking.
 
@@ -79,7 +79,7 @@ Implementations may drain at additional safe points, but shall not permit unboun
 ---
 
 ## D‑007: Canonical attribute spellings are Clang-style for header interoperability (v1)
-**Decision:** Features intended to appear in public headers shall have a **canonical Clang-style attribute spelling** (`__attribute__((...)))`) so that:
+**Decision:** Features intended to appear in public headers shall have a **canonical Clang-style attribute spelling** (`__attribute__((...))`) so that:
 - headers remain valid in ObjC/ObjC++ translation units,
 - tooling (indexers/analyzers) can reason about semantics without macro folklore,
 - and module interface extraction can preserve intent.
@@ -100,3 +100,107 @@ Implementations may drain at additional safe points, but shall not permit unboun
 **Rationale:** This draft’s “borrow from LLVM/Clang” philosophy is that the front end should lean on attribute infrastructure for cross-language and tooling stability.
 
 **Spec impact:** Parts 2, 6, 8, 9, and 11 are updated to include canonical spellings and header guidance.
+
+
+---
+
+## D‑008: Nonnull-by-default regions — canonical spelling (v1)
+**Decision:** Nonnull-by-default regions are established using standardized pragmas.
+
+**Canonical spelling:**
+```c
+#pragma objc assume_nonnull begin
+#pragma objc assume_nonnull end
+```
+
+**Recommended alias support (Clang-family toolchains):**
+```c
+#pragma clang assume_nonnull begin
+#pragma clang assume_nonnull end
+```
+
+**Rationale:**
+- Nonnull-by-default must be representable in module interfaces and must not depend on fragile macro include ordering.
+- Pragmas are widely used in existing Objective‑C ecosystems and are implementable without adding new `@` directives.
+
+**Spec impact:** Part 3 §3.2.4 is updated; “directive vs pragma vs module metadata” spelling is resolved for v1.
+
+---
+
+## D‑009: Generic methods are deferred (v1)
+**Decision:** Objective‑C 3.0 v1 supports **generic types** (parameterized interfaces/protocols and standard library generic types such as `Result<T,E>` and `KeyPath<Root,Value>`), but **does not** add generic parameter clauses or `where` clauses on Objective‑C methods/functions.
+
+**Rationale:**
+- Objective‑C method grammar (selectors with multiple segments) makes “template-like” syntax difficult to add without ambiguity and migration pain.
+- The ecosystem can achieve most value through generic types + protocol constraints + library APIs, while leaving method generics for a future revision.
+
+**Spec impact:** Part 3 §3.5 removes generic method grammar from v1 and treats it as a future extension.
+
+---
+
+## D‑010: No new `@`-prefixed declaration modifiers are required in v1
+**Decision:** Aside from required Objective‑C constructs (e.g., `@interface`, `@implementation`, `@keypath`, and module-qualified identifiers `@Module.Symbol`), the language does not require new `@`-prefixed declaration modifiers (e.g., `@final`, `@sealed`, `@task_spawn`, `@derive`) in v1.
+
+Instead, the canonical spelling for such features is `__attribute__((...))` as cataloged in **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**.
+
+**Rationale:**
+- Keeps parsing surface small and reduces source compatibility hazards.
+- Ensures features can be expressed in headers/module interfaces using well-established mechanisms.
+
+**Spec impact:** Parts 7, 9, and 10 are updated to present attribute spellings as normative and treat sugar as optional/non-required.
+
+---
+
+## D‑011: Derives — canonical spelling (v1)
+**Decision:** Derives are applied using an attribute.
+
+**Canonical spelling:**
+```c
+__attribute__((objc_derive(Equatable, Hashable)))
+@interface Person : NSObject
+@end
+```
+
+**Rationale:**
+- Derives must be visible to tooling and survive module interface generation.
+- Attributes compose well with existing declaration syntax.
+
+**Spec impact:** Part 10 §10.2.1 is updated to remove “provisional” derive syntax.
+
+
+---
+
+## D‑012: Optional sugar applies to `id` and `Class` (v1)
+**Decision:** The optional-type suffix `?` is permitted on the special Objective‑C object reference types `id` and `Class`, and on protocol-qualified `id` types.
+
+Examples:
+```objc
+id? maybeObject;
+Class? maybeClass;
+id<NSCopying>? maybeKey;
+```
+
+**Canonicalization:** These spellings canonicalize to `id _Nullable`, `Class _Nullable`, and `id<Proto> _Nullable` respectively (Part 3 §3.3.1.1).
+
+**Rationale:**
+- Aligns with how developers think about nullability for these ubiquitous types.
+- Removes an ergonomic footgun where `id`/`Class` require different spelling than ordinary object pointers.
+
+
+---
+
+## D‑013: Module-qualified identifiers use `@<module-path>.<TopLevelName>` (v1)
+**Decision:** Objective‑C 3.0 introduces a module-qualified identifier spelling that is unambiguous in ObjC++ translation units.
+
+**Canonical spelling:**
+```text
+@<module-path>.<TopLevelName>
+```
+
+Where `<module-path>` is one or more identifiers separated by `.` (modules/submodules), and `<TopLevelName>` is an identifier naming a top-level exported declaration.
+
+**Parsing rule:** The final identifier after the last `.` is the declaration name; all preceding components form the module path.
+
+**Rationale:**
+- Avoids introducing `::`-style scope that conflicts with C++ expectations and style.
+- Allows submodule paths without additional quoting or separators.
