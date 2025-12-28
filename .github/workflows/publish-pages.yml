@@ -22,10 +22,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
       - name: Install Node dependencies
         run: npm install
       - name: Lint markdown
-        run: npm run lint:md
+        run: npm run lint:md:all
+      - name: Check markdown formatting
+        run: npm run check:md
 
   build:
     needs: lint

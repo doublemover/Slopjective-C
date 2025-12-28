@@ -6,7 +6,9 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
+    "build:spec": "python scripts/build_pages.py",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
+    "lint:md:all": "npm run build:spec && npm run lint:md",
     "format:md": "prettier --write \"**/*.md\"",
     "check:md": "prettier --check \"**/*.md\""
   }
