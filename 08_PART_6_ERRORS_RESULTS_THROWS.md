@@ -1,14 +1,17 @@
 # Part 6 — Errors: Result, throws, try, and Propagation
-_Working draft v0.6 — last updated 2025-12-28_
+_Working draft v0.8 — last updated 2025-12-28_
 
 ## 6.0 Overview
+
+### v0.8 resolved decisions
+- `throws` uses an untyped error value: `id<Error>`.
+- Postfix optional propagation `e?` is carrier-preserving and is only valid in optional-returning functions (no implicit nil→error mapping).
+- Conforming implementations provide a stable calling convention for `throws` across module boundaries (01C.4).
+
 
 ### v0.5 resolved decisions
 - Optional propagation `e?` for `e : T?` is valid **only** in optional-returning functions (carrier-preserving). It is ill‑formed in `throws` or `Result` contexts (no implicit nil→error mapping).
 
-### v0.6 clarifications
-- Canonical header-facing spellings for NSError and status-code bridging are described in §§6.9–6.10 (Decision D‑007).
-- `try?` discards errors; in strict modes discarding should be explicit and warned.
 
 ### v0.4 resolved decisions
 - `throws` is **untyped** in v1: thrown values are `id<Error>`.
@@ -84,6 +87,7 @@ throws-specifier:
     'throws'
 ```
 
+The optional type parameter is a *typed throws* extension; see §6.3.5.
 
 ### 6.3.2 Semantics
 A `throws` function may either:
@@ -98,6 +102,21 @@ A call to a throwing function is ill-formed unless it appears:
 - within a context that explicitly handles the error (e.g., bridging to Result).
 
 ### 6.3.4 Function and block types
+
+### 6.3.5 ABI and lowering (normative for implementations)
+Source-level semantics for `throws` are defined in this part.
+In addition, conforming implementations shall ensure `throws` is stable under separate compilation (01C.2).
+
+A conforming implementation shall:
+- record the `throws` effect in module metadata,
+- diagnose effect mismatches on redeclaration/import (01C.2),
+- and provide a stable calling convention for throwing functions/methods.
+
+The recommended calling convention is the *trailing error-out parameter* described in 01C.4.
+
+> Note: This draft intentionally chooses an error-out convention rather than stack unwinding, to keep interoperability with NSError/return-code APIs straightforward and to align with existing Objective‑C runtime practices.
+
+
 Throwing is part of a function’s type.
 
 - `R (^)(Args) throws` is a throwing block type.
@@ -261,15 +280,6 @@ Result<T, E> = Ok(T) | Err(E)
 - Construction and inspection shall be possible without allocation where possible.
 - `Result` participates in pattern matching (Part 5) and propagation (`?`).
 
-
-### 6.8.3 Pattern matching
-`Result` participates in pattern matching (Part 5) as a closed two-case set:
-- `.Ok(payload)`
-- `.Err(error)`
-
-In strict mode, `match` over a `Result` shall be exhaustive unless a `default` case is present (Part 5).
-
-
 ---
 
 ## 6.9 Interoperability: NSError-out-parameter conventions
@@ -280,18 +290,8 @@ Eligible if:
 - annotated as error-out parameter (attribute or convention),
 - return type is `BOOL` or object pointer.
 
-### 6.9.2 Standard attribute (canonical spelling)
-A conforming implementation shall provide a way to mark an error-out parameter.
-
-**Canonical header spelling (illustrative):**
-- `__attribute__((objc_error_out))` applied to the error-out parameter.
-
-Example:
-```objc
-BOOL doThing(int x, NSError ** __attribute__((objc_error_out)) error);
-```
-
-If the attribute is not present, an implementation may still recognize the NSError convention by type and position (e.g., a final parameter of type `NSError **`), but the attribute is the portable, explicit mechanism that module interfaces shall preserve.
+### 6.9.2 Standard attribute
+Canonical attribute: `__attribute__((objc_nserror))` (see 01B.4.1).
 
 ### 6.9.3 `try` lowering for NSError-bridged calls
 Compiler shall:
@@ -304,21 +304,8 @@ Compiler shall:
 
 ## 6.10 Interoperability: return-code APIs
 
-### 6.10.1 Status attribute (canonical spelling)
-A conforming implementation shall provide a way to describe a status-code API’s success condition and mapping.
-
-**Canonical header spelling (illustrative):**
-- `__attribute__((objc_status_code(success = <integer-literal>)))` applied to the function.
-- optionally `__attribute__((objc_status_to_error(<mapping-function>)))` to specify how to produce an `id<Error>`.
-
-Example:
-```c
-int open_thing(int flags)
-  __attribute__((objc_status_code(success = 0)))
-  __attribute__((objc_status_to_error(OpenThingErrorFromStatus)));
-```
-
-> Note: Exact spelling is a toolchain choice, but a canonical attribute mechanism is required (Decision D‑007).
+### 6.10.1 Status attribute
+Canonical attribute: `__attribute__((objc_status_code(success: constant, error_type: Type, mapping: Function)))` (see 01B.4.2).
 
 ### 6.10.2 Bridging
 - Under `try`: throw on non-success.
@@ -336,10 +323,10 @@ Minimum diagnostics:
 ---
 
 ## 6.12 Open issues
-1. Exact spelling of attributes and how they map to existing toolchains.
-2. (Resolved in v0.4) v1 is untyped; typed throws is deferred.
-3. (Resolved in v0.5) v1 forbids implicit nil→error mapping; `T?` propagation with postfix `?` is allowed only in optional-returning functions.
-4. Whether to extend postfix `?` beyond current parsing restriction.
+- Whether to introduce a standard attribute or syntax for “never throws” in generic contexts (mostly redundant with absence of `throws`).
+- Whether to standardize a nil→error mapping helper (e.g., `orThrow(...)`) in the standard library rather than as language sugar.
+- Whether to add typed throws in a future revision (see §6.13.1).
+
 
 ## 6.13 Future extensions (non-normative)
 

@@ -1,192 +1,154 @@
-# Objective‑C 3.0 — Attribute and Surface Syntax Catalog (v0.7)
-_Last updated: 2025-12-28_
+# Objective‑C 3.0 — Attribute and Syntax Catalog
+_Working draft v0.8 — last updated 2025-12-28_
 
-This document defines the **canonical spellings** (especially for headers/module interfaces) for language and toolchain-visible features introduced by the Objective‑C 3.0 draft.
+## 01B.0 Purpose
+Objective‑C 3.0 introduces new language **effects**, **annotations**, and a small amount of **surface syntax**.
+To keep separate compilation reliable and to keep module interfaces stable, this document defines the **canonical spellings** that:
 
-It exists to:
-- keep the specification internally consistent,
-- give toolchain implementers a single “what do we actually parse/emit” reference,
-- and provide a stable mapping from “nice surface sugar” to **header-safe spellings**.
+- all conforming implementations shall accept; and
+- any interface-generation tool shall emit.
 
-## 0. Principles (normative)
+Implementations may accept additional “sugar” spellings (keywords, pragmas, macros), but those spellings are **not** required for conformance unless explicitly stated elsewhere.
 
-1. **Header-safe canonicalization.**  
-   Where a feature needs to survive preprocessing, module interface generation, and cross-language tooling, the specification favors **C/Clang-style attributes** as the canonical spelling.
+## 01B.1 Canonical vs. optional spellings
 
-2. **Optional sugar.**  
-   “Surface sugar” spellings (especially new `@`-prefixed modifiers) are **not required** unless explicitly stated. Toolchains may provide sugar as a source-level convenience, but module interfaces shall preserve canonical spellings.
+### 01B.1.1 Canonical spellings
+The canonical spellings use forms already widely supported by LLVM/Clang-family toolchains:
 
-3. **No silent semantic dependence on textual include order.**  
-   If a feature affects type checking, it must be representable in module interfaces (attributes, metadata, or standardized pragmas).
+- C/ObjC pragmas: `#pragma ...`
+- GNU/Clang attributes: `__attribute__((...))`
+- Existing Objective‑C keywords where the feature is inherently grammatical (`async`, `await`, `try`, `throw`, etc.)
 
-These principles refine Decision D‑007 in the Decisions Log.
+### 01B.1.2 Optional sugar spellings
+Implementations may additionally provide sugar spellings such as:
 
----
+- `@`-directives (e.g., `@assume_nonnull_begin`) as aliases for pragmas.
+- Framework macros (e.g., `NS_ASSUME_NONNULL_BEGIN`) as aliases for pragmas.
+- Alternative attribute syntaxes (e.g., C++11 `[[...]]`) when compiling as ObjC++.
 
-## 1. Reserved keywords (ObjC 3.0 mode)
+Such sugar spellings shall not change semantics.
 
-Minimum reserved keywords are defined in Part 1. Toolchains should provide a raw-identifier escape hatch for compatibility.
+## 01B.2 Nullability defaults
 
----
+### 01B.2.1 Nonnull-by-default region pragmas (canonical)
+Objective‑C 3.0 defines a nonnull-by-default region using:
 
-## 2. Directives and pragmas
-
-### 2.1 Nonnull-by-default regions (v1)
-**Canonical spelling:**
 ```c
 #pragma objc assume_nonnull begin
+// declarations
 #pragma objc assume_nonnull end
 ```
 
-**Accepted aliases (recommended for Clang-family toolchains):**
-```c
-#pragma clang assume_nonnull begin
-#pragma clang assume_nonnull end
-```
+Semantics are defined in Part 3 (§3.2.4).
 
-**Notes:**
-- Foundation-style macros (e.g., `NS_ASSUME_NONNULL_BEGIN/END`) may expand to the pragma alias form via `_Pragma(...)`.
-- Module interfaces shall preserve the *effective* nonnull-by-default behavior (Part 3).
+### 01B.2.2 Optional aliases (non-normative)
+Implementations may treat the following as aliases with identical semantics:
 
-### 2.2 Dispatch intent regions (optimization hint; optional)
-**Canonical spelling (if implemented):**
-```c
-#pragma objc3 dispatch dynamic
-#pragma objc3 dispatch static
-```
+- `#pragma clang assume_nonnull begin/end`
+- `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
-These pragmas express intent to favor dynamic dispatch or static/direct dispatch in the following region. They are **non-normative optimization hints**: correctness shall not depend on them.
+## 01B.3 Concurrency and executors
 
----
+### 01B.3.1 Executor affinity annotation (canonical)
+Executor affinity is expressed with:
 
-## 3. Module-qualified identifiers (ObjC / ObjC++)
-
-**Canonical spelling:**
-```text
-@<module-path>.<TopLevelName>
-```
-
-Where `<module-path>` is one or more identifiers separated by `.` and `TopLevelName` is an identifier.
-
-Examples:
-- `@Foundation.NSString`
-- `@Foundation.NSStringEncoding` (if in module scope)
-- `@MyFramework.Submodule.Widget`
-
-Parsing rule:
-- The **final** identifier after the last `.` is the declaration name.
-- Everything between `@` and that final `.` is the module path.
-
-This spelling is chosen to remain unambiguous in ObjC++ translation units.
-
----
-
-## 4. Canonical attributes
-
-All attributes below use the canonical C spelling:
-
-```c
-__attribute__((<attribute-name>(<optional-args>)))
-```
-
-Toolchains may additionally support the C++11 attribute spelling `[[...]]` as a synonym, but module interfaces shall preserve at least one canonical form.
-
-### 4.1 Concurrency
-
-#### 4.1.1 Executors
 ```c
 __attribute__((objc_executor(main)))
 __attribute__((objc_executor(global)))
-__attribute__((objc_executor(named("<name>"))))
+__attribute__((objc_executor(named("com.example.myexecutor"))))
 ```
 
-Applies to: functions/methods, and actor declarations (where applicable).  
-Semantics: Part 7.
+Semantics are defined in Part 7.
 
-#### 4.1.2 Task creation APIs
+### 01B.3.2 Task-spawn recognition attributes (canonical)
+The compiler recognizes standard-library task entry points via attributes:
+
 ```c
 __attribute__((objc_task_spawn))
 __attribute__((objc_task_detached))
 __attribute__((objc_task_group))
 ```
 
-Applies to: functions/methods in the standard library (or equivalent).  
-Semantics: Part 7.
+Semantics are defined in Part 7 (§7.5).
 
-#### 4.1.3 Sendable checking
+> Note: These attributes are intended to attach to **functions/methods** that take an `async` block/callback and create tasks/groups, not to arbitrary user functions.
+
+## 01B.4 Errors
+
+### 01B.4.1 NSError bridging attribute (canonical)
+For interop with NSError-out-parameter conventions, implementations shall recognize:
+
 ```c
-__attribute__((objc_sendable))
-__attribute__((objc_unsafe_sendable))
+__attribute__((objc_nserror))
 ```
 
-Applies to: types and declarations as specified by Part 7.  
-These attributes exist to support checking in pure ObjC codebases without requiring Swift-only annotations.
+Semantics are defined in Part 6 (§6.9).
 
-> Note: Part 7 also defines `@protocol Sendable` as the semantic marker in ObjC code. Toolchains may map between protocol conformance and these attributes.
+### 01B.4.2 Status-code bridging attribute (canonical)
+For return-code APIs, implementations shall recognize:
 
-### 4.2 Errors and bridging
-
-#### 4.2.1 NSError out-parameter marking
 ```c
-__attribute__((objc_error_out))
+__attribute__((objc_status_code(/* parameters */)))
 ```
 
-Applies to: an `NSError **` out parameter.  
-Semantics: Part 6.
+Semantics are defined in Part 6 (§6.10).
 
-#### 4.2.2 Status-code APIs
-```c
-__attribute__((objc_status_code(success = <integer-literal>)))
-__attribute__((objc_status_to_error(<mapping-function>)))
-```
+## 01B.5 Performance and dynamism controls
 
-Applies to: a function.  
-Semantics: Part 6.
+### 01B.5.1 Direct methods (canonical)
+Direct method intent is expressed with:
 
-### 4.3 Performance and dynamism
-
-#### 4.3.1 Direct dispatch
 ```c
 __attribute__((objc_direct))
-__attribute__((objc_direct_members))
 ```
 
-Applies to: methods and classes/interfaces.  
-Semantics: Part 9.
+Applied to methods. (Class-wide defaults are defined in Part 9.)
 
-#### 4.3.2 Final / sealed
+### 01B.5.2 Final and sealed (canonical)
+Objective‑C 3.0 uses the following canonical spellings:
+
 ```c
-__attribute__((objc_final))
-__attribute__((objc_sealed))
+__attribute__((objc_final))                  // methods or classes
+__attribute__((objc_sealed))                 // classes (module-sealed)
 ```
 
-Applies to: methods (`objc_final`) and classes/interfaces (`objc_sealed`).  
-Semantics: Part 9.
+If a toolchain already provides an equivalent attribute (e.g., `objc_subclassing_restricted`), it may treat that attribute as an alias.
 
-> Note: Some toolchains may choose to map these onto existing vendor attributes; this catalog defines the required *capability* and canonical spelling used in this draft.
+Semantics are defined in Part 9.
 
-### 4.4 Metaprogramming
+## 01B.6 Metaprogramming
 
-#### 4.4.1 Derives
+### 01B.6.1 Derive / synthesize (canonical)
+Derivation requests use:
+
 ```c
-__attribute__((objc_derive(<Derive1>, <Derive2>, ...)))
+__attribute__((objc_derive("TraitName")))
 ```
 
-Applies to: declarations that support derives (interfaces, structs, enums as specified in Part 10).  
-Semantics: Part 10.
+Semantics are defined in Part 10.
 
----
+### 01B.6.2 Macro expansion (canonical)
+If AST macros are supported, macro entry points may be annotated with:
 
-## 5. Required sugar spellings (v1)
+```c
+__attribute__((objc_macro))
+```
 
-The following sugar spellings are **required** because they are core language syntax (not optional attributes):
+The actual macro declaration syntax is implementation-defined (Part 10), but interface emission shall preserve the canonical attributes and any synthesized declarations.
 
-- Optional types: `T?`, implicitly unwrapped optionals: `T!` (Part 3)
-- Optional member access: `?.` and optional message send: `[receiver? selector]` (Part 3)
-- Nil-coalescing: `??` (Part 3)
-- Typed key path literal: `@keypath(Root, member.chain)` (Part 3)
-- Module-qualified identifiers: `@Module.Symbol` (Part 2)
-- Effects: `async`, `await`, `throws`, `try`, `throw`, `do`, `catch` (Parts 6–7)
-- Bindings: `if let`, `guard let` with `let`/`var` (Part 3)
+## 01B.7 Module interface emission requirements (normative)
+If an implementation provides any facility that emits a textual interface for a module (e.g., generated headers, module interface stubs, API dumps), then:
 
-All other “nice” spellings (e.g., `@final`, `@sealed`, `@task_spawn`, `@derive`) are **not required** in v1 unless a future decision explicitly upgrades them.
+1. The emitted interface shall be **semantics-preserving**: importing it must reconstruct the same declarations, effects, and attributes.
+2. The emitter shall use the **canonical spellings** from this catalog (or semantically equivalent spellings defined as canonical elsewhere in the spec).
+3. The emitted interface shall not depend on user macros for semantics (macros may remain for documentation convenience, but the semantic attributes/pragmas must be explicit).
+
+## 01B.8 Reserved tokens
+Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
+
+- `async`, `await`, `actor`
+- `throws`, `try`, `throw`, `do`, `catch`
+- `defer`, `guard`, `match`, `case`
+- `let`, `var`
+
+Additional reserved keywords may be added by other parts.

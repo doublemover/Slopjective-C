@@ -1,11 +1,13 @@
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths
-_Working draft v0.7 — last updated 2025-12-28_
+_Working draft v0.8 — last updated 2025-12-28_
 
 ## 3.0 Overview
 
-### v0.6 resolved decisions
-- Optional member access `?.` and optional message sends `[x? ...]` are **reference-only** in v1 (object/block/void only). Scalar/struct chaining is ill‑formed.
-- Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non‑`nil`.
+### v0.8 resolved decisions
+- Optional chaining and optional message sends are **reference-only** in v1 (object/block/void only). Scalar/struct optional chaining is ill-formed.
+- Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non-`nil`.
+- Generic methods/functions are **deferred** in v1; generic *types* remain supported.
+- Canonical nullability default regions use `#pragma objc assume_nonnull begin/end` (01B).
 
 Objective‑C 3.0 improves type safety without abandoning Objective‑C’s model:
 
@@ -80,24 +82,22 @@ If a type already includes an explicit nullability qualifier, the sugar form sha
 
 ### 3.2.4 Nonnull-by-default regions
 
-#### 3.2.4.1 Region introduction (v1 spelling)
-A translation unit in ObjC 3.0 mode may establish a nonnull-by-default region using standardized pragmas.
+#### 3.2.4.1 Region introduction
+A translation unit in ObjC 3.0 mode may establish a nonnull-by-default region using one of:
 
-**Canonical spelling (Decision D‑008):**
+- a module-level default (recommended for frameworks),
+- a pragma region, or
+- an explicit language directive.
+
+The canonical spelling is the pragma form (01B):
+
 ```c
 #pragma objc assume_nonnull begin
 // declarations
 #pragma objc assume_nonnull end
 ```
 
-**Accepted alias (recommended for Clang-family toolchains):**
-```c
-#pragma clang assume_nonnull begin
-// declarations
-#pragma clang assume_nonnull end
-```
-
-An implementation may additionally support a module-level default (e.g., module metadata that marks exported declarations as nonnull-by-default), but the pragma mechanism above is the v1 baseline and shall be preserved in module interfaces (directly or as an equivalent metadata representation).
+Implementations may additionally support aliases such as `#pragma clang assume_nonnull begin/end` or `NS_ASSUME_NONNULL_BEGIN/END`, but emitted interfaces shall use the canonical spelling.
 
 #### 3.2.4.2 Region semantics
 Inside a nonnull-by-default region:
@@ -134,25 +134,12 @@ A type written with the suffix `?` denotes a nullable object/block pointer type.
 Examples:
 
 ```objc
-NSString *? maybeName;
+NSString*? maybeName;
 id<NSCopying>? maybeKey;
-id? maybeObject;
-Class? maybeClass;
 void (^? callback)(int);
 ```
 
-#### 3.3.1.1 Canonicalization (normative)
-For the purposes of type checking and module interface emission:
-
-- `T?` canonicalizes to `T _Nullable`.
-- `T!` canonicalizes to `T _Nonnull` plus “implicitly unwrapped” behavior (see §3.3.4).
-
-In particular:
-- `id?` canonicalizes to `id _Nullable`.
-- `Class?` canonicalizes to `Class _Nullable`.
-- `id<Proto>?` canonicalizes to `id<Proto> _Nullable`.
-
-### 3.3.2 Optional binding: `if let` and `guard let`: `if let` and `guard let`
+### 3.3.2 Optional binding: `if let` and `guard let`
 
 #### 3.3.2.1 Grammar
 ```text
@@ -258,7 +245,7 @@ For `x?.p` where `p` resolves to a property access:
 - The result type is the property type made nullable (i.e., `T?`).
 
 If the property type is scalar/struct:
-- `?.` is ill‑formed (no scalar/struct optional chaining in v1).
+- `?.` is ill-formed in strict mode and diagnosed in permissive mode (because there is no scalar optional type in this draft).
 
 ### 3.4.2 Optional message send: `[receiver? selector]`
 
@@ -287,7 +274,6 @@ NSString*? s = [x? description];
 
 #### 3.4.2.3 Typing restrictions
 
-
 #### 3.4.2.4 Argument evaluation (normative)
 For an optional message send of the form:
 
@@ -297,18 +283,17 @@ For an optional message send of the form:
 
 the implementation shall:
 1. Evaluate `receiver` exactly once.
-2. If `receiver` is `nil`, the expression yields the “nil case” result (§3.4.2.2) **and** the argument expressions `arg1`, `arg2`, … shall **not** be evaluated.
+2. If `receiver` is `nil`, the expression yields the “nil case” result (§3.4.2.2) and the argument expressions `arg1`, `arg2`, … shall **not** be evaluated.
 3. If `receiver` is non-`nil`, evaluate argument expressions in the same order as ordinary message sends, then perform the message send.
 
-This differs intentionally from ordinary Objective‑C message send evaluation, where arguments are evaluated even if the receiver is `nil`.
-If argument side effects must occur regardless of receiver nilness, evaluate them explicitly before the optional send.
+This differs intentionally from ordinary Objective‑C message sends, where arguments are evaluated even if the receiver is `nil`.
+
 
 Optional message send is permitted only if the method return type is:
 - `void`, or
 - an object/block pointer type.
 
-If the method returns scalar/struct:
-- optional send is ill‑formed.
+If the method returns scalar/struct, optional send is **ill-formed** in v1 (all conformance levels).
 
 > Rationale: nil-messaging returning 0 for scalars is a major source of silent logic bugs; ObjC 3 strictness is allowed to reject it.
 
@@ -341,9 +326,9 @@ In Objective‑C 3.0 v1, optional chaining constructs in §3.4.1 and §3.4.2 are
 - members/methods that return a block pointer type; and
 - `void` return type for optional message send only.
 
-If the selected property or method returns any scalar, vector, enum, or struct/union type, use of `?.` or `[receiver? ...]` is **ill‑formed**, regardless of conformance strictness.
+If the selected property or method returns any scalar, vector, enum, or struct/union type, use of `?.` or `[receiver? ...]` is **ill‑formed**.
 
-**Note:** Ordinary Objective‑C message sends to `nil` receivers that yield scalar zero values remain part of the baseline language behavior. However, in ObjC 3.0 **strict** mode, sending a message to a nullable receiver using ordinary syntax is rejected (see §3.4.3). This pushes scalar-return calls into explicitly nonnull contexts, eliminating silent fallbacks.
+**Note:** Ordinary Objective‑C message sends to `nil` receivers that yield scalar zero values remain part of the baseline language behavior. However, in ObjC 3.0 **strict** mode, ordinary sends on nullable receivers are rejected (see §3.4.3), pushing scalar-return calls into explicitly nonnull contexts and eliminating silent fallbacks.
 
 
 
@@ -387,16 +372,12 @@ A `type-constraint` may be:
 
 The constraint grammar is intentionally limited for implementability.
 
-### 3.5.3 Generic method/function declarations (deferred)
-Objective‑C 3.0 v1 does **not** introduce generic parameter clauses or `where` clauses on Objective‑C methods or C/Objective‑C functions (Decision D‑009).
+### 3.5.3 Generic method/function declarations (future extension)
 
-#### 3.5.3.1 Guidance (non-normative)
-To express similar intent in v1:
-- prefer **generic types** (e.g., `Result<T,E>`, `NSArray<T>`) and protocol constraints on type parameters,
-- use `id<Proto>` for protocol-bounded “any” values,
-- or split APIs into overload families by naming convention.
+Objective‑C 3.0 v1 defers generic methods/functions.
+Toolchains may reserve the syntax, but in v1 it is ill‑formed.
 
-This is a candidate for a future revision once an unambiguous method syntax is selected.
+Rationale: integrating generic method syntax with Objective‑C selector grammar and redeclaration rules introduces significant complexity for separate compilation and interface emission.
 
 ### 3.5.4 Type argument application
 Type arguments may be applied to generic types using angle brackets:
@@ -547,7 +528,6 @@ NSString* s = KeyPathGet(kp, person);
 ---
 
 ## 3.9 Open issues
-1. (Resolved: D‑001) v1 does not support scalar/struct optional chaining. `OptionalScalar<T>` (or generalized value optionals) is a future extension.
-2. (Resolved: D‑008) Nonnull-by-default regions use standardized pragmas.
-3. (Resolved: D‑009) Generic methods are deferred in v1.
-4. (Resolved: D‑012) Optional sugar applies to `id`/`Class` and protocol-qualified `id` types via canonicalization to `_Nullable`.
+1. Whether to standardize `id`/`Class` optional sugar and how it maps to nullability qualifiers.
+2. Whether to introduce a first-class value optional ABI (`Optional<T>`) in a future revision.
+3. Whether and how to add generic methods/functions in a future revision without breaking selector grammar.
