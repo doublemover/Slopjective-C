@@ -31,7 +31,11 @@ If supported, the directive shall apply to the translation unit and shall be rej
 ## 1.3 Reserved keywords
 In ObjC 3.0 mode, the following tokens are reserved as keywords (at minimum):
 
-- `defer`, `guard`, `match`, `case`, `await`, `async`, `actor`
+- `defer`, `guard`, `match`, `case`
+- `async`, `await`, `actor`
+- `try`, `throw`, `do`, `catch`
+- `let`, `var`
+
 
 The spec shall define a compatibility escape hatch:
 - a raw identifier syntax (e.g., `@identifier(defer)`) or

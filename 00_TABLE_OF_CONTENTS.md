@@ -1,5 +1,5 @@
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents
-_Last generated: 2025-12-27_
+_Last generated: 2025-12-28_
 
 This is a working draft of an **Objective‑C 3.0** specification skeleton expanded into normative, implementable parts. Each part is a separate Markdown file.
 
@@ -29,3 +29,6 @@ This is a working draft of an **Objective‑C 3.0** specification skeleton expan
 
 ## Status / scope note
 This draft is intentionally **ambitious but implementable**: it prefers features that can be lowered by a compiler front end (Clang) to existing ABIs and/or small runtime libraries, and it makes “strictness” opt-in via conformance levels.
+
+## v0.3 note
+Parts 3, 6, and 7 have been expanded into spec‑grade drafts (grammar, semantics, diagnostics) in this v0.3 bundle.

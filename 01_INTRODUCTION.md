@@ -1,5 +1,5 @@
 # Objective‑C 3.0 Draft Specification (Working Draft) — Introduction
-_Last generated: 2025-12-27_
+_Last generated: 2025-12-28_
 
 ## 1. What Objective‑C 3.0 is trying to be
 Objective‑C 3.0 is a modernization of Objective‑C focused on:
@@ -60,3 +60,6 @@ Each part is a separate Markdown file. The system-programming chapter (Part 8) i
 This is a working draft. Each part includes “Open Issues” subsections for unresolved syntax bikeshedding and deeper ABI questions. The goal is to converge by:
 - shipping implementable subsets early (nullability defaults, defer, Result/?, capture lists),
 - then layering bigger features (async/await, actors, macros).
+
+## v0.3 update
+This bundle expands Part 3 (types/optionals), Part 6 (errors), and Part 7 (concurrency) with concrete grammar and enforceable rules, including optional message sends (`[x? foo]`), `try`/`throw`/`do`-`catch`, and executor/actor isolation scaffolding.
