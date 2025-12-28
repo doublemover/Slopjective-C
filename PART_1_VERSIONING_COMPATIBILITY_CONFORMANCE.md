@@ -166,4 +166,4 @@ Profiles may:
 - require additional module metadata preservation (01D),
 - restrict unsafe constructs (e.g., borrowed pointer escaping; Part 8).
 
-This part defines the *hook point* and selection mechanism; profile contents are specified in **01E_CONFORMANCE_PROFILE_CHECKLIST.md**.
+This part defines the *hook point* and selection mechanism; profile contents are specified in **CONFORMANCE_PROFILE_CHECKLIST.md**.

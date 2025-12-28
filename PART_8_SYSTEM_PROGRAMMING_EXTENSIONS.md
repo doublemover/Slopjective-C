@@ -16,7 +16,7 @@ This part intentionally provides *detailed normative semantics* because system-l
 
 ## 8.0.1 Canonical attribute spellings (header interoperability)
 
-**Normative note:** The canonical spellings for all attributes and pragmas used in this part are cataloged in **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**. Inline spellings here are illustrative; emitted interfaces and module metadata shall use the catalog spellings.
+**Normative note:** The canonical spellings for all attributes and pragmas used in this part are cataloged in **ATTRIBUTE_AND_SYNTAX_CATALOG.md**. Inline spellings here are illustrative; emitted interfaces and module metadata shall use the catalog spellings.
 Many system-facing features in this part are intended to be expressed in headers and preserved by module interfaces. Per Decision D‑007, a conforming implementation shall support canonical `__attribute__((...))` spellings for these features, so that:
 - APIs can be declared without macro folklore,
 - analyzers can reason about semantics,

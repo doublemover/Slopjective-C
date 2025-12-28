@@ -25,7 +25,7 @@ A conforming implementation shall ensure:
    - any dispatch-affecting attributes (`objc_direct`, `objc_sealed`, etc.)
    shall be part of the imported type information.
 
-   The minimum required set is enumerated normatively in **01D_MODULE_METADATA_AND_ABI_TABLES.md**.
+   The minimum required set is enumerated normatively in **MODULE_METADATA_AND_ABI_TABLES.md**.
 
 2. **Mismatched redeclarations are diagnosed.**  
    Redeclaring an imported function/method with a different effect set or incompatible lowering-affecting attributes is ill-formed.

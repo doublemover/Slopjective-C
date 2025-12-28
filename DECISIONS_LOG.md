@@ -89,7 +89,7 @@ If a declaration is annotated `objc_executor(X)`, then:
 ## D‑007: Canonical spellings and interface emission are attribute/pragma-first (v1)
 **Decision:** Features that must survive **module interface emission** and **separate compilation** have canonical spellings defined in:
 
-- **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md**
+- **ATTRIBUTE_AND_SYNTAX_CATALOG.md**
 
 Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist, but the canonical emitted form shall use the catalog spellings.
 
