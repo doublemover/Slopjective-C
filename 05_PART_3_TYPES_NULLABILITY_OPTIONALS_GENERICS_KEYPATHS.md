@@ -1,7 +1,12 @@
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths
-_Working draft v0.3 — last updated 2025-12-28_
+_Working draft v0.6 — last updated 2025-12-28_
 
 ## 3.0 Overview
+
+### v0.6 resolved decisions
+- Optional member access `?.` and optional message sends `[x? ...]` are **reference-only** in v1 (object/block/void only). Scalar/struct chaining is ill‑formed.
+- Optional message sends are **conditional calls**: argument expressions are evaluated only if the receiver is non‑`nil`.
+
 Objective‑C 3.0 improves type safety without abandoning Objective‑C’s model:
 
 - **Nullability** becomes a core, enforceable type property, with module/region defaults.
@@ -238,7 +243,7 @@ For `x?.p` where `p` resolves to a property access:
 - The result type is the property type made nullable (i.e., `T?`).
 
 If the property type is scalar/struct:
-- `?.` is ill-formed in strict mode and diagnosed in permissive mode (because there is no scalar optional type in this draft).
+- `?.` is ill‑formed (no scalar/struct optional chaining in v1).
 
 ### 3.4.2 Optional message send: `[receiver? selector]`
 
@@ -266,12 +271,29 @@ NSString*? s = [x? description];
   - no effect for `void` returns.
 
 #### 3.4.2.3 Typing restrictions
+
+
+#### 3.4.2.4 Argument evaluation (normative)
+For an optional message send of the form:
+
+```objc
+[receiver? method:arg1 other:arg2]
+```
+
+the implementation shall:
+1. Evaluate `receiver` exactly once.
+2. If `receiver` is `nil`, the expression yields the “nil case” result (§3.4.2.2) **and** the argument expressions `arg1`, `arg2`, … shall **not** be evaluated.
+3. If `receiver` is non-`nil`, evaluate argument expressions in the same order as ordinary message sends, then perform the message send.
+
+This differs intentionally from ordinary Objective‑C message send evaluation, where arguments are evaluated even if the receiver is `nil`.
+If argument side effects must occur regardless of receiver nilness, evaluate them explicitly before the optional send.
+
 Optional message send is permitted only if the method return type is:
 - `void`, or
 - an object/block pointer type.
 
 If the method returns scalar/struct:
-- optional send is ill-formed in strict mode.
+- optional send is ill‑formed.
 
 > Rationale: nil-messaging returning 0 for scalars is a major source of silent logic bugs; ObjC 3 strictness is allowed to reject it.
 
@@ -296,6 +318,19 @@ if (x != nil) {
 This refinement also applies to `if let` / `guard let`.
 
 ---
+
+### 3.4.5 v1 restriction: no scalar/struct optional chaining (normative)
+In Objective‑C 3.0 v1, optional chaining constructs in §3.4.1 and §3.4.2 are defined **only** for:
+
+- members/methods that return an Objective‑C object pointer type;
+- members/methods that return a block pointer type; and
+- `void` return type for optional message send only.
+
+If the selected property or method returns any scalar, vector, enum, or struct/union type, use of `?.` or `[receiver? ...]` is **ill‑formed**, regardless of conformance strictness.
+
+**Note:** Ordinary Objective‑C message sends to `nil` receivers that yield scalar zero values remain part of the baseline language behavior. However, in ObjC 3.0 **strict** mode, sending a message to a nullable receiver using ordinary syntax is rejected (see §3.4.3). This pushes scalar-return calls into explicitly nonnull contexts, eliminating silent fallbacks.
+
+
 
 ## 3.5 Pragmatic generics
 
@@ -509,7 +544,7 @@ NSString* s = KeyPathGet(kp, person);
 ---
 
 ## 3.9 Open issues
-1. Whether optional send should support scalar returns via a standard `OptionalScalar<T>` wrapper (not included in v0.3).
+1. (Resolved: D‑001) v1 does not support scalar/struct optional chaining; `OptionalScalar<T>` (or generalized value optionals) is a future extension.
 2. Exact spelling of nonnull-by-default regions (directive vs pragma vs module metadata).
 3. Generic method syntax integration with Objective‑C method grammar.
 4. Whether to standardize `id`/`Class` optional sugar and how it maps to nullability qualifiers.

@@ -1,104 +1,154 @@
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors
+_Working draft v0.6 — last updated 2025-12-28_
 
 ## 10.1 Purpose
 Objective‑C has historically relied on:
 - the C preprocessor,
 - code generation scripts,
-- and conventions.
+- and informal conventions.
 
-Objective‑C 3.0 introduces structured mechanisms that reduce boilerplate while remaining auditable and toolable:
-- derives for common conformances,
-- AST macros with strong safety constraints,
-- property behaviors/wrappers for reusable property semantics.
+Objective‑C 3.0 introduces structured metaprogramming mechanisms that are:
+- **deterministic** (builds are reproducible),
+- **auditable** (expanded form is inspectable),
+- **toolable** (indexers, analyzers, and IDEs can reason about results),
+- and **ABI-conscious** (public interfaces remain stable).
+
+This part defines three mechanisms:
+1. **Derives** — compiler-synthesized members for common patterns.
+2. **AST Macros** — user-defined compile-time expansions with strong constraints.
+3. **Property behaviors/wrappers** — reusable property semantics (observation, atomicity, validation, lazy storage).
 
 ## 10.2 Derives
+
 ### 10.2.1 Syntax (provisional)
 ```objc
-@derive(Equatable, Hashable, Codable)
+@derive(Equatable, Hashable)
 @interface Person : NSObject
-@property NSString* name;
-@property NSInteger age;
+@property (readonly) NSString *name;
+@property (readonly) NSInteger age;
 @end
 ```
 
-### 10.2.2 Semantics
-A derive expands to compiler-synthesized members:
-- `isEqual:` and `hash` for Equatable/Hashable
-- encoding/decoding methods for Codable-like protocols
-- copying methods for NSCopying-like protocols (if declared)
+### 10.2.2 Standard derives (v1 set)
+This draft defines a minimal v1 derive set (informative names; toolchains may ship as standard library macros initially):
 
-The expansion shall:
-- be deterministic,
-- be visible to tooling (expanded AST view),
-- and be overridable only through explicit hooks.
+- **Equatable / Hashable**: synthesize `-isEqual:` and `-hash`.
+- **Codable-like**: synthesize encode/decode routines for supported field types.
+- **MemberwiseInit** (optional): synthesize an initializer taking stored properties (where representable).
 
-### 10.2.3 Diagnostics
-Derive shall fail with clear diagnostics if:
-- required fields are not representable,
-- cycles or unsupported types are present (for coding derives),
-- user-defined methods conflict with synthesized ones without explicit override markers.
+A derive shall be rejected with diagnostics if the type does not meet preconditions.
+
+### 10.2.3 Semantics (normative)
+A derive expands to compiler-synthesized declarations that:
+- are deterministic,
+- are visible to tooling as expanded AST,
+- obey visibility and API surface rules (Part 2),
+- and do not require runtime reflection beyond what baseline ObjC already provides.
+
+### 10.2.4 Conflict and customization
+If user code declares a member that conflicts with a derived member:
+- In permissive mode: warn and choose user member.
+- In strict mode: error unless an explicit `@derive_override` marker is present.
+
+A future revision may standardize customization hooks (e.g., attributes marking which properties participate).
+
+### 10.2.5 ABI considerations
+For public types:
+- derived members that contribute to ABI (e.g., method presence) shall be considered part of the public API surface if the type is `@public`.
+- removing a derive is therefore an API-breaking change (diagnosed by tooling).
 
 ## 10.3 AST macros
-### 10.3.1 Overview
-An AST macro is a compile-time transformation that receives typed syntax/AST and produces additional AST nodes.
 
-### 10.3.2 Safety and sandboxing
-Objective‑C 3.0 requires that macro execution be:
-- deterministic by default,
-- hermetic (no network access),
-- and either sandboxed or restricted to approved plugin contexts.
+### 10.3.1 Macro kinds
+AST macros may be:
+- **declaration macros** (add members or declarations),
+- **attribute macros** (transform an annotated declaration),
+- **expression macros** (expand to an expression).
 
-### 10.3.3 Macro kinds
-- declaration macros (add members)
-- expression macros (produce expressions)
-- attribute macros (transform annotated declarations)
+### 10.3.2 Determinism and sandboxing (normative)
+Macro execution shall be deterministic by default:
+- no network access,
+- no reading arbitrary files outside declared inputs,
+- stable hashing of macro inputs for incremental builds.
 
-### 10.3.4 Hygiene
+A conforming implementation shall provide:
+- either a sandboxed execution environment, or
+- a trust/allowlist mechanism where untrusted macros are rejected.
+
+### 10.3.3 Canonical packaging (open but required concept)
+This draft does not fix the packaging format, but requires the concept of a *macro module*:
+- a compiled artifact containing macro implementations,
+- referenced explicitly by the build system and/or module metadata,
+- versioned and cacheable.
+
+### 10.3.4 Hygiene (normative intent)
 Macros shall be hygienic by default:
-- generated identifiers do not capture or shadow user identifiers unless explicitly requested.
+- generated identifiers do not accidentally capture user identifiers,
+- name collisions are prevented unless explicitly requested.
 
-### 10.3.5 Tooling visibility
+### 10.3.5 Tooling visibility (normative)
 Toolchains shall provide:
-- a way to view expanded code,
-- stable source locations for diagnostics pointing through macro expansion.
+- a way to view macro-expanded code,
+- stable source locations for diagnostics that cross macro boundaries,
+- and an exportable “expanded interface” for module interfaces (Part 2).
 
 ## 10.4 Property behaviors / wrappers
-### 10.4.1 Motivation
-Reusable property semantics are common:
-- observation
-- synchronization
-- clamping and validation
-- lazy initialization
 
-### 10.4.2 Syntax (provisional)
+### 10.4.1 Motivation
+Reusable property semantics are pervasive:
+- observation (KVO-like, custom observation),
+- synchronization/atomicity,
+- validation/clamping,
+- lazy initialization.
+
+### 10.4.2 Two surface models
+This draft allows two equivalent surface models:
+
+1) **Attribute behavior model**
 ```objc
-@property @observed NSString* title;
+@property @observed NSString *title;
 @property @atomic NSInteger count;
 ```
 
-Or wrapper-style:
+2) **Wrapper type model**
 ```objc
 @property Wrapped<Atomic<int>> count;
 ```
 
-### 10.4.3 Semantics
+A conforming implementation may choose one as the canonical surface syntax and treat the other as sugar.
+
+### 10.4.3 Semantics (normative intent)
 A behavior/wrapper may:
 - introduce backing storage,
 - synthesize accessors,
 - attach observation hooks,
-- impose thread-safety rules.
+- impose thread-safety rules,
+- and participate in key path typing (Part 3).
 
-The spec shall define:
-- how behaviors compose,
-- which behaviors are allowed on exported ABI surfaces,
-- and how they interact with KVC/KVO and key paths.
+Behaviors must declare:
+- whether accessors are eligible for direct calls/inlining (Part 9),
+- whether they require dynamic dispatch hooks.
 
-### 10.4.4 Performance contracts
-Behaviors must declare whether:
-- accessors are direct-callable (eligible for inlining),
-- they require dynamic dispatch hooks.
+### 10.4.4 Composition
+If multiple behaviors are applied, the composition order shall be defined and deterministic.
+This draft proposes left-to-right composition as written in source.
 
-## 10.5 Open issues
-- Plugin packaging format (SwiftPM-like vs compiler-integrated).
-- Which derives are standardized in the core language vs shipped in a standard library module.
-- Final syntax spellings.
+### 10.4.5 KVC/KVO and key paths
+For behaviors intended to interoperate with Foundation-style KVC/KVO:
+- key path formation shall observe the behavior’s declared key-path exposure,
+- observation hooks must not break typed key paths.
+
+### 10.4.6 Restrictions for public ABI
+In public API surfaces, behaviors must be ABI-stable:
+- a behavior used in a public property shall have a stable, named identity,
+- changing the behavior is an API-breaking change unless marked as resilient by module policy.
+
+## 10.5 Required diagnostics
+- Macro expansion failures must include clear diagnostics pointing to the expansion site and the macro definition.
+- Derive failures must explain missing preconditions.
+- Behavior composition conflicts must be diagnosed with suggested reorderings or explicit overrides.
+
+## 10.6 Open issues
+- Finalize macro packaging format and trust model (SwiftPM-like vs compiler-integrated).
+- Decide which derives are core language vs standard-library macros.
+- Finalize the canonical surface spelling for property behaviors (attributes vs wrapper types).

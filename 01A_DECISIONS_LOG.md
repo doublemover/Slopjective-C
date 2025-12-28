@@ -1,7 +1,7 @@
-# Objective‑C 3.0 — Design Decisions Log (v0.5)
+# Objective‑C 3.0 — Design Decisions Log (v0.6)
 _Last updated: 2025-12-28_
 
-This log captures explicit “ship/no‑ship” decisions made to resolve prior open issues.
+This log captures explicit ship/no‑ship decisions that resolve prior open issues. Each decision is intended to be reflected normatively in the corresponding part(s).
 
 ## D‑001: Optional chaining is reference-only in v1
 **Decision:** Optional member access (`?.`) and optional message sends (`[receiver? selector]`) are supported only when the accessed member/method returns:
@@ -11,92 +11,92 @@ This log captures explicit “ship/no‑ship” decisions made to resolve prior 
 
 Optional chaining for scalar/struct returns is **not** supported in v1.
 
-**Rationale:**
-- Objective‑C’s historic “nil messaging returns 0” behavior for scalars is a major source of silent bugs.
-- Providing scalar optionals would require introducing a new value-optional system (layout, ABI, conversions) that is larger than a v1 feature.
-- The safe alternative is explicit unwrapping/binding of the receiver, which is already ergonomically supported via `if let` / `guard let`.
+**Rationale:** Objective‑C’s historic “nil messaging returns 0” behavior for scalars is a major source of silent bugs; scalar optional chaining would require a value-optional ABI in v1.
 
-**Spec impact:** Part 3 §3.4 is normative; scalar/struct chaining is ill-formed in all conformance levels (permissive may still offer migration guidance).
+**Spec impact:** Part 3 §3.4 is normative.
 
-**Future direction:** Introduce `OptionalScalar<T>` (or generalized `Optional<T>`) as a v2 feature if warranted.
+**Future direction:** Introduce an `Optional<T>` value carrier (or `OptionalScalar<T>`) as a later revision if needed.
 
 ---
 
 ## D‑002: `throws` is untyped in v1; typed throws deferred
-**Decision:** The v1 `throws` effect is always **untyped**, with thrown values of type `id<Error>`.
+**Decision:** The v1 `throws` effect is **untyped**, with thrown values of type `id<Error>`.
 
-Typed throws syntax `throws(E)` is reserved for future consideration but is not part of the v1 grammar/semantics.
+Typed throws syntax `throws(E)` is reserved for future consideration but is not part of v1 grammar/semantics.
 
-**Rationale:**
-- Objective‑C’s runtime dynamism and mixed-language interop (NSError, C return codes) favor a single error supertype.
-- Typed throws adds significant complexity to generics, bridging, and ABI/lowering, and does not unlock enough value for v1.
+**Rationale:** Interop with NSError and status-code APIs favors a single error supertype; typed throws adds significant complexity and is not required for v1.
 
-**Spec impact:** Part 6 removes typed throws from normative grammar and treats it as a future extension.
+**Spec impact:** Part 6 §6.3 is normative.
 
 ---
 
 ## D‑003: Task spawning is library-defined in v1 (no `task {}` keyword)
-**Decision:** Objective‑C 3.0 v1 does not introduce a new `task { ... }` keyword expression/statement. Task creation and structured concurrency constructs are provided via the **standard library**, with compiler-recognized attributes to enable diagnostics and safety checks.
+**Decision:** Objective‑C 3.0 v1 does not introduce a `task { ... }` keyword expression/statement. Task creation and structured concurrency constructs are provided via the **standard library**, with compiler-recognized attributes to enable diagnostics and safety checks.
 
-**Rationale:**
-- Avoids freezing spawn semantics in the language before the runtime model settles.
-- Keeps parsing surface small and reduces conflicts with existing code.
-- Still enables excellent ergonomics via standard library + attributes + potential macro sugar (Part 10).
+**Rationale:** Avoids freezing syntax/semantics prematurely; keeps parsing surface small; still enables strong checking.
 
-**Spec impact:** Part 7 §7.5 specifies a standard-library contract and new attributes (`@task_spawn`, `@task_detached`, `@task_group`) that compilers must honor for checking.
-
-**Future direction:** Provide `task { ... }` as a macro or a v2 sugar once patterns stabilize.
-
+**Spec impact:** Part 7 §7.5 is normative.
 
 ---
 
-## D‑004: Optional propagation (`?`) does not map `nil` to errors in v1
-**Decision:** In v1, postfix propagation `?` applied to an optional (`T?`) may only be used when the enclosing function/method returns an optional type compatible with `T?`. In that case, `e?` early-returns `nil` from the enclosing function.
+## D‑004: Executor annotations — canonical spelling and meaning (v1)
+**Decision:** Executor affinity is declared using a standardized Clang-style attribute spelling:
 
-Using `e?` where `e` is an optional in a `throws` function or a `Result`-returning function is **ill‑formed** in v1.
+- `__attribute__((objc_executor(main)))`
+- `__attribute__((objc_executor(global)))`
+- `__attribute__((objc_executor(named("..."))))`
 
-**Rationale:**
-- `nil` often encodes *absence*, not necessarily *failure*.
-- Implicitly converting `nil` to an error risks surprising control flow and poor diagnostics (“why did this throw?”).
-- The ergonomics gap is already addressed by `guard let` / `if let` plus explicit `throw`/`return Err(...)`.
+These attributes may be applied to:
+- functions,
+- Objective‑C methods (instance/class),
+- Objective‑C types (classes/actors) to indicate a default executor for isolated members.
 
-**Spec impact:** Part 6 §6.6.4 is tightened; prior “NullError mapping” is removed from v1.
+**Meaning:** A declaration annotated with `objc_executor(X)` requires that execution occurs on executor `X`. Entering such a declaration from another executor requires an async hop and therefore must be expressible in an `async` context (i.e., at or under `await`).
 
-**Future direction:** Add explicit sugar for mapping, e.g. `x ?! errorExpr` or `x ?? throw errorExpr`, in a future revision.
-
----
-
-## D‑005: Executor annotation surface syntax in v1 is `@executor(main)`
-**Decision:** The v1 executor annotation is standardized as:
-
-- `@executor(main)`
-
-This annotation may be applied to functions/methods/types to indicate **main-executor isolation**.
-
-Custom executor designators (beyond `main`) are deferred.
-
-**Semantics (summary):**
-- Calling a `@executor(main)` declaration from a context not known to be on the main executor requires an **executor hop**.
-- Executor hops are suspension points; in async contexts they require `await`.
-- In non-async contexts, hops cannot be implicit; cross-executor calls are ill‑formed in strict mode (diagnosed in permissive mode), with guidance to use explicit bridging APIs.
-
-**Rationale:**
-- Captures the highest-value use case (UI/main-thread affinity) with minimal surface area.
-- Avoids freezing a custom-executor design prematurely.
-- Matches common ecosystem expectations and existing Swift experience.
-
-**Spec impact:** Part 7 §7.4.3 defines the grammar and rules; Part 12 adds diagnostics.
+**Spec impact:** Part 7 §7.4.3 is normative.
 
 ---
 
-## D‑006: Autorelease pool draining at task suspension boundaries is required
-**Decision:** On platforms with Objective‑C autorelease pools, the ObjC 3.0 concurrency runtime must ensure that **autoreleased objects do not accumulate unboundedly across suspension points**. Concretely:
+## D‑005: Optional propagation (`T?` with postfix `?`) follows carrier rules (v1)
+**Decision:** Postfix propagation `e?` on `e : T?` is allowed **only** when the enclosing function returns an optional type.
 
-- Each time a task/job is executed or resumed on an executor, execution occurs within an implicit autorelease pool.
-- That pool is drained when the job returns to the executor (by completion or suspension).
+- In an optional-returning function, `e?` yields `T` when non-`nil`, otherwise performs `return nil;`.
+- Using `e?` in `throws` or `Result` contexts is **ill‑formed** in v1 (no implicit nil→error mapping).
 
-**Rationale:**
-- Prevents memory spikes in async-heavy code that creates autoreleased temporaries.
-- Aligns with the conceptual “runloop iteration drains the pool” model, but for executors/tasks.
+**Spec impact:** Part 6 §6.6.4 is normative.
 
-**Spec impact:** Part 7 adds a normative runtime contract for autorelease pool behavior.
+---
+
+## D‑006: Autorelease pool boundaries at suspension points (v1)
+**Decision:** On platforms with Objective‑C autorelease pools, each async **task execution slice** (from resume to the next suspension/completion) executes within an implicit autorelease pool that is drained:
+- immediately before the task suspends at an `await` that actually suspends, and
+- at task completion (normal return, throw, or cancellation unwind).
+
+Implementations may drain at additional safe points, but shall not permit unbounded pool growth across long-lived tasks that repeatedly suspend.
+
+**Spec impact:** Part 7 §7.9.4 is normative; Part 4 references this as the concurrency/memory-management contract.
+
+---
+
+## D‑007: Canonical attribute spellings are Clang-style for header interoperability (v1)
+**Decision:** Features intended to appear in public headers shall have a **canonical Clang-style attribute spelling** (`__attribute__((...)))`) so that:
+- headers remain valid in ObjC/ObjC++ translation units,
+- tooling (indexers/analyzers) can reason about semantics without macro folklore,
+- and module interface extraction can preserve intent.
+
+**Policy:**
+- The specification may present ergonomic ObjC‑surface sugar (e.g., `@resource(...)`) in examples.
+- However, the *canonical* spelling for header emission and module interfaces is the attribute form.
+- Implementations may accept both spellings in ObjC 3.0 mode.
+
+**Illustrative canonical spellings (non-exhaustive; details in Parts 6–10):**
+- Executors: `__attribute__((objc_executor(...)))` (D‑004)
+- Task creation hooks: `__attribute__((objc_task_spawn))`, `__attribute__((objc_task_detached))`, `__attribute__((objc_task_group))`
+- Resource cleanup: `__attribute__((cleanup(F)))` and/or `__attribute__((objc3_resource(close=F, invalid=...)))`
+- Ownership transfer: `__attribute__((objc_consumed))`, `__attribute__((objc_returns_owned))`, `__attribute__((objc_returns_borrowed))`
+- Borrowed relationships: `__attribute__((objc3_returns_borrowed(owner_index=N)))`
+- Performance controls: `__attribute__((objc_direct))`, `__attribute__((objc_subclassing_restricted))` (or equivalent)
+
+**Rationale:** This draft’s “borrow from LLVM/Clang” philosophy is that the front end should lean on attribute infrastructure for cross-language and tooling stability.
+
+**Spec impact:** Parts 2, 6, 8, 9, and 11 are updated to include canonical spellings and header guidance.

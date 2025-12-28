@@ -1,14 +1,15 @@
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors
-_Working draft v0.5 — last updated 2025-12-28_
+_Working draft v0.6 — last updated 2025-12-28_
 
 ## 7.0 Overview
 
+### v0.5 resolved decisions
+- Executor annotations use a canonical Clang-style spelling `__attribute__((objc_executor(...)))`.
+- Autorelease pool behavior at suspension points is normative: each task execution slice runs inside an implicit pool drained on suspend and completion.
+
+
 ### v0.4 resolved decisions
 - v1 does **not** add `task {}` keyword syntax. Task spawning is provided by the standard library and recognized by the compiler via standardized attributes.
-
-### v0.5 resolved decisions
-- Executor affinity/isolation uses standardized syntax `@executor(main)` in v1.
-- Autorelease pools are drained at task suspension boundaries by the concurrency runtime (normative contract).
 
 Objective‑C 3.0 introduces structured concurrency that is composable, auditable, and implementable.
 
@@ -64,12 +65,7 @@ await-expression:
 ```
 
 ### 7.3.2 Static semantics
-An operation that may suspend shall appear within `await`.
-
-At minimum, this includes:
-- any call to an `async` function,
-- any cross-actor access (calling an actor-isolated method or accessing actor-isolated state from outside the actor), and
-- any call/access that requires an **executor hop** due to executor isolation (e.g., calling a `@executor(main)` declaration from a non-main executor context).
+A call to an async function shall appear within `await`.
 
 ### 7.3.3 Dynamic semantics
 `await e` may suspend:
@@ -88,32 +84,41 @@ Runtime shall provide:
 - main executor
 - global executor
 
-### 7.4.3 Executor annotations (v1)
 
-#### 7.4.3.1 Syntax (normative)
-Objective‑C 3.0 v1 standardizes a single executor isolation annotation:
+### 7.4.3 Executor annotations (normative)
 
-- `@executor(main)`
+Objective‑C 3.0 defines executor affinity using a standardized attribute spelling.
 
-This annotation may be applied to:
-- function and method declarations,
-- type declarations (including `actor class`), and
-- property declarations (affecting synthesized accessors).
+#### 7.4.3.1 Canonical spelling
+Executor affinity shall be expressed using a Clang-style attribute:
 
-#### 7.4.3.2 Meaning
-A declaration annotated `@executor(main)` is **main-executor isolated**:
-- its dynamic execution shall occur on the main executor.
+- `__attribute__((objc_executor(main)))`
+- `__attribute__((objc_executor(global)))`
+- `__attribute__((objc_executor(named("..."))))`
 
-#### 7.4.3.3 Calling rules and `await`
-Calling a `@executor(main)` declaration from a context not known to already be on the main executor requires an **executor hop**.
+The attribute may be applied to:
+- functions,
+- Objective‑C methods,
+- Objective‑C types (including actor classes), establishing a default executor for isolated members unless overridden.
 
-- In an `async` context, such a hop is a potential suspension point and therefore requires `await`, even if the callee is not declared `async`.
-- In a non-`async` context, an implicit hop is not permitted in v1. Such calls are ill‑formed in strict mode and diagnosed in permissive mode, with guidance to:
-  - make the calling context `async` and use `await`, or
-  - use an explicit library bridging primitive (e.g., “run on main executor”) if synchronous behavior is required.
+#### 7.4.3.2 Static semantics
+If a declaration is annotated `objc_executor(X)`, then:
+- entering that declaration from code not already executing on executor `X` requires an executor hop,
+- and therefore must occur only in an `async` context (because hops may suspend).
 
-#### 7.4.3.4 Future design space (non-normative)
-Future revisions may extend `@executor(...)` to support custom executor designators. v1 intentionally standardizes only `main`.
+In strict concurrency checking mode, calling an executor-annotated declaration from a context that is not proven to be on that executor is ill-formed unless the call is guarded by an `await` hop.
+
+#### 7.4.3.3 Dynamic semantics (model)
+An implementation shall ensure that execution of an executor-annotated declaration occurs on the specified executor. This may be achieved by:
+- inserting an implicit hop at the call boundary, or
+- requiring the caller to perform an explicit hop API that is `await`ed.
+
+The observable effect is that executor-affine code never runs on an incorrect executor.
+
+#### 7.4.3.4 Notes
+- `main` is intended for UI-thread-affine work.
+- `global` is intended for background execution.
+- `named("...")` is for custom executors defined by the runtime/standard library.
 
 
 ---
@@ -128,6 +133,15 @@ Objective‑C 3.0 v1 does not introduce a `task { ... }` keyword expression/stat
 - diagnostics can be issued for misuse (e.g., discarding a Task handle).
 
 ### 7.5.2 Standard attributes (normative)
+
+**Canonical header spellings (Decision D‑007):**
+Implementations should provide canonical attribute spellings so task APIs can be declared in headers, e.g.:
+- `__attribute__((objc_task_spawn))`
+- `__attribute__((objc_task_detached))`
+- `__attribute__((objc_task_group))`
+
+ObjC 3.0 mode may additionally accept `@task_spawn` / `@task_detached` / `@task_group` as sugar.
+
 
 #### 7.5.2.1 `@task_spawn`
 Applied to a function/method that creates a **child task**.
@@ -181,29 +195,106 @@ In strict concurrency checking mode:
 > Note: A future revision may add `task { ... }` as sugar (possibly via macros) once patterns stabilize.
 
 
+
 ## 7.6 Cancellation
 
-- cooperative cancellation
-- propagation to child tasks
-- cancellation check function(s)
-- cancellation must still run defers/cleanups
+### 7.6.1 Model (normative)
+Cancellation in Objective‑C 3.0 is **cooperative**:
+- cancellation is a request, not a preemptive termination;
+- tasks and libraries must check for cancellation at defined points and react by returning/throwing early.
+
+Each task has a cancellation state with at least:
+- a boolean “cancelled” flag, and
+- optional implementation-defined metadata (reason, deadline, etc.).
+
+### 7.6.2 Cancellation propagation (normative)
+- Child tasks spawned via an API annotated `@task_spawn` / `objc_task_spawn` shall **inherit** the parent’s cancellation state and shall receive cancellation requests when the parent is cancelled.
+- Detached tasks spawned via `@task_detached` / `objc_task_detached` shall **not** inherit cancellation by default.
+
+Task groups (`@task_group` / `objc_task_group`) shall enforce:
+- cancellation of remaining group tasks when the group scope exits by error/throw,
+- cancellation inheritance from the creating task into tasks added to the group.
+
+### 7.6.3 Required standard library surface (abstract)
+A conforming implementation shall provide cancellation APIs equivalent in expressive power to:
+
+- **Request cancellation**
+  - `cancel(taskHandle)` and/or `Task.cancel()`.
+
+- **Query cancellation state**
+  - `Task.isCancelled` returning a boolean.
+
+- **Check and react**
+  - a function callable from `async` code that either:
+    - throws a standard cancellation error, or
+    - returns a status that can be handled by the caller.
+
+The exact names are implementation-defined, but the compiler should be able to recognize common patterns for diagnostics (Part 12).
+
+### 7.6.4 Cancellation and cleanup (normative)
+Cancellation shall not bypass cleanup:
+- `defer` actions and resource cleanups execute on cancellation-driven unwinding in the same way they execute on error unwinding (Parts 5/8).
+- ARC-managed values captured by an async frame shall be released when the frame is destroyed (Part 7.9.3).
+
+### 7.6.5 Cancellation and `await`
+An `await` point **may** be a convenient place for libraries to check cancellation, but this specification does not require that `await` implicitly throws or returns on cancellation.
+Instead, cancellation checking is defined by the standard library surface and library conventions.
+
+> Rationale: Objective‑C codebases frequently interoperate with C/dispatch APIs where implicit cancellation behavior can be surprising. Making cancellation checks explicit improves auditability.
 
 ---
 
+
 ## 7.7 Actors
 
-### 7.7.1 Actor types
+### 7.7.1 Actor declaration
+Actor types are declared using `actor`:
+
 ```objc
 actor class Name : NSObject
 @end
 ```
 
-### 7.7.2 Isolation
-- mutable state is isolated
-- cross-actor access requires await
+An actor is a reference type with **isolated mutable state**. The compiler and runtime enforce that isolated state is accessed only:
+- from code already executing on the actor’s isolation context, or
+- via an `async` hop (i.e., using `await`) that re-enters the actor.
 
-### 7.7.3 Reentrancy
-Await within actor may permit reentrancy.
+### 7.7.2 Isolation rules (normative)
+For an actor instance `a`:
+
+- Accessing an **isolated** instance member of `a` from outside the actor requires `await`.
+- Accessing **nonisolated** members is permitted from any context.
+
+By default in v1:
+- instance methods and properties of an actor are isolated unless explicitly marked nonisolated.
+
+### 7.7.3 Nonisolated members (header-facing)
+A conforming implementation shall provide a way to mark a member as nonisolated.
+
+**Canonical spelling (illustrative):**
+- `__attribute__((objc_nonisolated))` on the declaration.
+
+ObjC 3.0 mode may accept `@nonisolated` as sugar.
+
+Nonisolated members:
+- shall not access actor-isolated mutable state unless they re-enter the actor (which requires `await`).
+
+### 7.7.4 Actor executors
+Each actor has an associated executor that serializes isolated execution.
+
+- If the actor type is annotated with `__attribute__((objc_executor(X)))`, then isolated execution occurs on executor `X`.
+- Otherwise, the actor uses an implementation-defined **actor default executor** (typically a serial executor).
+
+### 7.7.5 Reentrancy
+An isolated actor method may `await`. While it is suspended, other work may execute on the actor.
+Therefore, actor code must treat each `await` as a potential reentrancy point.
+
+This draft does not (yet) define a v1 “nonreentrant” actor mode; it is a potential future extension.
+
+### 7.7.6 Cross-actor calls
+A call from outside an actor to an isolated member of that actor shall be treated as an `async` call site requiring `await`.
+
+If the member is additionally `throws`, the canonical spelling is `try await` (Part 7.9.1).
 
 ---
 
@@ -223,45 +314,49 @@ Provide `@unsafeSendable` escape hatch.
 
 ---
 
+
 ## 7.9 Interactions
 
-- `try await` composition
-- `defer` in async functions preserves semantics
-- ARC lifetimes across suspension must be preserved
-- autorelease pool behavior at suspension boundaries is specified (normative)
+### 7.9.1 `try await` composition
+When calling an `async throws` function, both effects must be handled:
+- `await` handles the async effect (may suspend),
+- `try` handles the throws effect (may throw).
 
+A conforming implementation shall accept `try await f(...)` as the canonical order.
 
-### 7.9.1 Autorelease pools at suspension boundaries (normative)
-On platforms where Objective‑C autorelease pools are supported, the concurrency runtime shall ensure that autoreleased objects do not accumulate unboundedly across suspension points.
+### 7.9.2 `defer` and scope cleanup across suspension
+Defers registered in an async function scope execute when that scope exits, even if the function has suspended and resumed multiple times.
 
-A conforming implementation shall satisfy the following contract:
+### 7.9.3 ARC lifetimes across suspension
+Objects referenced across an `await` must remain alive until no longer needed. Implementations shall retain values captured into an async frame and release them when the frame is destroyed (normal completion, throw, or cancellation unwind).
 
-- Each time an async task/job is begun or resumed on an executor, execution of that job occurs within an implicit autorelease pool.
-- That implicit autorelease pool is drained when the job yields back to the executor, whether by:
-  - completing normally,
-  - throwing, or
-  - suspending at an `await` point.
+### 7.9.4 Autorelease pools at suspension points (normative on ObjC runtimes)
+On platforms that support Objective‑C autorelease pools:
 
-This requirement may be satisfied by wrapping each executor job invocation in an `@autoreleasepool { ... }` region (or an equivalent runtime mechanism).
+- Each **task execution slice** (from a resume point until the next suspension or completion) shall execute within an **implicit autorelease pool**.
+- If an `await` suspends the current task, the implementation shall drain the implicit autorelease pool **before** the task suspends and control returns to the executor.
+- The implementation shall drain the implicit pool at task completion (normal return, thrown error, or cancellation unwind).
 
-**Note:** Explicit `@autoreleasepool { ... }` blocks inside user code remain well-defined and may be used for tighter scoping; they nest within the implicit pool.
+If an `await` completes synchronously without suspending, draining is permitted but not required.
+
+Implementations may drain at additional safe points, but shall not permit unbounded autorelease pool growth across long-lived tasks that repeatedly suspend.
 
 
 ---
 
 ## 7.10 Diagnostics
 Minimum diagnostics:
-- await outside async (error)
+- `await` outside async (error)
 - calling async without await (error)
+- calling executor-annotated declarations from the wrong executor without an async hop (error in strict concurrency mode)
 - cross-actor isolated access without await (error in strict)
-- `@executor(main)` isolated access without required `await` hop (error in strict concurrency mode)
-- `@executor(main)` call requiring a hop from a non-async context (diagnose; strict mode error)
-- sendable violations in strict concurrency mode (error)
+- Sendable violations in strict concurrency mode (error)
+- unused task handles returned from `@task_spawn` APIs (warning in strict concurrency mode)
 
----
+
 
 ## 7.11 Open issues
-1. (Resolved in v0.5) v1 uses `@executor(main)`; custom executors deferred.
+1. (Resolved in v0.5) Executor annotations use `__attribute__((objc_executor(...)))` canonical spelling.
 2. (Resolved in v0.4) v1 is library-defined for spawning; `task {}` keyword syntax is deferred (possible macro sugar later).
-3. (Resolved in v0.5) Autorelease pools are drained at job boundaries (resume/suspend/complete).
+3. (Resolved in v0.5) Implicit per-slice autorelease pools drained on suspend and completion are normative.
 4. Extent of static race checking vs marker-based checking.

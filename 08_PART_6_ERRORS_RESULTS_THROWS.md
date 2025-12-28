@@ -1,14 +1,18 @@
 # Part 6 — Errors: Result, throws, try, and Propagation
-_Working draft v0.5 — last updated 2025-12-28_
+_Working draft v0.6 — last updated 2025-12-28_
 
 ## 6.0 Overview
+
+### v0.5 resolved decisions
+- Optional propagation `e?` for `e : T?` is valid **only** in optional-returning functions (carrier-preserving). It is ill‑formed in `throws` or `Result` contexts (no implicit nil→error mapping).
+
+### v0.6 clarifications
+- Canonical header-facing spellings for NSError and status-code bridging are described in §§6.9–6.10 (Decision D‑007).
+- `try?` discards errors; in strict modes discarding should be explicit and warned.
 
 ### v0.4 resolved decisions
 - `throws` is **untyped** in v1: thrown values are `id<Error>`.
 - Typed throws syntax `throws(E)` is reserved for future extension and is not part of v1 grammar.
-
-### v0.5 resolved decisions
-- Optional propagation (`e?` where `e` is `T?`) **only** propagates `nil` through optional-returning functions in v1; it does not implicitly throw or return `Err`.
 
 Objective‑C 3.0 standardizes a modern, explicit error model that can be used in new code while interoperating with existing Cocoa and system APIs.
 
@@ -80,7 +84,6 @@ throws-specifier:
     'throws'
 ```
 
-The optional type parameter is a *typed throws* extension; see §6.3.5.
 
 ### 6.3.2 Semantics
 A `throws` function may either:
@@ -198,13 +201,16 @@ Mapping:
 - `throws` → `throw err;`
 - otherwise ill-formed.
 
-### 6.6.4 Semantics for optionals (v1)
-If `e` has type `T?` then `e?` yields `T` if nonnull, else early-exits **by returning `nil`** from the enclosing function.
+### 6.6.4 Semantics for optionals
+If `e` has type `T?` then `e?` yields `T` if nonnull, else early-exits.
 
-**Restriction (normative):** `e?` where `e` is an optional is well‑formed only if the immediately enclosing function/method’s return type is an optional type compatible with `T?` (i.e., it can return `nil`).
+Carrier rule (normative):
+- `e?` is permitted only if the innermost enclosing function’s return type is an optional type.
+- In that case, if `e` is `nil`, execution performs `return nil;` from that function.
+- Otherwise `e?` yields the unwrapped `T`.
 
-If the enclosing function/method is `throws` or returns `Result<..., ...>`, optional propagation using `?` is **ill‑formed** in v1. Use `guard let` / `if let` to unwrap and then `throw` or `return Err(...)` explicitly.
-
+If the enclosing function is `throws` or returns `Result<…>`, use of `e?` is **ill‑formed** in v1.
+Convert explicitly using `guard let … else { throw … }` or an explicit helper such as `ok_or(...)`.
 
 ### 6.6.5 Diagnostics
 - Using `?` outside the follow-token restriction is ill-formed (fix-it: parenthesize).
@@ -255,6 +261,15 @@ Result<T, E> = Ok(T) | Err(E)
 - Construction and inspection shall be possible without allocation where possible.
 - `Result` participates in pattern matching (Part 5) and propagation (`?`).
 
+
+### 6.8.3 Pattern matching
+`Result` participates in pattern matching (Part 5) as a closed two-case set:
+- `.Ok(payload)`
+- `.Err(error)`
+
+In strict mode, `match` over a `Result` shall be exhaustive unless a `default` case is present (Part 5).
+
+
 ---
 
 ## 6.9 Interoperability: NSError-out-parameter conventions
@@ -265,8 +280,18 @@ Eligible if:
 - annotated as error-out parameter (attribute or convention),
 - return type is `BOOL` or object pointer.
 
-### 6.9.2 Standard attribute
-Provisional attribute: `@nserror`.
+### 6.9.2 Standard attribute (canonical spelling)
+A conforming implementation shall provide a way to mark an error-out parameter.
+
+**Canonical header spelling (illustrative):**
+- `__attribute__((objc_error_out))` applied to the error-out parameter.
+
+Example:
+```objc
+BOOL doThing(int x, NSError ** __attribute__((objc_error_out)) error);
+```
+
+If the attribute is not present, an implementation may still recognize the NSError convention by type and position (e.g., a final parameter of type `NSError **`), but the attribute is the portable, explicit mechanism that module interfaces shall preserve.
 
 ### 6.9.3 `try` lowering for NSError-bridged calls
 Compiler shall:
@@ -279,8 +304,21 @@ Compiler shall:
 
 ## 6.10 Interoperability: return-code APIs
 
-### 6.10.1 Status attribute
-Provisional attribute: `@status_code(success: constant, error_type: Type, mapping: Function)`.
+### 6.10.1 Status attribute (canonical spelling)
+A conforming implementation shall provide a way to describe a status-code API’s success condition and mapping.
+
+**Canonical header spelling (illustrative):**
+- `__attribute__((objc_status_code(success = <integer-literal>)))` applied to the function.
+- optionally `__attribute__((objc_status_to_error(<mapping-function>)))` to specify how to produce an `id<Error>`.
+
+Example:
+```c
+int open_thing(int flags)
+  __attribute__((objc_status_code(success = 0)))
+  __attribute__((objc_status_to_error(OpenThingErrorFromStatus)));
+```
+
+> Note: Exact spelling is a toolchain choice, but a canonical attribute mechanism is required (Decision D‑007).
 
 ### 6.10.2 Bridging
 - Under `try`: throw on non-success.
@@ -292,7 +330,7 @@ Provisional attribute: `@status_code(success: constant, error_type: Type, mappin
 Minimum diagnostics:
 - calling throwing function without `try` (error),
 - `throw` outside throws (error),
-- misuse of postfix `?` (error with fix-it),
+- misuse of postfix `?` (error with fix-it), including using `T?` propagation in `throws`/`Result` contexts,
 - `try!` without proof (warning/error policy in strict).
 
 ---
@@ -300,14 +338,10 @@ Minimum diagnostics:
 ## 6.12 Open issues
 1. Exact spelling of attributes and how they map to existing toolchains.
 2. (Resolved in v0.4) v1 is untyped; typed throws is deferred.
-3. (Resolved in v0.5) Optional propagation does not map `nil` to errors in v1; explicit unwrap + throw/Err is required.
+3. (Resolved in v0.5) v1 forbids implicit nil→error mapping; `T?` propagation with postfix `?` is allowed only in optional-returning functions.
 4. Whether to extend postfix `?` beyond current parsing restriction.
 
 ## 6.13 Future extensions (non-normative)
-
-### 6.13.0 Nil-to-error mapping sugar
-A future revision may add explicit syntax to map `nil` to an error in a concise way (e.g., `x ?? throw e`, `x ?! e`). This is intentionally excluded from v1.
-
 
 ### 6.13.1 Typed throws
 A future revision may introduce typed throws syntax (e.g., `throws(E)`) to restrict the set of throwable error types.
