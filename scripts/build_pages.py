@@ -14,7 +14,7 @@ EXCLUDE = {"README.md"}
 
 def parse_toc(path: Path) -> list[str]:
     text = path.read_text(encoding="utf-8")
-    names = re.findall(r"(?m)^- \*\*([A-Za-z0-9_.-]+\.md)\*\*", text)
+    names = re.findall(r"(?m)^-\s+.*?([A-Za-z0-9_.-]+\.md)", text)
     if not names:
         raise RuntimeError("No .md entries found in TABLE_OF_CONTENTS.md")
 
@@ -30,7 +30,7 @@ def parse_toc(path: Path) -> list[str]:
     return names
 
 
-def validate_files(names: list[str]) -> list[Path]:
+def validate_files(names: list[str], root: Path) -> list[Path]:
     if "TABLE_OF_CONTENTS.md" not in names:
         raise RuntimeError("TABLE_OF_CONTENTS.md is missing from the file list.")
     if names[0] != "TABLE_OF_CONTENTS.md":
@@ -39,11 +39,11 @@ def validate_files(names: list[str]) -> list[Path]:
         raise RuntimeError("README.md must not be included in the stitched output.")
 
     ordered = ["TABLE_OF_CONTENTS.md"] + [name for name in names if name != "TABLE_OF_CONTENTS.md"]
-    missing = [name for name in ordered if not (ROOT / name).is_file()]
+    missing = [name for name in ordered if not (root / name).is_file()]
     if missing:
         raise RuntimeError(f"Missing input files: {', '.join(missing)}")
 
-    return [ROOT / name for name in ordered]
+    return [root / name for name in ordered]
 
 
 def stitch(paths: list[Path]) -> str:
@@ -56,9 +56,13 @@ def stitch(paths: list[Path]) -> str:
     return "\n\n---\n\n".join(sections) + "\n"
 
 
-def main() -> None:
-    names = parse_toc(TOC_PATH)
-    paths = validate_files(names)
+def build_pages(root: Path) -> tuple[Path, int]:
+    toc_path = root / "TABLE_OF_CONTENTS.md"
+    output_dir = root / "site"
+    output_path = output_dir / "index.md"
+
+    names = parse_toc(toc_path)
+    paths = validate_files(names, root)
 
     front_matter = "\n".join(
         [
@@ -71,10 +75,15 @@ def main() -> None:
     )
 
     output = front_matter + stitch(paths)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(output, encoding="utf-8")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(output, encoding="utf-8")
 
-    print(f"Wrote {OUTPUT_PATH} ({len(paths)} documents).")
+    return output_path, len(paths)
+
+
+def main() -> None:
+    output_path, count = build_pages(ROOT)
+    print(f"Wrote {output_path} ({count} documents).")
 
 
 if __name__ == "__main__":
