@@ -1,5 +1,5 @@
 # Part 2 — Modules, Namespacing, and API Surfaces
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 2.1 Purpose
 This part defines:
@@ -9,7 +9,10 @@ This part defines:
 - API surface contracts: visibility, stability, and availability,
 - requirements for interface extraction/emission so ObjC 3.0 semantics survive separate compilation.
 
-This part is closely related to **01B** (canonical spellings for emitted interfaces) and **01C** (separate compilation and lowering contracts).
+This part is closely related to:
+- **01B** (canonical spellings for emitted interfaces),
+- **01C** (separate compilation and lowering contracts), and
+- **01D** (the normative checklist of what must be preserved in module metadata across boundaries).
 
 ## 2.2 Modules
 
@@ -81,6 +84,11 @@ If no matching declaration exists, the program is ill-formed.
 If a declaration is referenced using a module-qualified name in an emitted textual interface, the emitter shall preserve the module-qualified form **or** emit an equivalent unqualified name together with imports that make it unambiguous.
 
 ## 2.4 API surface contracts
+
+### 2.4.0 Cross-module semantic preservation (normative)
+A module’s public API contract includes not only names and types, but also ObjC 3.0 semantics that affect call legality and call lowering.
+The minimum required set is enumerated in **01D.3.1 Table A**.
+
 
 ### 2.4.1 Public vs SPI vs private (normative)
 A module’s API surface is partitioned into (at minimum):

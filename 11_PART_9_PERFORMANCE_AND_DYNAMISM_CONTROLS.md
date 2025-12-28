@@ -1,5 +1,5 @@
 # Part 9 — Performance and Dynamism Controls
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 9.1 Purpose
 Objective‑C’s dynamic dispatch is a strength, but “open world” dynamism can inhibit optimization and complicate reasoning about safety.
@@ -44,7 +44,7 @@ Calling model:
 
 ### 9.2.4 Separate compilation notes (normative)
 Because direct methods change call legality and dispatch surfaces, the `objc_direct` attribute shall be:
-- recorded in module metadata, and
+- recorded in module metadata (see 01D.3.1 Table A), and
 - preserved in emitted interfaces.
 
 Effect/attribute mismatches across modules are ill-formed (01C.2).

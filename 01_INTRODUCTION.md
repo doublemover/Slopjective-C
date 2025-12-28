@@ -86,3 +86,10 @@ This pass tightens the specification specifically for **separate compilation** a
 - Parts 6/7/9/11/12 are updated to cross-reference 01B/01C where semantics depend on lowering choices.
 
 This is a deliberate step toward a spec that can be implemented in Clang/LLVM with predictable behavior across modules.
+
+## v0.9 pass focus
+This pass makes the draft more “engineer-ready” by tightening the boundary between **source semantics** and **cross-module implementation reality**:
+
+- Adds **01D_MODULE_METADATA_AND_ABI_TABLES.md**: explicit tables for what must be preserved in module metadata and emitted interfaces, and which features are ABI-affecting.
+- Tightens the meaning of `await`: it is required for **any potentially suspending operation**, including cross-executor and cross-actor access (even when the callee is not explicitly `async`), aligning the surface model with implementable executor/actor hops.
+- Expands 01C with more concrete lowering obligations where separate compilation would otherwise be ambiguous.

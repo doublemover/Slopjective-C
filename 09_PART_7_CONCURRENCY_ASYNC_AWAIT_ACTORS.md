@@ -1,7 +1,12 @@
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 7.0 Overview
+
+### v0.9 resolved decisions
+- `await` is required for any potentially suspending operation, including cross-executor and cross-actor entry (Decision D‑011).
+- Required module metadata for concurrency/isolation is enumerated in 01D.
+
 
 ### v0.8 resolved decisions
 - Canonical attribute spellings for concurrency/executor features are defined in 01B.
@@ -32,10 +37,12 @@ This part defines:
 ### 7.1.1 New keywords
 In ObjC 3.0 mode, the following are reserved by this part:
 
-- `async`, `await`, `actor`
+- `async`, `await`, `actor`, `nonisolated`
 
-### 7.1.2 Effects
+### 7.1.2 Effects and isolation
 `async` and `throws` are effects that become part of a function’s type.
+
+Executor affinity (`objc_executor(...)`) and actor isolation are **isolation annotations** that may cause a call to **suspend at the call site** even when the callee is not explicitly `async` (Decision D‑011).
 
 ---
 
@@ -52,7 +59,7 @@ function-effect-specifier:
 
 ### 7.2.2 Static semantics
 - `await` is permitted only in async contexts.
-- calling an async function requires `await`.
+- Any **potentially suspending** operation (defined in §7.3.2) shall appear within an `await` expression.
 
 ### 7.2.3 Block types
 Async is part of a block’s type:
@@ -69,13 +76,26 @@ await-expression:
     'await' expression
 ```
 
-### 7.3.2 Static semantics
-A call to an async function shall appear within `await`.
+### 7.3.2 Static semantics (normative)
+A translation unit is ill-formed if it contains a **potentially suspending operation** that is not within the operand of an `await` expression.
+
+The following are potentially suspending operations:
+1. A call to a declaration whose type includes the `async` effect.
+2. A cross-executor entry into a declaration annotated `objc_executor(X)` when the compiler cannot prove the current executor is `X`.
+3. A cross-actor entry to an actor-isolated member when the compiler cannot prove it is already executing on that actor’s executor.
+4. A task-join / task-group operation that is specified by the standard library contract to be `async`.
+
+`await` applied to an expression that is not potentially suspending is permitted, but a conforming implementation should warn in strict modes (“unnecessary await”).
 
 ### 7.3.3 Dynamic semantics
 `await e` may suspend:
 - suspension returns control to the current executor,
 - later resumes on an executor consistent with isolation rules.
+
+In particular, `await` may represent:
+- suspending to call an `async` function,
+- an executor hop to satisfy `objc_executor(...)`,
+- or scheduling onto an actor’s serial executor.
 
 ---
 
@@ -106,19 +126,18 @@ The attribute may be applied to:
 - Objective‑C methods,
 - Objective‑C types (including actor classes), establishing a default executor for isolated members unless overridden.
 
-#### 7.4.3.2 Static semantics
-If a declaration is annotated `objc_executor(X)`, then:
-- entering that declaration from code not already executing on executor `X` requires an executor hop,
-- and therefore must occur only in an `async` context (because hops may suspend).
+#### 7.4.3.2 Static semantics (normative)
+If a declaration is annotated `objc_executor(X)`, then entering that declaration from a context not proven to already be on executor `X` is a **potentially suspending operation** (§7.3.2) and therefore requires `await`.
 
-In strict concurrency checking mode, calling an executor-annotated declaration from a context that is not proven to be on that executor is ill-formed unless the call is guarded by an `await` hop.
+In strict concurrency checking mode, the compiler shall reject a call to an executor-annotated declaration unless either:
+- the call is within an `await` operand, or
+- the compiler can prove the current execution is already on executor `X`.
 
 #### 7.4.3.3 Dynamic semantics (model)
-An implementation shall ensure that execution of an executor-annotated declaration occurs on the specified executor. This may be achieved by:
-- inserting an implicit hop at the call boundary, or
-- requiring the caller to perform an explicit hop API that is `await`ed.
+An implementation shall ensure that execution of an executor-annotated declaration occurs on the specified executor.
 
-The observable effect is that executor-affine code never runs on an incorrect executor.
+When a call is type-checked as crossing an executor boundary, the implementation may insert an implicit hop **provided the call site is explicitly marked with `await`**.
+The observable effect is that executor-affine code never runs on an incorrect executor, and the call is treated as potentially suspending.
 
 #### 7.4.3.4 Notes
 - `main` is intended for UI-thread-affine work.
@@ -209,11 +228,58 @@ actor class Name : NSObject
 ```
 
 ### 7.7.2 Isolation
-- mutable state is isolated
-- cross-actor access requires await
+Actors provide data-race safety by associating each actor instance with a **serial executor** and treating the actor’s isolated mutable state as accessible only while running on that executor.
+
+Informally: *outside code must hop onto the actor to touch its state.*
+
+### 7.7.2.1 Actor-isolated members (normative)
+Unless otherwise specified, instance methods and instance properties of an `actor class` are **actor-isolated**.
+
+A reference to an actor-isolated member from outside the actor’s isolation domain is a **potentially suspending operation** (§7.3.2) and therefore requires `await`.
+
+Example (illustrative):
+```objc
+actor class Counter : NSObject
+@property (atomic) NSInteger value;
+- (void)increment;
+@end
+
+async void f(Counter *c) {
+  await [c increment];         // may hop to c's executor
+  NSInteger v = await c.value; // may hop; read is isolated
+}
+```
+
+Within actor-isolated code already executing on the actor’s executor, `await` is not required for isolated member access unless the member is explicitly `async`.
+
+
 
 ### 7.7.3 Reentrancy
-Await within actor may permit reentrancy.
+An `await` inside actor-isolated code may suspend the current task while still preserving the actor’s serial executor.
+While suspended, other enqueued work on the same actor may run (i.e., **reentrancy** is possible).
+
+Guidance (normative intent):
+- Actor-isolated invariants must hold across `await` points.
+- If code requires a non-reentrant critical region, it should avoid `await` while holding that invariant, or use explicit design patterns (e.g., copy state to locals before awaiting).
+
+
+### 7.7.4 Nonisolated members (normative)
+A member may be declared **nonisolated** to indicate it is safe to call without actor isolation.
+
+Canonical spelling (attribute):
+```objc
+actor class Logger : NSObject
+- (void)log:(NSString *)message __attribute__((objc_nonisolated));
+@end
+```
+
+Rules:
+- A `nonisolated` member shall not access actor-isolated mutable state without an explicit hop.
+- Parameters and return types of `nonisolated` members that cross concurrency domains should satisfy Sendable-like checking in strict mode.
+
+> Note: Toolchains may additionally accept a contextual keyword spelling (`nonisolated`) as sugar, but emitted interfaces should use the canonical attribute spelling (01B.3.4).
+
+
 
 ---
 
@@ -229,7 +295,7 @@ Await within actor may permit reentrancy.
 - captures into concurrent tasks
 - cross-actor arguments/returns
 
-Provide `@unsafeSendable` escape hatch.
+Provide `__attribute__((objc_unsafe_sendable))` escape hatch (01B.3.3).
 
 ---
 
@@ -268,7 +334,7 @@ Implementations may drain at additional safe points, but shall not permit unboun
 ## 7.12 Lowering, ABI, and runtime hooks (normative for implementations)
 
 ### 7.12.1 Separate compilation requirements
-Conforming implementations shall satisfy the separate compilation requirements in 01C.2 for all concurrency-relevant declarations, including:
+Conforming implementations shall satisfy the separate compilation requirements in 01C.2 and the required metadata set in 01D for all concurrency-relevant declarations, including:
 - `async` effects,
 - executor annotations (`objc_executor(...)`),
 - actor isolation metadata,
@@ -303,8 +369,8 @@ Autorelease pool boundaries at suspension points are required by Decision D‑00
 Minimum diagnostics:
 - `await` outside async (error)
 - calling async without await (error)
-- calling executor-annotated declarations from the wrong executor without an async hop (error in strict concurrency mode)
-- cross-actor isolated access without await (error in strict)
+- crossing an executor boundary into `objc_executor(X)` without `await` when a hop may be required (error in strict concurrency mode)
+- cross-actor isolated access without `await` when a hop may be required (error in strict)
 - Sendable violations in strict concurrency mode (error)
 - unused task handles returned from `__attribute__((objc_task_spawn))` APIs (warning in strict concurrency mode)
 

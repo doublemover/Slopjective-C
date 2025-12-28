@@ -1,5 +1,5 @@
 # Part 11 — Interoperability: C, C++, and Swift
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 11.1 Purpose
 Objective‑C’s success depends on interoperability:
@@ -9,7 +9,7 @@ Objective‑C’s success depends on interoperability:
 
 This part defines interoperability expectations so ObjC 3.0 features can be adopted without breaking the ecosystem.
 
-This part is intentionally conservative about ABI: where a feature affects ABI or lowering, it is cross-referenced to **01C**.
+This part is intentionally conservative about ABI: where a feature affects ABI or lowering, it is cross-referenced to **01C** and summarized in **01D**.
 
 ## 11.2 C interoperability
 

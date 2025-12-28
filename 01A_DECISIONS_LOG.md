@@ -1,4 +1,4 @@
-# Objective‑C 3.0 — Design Decisions Log (v0.8)
+# Objective‑C 3.0 — Design Decisions Log (v0.9)
 _Last updated: 2025-12-28_
 
 This log captures explicit “ship/no‑ship” decisions made to keep Objective‑C 3.0 **ambitious but implementable** (especially under separate compilation).
@@ -129,3 +129,30 @@ Sugar spellings (macros, `@`-directives, alternate attribute syntaxes) may exist
 **Rationale:** This is the most direct path to implement structured `async/await` in LLVM while preserving ARC and Objective‑C runtime behavior.
 
 **Spec impact:** 01C and Part 7.
+
+
+---
+
+## D‑011: `await` is required for any potentially suspending operation (v1)
+**Decision:** In v1, `await` is not restricted to “calling explicitly-async functions.”  
+It is required for **any operation that may suspend**, including:
+
+- calls to `async` functions,
+- cross-executor entry into `objc_executor(X)` declarations when not proven already on `X`,
+- cross-actor access to actor-isolated members when not already on the actor’s executor,
+- joining tasks / iterating task-group results where suspension may occur.
+
+`await` remains permitted only in `async` contexts.
+
+**Rationale:** Executor and actor isolation are implemented by *hops* that may suspend even when the callee’s body is “logically synchronous.” Requiring `await` keeps suspension explicit at the call site while preserving ergonomic isolation.
+
+**Spec impact:** Part 7, 01C, 01D.
+
+---
+
+## D‑012: Required module metadata set is normative (v1)
+**Decision:** For ObjC 3.0 semantics to survive separate compilation, the required information enumerated in **01D** is normative: a conforming toolchain shall preserve that information in module metadata and in emitted textual interfaces.
+
+**Rationale:** Without an explicit checklist, toolchains drift into “works in a single TU” but fails at module boundaries. 01D makes the “separate compilation contract” testable.
+
+**Spec impact:** 01C, 01D, Part 2, Part 12.

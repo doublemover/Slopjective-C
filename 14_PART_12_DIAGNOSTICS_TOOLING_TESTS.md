@@ -1,5 +1,5 @@
 # Part 12 — Diagnostics, Tooling, and Test Suites
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 12.1 Purpose
 Objective‑C 3.0 treats tooling requirements as part of conformance:
@@ -11,6 +11,7 @@ Objective‑C 3.0 treats tooling requirements as part of conformance:
 This part is cross-cutting and references:
 - **01B** for canonical spellings and interface emission requirements,
 - **01C** for separate compilation and lowering contracts.
+- **01D** for the normative checklist of required module metadata and ABI boundaries.
 
 ## 12.2 Diagnostic principles (normative)
 A conforming implementation shall provide diagnostics that:
@@ -35,12 +36,14 @@ A conforming implementation shall provide diagnostics that:
 - Using postfix propagation `e?` expecting it to map to `throws`/`Result` (error; explain “carrier preserving” rule).
 
 ### 12.3.3 Concurrency (`async/await`, executors, actors)
-- Calling an `async` function without `await` where required by grammar/semantics (error).
+- Any potentially suspending operation without `await` (error), including calling an `async` function and crossing executor/actor isolation boundaries (Part 7 / D‑011).
 - Calling into an `objc_executor(X)` declaration from a different executor without an `await` hop (strict concurrency: error; permissive: warning).
 - Capturing non-Sendable-like values into a task-spawned async closure (strict concurrency: error; permissive: warning).
-- Actor-isolated member access from outside the actor without an `await`ed hop (strict concurrency: error).
+- Actor-isolated member access from outside the actor without `await` when a hop may be required (strict concurrency: error).
+- `await` applied to an expression that cannot suspend (strict: warning) (diagnostic: “unnecessary await”).
 
 ### 12.3.4 Modules and interface emission
+- Missing required semantic metadata on imported declarations (effects/isolation/directness): error in strict modes; see 01D.3.1 Table A.
 - Using a module-qualified name with a non-imported module: error with fix-it to add `@import`.
 - Importing an API through a mechanism that loses effects/attributes (e.g., textual header without metadata) when strictness requires them: warning with suggestion to enable modules/interface emission.
 - Emitted interface does not use canonical spellings from 01B: tooling warning; in “interface verification” mode, error.
@@ -80,6 +83,7 @@ A conforming implementation shall ship or publish a test suite that covers at le
 - Module-qualified name parsing (`@A.B.C`).
 
 ### 12.5.2 Type system and diagnostics
+- Module metadata preservation tests for each Table A item in 01D (import module; verify semantics survive; verify mismatch diagnostics).
 - Strict vs permissive nullability behavior.
 - Optional send restrictions (reference-only).
 - Postfix propagation carrier-preserving rules.
@@ -92,7 +96,8 @@ A conforming implementation shall ship or publish a test suite that covers at le
 
 ### 12.5.4 Runtime contracts
 - Autorelease pool draining at suspension points (Objective‑C runtimes) (D‑006 / 01C.7).
-- Executor hops preserve ordering and do not deadlock in basic scenarios.
+- Executor/actor hops preserve ordering and do not deadlock in basic scenarios.
+- Calling executor-annotated or actor-isolated *synchronous* members from outside requires `await` and schedules onto the correct executor (D‑011).
 
 ## 12.6 Debuggability requirements (minimum)
 For features like macros and async:

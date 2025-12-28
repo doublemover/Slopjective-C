@@ -10,6 +10,7 @@ Each part is a separate Markdown file intended to be read independently, but the
 - **01A_DECISIONS_LOG.md** — Explicit design decisions (ship/no‑ship) made to keep v1 implementable
 - **01B_ATTRIBUTE_AND_SYNTAX_CATALOG.md** — Canonical spellings for pragmas/attributes and module-interface emission requirements
 - **01C_LOWERING_AND_RUNTIME_CONTRACTS.md** — Implementation contracts for lowering, ABI stability, and runtime hooks
+- **01D_MODULE_METADATA_AND_ABI_TABLES.md** — Normative tables for required module metadata and ABI boundaries (implementer checklist)
 
 ## Parts
 - **02_PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md** — Baseline Objective‑C (as implemented by Clang) and the normative reference model used by this draft
@@ -40,3 +41,4 @@ This draft is ambitious but implementable:
 ## Pass notes
 - **v0.5:** locked major decisions for optionals/errors/concurrency (D‑001…D‑006).
 - **v0.8:** adds canonical surface spellings (01B) and a lowering/ABI/runtime contract (01C), and begins tightening ABI-impacting features for separate compilation.
+- **v0.9:** adds explicit module-metadata/ABI boundary tables (01D) and tightens `await` requirements for all potentially-suspending operations across executors/actors.

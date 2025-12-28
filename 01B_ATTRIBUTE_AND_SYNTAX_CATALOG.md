@@ -1,5 +1,5 @@
 # Objective‑C 3.0 — Attribute and Syntax Catalog
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 01B.0 Purpose
 Objective‑C 3.0 introduces new language **effects**, **annotations**, and a small amount of **surface syntax**.
@@ -47,6 +47,7 @@ Implementations may treat the following as aliases with identical semantics:
 - `#pragma clang assume_nonnull begin/end`
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
+
 ## 01B.3 Concurrency and executors
 
 ### 01B.3.1 Executor affinity annotation (canonical)
@@ -58,7 +59,7 @@ __attribute__((objc_executor(global)))
 __attribute__((objc_executor(named("com.example.myexecutor"))))
 ```
 
-Semantics are defined in Part 7.
+Semantics are defined in Part 7 (§7.4).
 
 ### 01B.3.2 Task-spawn recognition attributes (canonical)
 The compiler recognizes standard-library task entry points via attributes:
@@ -72,6 +73,40 @@ __attribute__((objc_task_group))
 Semantics are defined in Part 7 (§7.5).
 
 > Note: These attributes are intended to attach to **functions/methods** that take an `async` block/callback and create tasks/groups, not to arbitrary user functions.
+
+### 01B.3.3 Unsafe Sendable escape hatch (canonical)
+For strict concurrency checking, implementations shall recognize an explicit escape hatch that marks a type as “Sendable-like” by programmer promise, even if the compiler cannot prove it.
+
+Canonical attribute:
+
+```c
+__attribute__((objc_unsafe_sendable))
+```
+
+This attribute may be applied to:
+- Objective‑C interface declarations (`@interface` / `@implementation`) to promise instances are safe to transfer across concurrency domains, and/or
+- specific typedefs or wrapper types used for cross-task messaging.
+
+Semantics are defined in Part 7 (§7.8).
+
+> Toolchains may also provide sugar spellings (e.g., `@unsafeSendable`), but emitted interfaces must use the canonical attribute.
+
+### 01B.3.4 Actor isolation modifier: nonisolated (canonical)
+For actor types, implementations shall support a way to mark specific members as **nonisolated**.
+
+Canonical attribute:
+
+```c
+__attribute__((objc_nonisolated))
+```
+
+This attribute may be applied to:
+- Objective‑C methods and properties declared within an `actor class`.
+
+Semantics are defined in Part 7 (§7.7.4).
+
+> Toolchains may additionally support a contextual keyword spelling (`nonisolated`) as sugar, but emitted interfaces should preserve semantics and may prefer the canonical attribute spelling.
+
 
 ## 01B.4 Errors
 
@@ -146,7 +181,7 @@ If an implementation provides any facility that emits a textual interface for a 
 ## 01B.8 Reserved tokens
 Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 
-- `async`, `await`, `actor`
+- `async`, `await`, `actor`, `nonisolated`
 - `throws`, `try`, `throw`, `do`, `catch`
 - `defer`, `guard`, `match`, `case`
 - `let`, `var`

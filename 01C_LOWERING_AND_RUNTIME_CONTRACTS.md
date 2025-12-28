@@ -1,5 +1,5 @@
 # Objective‑C 3.0 — Lowering, ABI, and Runtime Contracts
-_Working draft v0.8 — last updated 2025-12-28_
+_Working draft v0.9 — last updated 2025-12-28_
 
 ## 01C.0 Scope and audience
 This document is primarily **normative for implementations** (compiler + runtime + standard library).
@@ -17,14 +17,26 @@ Where this document provides “canonical lowering” patterns, those are:
 ## 01C.2 Separate compilation requirements (normative)
 A conforming implementation shall ensure:
 
-1. **Effect consistency is recorded in module metadata.**  
-   If a declaration is imported from a module, its `async`/`throws` effects and any relevant attributes (e.g., executor affinity) shall be part of the imported type information.
+1. **Effect and isolation consistency is recorded in module metadata.**  
+   If a declaration is imported from a module, its:
+   - `async`/`throws` effects,
+   - executor affinity (`objc_executor(...)`),
+   - actor isolation (actor type + isolated/nonisolated members), and
+   - any dispatch-affecting attributes (`objc_direct`, `objc_sealed`, etc.)
+   shall be part of the imported type information.
+
+   The minimum required set is enumerated normatively in **01D_MODULE_METADATA_AND_ABI_TABLES.md**.
 
 2. **Mismatched redeclarations are diagnosed.**  
    Redeclaring an imported function/method with a different effect set or incompatible lowering-affecting attributes is ill-formed.
 
 3. **Interface emission is semantics-preserving.**  
    If a textual module interface is emitted, it shall preserve effects and attributes (see 01B.7).
+
+## 01C.2.1 Required module metadata (normative)
+A conforming implementation shall preserve in module metadata and interface emission the items listed in **01D.3.1 Table A**.
+
+This requirement is intentionally testable: if importing a module can change whether a call requires `try`/`await`, or can change dispatch legality (`objc_direct`), the implementation is non-conforming.
 
 ## 01C.3 Canonical lowering patterns
 
@@ -91,6 +103,19 @@ For Objective‑C methods, the same “trailing error-out parameter” approach 
 The language surface does not expose that parameter; it is introduced/consumed by the compiler as part of the `throws` effect.
 
 ### 01C.4.3 Lowering of `try` (recommended)
+
+### 01C.4.4 Objective‑C selectors vs ABI signatures (normative intent)
+For Objective‑C methods, the `throws` effect is **not** part of the selector spelling. The selector used for lookup remains the source-level selector.
+
+However, the *call ABI* of the method’s implementation may include the canonical trailing error-out parameter described in 01C.4.1.
+
+A conforming implementation shall ensure that:
+- when a call site is type-checked as calling a `throws` method, the generated call passes the error-out parameter in the canonical position required by that implementation’s ABI; and
+- when forming or calling an `IMP` for a `throws` method (e.g., via `methodForSelector:`), the compiler uses a function pointer type whose parameter list includes the error-out parameter.
+
+**Reflection note (non-normative):** baseline Objective‑C runtime type-encoding strings do not represent `throws`. This draft does not require extending the runtime type encoding in v1. Toolchains may provide extended metadata for reflective invocation as an extension.
+
+
 A `try` call should lower to:
 - allocate a local `id<Error> err = nil;`
 - perform the call with `&err`
@@ -126,6 +151,30 @@ Implementations should provide (directly or via the standard library) a primitiv
 - `await ExecutorHop(X)`
 
 so that the compiler can lower hops in a uniform way.
+
+
+### 01C.5.4 Call-site lowering for isolation boundaries (normative intent)
+Part 7 defines `await` as the marker for **potential suspension** (Decision D‑011), not merely “calling explicitly-async functions.”
+
+A conforming implementation shall treat the following as potentially-suspending at call sites when the relevant metadata indicates an isolation boundary is being crossed:
+
+- entering an `objc_executor(X)` declaration from code not proven to already be on executor `X`;
+- entering an actor-isolated member from outside that actor’s executor.
+
+**Recommended lowering pattern (informative):**
+1. If already on the required executor, call directly.
+2. Otherwise:
+   - suspend the current task,
+   - enqueue the continuation onto the required executor (or actor executor),
+   - resume and perform the call,
+   - then continue.
+
+This may be implemented either as:
+- an implicit compiler-inserted hop around the call (still requiring `await` in the source), or
+- a lowering through an explicit hop primitive plus a direct call.
+
+The observable requirement is: the call **may suspend**, and the work executes on the correct executor.
+
 
 ## 01C.6 Actors: runtime representation and dispatch
 
