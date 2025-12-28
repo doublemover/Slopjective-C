@@ -10,6 +10,7 @@
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "lint:md:all": "npm run build:spec && npm run lint:md",
     "format:md": "prettier --write \"**/*.md\"",
-    "check:md": "prettier --check \"**/*.md\""
+    "check:md": "prettier --check \"**/*.md\"",
+    "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
