@@ -2,6 +2,48 @@
 
 This repo is spec-first. Keep contributions small, explicit, and testable.
 
+## ObjC3C refactor workflow and PR slicing policy
+
+Use this section for M132+ monolith decomposition work. It establishes one refactor workflow for all parallel lanes.
+
+### Branch and commit conventions
+
+- Branch naming: `refactor/m132-<lane>-issue-<issue>-<slug>` (example: `refactor/m132-e-issue-4236-pr-slicing`).
+- Keep one primary issue per branch. If a dependency issue is required, record it in the PR body under `Dependencies`.
+- Commit subject format: `[M132-<lane-id>][#<issue>] <imperative summary>`.
+- Keep commits atomic: one behavior/documentation delta per commit and include matching validation evidence in the same PR.
+
+### Issue-link requirements
+
+- PR description must include `Primary issue: #<id>` and `Packet ID: M132-<lane><nnn>`.
+- PR description must include `Parallel lane impact:` with `none` or explicit lane IDs.
+- If blocked, mark `Blocked by: #<id>` and do not merge until cleared.
+
+### PR slicing policy
+
+`PR slicing` is mandatory for refactor lanes.
+
+| Slice type | Maximum changed files | Maximum changed lines | Required notes |
+| --- | --- | --- | --- |
+| Docs-only | 3 | 500 | linked issue, validation command output |
+| Compiler + tests | 10 | 800 | risk notes, fallback behavior, test evidence |
+| Plumbing/chore | 6 | 400 | dependency map and follow-up issue IDs |
+
+If a change exceeds any cap, split into multiple PRs before review.
+
+### review checklist (required in every refactor PR)
+
+- [ ] Scope maps to exactly one primary issue and packet ID.
+- [ ] Dependencies and blocked lanes are listed in PR body.
+- [ ] Validation commands and exit codes are included.
+- [ ] Risks and rollback/cutover impact are stated.
+- [ ] Reviewer can merge without inferring hidden follow-up work.
+
+### Refactor references
+
+- `docs/refactor/objc3c_refactor_workflow.md`
+- `docs/refactor/objc3c_refactor_cutover_governance.md`
+
 ## Local checks
 
 Run these before committing:
