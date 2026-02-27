@@ -61,12 +61,20 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="alias for --mode strict for CI/task packets that require this flag.",
+    )
+    parser.add_argument(
         "--mode",
         choices=("contract", "strict"),
         default="strict",
         help="contract checks docs/ADR presence; strict also checks include directions.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.strict:
+        args.mode = "strict"
+    return args
 
 
 def ensure_contract_assets() -> None:

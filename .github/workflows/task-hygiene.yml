@@ -26,6 +26,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: 00 Enforce ObjC3C dependency boundaries (strict fail-fast gate)
+        run: python scripts/check_objc3c_dependency_boundaries.py --strict
+      - name: 00a ObjC3C dependency boundary triage hint
+        if: failure()
+        run: |
+          echo "::error title=ObjC3C dependency boundary gate failed::Run 'python scripts/check_objc3c_dependency_boundaries.py --strict' locally and follow docs/refactor/objc3c_dependency_violation_playbook.md."
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
