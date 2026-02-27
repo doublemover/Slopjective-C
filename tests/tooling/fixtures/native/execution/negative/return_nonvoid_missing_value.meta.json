@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "return_nonvoid_missing_value.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S211",
+      "must return 'i32'"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

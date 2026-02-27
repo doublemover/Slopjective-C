@@ -1,0 +1,6 @@
+module ModuleDuplicateDeclaration;
+module ModuleDuplicateDeclarationSecond;
+
+fn main() -> i32 {
+  return 0;
+}

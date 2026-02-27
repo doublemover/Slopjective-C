@@ -1,0 +1,21 @@
+{
+  "id": "GRD-72-02",
+  "title": "Accept optional and pattern refinements that remain available after guard succeeds",
+  "feature": "guard refinement availability for optional bindings and patterns",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-2-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-4",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-4",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-4-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-5-3"
+  ],
+  "source": "id _Nonnull consume(id _Nonnull value);\n\nid _Nonnull refinedAfterGuard(id _Nullable maybeValue) {\n    guard let value = maybeValue else {\n        return @\"fallback\";\n    }\n\n    match (value) {\n      case let bound: {\n        return consume(bound);\n      }\n      default: {\n        return @\"fallback\";\n      }\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

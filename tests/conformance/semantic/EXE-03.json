@@ -1,0 +1,33 @@
+{
+  "id": "EXE-03",
+  "title": "Apply cross-module executor proof rules consistently for hop elision versus required await",
+  "feature": "cross-module executor metadata proof behavior",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -DEXE03_BUILD_BASE --emit-module EXE03Base.objcmod --module-name EXE03Base %s\n// RUN: objc3c -fobjc-version=3 --import-module EXE03Base.objcmod -fsyntax-only %s\n#if defined(EXE03_BUILD_BASE)\nid exe03_mainToken(id seed) __attribute__((objc_executor(main)));\nid exe03_mainToken(id seed) {\n    return seed;\n}\n#else\n@import EXE03Base;\nid exe03_sameExecutor(id seed) __attribute__((objc_executor(main)));\nid exe03_sameExecutor(id seed) {\n    return exe03_mainToken(seed);\n}\nid exe03_missingProof(id seed) async __attribute__((objc_executor(global))) {\n    return exe03_mainToken(seed);\n}\n#endif\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 15, "column": 12 },
+          "end": { "line": 15, "column": 30 }
+        },
+        "message": "calling an executor-annotated declaration requires 'await' when executor equivalence is not proven"
+      }
+    ]
+  }
+}

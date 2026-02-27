@@ -1,0 +1,22 @@
+{
+  "id": "DEF-70-01",
+  "title": "Accept same-scope defer registration with LIFO scope-exit execution order",
+  "feature": "defer LIFO scope-exit semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-3"
+  ],
+  "source": "int lifoSameScope(int bump) {\\n    int trace = 0;\\n    defer { trace = trace * 10 + 1; };\\n    defer { trace = trace * 10 + 2; };\\n\\n    if (bump != 0) {\\n        trace = trace + 7;\\n    }\\n\\n    // On scope exit, defers run in reverse registration order: 2 then 1.\\n    return trace;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

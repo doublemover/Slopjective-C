@@ -1,0 +1,26 @@
+{
+  "id": "M23-C013",
+  "title": "Harden layout/call-convention edge paths (Negative-Path Hardening) (issue #2653 / task M23-C013)",
+  "feature": "m23 lane-c end to end compilation and artifact emission harden layout call convention edge paths negative path hardening slice 13",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "C",
+    "issue": 2653,
+    "task": "M23-C013",
+    "sequence": 13
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M23_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_H__\\n#define __OBJC3_FEATURE_M23_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_H__ 1\\n#endif\\n\\ntypedef struct M23C013_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23C013_Probe;\\n\\nM23C013_Probe m23c013_probe(void) {\\n#if __OBJC3_FEATURE_M23_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_H__\\n    M23C013_Probe probe = { 1, 13, 2653 };\\n#else\\n    M23C013_Probe probe = { 0, 13, 2653 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

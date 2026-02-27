@@ -1,0 +1,72 @@
+{
+  "id": "ACT-07",
+  "title": "Reject reserved actor-member nonreentrant modifier in v1 before lowering",
+  "feature": "deferred explicit actor nonreentrancy controls in v1",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 -fsyntax-only %s\nactor class ACT07Gate : NSObject\nnonreentrant - (id _Nonnull)step:(id _Nonnull)seed async;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-ACTOR-NONREENTRANT-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 1 },
+          "end": { "line": 4, "column": 12 }
+        },
+        "message": "explicit actor nonreentrancy is deferred in v1"
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "reserved actor-member nonreentrant syntax is rejected before actor-entry lowering proceeds",
+            "v1 compilation does not emit explicit actor-reentrancy-control metadata for rejected declarations",
+            "diagnostic is stable and targeted to deferred-feature usage"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized compilation preserves deferred-feature rejection for actor-member nonreentrant syntax",
+            "optimization does not accept or synthesize explicit nonreentrant actor lowering paths in v1",
+            "targeted deferred-feature diagnostic behavior remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "actor_reentrancy_control_v1_deferred",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "stability_property": "v1 lowering reserves explicit actor nonreentrancy controls and does not emit active metadata for them",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

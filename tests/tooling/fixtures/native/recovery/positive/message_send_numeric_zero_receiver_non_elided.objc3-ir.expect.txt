@@ -1,0 +1,8 @@
+# Numeric zero receiver dispatch-lowering boundary markers.
+define i32 @main()
+icmp eq i32
+msg_nil_
+msg_dispatch_
+phi i32 [0, %msg_nil_
+call i32 @objc3_msgsend_i32(
+ret i32

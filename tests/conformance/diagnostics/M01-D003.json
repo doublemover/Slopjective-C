@@ -1,0 +1,39 @@
+{
+  "id": "M01-D003",
+  "title": "Scope-freeze baseline: missing-await fix-it payload remains deterministic",
+  "feature": "M01 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+  ],
+  "source": "id m01d003_load_payload(void) async;\n\nid m01d003_negative(void) async {\n    return m01d003_load_payload();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 37 }
+        },
+        "message": "potentially suspending call requires 'await' in strict concurrency checking",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 12 }
+            },
+            "replacement": "await "
+          }
+        ]
+      }
+    ]
+  }
+}

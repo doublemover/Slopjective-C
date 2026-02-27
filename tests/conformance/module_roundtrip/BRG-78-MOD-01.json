@@ -1,0 +1,18 @@
+{
+  "id": "BRG-78-MOD-01",
+  "title": "Preserve bridging attributes across module metadata and textual interfaces",
+  "feature": "NSError/status-code bridging attributes",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module Bridge.objcmod --emit-interface Bridge.obji %s\n// RUN: objc3c --verify-interface Bridge.objcmod Bridge.obji %s\n@interface BridgeAPI : NSObject\n- (BOOL)perform:(NSError * _Nullable * _Nullable)error __attribute__((objc_error_out(error)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

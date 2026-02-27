@@ -1,0 +1,22 @@
+{
+  "id": "TRY-77-01",
+  "title": "Accept nested do/catch with rethrow and optional-carrier propagation",
+  "feature": "try/do-catch and optional-carrier propagation integration",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-4-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-5-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-5-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-7-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-3-3"
+  ],
+  "source": "id loadPrimary(id seed) throws;\nid loadSecondary(id seed) throws;\nid<Error> upgradeFailure(void);\n\nid? resolveDisplay(id seed) {\n    do {\n        do {\n            id value = try loadPrimary(seed);\n            return value;\n        } catch {\n            if (seed == nil) {\n                throw upgradeFailure();\n            }\n            id? fallback = try? loadSecondary(seed);\n            return fallback?;\n        }\n    } catch {\n        return nil;\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

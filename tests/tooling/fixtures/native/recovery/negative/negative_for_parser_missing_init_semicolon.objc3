@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3P104, O3P100.
+module NegativeForParserMissingInitSemicolon;
+
+fn main() -> i32 {
+  for (let i = 0 i < 3; i = i + 1) {
+    let x = i;
+  }
+  return 0;
+}

@@ -1,0 +1,1 @@
+error: catalog task row 0 fields 'blocker_owner' and 'blocker_notes' must either both be present or both be absent in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_blocker_metadata_pair_mismatch/catalog.json

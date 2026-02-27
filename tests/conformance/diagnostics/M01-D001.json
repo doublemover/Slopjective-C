@@ -1,0 +1,39 @@
+{
+  "id": "M01-D001",
+  "title": "Scope-freeze baseline: strict nullability diagnostics keep stable payload mapping",
+  "feature": "M01 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+  ],
+  "source": "@interface M01D001Missing : NSObject\n- (id)tokenForUser:(id)user;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 4 },
+          "end": { "line": 2, "column": 6 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer return types",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 21 },
+          "end": { "line": 2, "column": 23 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer parameters",
+        "fixits": []
+      }
+    ]
+  }
+}

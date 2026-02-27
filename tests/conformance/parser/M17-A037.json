@@ -1,0 +1,25 @@
+{
+  "id": "M17-A037",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #2028 task M17-A037 (Wire mode/flag behavior through frontend (Refactor and Simplification))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict mode routing slice 37",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 2028,
+    "task": "M17-A037",
+    "sequence": 37
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_MODE_ROUTING_SLICE_S037__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_MODE_ROUTING_SLICE_S037__ 1\\n#endif\\n\\ntypedef struct M17A037_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A037_Probe;\\n\\nM17A037_Probe m17a037_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_MODE_ROUTING_SLICE_S037__\\n    M17A037_Probe probe = { 1, 37, 2028 };\\n#else\\n    M17A037_Probe probe = { 0, 37, 2028 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

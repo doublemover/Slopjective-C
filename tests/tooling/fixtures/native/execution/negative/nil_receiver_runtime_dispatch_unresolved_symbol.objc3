@@ -1,0 +1,15 @@
+// Negative execution fixture: mutable receiver reassigned from runtime-unknown value retains dispatch dependency.
+module NilReceiverRuntimeDispatchUnresolvedSymbol;
+
+fn choose(flag: i32) -> i32 {
+  if (flag) {
+    return nil;
+  }
+  return 1;
+}
+
+fn main() -> i32 {
+  let receiver = 1;
+  receiver = choose(1);
+  return [receiver ping];
+}

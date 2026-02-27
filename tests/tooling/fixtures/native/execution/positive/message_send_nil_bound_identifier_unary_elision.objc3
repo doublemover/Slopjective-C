@@ -1,0 +1,8 @@
+// Positive execution fixture: immutable nil-bound identifier unary send is compile-time elided and links without runtime shim.
+module MessageSendNilBoundIdentifierUnaryElisionExecution;
+
+fn main() {
+  let receiver = nil;
+  let sent = [receiver ping];
+  return sent + 12;
+}

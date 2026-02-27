@@ -1,0 +1,7 @@
+module OctalLiteralGlobalDivideByZero;
+
+let value = 0o10 / 0o0;
+
+fn main() -> i32 {
+  return value;
+}

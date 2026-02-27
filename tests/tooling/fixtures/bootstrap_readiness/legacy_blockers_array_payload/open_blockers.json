@@ -1,0 +1,12 @@
+[
+  {
+    "blocker_id": "BLK-M44-B1-010",
+    "source_path": "spec/planning/m44_legacy.md",
+    "line": 7
+  },
+  {
+    "blocker_id": "BLK-M44-B1-011",
+    "source_path": "spec/planning/m44_legacy.md",
+    "line": 11
+  }
+]

@@ -1,0 +1,267 @@
+{
+  "generated_on": "2026-02-23",
+  "task_count": 5,
+  "tasks": [
+    {
+      "task_id": "SPT-0001",
+      "task_key": "spec/conformance/profile_release_evidence_checklist.md:3",
+      "source_line_hash": "9c1863245b205113b4d89a6fcdf7b51030f57c68b3b1021886a34922453fff7a",
+      "title": "[SPT-0001][Lane D] Capture strict-system evidence bundle artifact and validation command output",
+      "path": "spec/conformance/profile_release_evidence_checklist.md",
+      "line": 3,
+      "bucket": "release-evidence",
+      "lane": "D",
+      "lane_name": "Program Control & Release",
+      "milestone_title": "Conformance: Strict System (E)",
+      "priority_label": "priority:P1",
+      "area_label": "area:memory",
+      "type_label": "type:tooling",
+      "labels": [
+        "lane:D",
+        "source:release-evidence",
+        "parallelizable",
+        "priority:P1",
+        "area:memory",
+        "type:tooling"
+      ],
+      "quality": "medium",
+      "quality_gaps": [
+        "Missing explicit dependency/order constraints.",
+        "Outcome is activity-oriented; add measurable completion criteria."
+      ],
+      "original": "Capture strict-system evidence bundle artifact and validation command output.",
+      "cleaned": "Capture strict-system evidence bundle artifact and validation command output",
+      "objective": "Capture strict-system evidence bundle artifact and validation command output",
+      "deliverables": [
+        "Produce the required evidence bundle fields/artifacts for the referenced profile gate.",
+        "Attach validation outputs proving schema/command-level correctness.",
+        "Record artifact digests and evidence pointers needed for release sign-off."
+      ],
+      "acceptance_criteria": [
+        "All required release evidence keys/metrics for the row are present and conform to schema/contract.",
+        "Validation commands run successfully and outputs are attached in issue comments.",
+        "Source checklist row is updated to checked state with commit SHA + evidence reference."
+      ],
+      "dependencies": [
+        "No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.",
+        "Lane-level dependency: execute under Lane D governance (Program Control & Release)."
+      ],
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "npm run check:task-hygiene",
+        "python scripts/check_release_evidence.py"
+      ],
+      "shard": "release-evidence-checklist",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-0002",
+      "task_key": "spec/CONFORMANCE_PROFILE_CHECKLIST.md:3",
+      "source_line_hash": "36f02758b9acda21e32ede48474cfea58db083baf975505880615b9390c1ab22",
+      "title": "[SPT-0002][Lane B] [CORE] Validate parser accepts let bindings in strict mode",
+      "path": "spec/CONFORMANCE_PROFILE_CHECKLIST.md",
+      "line": 3,
+      "bucket": "conformance-checklist",
+      "lane": "B",
+      "lane_name": "Implementation & Tooling",
+      "milestone_title": "Conformance: Core (E)",
+      "priority_label": "priority:P1",
+      "area_label": "area:syntax",
+      "type_label": "type:spec-gap",
+      "labels": [
+        "lane:B",
+        "source:conformance-checklist",
+        "parallelizable",
+        "priority:P1",
+        "area:syntax",
+        "type:spec-gap"
+      ],
+      "quality": "weak",
+      "quality_gaps": [
+        "Missing explicit artifact/file target in the task line.",
+        "Missing deterministic validation command or test expectation.",
+        "Missing explicit dependency/order constraints.",
+        "Outcome is activity-oriented; add measurable completion criteria."
+      ],
+      "original": "[CORE] Validate parser accepts `let` bindings in strict mode.",
+      "cleaned": "[CORE] Validate parser accepts let bindings in strict mode",
+      "objective": "[CORE] Validate parser accepts let bindings in strict mode",
+      "deliverables": [
+        "Implement or codify the specified language/toolchain behavior.",
+        "Add or update positive/negative conformance tests that demonstrate the behavior.",
+        "Update conformance status evidence so the checklist row can be marked complete with traceable links."
+      ],
+      "acceptance_criteria": [
+        "Required compiler/spec behavior is implemented (or explicitly documented as unsupported) with no ambiguity.",
+        "Validation commands run successfully and outputs are attached in issue comments.",
+        "Source checklist row is updated to checked state with commit SHA + evidence reference."
+      ],
+      "dependencies": [
+        "No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.",
+        "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
+      ],
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "npm run check:task-hygiene"
+      ],
+      "shard": "conformance-profile-checklist",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-0003",
+      "task_key": "spec/CONFORMANCE_PROFILE_CHECKLIST.md:4",
+      "source_line_hash": "53f2775b1f100d3bab6634e12acfa6450244353db1296f0b31649faa1a9efdd1",
+      "title": "[SPT-0003][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata",
+      "path": "spec/CONFORMANCE_PROFILE_CHECKLIST.md",
+      "line": 4,
+      "bucket": "conformance-checklist",
+      "lane": "B",
+      "lane_name": "Implementation & Tooling",
+      "milestone_title": "Conformance: Optional Interop (E)",
+      "priority_label": "priority:P2",
+      "area_label": "area:modules",
+      "type_label": "type:spec-gap",
+      "labels": [
+        "lane:B",
+        "source:conformance-checklist",
+        "parallelizable",
+        "priority:P2",
+        "area:modules",
+        "type:spec-gap"
+      ],
+      "quality": "weak",
+      "quality_gaps": [
+        "Missing explicit artifact/file target in the task line.",
+        "Missing deterministic validation command or test expectation.",
+        "Missing explicit dependency/order constraints.",
+        "Outcome is activity-oriented; add measurable completion criteria."
+      ],
+      "original": "[OPT-CXX] Confirm interop marker appears in emitted metadata.",
+      "cleaned": "[OPT-CXX] Confirm interop marker appears in emitted metadata",
+      "objective": "[OPT-CXX] Confirm interop marker appears in emitted metadata",
+      "deliverables": [
+        "Implement or codify the specified language/toolchain behavior.",
+        "Add or update positive/negative conformance tests that demonstrate the behavior.",
+        "Update conformance status evidence so the checklist row can be marked complete with traceable links."
+      ],
+      "acceptance_criteria": [
+        "Required compiler/spec behavior is implemented (or explicitly documented as unsupported) with no ambiguity.",
+        "Validation commands run successfully and outputs are attached in issue comments.",
+        "Source checklist row is updated to checked state with commit SHA + evidence reference."
+      ],
+      "dependencies": [
+        "No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.",
+        "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
+      ],
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "npm run check:task-hygiene"
+      ],
+      "shard": "conformance-profile-checklist",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-0004",
+      "task_key": "spec/planning/issue_140_seed_fixture.md:3",
+      "source_line_hash": "361504232b7789c8bde94f1d812ba0dca0e2a970732e0a6aa2a0740faaf6a14d",
+      "title": "[SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker",
+      "path": "spec/planning/issue_140_seed_fixture.md",
+      "line": 3,
+      "bucket": "planning-checklist",
+      "lane": "B",
+      "lane_name": "Implementation & Tooling",
+      "milestone_title": "v0.12 Lane B - Implementation & Tooling",
+      "priority_label": "priority:P1",
+      "area_label": "area:tooling",
+      "type_label": "type:process",
+      "labels": [
+        "lane:B",
+        "source:planning-checklist",
+        "parallelizable",
+        "priority:P1",
+        "area:tooling",
+        "type:process"
+      ],
+      "quality": "weak",
+      "quality_gaps": [
+        "Missing deterministic validation command or test expectation.",
+        "Missing explicit dependency/order constraints.",
+        "Outcome is activity-oriented; add measurable completion criteria."
+      ],
+      "original": "Document kickoff decision record for lane batching in artifact tracker.",
+      "cleaned": "Document kickoff decision record for lane batching in artifact tracker",
+      "objective": "Document kickoff decision record for lane batching in artifact tracker",
+      "deliverables": [
+        "Update the referenced planning artifact with concrete, non-placeholder content for this checklist row.",
+        "Capture review/approval evidence (owner, date, and decision record) linked in the issue.",
+        "Attach validation command results and closeout traceability so the row can be checked reliably."
+      ],
+      "acceptance_criteria": [
+        "The original checklist intent is fully satisfied with concrete artifacts and links.",
+        "Validation commands run successfully and outputs are attached in issue comments.",
+        "Source checklist row is updated to checked state with commit SHA + evidence reference."
+      ],
+      "dependencies": [
+        "No hard dependency encoded in the row; schedule as parallel-ready within the same lane shard.",
+        "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
+      ],
+      "validation_commands": [
+        "python scripts/spec_lint.py"
+      ],
+      "shard": "planning-issue-140",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-0005",
+      "task_key": "spec/planning/issue_140_seed_fixture.md:4",
+      "source_line_hash": "66ae2658985e2991fa135c0e02f8257b20b3579eba82b0110b1f2c13d01437ac",
+      "title": "[SPT-0005][Lane B] Link dependency to Issue #111 and A-03 for traceability",
+      "path": "spec/planning/issue_140_seed_fixture.md",
+      "line": 4,
+      "bucket": "planning-checklist",
+      "lane": "B",
+      "lane_name": "Implementation & Tooling",
+      "milestone_title": "v0.12 Lane B - Implementation & Tooling",
+      "priority_label": "priority:P1",
+      "area_label": "area:abi",
+      "type_label": "type:process",
+      "labels": [
+        "lane:B",
+        "source:planning-checklist",
+        "parallelizable",
+        "priority:P1",
+        "area:abi",
+        "type:process"
+      ],
+      "quality": "weak",
+      "quality_gaps": [
+        "Missing explicit artifact/file target in the task line.",
+        "Missing deterministic validation command or test expectation.",
+        "Outcome is activity-oriented; add measurable completion criteria."
+      ],
+      "original": "Link dependency to Issue #111 and A-03 for traceability.",
+      "cleaned": "Link dependency to Issue #111 and A-03 for traceability",
+      "objective": "Link dependency to Issue #111 and A-03 for traceability",
+      "deliverables": [
+        "Update the referenced planning artifact with concrete, non-placeholder content for this checklist row.",
+        "Capture review/approval evidence (owner, date, and decision record) linked in the issue.",
+        "Attach validation command results and closeout traceability so the row can be checked reliably."
+      ],
+      "acceptance_criteria": [
+        "The original checklist intent is fully satisfied with concrete artifacts and links.",
+        "Validation commands run successfully and outputs are attached in issue comments.",
+        "Source checklist row is updated to checked state with commit SHA + evidence reference."
+      ],
+      "dependencies": [
+        "Traceability references: closed seed issue(s) #111; use for context while implementing this new task.",
+        "Explicit cross-task references detected: A-03; honor sequencing when these artifacts are touched.",
+        "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
+      ],
+      "validation_commands": [
+        "python scripts/spec_lint.py"
+      ],
+      "shard": "planning-issue-140",
+      "execution_status": "open"
+    }
+  ]
+}

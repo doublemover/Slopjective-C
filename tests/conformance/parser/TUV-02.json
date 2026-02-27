@@ -1,0 +1,16 @@
+{
+  "id": "TUV-02",
+  "title": "Accept file-scope objc_language_version pragma before declarations",
+  "feature": "translation-unit language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\nint selectedMode(void) {\n    return 3;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

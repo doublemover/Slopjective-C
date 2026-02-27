@@ -1,0 +1,7 @@
+module HexLiteralGlobalDivideByZero;
+
+let value = 0x10 / 0x0;
+
+fn main() -> i32 {
+  return value;
+}

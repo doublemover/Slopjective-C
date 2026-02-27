@@ -1,0 +1,8 @@
+module UnaryPlusBasic;
+
+fn main() -> i32 {
+  let base = 7;
+  let lifted = +base;
+  let nested = +(+(lifted + 2));
+  return nested;
+}

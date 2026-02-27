@@ -1,0 +1,72 @@
+{
+  "id": "M01-C002",
+  "title": "Diagnose async completion status-width metadata drift during interface replay verification",
+  "feature": "strict interface replay guard for async completion status ABI fields",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M01C002.objcmod --emit-interface M01C002.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M01C002.opt.objcmod --emit-interface M01C002.opt.obji %s\n// RUN: objc3c --verify-interface M01C002.objcmod M01C002.obji --assert-mismatch async_completion.status_width:i32:i8\n// RUN: objc3c --verify-interface M01C002.opt.objcmod M01C002.opt.obji --assert-mismatch async_completion.status_width:i32:i8\ntypedef enum M01C002Status {\n    M01C002_STATUS_SUCCESS = 0,\n    M01C002_STATUS_ERROR = 1,\n    M01C002_STATUS_CANCELLED = 2\n} M01C002Status;\n\ntypedef void (*M01C002Completion)(\n    void * _Nullable context,\n    M01C002Status status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nvoid m01c002_export_async(id _Nullable seed,\n                          void * _Nullable context,\n                          M01C002Completion _Nonnull completion);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 1 },
+          "end": { "line": 4, "column": 108 }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "strict verification compares async completion status-width metadata between compiled module and textual interface",
+            "status-width drift is diagnosed as a deterministic interface mismatch instead of being tolerated",
+            "replay verification remains fail-closed for completion status ABI field changes"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized emission preserves status-width metadata contract for async completion ABI fields",
+            "optimization does not suppress strict mismatch diagnostics for status-width drift",
+            "replay verification behavior remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_completion_status_width",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "completion status field width is stable across emitted module/interface artifacts",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

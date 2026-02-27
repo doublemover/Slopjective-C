@@ -1,0 +1,7 @@
+module HexLiteralBasic;
+
+let base = 0x10;
+
+fn main() -> i32 {
+  return base + 0x2;
+}

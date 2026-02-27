@@ -1,0 +1,72 @@
+{
+  "id": "INT-SWIFT-07",
+  "title": "Preserve Swift async-await and actor-isolation import-export mappings across module/interface round-trip",
+  "feature": "Swift interop metadata preservation for async-await and actor isolation mappings",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module INTSWIFT07.objcmod --emit-interface INTSWIFT07.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\\n// RUN: objc3c --emit-module INTSWIFT07-import.objcmod --import-interface INTSWIFT07.obji --emit-interface INTSWIFT07-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\\n// RUN: objc3c --verify-interface INTSWIFT07.objcmod INTSWIFT07-roundtrip.obji %s\\n// RUN: objc3c --verify-interface INTSWIFT07-import.objcmod INTSWIFT07.obji %s\\nactor class INTSWIFT07Mailbox : NSObject\\n- (id _Nonnull)pull:(id _Nonnull)seed async;\\n- (id _Nonnull)drainOnMain:(id _Nonnull)seed async __attribute__((objc_executor(main)));\\n@end\\n\\nid _Nonnull intswift07_pump(INTSWIFT07Mailbox * _Nonnull mailbox, id _Nonnull seed) async {\\n    id _Nonnull step = await [mailbox pull:seed];\\n    return await [mailbox drainOnMain:step];\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "async_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "async_coroutine_model_v1",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "actor_type_and_actor_isolation",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "swift_interop_async_mapping",
+          "part11_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "swift_interop_actor_isolation_mapping",
+          "part11_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

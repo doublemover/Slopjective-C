@@ -1,0 +1,4 @@
+# Nil literal global initializer markers.
+@base = global i32 0
+@derived = global i32 7
+ret i32

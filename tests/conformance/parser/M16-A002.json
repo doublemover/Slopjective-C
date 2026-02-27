@@ -1,0 +1,25 @@
+{
+  "id": "M16-A002",
+  "title": "Accept M16 lane-A parser fixture baseline for issue #1949 task M16-A002 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m16 lane-a parser core strict release gate and evidence bundle slice 02",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M16",
+    "milestone_number": 101,
+    "lane": "A",
+    "issue": 1949,
+    "task": "M16-A002",
+    "sequence": 2
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_EXECUTION_SLICE__\n#define __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_EXECUTION_SLICE__ 1\n#endif\n\ntypedef struct M16A002_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M16A002_Probe;\n\nM16A002_Probe m16a002_probe(void) {\n#if __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_EXECUTION_SLICE__\n    M16A002_Probe probe = { 1, 2, 1949 };\n#else\n    M16A002_Probe probe = { 0, 2, 1949 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

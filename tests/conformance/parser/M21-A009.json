@@ -1,0 +1,25 @@
+{
+  "id": "M21-A009",
+  "title": "Accept M21 lane-A parser fixture baseline for issue #2476 task M21-A009 (Document frontend invariants for integrators (Documentation and Evidence))",
+  "feature": "m21 lane-a parser semantic analysis type system core document frontend invariants for integrators documentation and evidence slice 09",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M21",
+    "milestone_number": 106,
+    "lane": "A",
+    "issue": 2476,
+    "task": "M21-A009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M21_A_009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOC__\\n#define __OBJC3_FEATURE_M21_A_009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOC__ 1\\n#endif\\n\\ntypedef struct M21A009_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M21A009_Probe;\\n\\nM21A009_Probe m21a009_probe(void) {\\n#if __OBJC3_FEATURE_M21_A_009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOC__\\n    M21A009_Probe probe = { 1, 9, 2476 };\\n#else\\n    M21A009_Probe probe = { 0, 9, 2476 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

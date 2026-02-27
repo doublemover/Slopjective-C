@@ -1,0 +1,19 @@
+{
+  "id": "SYS-ATTR-02",
+  "title": "Accept canonical objc_returns_borrowed(owner_index=...) spelling",
+  "feature": "Part 8 canonical system attribute spellings",
+  "bucket": "parser",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-4"
+  ],
+  "source": "borrowed const char *borrow_view(const char *owner, unsigned long length) __attribute__((objc_returns_borrowed(owner_index=0)));\n\nborrowed const char *borrow_view(const char *owner, unsigned long length) {\n    (void)length;\n    return owner;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

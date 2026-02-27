@@ -1,0 +1,5 @@
+# bool main entrypoint ABI bridge markers
+define i1 @main()
+%call_main = call i1 @main()
+%call_main_i32 = zext i1 %call_main to i32
+ret i32 %call_main_i32

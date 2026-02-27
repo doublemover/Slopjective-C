@@ -1,0 +1,63 @@
+{
+  "id": "RES-05",
+  "title": "Lower unwind-path resource cleanup with LIFO and exactly-once guarantees",
+  "feature": "resource cleanup lowering on exceptional exits",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -fexceptions -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -fexceptions -O2 -fsyntax-only %s\ntypedef int res_handle_t;\nstatic int res05_trace = 0;\nstatic int res05_close_count = 0;\n\nvoid res05_close(res_handle_t handle) {\n    if (handle != -1) {\n        res05_trace = res05_trace * 10 + 4;\n        res05_close_count = res05_close_count + 1;\n    }\n}\n\nint res05_unwind_cleanup_once(int shouldThrow) {\n    res05_trace = 0;\n    res05_close_count = 0;\n\n    try {\n        res_handle_t fd __attribute__((objc_resource(close=res05_close, invalid=-1))) = 11;\n        defer { res05_trace = res05_trace * 10 + 9; };\n        if (shouldThrow != 0) {\n            throw 5;\n        }\n        res05_trace = res05_trace * 10 + 1;\n        (void)fd;\n    } catch (...) {\n        res05_trace = res05_trace * 10 + 7;\n    }\n\n    if (res05_close_count != 1) {\n        return -1;\n    }\n\n    return res05_trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-fexceptions",
+            "-O0"
+          ],
+          "resource_requirements": [
+            "unwind across cleanup scopes executes defer and resource cleanup exactly once",
+            "resource cleanup remains ordered on the same LIFO stack as defer actions during unwind",
+            "catch observes completed cleanup actions before handler logic"
+          ],
+          "runtime_assertions": [
+            "res05_unwind_cleanup_once(0) returns 194",
+            "res05_unwind_cleanup_once(1) returns 947",
+            "function returns -1 if unwind cleanup executes zero or multiple times"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-fexceptions",
+            "-O2"
+          ],
+          "resource_requirements": [
+            "optimization preserves exceptional-exit LIFO cleanup ordering",
+            "optimization preserves exactly-once cleanup execution on unwind paths"
+          ],
+          "runtime_assertions": [
+            "res05_unwind_cleanup_once(1) still returns 947 under optimization",
+            "optimized lowering does not duplicate resource cleanup callbacks on throw paths"
+          ]
+        }
+      ]
+    }
+  }
+}

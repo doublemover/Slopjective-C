@@ -1,0 +1,17 @@
+{
+  "id": "M02-A001",
+  "title": "Accept command/grammar contract slice baseline in Objective-C 3 mode",
+  "feature": "frontend command and grammar contract definition",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m02a001_contract_entry(int value) {\n    return value + 1;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "MOD-53-01",
+  "title": "Accept deterministic module-qualified lookup in single-module import flow",
+  "feature": "module-aware compilation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-2-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -DMOD53_BUILD_MODULE --emit-module Metrics.objcmod --module-name Metrics %s\n// RUN: objc3c -fobjc-version=3 --import-module Metrics.objcmod --dump-module-lookups MOD5301.lookups -fsyntax-only %s\n// RUN: FileCheck %s --input-file=MOD5301.lookups --check-prefix=MOD5301\n#if defined(MOD53_BUILD_MODULE)\nconst int PacketCount = 7;\n#else\n@import Metrics;\nint readPacketCount(void) {\n    return @Metrics.PacketCount;\n}\n#endif\n// MOD5301: @Metrics.PacketCount => Metrics.PacketCount\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

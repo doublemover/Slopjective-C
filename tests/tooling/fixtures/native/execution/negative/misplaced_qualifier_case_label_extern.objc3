@@ -1,0 +1,11 @@
+module MisplacedQualifierCaseLabelExtern;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case extern:
+      return 1;
+    default:
+      return 0;
+  }
+}

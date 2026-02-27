@@ -1,0 +1,23 @@
+{
+  "id": "OPT-61-01",
+  "title": "Accept T? binding with optional send/chaining and postfix propagation",
+  "feature": "optional types T? with binding/chaining/postfix propagation",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-2-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-1-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-2-4",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-3",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-3-1",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-3-3"
+  ],
+  "source": "id? selectHandle(id? maybeUser, id? fallback) {\n    id? maybeProfile = [maybeUser? profile];\n    id? maybeHandle = maybeProfile?.handle;\n    guard let selected = maybeHandle else {\n        return fallback?;\n    }\n    return selected;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

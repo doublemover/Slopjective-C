@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'open_blockers' contains duplicate canonical blocker row ('BLK-M44-B1-301', 'spec/planning/m44_duplicate.md', 33) in tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_duplicate_rows/open_blockers.json

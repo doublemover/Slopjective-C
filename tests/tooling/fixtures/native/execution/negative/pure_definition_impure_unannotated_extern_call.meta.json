@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "pure_definition_impure_unannotated_extern_call.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "error:5:9",
+      "O3S215",
+      "pure contract violation",
+      "declared 'pure' has side effects",
+      "cause: unannotated-extern-call:ext_impure",
+      "cause-site:6:10",
+      "detail:unannotated-extern-call:ext_impure@6:10"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

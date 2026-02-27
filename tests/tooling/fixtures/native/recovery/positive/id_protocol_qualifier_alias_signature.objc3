@@ -1,0 +1,12 @@
+module IdProtocolQualifierAliasSignature;
+
+fn choose(flag: bool, when_true: id<NSObject>, when_false: id<NSObject>) -> id {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main() -> i32 {
+  return choose(true, 40, 2) + 1;
+}

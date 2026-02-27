@@ -1,0 +1,23 @@
+module SwitchCaseGlobalAssignedConservativeReject;
+
+let globalFlag = 0;
+
+fn setFlag() -> i32 {
+  globalFlag = 1;
+  return 0;
+}
+
+fn main() -> i32 {
+  let value = 1;
+  setFlag();
+  switch (value) {
+    case 1:
+      while (globalFlag) {
+        return 9;
+      }
+    case 2:
+      return 42;
+    default:
+      return 7;
+  }
+}

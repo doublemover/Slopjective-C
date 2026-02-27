@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "conditional_condition_function_value.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "function 'ready' cannot be used as a value"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeGlobalConstReferenceFunctionInitializer;
+
+fn helper() -> i32 {
+  return 1;
+}
+
+let value = helper;
+
+fn main() -> i32 {
+  return value;
+}

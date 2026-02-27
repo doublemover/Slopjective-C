@@ -1,0 +1,91 @@
+{
+  "id": "INT-CXX-08",
+  "title": "Preserve async throws method-thunk ABI parity when ObjC++ wrappers forward through exported C surfaces",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 -O2 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 --emit-module INTCXX08.objcmod --emit-interface INTCXX08.obji %s\n// RUN: objc3c -x objective-c++ --verify-interface INTCXX08.objcmod INTCXX08.obji %s\ntypedef enum objc_async_completion_status {\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\n} objc_async_completion_status_t;\n\ntypedef void (*INTCXX08Completion)(\n    void * _Nullable context,\n    objc_async_completion_status_t status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\n@interface INTCXX08Service : NSObject\n- (id _Nullable)compute:(int)token async throws;\n@end\n\nvoid intcxx08_service_compute_async_c(INTCXX08Service * _Nonnull service,\n                                      int token,\n                                      void * _Nullable context,\n                                      INTCXX08Completion _Nonnull completion);\n\nclass INTCXX08Invoker {\npublic:\n    static void start(INTCXX08Service * _Nonnull service,\n                      int token,\n                      void * _Nullable context,\n                      INTCXX08Completion _Nonnull completion) {\n        intcxx08_service_compute_async_c(service, token, context, completion);\n    }\n};\n\nSEL intcxx08_runtime_selector(void) {\n    return @selector(compute:);\n}\n\ntypedef struct INTCXX08Probe {\n    int callbackCount;\n    void * _Nullable echoedContext;\n    objc_async_completion_status_t lastStatus;\n    id<Error> _Nullable lastError;\n} INTCXX08Probe;\n\nvoid intcxx08_probe_callback(void * _Nullable context,\n                             objc_async_completion_status_t status,\n                             id _Nullable result,\n                             id<Error> _Nullable error) {\n    INTCXX08Probe *probe = (INTCXX08Probe *)context;\n    probe->callbackCount = probe->callbackCount + 1;\n    probe->echoedContext = context;\n    probe->lastStatus = status;\n    probe->lastError = error;\n    (void)result;\n}\n\nvoid intcxx08_start_probe(INTCXX08Service *service,\n                          int token,\n                          INTCXX08Probe *probe) {\n    probe->callbackCount = 0;\n    probe->echoedContext = 0;\n    INTCXX08Invoker::start(service, token, probe, intcxx08_probe_callback);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "Objective-C selector spelling remains compute: while lowered async-throws ABI is expressed in exported C thunk surface",
+            "ObjC++ wrapper forwarding path preserves exact thunk argument order: service, source args, context, completion",
+            "method async-throws callback status/error behavior matches ObjC-mode invariants for success, failure, and cancellation",
+            "separate compilation preserves callable thunk declarations for importers that only observe emitted interfaces"
+          ],
+          "runtime_assertions": [
+            "intcxx08_runtime_selector resolves to @selector(compute:) with no ABI suffix leakage into selector surface",
+            "intcxx08_probe_callback executes exactly once and observes unchanged context pointer identity",
+            "wrapper-dispatched thunk calls produce the same status/error observation contract as direct C thunk calls"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized ObjC++ lowering preserves selector-surface vs ABI-surface split from -O0",
+            "optimized wrapper forwarding preserves method thunk signature and argument ordering",
+            "optimized lowering preserves async-throws status/error callback invariants and separate-compilation compatibility"
+          ],
+          "runtime_assertions": [
+            "selector identity, callback once-ness, and context identity remain stable under optimization",
+            "status/error observations from wrapper-dispatched calls remain equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.objcxx_method_async_c_thunk_signature",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "method-exported thunk keeps canonical async completion signature with trailing context/completion in ObjC++ mode",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "objc_selector_surface_vs_objcxx_async_abi",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "selector remains source-level while async/throws ABI details remain in lowered thunk and metadata surfaces",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.objcxx_wrapper_forwarding_parity",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "C++ wrapper forwarding does not alter exported thunk ABI shape or callback contract",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

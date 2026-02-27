@@ -1,0 +1,30 @@
+{
+  "id": "M01-B008",
+  "title": "Accept reinitialized resource flow and reject moved-from validity probe",
+  "feature": "M01 lane B resource move-state diagnostics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+  ],
+  "source": "typedef int m01b008_handle_t;\nvoid m01b008_close(m01b008_handle_t handle);\nm01b008_handle_t m01b008_open(void);\nint m01b008_is_valid(m01b008_handle_t handle);\n\nint m01b008_positive(void) {\n    m01b008_handle_t fd __attribute__((objc_resource(close=m01b008_close, invalid=-1))) = m01b008_open();\n    m01b008_handle_t moved = take(fd);\n    fd = m01b008_open();\n    return (int)fd + (int)moved;\n}\n\nint m01b008_negative(void) {\n    m01b008_handle_t fd __attribute__((objc_resource(close=m01b008_close, invalid=-1))) = m01b008_open();\n    m01b008_handle_t moved = take(fd);\n    if (m01b008_is_valid(fd)) {\n        return (int)fd;\n    }\n    return (int)moved;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-RESOURCE-USE-AFTER-TAKE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 16, "column": 9 },
+          "end": { "line": 16, "column": 27 }
+        },
+        "message": "resource was moved by take(fd); reinitialize with reset before valid use",
+        "fixits": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "MOD-53-02",
+  "title": "Diagnose ambiguous unqualified lookup across imported modules",
+  "feature": "module-aware compilation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -DMOD53_MODULE_ALPHA --emit-module Alpha.objcmod --module-name Alpha %s\n// RUN: objc3c -fobjc-version=3 -DMOD53_MODULE_BETA --emit-module Beta.objcmod --module-name Beta %s\n// RUN: objc3c -fobjc-version=3 --import-module Alpha.objcmod --import-module Beta.objcmod -fsyntax-only %s\n#if defined(MOD53_MODULE_ALPHA)\nconst int SharedCounter = 1;\n#elif defined(MOD53_MODULE_BETA)\nconst int SharedCounter = 2;\n#else\n@import Alpha;\n@import Beta;\nint readCounter(void) {\n    return SharedCounter;\n}\n#endif\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MODULE-AMBIGUOUS-LOOKUP",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 12 },
+          "end": { "line": 12, "column": 24 }
+        },
+        "message": "unqualified lookup for 'SharedCounter' is ambiguous between imported modules 'Alpha' and 'Beta'",
+        "fixits": []
+      }
+    ]
+  }
+}

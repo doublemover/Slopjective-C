@@ -1,0 +1,28 @@
+{
+  "id": "M02-B004",
+  "title": "Add semantic diagnostic gating fixture with strict-system borrowed-escape guard",
+  "feature": "M02 lane B issue #1226 semantic diagnostic gating requirements",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12",
+    "spec/planning/compiler/m02/lane_b_m02_scope_freeze.md"
+  ],
+  "source": "borrowed const char *m02b004_global;\n\nint m02b004_positive(borrowed const char *bytes) {\n    return bytes != 0;\n}\n\nvoid m02b004_negative(borrowed const char *bytes) {\n    m02b004_global = bytes;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 5 },
+          "end": { "line": 8, "column": 23 }
+        },
+        "message": "borrowed pointer escapes into global storage; copy to owned storage, extend owner lifetime, or mark explicitly unsafe"
+      }
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "generated_at_utc": "2026-02-23T00:00:00Z",
+  "source": "fixture:tests/tooling/fixtures/activation_triggers/preflight/zero_open/open_blockers.json",
+  "open_blocker_count": 0,
+  "open_blockers": []
+}

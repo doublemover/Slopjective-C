@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-conformance-module-roundtrip-wave1",
+  "description": "Module/interface conformance fixtures for issues #53-#57, #63, #78, #81, #83, #84, #86, #88, #92, #95, #96, #98, #100, and #103.",
+  "groups": [
+    {
+      "name": "issue_53_module_aware_compilation",
+      "feature": "module-aware compilation and lookup",
+      "issue": 53,
+      "files": [
+        "MOD-53-01.json",
+        "MOD-53-02.json"
+      ]
+    },
+    {
+      "name": "issue_54_textual_interface_emission",
+      "feature": "textual interface emission mode",
+      "issue": 54,
+      "files": [
+        "IFC-54-01.json",
+        "IFC-54-02.json"
+      ]
+    },
+    {
+      "name": "issue_55_canonical_interface_spellings",
+      "feature": "canonical textual interface spellings",
+      "issue": 55,
+      "files": [
+        "IFC-55-01.json",
+        "IFC-55-02.json"
+      ]
+    },
+    {
+      "name": "issue_56_metadata_preservation",
+      "feature": "D Table A metadata preservation",
+      "issue": 56,
+      "files": [
+        "META-56-01.json",
+        "META-56-02.json"
+      ]
+    },
+    {
+      "name": "issue_57_interface_verification_mode",
+      "feature": "metadata/interface mismatch verification",
+      "issue": 57,
+      "files": [
+        "IFV-57-01.json",
+        "IFV-57-02.json"
+      ]
+    },
+    {
+      "name": "issue_63_optional_nullability_preservation",
+      "feature": "optional and nullability metadata/interface preservation",
+      "issue": 63,
+      "files": [
+        "META-63-01.json",
+        "IFC-63-01.json"
+      ]
+    },
+    {
+      "name": "issue_78_bridging_metadata_preservation",
+      "feature": "bridging-attribute metadata/interface preservation",
+      "issue": 78,
+      "files": [
+        "BRG-78-MOD-01.json"
+      ]
+    },
+    {
+      "name": "issue_81_async_coroutine_roundtrip",
+      "feature": "async coroutine ABI metadata and interface round-trip stability",
+      "issue": 81,
+      "files": [
+        "CORO-04.json",
+        "CORO-05.json"
+      ]
+    },
+    {
+      "name": "issue_83_executor_affinity_roundtrip",
+      "feature": "executor annotation metadata/interface preservation across modules",
+      "issue": 83,
+      "files": [
+        "EXE-05.json",
+        "EXEC-ATTR-03.json"
+      ]
+    },
+    {
+      "name": "issue_84_actor_isolation_roundtrip",
+      "feature": "actor isolation metadata and contextual keyword compatibility across modules",
+      "issue": 84,
+      "files": [
+        "ACT-08.json",
+        "ACT-09.json"
+      ]
+    },
+    {
+      "name": "issue_86_sendable_constraints_roundtrip",
+      "feature": "sendability metadata preservation and mismatch diagnostics across modules",
+      "issue": 86,
+      "files": [
+        "SND-XM-01.json",
+        "SND-XM-02.json"
+      ]
+    },
+    {
+      "name": "issue_88_system_attribute_roundtrip",
+      "feature": "Part 8 canonical spellings and borrowed/resource metadata preservation",
+      "issue": 88,
+      "files": [
+        "SYS-ATTR-05.json",
+        "SYS-ATTR-06.json",
+        "SYS-ATTR-07.json",
+        "SYS-ATTR-08.json"
+      ]
+    },
+    {
+      "name": "issue_92_borrowed_lifetime_metadata_roundtrip",
+      "feature": "borrowed pointer and lifetime metadata preservation across module import",
+      "issue": 92,
+      "files": [
+        "BRW-META-01.json",
+        "BRW-META-02.json",
+        "BRW-META-03.json"
+      ]
+    },
+    {
+      "name": "issue_95_performance_attribute_roundtrip",
+      "feature": "objc_direct/objc_final/objc_sealed metadata/interface preservation",
+      "issue": 95,
+      "files": [
+        "PERF-ATTR-03.json",
+        "PERF-ATTR-04.json"
+      ]
+    },
+    {
+      "name": "issue_96_performance_legality_roundtrip",
+      "feature": "direct/final/sealed legality validation across module boundaries",
+      "issue": 96,
+      "files": [
+        "PERF-DIRMEM-04.json",
+        "PERF-LEG-03.json"
+      ]
+    },
+    {
+      "name": "issue_98_meta_derive_expansion_roundtrip",
+      "feature": "derive expansion preservation and deterministic re-import behavior",
+      "issue": 98,
+      "files": [
+        "META-EXP-01.json",
+        "META-EXP-02.json"
+      ]
+    },
+    {
+      "name": "issue_100_macro_derive_roundtrip_preservation",
+      "feature": "macro and derive expansion preservation across metadata and interfaces",
+      "issue": 100,
+      "files": [
+        "META-XM-01.json",
+        "META-XM-02.json",
+        "META-XM-03.json",
+        "META-XM-04.json"
+      ]
+    },
+    {
+      "name": "issue_103_swift_interop_roundtrip",
+      "feature": "Swift interop mapping metadata/interface preservation across module boundaries",
+      "issue": 103,
+      "files": [
+        "INT-SWIFT-05.json",
+        "INT-SWIFT-06.json",
+        "INT-SWIFT-07.json",
+        "INT-SWIFT-08.json"
+      ]
+    }
+  ]
+}

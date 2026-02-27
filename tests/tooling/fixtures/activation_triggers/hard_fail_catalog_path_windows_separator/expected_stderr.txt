@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'path' must use '/' path separators

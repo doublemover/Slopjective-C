@@ -1,0 +1,13 @@
+module IfCallUnknownElseMissingReturnConservativeReject;
+
+fn predicate() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  if (predicate()) {
+    return 42;
+  } else {
+    let fallback = 7;
+  }
+}

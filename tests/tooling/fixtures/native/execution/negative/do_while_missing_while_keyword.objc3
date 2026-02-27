@@ -1,0 +1,9 @@
+module DoWhileMissingWhileKeywordExec;
+
+fn main() -> i32 {
+  do {
+    let i = 1;
+  } (1 < 2);
+  return 0;
+}
+

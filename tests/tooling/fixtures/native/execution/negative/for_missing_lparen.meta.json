@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "for_missing_lparen.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P106",
+      "missing '(' after for"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

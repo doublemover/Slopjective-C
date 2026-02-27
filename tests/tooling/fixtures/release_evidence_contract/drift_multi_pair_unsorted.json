@@ -1,0 +1,16 @@
+{
+  "contract_id": "fixture-drift-multi-unsorted",
+  "release_label": "v0.11",
+  "schema_data_pairs": [
+    {
+      "id": "zeta",
+      "schema": "tests/tooling/fixtures/release_evidence_contract/does_not_exist_zeta.schema.json",
+      "data": "tests/tooling/fixtures/release_evidence_contract/does_not_exist_zeta.data.json"
+    },
+    {
+      "id": "alpha",
+      "schema": "tests/tooling/fixtures/release_evidence_contract/does_not_exist_alpha.schema.json",
+      "data": "tests/tooling/fixtures/release_evidence_contract/does_not_exist_alpha.data.json"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "EC-BORROW-02",
+  "title": "Reject malformed borrowed pointer qualifier placement",
+  "feature": "borrowed pointer punctuation",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7"
+  ],
+  "source": "size_t countBytes(borrowed* const uint8_t bytes, size_t length) {\n    return length;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-BORROWED-POINTER-SPELLING",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 19 },
+          "end": { "line": 1, "column": 28 }
+        },
+        "message": "borrowed pointer must be written as borrowed T *name",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 19 },
+              "end": { "line": 1, "column": 47 }
+            },
+            "replacement": "borrowed const uint8_t *bytes"
+          }
+        ]
+      }
+    ]
+  }
+}

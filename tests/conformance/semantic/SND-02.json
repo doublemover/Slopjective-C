@@ -1,0 +1,21 @@
+{
+  "id": "SND-02",
+  "title": "Accept spawned task capture of actor reference with awaited actor-isolated access",
+  "feature": "actor-reference sendability and isolation-boundary enforcement in task captures",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "typedef id SND02TaskHandle;\nSND02TaskHandle snd02_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nid snd02_join(SND02TaskHandle handle) async;\n\nactor class SND02Counter : NSObject\n- (void)bump;\n- (int)current;\n@end\n\nid snd02_actor_capture_with_await(SND02Counter *counter) async {\n    SND02TaskHandle handle = snd02_spawn(^id(void) async {\n        await [counter bump];\n        return @((int)await [counter current]);\n    });\n    return await snd02_join(handle);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

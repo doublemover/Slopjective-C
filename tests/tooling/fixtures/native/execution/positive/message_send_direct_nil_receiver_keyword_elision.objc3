@@ -1,0 +1,7 @@
+// Positive execution fixture: direct nil receiver keyword send is compile-time elided and does not require runtime shim.
+module MessageSendDirectNilReceiverKeywordElision;
+
+fn main() {
+  let sent = [nil ping: 4 pong: 5];
+  return sent + 6;
+}

@@ -1,0 +1,12 @@
+// Negative fixture: message argument resolves to function value.
+// Expected diagnostic code(s): O3S206, O3S209.
+module NegativeMessageArgFunction;
+
+fn payload() {
+  return 1;
+}
+
+fn main() {
+  let receiver = 7;
+  return [receiver send: payload];
+}

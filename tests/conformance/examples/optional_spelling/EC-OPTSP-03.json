@@ -1,0 +1,47 @@
+{
+  "id": "EC-OPTSP-03",
+  "title": "Reject non-canonical optional<int> in canonical-only mode",
+  "feature": "optional spelling",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-6",
+    "spec/planning/issue_134_optional_spelling_diagnostics_package.md#issue-134-optional-spelling-diagnostics-package"
+  ],
+  "source": "// MODE: future-canonical-only\noptional<int> wrapCanonicalOnly(int value) {\n    return optional<int>(value);\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OPT-SPELL-NONCANON-UNSUPPORTED",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 9
+          }
+        },
+        "message": "canonical-only mode requires Optional spelling",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": 9
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      }
+    ]
+  }
+}

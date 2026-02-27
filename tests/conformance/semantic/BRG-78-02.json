@@ -1,0 +1,29 @@
+{
+  "id": "BRG-78-02",
+  "title": "Reject invalid bridging attribute placement/signature combinations",
+  "feature": "NSError/status-code bridging attributes",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2"
+  ],
+  "source": "@interface API : NSObject\n- (int)badBridge:(NSError * _Nullable * _Nullable)error __attribute__((objc_error_out(error)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-BRIDGE-SIGNATURE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 3 },
+          "end": { "line": 2, "column": 97 }
+        },
+        "message": "objc_error_out requires a supported return convention for bridging",
+        "fixits": []
+      }
+    ]
+  }
+}

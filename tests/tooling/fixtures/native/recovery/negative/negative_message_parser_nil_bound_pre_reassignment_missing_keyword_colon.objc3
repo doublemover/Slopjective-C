@@ -1,0 +1,8 @@
+// Negative fixture: pre-reassignment nil-bound receiver message-send missing keyword colon.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageParserNilBoundPreReassignmentMissingKeywordColon;
+
+fn main() {
+  let receiver = nil;
+  return [receiver ping 1];
+}

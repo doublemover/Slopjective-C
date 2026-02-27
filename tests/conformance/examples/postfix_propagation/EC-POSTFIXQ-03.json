@@ -1,0 +1,35 @@
+{
+  "id": "EC-POSTFIXQ-03",
+  "title": "Reject optional propagation in non-optional return context",
+  "feature": "postfix ?",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "NSString * requiredName(NSString * _Nullable value) {\n    return value?;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-OPTIONAL-RETURN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 18 }
+        },
+        "message": "postfix ? requires an optional-returning carrier context",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 1 },
+              "end": { "line": 1, "column": 11 }
+            },
+            "replacement": "NSString * _Nullable"
+          }
+        ]
+      }
+    ]
+  }
+}

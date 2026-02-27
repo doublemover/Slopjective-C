@@ -1,0 +1,30 @@
+{
+  "id": "CRPT-06",
+  "title": "Reject report/profile mismatch when mode claims strict concurrency but profile list omits concurrency claim",
+  "feature": "conformance report mode/profile consistency validation",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "{\n  \"schema_id\": \"objc3-conformance-report/v1\",\n  \"toolchain\": {\"name\": \"objc3c\", \"version\": \"1.0.0\"},\n  \"mode\": {\"language_version\": 3, \"strictness\": \"strict\", \"concurrency\": \"strict\"},\n  \"profiles\": [{\"id\": \"core\"}, {\"id\": \"strict\"}],\n  \"optional_features\": [],\n  \"known_deviations\": [],\n  \"versions\": [{\"component\": \"frontend\", \"value\": \"1.0.0\"}]\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONF-REPORT-MODE-PROFILE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 11 },
+          "end": { "line": 5, "column": 48 }
+        },
+        "message": "report mode claims strict concurrency but profiles omit strict-concurrency claim"
+      }
+    ]
+  }
+}

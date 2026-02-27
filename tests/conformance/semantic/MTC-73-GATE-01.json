@@ -1,0 +1,31 @@
+{
+  "id": "MTC-73-GATE-01",
+  "title": "Require macro-gated fallback and reject unguarded match when match feature is disabled",
+  "feature": "match provisional gating and feature-macro fallback behavior",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-4",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-match=off -fsyntax-only %s\nint classifyWithFallback(int value) {\n#if __OBJC3_FEATURE_MATCH__\n    match (value) {\n      case 0: {\n        return 10;\n      }\n      case let observed: {\n        return observed;\n      }\n    }\n#else\n    if (value == 0) {\n        return 10;\n    }\n    return value;\n#endif\n}\n\nint rejectUnguardedMatchWhenDisabled(int value) {\n    match (value) {\n      case 0: {\n        return 1;\n      }\n      default: {\n        return 0;\n      }\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MATCH-UNSUPPORTED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 21, "column": 5 },
+          "end": { "line": 21, "column": 17 }
+        },
+        "message": "match statements are not available in the current feature configuration; guard with __OBJC3_FEATURE_MATCH__ or use an if/switch fallback",
+        "fixits": []
+      }
+    ]
+  }
+}

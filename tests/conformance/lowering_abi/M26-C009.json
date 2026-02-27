@@ -1,0 +1,26 @@
+{
+  "id": "M26-C009",
+  "title": "Codify docs-evidence compile contracts for typed bool/i32 lowering ABI in native objc3c frontend (Docs-Evidence Contracts) (issue #2864 / task M26-C009)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 docs evidence compile contracts",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2864,
+    "task": "M26-C009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_009_DOCS_EVIDENCE_COMPILE_CONTRACTS\n#define __OBJC3_FEATURE_M26_C_009_DOCS_EVIDENCE_COMPILE_CONTRACTS 1\n#endif\n\ntypedef signed int m26c009_i32;\ntypedef _Bool m26c009_bool;\n\ntypedef struct M26C009_ContractEvidence {\n    m26c009_i32 checklist_e_3_11;\n    m26c009_i32 interop_part_11_2_4;\n    m26c009_i32 lowering_contract_c_5;\n    m26c009_i32 metadata_d_3_2;\n} M26C009_ContractEvidence;\n\ntypedef m26c009_bool (*M26C009_ContractsSatisfiedFn)(M26C009_ContractEvidence evidence);\ntypedef m26c009_i32 (*M26C009_ContractDigestFn)(M26C009_ContractEvidence evidence);\n\nstatic m26c009_bool m26c009_contracts_satisfied(M26C009_ContractEvidence evidence) {\n    return evidence.checklist_e_3_11 && evidence.interop_part_11_2_4 && evidence.lowering_contract_c_5 && evidence.metadata_d_3_2;\n}\n\nstatic m26c009_i32 m26c009_contract_digest(M26C009_ContractEvidence evidence) {\n    m26c009_i32 digest = 0;\n    digest = (digest << 1) | (evidence.checklist_e_3_11 != 0);\n    digest = (digest << 1) | (evidence.interop_part_11_2_4 != 0);\n    digest = (digest << 1) | (evidence.lowering_contract_c_5 != 0);\n    digest = (digest << 1) | (evidence.metadata_d_3_2 != 0);\n    return digest;\n}\n\ntypedef struct M26C009_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c009_i32 contract_digest;\n    m26c009_bool contracts_satisfied;\n} M26C009_Probe;\n\nM26C009_Probe m26c009_probe(void) {\n#if __OBJC3_FEATURE_M26_C_009_DOCS_EVIDENCE_COMPILE_CONTRACTS\n    M26C009_ContractsSatisfiedFn contracts_satisfied = m26c009_contracts_satisfied;\n    M26C009_ContractDigestFn contract_digest = m26c009_contract_digest;\n    M26C009_ContractEvidence evidence = { 1, 1, 1, 1 };\n    M26C009_Probe probe = { 1, 9, 2864, contract_digest(evidence), contracts_satisfied(evidence) };\n#else\n    M26C009_Probe probe = { 0, 9, 2864, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

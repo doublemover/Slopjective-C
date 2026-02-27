@@ -1,0 +1,12 @@
+module IncrementDecrementForStep;
+
+fn main() -> i32 {
+  let sum = 0;
+  for (let i = 0; i < 4; i++) {
+    sum += i;
+  }
+  for (let j = 0; j < 3; ++j) {
+    sum += j;
+  }
+  return sum;
+}

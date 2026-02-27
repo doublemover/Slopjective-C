@@ -1,0 +1,26 @@
+{
+  "id": "M26-C002",
+  "title": "Implement typed bool/i32 call-lowering path for native objc3c frontend (Primary Implementation) (issue #2857 / task M26-C002)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering abi implementation primary implementation",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2857,
+    "task": "M26-C002",
+    "sequence": 2
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_002_TYPED_BOOL_I32_CALL_LOWERING_IMPL\n#define __OBJC3_FEATURE_M26_C_002_TYPED_BOOL_I32_CALL_LOWERING_IMPL 1\n#endif\n\ntypedef signed int m26c002_i32;\ntypedef _Bool m26c002_bool;\n\ntypedef m26c002_i32 (*M26C002_SelectI32Fn)(m26c002_bool choose_lhs, m26c002_i32 lhs, m26c002_i32 rhs);\ntypedef m26c002_bool (*M26C002_NonZeroFn)(m26c002_i32 value);\n\nstatic m26c002_i32 m26c002_select_i32(m26c002_bool choose_lhs, m26c002_i32 lhs, m26c002_i32 rhs) {\n    return choose_lhs ? lhs : rhs;\n}\n\nstatic m26c002_bool m26c002_nonzero_i32(m26c002_i32 value) {\n    return value != 0;\n}\n\ntypedef struct M26C002_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c002_i32 selected;\n    m26c002_bool selected_is_nonzero;\n} M26C002_Probe;\n\nM26C002_Probe m26c002_probe(void) {\n#if __OBJC3_FEATURE_M26_C_002_TYPED_BOOL_I32_CALL_LOWERING_IMPL\n    M26C002_SelectI32Fn select_i32 = m26c002_select_i32;\n    M26C002_NonZeroFn nonzero_i32 = m26c002_nonzero_i32;\n    m26c002_i32 selected = select_i32(1, 17, 29);\n    M26C002_Probe probe = { 1, 2, 2857, selected, nonzero_i32(selected) };\n#else\n    M26C002_Probe probe = { 0, 2, 2857, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

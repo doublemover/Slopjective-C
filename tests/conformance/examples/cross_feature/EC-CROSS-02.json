@@ -1,0 +1,35 @@
+{
+  "id": "EC-CROSS-02",
+  "title": "Warn on non-canonical await try ordering with cross-feature expression",
+  "feature": "try await + postfix ? + ?.",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-6",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id _Nullable nextToken(Client * _Nullable client) async throws {\n    return (await try client?.fetchToken())?;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-W-EFFECT-ORDER",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 2, "column": 13 },
+          "end": { "line": 2, "column": 22 }
+        },
+        "message": "non-canonical await try order",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 13 },
+              "end": { "line": 2, "column": 22 }
+            },
+            "replacement": "try await"
+          }
+        ]
+      }
+    ]
+  }
+}

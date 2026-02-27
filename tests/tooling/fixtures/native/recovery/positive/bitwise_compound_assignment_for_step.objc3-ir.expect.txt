@@ -1,0 +1,11 @@
+# Bitwise compound assignment in for-step lowering markers.
+define i32 @main()
+for_cond_
+for_body_
+for_step_
+and i32
+or i32
+xor i32
+shl i32
+ashr i32
+ret i32

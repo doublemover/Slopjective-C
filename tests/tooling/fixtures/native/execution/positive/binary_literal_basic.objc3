@@ -1,0 +1,7 @@
+module BinaryLiteralBasic;
+
+let base = 0b1010;
+
+fn main() -> i32 {
+  return base + 0b11;
+}

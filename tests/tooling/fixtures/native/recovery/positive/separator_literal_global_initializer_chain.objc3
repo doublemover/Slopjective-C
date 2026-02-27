@@ -1,0 +1,10 @@
+module SeparatorLiteralGlobalInitializerChain;
+
+let a = 1_0;
+let b = a + 0b1_1;
+let c = b + 0o7;
+let d = c + 0xA_A;
+
+fn main() -> i32 {
+  return d;
+}

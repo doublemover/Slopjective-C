@@ -1,0 +1,16 @@
+{
+  "id": "EC-POSTFIXQ-04",
+  "title": "Allow postfix propagation in call argument with comma follow token",
+  "feature": "postfix ?",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id _Nullable consume(id first, id fallback);\n\nid _Nullable call(id _Nullable input, id fallback) {\n    return consume(input?, fallback);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

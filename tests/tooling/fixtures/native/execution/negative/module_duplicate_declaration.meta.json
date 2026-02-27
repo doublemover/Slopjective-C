@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "module_duplicate_declaration.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S200",
+      "duplicate module"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

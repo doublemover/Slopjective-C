@@ -1,0 +1,10 @@
+module ConditionalConditionFunctionValueExec;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  let x = ready ? 1 : 0;
+  return x;
+}

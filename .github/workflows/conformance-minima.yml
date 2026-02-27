@@ -1,0 +1,26 @@
+name: conformance-minima
+
+on:
+  pull_request:
+    paths:
+      - "tests/conformance/**"
+      - "scripts/check_conformance_suite.ps1"
+      - ".github/workflows/conformance-minima.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "tests/conformance/**"
+      - "scripts/check_conformance_suite.ps1"
+      - ".github/workflows/conformance-minima.yml"
+
+jobs:
+  conformance-minima:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify conformance suite minima and required families
+        shell: pwsh
+        run: ./scripts/check_conformance_suite.ps1

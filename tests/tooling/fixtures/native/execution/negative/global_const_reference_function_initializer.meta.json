@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "global_const_reference_function_initializer.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S210",
+      "global initializer must be constant expression"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

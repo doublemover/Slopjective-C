@@ -1,0 +1,7 @@
+// Negative execution fixture: compile should fail on continue used outside of a loop body.
+module LoopControlContinueOutsideLoop;
+
+fn main() -> i32 {
+  continue;
+  return 0;
+}

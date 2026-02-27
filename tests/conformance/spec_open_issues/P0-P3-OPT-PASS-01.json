@@ -1,0 +1,22 @@
+{
+  "id": "P0-P3-OPT-PASS-01",
+  "title": "Accept canonical optional spelling and permitted alias migration path",
+  "feature": "part3 optional spelling and alias policy canonical path",
+  "bucket": "spec_open_issues",
+  "profile": "strict",
+  "profile_scope": "core|strict|strict-concurrency|strict-system",
+  "seed_alias": "S1-P3-OPT",
+  "required_outcome": "required-pass",
+  "dependency_ref": "B-06/#162@UNPINNED-EXTERNAL",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_162_optional_spelling_diagnostics_fixit_plan.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "int? maybeCount = nil;\\nint value = maybeCount ?? 0;\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "signal": "OPT-SPELL-CANONICAL-OK"
+  }
+}

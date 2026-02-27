@@ -1,0 +1,26 @@
+{
+  "id": "M23-C010",
+  "title": "Add lowering replay/automation enforcement (CI/Automation Enforcement) (issue #2650 / task M23-C010)",
+  "feature": "m23 lane-c end to end compilation and artifact emission add lowering replay automation enforcement ci automation enforcement slice 10",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "C",
+    "issue": 2650,
+    "task": "M23-C010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M23_C_010_ADD_LOWERING_REPLAY_AUTOMATION_ENFORCEMENT_CI_AUTOMATION__\\n#define __OBJC3_FEATURE_M23_C_010_ADD_LOWERING_REPLAY_AUTOMATION_ENFORCEMENT_CI_AUTOMATION__ 1\\n#endif\\n\\ntypedef struct M23C010_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23C010_Probe;\\n\\nM23C010_Probe m23c010_probe(void) {\\n#if __OBJC3_FEATURE_M23_C_010_ADD_LOWERING_REPLAY_AUTOMATION_ENFORCEMENT_CI_AUTOMATION__\\n    M23C010_Probe probe = { 1, 10, 2650 };\\n#else\\n    M23C010_Probe probe = { 0, 10, 2650 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

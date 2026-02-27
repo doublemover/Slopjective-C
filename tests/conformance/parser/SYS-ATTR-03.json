@@ -1,0 +1,19 @@
+{
+  "id": "SYS-ATTR-03",
+  "title": "Accept canonical borrowed T * qualifier spelling",
+  "feature": "Part 8 canonical system attribute spellings",
+  "bucket": "parser",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-3"
+  ],
+  "source": "int borrowed = 1;\n\nunsigned long count_bytes(borrowed const unsigned char *bytes, unsigned long length) {\n    (void)bytes;\n    return length + (unsigned long)borrowed;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

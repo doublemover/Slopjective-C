@@ -1,0 +1,32 @@
+{
+  "id": "PERF-ATTR-03",
+  "title": "Preserve canonical objc_direct/objc_final/objc_sealed spellings in textual interfaces",
+  "feature": "performance and dynamism canonical textual interface spellings",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-5",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-5",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module PERFATTR03.objcmod --emit-interface PERFATTR03.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: FileCheck %s --input-file=PERFATTR03.obji --check-prefix=PERFATTR03\n// RUN: objc3c --emit-module PERFATTR03-import.objcmod --import-interface PERFATTR03.obji --emit-interface PERFATTR03-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: diff -u PERFATTR03.obji PERFATTR03-roundtrip.obji\n// RUN: objc3c --verify-interface PERFATTR03.objcmod PERFATTR03-roundtrip.obji %s\n__attribute__((objc_final))\n@interface PERFATTR03FinalSurface : NSObject\n- (int)fastPath __attribute__((objc_direct));\n- (int)finalPath __attribute__((objc_final));\n@end\n__attribute__((objc_sealed))\n@interface PERFATTR03SealedSurface : NSObject\n- (int)sealedToken;\n@end\n// PERFATTR03: __attribute__((objc_final))\n// PERFATTR03: @interface PERFATTR03FinalSurface : NSObject\n// PERFATTR03: - (int)fastPath __attribute__((objc_direct));\n// PERFATTR03: - (int)finalPath __attribute__((objc_final));\n// PERFATTR03: __attribute__((objc_sealed))\n// PERFATTR03: @interface PERFATTR03SealedSurface : NSObject\n// PERFATTR03: - (int)sealedToken;\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "__attribute__((objc_final))\n@interface PERFATTR03FinalSurface : NSObject\n- (int)fastPath __attribute__((objc_direct));\n- (int)finalPath __attribute__((objc_final));\n@end\n__attribute__((objc_sealed))\n@interface PERFATTR03SealedSurface : NSObject\n- (int)sealedToken;\n@end\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": false,
+      "expected_canonical_spellings": [
+        "__attribute__((objc_direct))",
+        "__attribute__((objc_final))",
+        "__attribute__((objc_sealed))"
+      ],
+      "forbidden_noncanonical_spellings": [
+        "__attribute__((objc_subclassing_restricted))"
+      ]
+    }
+  }
+}

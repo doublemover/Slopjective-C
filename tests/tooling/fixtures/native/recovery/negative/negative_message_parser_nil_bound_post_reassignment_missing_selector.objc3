@@ -1,0 +1,9 @@
+// Negative fixture: post-reassignment receiver message-send missing selector identifier.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageParserNilBoundPostReassignmentMissingSelector;
+
+fn main() {
+  let receiver = nil;
+  receiver = 1;
+  return [receiver : 1];
+}

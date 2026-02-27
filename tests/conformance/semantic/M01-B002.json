@@ -1,0 +1,38 @@
+{
+  "id": "M01-B002",
+  "title": "Allow reference optional send and reject scalar optional send in one deterministic fixture",
+  "feature": "M01 lane B optional-send return-category enforcement",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-5",
+    "spec/DECISIONS_LOG.md#decisions-d-001",
+    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+  ],
+  "source": "@interface M01B002Probe\n- (id _Nullable)label;\n- (int)count;\n@end\n\nid _Nullable m01b002_positive(M01B002Probe * _Nullable probe) {\n    return [probe? label];\n}\n\nint m01b002_negative(M01B002Probe * _Nullable probe) {\n    return [probe? count];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-OPTSEND-NONREF",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 12 },
+          "end": { "line": 11, "column": 26 }
+        },
+        "message": "optional message send requires object or block pointer return in v1",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 11, "column": 12 },
+              "end": { "line": 11, "column": 26 }
+            },
+            "replacement": "probe != nil ? [probe count] : 0"
+          }
+        ]
+      }
+    ]
+  }
+}

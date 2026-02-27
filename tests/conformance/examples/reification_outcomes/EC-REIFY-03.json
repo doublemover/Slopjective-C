@@ -1,0 +1,47 @@
+{
+  "id": "EC-REIFY-03",
+  "title": "Reject marker when reification gate is disabled",
+  "feature": "reification outcomes",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_136_reification_grammar_semantics_package.md#issue-136-reification-grammar-semantics-package"
+  ],
+  "source": "// MODE: generic=1,reify=0\n@reify_generics\nBox<T> gatedOff<T>(T value) { return Box<T>(value); }\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "REIFY-02",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 16
+          }
+        },
+        "message": "reification marker requires reify gate enabled",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": 16
+              }
+            },
+            "replacement": ""
+          }
+        ]
+      }
+    ]
+  }
+}

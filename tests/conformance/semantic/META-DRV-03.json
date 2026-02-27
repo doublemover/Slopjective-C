@@ -1,0 +1,31 @@
+{
+  "id": "META-DRV-03",
+  "title": "Diagnose missing derive capability with capability-id and macro guidance",
+  "feature": "optional metaprogramming derive gating",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=on -fobjc3-feature-derive-codable=off -fsyntax-only %s\n__attribute__((objc_derive(\"Codable\")))\n@interface METADRV03Payload : NSObject\n@property (nonatomic, copy) NSString * _Nonnull token;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-DERIVE-CAPABILITY-MISSING",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 39 }
+        },
+        "message": "requested derive capability objc3.meta.derive.codable.v1 is unavailable; enable __OBJC3_FEATURE_DERIVE_CODABLE__ or guard the derive request",
+        "fixits": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "P0-P3-MANGLE-FAIL-01",
+  "title": "Reject malformed generic free-function mangling token stream",
+  "feature": "part3 generic free-function mangling malformed path",
+  "bucket": "spec_open_issues",
+  "profile": "core",
+  "profile_scope": "all",
+  "seed_alias": "S1-P3-MANGLE",
+  "required_outcome": "required-fail",
+  "dependency_ref": "B-08/#163@UNPINNED-EXTERNAL",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_163_demangler_reflection_update_plan.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "symbol=_OBJC3$gfn$<T$broken_token\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "DEMANGLE-GFN-UNSUPPORTED-SHAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 31 }
+        },
+        "message": "mangled generic function symbol has malformed token sequence",
+        "fixits": []
+      }
+    ],
+    "signal": "DEMANGLE-GFN-UNSUPPORTED-SHAPE"
+  }
+}

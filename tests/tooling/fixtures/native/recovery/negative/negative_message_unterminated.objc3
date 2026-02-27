@@ -1,0 +1,8 @@
+// Negative fixture: unterminated bracketed message-send expression.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageUnterminated;
+
+fn main() {
+  let receiver = 1;
+  return [receiver ping;
+}

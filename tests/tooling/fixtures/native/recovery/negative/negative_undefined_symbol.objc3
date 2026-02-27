@@ -1,0 +1,7 @@
+// Negative fixture: undefined symbol.
+// Expected diagnostic code(s): O3S203.
+module NegativeUndefinedSymbol;
+
+fn main() {
+  return missing_symbol();
+}

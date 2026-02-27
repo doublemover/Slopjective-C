@@ -1,0 +1,22 @@
+module LoopNestedWhile;
+
+fn main() -> i32 {
+  let outer = 0;
+  let acc = 0;
+  while (outer < 3) {
+    let inner = 0;
+    while (inner < 5) {
+      let inner = inner + 1;
+      if (inner == 2) {
+        continue;
+      }
+      let acc = acc + inner;
+      if (inner == 4) {
+        break;
+      }
+    }
+    let outer = outer + 1;
+  }
+  return acc;
+}
+

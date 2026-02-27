@@ -1,0 +1,49 @@
+{
+  "id": "M05-D006",
+  "title": "Scope-freeze baseline: strict-mode failure-path assertions keep stable payload mapping",
+  "feature": "M05 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m05/lane_d_m05_scope_freeze.md"
+  ],
+  "source": "void objc3c_harness_flag(id arg);`n`nvoid m05d006_negative(void) {`n    objc3c_harness_flag(@\"--strict-conformance-assert=partial\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-STRICT-MODE-REQUIRES-CANONICAL-ASSERTIONS",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 25
+          },
+          "end": {
+            "line": 4,
+            "column": 64
+          }
+        },
+        "message": "strict-mode conformance assertions must be canonical and deterministic",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 25
+              },
+              "end": {
+                "line": 4,
+                "column": 64
+              }
+            },
+            "replacement": "@\"--strict-conformance-assert=canonical\""
+          }
+        ]
+      }
+    ]
+  }
+}

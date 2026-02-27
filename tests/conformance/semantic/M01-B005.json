@@ -1,0 +1,30 @@
+{
+  "id": "M01-B005",
+  "title": "Keep isolated member access valid and reject objc_nonisolated state read",
+  "feature": "M01 lane B actor nonisolated access enforcement",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+  ],
+  "source": "actor class M01B005Counter : NSObject\n@property (atomic) int count;\n- (int)positiveSnapshot;\n- (int)negativeSnapshot __attribute__((objc_nonisolated));\n@end\n\n@implementation M01B005Counter\n- (int)positiveSnapshot {\n    return self.count;\n}\n\n- (int)negativeSnapshot {\n    return self.count;\n}\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONISOLATED-ISOLATED-ACCESS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 13, "column": 12 },
+          "end": { "line": 13, "column": 21 }
+        },
+        "message": "objc_nonisolated members may not access actor-isolated mutable state without an explicit hop"
+      }
+    ]
+  }
+}

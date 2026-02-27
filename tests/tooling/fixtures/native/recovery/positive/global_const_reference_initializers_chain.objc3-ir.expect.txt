@@ -1,0 +1,6 @@
+# Global const-reference chain lowering markers.
+@base = global i32 2
+@doubled = global i32 4
+@biased = global i32 5
+@selected = global i32 5
+ret i32

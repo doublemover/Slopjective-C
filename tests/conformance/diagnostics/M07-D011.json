@@ -1,0 +1,50 @@
+{
+  "id": "M07-D011",
+  "title": "Issue #1511 / M07-D011: Scope-freeze baseline: extension contract slice keeps stable payload mapping",
+  "feature": "M07 lane D diagnostic payload/code mapping freeze (issue #1511, task M07-D011)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m07/lane_d_m07_scope_freeze.md",
+    "spec/planning/compiler/m07/lane_d_m07_execution_packet_20260226.md"
+  ],
+  "source": "void objc3c_harness_flag(id arg);`n`nvoid m07d011_extension_negative(void) {`n    objc3c_harness_flag(@\"--conformance-contract-extension=partial\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-CONTRACT-EXTENSION-INCOMPLETE",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 25
+          },
+          "end": {
+            "line": 4,
+            "column": 67
+          }
+        },
+        "message": "issue #1511 task M07-D011: extension contract slice must be canonical and non-overlapping with M07-D001",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 25
+              },
+              "end": {
+                "line": 4,
+                "column": 67
+              }
+            },
+            "replacement": "@\"--conformance-contract-extension=canonical\""
+          }
+        ]
+      }
+    ]
+  }
+}

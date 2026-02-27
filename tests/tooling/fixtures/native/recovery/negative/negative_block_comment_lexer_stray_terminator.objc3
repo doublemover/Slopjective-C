@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3L004.
+module NegativeBlockCommentLexerStrayTerminator;
+
+fn main() -> i32 {
+  */
+  return 0;
+}

@@ -1,0 +1,15 @@
+// Negative fixture: typed bool return rejects i32 function call result.
+// Expected diagnostic code(s): O3S211.
+module NegativeTypedBoolReturnFromI32Call;
+
+fn raw_value() -> i32 {
+  return 2;
+}
+
+fn as_bool() -> bool {
+  return raw_value();
+}
+
+fn main() -> i32 {
+  return 0;
+}

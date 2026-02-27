@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-edge-case-examples",
+  "description": "Executable punctuation-heavy conformance examples with diagnostics/fix-its.",
+  "groups": [
+    {
+      "name": "optional_chaining",
+      "feature": "?.",
+      "minimum_examples": 5,
+      "files": [
+        "optional_chaining/EC-OPTCHAIN-01.json",
+        "optional_chaining/EC-OPTCHAIN-02.json",
+        "optional_chaining/EC-OPTCHAIN-03.json",
+        "optional_chaining/EC-OPTCHAIN-04.json",
+        "optional_chaining/EC-OPTCHAIN-05.json"
+      ]
+    },
+    {
+      "name": "postfix_propagation",
+      "feature": "postfix ?",
+      "minimum_examples": 5,
+      "files": [
+        "postfix_propagation/EC-POSTFIXQ-01.json",
+        "postfix_propagation/EC-POSTFIXQ-02.json",
+        "postfix_propagation/EC-POSTFIXQ-03.json",
+        "postfix_propagation/EC-POSTFIXQ-04.json",
+        "postfix_propagation/EC-POSTFIXQ-05.json"
+      ]
+    },
+    {
+      "name": "nil_coalescing",
+      "feature": "??",
+      "minimum_examples": 5,
+      "files": [
+        "nil_coalescing/EC-COALESCE-01.json",
+        "nil_coalescing/EC-COALESCE-02.json",
+        "nil_coalescing/EC-COALESCE-03.json",
+        "nil_coalescing/EC-COALESCE-04.json",
+        "nil_coalescing/EC-COALESCE-05.json"
+      ]
+    },
+    {
+      "name": "capture_lists",
+      "feature": "capture lists",
+      "minimum_examples": 5,
+      "files": [
+        "capture_lists/EC-CAPTURE-01.json",
+        "capture_lists/EC-CAPTURE-02.json",
+        "capture_lists/EC-CAPTURE-03.json",
+        "capture_lists/EC-CAPTURE-04.json",
+        "capture_lists/EC-CAPTURE-05.json"
+      ]
+    },
+    {
+      "name": "borrowed_pointer_punctuation",
+      "feature": "borrowed pointer punctuation",
+      "minimum_examples": 5,
+      "files": [
+        "borrowed_pointer_punctuation/EC-BORROW-01.json",
+        "borrowed_pointer_punctuation/EC-BORROW-02.json",
+        "borrowed_pointer_punctuation/EC-BORROW-03.json",
+        "borrowed_pointer_punctuation/EC-BORROW-04.json",
+        "borrowed_pointer_punctuation/EC-BORROW-05.json"
+      ]
+    },
+    {
+      "name": "cross_feature",
+      "feature": "try await + postfix ? + ?.",
+      "minimum_examples": 5,
+      "files": [
+        "cross_feature/EC-CROSS-01.json",
+        "cross_feature/EC-CROSS-02.json",
+        "cross_feature/EC-CROSS-03.json",
+        "cross_feature/EC-CROSS-04.json",
+        "cross_feature/EC-CROSS-05.json"
+      ]
+    },
+    {
+      "name": "optional_spelling",
+      "feature": "optional spelling outcomes",
+      "minimum_examples": 7,
+      "files": [
+        "optional_spelling/EC-OPTSP-01.json",
+        "optional_spelling/EC-OPTSP-02.json",
+        "optional_spelling/EC-OPTSP-03.json",
+        "optional_spelling/EC-OPTSP-04.json",
+        "optional_spelling/EC-OPTSP-05.json",
+        "optional_spelling/EC-OPTSP-06.json",
+        "optional_spelling/EC-OPTSP-07.json"
+      ]
+    },
+    {
+      "name": "mangling_invariants",
+      "feature": "mangling invariants outcomes",
+      "minimum_examples": 8,
+      "files": [
+        "mangling_invariants/EC-MANGLE-01.json",
+        "mangling_invariants/EC-MANGLE-02.json",
+        "mangling_invariants/EC-MANGLE-03.json",
+        "mangling_invariants/EC-MANGLE-04.json",
+        "mangling_invariants/EC-MANGLE-05.json",
+        "mangling_invariants/EC-MANGLE-06.json",
+        "mangling_invariants/EC-MANGLE-07.json",
+        "mangling_invariants/EC-MANGLE-08.json"
+      ]
+    },
+    {
+      "name": "reification_outcomes",
+      "feature": "reification outcomes",
+      "minimum_examples": 13,
+      "files": [
+        "reification_outcomes/EC-REIFY-01.json",
+        "reification_outcomes/EC-REIFY-02.json",
+        "reification_outcomes/EC-REIFY-03.json",
+        "reification_outcomes/EC-REIFY-04.json",
+        "reification_outcomes/EC-REIFY-05.json",
+        "reification_outcomes/EC-REIFY-06.json",
+        "reification_outcomes/EC-REIFY-07.json",
+        "reification_outcomes/EC-REIFY-08.json",
+        "reification_outcomes/EC-REIFY-09.json",
+        "reification_outcomes/EC-REIFY-10.json",
+        "reification_outcomes/EC-REIFY-11.json",
+        "reification_outcomes/EC-REIFY-12.json",
+        "reification_outcomes/EC-REIFY-13.json"
+      ]
+    }
+  ]
+}

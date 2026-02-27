@@ -1,0 +1,9 @@
+module SeparatorLiteralPrefixedMix;
+
+let b = 0b1_1;
+let o = 0o1_2;
+let h = 0x1_A;
+
+fn main() -> i32 {
+  return b + o + h;
+}

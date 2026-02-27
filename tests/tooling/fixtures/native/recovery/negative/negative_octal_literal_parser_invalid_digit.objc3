@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeOctalLiteralParserInvalidDigit;
+
+let value = 0o8;
+
+fn main() -> i32 {
+  return 0;
+}

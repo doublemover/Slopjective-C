@@ -1,0 +1,7 @@
+module MessageSendNonzeroBoundIdentifierPostAssignmentFastPath;
+
+fn main() -> i32 {
+  let receiver = 0;
+  receiver = 7;
+  return [receiver ping];
+}

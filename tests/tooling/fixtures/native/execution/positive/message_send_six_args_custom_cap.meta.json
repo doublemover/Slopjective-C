@@ -1,0 +1,9 @@
+{
+  "fixture": "message_send_six_args_custom_cap.objc3",
+  "execution": {
+    "native_compile_args": [
+      "--objc3-max-message-args",
+      "6"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "id": "P0-P3-MANIFEST-PASS-01",
+  "title": "Accept canonical runtime and ABI manifest fixture",
+  "feature": "part0 runtime and abi manifest pass path",
+  "bucket": "spec_open_issues",
+  "profile": "core",
+  "profile_scope": "all",
+  "seed_alias": "S1-P0-MANIFEST",
+  "required_outcome": "required-pass",
+  "dependency_ref": "Part0:B-01,B-02,B-03,B-04@spec-baseline",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_149_lane_a_consolidated_closure_bundle.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "{\\n  \\\"manifest_kind\\\": \\\"runtime+abi\\\",\\n  \\\"schema_version\\\": \\\"1.0.0\\\",\\n  \\\"artifacts\\\": [\\\"runtime.bin\\\", \\\"abi.json\\\"],\\n  \\\"signature\\\": \\\"sha256:2d06d18f\\\"\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "signal": "MANIFEST-VALID-PUBLISHED"
+  }
+}

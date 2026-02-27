@@ -1,0 +1,16 @@
+{
+  "id": "EC-COALESCE-01",
+  "title": "Parse nil-coalescing as right associative",
+  "feature": "??",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "id choose(id _Nullable first, id _Nullable second, id fallback) {\n    return first ?? second ?? fallback;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

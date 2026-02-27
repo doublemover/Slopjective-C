@@ -1,0 +1,29 @@
+{
+  "id": "META-XM-03",
+  "title": "Reject import when macro expansion provenance metadata is missing",
+  "feature": "macro/derive expansion metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2"
+  ],
+  "source": "// RUN: objc3c --verify-interface MetaXM-missing-meta.objcmod MetaXM.obji %s\\n@interface XMImporter : NSObject\\n- (void)consume:(id _Nonnull)value;\\n@end\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-META-EXPANSION-MISSING-PROVENANCE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 66 }
+        },
+        "message": "module metadata is missing required macro/derive expansion provenance",
+        "fixits": []
+      }
+    ]
+  }
+}

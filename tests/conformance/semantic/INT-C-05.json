@@ -1,0 +1,39 @@
+{
+  "id": "INT-C-05",
+  "title": "Diagnose escaping +0 async-thunk callback values across ownership/lifetime boundaries without retain or copy",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef struct INTC05Box {\\n    id _Nullable savedValue;\\n    id<Error> _Nullable savedError;\\n} INTC05Box;\\n\\nvoid intc05_escape_callback_values(void * _Nullable context,\\n                                   objc_async_completion_status_t status,\\n                                   id _Nullable result,\\n                                   id<Error> _Nullable error) {\\n    INTC05Box *box = (INTC05Box *)context;\\n    box->savedValue = result;\\n    box->savedError = error;\\n    (void)status;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-CALLBACK-ESCAPE-UNRETAINED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 16, "column": 5 },
+          "end": { "line": 16, "column": 28 }
+        },
+        "message": "result delivered by async C thunk callback is +0 and must be retained or copied before escaping callback scope"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-CALLBACK-ESCAPE-UNRETAINED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 17, "column": 5 },
+          "end": { "line": 17, "column": 28 }
+        },
+        "message": "error delivered by async C thunk callback is +0 and must be retained or copied before escaping callback scope"
+      }
+    ]
+  }
+}

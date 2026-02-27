@@ -1,0 +1,28 @@
+{
+  "id": "IFV-57-01",
+  "title": "Reject metadata/interface mismatch in verification mode",
+  "feature": "interface verification mode",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module Foo.objcmod --emit-interface Foo.obji %s\n// RUN: objc3c --verify-interface Foo.objcmod Foo.obji --assert-mismatch _Nonnull:_Nullable\n@interface FooAPI : NSObject\n- (id _Nonnull)loadToken;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 1 },
+          "end": { "line": 4, "column": 29 }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ]
+  }
+}

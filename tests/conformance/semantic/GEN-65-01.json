@@ -1,0 +1,39 @@
+{
+  "id": "GEN-65-01",
+  "title": "Reject generic methods/functions by default in v1 mode",
+  "feature": "generic methods/functions deferral gate",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/DECISIONS_LOG.md#decisions-d-008",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-3-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7"
+  ],
+  "source": "@interface GenericProbe : NSObject\n- <T> (T)identity:(T)value;\n@end\n\n<T> T GenericIdentity(T value) {\n    return value;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-GENERIC-METHODS-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 3 },
+          "end": { "line": 2, "column": 6 }
+        },
+        "message": "generic method/function declaration syntax is deferred in Objective-C 3.0 v1; enable an extension flag to use it"
+      },
+      {
+        "code": "OBJC3-E-GENERIC-METHODS-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 1 },
+          "end": { "line": 5, "column": 4 }
+        },
+        "message": "generic method/function declaration syntax is deferred in Objective-C 3.0 v1; enable an extension flag to use it"
+      }
+    ]
+  }
+}

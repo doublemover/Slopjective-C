@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "increment_decrement_bool_target.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "update operator '++' target"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

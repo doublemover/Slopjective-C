@@ -1,0 +1,11 @@
+module PrototypeCallBeforeDefinition;
+
+fn twice(value: i32) -> i32;
+
+fn main() -> i32 {
+  return twice(9);
+}
+
+fn twice(value: i32) -> i32 {
+  return value * 2;
+}

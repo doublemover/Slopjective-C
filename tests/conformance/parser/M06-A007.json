@@ -1,0 +1,17 @@
+{
+  "id": "M06-A007",
+  "title": "Accept actor declaration when mode routing enables Objective-C language version 3 grammar",
+  "feature": "m06 mode and flag routing for actor grammar acceptance",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-2"
+  ],
+  "source": "#pragma objc_language_version(3)\nactor class M06A007Counter : NSObject\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "M16-A008",
+  "title": "Accept M16 lane-A parser fixture baseline for issue #1955 task M16-A008 (Add frontend negative path coverage (Integration Surface Stabilization))",
+  "feature": "m16 lane-a parser core strict release gate and evidence bundle slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M16",
+    "milestone_number": 101,
+    "lane": "A",
+    "issue": 1955,
+    "task": "M16-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_NEGATIVE_PATH_COVERAGE__\n#define __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_NEGATIVE_PATH_COVERAGE__ 1\n#endif\n\ntypedef struct M16A008_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M16A008_Probe;\n\nM16A008_Probe m16a008_probe(void) {\n#if __OBJC3_FEATURE_CORE_STRICT_RELEASE_GATE_EVIDENCE_BUNDLE_NEGATIVE_PATH_COVERAGE__\n    M16A008_Probe probe = { 1, 8, 1955 };\n#else\n    M16A008_Probe probe = { 0, 8, 1955 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

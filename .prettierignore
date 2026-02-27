@@ -1,0 +1,4 @@
+node_modules/
+site/_site/
+tests/tooling/fixtures/
+tmp/

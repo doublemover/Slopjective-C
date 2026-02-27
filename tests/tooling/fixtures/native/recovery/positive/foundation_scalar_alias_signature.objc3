@@ -1,0 +1,12 @@
+module FoundationScalarAliasSignature;
+
+fn pick(flag: BOOL, lhs: NSInteger, rhs: NSUInteger) -> NSInteger {
+  if (flag) {
+    return lhs + rhs;
+  }
+  return rhs - lhs;
+}
+
+fn main() -> i32 {
+  return pick(true, 10, 20);
+}

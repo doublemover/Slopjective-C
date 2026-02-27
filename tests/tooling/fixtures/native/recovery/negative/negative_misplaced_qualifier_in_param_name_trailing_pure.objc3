@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are not valid parameter identifiers.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierInParamNameTrailingPure;
+
+fn add(lhs: i32, pure: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

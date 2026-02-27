@@ -1,0 +1,97 @@
+{
+  "id": "M17-C047",
+  "title": "Encode deterministic negative conformance vectors for invalid lowering boundary states (issue #2142 / task M17-C047)",
+  "feature": "M17 Lane C explicit negative conformance vectors for lowering boundary failures; issue #2142; task M17-C047; sequence 47; dispatch title: [Compiler][M17][Lane C][M17-C047] Add lowering negative conformance vectors (Refactor and Simplification)",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M17C047.objcmod --emit-interface M17C047.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M17C047.opt.objcmod --emit-interface M17C047.opt.obji %s\n// RUN: objc3c --verify-interface M17C047.objcmod M17C047.obji --assert-mismatch neg_vector.callback_order:context,status,result,error --assert-mismatch neg_vector.status_error_pair:success+error --assert-mismatch neg_vector.cleanup_count:2:1\n// RUN: objc3c --verify-interface M17C047.opt.objcmod M17C047.opt.obji --assert-mismatch neg_vector.callback_order:context,status,result,error --assert-mismatch neg_vector.status_error_pair:success+error --assert-mismatch neg_vector.cleanup_count:2:1\ntypedef enum M17C047CompletionStatus {\n    M17C047_STATUS_SUCCESS = 0,\n    M17C047_STATUS_ERROR = 1,\n    M17C047_STATUS_CANCELLED = 2\n} M17C047CompletionStatus;\n\ntypedef void (*M17C047Completion)(\n    void * _Nullable context,\n    M17C047CompletionStatus status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nvoid M17c047_dispatch(int token,\n                      void * _Nullable context,\n                      M17C047Completion _Nonnull completion);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": 263
+          }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "negative vectors for callback-order drift, status/error contradiction, and cleanup-count mismatch are explicit and deterministic",
+            "strict replay verification fails closed when any declared negative vector is missing",
+            "negative vector IDs are stable conformance keys consumed by lowering regression checks"
+          ],
+          "runtime_assertions": [
+            "callback-order vector fails when completion fields are reordered from canonical tuple",
+            "status/error vector fails when success status is paired with non-nil error payload",
+            "cleanup-count vector fails when unwind cleanup executes zero or multiple times"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized replay preserves declared negative vector set from -O0",
+            "optimization does not suppress strict failure behavior for negative vectors",
+            "deterministic negative vector IDs remain stable across optimization modes"
+          ],
+          "runtime_assertions": [
+            "negative vector failure behavior remains equivalent to -O0 under optimization",
+            "missing vector coverage remains a deterministic fail-closed conformance outcome"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "neg_vector.callback_order",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "canonical callback field order mismatch remains an explicit deterministic negative vector",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "neg_vector.status_error_pair",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "invalid status/error combinations remain explicit deterministic negative vectors",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "SND-07",
+  "title": "Diagnose borrowed-pointer and cleanup-managed resource crossings at task/actor boundaries",
+  "feature": "sendable-like diagnostics for borrowed and resource-handle boundary violations",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef id SND07TaskHandle;\nSND07TaskHandle snd07_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\n\ntypedef int snd07_handle_t;\nvoid snd07_close(snd07_handle_t handle);\nvoid snd07_consume_bytes(const char *bytes);\n\nactor class SND07Actor : NSObject\n- (void)acceptHandle:(snd07_handle_t)handle;\n@end\n\nid snd07_boundary_failures(borrowed const char *bytes, SND07Actor *actor, int raw) async {\n    snd07_handle_t handle __attribute__((objc_resource(close=snd07_close, invalid=-1))) = raw;\n    SND07TaskHandle task = snd07_spawn(^id(void) async {\n        snd07_consume_bytes(bytes);\n        return nil;\n    });\n    await [actor acceptHandle:handle];\n    return task;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 15, "column": 27 },
+          "end": { "line": 15, "column": 31 }
+        },
+        "message": "borrowed pointer cannot cross an objc_task_spawn boundary without an explicit safe transfer wrapper",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-BOUNDARY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 18, "column": 30 },
+          "end": { "line": 18, "column": 36 }
+        },
+        "message": "cleanup-managed resource handle type is non-Sendable across actor boundaries in strict concurrency mode",
+        "fixits": []
+      }
+    ]
+  }
+}

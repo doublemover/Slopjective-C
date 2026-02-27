@@ -1,0 +1,7 @@
+module AssignmentUnknownTargetExec;
+
+fn main() -> i32 {
+  missing = 3;
+  return 0;
+}
+

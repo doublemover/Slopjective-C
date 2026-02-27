@@ -1,0 +1,15 @@
+// Negative fixture: unresolved if-condition branch-selection remains conservative in function return-path analysis.
+// Expected diagnostic code(s): O3S205.
+module NegativeIfCallUnknownElseMissingReturnConservativeReject;
+
+fn predicate() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  if (predicate()) {
+    return 42;
+  } else {
+    let fallback = 7;
+  }
+}

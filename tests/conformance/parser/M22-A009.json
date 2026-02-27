@@ -1,0 +1,25 @@
+{
+  "id": "M22-A009",
+  "title": "Accept M22 lane-A parser fixture baseline for issue #2548 task M22-A009 (Document frontend invariants for integrators (Documentation and Evidence))",
+  "feature": "m22 lane a parser lowering abi contracts runtime bridge document frontend invariants for integrators documentation and evidence slice 09",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M22",
+    "milestone_number": 107,
+    "lane": "A",
+    "issue": 2548,
+    "task": "M22-A009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M22_A009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOCU__\\n#define __OBJC3_FEATURE_M22_A009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOCU__ 1\\n#endif\\n\\ntypedef struct M22A009_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M22A009_Probe;\\n\\nM22A009_Probe m22a009_probe(void) {\\n#if __OBJC3_FEATURE_M22_A009_DOCUMENT_FRONTEND_INVARIANTS_FOR_INTEGRATORS_DOCU__\\n    M22A009_Probe probe = { 1, 9, 2548 };\\n#else\\n    M22A009_Probe probe = { 0, 9, 2548 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

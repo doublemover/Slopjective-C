@@ -1,0 +1,9 @@
+{
+  "seed_remaining_spec_tasks": {
+    "expected_task_count": 5,
+    "repo_default": "example/seed-catalog",
+    "catalog_md_default": "out/remaining_task_review_catalog.md",
+    "catalog_json_default": "out/remaining_task_review_catalog.json",
+    "sleep_seconds_default": 0.0
+  }
+}

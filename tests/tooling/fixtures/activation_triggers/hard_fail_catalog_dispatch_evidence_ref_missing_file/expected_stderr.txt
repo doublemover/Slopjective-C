@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'execution_status_evidence_refs[0]' must reference existing evidence file 'spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w5_missing_tooling_validation_20260225.md' in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_dispatch_evidence_ref_missing_file/catalog.json

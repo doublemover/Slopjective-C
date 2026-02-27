@@ -1,0 +1,28 @@
+{
+  "id": "M04-A006",
+  "title": "Reject late language-version pragma to lock source-location fidelity assertions",
+  "feature": "frontend source-location fidelity and deterministic span anchoring",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "int m04a006_seed(void) {\n    return 6;\n}\n#pragma objc_language_version(3)\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-LANGVERSION-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 1 },
+          "end": { "line": 4, "column": 33 }
+        },
+        "message": "language-version pragma must appear before declarations in a translation unit",
+        "fixits": []
+      }
+    ]
+  }
+}

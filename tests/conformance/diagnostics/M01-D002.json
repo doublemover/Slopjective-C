@@ -1,0 +1,30 @@
+{
+  "id": "M01-D002",
+  "title": "Scope-freeze baseline: missing-try diagnostic keeps stable payload mapping",
+  "feature": "M01 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+  ],
+  "source": "id m01d002_load_payload(void) throws;\n\nvoid m01d002_negative(void) {\n    m01d002_load_payload();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ERROR-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 5 },
+          "end": { "line": 4, "column": 26 }
+        },
+        "message": "call to throwing function requires try in strict mode",
+        "fixits": []
+      }
+    ]
+  }
+}

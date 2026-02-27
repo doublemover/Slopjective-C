@@ -1,0 +1,14 @@
+// Negative fixture: non-id return generic suffix is unsupported.
+// Expected diagnostic code(s): O3S206.
+module NegativeReturnBoolGenericSuffix;
+
+fn pick(flag: bool) -> bool<NSObject> {
+  return flag;
+}
+
+fn main() -> i32 {
+  if (pick(true)) {
+    return 1;
+  }
+  return 0;
+}

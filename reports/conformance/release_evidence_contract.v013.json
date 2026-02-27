@@ -1,0 +1,25 @@
+{
+  "contract_id": "release-evidence-contract/v0.13",
+  "release_label": "v0.13",
+  "index_generation": {
+    "generated_at": "2026-02-23T00:00:00Z",
+    "strict_generated_at": true
+  },
+  "schema_data_pairs": [
+    {
+      "id": "runtime-manifest",
+      "schema": "schemas/objc3-runtime-2025Q4.manifest.schema.json",
+      "data": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+    },
+    {
+      "id": "abi-manifest",
+      "schema": "schemas/objc3-abi-2025Q4.schema.json",
+      "data": "reports/conformance/manifests/objc3-abi-2025Q4.example.json"
+    },
+    {
+      "id": "conformance-evidence-bundle",
+      "schema": "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
+      "data": "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json"
+    }
+  ]
+}

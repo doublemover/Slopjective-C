@@ -1,0 +1,27 @@
+{
+  "id": "M25-C011",
+  "title": "Define message dispatch lowering/ABI contract slice (Contract Definition) (issue #2795 / task M25-C011)",
+  "feature": "m25 lane-c objective-c 3 message dispatch lowering and direct llvm ir emission define message dispatch lowering abi contract slice contract definition",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M25",
+    "milestone_number": 110,
+    "lane": "C",
+    "issue": 2795,
+    "task": "M25-C011",
+    "sequence": 11
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M25_C_011_DEFINE_MESSAGE_DISPATCH_LOWERING_ABI_CONTRACT_SLICE_CONTRACT\n#define __OBJC3_FEATURE_M25_C_011_DEFINE_MESSAGE_DISPATCH_LOWERING_ABI_CONTRACT_SLICE_CONTRACT 1\n#endif\n\ntypedef struct M25C011_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M25C011_Probe;\n\nM25C011_Probe m25c011_probe(void) {\n#if __OBJC3_FEATURE_M25_C_011_DEFINE_MESSAGE_DISPATCH_LOWERING_ABI_CONTRACT_SLICE_CONTRACT\n    M25C011_Probe probe = { 1, 11, 2795 };\n#else\n    M25C011_Probe probe = { 0, 11, 2795 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

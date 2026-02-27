@@ -1,0 +1,39 @@
+{
+  "id": "MIG-03",
+  "title": "Insert explicit nullability for unannotated exported interface returns",
+  "feature": "migrator nullability inference and annotation insertion",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface MIG03Surface : NSObject\n- (id)displayName;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 4 },
+          "end": { "line": 2, "column": 6 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer return types",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 4 },
+              "end": { "line": 2, "column": 6 }
+            },
+            "replacement": "id _Nonnull"
+          }
+        ]
+      }
+    ]
+  }
+}

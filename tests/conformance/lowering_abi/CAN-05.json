@@ -1,0 +1,73 @@
+{
+  "id": "CAN-05",
+  "title": "Lower try? await cancellation conversion to a stable non-throwing empty-result contract",
+  "feature": "cancellation optionalization and task-context lowering invariants",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-7",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\nid<Error> can05_cancellation_error(void);\n\nid can05_throwing_cancellation_point(void) async throws {\n    throw can05_cancellation_error();\n}\n\nid can05_try_optionalize(void) async {\n    return try? await can05_throwing_cancellation_point();\n}\n\nint can05_optional_is_empty_on_cancel(void) async {\n    id value = try? await can05_throwing_cancellation_point();\n    return value == nil ? 1 : 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "try? await lowering catches cancellation throws from cancellation points and converts them to the optional empty result",
+            "conversion to empty result occurs without rethrowing cancellation through the non-throwing caller",
+            "current task context remains queryable after the optionalizing conversion path completes"
+          ],
+          "runtime_assertions": [
+            "can05_try_optionalize returns nil when can05_throwing_cancellation_point throws cancellation",
+            "can05_optional_is_empty_on_cancel returns 1"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves cancellation-to-empty-result conversion behavior for try? await",
+            "optimization does not transform the non-throwing optionalized path into a rethrowing path",
+            "task-context handling around cancellation conversion remains equivalent to -O0"
+          ],
+          "runtime_assertions": [
+            "can05_optional_is_empty_on_cancel still returns 1 under optimization",
+            "optimized lowering does not report cancellation as successful non-empty completion"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "cancellation_optionalize_conversion",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-011",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "try? await converts cancellation throws into the operator empty result without changing caller non-throwing effect shape",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

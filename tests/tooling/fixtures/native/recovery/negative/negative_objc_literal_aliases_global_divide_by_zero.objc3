@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeObjcLiteralAliasesGlobalDivideByZero;
+
+let value = NULL / 0;
+
+fn main() -> i32 {
+  return value;
+}

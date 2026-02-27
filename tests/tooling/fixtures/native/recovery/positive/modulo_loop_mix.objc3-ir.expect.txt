@@ -1,0 +1,6 @@
+# Modulo loop lowering markers.
+define i32 @main()
+for_cond_
+for_step_
+srem i32
+ret i32

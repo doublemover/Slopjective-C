@@ -1,0 +1,36 @@
+{
+  "id": "SCM-01",
+  "title": "Strict + concurrency off keeps strict diagnostics while concurrency-only checks stay non-strict",
+  "feature": "strictness/sub-mode matrix",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-5",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10"
+  ],
+  "source": "int consumeNonnull(id _Nonnull value);\\nvoid spawnDetached(void (^operation)(void));\\nvoid useSharedState(id value);\\n\\nasync void runMatrix(id _Nullable maybeValue, id sharedState) {\\n    consumeNonnull(maybeValue);\\n    spawnDetached(^{\\n        useSharedState(sharedState);\\n    });\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 5 },
+          "end": { "line": 6, "column": 31 }
+        },
+        "message": "strict non-concurrency diagnostics remain errors when -fobjc3-concurrency=off"
+      },
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-CAPTURE",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 8, "column": 9 },
+          "end": { "line": 8, "column": 35 }
+        },
+        "message": "concurrency-only diagnostics follow non-strict-concurrency policy when -fobjc3-concurrency=off"
+      }
+    ]
+  }
+}

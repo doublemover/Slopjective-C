@@ -1,0 +1,413 @@
+{
+  "schema_id": "objc3-conformance-dashboard-status/v1",
+  "schema_version": 1,
+  "dashboard_version": "0.11.0",
+  "release_label": "v0.11",
+  "release_id": "20260223-issue789-lanea-013",
+  "generated_at": "2026-02-23T20:05:00Z",
+  "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+  "status": "fail",
+  "profiles": [
+    {
+      "profile_id": "core",
+      "status": "pass",
+      "dependency_status": {
+        "B-04": "pass",
+        "B-10": "pass",
+        "B-11": "pass",
+        "B-12": "pass"
+      },
+      "last_refresh": "2026-02-23T18:15:00Z",
+      "blocker_ids": []
+    },
+    {
+      "profile_id": "strict",
+      "status": "incomplete",
+      "dependency_status": {
+        "B-04": "pass",
+        "B-10": "pass",
+        "B-11": "pass",
+        "B-12": "stale"
+      },
+      "last_refresh": "2026-02-23T18:15:00Z",
+      "blocker_ids": [
+        "BLK-B12-STALE-001"
+      ]
+    },
+    {
+      "profile_id": "strict-concurrency",
+      "status": "fail",
+      "dependency_status": {
+        "B-04": "pass",
+        "B-10": "pass",
+        "B-11": "fail",
+        "B-12": "stale"
+      },
+      "last_refresh": "2026-02-23T18:15:00Z",
+      "blocker_ids": [
+        "BLK-B11-RESULT-FAIL-001",
+        "BLK-B12-STALE-001"
+      ]
+    },
+    {
+      "profile_id": "strict-system",
+      "status": "blocked",
+      "dependency_status": {
+        "B-04": "pass",
+        "B-10": "blocked",
+        "B-11": "pass",
+        "B-12": "stale"
+      },
+      "last_refresh": "2026-02-23T18:15:00Z",
+      "blocker_ids": [
+        "BLK-B10-PROFILE-GAP-001",
+        "BLK-B12-STALE-001"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "dependency_id": "B-04",
+      "status": "pass",
+      "refreshed_at": "2026-02-23T18:10:00Z",
+      "stale_after_hours": 24,
+      "artifact_refs": [
+        "ART-B04-RUNTIME-MANIFEST",
+        "ART-B04-ABI-MANIFEST",
+        "ART-B04-EVIDENCE-INDEX"
+      ],
+      "failure_codes": []
+    },
+    {
+      "dependency_id": "B-10",
+      "status": "blocked",
+      "refreshed_at": "2026-02-23T18:05:00Z",
+      "stale_after_hours": 24,
+      "artifact_refs": [
+        "ART-B10-CAPABILITY-CONTRACT"
+      ],
+      "failure_codes": [
+        "DASH-B10-PROFILE-GAP"
+      ]
+    },
+    {
+      "dependency_id": "B-11",
+      "status": "fail",
+      "refreshed_at": "2026-02-23T17:50:00Z",
+      "stale_after_hours": 24,
+      "artifact_refs": [
+        "ART-B11-SEED-TRACE",
+        "ART-B11-SEED-MANIFEST"
+      ],
+      "failure_codes": [
+        "DASH-B11-RESULT-FAIL"
+      ]
+    },
+    {
+      "dependency_id": "B-12",
+      "status": "stale",
+      "refreshed_at": "2026-02-22T08:30:00Z",
+      "stale_after_hours": 24,
+      "artifact_refs": [
+        "ART-B12-DRIFT-CONTRACT"
+      ],
+      "failure_codes": [
+        "DASH-B12-EXCEPTION-STALE"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "ART-B04-RUNTIME-MANIFEST",
+      "dependency_id": "B-04",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+      "file_sha256": "84229d46ab6ab735c25c9b70ff697f72bfdfe3e6207bed594abb029a16385d59",
+      "generated_at": "2026-02-23T18:10:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#161/runtime-manifest"
+    },
+    {
+      "artifact_id": "ART-B04-ABI-MANIFEST",
+      "dependency_id": "B-04",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+      "file_sha256": "200d84a4d5e373e9c55fed5f96d67c78c249e36554e8cd7b53940c3b73ac9f12",
+      "generated_at": "2026-02-23T18:10:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#161/abi-manifest"
+    },
+    {
+      "artifact_id": "ART-B04-EVIDENCE-INDEX",
+      "dependency_id": "B-04",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/evidence-index.v0.11.sample.json",
+      "file_sha256": "935b57de908ca30437464dd24e1e1f99d0e381b14518460237d623dea6094384",
+      "generated_at": "2026-02-23T18:10:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#161/evidence-index"
+    },
+    {
+      "artifact_id": "ART-B10-CAPABILITY-CONTRACT",
+      "dependency_id": "B-10",
+      "profile_scope": "all",
+      "artifact_path": "spec/planning/issue_140_capability_report_outputs_plan.md",
+      "file_sha256": "0dd6b59fe742de3d55a5179888fed6f46042ce128e05bc5b94fcd52cf74a76da",
+      "generated_at": "2026-02-23T18:05:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#140/capability-contract"
+    },
+    {
+      "artifact_id": "ART-B11-SEED-TRACE",
+      "dependency_id": "B-11",
+      "profile_scope": "all",
+      "artifact_path": "tests/conformance/spec_open_issues/P0-P3-seed_traceability.csv",
+      "file_sha256": "0ed18120e8579be332869ae2e20f481c98c641c8d423a33180239791fe031da7",
+      "generated_at": "2026-02-23T17:50:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#167/seed-traceability"
+    },
+    {
+      "artifact_id": "ART-B11-SEED-MANIFEST",
+      "dependency_id": "B-11",
+      "profile_scope": "strict-concurrency",
+      "artifact_path": "tests/conformance/spec_open_issues/manifest.json",
+      "file_sha256": "7ec545133a1dcf8ff61a53046f73c09891f4ed726b8bdb7d9cac21d1ec47385b",
+      "generated_at": "2026-02-23T17:50:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#167/seed-manifest"
+    },
+    {
+      "artifact_id": "ART-B12-DRIFT-CONTRACT",
+      "dependency_id": "B-12",
+      "profile_scope": "all",
+      "artifact_path": "spec/planning/issue_158_abstract_machine_drift_lint_plan.md",
+      "file_sha256": "e8d4d86265c1ac1e079933447f0cc50e7f47a29218789f9d7419689d97fa70f6",
+      "generated_at": "2026-02-22T08:30:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#158/drift-lint"
+    },
+    {
+      "artifact_id": "ART-B13-DASHBOARD-MD",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/dashboard_v011.md",
+      "file_sha256": "6fb9ab4839d6d145d5156cd6fe826511206bcaf309160abb6d46659ba6b2b11b",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#173/dashboard-markdown"
+    },
+    {
+      "artifact_id": "ART-B13-DASHBOARD-STATUS",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/dashboard_v011.status.json",
+      "file_sha256": "eed777c3e4e8324712230b7067ebedd97d06667208c99c68eb4d74e59ac30c68",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#173/dashboard-status"
+    },
+    {
+      "artifact_id": "ART-B13-DASHBOARD-SCHEMA",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+      "file_sha256": "5188d2a6d4d6b892367fedec9302f15df12389739201b056eb6d95ca1d52da6a",
+      "generated_at": "2026-02-23T18:30:00Z",
+      "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+      "validation_state": "valid",
+      "issue_ref": "#173/dashboard-schema"
+    },
+    {
+      "artifact_id": "ART-EV01-EVIDENCE-PACK",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "spec/planning/v013_ev01_ev05_evidence_pack_package.md",
+      "file_sha256": "e6b235f617965dd26ab438b0c86f68cde94c82d0bc1f7ad44e491e4b85d33279",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#789/evidence-pack"
+    },
+    {
+      "artifact_id": "ART-EV02-DASHBOARD-MD",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/dashboard_v011.md",
+      "file_sha256": "6fb9ab4839d6d145d5156cd6fe826511206bcaf309160abb6d46659ba6b2b11b",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#789/dashboard"
+    },
+    {
+      "artifact_id": "ART-EV03-DASHBOARD-STATUS",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/dashboard_v011.status.json",
+      "file_sha256": "eed777c3e4e8324712230b7067ebedd97d06667208c99c68eb4d74e59ac30c68",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#789/dashboard-status"
+    },
+    {
+      "artifact_id": "ART-EV04-RERUN-DIGEST",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "reports/conformance/reproducibility/v011_rerun_digest_report.md",
+      "file_sha256": "29e05965becc96ab94b86acebab9b4a0150ae3ebfedf107e12af0bc9ea20fecd",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#789/rerun-digest"
+    },
+    {
+      "artifact_id": "ART-EV05-GATE-HANDOFF-MAP",
+      "dependency_id": "B-13",
+      "profile_scope": "all",
+      "artifact_path": "spec/planning/v013_ev01_ev05_evidence_pack_package.md",
+      "file_sha256": "e6b235f617965dd26ab438b0c86f68cde94c82d0bc1f7ad44e491e4b85d33279",
+      "generated_at": "2026-02-23T20:05:00Z",
+      "source_revision": "fc34c0a0c744053782d225a875a00d3f89ce41cb",
+      "validation_state": "valid",
+      "issue_ref": "#789/gate-handoff"
+    }
+  ],
+  "blockers": [
+    {
+      "blocker_id": "BLK-B10-PROFILE-GAP-001",
+      "severity": "high",
+      "state": "open",
+      "title": "Capability profile rows are incomplete for strict-system.",
+      "dependency_ids": [
+        "B-10"
+      ],
+      "profile_ids": [
+        "strict-system"
+      ],
+      "created_at": "2026-02-23T18:05:00Z",
+      "owner": "lane-b",
+      "failure_code": "DASH-B10-PROFILE-GAP",
+      "artifact_refs": [
+        "ART-B10-CAPABILITY-CONTRACT"
+      ],
+      "taxonomy": "dependency-ingest"
+    },
+    {
+      "blocker_id": "BLK-B11-RESULT-FAIL-001",
+      "severity": "critical",
+      "state": "open",
+      "title": "Seeded required-fail expectation mismatch in strict-concurrency run.",
+      "dependency_ids": [
+        "B-11"
+      ],
+      "profile_ids": [
+        "strict-concurrency"
+      ],
+      "created_at": "2026-02-23T17:50:00Z",
+      "owner": "lane-b",
+      "failure_code": "DASH-B11-RESULT-FAIL",
+      "artifact_refs": [
+        "ART-B11-SEED-TRACE",
+        "ART-B11-SEED-MANIFEST"
+      ],
+      "taxonomy": "test-failure"
+    },
+    {
+      "blocker_id": "BLK-B12-STALE-001",
+      "severity": "high",
+      "state": "open",
+      "title": "Drift lint input exceeded freshness threshold.",
+      "dependency_ids": [
+        "B-12"
+      ],
+      "profile_ids": [
+        "strict",
+        "strict-concurrency",
+        "strict-system"
+      ],
+      "created_at": "2026-02-23T18:00:00Z",
+      "owner": "lane-b",
+      "failure_code": "DASH-B12-EXCEPTION-STALE",
+      "artifact_refs": [
+        "ART-B12-DRIFT-CONTRACT"
+      ],
+      "taxonomy": "staleness"
+    }
+  ],
+  "summary": {
+    "profile_counts": {
+      "pass": 1,
+      "fail": 1,
+      "blocked": 1,
+      "incomplete": 1
+    },
+    "dependency_counts": {
+      "pass": 1,
+      "fail": 1,
+      "blocked": 1,
+      "stale": 1,
+      "missing": 0
+    },
+    "blocker_counts": {
+      "open": 3,
+      "resolved": 0,
+      "high_or_critical": 3
+    }
+  },
+  "refresh": {
+    "trigger": "scheduled",
+    "cadence": {
+      "merge_latency_target_minutes": 15,
+      "scheduled_latency_target_minutes": 30,
+      "rc_fast_refresh_hours": 4
+    },
+    "last_successful_refresh": "2026-02-23T18:15:00Z",
+    "next_scheduled_refresh": "2026-02-24T06:00:00Z",
+    "stale_dependency_ids": [
+      "B-12"
+    ],
+    "missed_scheduled_refreshes": 0,
+    "escalation_state": "none"
+  },
+  "change_history": [
+    {
+      "snapshot_id": "20260223-issue789-lanea-013",
+      "previous_snapshot_id": "20260223-issue713-lanea-012",
+      "change_kind": "evidence-pack-refresh",
+      "changed_at": "2026-02-23T20:05:00Z",
+      "summary": "Rebound EV-01..EV-05 metadata to issue #789 for tranche BATCH-20260223-11S while preserving AC-V013-CONF-01 and downstream handoff mappings."
+    },
+    {
+      "snapshot_id": "20260223-issue713-lanea-012",
+      "previous_snapshot_id": "20260223-issue173-laneb-011",
+      "change_kind": "evidence-pack-refresh",
+      "changed_at": "2026-02-23T19:45:00Z",
+      "summary": "Published EV-01..EV-05 evidence pack linkage for downstream CON-02 and REL-01."
+    },
+    {
+      "snapshot_id": "20260223-issue173-laneb-011",
+      "previous_snapshot_id": "20260223-issue173-laneb-010",
+      "change_kind": "status-changed",
+      "changed_at": "2026-02-23T18:20:00Z",
+      "summary": "strict-concurrency moved to fail after seeded required-fail mismatch (B-11)."
+    },
+    {
+      "snapshot_id": "20260223-issue173-laneb-010",
+      "previous_snapshot_id": "20260222-issue173-laneb-009",
+      "change_kind": "blocker-changed",
+      "changed_at": "2026-02-23T14:00:00Z",
+      "summary": "Added B-12 stale blocker after freshness threshold breach."
+    }
+  ]
+}

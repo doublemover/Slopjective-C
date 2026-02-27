@@ -1,0 +1,22 @@
+{
+  "id": "P0-P3-MANGLE-PASS-01",
+  "title": "Accept canonical generic free-function mangling round-trip fixture",
+  "feature": "part3 generic free-function mangling pass path",
+  "bucket": "spec_open_issues",
+  "profile": "core",
+  "profile_scope": "all",
+  "seed_alias": "S1-P3-MANGLE",
+  "required_outcome": "required-pass",
+  "dependency_ref": "B-08/#163@UNPINNED-EXTERNAL",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_163_demangler_reflection_update_plan.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "symbol=_OBJC3$gfn$Map$T_Int$_to_$T_String\\nreflection=Map<Int,String>\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "signal": "DEMANGLE-GFN-ROUNDTRIP-OK"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "ERR-79-FIX-01",
+  "title": "Strict missing-try diagnostic provides machine-applicable insertion fix-it",
+  "feature": "strict diagnostics for error-handling misuse",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id normalize(id payload) throws;\n+\n+id err79_fixit(id payload) {\n+    return normalize(payload);\n+}\n+",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ERROR-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 30 }
+        },
+        "message": "call to throwing function requires try in strict mode",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 12 }
+            },
+            "replacement": "try "
+          }
+        ]
+      }
+    ]
+  }
+}

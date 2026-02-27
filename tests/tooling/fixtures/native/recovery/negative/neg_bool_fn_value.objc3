@@ -1,0 +1,19 @@
+// Negative fixture: function value passed to bool parameter.
+// Expected diagnostic code(s): O3S206.
+module NegativeBoolParamFunctionValue;
+
+fn choose(flag: bool, left: i32, right: i32) {
+  if (flag) {
+    return left;
+  } else {
+    return right;
+  }
+}
+
+fn marker() {
+  return 1;
+}
+
+fn main() {
+  return choose(marker, 10, 20);
+}

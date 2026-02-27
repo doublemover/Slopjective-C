@@ -1,0 +1,15 @@
+module SwitchCaseArithmeticFalseFallthroughReturn;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case 1:
+      while (((2 + 3) * 2) - 10) {
+        return 9;
+      }
+    case 2:
+      return 42;
+    default:
+      return 7;
+  }
+}

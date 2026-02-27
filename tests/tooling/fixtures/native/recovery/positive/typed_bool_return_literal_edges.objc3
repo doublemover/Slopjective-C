@@ -1,0 +1,30 @@
+// Positive fixture: typed bool return accepts bool-like i32 literals on return paths.
+module TypedBoolReturnLiteralEdges;
+
+fn from_literal(flag: bool) -> bool {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+fn score(flag: bool) -> i32 {
+  if (flag) {
+    return 7;
+  } else {
+    return 3;
+  }
+}
+
+fn main() -> i32 {
+  let yes = from_literal(true);
+  let no = from_literal(false);
+  let total = score(yes) + score(no);
+
+  if (total == 10) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

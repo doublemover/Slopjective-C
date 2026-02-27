@@ -1,0 +1,21 @@
+{
+  "id": "EXEC-ATTR-01",
+  "title": "Accept canonical objc_executor(main/global/named) affinity spellings on supported targets",
+  "feature": "executor affinity annotation parsing and target coverage",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "__attribute__((objc_executor(named(\"com.example.execattr01\"))))\n@interface EXECATTR01Surface : NSObject\n- (id)runOnTypeExecutor:(id)seed;\n- (id)runOnMain:(id)seed __attribute__((objc_executor(main)));\n@end\n\nid execattr01_global(id seed) __attribute__((objc_executor(global)));\nid execattr01_named(id seed) __attribute__((objc_executor(named(\"com.example.execattr01\"))));\n\nid execattr01_global(id seed) {\n    return seed;\n}\n\nid execattr01_named(id seed) {\n    return seed;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

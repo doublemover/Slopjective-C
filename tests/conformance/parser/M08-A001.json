@@ -1,0 +1,25 @@
+{
+  "id": "M08-A001",
+  "title": "Accept M08 lane-A parser fixture baseline for issue #1530 task M08-A001 (Define command/grammar contract slice)",
+  "feature": "m08 lane-a parser strictness-concurrency slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M08",
+    "milestone_number": 93,
+    "lane": "A",
+    "issue": 1530,
+    "task": "M08-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M08A001_Node {\n    int token;\n    int span_start;\n    int span_end;\n} M08A001_Node;\n\nM08A001_Node m08a001_slice(int token, int start, int end) {\n    M08A001_Node node = { token, start, end };\n    return node;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,770 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3-conformance-dashboard-status-v1.schema.json",
+  "title": "Objective-C 3 Conformance Dashboard Status (v1)",
+  "description": "Machine-readable status contract for the v0.11 conformance evidence dashboard (Issue #173 / B-13).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "dashboard_version",
+    "release_label",
+    "release_id",
+    "generated_at",
+    "source_revision",
+    "status",
+    "profiles",
+    "dependencies",
+    "artifacts",
+    "blockers",
+    "summary",
+    "refresh",
+    "change_history"
+  ],
+  "properties": {
+    "schema_id": {
+      "type": "string",
+      "const": "objc3-conformance-dashboard-status/v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "dashboard_version": {
+      "$ref": "#/$defs/semver"
+    },
+    "release_label": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "release_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{8,64}$"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/utcTimestamp"
+    },
+    "source_revision": {
+      "$ref": "#/$defs/sourceRevision"
+    },
+    "status": {
+      "$ref": "#/$defs/profileStatus"
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/profileEntry"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "profile_id"
+            ],
+            "properties": {
+              "profile_id": {
+                "const": "core"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "profile_id"
+            ],
+            "properties": {
+              "profile_id": {
+                "const": "strict"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "profile_id"
+            ],
+            "properties": {
+              "profile_id": {
+                "const": "strict-concurrency"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "profile_id"
+            ],
+            "properties": {
+              "profile_id": {
+                "const": "strict-system"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "dependencies": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/dependencyEntry"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "dependency_id"
+            ],
+            "properties": {
+              "dependency_id": {
+                "const": "B-04"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "dependency_id"
+            ],
+            "properties": {
+              "dependency_id": {
+                "const": "B-10"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "dependency_id"
+            ],
+            "properties": {
+              "dependency_id": {
+                "const": "B-11"
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "dependency_id"
+            ],
+            "properties": {
+              "dependency_id": {
+                "const": "B-12"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/artifactEntry"
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/blockerEntry"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "refresh": {
+      "$ref": "#/$defs/refreshTelemetry"
+    },
+    "change_history": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/changeHistoryEntry"
+      }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "sourceRevision": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{7,40}$"
+    },
+    "profileId": {
+      "type": "string",
+      "enum": [
+        "core",
+        "strict",
+        "strict-concurrency",
+        "strict-system"
+      ]
+    },
+    "dependencyId": {
+      "type": "string",
+      "enum": [
+        "B-04",
+        "B-10",
+        "B-11",
+        "B-12"
+      ]
+    },
+    "artifactDependencyId": {
+      "type": "string",
+      "enum": [
+        "B-04",
+        "B-10",
+        "B-11",
+        "B-12",
+        "B-13"
+      ]
+    },
+    "profileScope": {
+      "type": "string",
+      "enum": [
+        "all",
+        "core",
+        "strict",
+        "strict-concurrency",
+        "strict-system"
+      ]
+    },
+    "profileStatus": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "blocked",
+        "incomplete"
+      ]
+    },
+    "componentStatus": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "blocked",
+        "stale",
+        "missing"
+      ]
+    },
+    "artifactId": {
+      "type": "string",
+      "pattern": "^ART-[A-Z0-9-]+$"
+    },
+    "failureCode": {
+      "type": "string",
+      "pattern": "^DASH-B(?:04|10|11|12)-[A-Z0-9-]+$"
+    },
+    "blockerId": {
+      "type": "string",
+      "pattern": "^BLK-[A-Z0-9-]+$"
+    },
+    "validationState": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "invalid",
+        "unchecked"
+      ]
+    },
+    "profileDependencyStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "B-04",
+        "B-10",
+        "B-11",
+        "B-12"
+      ],
+      "properties": {
+        "B-04": {
+          "$ref": "#/$defs/componentStatus"
+        },
+        "B-10": {
+          "$ref": "#/$defs/componentStatus"
+        },
+        "B-11": {
+          "$ref": "#/$defs/componentStatus"
+        },
+        "B-12": {
+          "$ref": "#/$defs/componentStatus"
+        }
+      }
+    },
+    "profileEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "status",
+        "dependency_status",
+        "last_refresh",
+        "blocker_ids"
+      ],
+      "properties": {
+        "profile_id": {
+          "$ref": "#/$defs/profileId"
+        },
+        "status": {
+          "$ref": "#/$defs/profileStatus"
+        },
+        "dependency_status": {
+          "$ref": "#/$defs/profileDependencyStatus"
+        },
+        "last_refresh": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "blocker_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/blockerId"
+          }
+        }
+      }
+    },
+    "dependencyEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dependency_id",
+        "status",
+        "refreshed_at",
+        "stale_after_hours",
+        "artifact_refs",
+        "failure_codes"
+      ],
+      "properties": {
+        "dependency_id": {
+          "$ref": "#/$defs/dependencyId"
+        },
+        "status": {
+          "$ref": "#/$defs/componentStatus"
+        },
+        "refreshed_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "stale_after_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 168
+        },
+        "artifact_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/artifactId"
+          }
+        },
+        "failure_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/failureCode"
+          }
+        }
+      }
+    },
+    "artifactEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "dependency_id",
+        "profile_scope",
+        "artifact_path",
+        "file_sha256",
+        "generated_at",
+        "source_revision",
+        "validation_state",
+        "issue_ref"
+      ],
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/artifactId"
+        },
+        "dependency_id": {
+          "$ref": "#/$defs/artifactDependencyId"
+        },
+        "profile_scope": {
+          "$ref": "#/$defs/profileScope"
+        },
+        "artifact_path": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 260,
+          "pattern": "^[A-Za-z0-9._\\-/]+$"
+        },
+        "file_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "generated_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "source_revision": {
+          "$ref": "#/$defs/sourceRevision"
+        },
+        "validation_state": {
+          "$ref": "#/$defs/validationState"
+        },
+        "issue_ref": {
+          "type": "string",
+          "pattern": "^#(?:140|158|161|167|173)(?:/[A-Za-z0-9_.-]+)?$"
+        }
+      }
+    },
+    "blockerSeverity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "blockerState": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in-progress",
+        "mitigated",
+        "resolved"
+      ]
+    },
+    "blockerEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocker_id",
+        "severity",
+        "state",
+        "title",
+        "dependency_ids",
+        "profile_ids",
+        "created_at",
+        "owner",
+        "failure_code",
+        "artifact_refs",
+        "taxonomy"
+      ],
+      "properties": {
+        "blocker_id": {
+          "$ref": "#/$defs/blockerId"
+        },
+        "severity": {
+          "$ref": "#/$defs/blockerSeverity"
+        },
+        "state": {
+          "$ref": "#/$defs/blockerState"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 200
+        },
+        "dependency_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/dependencyId"
+          }
+        },
+        "profile_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/profileId"
+          }
+        },
+        "created_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]{2,32}$"
+        },
+        "failure_code": {
+          "$ref": "#/$defs/failureCode"
+        },
+        "artifact_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/artifactId"
+          }
+        },
+        "taxonomy": {
+          "type": "string",
+          "enum": [
+            "dependency-ingest",
+            "schema-validation",
+            "coverage-gap",
+            "test-failure",
+            "staleness",
+            "signature-provenance",
+            "lookup-drift",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "profileCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pass",
+        "fail",
+        "blocked",
+        "incomplete"
+      ],
+      "properties": {
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "incomplete": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "dependencyCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pass",
+        "fail",
+        "blocked",
+        "stale",
+        "missing"
+      ],
+      "properties": {
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stale": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "blockerCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "open",
+        "resolved",
+        "high_or_critical"
+      ],
+      "properties": {
+        "open": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high_or_critical": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_counts",
+        "dependency_counts",
+        "blocker_counts"
+      ],
+      "properties": {
+        "profile_counts": {
+          "$ref": "#/$defs/profileCounts"
+        },
+        "dependency_counts": {
+          "$ref": "#/$defs/dependencyCounts"
+        },
+        "blocker_counts": {
+          "$ref": "#/$defs/blockerCounts"
+        }
+      }
+    },
+    "refreshCadence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "merge_latency_target_minutes",
+        "scheduled_latency_target_minutes",
+        "rc_fast_refresh_hours"
+      ],
+      "properties": {
+        "merge_latency_target_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "scheduled_latency_target_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "rc_fast_refresh_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+        }
+      }
+    },
+    "refreshTelemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger",
+        "cadence",
+        "last_successful_refresh",
+        "next_scheduled_refresh",
+        "stale_dependency_ids",
+        "missed_scheduled_refreshes",
+        "escalation_state"
+      ],
+      "properties": {
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "merge",
+            "scheduled",
+            "rc-fast",
+            "manual-replay"
+          ]
+        },
+        "cadence": {
+          "$ref": "#/$defs/refreshCadence"
+        },
+        "last_successful_refresh": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "next_scheduled_refresh": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "stale_dependency_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/dependencyId"
+          }
+        },
+        "missed_scheduled_refreshes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "escalation_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "high",
+            "critical"
+          ]
+        }
+      }
+    },
+    "changeHistoryEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "previous_snapshot_id",
+        "change_kind",
+        "changed_at",
+        "summary"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._-]{8,64}$"
+        },
+        "previous_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{8,64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "change_kind": {
+          "type": "string",
+          "enum": [
+            "none",
+            "blocker-changed",
+            "status-changed",
+            "refresh-only",
+            "artifact-delta"
+          ]
+        },
+        "changed_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 300
+        }
+      }
+    }
+  }
+}

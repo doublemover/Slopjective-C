@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<COMMIT_SHA>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<sha-*>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<output>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<yes/no + note>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "token": "<status>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "token": "<DATE>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "token": "<YYYY-MM-DD>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    }
+  ]
+}

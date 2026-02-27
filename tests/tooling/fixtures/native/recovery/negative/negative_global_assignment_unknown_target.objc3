@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S214.
+module NegativeGlobalAssignmentUnknownTarget;
+
+let total = 5;
+
+fn main() -> i32 {
+  shadow += 1;
+  return total;
+}

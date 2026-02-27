@@ -1,0 +1,81 @@
+{
+  "mode": "offline-deterministic",
+  "contract_id": "activation-seed-contract/v0.15",
+  "fail_closed": true,
+  "inputs": {
+    "issues_json": "tests/tooling/fixtures/activation_triggers/release_scale_foundation_w2_happy/issues.json",
+    "milestones_json": "tests/tooling/fixtures/activation_triggers/release_scale_foundation_w2_happy/milestones.json",
+    "catalog_json": "tests/tooling/fixtures/activation_triggers/release_scale_foundation_w2_happy/catalog.json",
+    "open_blockers_json": null,
+    "t4_governance_overlay_json": null
+  },
+  "actionable_statuses": [
+    "open",
+    "open-blocked",
+    "blocked"
+  ],
+  "trigger_order": [
+    "T1-ISSUES",
+    "T2-MILESTONES",
+    "T3-ACTIONABLE-ROWS",
+    "T5-OPEN-BLOCKERS"
+  ],
+  "freshness": {
+    "issues": {
+      "requested": false,
+      "max_age_seconds": null,
+      "generated_at_utc": null,
+      "age_seconds": null,
+      "fresh": null
+    },
+    "milestones": {
+      "requested": false,
+      "max_age_seconds": null,
+      "generated_at_utc": null,
+      "age_seconds": null,
+      "fresh": null
+    }
+  },
+  "triggers": [
+    {
+      "id": "T1-ISSUES",
+      "condition": "open issues > 0",
+      "count": 0,
+      "fired": false
+    },
+    {
+      "id": "T2-MILESTONES",
+      "condition": "open milestones > 0",
+      "count": 0,
+      "fired": false
+    },
+    {
+      "id": "T3-ACTIONABLE-ROWS",
+      "condition": "actionable catalog rows > 0",
+      "count": 1,
+      "fired": true
+    },
+    {
+      "id": "T5-OPEN-BLOCKERS",
+      "condition": "open blockers > 0",
+      "count": 0,
+      "fired": false
+    }
+  ],
+  "active_trigger_ids": [
+    "T3-ACTIONABLE-ROWS"
+  ],
+  "activation_required": true,
+  "open_blockers": {
+    "count": 0,
+    "trigger_id": "T5-OPEN-BLOCKERS",
+    "trigger_fired": false
+  },
+  "t4_governance_overlay": {
+    "new_scope_publish": false,
+    "source": "default-false"
+  },
+  "gate_open": true,
+  "queue_state": "dispatch-open",
+  "exit_code": 1
+}

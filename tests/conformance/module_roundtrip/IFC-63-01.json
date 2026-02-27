@@ -1,0 +1,48 @@
+{
+  "id": "IFC-63-01",
+  "title": "Preserve equivalent optional/nullability semantics in textual interfaces across round-trip",
+  "feature": "optional/nullability textual interface equivalence",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-5",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-6",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module IFC63.objcmod --emit-interface IFC63.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: FileCheck %s --input-file=IFC63.obji --check-prefix=IFC63\n// RUN: objc3c --emit-module IFC63-import.objcmod --import-interface IFC63.obji --emit-interface IFC63-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: diff -u IFC63.obji IFC63-roundtrip.obji\n// RUN: objc3c --verify-interface IFC63.objcmod IFC63-roundtrip.obji %s\n#define NS_ASSUME_NONNULL_BEGIN _Pragma(\"clang assume_nonnull begin\")\n#define NS_ASSUME_NONNULL_END _Pragma(\"clang assume_nonnull end\")\nNS_ASSUME_NONNULL_BEGIN\n@interface IFC63Surface : NSObject\n- (id?)optionalValueForKey:(id?)key;\n- (id _Nullable)nullableAliasForKey:(id _Nonnull)key;\n@end\nNS_ASSUME_NONNULL_END\n// IFC63: #pragma objc assume_nonnull begin\n// IFC63: @interface IFC63Surface : NSObject\n// IFC63: - (id _Nullable)optionalValueForKey:(id _Nullable)key;\n// IFC63: - (id _Nullable)nullableAliasForKey:(id _Nonnull)key;\n// IFC63: @end\n// IFC63: #pragma objc assume_nonnull end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "#pragma objc assume_nonnull begin\n@interface IFC63Surface : NSObject\n- (id _Nullable)optionalValueForKey:(id _Nullable)key;\n- (id _Nullable)nullableAliasForKey:(id _Nonnull)key;\n@end\n#pragma objc assume_nonnull end\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": true,
+      "normalization_pairs": [
+        {
+          "from": "NS_ASSUME_NONNULL_BEGIN",
+          "to": "#pragma objc assume_nonnull begin"
+        },
+        {
+          "from": "NS_ASSUME_NONNULL_END",
+          "to": "#pragma objc assume_nonnull end"
+        },
+        {
+          "from": "id?",
+          "to": "id _Nullable"
+        }
+      ],
+      "forbidden_noncanonical_spellings": [
+        "NS_ASSUME_NONNULL_BEGIN",
+        "NS_ASSUME_NONNULL_END",
+        "_Pragma(\"clang assume_nonnull begin\")",
+        "_Pragma(\"clang assume_nonnull end\")",
+        "id?"
+      ]
+    }
+  }
+}

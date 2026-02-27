@@ -1,0 +1,9 @@
+module BinaryLiteralGlobalInitializerChain;
+
+let a = 0b101;
+let b = a + 0b10;
+let c = b << 0b1;
+
+fn main() -> i32 {
+  return c;
+}

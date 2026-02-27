@@ -1,0 +1,18 @@
+// Negative fixture: while condition uses function value instead of bool-compatible expression.
+// Expected diagnostic code(s): O3S206.
+module NegativeLoopWhileConditionFunctionValue;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  let i = 0;
+  while (ready) {
+    let i = i + 1;
+    if (i > 3) {
+      break;
+    }
+  }
+  return i;
+}

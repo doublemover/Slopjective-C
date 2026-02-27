@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "extern_pure_function_with_body.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P104",
+      "missing ';' after extern function declaration"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

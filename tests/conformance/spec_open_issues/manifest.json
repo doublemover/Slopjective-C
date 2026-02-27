@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-conformance-spec-open-issues-p0-p3-seeded",
+  "description": "Seeded issue fixtures for FUTURE_WORK B-11 with deterministic required-pass and required-fail coverage.",
+  "groups": [
+    {
+      "name": "seed_s1_p0_amsync",
+      "seed_alias": "S1-P0-AMSYNC",
+      "files": [
+        "P0-P3-AMSYNC-FAIL-01.json",
+        "P0-P3-AMSYNC-PASS-01.json"
+      ]
+    },
+    {
+      "name": "seed_s1_p0_manifest",
+      "seed_alias": "S1-P0-MANIFEST",
+      "files": [
+        "P0-P3-MANIFEST-FAIL-01.json",
+        "P0-P3-MANIFEST-PASS-01.json"
+      ]
+    },
+    {
+      "name": "seed_s1_p3_mangle",
+      "seed_alias": "S1-P3-MANGLE",
+      "files": [
+        "P0-P3-MANGLE-FAIL-01.json",
+        "P0-P3-MANGLE-PASS-01.json"
+      ]
+    },
+    {
+      "name": "seed_s1_p3_opt",
+      "seed_alias": "S1-P3-OPT",
+      "files": [
+        "P0-P3-OPT-FAIL-01.json",
+        "P0-P3-OPT-PASS-01.json"
+      ]
+    },
+    {
+      "name": "seed_s1_p3_reify",
+      "seed_alias": "S1-P3-REIFY",
+      "files": [
+        "P0-P3-REIFY-FAIL-01.json",
+        "P0-P3-REIFY-PASS-01.json"
+      ]
+    }
+  ]
+}

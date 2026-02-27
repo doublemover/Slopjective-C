@@ -1,0 +1,35 @@
+{
+  "id": "EC-POSTFIXQ-01",
+  "title": "Reject postfix propagation without follow-token boundary",
+  "feature": "postfix ?",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4"
+  ],
+  "source": "int plusOne(void) {\n    return compute()? + 1;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-FOLLOWTOKEN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 22 }
+        },
+        "message": "postfix ? propagation requires a follow token boundary",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 22 }
+            },
+            "replacement": "(compute()?)"
+          }
+        ]
+      }
+    ]
+  }
+}

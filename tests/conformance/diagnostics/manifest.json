@@ -1,0 +1,1492 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-conformance-diagnostics-wave",
+  "description": "Diagnostics fixtures for strictness/sub-mode matrix, lifetime/ownership checks, strict nullability checks, defer strict exits, throws misuse, concurrency checks, borrowed/capture/resource safety, performance misuse checks, macro sandbox safety, diagnostic-group coverage, migrator coverage, conformance-report validation, and M01/M02/M03/M04/M05/M06/M07/M08/M10/M11 lane D payload/code mapping freeze checks (issues #51, #52, #60, #69, #74, #79, #80, #85, #86, #87, #89, #91, #93, #94, #97, #99, #104, #105, #106, #1197, #1198, #1199, #1200, #1201, #1202, #1203, #1204, #1241, #1242, #1243, #1244, #1245, #1246, #1247, #1248, #1287, #1288, #1289, #1290, #1291, #1292, #1293, #1294, #1295, #1335, #1336, #1337, #1338, #1339, #1340, #1341, #1342, #1343, #1390, #1391, #1392, #1393, #1394, #1395, #1396, #1397, #1398, #1399, #1400, #1401, #1441, #1442, #1443, #1444, #1445, #1446, #1447, #1448, #1501, #1502, #1503, #1504, #1505, #1506, #1507, #1508, #1509, #1510, #1511, #1512, #1513, #1514, #1557, #1558, #1559, #1560, #1561, #1562, #1563, #1564, #1647, #1648, #1649, #1650, #1651, #1652, #1653, #1654, #1655, #1656, #1701, #1702, #1703, #1704, #1705, #1706, #1707, #1708, #1709, #1710, #1711).",
+  "groups": [
+    {
+      "name": "issue_51_strictness_matrix",
+      "feature": "strictness selection",
+      "issue": 51,
+      "files": [
+        "SCM-01.json",
+        "SCM-02.json",
+        "SCM-03.json",
+        "SCM-04.json"
+      ]
+    },
+    {
+      "name": "issue_52_concurrency_submode_matrix",
+      "feature": "strict concurrency sub-mode selection",
+      "issue": 52,
+      "files": [
+        "SCM-05.json",
+        "SCM-06.json"
+      ]
+    },
+    {
+      "name": "issue_60_strict_missing_nullability",
+      "feature": "strict missing-nullability diagnostics and fix-its",
+      "issue": 60,
+      "files": [
+        "NUL-60-NEG-01.json",
+        "NUL-60-FIX-01.json"
+      ]
+    },
+    {
+      "name": "issue_69_lifetime_escape_diagnostics",
+      "feature": "strict diagnostics for suspicious lifetime extension and unsafe escapes/bridges",
+      "issue": 69,
+      "files": [
+        "LFT-69-NEG-01.json",
+        "LFT-69-FIX-01.json"
+      ]
+    },
+    {
+      "name": "issue_74_defer_non_local_exit_diagnostics",
+      "feature": "strict diagnostics for illegal non-local exits from defer",
+      "issue": 74,
+      "files": [
+        "NLE-74-NEG-01.json",
+        "NLE-74-NEG-02.json"
+      ]
+    },
+    {
+      "name": "issue_79_throws_misuse_diagnostics",
+      "feature": "strict diagnostics for missing try, ignored errors, and invalid bridging patterns",
+      "issue": 79,
+      "files": [
+        "ERR-79-NEG-01.json",
+        "ERR-79-FIX-01.json"
+      ]
+    },
+    {
+      "name": "issue_80_async_await_diagnostics",
+      "feature": "async-context diagnostics for await misuse with required fix-its",
+      "issue": 80,
+      "files": [
+        "ASY-05.json",
+        "ASY-06.json"
+      ]
+    },
+    {
+      "name": "issue_85_isolation_executor_diagnostics",
+      "feature": "strict-concurrency diagnostics for isolation and executor misuse",
+      "issue": 85,
+      "files": [
+        "CONC-DIAG-01.json",
+        "CONC-DIAG-02.json",
+        "CONC-DIAG-03.json",
+        "CONC-DIAG-04.json",
+        "CONC-DIAG-05.json",
+        "CONC-DIAG-06.json"
+      ]
+    },
+    {
+      "name": "issue_86_sendable_boundary_diagnostics",
+      "feature": "sendable-like boundary diagnostics including unsafe-sendable warnings",
+      "issue": 86,
+      "files": [
+        "SND-07.json",
+        "SND-08.json"
+      ]
+    },
+    {
+      "name": "issue_87_d011_await_requirement_diagnostics",
+      "feature": "strict diagnostics and fix-its for missing await on all suspension sources",
+      "issue": 87,
+      "files": [
+        "AWT-05.json",
+        "AWT-06.json"
+      ]
+    },
+    {
+      "name": "issue_89_resource_cleanup_diagnostics",
+      "feature": "strict-system diagnostics for resource misuse and aggregate constraints",
+      "issue": 89,
+      "files": [
+        "RES-06.json",
+        "AGR-NEG-01.json"
+      ]
+    },
+    {
+      "name": "issue_91_borrowed_pointer_diagnostics",
+      "feature": "strict-system borrowed pointer escape diagnostics",
+      "issue": 91,
+      "files": [
+        "BRW-NEG-03.json",
+        "BRW-NEG-04.json",
+        "BRW-NEG-05.json"
+      ]
+    },
+    {
+      "name": "issue_93_capture_list_diagnostics",
+      "feature": "strict-system capture-list move/unowned hazard diagnostics",
+      "issue": 93,
+      "files": [
+        "CAP-06.json",
+        "CAP-07.json",
+        "CAP-08.json"
+      ]
+    },
+    {
+      "name": "issue_94_system_hazard_diagnostics",
+      "feature": "strict-system diagnostics for borrowed/resource/capture hazard families",
+      "issue": 94,
+      "files": [
+        "SYS-DIAG-01.json",
+        "SYS-DIAG-02.json",
+        "SYS-DIAG-03.json",
+        "SYS-DIAG-04.json",
+        "SYS-DIAG-05.json",
+        "SYS-DIAG-06.json",
+        "SYS-DIAG-07.json",
+        "SYS-DIAG-08.json"
+      ]
+    },
+    {
+      "name": "issue_97_performance_misuse_diagnostics",
+      "feature": "strict and strict-performance diagnostics for direct/final/sealed misuse",
+      "issue": 97,
+      "files": [
+        "PERF-DYN-01.json",
+        "PERF-DYN-02.json",
+        "PERF-DYN-03.json",
+        "PERF-DYN-04.json",
+        "PERF-DIAG-01.json",
+        "PERF-DIAG-02.json",
+        "PERF-DIAG-03.json",
+        "PERF-DIAG-04.json"
+      ]
+    },
+    {
+      "name": "issue_99_macro_sandbox_diagnostics",
+      "feature": "macro sandbox policy and reproducibility diagnostics",
+      "issue": 99,
+      "files": [
+        "META-MAC-01.json",
+        "META-MAC-02.json",
+        "META-MAC-03.json",
+        "META-MAC-04.json"
+      ]
+    },
+    {
+      "name": "issue_104_diagnostic_group_matrix",
+      "feature": "minimum diagnostic-group coverage across profile categories",
+      "issue": 104,
+      "files": [
+        "DIAG-GRP-01.json",
+        "DIAG-GRP-02.json",
+        "DIAG-GRP-03.json",
+        "DIAG-GRP-04.json",
+        "DIAG-GRP-05.json",
+        "DIAG-GRP-06.json",
+        "DIAG-GRP-07.json",
+        "DIAG-GRP-08.json",
+        "DIAG-GRP-09.json",
+        "DIAG-GRP-10.json"
+      ]
+    },
+    {
+      "name": "issue_105_migrator_fixit_suite",
+      "feature": "migrator and fix-it coverage for canonical spellings and safer idioms",
+      "issue": 105,
+      "files": [
+        "MIG-01.json",
+        "MIG-02.json",
+        "MIG-03.json",
+        "MIG-04.json",
+        "MIG-05.json",
+        "MIG-06.json",
+        "MIG-07.json",
+        "MIG-08.json"
+      ]
+    },
+    {
+      "name": "issue_106_conformance_report_validation",
+      "feature": "conformance report emission and schema/content validation coverage",
+      "issue": 106,
+      "files": [
+        "CRPT-01.json",
+        "CRPT-02.json",
+        "CRPT-03.json",
+        "CRPT-04.json",
+        "CRPT-05.json",
+        "CRPT-06.json"
+      ]
+    },
+    {
+      "name": "issue_1197_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for strict nullability",
+      "issue": 1197,
+      "files": [
+        "M01-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1198_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for throws-misuse",
+      "issue": 1198,
+      "files": [
+        "M01-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1199_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for missing await fix-its",
+      "issue": 1199,
+      "files": [
+        "M01-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1200_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for await context enforcement",
+      "issue": 1200,
+      "files": [
+        "M01-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1201_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for borrowed escape diagnostics",
+      "issue": 1201,
+      "files": [
+        "M01-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1202_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for resource move-state diagnostics",
+      "issue": 1202,
+      "files": [
+        "M01-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1203_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for performance dispatch diagnostics",
+      "issue": 1203,
+      "files": [
+        "M01-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1204_m01_lane_d_diagnostic_mapping",
+      "feature": "M01 lane D scope-freeze diagnostic payload/code mapping for macro lockfile diagnostics",
+      "issue": 1204,
+      "files": [
+        "M01-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1241_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1241,
+      "files": [
+        "M02-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1242_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for driver profile diagnostics",
+      "issue": 1242,
+      "files": [
+        "M02-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1243_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1243,
+      "files": [
+        "M02-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1244_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1244,
+      "files": [
+        "M02-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1245_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1245,
+      "files": [
+        "M02-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1246_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1246,
+      "files": [
+        "M02-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1247_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1247,
+      "files": [
+        "M02-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1248_m02_lane_d_diagnostic_mapping",
+      "feature": "M02 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1248,
+      "files": [
+        "M02-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1287_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1287,
+      "files": [
+        "M03-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1288_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1288,
+      "files": [
+        "M03-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1289_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1289,
+      "files": [
+        "M03-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1290_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1290,
+      "files": [
+        "M03-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1291_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1291,
+      "files": [
+        "M03-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1292_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1292,
+      "files": [
+        "M03-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1293_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1293,
+      "files": [
+        "M03-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1294_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1294,
+      "files": [
+        "M03-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1295_m03_lane_d_diagnostic_mapping",
+      "feature": "M03 lane D scope-freeze diagnostic payload/code mapping for known-edge regression vectors",
+      "issue": 1295,
+      "files": [
+        "M03-D009.json"
+      ]
+    },
+    {
+      "name": "issue_1335_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1335,
+      "files": [
+        "M04-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1336_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1336,
+      "files": [
+        "M04-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1337_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1337,
+      "files": [
+        "M04-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1338_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1338,
+      "files": [
+        "M04-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1339_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1339,
+      "files": [
+        "M04-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1340_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1340,
+      "files": [
+        "M04-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1341_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1341,
+      "files": [
+        "M04-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1342_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1342,
+      "files": [
+        "M04-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1343_m04_lane_d_diagnostic_mapping",
+      "feature": "M04 lane D scope-freeze diagnostic payload/code mapping for known-edge regression vectors",
+      "issue": 1343,
+      "files": [
+        "M04-D009.json"
+      ]
+    },
+    {
+      "name": "issue_1390_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1390,
+      "files": [
+        "M05-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1391_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1391,
+      "files": [
+        "M05-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1392_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1392,
+      "files": [
+        "M05-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1393_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1393,
+      "files": [
+        "M05-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1394_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1394,
+      "files": [
+        "M05-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1395_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1395,
+      "files": [
+        "M05-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1396_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1396,
+      "files": [
+        "M05-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1397_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1397,
+      "files": [
+        "M05-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1398_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for known-edge regression vectors",
+      "issue": 1398,
+      "files": [
+        "M05-D009.json"
+      ]
+    },
+    {
+      "name": "issue_1399_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for CI determinism vectors",
+      "issue": 1399,
+      "files": [
+        "M05-D010.json"
+      ]
+    },
+    {
+      "name": "issue_1400_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for extension contract definition diagnostics",
+      "issue": 1400,
+      "files": [
+        "M05-D011.json"
+      ]
+    },
+    {
+      "name": "issue_1401_m05_lane_d_diagnostic_mapping",
+      "feature": "M05 lane D scope-freeze diagnostic payload/code mapping for extension payload and code mapping",
+      "issue": 1401,
+      "files": [
+        "M05-D012.json"
+      ]
+    },
+    {
+      "name": "issue_1441_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1441,
+      "files": [
+        "M06-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1442_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1442,
+      "files": [
+        "M06-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1443_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1443,
+      "files": [
+        "M06-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1444_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1444,
+      "files": [
+        "M06-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1445_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1445,
+      "files": [
+        "M06-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1446_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1446,
+      "files": [
+        "M06-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1447_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1447,
+      "files": [
+        "M06-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1448_m06_lane_d_diagnostic_mapping",
+      "feature": "M06 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1448,
+      "files": [
+        "M06-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1501_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1501,
+      "files": [
+        "M07-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1502_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1502,
+      "files": [
+        "M07-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1503_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1503,
+      "files": [
+        "M07-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1504_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1504,
+      "files": [
+        "M07-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1505_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1505,
+      "files": [
+        "M07-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1506_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1506,
+      "files": [
+        "M07-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1507_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1507,
+      "files": [
+        "M07-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1508_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1508,
+      "files": [
+        "M07-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1509_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for known-edge regression vectors",
+      "issue": 1509,
+      "files": [
+        "M07-D009.json"
+      ]
+    },
+    {
+      "name": "issue_1510_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for CI determinism vectors",
+      "issue": 1510,
+      "files": [
+        "M07-D010.json"
+      ]
+    },
+    {
+      "name": "issue_1511_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for extension contract definition diagnostics",
+      "issue": 1511,
+      "files": [
+        "M07-D011.json"
+      ]
+    },
+    {
+      "name": "issue_1512_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for extension payload and code mapping",
+      "issue": 1512,
+      "files": [
+        "M07-D012.json"
+      ]
+    },
+    {
+      "name": "issue_1513_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for extension negative-path oracle expansion",
+      "issue": 1513,
+      "files": [
+        "M07-D013.json"
+      ]
+    },
+    {
+      "name": "issue_1514_m07_lane_d_diagnostic_mapping",
+      "feature": "M07 lane D scope-freeze diagnostic payload/code mapping for extension mismatch drift detection",
+      "issue": 1514,
+      "files": [
+        "M07-D014.json"
+      ]
+    },
+    {
+      "name": "issue_1557_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1557,
+      "files": [
+        "M08-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1558_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1558,
+      "files": [
+        "M08-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1559_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1559,
+      "files": [
+        "M08-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1560_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1560,
+      "files": [
+        "M08-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1561_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1561,
+      "files": [
+        "M08-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1562_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1562,
+      "files": [
+        "M08-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1563_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1563,
+      "files": [
+        "M08-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1564_m08_lane_d_diagnostic_mapping",
+      "feature": "M08 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1564,
+      "files": [
+        "M08-D008.json"
+      ]
+    },
+    {
+      "name": "issue_1599_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for contract definition diagnostics",
+      "issue": 1599,
+      "files": [
+        "M09-D001.json"
+      ]
+    },
+    {
+      "name": "issue_1600_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for primary payload and code mapping",
+      "issue": 1600,
+      "files": [
+        "M09-D002.json"
+      ]
+    },
+    {
+      "name": "issue_1601_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for negative-path oracle expansion",
+      "issue": 1601,
+      "files": [
+        "M09-D003.json"
+      ]
+    },
+    {
+      "name": "issue_1602_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for mismatch drift detection",
+      "issue": 1602,
+      "files": [
+        "M09-D004.json"
+      ]
+    },
+    {
+      "name": "issue_1603_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for deterministic rendering order",
+      "issue": 1603,
+      "files": [
+        "M09-D005.json"
+      ]
+    },
+    {
+      "name": "issue_1604_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for strict-mode failure paths",
+      "issue": 1604,
+      "files": [
+        "M09-D006.json"
+      ]
+    },
+    {
+      "name": "issue_1605_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for traceability stabilization",
+      "issue": 1605,
+      "files": [
+        "M09-D007.json"
+      ]
+    },
+    {
+      "name": "issue_1606_m09_lane_d_diagnostic_mapping",
+      "feature": "M09 lane D scope-freeze diagnostic payload/code mapping for conformance expectation set",
+      "issue": 1606,
+      "files": [
+        "M09-D008.json"
+      ]
+    },
+    {
+      "name": "m10_lane_d_issue_1647_1656_diagnostics_scope",
+      "issue": 1647,
+      "issues": [
+        1647,
+        1648,
+        1649,
+        1650,
+        1651,
+        1652,
+        1653,
+        1654,
+        1655,
+        1656
+      ],
+      "files": [
+        "M10-D001.json",
+        "M10-D002.json",
+        "M10-D003.json",
+        "M10-D004.json",
+        "M10-D005.json",
+        "M10-D006.json",
+        "M10-D007.json",
+        "M10-D008.json",
+        "M10-D009.json",
+        "M10-D010.json"
+      ]
+    },
+    {
+      "name": "m11_lane_d_issue_1701_1711_diagnostics_scope",
+      "issue": 1701,
+      "issues": [
+        1701,
+        1702,
+        1703,
+        1704,
+        1705,
+        1706,
+        1707,
+        1708,
+        1709,
+        1710,
+        1711
+      ],
+      "files": [
+        "M11-D001.json",
+        "M11-D002.json",
+        "M11-D003.json",
+        "M11-D004.json",
+        "M11-D005.json",
+        "M11-D006.json",
+        "M11-D007.json",
+        "M11-D008.json",
+        "M11-D009.json",
+        "M11-D010.json",
+        "M11-D011.json"
+      ]
+    },
+    {
+      "name": "m12_lane_d_issue_1760_1771_diagnostics_scope",
+      "issue": 1760,
+      "issues": [
+        1760,
+        1761,
+        1762,
+        1763,
+        1764,
+        1765,
+        1766,
+        1767,
+        1768,
+        1769,
+        1770,
+        1771
+      ],
+      "files": [
+        "M12-D001.json",
+        "M12-D002.json",
+        "M12-D003.json",
+        "M12-D004.json",
+        "M12-D005.json",
+        "M12-D006.json",
+        "M12-D007.json",
+        "M12-D008.json",
+        "M12-D009.json",
+        "M12-D010.json",
+        "M12-D011.json",
+        "M12-D012.json"
+      ]
+    },
+    {
+      "name": "m13_lane_d_issue_1815_1824_diagnostics_scope",
+      "issue": 1815,
+      "issues": [
+        1815,
+        1816,
+        1817,
+        1818,
+        1819,
+        1820,
+        1821,
+        1822,
+        1823,
+        1824
+      ],
+      "files": [
+        "M13-D001.json",
+        "M13-D002.json",
+        "M13-D003.json",
+        "M13-D004.json",
+        "M13-D005.json",
+        "M13-D006.json",
+        "M13-D007.json",
+        "M13-D008.json",
+        "M13-D009.json",
+        "M13-D010.json"
+      ]
+    },
+    {
+      "name": "m14_lane_d_issue_1872_1883_diagnostics_scope",
+      "issue": 1872,
+      "issues": [
+        1872,
+        1873,
+        1874,
+        1875,
+        1876,
+        1877,
+        1878,
+        1879,
+        1880,
+        1881,
+        1882,
+        1883
+      ],
+      "files": [
+        "M14-D001.json",
+        "M14-D002.json",
+        "M14-D003.json",
+        "M14-D004.json",
+        "M14-D005.json",
+        "M14-D006.json",
+        "M14-D007.json",
+        "M14-D008.json",
+        "M14-D009.json",
+        "M14-D010.json",
+        "M14-D011.json",
+        "M14-D012.json"
+      ]
+    },
+    {
+      "name": "m15_lane_d_issue_1927_1936_diagnostics_scope",
+      "issue": 1927,
+      "issues": [
+        1927,
+        1928,
+        1929,
+        1930,
+        1931,
+        1932,
+        1933,
+        1934,
+        1935,
+        1936
+      ],
+      "files": [
+        "M15-D001.json",
+        "M15-D002.json",
+        "M15-D003.json",
+        "M15-D004.json",
+        "M15-D005.json",
+        "M15-D006.json",
+        "M15-D007.json",
+        "M15-D008.json",
+        "M15-D009.json",
+        "M15-D010.json"
+      ]
+    },
+    {
+      "name": "m16_lane_d_issue_1975_1982_diagnostics_scope",
+      "issue": 1975,
+      "issues": [
+        1975,
+        1976,
+        1977,
+        1978,
+        1979,
+        1980,
+        1981,
+        1982
+      ],
+      "files": [
+        "M16-D001.json",
+        "M16-D002.json",
+        "M16-D003.json",
+        "M16-D004.json",
+        "M16-D005.json",
+        "M16-D006.json",
+        "M16-D007.json",
+        "M16-D008.json"
+      ]
+    },
+    {
+      "name": "m17_lane_d_issue_2148_2199_diagnostics_scope",
+      "issue": 2148,
+      "issues": [
+        2148,
+        2149,
+        2150,
+        2151,
+        2152,
+        2153,
+        2154,
+        2155,
+        2156,
+        2157,
+        2158,
+        2159,
+        2160,
+        2161,
+        2162,
+        2163,
+        2164,
+        2165,
+        2166,
+        2167,
+        2168,
+        2169,
+        2170,
+        2171,
+        2172,
+        2173,
+        2174,
+        2175,
+        2176,
+        2177,
+        2178,
+        2179,
+        2180,
+        2181,
+        2182,
+        2183,
+        2184,
+        2185,
+        2186,
+        2187,
+        2188,
+        2189,
+        2190,
+        2191,
+        2192,
+        2193,
+        2194,
+        2195,
+        2196,
+        2197,
+        2198,
+        2199
+      ],
+      "files": [
+        "M17-D001.json",
+        "M17-D002.json",
+        "M17-D003.json",
+        "M17-D004.json",
+        "M17-D005.json",
+        "M17-D006.json",
+        "M17-D007.json",
+        "M17-D008.json",
+        "M17-D009.json",
+        "M17-D010.json",
+        "M17-D011.json",
+        "M17-D012.json",
+        "M17-D013.json",
+        "M17-D014.json",
+        "M17-D015.json",
+        "M17-D016.json",
+        "M17-D017.json",
+        "M17-D018.json",
+        "M17-D019.json",
+        "M17-D020.json",
+        "M17-D021.json",
+        "M17-D022.json",
+        "M17-D023.json",
+        "M17-D024.json",
+        "M17-D025.json",
+        "M17-D026.json",
+        "M17-D027.json",
+        "M17-D028.json",
+        "M17-D029.json",
+        "M17-D030.json",
+        "M17-D031.json",
+        "M17-D032.json",
+        "M17-D033.json",
+        "M17-D034.json",
+        "M17-D035.json",
+        "M17-D036.json",
+        "M17-D037.json",
+        "M17-D038.json",
+        "M17-D039.json",
+        "M17-D040.json",
+        "M17-D041.json",
+        "M17-D042.json",
+        "M17-D043.json",
+        "M17-D044.json",
+        "M17-D045.json",
+        "M17-D046.json",
+        "M17-D047.json",
+        "M17-D048.json",
+        "M17-D049.json",
+        "M17-D050.json",
+        "M17-D051.json",
+        "M17-D052.json"
+      ]
+    },
+    {
+      "name": "m18_lane_d_issue_2295_2308_diagnostics_scope",
+      "issue": 2295,
+      "issues": [
+        2295,
+        2296,
+        2297,
+        2298,
+        2299,
+        2300,
+        2301,
+        2302,
+        2303,
+        2304,
+        2305,
+        2306,
+        2307,
+        2308
+      ],
+      "files": [
+        "M18-D001.json",
+        "M18-D002.json",
+        "M18-D003.json",
+        "M18-D004.json",
+        "M18-D005.json",
+        "M18-D006.json",
+        "M18-D007.json",
+        "M18-D008.json",
+        "M18-D009.json",
+        "M18-D010.json",
+        "M18-D011.json",
+        "M18-D012.json",
+        "M18-D013.json",
+        "M18-D014.json"
+      ]
+    },
+    {
+      "name": "m19_lane_d_issue_2367_2380_diagnostics_scope",
+      "issue": 2367,
+      "issues": [
+        2367,
+        2368,
+        2369,
+        2370,
+        2371,
+        2372,
+        2373,
+        2374,
+        2375,
+        2376,
+        2377,
+        2378,
+        2379,
+        2380
+      ],
+      "files": [
+        "M19-D001.json",
+        "M19-D002.json",
+        "M19-D003.json",
+        "M19-D004.json",
+        "M19-D005.json",
+        "M19-D006.json",
+        "M19-D007.json",
+        "M19-D008.json",
+        "M19-D009.json",
+        "M19-D010.json",
+        "M19-D011.json",
+        "M19-D012.json",
+        "M19-D013.json",
+        "M19-D014.json"
+      ]
+    },
+    {
+      "name": "m20_lane_d_issue_2439_2452_diagnostics_scope",
+      "issue": 2439,
+      "issues": [
+        2439,
+        2440,
+        2441,
+        2442,
+        2443,
+        2444,
+        2445,
+        2446,
+        2447,
+        2448,
+        2449,
+        2450,
+        2451,
+        2452
+      ],
+      "files": [
+        "M20-D001.json",
+        "M20-D002.json",
+        "M20-D003.json",
+        "M20-D004.json",
+        "M20-D005.json",
+        "M20-D006.json",
+        "M20-D007.json",
+        "M20-D008.json",
+        "M20-D009.json",
+        "M20-D010.json",
+        "M20-D011.json",
+        "M20-D012.json",
+        "M20-D013.json",
+        "M20-D014.json"
+      ]
+    },
+    {
+      "name": "m21_lane_d_issue_2511_2524_diagnostics_scope",
+      "issue": 2511,
+      "issues": [
+        2511,
+        2512,
+        2513,
+        2514,
+        2515,
+        2516,
+        2517,
+        2518,
+        2519,
+        2520,
+        2521,
+        2522,
+        2523,
+        2524
+      ],
+      "files": [
+        "M21-D001.json",
+        "M21-D002.json",
+        "M21-D003.json",
+        "M21-D004.json",
+        "M21-D005.json",
+        "M21-D006.json",
+        "M21-D007.json",
+        "M21-D008.json",
+        "M21-D009.json",
+        "M21-D010.json",
+        "M21-D011.json",
+        "M21-D012.json",
+        "M21-D013.json",
+        "M21-D014.json"
+      ]
+    },
+    {
+      "name": "m22_lane_d_issue_2583_2596_diagnostics_scope",
+      "issue": 2583,
+      "issues": [
+        2583,
+        2584,
+        2585,
+        2586,
+        2587,
+        2588,
+        2589,
+        2590,
+        2591,
+        2592,
+        2593,
+        2594,
+        2595,
+        2596
+      ],
+      "files": [
+        "M22-D001.json",
+        "M22-D002.json",
+        "M22-D003.json",
+        "M22-D004.json",
+        "M22-D005.json",
+        "M22-D006.json",
+        "M22-D007.json",
+        "M22-D008.json",
+        "M22-D009.json",
+        "M22-D010.json",
+        "M22-D011.json",
+        "M22-D012.json",
+        "M22-D013.json",
+        "M22-D014.json"
+      ]
+    },
+    {
+      "name": "m23_lane_d_issue_2655_2668_diagnostics_scope",
+      "issue": 2655,
+      "issues": [
+        2655,
+        2656,
+        2657,
+        2658,
+        2659,
+        2660,
+        2661,
+        2662,
+        2663,
+        2664,
+        2665,
+        2666,
+        2667,
+        2668
+      ],
+      "files": [
+        "M23-D001.json",
+        "M23-D002.json",
+        "M23-D003.json",
+        "M23-D004.json",
+        "M23-D005.json",
+        "M23-D006.json",
+        "M23-D007.json",
+        "M23-D008.json",
+        "M23-D009.json",
+        "M23-D010.json",
+        "M23-D011.json",
+        "M23-D012.json",
+        "M23-D013.json",
+        "M23-D014.json"
+      ]
+    },
+    {
+      "name": "m24_lane_d_issue_2727_2740_diagnostics_scope",
+      "issue": 2727,
+      "issues": [
+        2727,
+        2728,
+        2729,
+        2730,
+        2731,
+        2732,
+        2733,
+        2734,
+        2735,
+        2736,
+        2737,
+        2738,
+        2739,
+        2740
+      ],
+      "files": [
+        "M24-D001.json",
+        "M24-D002.json",
+        "M24-D003.json",
+        "M24-D004.json",
+        "M24-D005.json",
+        "M24-D006.json",
+        "M24-D007.json",
+        "M24-D008.json",
+        "M24-D009.json",
+        "M24-D010.json",
+        "M24-D011.json",
+        "M24-D012.json",
+        "M24-D013.json",
+        "M24-D014.json"
+      ]
+    },
+    {
+      "name": "m25_lane_d_issue_2799_2812_diagnostics_scope",
+      "issue": 2799,
+      "issues": [
+        2799,
+        2800,
+        2801,
+        2802,
+        2803,
+        2804,
+        2805,
+        2806,
+        2807,
+        2808,
+        2809,
+        2810,
+        2811,
+        2812
+      ],
+      "files": [
+        "M25-D001.json",
+        "M25-D002.json",
+        "M25-D003.json",
+        "M25-D004.json",
+        "M25-D005.json",
+        "M25-D006.json",
+        "M25-D007.json",
+        "M25-D008.json",
+        "M25-D009.json",
+        "M25-D010.json",
+        "M25-D011.json",
+        "M25-D012.json",
+        "M25-D013.json",
+        "M25-D014.json"
+      ]
+    }
+  ]
+}

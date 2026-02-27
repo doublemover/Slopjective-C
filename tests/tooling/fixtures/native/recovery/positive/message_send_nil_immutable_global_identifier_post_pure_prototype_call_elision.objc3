@@ -1,0 +1,10 @@
+module MessageSendNilImmutableGlobalIdentifierPostPurePrototypeCallElision;
+
+let receiver = nil;
+
+pure fn touch() -> i32;
+
+fn main() -> i32 {
+  touch();
+  return [receiver ping];
+}

@@ -1,0 +1,8 @@
+# Typed bool return literal edge ABI expectation markers.
+define i1 @from_literal(i1 %arg0)
+icmp ne i32 1, 0
+icmp ne i32 0, 0
+define i32 @score(i1 %arg0)
+call i1 @from_literal(i1
+call i32 @score(i1
+define i32 @objc3c_entry()

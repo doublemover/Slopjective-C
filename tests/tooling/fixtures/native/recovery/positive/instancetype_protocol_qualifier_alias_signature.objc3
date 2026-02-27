@@ -1,0 +1,12 @@
+module InstancetypeProtocolQualifierAliasSignature;
+
+fn choose(flag: bool, when_true: instancetype<NSObject>, when_false: instancetype<NSObject>) -> instancetype {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main() -> i32 {
+  return choose(true, 40, 2) + 1;
+}

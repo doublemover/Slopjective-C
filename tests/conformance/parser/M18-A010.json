@@ -1,0 +1,25 @@
+{
+  "id": "M18-A010",
+  "title": "Accept M18 lane-A parser fixture baseline for issue #2261 task M18-A010 (Refactor parser pipeline for deterministic replay (CI/Automation Enforcement))",
+  "feature": "m18 lane-a parser correctness hardening determinism closure core strict replay enforcement slice 10",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M18",
+    "milestone_number": 103,
+    "lane": "A",
+    "issue": 2261,
+    "task": "M18-A010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/PROJECT_WIDE_GLOSSARY.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S010__\\n#define __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S010__ 1\\n#endif\\n\\ntypedef struct M18A010_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M18A010_Probe;\\n\\nM18A010_Probe m18a010_probe(void) {\\n#if __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S010__\\n    M18A010_Probe probe = { 1, 10, 2261 };\\n#else\\n    M18A010_Probe probe = { 0, 10, 2261 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

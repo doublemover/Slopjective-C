@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "switch_case_logical_unknown_conservative_reject.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S205",
+      "missing return path in function 'main'"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

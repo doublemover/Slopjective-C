@@ -1,0 +1,20 @@
+{
+  "id": "THR-75-01",
+  "title": "Accept untyped throws declarations, calls, and overrides",
+  "feature": "untyped throws v1 model",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/DECISIONS_LOG.md#decisions-d-002",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-3"
+  ],
+  "source": "id makeToken(id seed) throws;\n\n@interface ThrowBase : NSObject\n- (id)load:(id)seed throws;\n@end\n\n@interface ThrowChild : ThrowBase\n- (id)load:(id)seed throws;\n@end\n\nid runFlow(ThrowChild *child, id seed) throws {\n    id token = try makeToken(seed);\n    return try [child load:token];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

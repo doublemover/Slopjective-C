@@ -1,0 +1,7 @@
+# Global initializer reference chain lowering markers.
+@base = global i32 4
+@twice = global i32 8
+@mix = global i32 11
+@flag = global i32 1
+@folded = global i32 11
+ret i32

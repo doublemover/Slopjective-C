@@ -1,0 +1,9 @@
+module UnaryPlusGlobalInitializerChain;
+
+let base = +5;
+let doubled = +(base + base);
+let biased = +(doubled + 1);
+
+fn main() -> i32 {
+  return biased;
+}

@@ -1,0 +1,8 @@
+// Negative fixture: declaration qualifiers are invalid in statement position.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierStatementPure;
+
+fn main() -> i32 {
+  pure let value = 1;
+  return value;
+}

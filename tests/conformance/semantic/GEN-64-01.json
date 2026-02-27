@@ -1,0 +1,21 @@
+{
+  "id": "GEN-64-01",
+  "title": "Accept covariant pragmatic generic typing with erased usage",
+  "feature": "pragmatic generic types (compile-time checks with runtime erasure intent)",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-5",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-6"
+  ],
+  "source": "@protocol Persistable\n@end\n\n@interface Record : NSObject <Persistable>\n@end\n\n@interface Vault<__covariant T : id<Persistable>> : NSObject\n- (T)peek;\n@end\n\nid consumeErased(Vault<id<Persistable>> *value);\n\nid acceptCovariantErasure(Vault<Record *> *records) {\n    Vault<id<Persistable>> *erasedView = records;\n    return consumeErased(erasedView);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

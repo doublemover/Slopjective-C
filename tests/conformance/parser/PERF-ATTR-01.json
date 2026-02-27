@@ -1,0 +1,19 @@
+{
+  "id": "PERF-ATTR-01",
+  "title": "Accept canonical objc_direct spelling on method declarations",
+  "feature": "performance and dynamism control attribute parsing",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-5",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "@interface PERFATTR01DirectSurface : NSObject\n- (int)fastPath __attribute__((objc_direct));\n- (int)slowPath;\n@end\n@implementation PERFATTR01DirectSurface\n- (int)fastPath { return 7; }\n- (int)slowPath { return 3; }\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

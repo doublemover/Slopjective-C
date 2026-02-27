@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'open_blockers' must be sorted by 'source_path', then line number, then 'blocker_id' in tests/tooling/fixtures/activation_triggers/drift_open_blockers_unsorted/open_blockers.json

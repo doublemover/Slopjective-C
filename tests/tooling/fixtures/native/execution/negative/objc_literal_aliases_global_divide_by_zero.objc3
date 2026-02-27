@@ -1,0 +1,7 @@
+module ObjcLiteralAliasesGlobalDivideByZero;
+
+let value = NULL / 0;
+
+fn main() -> i32 {
+  return value;
+}

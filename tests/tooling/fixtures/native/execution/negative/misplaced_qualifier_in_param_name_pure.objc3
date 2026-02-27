@@ -1,0 +1,7 @@
+module MisplacedQualifierInParamNamePure;
+
+fn add(pure: i32, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

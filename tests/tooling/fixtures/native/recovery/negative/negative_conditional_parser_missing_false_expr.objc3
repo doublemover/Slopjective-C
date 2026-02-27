@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeConditionalParserMissingFalseExpr;
+
+fn main() -> i32 {
+  let x = true ? 1 : ;
+  return x;
+}

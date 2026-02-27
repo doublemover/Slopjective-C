@@ -1,0 +1,15 @@
+// Expected diagnostic code(s): O3S206, O3S213.
+module NegativeDoWhileMixedConditionAndControl;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  do {
+    let i = 1;
+  } while (ready);
+  continue;
+  return 0;
+}
+

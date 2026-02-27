@@ -1,0 +1,3 @@
+# Flow-sensitive pre-reassignment nil-bound receiver elision markers.
+define i32 @main()
+ret i32

@@ -1,0 +1,15 @@
+// Negative fixture: nullability suffix on parameter type is unsupported.
+// Expected diagnostic code(s): O3S206.
+module NegativeParamNullabilitySuffix;
+
+fn pick(flag: bool?, left: i32, right: i32) {
+  if (flag) {
+    return left;
+  } else {
+    return right;
+  }
+}
+
+fn main() {
+  return pick(true, 1, 0);
+}

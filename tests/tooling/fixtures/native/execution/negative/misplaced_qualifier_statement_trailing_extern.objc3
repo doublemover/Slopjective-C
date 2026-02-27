@@ -1,0 +1,7 @@
+module MisplacedQualifierStatementTrailingExtern;
+
+fn main() -> i32 {
+  let lhs = 1;
+  extern let rhs = 2;
+  return lhs;
+}

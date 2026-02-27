@@ -1,0 +1,11 @@
+module GlobalInitializerReferenceChain;
+
+let base = 4;
+let twice = base * 2;
+let mix = twice + base - 1;
+let flag = mix > 5;
+let folded = flag ? mix : base;
+
+fn main() -> i32 {
+  return folded;
+}

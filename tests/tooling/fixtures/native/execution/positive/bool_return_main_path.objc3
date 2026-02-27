@@ -1,0 +1,15 @@
+// Positive execution fixture: bool-return helper path normalized to i32 main exit.
+module BoolReturnMainPath;
+
+fn should_exit_true(value: i32) -> bool {
+  return value == 9;
+}
+
+fn main() -> i32 {
+  let probe = 4 + 5;
+  if (should_exit_true(probe)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

@@ -1,0 +1,9 @@
+// Positive fixture: nil-bound identifier send-site before reassignment is flow-sensitively elided.
+module MessageSendNilBoundIdentifierPreReassignmentElision;
+
+fn main() {
+  let receiver = nil;
+  let sent = [receiver ping];
+  receiver = 1;
+  return sent + 16;
+}

@@ -1,0 +1,1 @@
+error: invalid JSON in open issues snapshot file tests/tooling/fixtures/activation_triggers/hard_fail_invalid_issues_json/issues.json: Expecting value: line 1 column 24 (char 23)

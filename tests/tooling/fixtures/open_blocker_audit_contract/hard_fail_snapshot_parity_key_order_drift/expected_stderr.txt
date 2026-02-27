@@ -1,0 +1,4 @@
+snapshot parity
+key order drift
+contract_id
+contract_version

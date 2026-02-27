@@ -1,0 +1,164 @@
+{
+  "bundle_type": "objc3-conformance-evidence-bundle",
+  "bundle_schema": "objc3-conformance-evidence-bundle-v1",
+  "bundle_version": "0.11.0",
+  "issue_ref": "v0.11-B01/#122",
+  "generated_at": "2026-02-23T06:45:00Z",
+  "producer": {
+    "name": "objc3-conformance-packager",
+    "version": "0.11.0",
+    "build_id": "ci-2026q1-000512"
+  },
+  "spec_baseline": {
+    "language_line": "objc3-v1",
+    "release_train": "v0.11",
+    "conformance_checklist_ref": "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-2",
+    "minimum_conformance_suite_version": "0.11.0"
+  },
+  "profile_claim": {
+    "profile": "strict-v1",
+    "strictness": "strict",
+    "concurrency_mode": "off",
+    "status": "conformant-with-deviations",
+    "optional_feature_sets": [
+      "opt-cxx"
+    ],
+    "claimed_capabilities": [
+      "objc3.abi.throws.v1",
+      "objc3.metadata.executor_affinity.v1",
+      "objc3.runtime.selector_identity.v1"
+    ]
+  },
+  "manifests": [
+    {
+      "kind": "abi-manifest",
+      "schema_id": "objc3-abi-2025Q4",
+      "path": "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+      "sha256": "sha256:72b7e1f0664623f0f09ac33d4f17f7f6629d36e8cc31a5a72eb9e8c1267e275f",
+      "generated_at": "2026-02-23T05:15:00Z",
+      "status": "accepted"
+    },
+    {
+      "kind": "runtime-manifest",
+      "schema_id": "objc3-runtime-artifact-manifest/v1",
+      "path": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+      "sha256": "sha256:3f0d5b44ae54fe9f7ef6bca5f91d3caedaf4b76725c45543f8c866cb4e67c9a1",
+      "generated_at": "2025-10-15T12:00:00Z",
+      "status": "accepted"
+    }
+  ],
+  "test_evidence": {
+    "suite_run_id": "run-20260223T063000Z",
+    "runner": {
+      "name": "objc3-conformance-runner",
+      "version": "0.11.0",
+      "host_os": "linux",
+      "target_triples": [
+        "arm64-apple-darwin23",
+        "x86_64-apple-darwin23"
+      ]
+    },
+    "executed_at": "2026-02-23T06:30:00Z",
+    "summary": {
+      "total_tests": 204,
+      "passed": 203,
+      "failed": 0,
+      "expected_failures": 1,
+      "skipped": 0,
+      "result": "pass-with-known-deviations"
+    },
+    "suites": [
+      {
+        "suite_id": "diagnostics",
+        "result": "pass-with-expected-failures",
+        "executed": 30,
+        "passed": 29,
+        "failed": 0,
+        "expected_failures": 1,
+        "skipped": 0,
+        "duration_seconds": 26.2,
+        "evidence_paths": [
+          "tests/conformance/diagnostics/manifest.json",
+          "tests/conformance/diagnostics/SCM-06.json"
+        ]
+      },
+      {
+        "suite_id": "lowering_abi",
+        "result": "pass",
+        "executed": 36,
+        "passed": 36,
+        "failed": 0,
+        "expected_failures": 0,
+        "skipped": 0,
+        "duration_seconds": 31.8,
+        "evidence_paths": [
+          "tests/conformance/lowering_abi/manifest.json"
+        ]
+      },
+      {
+        "suite_id": "module_roundtrip",
+        "result": "pass",
+        "executed": 28,
+        "passed": 28,
+        "failed": 0,
+        "expected_failures": 0,
+        "skipped": 0,
+        "duration_seconds": 22.4,
+        "evidence_paths": [
+          "tests/conformance/module_roundtrip/manifest.json"
+        ]
+      },
+      {
+        "suite_id": "parser",
+        "result": "pass",
+        "executed": 30,
+        "passed": 30,
+        "failed": 0,
+        "expected_failures": 0,
+        "skipped": 0,
+        "duration_seconds": 18.5,
+        "evidence_paths": [
+          "tests/conformance/parser/manifest.json"
+        ]
+      },
+      {
+        "suite_id": "semantic",
+        "result": "pass",
+        "executed": 80,
+        "passed": 80,
+        "failed": 0,
+        "expected_failures": 0,
+        "skipped": 0,
+        "duration_seconds": 49.7,
+        "evidence_paths": [
+          "tests/conformance/semantic/manifest.json"
+        ]
+      }
+    ]
+  },
+  "known_deviations": [
+    {
+      "deviation_id": "KD-001",
+      "title": "Strict-system macro conformance edge case in diagnostics lane",
+      "issue_ref": "#125",
+      "severity": "medium",
+      "status": "accepted-temporary",
+      "affects_profiles": [
+        "strict-system-v1"
+      ],
+      "related_tests": [
+        "SCM-06"
+      ],
+      "rationale": "One strict-system macro consistency check remains unstable under mixed host/target SDK combinations.",
+      "mitigation": "Release gating requires explicit expected-failure accounting and per-run review before publication.",
+      "tracking_milestone": "v0.12.0",
+      "last_reviewed": "2026-02-23",
+      "sunset_target": "2026-06-30"
+    }
+  ],
+  "invariants": {
+    "deterministic_ordering": true,
+    "normalized_paths": true,
+    "digest_algorithm": "sha256"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "id": "DIAG-GRP-09",
+  "title": "Performance group escalates direct-via-dynamic dispatch to error under strict-performance mode",
+  "feature": "minimum diagnostic groups: performance controls and profile-aware severities",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -fobjc3-performance=strict -fsyntax-only %s\n@interface DIAGGRP09Box : NSObject\n- (int)fastPath __attribute__((objc_direct));\n@end\n\nid diaggrp09_error_under_strict_performance(DIAGGRP09Box *box) {\n    return [box performSelector:@selector(fastPath)];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-DIRECT-DYNAMIC-DISPATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 17 },
+          "end": { "line": 7, "column": 32 }
+        },
+        "message": "strict-performance mode rejects dynamic dispatch to objc_direct method 'fastPath'; call it directly or mark the declaration objc_dynamic"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+module BitwiseCompoundAssignmentMix;
+
+fn main() -> i32 {
+  let value = 29;
+  value &= 15;
+  value |= 2;
+  value ^= 6;
+  value <<= 2;
+  value >>= 3;
+  return value;
+}

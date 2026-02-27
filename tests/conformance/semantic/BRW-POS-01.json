@@ -1,0 +1,18 @@
+{
+  "id": "BRW-POS-01",
+  "title": "Accept passing borrowed pointers to explicitly non-escaping parameters",
+  "feature": "borrowed pointer escape analysis (intra-procedural minimum)",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "void brw_consume_noescape(const char *bytes __attribute__((noescape)));\n\nvoid brw_pos01_pass_to_noescape(borrowed const char *bytes) {\n    brw_consume_noescape(bytes);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

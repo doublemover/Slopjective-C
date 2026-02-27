@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "binary_literal_global_divide_by_zero.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S210",
+      "global initializer must be constant expression"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

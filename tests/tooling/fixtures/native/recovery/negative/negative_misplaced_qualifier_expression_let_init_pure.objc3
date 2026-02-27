@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are invalid in expression position.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierExpressionLetInitPure;
+
+fn main() -> i32 {
+  let seed = 1;
+  let rhs = pure;
+  return seed;
+}

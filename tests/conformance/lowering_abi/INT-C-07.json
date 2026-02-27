@@ -1,0 +1,77 @@
+{
+  "id": "INT-C-07",
+  "title": "Lower async throws exports to canonical C thunk ABI with stable parameter order and separate-compilation compatibility",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 --emit-module INTC07.objcmod --emit-interface INTC07.obji %s\\n// RUN: objc3c --verify-interface INTC07.objcmod INTC07.obji %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC07Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nid intc07_fetch(int token) async throws;\\nvoid intc07_fetch_async_c(int token,\\n                          void * _Nullable context,\\n                          INTC07Completion _Nonnull completion);\\n\\ntypedef struct INTC07Probe {\\n    int callbackCount;\\n    void * _Nullable echoedContext;\\n    objc_async_completion_status_t lastStatus;\\n    id _Nullable lastResult;\\n    id<Error> _Nullable lastError;\\n} INTC07Probe;\\n\\nvoid intc07_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC07Probe *probe = (INTC07Probe *)context;\\n    probe->callbackCount = probe->callbackCount + 1;\\n    probe->echoedContext = context;\\n    probe->lastStatus = status;\\n    probe->lastResult = result;\\n    probe->lastError = error;\\n}\\n\\nvoid intc07_start_probe(int token, INTC07Probe *probe) {\\n    probe->callbackCount = 0;\\n    probe->echoedContext = 0;\\n    intc07_fetch_async_c(token, probe, intc07_probe_callback);\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "exported async thunk keeps canonical parameter order: source parameters, then trailing context, then trailing completion",
+            "completion callback ABI shape carries status, result, and error slots in canonical order for throwing async exports",
+            "separate compilation preserves equivalent thunk callable shape for C translation units that import only emitted declarations"
+          ],
+          "runtime_assertions": [
+            "intc07_probe_callback runs exactly once per intc07_fetch_async_c invocation",
+            "callback observes probe context pointer identity unchanged (echoedContext equals passed context)"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves canonical thunk parameter order and callback signature shape from -O0",
+            "optimized code generation keeps separate-compilation C caller compatibility for exported thunk declarations",
+            "optimization does not elide required async thunk callback ABI edges"
+          ],
+          "runtime_assertions": [
+            "exactly-once callback behavior remains true under optimization",
+            "context pointer round-trip identity remains unchanged under optimization"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_c_thunk_signature_order",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "A1..An, then void *context, then nonnull completion callback",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.async_c_thunk_separate_compilation_shape",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "imported thunk declaration is ABI-compatible with exporter across translation units",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

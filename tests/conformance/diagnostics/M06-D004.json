@@ -1,0 +1,51 @@
+{
+  "id": "M06-D004",
+  "title": "Scope-freeze baseline: mismatch drift detection keeps stable payload mapping",
+  "feature": "M06 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m06/lane_d_m06_scope_freeze.md"
+  ],
+  "source": "void m06d004_compare(id lhs, id rhs);`n`nvoid m06d004_negative(void) {`n    m06d004_compare(@\"code=OBJC3-D-OTHER\", @\"expected=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 21
+          },
+          "end": {
+            "line": 4,
+            "column": 42
+          }
+        },
+        "message": "diagnostic code drift detected; expected canonical lane-D code mapping",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 21
+              },
+              "end": {
+                "line": 4,
+                "column": 42
+              }
+            },
+            "replacement": "@\"code=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\""
+          }
+        ]
+      }
+    ]
+  }
+}
+
+

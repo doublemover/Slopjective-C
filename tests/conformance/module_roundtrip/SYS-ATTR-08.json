@@ -1,0 +1,58 @@
+{
+  "id": "SYS-ATTR-08",
+  "title": "Normalize macro sugar to canonical borrowed return spellings in emitted interfaces",
+  "feature": "Part 8 canonical borrowed spellings in interfaces and metadata",
+  "bucket": "module_roundtrip",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-0-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-3",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module SYSATTR08.objcmod --emit-interface SYSATTR08.obji %s\n// RUN: objc3c --verify-interface SYSATTR08.objcmod SYSATTR08.obji %s\n#define SYS_BORROWED_PTR borrowed const char *\n#define SYS_RETURNS_BORROWED(N) __attribute__((objc_returns_borrowed(owner_index=N)))\nSYS_BORROWED_PTR borrow_slice(const char *owner, unsigned long offset) SYS_RETURNS_BORROWED(0);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "borrowed const char *borrow_slice(const char *owner, unsigned long offset) __attribute__((objc_returns_borrowed(owner_index=0)));\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": true,
+      "normalization_pairs": [
+        {
+          "from": "SYS_BORROWED_PTR",
+          "to": "borrowed const char *"
+        },
+        {
+          "from": "SYS_RETURNS_BORROWED(0)",
+          "to": "__attribute__((objc_returns_borrowed(owner_index=0)))"
+        }
+      ],
+      "forbidden_noncanonical_spellings": [
+        "SYS_BORROWED_PTR",
+        "SYS_RETURNS_BORROWED(0)"
+      ]
+    },
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "borrowed_pointer_qualifier",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_returns_borrowed_owner_index",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

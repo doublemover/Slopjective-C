@@ -1,0 +1,11 @@
+module AssignmentBoolBranchExec;
+
+fn main() -> i32 {
+  let flag = false;
+  flag = true;
+  if (flag) {
+    return 1;
+  }
+  return 0;
+}
+

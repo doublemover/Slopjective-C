@@ -1,0 +1,47 @@
+{
+  "id": "FTM-50-02",
+  "title": "Require mode-selection macro consistency for strictness and concurrency",
+  "feature": "feature-test macros",
+  "bucket": "parser",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-3",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-2"
+  ],
+  "source": "#if __OBJC3_STRICTNESS_LEVEL__ != EXPECT_STRICTNESS_LEVEL\n#error \"strictness macro mismatch\"\n#endif\n#if __OBJC3_CONCURRENCY_MODE__ != EXPECT_CONCURRENCY_MODE\n#error \"concurrency mode macro mismatch\"\n#endif\n#if __OBJC3_CONCURRENCY_STRICT__ != EXPECT_CONCURRENCY_STRICT\n#error \"concurrency strict alias mismatch\"\n#endif\nint ftm50_mode_macros(void) { return __OBJC3_STRICTNESS_LEVEL__; }\n",
+  "matrix": [
+    {
+      "name": "strict-off",
+      "flags": [
+        "-fobjc3-strictness=strict",
+        "-fobjc3-concurrency=off",
+        "-DEXPECT_STRICTNESS_LEVEL=1",
+        "-DEXPECT_CONCURRENCY_MODE=0",
+        "-DEXPECT_CONCURRENCY_STRICT=0"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "strict-system-strict",
+      "flags": [
+        "-fobjc3-strictness=strict-system",
+        "-fobjc3-concurrency=strict",
+        "-DEXPECT_STRICTNESS_LEVEL=2",
+        "-DEXPECT_CONCURRENCY_MODE=1",
+        "-DEXPECT_CONCURRENCY_STRICT=1"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    }
+  ],
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

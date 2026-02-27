@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "foundation_alias_parser_missing_param_colon.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P107",
+      "missing ':' after parameter name"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

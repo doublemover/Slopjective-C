@@ -1,0 +1,25 @@
+{
+  "id": "M08-A008",
+  "title": "Accept M08 lane-A parser fixture baseline for issue #1537 task M08-A008 (Add frontend negative path coverage)",
+  "feature": "m08 lane-a parser strictness-concurrency slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M08",
+    "milestone_number": 93,
+    "lane": "A",
+    "issue": 1537,
+    "task": "M08-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m08a008_fetch(void) async;\n\nint m08a008_execute(int gate) async {\n    return gate ? (try await m08a008_fetch()) : 8;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

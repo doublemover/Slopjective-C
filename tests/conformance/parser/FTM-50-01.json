@@ -1,0 +1,17 @@
+{
+  "id": "FTM-50-01",
+  "title": "Emit required core ObjC3 feature-test macros in ObjC 3.0 mode",
+  "feature": "feature-test macros",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-2"
+  ],
+  "source": "#if !defined(__OBJC3_FEATURE_OPTIONALS__)\n#error \"missing __OBJC3_FEATURE_OPTIONALS__\"\n#endif\n#if !defined(__OBJC3_FEATURE_THROWS__)\n#error \"missing __OBJC3_FEATURE_THROWS__\"\n#endif\n#if !defined(__OBJC3_FEATURE_ASYNC_AWAIT__)\n#error \"missing __OBJC3_FEATURE_ASYNC_AWAIT__\"\n#endif\n#if !defined(__OBJC3_FEATURE_ACTORS__)\n#error \"missing __OBJC3_FEATURE_ACTORS__\"\n#endif\nint ftm50_core_macros(void) { return 0; }\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schema_id": "objc3-manifest-publish-record/v1",
+  "publish_record_schema_version": 1,
+  "publish_policy_id": "MANPUB-POLICY-v0.11-B04",
+  "publish_policy_version": "1.0.0",
+  "source_revision": "9f4b95f2c6d8a1e7b4a392a7f4c662d6fb6f4c2a",
+  "ci_context": {
+    "ci_workflow": "objc3-manifest-publish",
+    "ci_run_id": 7001,
+    "ci_run_attempt": 1,
+    "trigger_event": "push"
+  },
+  "published_at_utc": "2026-02-23T09:30:15Z",
+  "bundles": [
+    {
+      "manifest_kind": "abi",
+      "manifest_name": "objc3-abi-2026Q1",
+      "profile_id": "objc3-abi",
+      "manifest_sha256": "sha256:fb50cfb743934cecd0c023aa0af52f2573e5f21bbf72d4da2d655ef8f645ba2d",
+      "signature_sha256": "sha256:c79f1dbf1eaec54de9834de63fccca2fa8d7f34d20b90433d9010d7269bc1d6f",
+      "provenance_sha256": "sha256:69f9cc33667a7f7be63f7fc8e1c49a7ec536d5ae0c5b995e56f24047f976ff96",
+      "immutable_paths": {
+        "manifest": "manifests/objc3-abi-2026Q1/sha256/fb50cfb743934cecd0c023aa0af52f2573e5f21bbf72d4da2d655ef8f645ba2d/manifest.json",
+        "signature": "manifests/objc3-abi-2026Q1/sha256/fb50cfb743934cecd0c023aa0af52f2573e5f21bbf72d4da2d655ef8f645ba2d/manifest.sig",
+        "provenance": "manifests/objc3-abi-2026Q1/sha256/fb50cfb743934cecd0c023aa0af52f2573e5f21bbf72d4da2d655ef8f645ba2d/provenance.intoto.jsonl",
+        "publish_record": "manifests/objc3-abi-2026Q1/sha256/fb50cfb743934cecd0c023aa0af52f2573e5f21bbf72d4da2d655ef8f645ba2d/publish_record.json"
+      },
+      "retention": {
+        "retention_class": "release-evidence",
+        "retention_expiry_utc": "2029-02-22T00:00:00Z",
+        "hold_state": false
+      }
+    },
+    {
+      "manifest_kind": "runtime",
+      "manifest_name": "objc3-runtime-2026Q1",
+      "profile_id": "objc3-runtime",
+      "manifest_sha256": "sha256:09e7a4dbcff1fa5ad1a45b5ecf214fb5a4c2204ef65f09f7fecf5695b53a1755",
+      "signature_sha256": "sha256:c38870ebf005786092d5b93247d3d5754795f7c3ce5965d97f469e7f6f4f977a",
+      "provenance_sha256": "sha256:e95b87256a763f387bc59d3ee86f5f6b428d57903eb4e658f916db3e5f60e73c",
+      "immutable_paths": {
+        "manifest": "manifests/objc3-runtime-2026Q1/sha256/09e7a4dbcff1fa5ad1a45b5ecf214fb5a4c2204ef65f09f7fecf5695b53a1755/manifest.json",
+        "signature": "manifests/objc3-runtime-2026Q1/sha256/09e7a4dbcff1fa5ad1a45b5ecf214fb5a4c2204ef65f09f7fecf5695b53a1755/manifest.sig",
+        "provenance": "manifests/objc3-runtime-2026Q1/sha256/09e7a4dbcff1fa5ad1a45b5ecf214fb5a4c2204ef65f09f7fecf5695b53a1755/provenance.intoto.jsonl",
+        "publish_record": "manifests/objc3-runtime-2026Q1/sha256/09e7a4dbcff1fa5ad1a45b5ecf214fb5a4c2204ef65f09f7fecf5695b53a1755/publish_record.json"
+      },
+      "retention": {
+        "retention_class": "release-evidence",
+        "retention_expiry_utc": "2029-02-22T00:00:00Z",
+        "hold_state": false
+      }
+    }
+  ],
+  "index_targets": {
+    "current": "reports/conformance/manifests/publish/index/current.json",
+    "snapshot": "reports/conformance/manifests/publish/index/snapshots/main_20260223_7001.json"
+  }
+}

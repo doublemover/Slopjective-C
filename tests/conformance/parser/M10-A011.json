@@ -1,0 +1,25 @@
+{
+  "id": "M10-A011",
+  "title": "Accept M10 lane-A parser fixture baseline for issue #1626 task M10-A011 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m10 lane-a parser nullability and nonnull region slice 11",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M10",
+    "milestone_number": 95,
+    "lane": "A",
+    "issue": 1626,
+    "task": "M10-A011",
+    "sequence": 11
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-6-1"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_NULLABILITY_CONTRACT_RELOCK__\n#define __OBJC3_FEATURE_NULLABILITY_CONTRACT_RELOCK__ 1\n#endif\n\ntypedef struct M10A011_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M10A011_Probe;\n\nM10A011_Probe m10a011_probe(void) {\n#if __OBJC3_FEATURE_NULLABILITY_CONTRACT_RELOCK__\n    M10A011_Probe probe = { 1, 11, 1626 };\n#else\n    M10A011_Probe probe = { 0, 11, 1626 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

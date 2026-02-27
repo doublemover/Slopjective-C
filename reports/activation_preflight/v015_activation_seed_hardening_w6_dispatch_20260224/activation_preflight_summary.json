@@ -1,0 +1,111 @@
+{
+  "runner": "activation-preflight/v0.13",
+  "inputs": {
+    "issues_json": "tmp/v015_m26_open_issues_snapshot.json",
+    "milestones_json": "tmp/v015_m26_open_milestones_snapshot.json",
+    "catalog_json": "spec/planning/remaining_task_review_catalog.json",
+    "open_blockers_json": null,
+    "spec_globs": [],
+    "snapshot_refresh": true,
+    "issues_max_age_seconds": null,
+    "milestones_max_age_seconds": null,
+    "snapshot_generated_at_utc": null
+  },
+  "artifacts": {
+    "output_dir": "reports/activation_preflight/v015_activation_seed_hardening_w6_dispatch_20260224",
+    "check_activation_json": "check_activation_triggers.json",
+    "check_activation_markdown": "check_activation_triggers.md",
+    "spec_lint_log": "spec_lint.log",
+    "snapshot_capture_log": "capture_activation_snapshots.log",
+    "summary_json": "activation_preflight_summary.json",
+    "report_markdown": "activation_preflight_report.md"
+  },
+  "snapshot": {
+    "refresh_requested": true,
+    "refresh_attempted": true,
+    "refresh_exit_code": 0,
+    "issues_json": "tmp/v015_m26_open_issues_snapshot.json",
+    "milestones_json": "tmp/v015_m26_open_milestones_snapshot.json",
+    "open_blockers_json": null,
+    "issues_max_age_seconds": null,
+    "milestones_max_age_seconds": null,
+    "snapshot_generated_at_utc": null
+  },
+  "activation": {
+    "gate_open": true,
+    "activation_required": true,
+    "queue_state": "dispatch-open",
+    "active_trigger_ids": [
+      "T1-ISSUES",
+      "T2-MILESTONES"
+    ],
+    "open_blocker_count": 0,
+    "open_blockers_trigger_fired": false,
+    "exit_code": 1
+  },
+  "spec_lint": {
+    "exit_code": 0,
+    "ok": true
+  },
+  "commands": {
+    "check_activation_triggers_json": {
+      "argv": [
+        "python",
+        "scripts/check_activation_triggers.py",
+        "--issues-json",
+        "tmp/v015_m26_open_issues_snapshot.json",
+        "--milestones-json",
+        "tmp/v015_m26_open_milestones_snapshot.json",
+        "--catalog-json",
+        "spec/planning/remaining_task_review_catalog.json",
+        "--format",
+        "json"
+      ],
+      "exit_code": 1,
+      "stdout_bytes": 1832,
+      "stderr_bytes": 0
+    },
+    "check_activation_triggers_markdown": {
+      "argv": [
+        "python",
+        "scripts/check_activation_triggers.py",
+        "--issues-json",
+        "tmp/v015_m26_open_issues_snapshot.json",
+        "--milestones-json",
+        "tmp/v015_m26_open_milestones_snapshot.json",
+        "--catalog-json",
+        "spec/planning/remaining_task_review_catalog.json",
+        "--format",
+        "markdown"
+      ],
+      "exit_code": 1,
+      "stdout_bytes": 1387,
+      "stderr_bytes": 0
+    },
+    "spec_lint": {
+      "argv": [
+        "python",
+        "scripts/spec_lint.py"
+      ],
+      "exit_code": 0,
+      "stdout_bytes": 14,
+      "stderr_bytes": 0
+    },
+    "capture_activation_snapshots": {
+      "argv": [
+        "python",
+        "scripts/capture_activation_snapshots.py",
+        "--issues-output",
+        "tmp/v015_m26_open_issues_snapshot.json",
+        "--milestones-output",
+        "tmp/v015_m26_open_milestones_snapshot.json"
+      ],
+      "exit_code": 0,
+      "stdout_bytes": 177,
+      "stderr_bytes": 0
+    }
+  },
+  "errors": [],
+  "final_status": "activation-open",
+  "final_exit_code": 1
+}

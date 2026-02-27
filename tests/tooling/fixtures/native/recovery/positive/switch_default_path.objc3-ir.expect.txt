@@ -1,0 +1,11 @@
+# Switch default-path lowering markers.
+define i32 @main()
+br label %switch_test_4
+switch_test_4:
+label %switch_case_1, label %switch_test_5
+switch_test_5:
+label %switch_case_2, label %switch_default_3
+switch_default_3:
+store i32 77, ptr %out.addr.1, align 4
+switch_end_0:
+ret i32 %t5

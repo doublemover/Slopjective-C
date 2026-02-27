@@ -1,0 +1,24 @@
+{
+  "id": "RES-02",
+  "title": "Accept take/reset/discard resource flows with explicit invalid-sentinel transitions",
+  "feature": "resource move-state operations",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef int res_handle_t;\nvoid res_close(res_handle_t handle);\nres_handle_t res_open(int seed);\nvoid res_consume(res_handle_t handle);\n\nint res02_take_reset_discard(int seed) {\n    res_handle_t fd __attribute__((objc_resource(close=res_close, invalid=-1))) = res_open(seed);\n    res_handle_t moved = take(fd);\n    res_consume(moved);\n\n    reset(fd, res_open(seed + 1));\n    if (fd != -1) {\n        discard(fd);\n    }\n\n    return moved;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

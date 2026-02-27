@@ -1,0 +1,25 @@
+{
+  "id": "M17-A030",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #2021 task M17-A030 (Refactor parser pipeline for deterministic replay (CI/Automation Enforcement))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict replay enforcement slice 30",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 2021,
+    "task": "M17-A030",
+    "sequence": 30
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S030__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S030__ 1\\n#endif\\n\\ntypedef struct M17A030_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A030_Probe;\\n\\nM17A030_Probe m17a030_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_REPLAY_ENFORCEMENT_SLICE_S030__\\n    M17A030_Probe probe = { 1, 30, 2021 };\\n#else\\n    M17A030_Probe probe = { 0, 30, 2021 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,1 @@
+error: open milestones snapshot field 'items'[0] object in tests/tooling/fixtures/activation_triggers/drift_milestones_row_unknown_field/milestones.json contains unexpected field(s) ['unexpected']; allowed fields are ['number', 'title', 'state', 'description', 'open_issues', 'closed_issues', 'url', 'html_url', 'created_at', 'updated_at', 'due_on', 'closed_at']

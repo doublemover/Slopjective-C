@@ -1,0 +1,25 @@
+{
+  "id": "M23-A012",
+  "title": "Accept M23 lane-A parser fixture baseline for issue #2623 task M23-A012 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m23 lane a parser end to end compilation artifact emission implement parser frontend execution slice primary implementation slice 12",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "A",
+    "issue": 2623,
+    "task": "M23-A012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M23_A012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMARY__\\n#define __OBJC3_FEATURE_M23_A012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMARY__ 1\\n#endif\\n\\ntypedef struct M23A012_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23A012_Probe;\\n\\nM23A012_Probe m23a012_probe(void) {\\n#if __OBJC3_FEATURE_M23_A012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMARY__\\n    M23A012_Probe probe = { 1, 12, 2623 };\\n#else\\n    M23A012_Probe probe = { 0, 12, 2623 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

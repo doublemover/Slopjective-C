@@ -1,0 +1,26 @@
+{
+  "id": "M24-C013",
+  "title": "Harden layout/call-convention edge paths (Negative-Path Hardening) (issue #2725 / task M24-C013)",
+  "feature": "m24 lane-c conformance expansion performance and release hardening harden layout call convention edge paths negative path hardening slice 13",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M24",
+    "milestone_number": 109,
+    "lane": "C",
+    "issue": 2725,
+    "task": "M24-C013",
+    "sequence": 13
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M24_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_HARDENING__\\n#define __OBJC3_FEATURE_M24_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_HARDENING__ 1\\n#endif\\n\\ntypedef struct M24C013_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M24C013_Probe;\\n\\nM24C013_Probe m24c013_probe(void) {\\n#if __OBJC3_FEATURE_M24_C_013_HARDEN_LAYOUT_CALL_CONVENTION_EDGE_PATHS_NEGATIVE_PATH_HARDENING__\\n    M24C013_Probe probe = { 1, 13, 2725 };\\n#else\\n    M24C013_Probe probe = { 0, 13, 2725 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

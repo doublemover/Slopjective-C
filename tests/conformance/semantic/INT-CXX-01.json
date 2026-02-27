@@ -1,0 +1,20 @@
+{
+  "id": "INT-CXX-01",
+  "title": "Accept ObjC++ async callback ownership boundaries when +0 values are explicitly retained before C++ escape",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -fsyntax-only %s\ntypedef enum objc_async_completion_status {\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\n} objc_async_completion_status_t;\n\ntypedef void (*INTCXX01Completion)(\n    void * _Nullable context,\n    objc_async_completion_status_t status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nid intcxx01_fetch(int token) async throws;\nvoid intcxx01_fetch_async_c(int token,\n                            void * _Nullable context,\n                            INTCXX01Completion _Nonnull completion);\n\nid intcxx01_retain(id _Nullable value);\nvoid intcxx01_release(id _Nullable value);\n\nstruct INTCXX01RetainSlot {\n    id _Nullable saved;\n    INTCXX01RetainSlot() : saved(nil) {}\n    ~INTCXX01RetainSlot() {\n        if (saved != nil) {\n            intcxx01_release(saved);\n        }\n    }\n    void store(id _Nullable value) {\n        if (value != nil) {\n            saved = intcxx01_retain(value);\n        }\n    }\n};\n\nvoid intcxx01_callback(void * _Nullable context,\n                       objc_async_completion_status_t status,\n                       id _Nullable result,\n                       id<Error> _Nullable error) {\n    INTCXX01RetainSlot *slot = (INTCXX01RetainSlot *)context;\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS) {\n        slot->store(result);\n    }\n    if (error != nil) {\n        slot->store((id)error);\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

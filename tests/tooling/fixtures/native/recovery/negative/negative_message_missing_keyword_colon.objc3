@@ -1,0 +1,8 @@
+// Negative fixture: keyword message-send segment missing ':'.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageMissingKeywordColon;
+
+fn main() {
+  let receiver = 1;
+  return [receiver sum: 1 with 2];
+}

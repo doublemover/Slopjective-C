@@ -1,0 +1,31 @@
+{
+  "id": "GEN-64-02",
+  "title": "Reject pragmatic generic argument that violates declared constraints",
+  "feature": "pragmatic generic types (constraint enforcement with erased runtime model)",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-2-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-5",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-7",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-3"
+  ],
+  "source": "@protocol Persistable\n@end\n\n@interface PersistedRecord : NSObject <Persistable>\n@end\n\n@interface PlainRecord : NSObject\n@end\n\n@interface Vault<T : id<Persistable>> : NSObject\n- (T)peek;\n@end\n\nid rejectConstraint(Vault<PlainRecord *> *plainVault) {\n    return [plainVault peek];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-GENERICS-CONSTRAINT-VIOLATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 27 },
+          "end": { "line": 14, "column": 38 }
+        },
+        "message": "type argument 'PlainRecord *' does not satisfy constraint 'id<Persistable>'"
+      }
+    ]
+  }
+}

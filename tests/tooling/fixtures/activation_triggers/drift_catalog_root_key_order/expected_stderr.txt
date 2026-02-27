@@ -1,0 +1,1 @@
+error: catalog snapshot object in tests/tooling/fixtures/activation_triggers/drift_catalog_root_key_order/catalog.json key order drift: expected=['generated_at_utc', 'source', 'tasks'] observed=['source', 'generated_at_utc', 'tasks']

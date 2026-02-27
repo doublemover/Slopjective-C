@@ -1,0 +1,17 @@
+{
+  "id": "M06-A001",
+  "title": "Accept M06 command and grammar contract baseline for typed AST and source-span handoff",
+  "feature": "m06 frontend command and grammar contract definition",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M06A001_Node {\n    int token;\n    int span_start;\n    int span_end;\n} M06A001_Node;\n\nM06A001_Node m06a001_contract(int token, int start, int end) {\n    M06A001_Node node = { token, start, end };\n    return node;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

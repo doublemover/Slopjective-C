@@ -1,0 +1,27 @@
+// Negative fixture: mixed loop diagnostics (while condition typing + loop-control misuse).
+// Expected diagnostic code(s): O3S206, O3S212, O3S213.
+module NegativeLoopMixedConditionAndControl;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  let i = 0;
+  while (ready) {
+    let i = i + 1;
+    if (i == 2) {
+      break;
+    }
+  }
+
+  if (i >= 0) {
+    let i = i;
+    if (i > 0) {
+      continue;
+    }
+  }
+
+  break;
+  return i;
+}

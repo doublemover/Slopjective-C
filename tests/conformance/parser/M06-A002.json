@@ -1,0 +1,17 @@
+{
+  "id": "M06-A002",
+  "title": "Accept primary parser frontend execution slice for typed AST result construction",
+  "feature": "m06 parser execution-path acceptance",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m06a002_fetch(void) async;\n\ntypedef struct M06A002_Result {\n    int value;\n    int span;\n} M06A002_Result;\n\nM06A002_Result m06a002_execute(int gate) async {\n    M06A002_Result out = { 0, 0 };\n    if (gate) {\n        out.value = try await m06a002_fetch();\n        out.span = 22;\n    }\n    return out;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

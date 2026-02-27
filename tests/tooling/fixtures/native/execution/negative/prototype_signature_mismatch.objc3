@@ -1,0 +1,10 @@
+module PrototypeExecutionSignatureMismatch;
+
+fn pick(value: i32) -> i32;
+fn pick(value: bool) -> i32 {
+  return value;
+}
+
+fn main() -> i32 {
+  return pick(1);
+}

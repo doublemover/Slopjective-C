@@ -1,0 +1,35 @@
+{
+  "id": "IFC-55-01",
+  "title": "Emit canonical textual-interface spellings for ObjC 3.0 attributes and pragmas",
+  "feature": "canonical textual interface spellings",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-7",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-5",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module IFC55A.objcmod --emit-interface IFC55A.obji %s\n// RUN: objc3c --verify-interface IFC55A.objcmod IFC55A.obji %s\n#pragma objc assume_nonnull begin\n__attribute__((objc_unsafe_sendable))\n@interface IFC55CanonicalBox : NSObject\n- (id _Nullable)cachedToken __attribute__((objc_nonisolated));\n- (void)enqueue:(id _Nonnull)item __attribute__((objc_executor(main)));\n@end\n#pragma objc assume_nonnull end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "#pragma objc assume_nonnull begin\n__attribute__((objc_unsafe_sendable))\n@interface IFC55CanonicalBox : NSObject\n- (id _Nullable)cachedToken __attribute__((objc_nonisolated));\n- (void)enqueue:(id _Nonnull)item __attribute__((objc_executor(main)));\n@end\n#pragma objc assume_nonnull end\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": false,
+      "expected_canonical_spellings": [
+        "#pragma objc assume_nonnull begin",
+        "__attribute__((objc_unsafe_sendable))",
+        "__attribute__((objc_nonisolated))",
+        "__attribute__((objc_executor(main)))"
+      ],
+      "forbidden_noncanonical_spellings": [
+        "#pragma clang assume_nonnull begin",
+        "NS_ASSUME_NONNULL_BEGIN",
+        "@unsafeSendable",
+        "nonisolated"
+      ]
+    }
+  }
+}

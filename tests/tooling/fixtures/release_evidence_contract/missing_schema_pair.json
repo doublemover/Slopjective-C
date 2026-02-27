@@ -1,0 +1,11 @@
+{
+  "contract_id": "fixture-missing-schema",
+  "release_label": "v0.11",
+  "schema_data_pairs": [
+    {
+      "id": "missing-schema",
+      "schema": "tests/tooling/fixtures/release_evidence_contract/does_not_exist.schema.json",
+      "data": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+    }
+  ]
+}

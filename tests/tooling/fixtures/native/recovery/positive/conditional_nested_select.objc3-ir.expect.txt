@@ -1,0 +1,19 @@
+# Nested conditional lowering markers.
+define i32 @main()
+%cond.addr.5 = alloca i32, align 4
+%cond.addr.10 = alloca i32, align 4
+br i1 %t4, label %cond_true_0, label %cond_false_1
+cond_true_0:
+br i1 %t9, label %cond_true_3, label %cond_false_4
+cond_true_3:
+store i32 7, ptr %cond.addr.10, align 4
+cond_false_4:
+store i32 8, ptr %cond.addr.10, align 4
+cond_merge_5:
+%t11 = load i32, ptr %cond.addr.10, align 4
+store i32 %t11, ptr %cond.addr.5, align 4
+cond_false_1:
+store i32 9, ptr %cond.addr.5, align 4
+cond_merge_2:
+%t12 = load i32, ptr %cond.addr.5, align 4
+ret i32 %t14

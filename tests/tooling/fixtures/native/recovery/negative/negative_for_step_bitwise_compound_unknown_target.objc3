@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S214.
+module NegativeForStepBitwiseCompoundUnknownTarget;
+
+fn main() -> i32 {
+  for (let i = 0; i < 2; missing >>= 1) {
+    let keep = i;
+  }
+  return 0;
+}

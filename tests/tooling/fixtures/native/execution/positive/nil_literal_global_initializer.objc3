@@ -1,0 +1,8 @@
+module NilLiteralGlobalInitializer;
+
+let base = nil;
+let derived = base + 7;
+
+fn main() -> i32 {
+  return derived;
+}

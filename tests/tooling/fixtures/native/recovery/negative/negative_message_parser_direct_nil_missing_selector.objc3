@@ -1,0 +1,7 @@
+// Negative fixture: direct nil receiver message-send missing selector identifier.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageParserDirectNilMissingSelector;
+
+fn main() {
+  return [nil : 1];
+}

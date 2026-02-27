@@ -1,0 +1,34 @@
+{
+  "id": "M09-B005",
+  "title": "Harden flow-sensitive reasoning with explicit safe path and unstable-path rejection",
+  "feature": "M09 lane B issue #1587 flow-sensitive reasoning determinism",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m09/lane_b_m09_scope_freeze.md"
+  ],
+  "source": "id _Nonnull m09b005_require_nonnull(id _Nonnull value);\nid _Nullable m09b005_source(int flag);\n\nid _Nonnull m09b005_positive(int flag) {\n    id _Nullable maybe = m09b005_source(flag);\n    if (maybe == nil) {\n        maybe = (id _Nonnull)@\"seed\";\n    }\n    return m09b005_require_nonnull(maybe);\n}\n\nid _Nonnull m09b005_negative(int flag) {\n    id _Nullable maybe = m09b005_source(flag);\n    if (flag > 0) {\n        maybe = (id _Nonnull)@\"seed\";\n    }\n    return m09b005_require_nonnull(maybe);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 17,
+            "column": 12
+          },
+          "end": {
+            "line": 17,
+            "column": 40
+          }
+        },
+        "message": "flow analysis cannot prove value is nonnull on all paths before nonnull use"
+      }
+    ]
+  }
+}

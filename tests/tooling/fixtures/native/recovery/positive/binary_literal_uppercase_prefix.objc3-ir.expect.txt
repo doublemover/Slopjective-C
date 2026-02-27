@@ -1,0 +1,6 @@
+# Binary uppercase-prefix literal lowering markers.
+@mask = global i32 10
+@shift = global i32 1
+ashr i32
+add i32
+ret i32

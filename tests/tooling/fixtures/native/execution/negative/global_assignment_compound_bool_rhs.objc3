@@ -1,0 +1,9 @@
+module GlobalAssignmentCompoundBoolRhs;
+
+let total = 5;
+
+fn main() -> i32 {
+  let flag = true;
+  total |= flag;
+  return total;
+}

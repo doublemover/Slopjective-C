@@ -1,0 +1,23 @@
+[
+  {
+    "evidence_id": "EV-06",
+    "status": "pass",
+    "blocking_refs": []
+  },
+  {
+    "evidence_id": "EV-07",
+    "status": "pass",
+    "summary": "Valid summary.",
+    "blocking_refs": []
+  },
+  {
+    "evidence_id": "EV-08",
+    "status": "fail",
+    "summary": "Valid summary.",
+    "blocking_refs": [
+      "BLK-189-01",
+      "BLK-189-02",
+      "BLK-189-03"
+    ]
+  }
+]

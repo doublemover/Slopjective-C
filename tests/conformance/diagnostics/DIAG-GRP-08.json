@@ -1,0 +1,17 @@
+{
+  "id": "DIAG-GRP-08",
+  "title": "Modules/interface group accepts deterministic module-qualified lookup",
+  "feature": "minimum diagnostic groups: modules and interface emission",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -DDIAGGRP08_BUILD_MODULE --emit-module DIAGGRP08Metrics.objcmod --module-name Metrics %s\n// RUN: objc3c -fobjc-version=3 --import-module DIAGGRP08Metrics.objcmod --dump-module-lookups DIAGGRP08.lookups -fsyntax-only %s\n// RUN: FileCheck %s --input-file=DIAGGRP08.lookups --check-prefix=DIAGGRP08\n#if defined(DIAGGRP08_BUILD_MODULE)\nconst int PacketCount = 7;\n#else\n@import Metrics;\nint diaggrp08_readPacketCount(void) {\n    return @Metrics.PacketCount;\n}\n#endif\n// DIAGGRP08: @Metrics.PacketCount => Metrics.PacketCount\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

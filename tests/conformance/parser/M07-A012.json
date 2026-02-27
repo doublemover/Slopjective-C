@@ -1,0 +1,25 @@
+{
+  "id": "M07-A012",
+  "title": "Accept M07 lane-A parser fixture baseline for issue #1469 task M07-A012 (Implement parser/frontend execution slice)",
+  "feature": "m07 lane-a parser semantic-core slice 12",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M07",
+    "milestone_number": 92,
+    "lane": "A",
+    "issue": 1469,
+    "task": "M07-A012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M07A012_Trace {\n    int value;\n    int span_start;\n    int span_end;\n} M07A012_Trace;\n\nM07A012_Trace m07a012_trace(int token) {\n    M07A012_Trace trace = { token, 12, 22 };\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

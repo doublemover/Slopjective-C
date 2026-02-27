@@ -1,0 +1,57 @@
+{
+  "id": "MIG-01",
+  "title": "Migrate NS_ASSUME_NONNULL region macros to canonical pragma spellings",
+  "feature": "migrator canonical-spelling rewrites for assume-nonnull regions",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#define NS_ASSUME_NONNULL_BEGIN _Pragma(\"clang assume_nonnull begin\")\n#define NS_ASSUME_NONNULL_END _Pragma(\"clang assume_nonnull end\")\nNS_ASSUME_NONNULL_BEGIN\n@interface MIG01Surface : NSObject\n- (id _Nullable)token;\n@end\nNS_ASSUME_NONNULL_END\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MIG-CANONICAL-ASSUME_NONNULL",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 3, "column": 1 },
+          "end": { "line": 3, "column": 24 }
+        },
+        "message": "non-canonical nullability-region spelling; prefer '#pragma objc assume_nonnull begin'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 3, "column": 1 },
+              "end": { "line": 3, "column": 24 }
+            },
+            "replacement": "#pragma objc assume_nonnull begin"
+          }
+        ]
+      },
+      {
+        "code": "OBJC3-D-MIG-CANONICAL-ASSUME_NONNULL",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 1 },
+          "end": { "line": 7, "column": 22 }
+        },
+        "message": "non-canonical nullability-region spelling; prefer '#pragma objc assume_nonnull end'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 7, "column": 1 },
+              "end": { "line": 7, "column": 22 }
+            },
+            "replacement": "#pragma objc assume_nonnull end"
+          }
+        ]
+      }
+    ]
+  }
+}

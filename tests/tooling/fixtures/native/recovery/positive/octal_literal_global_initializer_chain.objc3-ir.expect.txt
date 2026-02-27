@@ -1,0 +1,5 @@
+# Octal global initializer chain markers.
+@a = global i32 7
+@b = global i32 9
+@c = global i32 18
+ret i32

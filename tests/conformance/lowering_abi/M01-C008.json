@@ -1,0 +1,74 @@
+{
+  "id": "M01-C008",
+  "title": "Reject stack-bound context escape at async callback boundaries in strict lowering mode",
+  "feature": "runtime boundary drift guard for async callback context lifetime",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\ntypedef void (^M01C008Completion)(const char * _Nonnull bytes);\nM01C008Completion m01c008_sink;\n\nvoid m01c008_install_sink(void) {\n    const char stackBytes[] = \"m01c008\";\n    m01c008_sink = ^(const char * _Nonnull ignored) {\n        (void)ignored;\n        (void)stackBytes;\n    };\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ARC-STACK-BOUND-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 15 },
+          "end": { "line": 9, "column": 24 }
+        },
+        "message": "stack-bound storage escapes through an escaping block; copy to owned storage or extend the backing owner lifetime explicitly",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "strict lowering rejects stack-bound context escape across async-capable callback boundaries",
+            "escaping callback contexts must satisfy owned-lifetime boundary contract before ABI emission",
+            "negative path is fail-closed with deterministic stack-bound escape diagnostics"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves stack-bound escape rejection at callback boundaries",
+            "optimization does not permit unsafe lifetime capture patterns rejected at -O0",
+            "diagnostic behavior remains deterministic across optimization modes"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_callback_context_lifetime_boundary",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "callback context values crossing async boundaries must satisfy owned-lifetime rules",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

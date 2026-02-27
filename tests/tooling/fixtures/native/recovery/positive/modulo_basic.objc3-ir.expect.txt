@@ -1,0 +1,5 @@
+# Modulo lowering markers.
+define i32 @main()
+srem i32
+store i32
+ret i32

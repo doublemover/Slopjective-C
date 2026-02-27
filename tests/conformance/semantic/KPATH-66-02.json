@@ -1,0 +1,28 @@
+{
+  "id": "KPATH-66-02",
+  "title": "Require explicit unsupported diagnostic when key paths are provisional/disabled",
+  "feature": "key path literals",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-keypath=off -fsyntax-only %s\n@interface Account : NSObject\n@property (nonatomic) int balance;\n@end\nid probe(void) {\n    return @keyPath(Account.balance);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-KEYPATH-UNSUPPORTED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 12 },
+          "end": { "line": 7, "column": 37 }
+        },
+        "message": "key path literals are not available in the current feature configuration",
+        "fixits": []
+      }
+    ]
+  }
+}

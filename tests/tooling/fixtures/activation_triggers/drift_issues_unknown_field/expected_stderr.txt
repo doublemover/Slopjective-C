@@ -1,0 +1,1 @@
+error: open issues snapshot object in tests/tooling/fixtures/activation_triggers/drift_issues_unknown_field/issues.json contains unexpected field(s) ['unexpected']; allowed fields are ['generated_at_utc', 'source', 'count', 'open', 'items', 'issues', 'milestones']

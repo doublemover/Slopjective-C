@@ -1,0 +1,15 @@
+module SwitchConditionalCaseBreakPathConservativeReject;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case 1:
+      if (value == 0) {
+        break;
+      }
+    case 2:
+      return 42;
+    default:
+      return 9;
+  }
+}

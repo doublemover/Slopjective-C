@@ -1,0 +1,33 @@
+{
+  "id": "ACT-09",
+  "title": "Preserve nonreentrant as an identifier outside reserved actor-member modifier positions",
+  "feature": "contextual-keyword compatibility and actor metadata round-trip stability",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module ACT09.objcmod --emit-interface ACT09.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module ACT09-import.objcmod --import-interface ACT09.obji --emit-interface ACT09-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface ACT09.objcmod ACT09-roundtrip.obji %s\n// RUN: objc3c --verify-interface ACT09-import.objcmod ACT09.obji %s\nactor class ACT09CompatibilityActor : NSObject\n- (id _Nonnull)nonreentrant;\n@end\n\nint act09_nonreentrant(int value) {\n    return value + 1;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "actor_type_and_actor_isolation",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

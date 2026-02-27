@@ -1,0 +1,10 @@
+module ObjcLiteralAliasesGlobals;
+
+let yes_value = YES;
+let no_value = NO;
+let null_value = NULL;
+let folded = yes_value + no_value + null_value;
+
+fn main() -> i32 {
+  return folded;
+}

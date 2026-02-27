@@ -1,0 +1,6 @@
+// Negative execution fixture: links should fail because no `main` entrypoint exists.
+module MissingEntrypoint;
+
+fn helper() -> i32 {
+  return 7;
+}

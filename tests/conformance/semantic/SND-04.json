@@ -1,0 +1,39 @@
+{
+  "id": "SND-04",
+  "title": "Reject cross-actor boundary arguments and results that are not Sendable-like",
+  "feature": "actor-boundary sendability checks for parameters and return values",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "@interface SND04MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nactor class SND04Channel : NSObject\n- (void)put:(SND04MutableBox * _Nonnull)value;\n- (SND04MutableBox * _Nonnull)take;\n@end\n\nSND04MutableBox *snd04_cross_actor_boundary(SND04Channel *channel, SND04MutableBox *box) async {\n    await [channel put:box];\n    return await [channel take];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-BOUNDARY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 24 },
+          "end": { "line": 10, "column": 27 }
+        },
+        "message": "cross-actor argument type 'SND04MutableBox *' must be Sendable-like in strict concurrency mode"
+      },
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-BOUNDARY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 12 },
+          "end": { "line": 12, "column": 32 }
+        },
+        "message": "cross-actor return type 'SND04MutableBox *' must be Sendable-like in strict concurrency mode"
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "M04-D003",
+  "title": "Scope-freeze baseline: negative-path oracle expansion keeps stable payload mapping",
+  "feature": "M04 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2",
+    "spec/planning/compiler/m04/lane_d_m04_scope_freeze.md"
+  ],
+  "source": "void objc3c_harness_flag(id arg);\n\nvoid m04d003_negative(void) {\n    objc3c_harness_flag(@\"--emit-conformance-oracle\");\n    objc3c_harness_flag(@\"--emit-conformance-oracle\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-ORACLE-PATH-REQUIRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 25 },
+          "end": { "line": 4, "column": 51 }
+        },
+        "message": "oracle emission flag requires an explicit output path for deterministic conformance replay",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-CONFORMANCE-ORACLE-DUPLICATE-FLAG",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 25 },
+          "end": { "line": 5, "column": 51 }
+        },
+        "message": "duplicate '--emit-conformance-oracle' flag is rejected to keep payload ordering deterministic",
+        "fixits": []
+      }
+    ]
+  }
+}

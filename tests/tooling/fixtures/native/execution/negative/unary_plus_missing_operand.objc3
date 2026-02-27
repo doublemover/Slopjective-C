@@ -1,0 +1,6 @@
+module UnaryPlusMissingOperand;
+
+fn main() -> i32 {
+  let value = +;
+  return value;
+}

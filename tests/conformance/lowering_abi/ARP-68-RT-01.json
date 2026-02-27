@@ -1,0 +1,60 @@
+{
+  "id": "ARP-68-RT-01",
+  "title": "Create and drain implicit autorelease pools for each async slice across multiple suspension points",
+  "feature": "suspension-point autorelease pool runtime contract",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/DECISIONS_LOG.md#decisions-d-006",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\nstatic int arp68_rt01_pool_trace = 0;\nstatic int arp68_rt01_pool_push_count = 0;\nstatic int arp68_rt01_pool_pop_count = 0;\nstatic int arp68_rt01_pool_depth = 0;\nstatic int arp68_rt01_pool_tokens[8];\n\nvoid *objc_autoreleasePoolPush(void) {\n    int slot = arp68_rt01_pool_push_count;\n    arp68_rt01_pool_trace = arp68_rt01_pool_trace * 10 + 1;\n    arp68_rt01_pool_push_count = arp68_rt01_pool_push_count + 1;\n    arp68_rt01_pool_depth = arp68_rt01_pool_depth + 1;\n    if (slot < 8) {\n        arp68_rt01_pool_tokens[slot] = slot + 1;\n        return &arp68_rt01_pool_tokens[slot];\n    }\n    return (void *)0;\n}\n\nvoid objc_autoreleasePoolPop(void *token) {\n    if (token != (void *)0 && arp68_rt01_pool_depth > 0) {\n        arp68_rt01_pool_trace = arp68_rt01_pool_trace * 10 + 2;\n        arp68_rt01_pool_pop_count = arp68_rt01_pool_pop_count + 1;\n        arp68_rt01_pool_depth = arp68_rt01_pool_depth - 1;\n    }\n}\n\nvoid arp68_rt01_reset_pool_trace(void) {\n    arp68_rt01_pool_trace = 0;\n    arp68_rt01_pool_push_count = 0;\n    arp68_rt01_pool_pop_count = 0;\n    arp68_rt01_pool_depth = 0;\n}\n\nint arp68_rt01_pool_trace_snapshot(void) {\n    return arp68_rt01_pool_trace;\n}\n\nint arp68_rt01_pool_push_count_snapshot(void) {\n    return arp68_rt01_pool_push_count;\n}\n\nint arp68_rt01_pool_pop_count_snapshot(void) {\n    return arp68_rt01_pool_pop_count;\n}\n\nint arp68_rt01_pool_contract_ok(void) {\n    return (arp68_rt01_pool_depth == 0 &&\n            arp68_rt01_pool_push_count == arp68_rt01_pool_pop_count) ? 1 : 0;\n}\n\nid arp68_rt01_suspend_once(id value) async;\n\nint arp68_rt01_two_suspend_slices(id seed) async {\n    id stage1 = await arp68_rt01_suspend_once(seed);\n    id stage2 = await arp68_rt01_suspend_once(stage1);\n    return stage2 != nil ? 1 : 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "lowering creates an implicit autorelease pool for each async execution slice (entry and every resume-to-next-boundary segment)",
+            "when an await in this function actually suspends, the current slice pool is drained before control returns to the executor",
+            "pool push/pop insertion uses objc_autoreleasePoolPush/objc_autoreleasePoolPop with one drain per created slice"
+          ],
+          "runtime_assertions": [
+            "after arp68_rt01_reset_pool_trace, running arp68_rt01_two_suspend_slices with a harness that forces both awaits to suspend returns 1",
+            "arp68_rt01_pool_trace_snapshot returns 121212 for two real suspensions (push,pop per slice across entry, resume-1, and resume-2/completion)",
+            "arp68_rt01_pool_push_count_snapshot returns 3, arp68_rt01_pool_pop_count_snapshot returns 3, and arp68_rt01_pool_contract_ok returns 1"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "optimization preserves per-slice implicit pool creation and drain boundaries from -O0",
+            "optimization does not sink pool drains past suspension boundaries or elide the completion drain",
+            "optimized lowering preserves one-pop-per-push pool balance across multi-suspend async traces"
+          ],
+          "runtime_assertions": [
+            "with the same forced-suspend harness, arp68_rt01_pool_trace_snapshot still returns 121212 under optimization",
+            "optimized lowering preserves push/pop counts of 3/3 and arp68_rt01_pool_contract_ok == 1"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+// Negative fixture: unresolved switch condition selection remains conservative in function return-path analysis.
+// Expected diagnostic code(s): O3S205.
+module NegativeSwitchCallConditionSelectedConservativeReject;
+
+fn choose() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  switch (choose()) {
+    case 1:
+      return 42;
+    default:
+      let fallback = 7;
+  }
+}

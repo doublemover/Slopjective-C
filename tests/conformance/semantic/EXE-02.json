@@ -1,0 +1,22 @@
+{
+  "id": "EXE-02",
+  "title": "Allow hop elision when caller and callee are proven to share executor affinity",
+  "feature": "executor affinity proof rules and hop elision",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "id exe02_mainLeaf(id seed) __attribute__((objc_executor(main)));\n\nid exe02_mainLeaf(id seed) {\n    return seed;\n}\n\nid exe02_mainChain(id seed) __attribute__((objc_executor(main)));\nid exe02_mainChain(id seed) {\n    id first = exe02_mainLeaf(seed);\n    id second = exe02_mainLeaf(first);\n    return second;\n}\n\nid exe02_mainAsyncChain(id seed) async __attribute__((objc_executor(main))) {\n    return exe02_mainLeaf(seed);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

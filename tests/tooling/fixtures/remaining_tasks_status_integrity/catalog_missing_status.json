@@ -1,0 +1,69 @@
+{
+  "generated_on": "2026-02-23",
+  "task_count": 8,
+  "tasks": [
+    {
+      "task_id": "SPT-2008",
+      "title": "Blocked beta lane B",
+      "path": "spec/planning/beta.md",
+      "line": 3,
+      "lane": "B",
+      "execution_status": "blocked"
+    },
+    {
+      "task_id": "SPT-2004",
+      "title": "Complete task lane C",
+      "path": "spec/planning/gamma.md",
+      "line": 5,
+      "lane": "C",
+      "execution_status": "complete"
+    },
+    {
+      "task_id": "SPT-2001",
+      "title": "Open zeta lane B",
+      "path": "spec/planning/zeta.md",
+      "line": 8,
+      "lane": "B",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-2006",
+      "title": "Missing status lane D",
+      "path": "spec/planning/delta.md",
+      "line": 1,
+      "lane": "D"
+    },
+    {
+      "task_id": "SPT-2002",
+      "title": "Blocked alpha lane A",
+      "path": "spec/planning/alpha.md",
+      "line": 30,
+      "lane": "A",
+      "execution_status": "blocked"
+    },
+    {
+      "task_id": "SPT-2003",
+      "title": "Open blocked alpha lane A",
+      "path": "spec/planning/alpha.md",
+      "line": 12,
+      "lane": "A",
+      "execution_status": "open-blocked"
+    },
+    {
+      "task_id": "SPT-2005",
+      "title": "Open alpha lane B",
+      "path": "spec/planning/alpha.md",
+      "line": 11,
+      "lane": "B",
+      "execution_status": "open"
+    },
+    {
+      "task_id": "SPT-2007",
+      "title": "Open beta lane A",
+      "path": "spec/planning/beta.md",
+      "line": 7,
+      "lane": "A",
+      "execution_status": "open"
+    }
+  ]
+}

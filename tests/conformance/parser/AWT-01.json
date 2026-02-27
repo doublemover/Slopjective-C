@@ -1,0 +1,21 @@
+{
+  "id": "AWT-01",
+  "title": "Accept await operands spanning async calls, executor hops, and actor-isolated sends",
+  "feature": "await operand grammar for potentially-suspending operations",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1"
+  ],
+  "source": "id awt01_fetch(void) async;\nid awt01_mainOnly(id seed) __attribute__((objc_executor(main)));\n\nactor class AWT01Counter : NSObject\n- (void)bump;\n- (int)current;\n@end\n\nint awt01_parse_operands(AWT01Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    id token = await awt01_fetch();\n    id mainToken = await awt01_mainOnly(seed);\n    await [counter bump];\n    return await [counter current];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

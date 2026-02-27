@@ -1,0 +1,36 @@
+{
+  "id": "M08-D001",
+  "title": "Issue #1557 / M08-D001: Scope-freeze baseline: conformance contract slice keeps stable payload mapping",
+  "feature": "M08 lane D diagnostic payload/code mapping freeze (issue #1557, task M08-D001)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m08/lane_d_m08_scope_freeze.md",
+    "spec/planning/compiler/m08/lane_d_m08_execution_packet_20260226.md"
+  ],
+  "source": "void objc3c_harness_flag(id arg);`n`nvoid m08d001_contract_negative(void) {`n    objc3c_harness_flag(@\"--conformance-contract=partial\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-CONTRACT-INCOMPLETE",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 25
+          },
+          "end": {
+            "line": 4,
+            "column": 57
+          }
+        },
+        "message": "issue #1557 task M08-D001: conformance contract slice must be canonical for M08 diagnostics replay",
+        "fixits": []
+      }
+    ]
+  }
+}

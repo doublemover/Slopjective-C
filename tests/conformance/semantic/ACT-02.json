@@ -1,0 +1,20 @@
+{
+  "id": "ACT-02",
+  "title": "Accept same-actor isolated member access without await when no boundary is crossed",
+  "feature": "actor declarations and same-actor isolation behavior",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5"
+  ],
+  "source": "actor class ACT02Ledger : NSObject\n- (int)read;\n- (void)write:(int)value;\n- (int)applyDelta:(int)delta;\n@end\n\n@implementation ACT02Ledger\n- (int)applyDelta:(int)delta {\n    int current = [self read];\n    [self write:current + delta];\n    return [self read];\n}\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

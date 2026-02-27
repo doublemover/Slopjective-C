@@ -1,0 +1,17 @@
+{
+  "id": "M05-A007",
+  "title": "Accept actor declaration when Wave-0 mode routing enables Objective-C 3 grammar",
+  "feature": "wave-0 mode and flag behavior routing",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-1-1"
+  ],
+  "source": "#pragma objc_language_version(3)\nactor class m05a007Counter : NSObject\n- (int)next;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

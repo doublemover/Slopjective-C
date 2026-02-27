@@ -1,0 +1,19 @@
+{
+  "id": "SYS-ATTR-01",
+  "title": "Accept canonical objc_resource(close=..., invalid=...) spelling",
+  "feature": "Part 8 canonical system attribute spellings",
+  "bucket": "parser",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-1"
+  ],
+  "source": "typedef int objc_handle_t;\nvoid close_handle(objc_handle_t handle);\n\nvoid configureHandle(void) {\n    objc_handle_t handle __attribute__((objc_resource(close=close_handle, invalid=-1))) = -1;\n    (void)handle;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

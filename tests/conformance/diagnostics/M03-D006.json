@@ -1,0 +1,47 @@
+{
+  "id": "M03-D006",
+  "title": "Scope-freeze baseline: strict-mode failure-path assertions keep stable payload mapping",
+  "feature": "M03 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/planning/compiler/m03/lane_d_m03_scope_freeze.md"
+  ],
+  "source": "void objc3c_harness_mode(id mode);\nvoid objc3c_harness_flag(id arg);\n\nvoid m03d006_negative(void) {\n    objc3c_harness_mode(@\"strict-system\");\n    objc3c_harness_flag(@\"--failure-path=\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-STRICT-MODE-REQUIRES-CANONICAL-ASSERTIONS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 5 },
+          "end": { "line": 5, "column": 41 }
+        },
+        "message": "strict-system mode requires canonical conformance assertion output to be enabled",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-CONFORMANCE-FAILURE-PATH-EMPTY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 25 },
+          "end": { "line": 6, "column": 42 }
+        },
+        "message": "strict-system mode requires a non-empty --failure-path value",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 6, "column": 25 },
+              "end": { "line": 6, "column": 42 }
+            },
+            "replacement": "@\"--failure-path=canonical\""
+          }
+        ]
+      }
+    ]
+  }
+}

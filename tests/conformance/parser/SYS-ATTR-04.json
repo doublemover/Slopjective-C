@@ -1,0 +1,19 @@
+{
+  "id": "SYS-ATTR-04",
+  "title": "Accept canonical capture-list contextual keywords",
+  "feature": "Part 8 canonical system attribute spellings",
+  "bucket": "parser",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-5"
+  ],
+  "source": "void buildHandler(id self, id observer, int token) {\n    void (^handler)(void) = [weak self, unowned observer, move token] {\n        (void)self;\n        (void)observer;\n        (void)token;\n    };\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

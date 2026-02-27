@@ -1,0 +1,79 @@
+{
+  "id": "AWT-06",
+  "title": "Strict missing-await diagnostics provide insertion fix-its for all D-011 suspension categories",
+  "feature": "strict concurrency missing-await fix-its for potentially-suspending operations",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id awt06_asyncCall(void) async;\nid awt06_mainOnly(id seed) __attribute__((objc_executor(main)));\n\nactor class AWT06Counter : NSObject\n- (void)bump;\n@end\n\nvoid awt06_fixits(AWT06Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    awt06_asyncCall();\n    awt06_mainOnly(seed);\n    [counter bump];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 5 },
+          "end": { "line": 9, "column": 22 }
+        },
+        "message": "potentially suspending call requires 'await' in strict concurrency checking",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 9, "column": 5 },
+              "end": { "line": 9, "column": 5 }
+            },
+            "replacement": "await "
+          }
+        ]
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 5 },
+          "end": { "line": 10, "column": 25 }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 10, "column": 5 },
+              "end": { "line": 10, "column": 5 }
+            },
+            "replacement": "await "
+          }
+        ]
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 5 },
+          "end": { "line": 11, "column": 19 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 11, "column": 5 },
+              "end": { "line": 11, "column": 5 }
+            },
+            "replacement": "await "
+          }
+        ]
+      }
+    ]
+  }
+}

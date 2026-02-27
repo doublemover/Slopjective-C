@@ -1,0 +1,41 @@
+{
+  "id": "MIG-07",
+  "title": "Suggest await insertion for statically-determinable executor hop",
+  "feature": "migrator executor-hop fix-it for strict concurrency",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id mig07_main_only(id seed) __attribute__((objc_executor(main)));\n\nid mig07_executor_hop(id seed) async __attribute__((objc_executor(global))) {\n    return mig07_main_only(seed);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 33 }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 12 }
+            },
+            "replacement": "await "
+          }
+        ]
+      }
+    ]
+  }
+}

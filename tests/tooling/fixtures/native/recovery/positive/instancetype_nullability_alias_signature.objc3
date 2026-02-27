@@ -1,0 +1,12 @@
+module InstancetypeNullabilityAliasSignature;
+
+fn choose(flag: bool, maybe: instancetype?, always: instancetype!) -> instancetype {
+  if (flag) {
+    return maybe;
+  }
+  return always;
+}
+
+fn main() -> i32 {
+  return choose(true, 33, 9) + 4;
+}

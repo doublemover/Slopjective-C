@@ -1,0 +1,38 @@
+{
+  "id": "LMV-48-NEG-01",
+  "title": "Reject unsupported -fobjc-version value for TU mode selection",
+  "feature": "language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-2",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=2 -fsyntax-only %s\nint baseline(void) {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-LANGMODE-UNSUPPORTED-VERSION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 16 },
+          "end": { "line": 1, "column": 32 }
+        },
+        "message": "unsupported Objective-C language version '2'; expected '3'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 31 },
+              "end": { "line": 1, "column": 32 }
+            },
+            "replacement": "3"
+          }
+        ]
+      }
+    ]
+  }
+}

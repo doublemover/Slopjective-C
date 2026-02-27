@@ -1,0 +1,68 @@
+{
+  "id": "M01-C004",
+  "title": "Lower non-throwing async wait cancellation to explicit cancelled status without payload drift",
+  "feature": "non-throwing cancellation status ABI mapping stability",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-003",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\ntypedef id M01C004TaskHandle;\ntypedef enum M01C004WaitStatus {\n    M01C004_WAIT_SUCCESS = 0,\n    M01C004_WAIT_CANCELLED = 1,\n    M01C004_WAIT_FAILURE = 2\n} M01C004WaitStatus;\n\nM01C004TaskHandle m01c004_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nvoid m01c004_request_current_task_cancellation(void);\nM01C004WaitStatus m01c004_wait_nonthrowing(M01C004TaskHandle handle, id *resultOut) async;\n\nint m01c004_validate_cancelled_status(id seed) async {\n    M01C004TaskHandle handle = m01c004_spawn(^id(void) async {\n        return seed;\n    });\n\n    m01c004_request_current_task_cancellation();\n\n    id result = nil;\n    M01C004WaitStatus status = await m01c004_wait_nonthrowing(handle, &result);\n    if (status == M01C004_WAIT_CANCELLED && result == nil) {\n        return 1;\n    }\n    return -1;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "non-throwing wait lowering maps cancellation to explicit cancelled status rather than success or throw transport",
+            "cancelled status path does not carry success payload values",
+            "task-context cancellation edge is preserved as deterministic status mapping input"
+          ],
+          "runtime_assertions": [
+            "m01c004_validate_cancelled_status returns 1 for cancelled status with nil payload",
+            "m01c004_validate_cancelled_status returns -1 for negative-path payload/status drift"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves non-throwing cancellation status mapping semantics from -O0",
+            "optimization does not rewrite cancelled outcomes into success transport",
+            "cancellation-to-status mapping remains deterministic across replayed builds"
+          ],
+          "runtime_assertions": [
+            "m01c004_validate_cancelled_status remains 1 under optimization",
+            "negative-path sentinel (-1) remains deterministic if cancellation payload contract drifts"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "nonthrowing_wait_cancellation_status_mapping",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-003",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "cancelled task state maps to cancelled status in non-throwing wait/join APIs",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

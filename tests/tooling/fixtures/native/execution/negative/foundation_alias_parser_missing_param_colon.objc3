@@ -1,0 +1,9 @@
+module FoundationAliasParserMissingParamColon;
+
+fn pick(flag BOOL, value: NSInteger) -> NSUInteger {
+  return value;
+}
+
+fn main() -> i32 {
+  return pick(true, 7);
+}

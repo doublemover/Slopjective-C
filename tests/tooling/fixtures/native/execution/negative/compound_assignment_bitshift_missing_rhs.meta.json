@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "compound_assignment_bitshift_missing_rhs.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P103",
+      "invalid expression"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

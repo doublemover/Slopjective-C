@@ -1,0 +1,6 @@
+module ConditionalMissingColonExec;
+
+fn main() -> i32 {
+  let x = true ? 1 2;
+  return x;
+}

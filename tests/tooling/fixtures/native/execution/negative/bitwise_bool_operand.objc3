@@ -1,0 +1,7 @@
+module BitwiseBoolOperand;
+
+fn main() -> i32 {
+  let flag = true;
+  let x = flag & 1;
+  return x;
+}

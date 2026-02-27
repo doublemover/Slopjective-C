@@ -1,0 +1,8 @@
+# Global assignment in for-step lowering markers.
+@total = global i32 1
+load i32, ptr @total
+store i32
+add i32
+shl i32
+ashr i32
+ret i32

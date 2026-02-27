@@ -1,0 +1,12 @@
+// Negative fixture: nil receiver message-send cannot accept function values as argument expressions.
+// Expected diagnostic code(s): O3S206, O3S209.
+module NegativeMessageNilReceiverFunctionArgument;
+
+fn payload() {
+  return 1;
+}
+
+fn main() {
+  let receiver = nil;
+  return [receiver send: payload];
+}

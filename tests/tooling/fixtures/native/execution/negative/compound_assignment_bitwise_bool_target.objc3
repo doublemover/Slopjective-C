@@ -1,0 +1,7 @@
+module CompoundAssignmentBitwiseBoolTarget;
+
+fn main() -> i32 {
+  let flag = true;
+  flag &= 1;
+  return 0;
+}

@@ -1,0 +1,30 @@
+{
+  "id": "META-PKG-03",
+  "title": "Reject unsafe or non-whitelisted macro package sources under sandbox policy",
+  "feature": "macro package resolution determinism",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-macros=on -fobjc3-macro-sandbox=strict -fsyntax-only %s\\n@objc_macro(package=\"https://example.invalid/unsafe-macros\", version=\"1.0.0\", lockfile=\"objc3.lock\")\\nint fmt_reject_remote(int value) {\\n    return value;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MACRO-PACKAGE-SOURCE-BLOCKED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 106 }
+        },
+        "message": "macro package source is outside the sandbox allowlist",
+        "fixits": []
+      }
+    ]
+  }
+}

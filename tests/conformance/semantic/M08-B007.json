@@ -1,0 +1,34 @@
+{
+  "id": "M08-B007",
+  "title": "Add semantic negative conformance vector for optional-send scalar return rejection",
+  "feature": "M08 lane B issue #1545 semantic negative conformance vectors",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-5",
+    "spec/DECISIONS_LOG.md#decisions-d-001",
+    "spec/planning/compiler/m08/lane_b_m08_scope_freeze.md"
+  ],
+  "source": "@interface m08b007Probe\n- (int)count;\n@end\n\nint m08b007_positive(m08b007Probe *probe) {\n    return [probe count];\n}\n\nint m08b007_negative(m08b007Probe * _Nullable probe) {\n    return [probe? count];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-OPTSEND-NONREF",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 12
+          },
+          "end": {
+            "line": 10,
+            "column": 26
+          }
+        },
+        "message": "optional message send requires object or block pointer return in v1"
+      }
+    ]
+  }
+}

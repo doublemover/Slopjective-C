@@ -1,0 +1,40 @@
+{
+  "id": "MIG-02",
+  "title": "Migrate macro attribute sugar to canonical objc_nonisolated spelling",
+  "feature": "migrator canonical-spelling rewrites for interface-stable attributes",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#define OBJC3_NONISOLATED __attribute__((objc_nonisolated))\n@interface MIG02Worker : NSObject\n- (id _Nullable)token OBJC3_NONISOLATED;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MIG-CANONICAL-ATTRIBUTE-SPELLING",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 3, "column": 23 },
+          "end": { "line": 3, "column": 40 }
+        },
+        "message": "attribute macro sugar should be rewritten to canonical spelling for stable interface emission",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 3, "column": 23 },
+              "end": { "line": 3, "column": 40 }
+            },
+            "replacement": "__attribute__((objc_nonisolated))"
+          }
+        ]
+      }
+    ]
+  }
+}

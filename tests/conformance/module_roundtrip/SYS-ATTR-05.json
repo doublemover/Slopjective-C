@@ -1,0 +1,30 @@
+{
+  "id": "SYS-ATTR-05",
+  "title": "Preserve canonical objc_resource spelling in emitted module interfaces",
+  "feature": "Part 8 canonical system attribute spellings in interfaces",
+  "bucket": "module_roundtrip",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-0-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module SYSATTR05.objcmod --emit-interface SYSATTR05.obji %s\n// RUN: objc3c --verify-interface SYSATTR05.objcmod SYSATTR05.obji %s\ntypedef int objc_handle_t;\nvoid close_fd(objc_handle_t fd);\nextern objc_handle_t gTrackedFD __attribute__((objc_resource(close=close_fd, invalid=-1)));\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "typedef int objc_handle_t;\nvoid close_fd(objc_handle_t fd);\nextern objc_handle_t gTrackedFD __attribute__((objc_resource(close=close_fd, invalid=-1)));\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": false,
+      "expected_canonical_spellings": [
+        "__attribute__((objc_resource(close=close_fd, invalid=-1)))"
+      ],
+      "forbidden_noncanonical_spellings": [
+        "@resource(close_fd, invalid: -1)"
+      ]
+    }
+  }
+}

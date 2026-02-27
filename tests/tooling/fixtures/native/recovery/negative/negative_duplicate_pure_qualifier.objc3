@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers reject duplicate `pure` entries.
+// Expected diagnostic code(s): O3P100.
+module NegativeDuplicatePureQualifier;
+
+pure pure fn touch() -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

@@ -1,0 +1,6 @@
+module MisplacedQualifierStatementExtern;
+
+fn main() -> i32 {
+  extern let value = 1;
+  return value;
+}

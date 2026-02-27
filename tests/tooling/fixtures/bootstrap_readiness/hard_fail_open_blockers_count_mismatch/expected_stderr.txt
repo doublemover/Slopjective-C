@@ -1,0 +1,1 @@
+error: open blockers count mismatch: discovered 1 != declared 2 in tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_count_mismatch/open_blockers.json

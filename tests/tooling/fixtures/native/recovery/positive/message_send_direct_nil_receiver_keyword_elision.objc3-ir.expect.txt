@@ -1,0 +1,3 @@
+# Direct nil-receiver keyword dispatch-elision lowering markers.
+define i32 @main()
+ret i32

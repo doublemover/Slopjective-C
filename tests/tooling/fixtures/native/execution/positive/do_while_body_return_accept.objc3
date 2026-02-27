@@ -1,0 +1,7 @@
+module DoWhileBodyReturnAccept;
+
+fn main() -> i32 {
+  do {
+    return 42;
+  } while (false);
+}

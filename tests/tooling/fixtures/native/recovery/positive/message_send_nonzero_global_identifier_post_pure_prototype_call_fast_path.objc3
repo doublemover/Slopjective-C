@@ -1,0 +1,10 @@
+module MessageSendNonzeroGlobalIdentifierPostPurePrototypeCallFastPath;
+
+let receiver = 7;
+
+pure fn touch() -> i32;
+
+fn main() -> i32 {
+  touch();
+  return [receiver ping];
+}

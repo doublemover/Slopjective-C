@@ -1,0 +1,26 @@
+{
+  "id": "M24-A004",
+  "title": "Accept M24 lane-A parser fixture baseline for issue #2687 task M24-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m24 lane a parser conformance expansion performance release hardening add parser recovery and ambiguity guard conformance expansion coverage slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M24",
+    "milestone_number": 109,
+    "lane": "A",
+    "issue": 2687,
+    "task": "M24-A004",
+    "sequence": 4,
+    "slice": "coverage"
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M24_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__\\n#define __OBJC3_FEATURE_M24_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__ 1\\n#endif\\n\\nenum { M24A004_SLICE = 4 };\\n\\ntypedef struct M24A004_Probe {\\n    int enabled;\\n    int slice;\\n    int sequence;\\n    int issue;\\n} M24A004_Probe;\\n\\nM24A004_Probe m24a004_probe(void) {\\n#if __OBJC3_FEATURE_M24_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__\\n    M24A004_Probe probe = { 1, M24A004_SLICE, 4, 2687 };\\n#else\\n    M24A004_Probe probe = { 0, M24A004_SLICE, 4, 2687 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

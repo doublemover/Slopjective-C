@@ -1,0 +1,61 @@
+{
+  "id": "ARP-68-RT-02",
+  "title": "Drain implicit autorelease pools at async completion boundaries for return and throw paths",
+  "feature": "suspension-point autorelease pool runtime contract",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/DECISIONS_LOG.md#decisions-d-006",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\nstatic int arp68_rt02_pool_trace = 0;\nstatic int arp68_rt02_pool_push_count = 0;\nstatic int arp68_rt02_pool_pop_count = 0;\nstatic int arp68_rt02_pool_depth = 0;\nstatic int arp68_rt02_pool_tokens[8];\n\nvoid *objc_autoreleasePoolPush(void) {\n    int slot = arp68_rt02_pool_push_count;\n    arp68_rt02_pool_trace = arp68_rt02_pool_trace * 10 + 1;\n    arp68_rt02_pool_push_count = arp68_rt02_pool_push_count + 1;\n    arp68_rt02_pool_depth = arp68_rt02_pool_depth + 1;\n    if (slot < 8) {\n        arp68_rt02_pool_tokens[slot] = slot + 1;\n        return &arp68_rt02_pool_tokens[slot];\n    }\n    return (void *)0;\n}\n\nvoid objc_autoreleasePoolPop(void *token) {\n    if (token != (void *)0 && arp68_rt02_pool_depth > 0) {\n        arp68_rt02_pool_trace = arp68_rt02_pool_trace * 10 + 2;\n        arp68_rt02_pool_pop_count = arp68_rt02_pool_pop_count + 1;\n        arp68_rt02_pool_depth = arp68_rt02_pool_depth - 1;\n    }\n}\n\nvoid arp68_rt02_reset_pool_trace(void) {\n    arp68_rt02_pool_trace = 0;\n    arp68_rt02_pool_push_count = 0;\n    arp68_rt02_pool_pop_count = 0;\n    arp68_rt02_pool_depth = 0;\n}\n\nint arp68_rt02_pool_trace_snapshot(void) {\n    return arp68_rt02_pool_trace;\n}\n\nint arp68_rt02_pool_push_count_snapshot(void) {\n    return arp68_rt02_pool_push_count;\n}\n\nint arp68_rt02_pool_pop_count_snapshot(void) {\n    return arp68_rt02_pool_pop_count;\n}\n\nint arp68_rt02_pool_contract_ok(void) {\n    return (arp68_rt02_pool_depth == 0 &&\n            arp68_rt02_pool_push_count == arp68_rt02_pool_pop_count) ? 1 : 0;\n}\n\nid arp68_rt02_suspend_once(id value) async;\nid<Error> arp68_rt02_cancellation_error(void);\n\nid arp68_rt02_finish_or_throw(id seed, int shouldThrow) async throws {\n    id stage = await arp68_rt02_suspend_once(seed);\n    if (shouldThrow != 0) {\n        throw arp68_rt02_cancellation_error();\n    }\n    return stage;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "the slice pool that contains an await suspension is drained before suspension and a fresh implicit pool is created for the resumed slice",
+            "the resumed slice drains its implicit pool when the async entry completes by normal return",
+            "the resumed slice also drains its implicit pool when completion occurs via throw/cancellation unwind"
+          ],
+          "runtime_assertions": [
+            "after arp68_rt02_reset_pool_trace, running arp68_rt02_finish_or_throw(seed, 0) with a harness that forces one real suspension yields arp68_rt02_pool_trace_snapshot == 1212",
+            "after arp68_rt02_reset_pool_trace, running arp68_rt02_finish_or_throw(seed, 1) to thrown completion still yields arp68_rt02_pool_trace_snapshot == 1212",
+            "both runs preserve arp68_rt02_pool_push_count_snapshot == 2, arp68_rt02_pool_pop_count_snapshot == 2, and arp68_rt02_pool_contract_ok == 1"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "optimization preserves completion-boundary pool drains for both return and throw exits",
+            "optimization preserves per-suspension drain-before-suspend ordering",
+            "optimized lowering does not leak implicit slice pools on throw/cancellation unwind exits"
+          ],
+          "runtime_assertions": [
+            "optimized return and throw runs keep deterministic trace 1212 for the one-suspension scenario",
+            "optimized runs preserve push/pop counts of 2/2 with arp68_rt02_pool_contract_ok == 1"
+          ]
+        }
+      ]
+    }
+  }
+}

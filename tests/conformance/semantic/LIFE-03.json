@@ -1,0 +1,41 @@
+{
+  "id": "LIFE-03",
+  "title": "Reject withLifetime and keepAlive on non-retainable expressions",
+  "feature": "explicit lifetime control diagnostics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4"
+  ],
+  "source": "void life03_misuse(void) {\n    int ticket = 90;\n    withLifetime(ticket) {\n        (void)ticket;\n    }\n    keepAlive(7);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-LIFETIME-NONRETAINABLE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 5 },
+          "end": { "line": 3, "column": 22 }
+        },
+        "message": "withLifetime expression must be ARC-retainable",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-SYSTEM-LIFETIME-NONRETAINABLE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 5 },
+          "end": { "line": 6, "column": 17 }
+        },
+        "message": "keepAlive expression must be ARC-retainable",
+        "fixits": []
+      }
+    ]
+  }
+}

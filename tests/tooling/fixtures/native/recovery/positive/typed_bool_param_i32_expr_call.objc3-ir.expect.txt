@@ -1,0 +1,7 @@
+# Typed bool parameter + i32 expression call ABI expectation markers.
+define i32 @choose(i1 %arg0, i32 %arg1, i32 %arg2)
+zext i1 %arg0 to i32
+define i1 @is_descending(i32 %arg0, i32 %arg1)
+call i1 @is_descending(i32 9, i32 2)
+call i32 @choose(i1
+define i32 @objc3c_entry()

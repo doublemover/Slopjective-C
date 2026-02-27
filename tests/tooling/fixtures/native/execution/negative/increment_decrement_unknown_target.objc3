@@ -1,0 +1,6 @@
+module IncrementDecrementUnknownTarget;
+
+fn main() -> i32 {
+  value++;
+  return 0;
+}

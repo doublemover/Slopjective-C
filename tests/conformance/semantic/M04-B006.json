@@ -1,0 +1,28 @@
+{
+  "id": "M04-B006",
+  "title": "Normalize strictness-dependent behavior by requiring explicit narrowing conversions",
+  "feature": "M04 lane B issue #1321 strictness behavior normalization",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m04/lane_b_m04_scope_freeze.md"
+  ],
+  "source": "int m04b006_take_int(int value);\n\nint m04b006_positive(double raw) {\n    return m04b006_take_int((int)raw);\n}\n\nint m04b006_negative(double raw) {\n    return m04b006_take_int(raw);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-STRICT-IMPLICIT-NARROWING",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 32 }
+        },
+        "message": "strict profile requires an explicit narrowing conversion from 'double' to 'int'"
+      }
+    ]
+  }
+}

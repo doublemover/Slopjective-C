@@ -1,0 +1,26 @@
+{
+  "id": "M24-C012",
+  "title": "Implement IR/lowering execution slice (Primary Implementation) (issue #2724 / task M24-C012)",
+  "feature": "m24 lane-c conformance expansion performance and release hardening implement ir lowering execution slice primary implementation slice 12",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M24",
+    "milestone_number": 109,
+    "lane": "C",
+    "issue": 2724,
+    "task": "M24-C012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M24_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTATION__\\n#define __OBJC3_FEATURE_M24_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTATION__ 1\\n#endif\\n\\ntypedef struct M24C012_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M24C012_Probe;\\n\\nM24C012_Probe m24c012_probe(void) {\\n#if __OBJC3_FEATURE_M24_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTATION__\\n    M24C012_Probe probe = { 1, 12, 2724 };\\n#else\\n    M24C012_Probe probe = { 0, 12, 2724 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

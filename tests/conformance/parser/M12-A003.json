@@ -1,0 +1,25 @@
+{
+  "id": "M12-A003",
+  "title": "Accept M12 lane-A parser fixture baseline for issue #1726 task M12-A003 (Stabilize AST construction path (Negative-Path Hardening))",
+  "feature": "m12 lane-a parser module import and name lookup core slice 03",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M12",
+    "milestone_number": 97,
+    "lane": "A",
+    "issue": 1726,
+    "task": "M12-A003",
+    "sequence": 3
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-2-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_AST_HARDENING__\n#define __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_AST_HARDENING__ 1\n#endif\n\ntypedef struct M12A003_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M12A003_Probe;\n\nM12A003_Probe m12a003_probe(void) {\n#if __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_AST_HARDENING__\n    M12A003_Probe probe = { 1, 3, 1726 };\n#else\n    M12A003_Probe probe = { 0, 3, 1726 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

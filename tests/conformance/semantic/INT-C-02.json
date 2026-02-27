@@ -1,0 +1,38 @@
+{
+  "id": "INT-C-02",
+  "title": "Reject exported async thunk declarations that violate canonical trailing parameter order",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "typedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC02Completion)(void * _Nullable context,\\n                                 objc_async_completion_status_t status,\\n                                 id _Nullable result,\\n                                 id<Error> _Nullable error);\\n\\nvoid intc02_bad_async_c(void * _Nullable context,\\n                        int token,\\n                        INTC02Completion _Nonnull completion);\\n\\nvoid intc02_bad_async_c2(int token,\\n                         INTC02Completion _Nonnull completion,\\n                         void * _Nullable context);\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-THUNK-PARAM-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 1 },
+          "end": { "line": 14, "column": 62 }
+        },
+        "message": "exported async C thunk must place source parameters first, then trailing context, then trailing completion callback"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-THUNK-PARAM-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 16, "column": 1 },
+          "end": { "line": 18, "column": 51 }
+        },
+        "message": "exported async C thunk must place context before completion and both at the end of the parameter list"
+      }
+    ]
+  }
+}

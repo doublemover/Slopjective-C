@@ -1,0 +1,252 @@
+{
+  "input": "tests/tooling/fixtures/remaining_tasks_status_integrity/catalog_valid_status.json",
+  "group_by": "lane",
+  "filters": {
+    "status": [
+      "open",
+      "open-blocked",
+      "blocked"
+    ],
+    "lane": []
+  },
+  "capacity_policy": {
+    "lane_wip_caps": {
+      "A": 4,
+      "B": 5,
+      "C": 4,
+      "D": 3
+    },
+    "global_wip_cap": 16,
+    "warning_load_ratio_gt": 0.85,
+    "hard_cap_breach_load_ratio_gt": 1.0,
+    "active_issue_statuses": [
+      "open",
+      "open-blocked",
+      "blocked"
+    ],
+    "overlap_active_issue_statuses": [
+      "open"
+    ],
+    "max_overlap_conflicts": 0
+  },
+  "summary": {
+    "total_tasks": 6,
+    "status_counts": [
+      {
+        "status": "open",
+        "count": 3
+      },
+      {
+        "status": "open-blocked",
+        "count": 1
+      },
+      {
+        "status": "blocked",
+        "count": 2
+      }
+    ],
+    "lane_counts": [
+      {
+        "lane": "A",
+        "count": 3
+      },
+      {
+        "lane": "B",
+        "count": 3
+      }
+    ],
+    "path_counts": [
+      {
+        "path": "spec/planning/alpha.md",
+        "count": 3
+      },
+      {
+        "path": "spec/planning/beta.md",
+        "count": 2
+      },
+      {
+        "path": "spec/planning/zeta.md",
+        "count": 1
+      }
+    ],
+    "capacity_status_counts": [
+      {
+        "status": "pass",
+        "count": 4
+      }
+    ],
+    "dispatch_intake": {
+      "status": "pass",
+      "recommendation": "go"
+    },
+    "overlap_conflicts": {
+      "count": 0,
+      "max_allowed": 0,
+      "status": "pass",
+      "intake_recommendation": "go"
+    },
+    "global_capacity": {
+      "active_issue_count": 6,
+      "global_wip_cap": 16,
+      "load_ratio": 0.375,
+      "status": "pass",
+      "dispatch_state": "dispatch-open",
+      "intake_recommendation": "go"
+    }
+  },
+  "capacity": [
+    {
+      "lane": "A",
+      "active_issue_count": 3,
+      "lane_wip_cap": 4,
+      "status": "pass",
+      "dispatch_state": "dispatch-open",
+      "intake_recommendation": "go",
+      "escalations": [],
+      "load_ratio": 0.75
+    },
+    {
+      "lane": "B",
+      "active_issue_count": 3,
+      "lane_wip_cap": 5,
+      "status": "pass",
+      "dispatch_state": "dispatch-open",
+      "intake_recommendation": "go",
+      "escalations": [],
+      "load_ratio": 0.6
+    },
+    {
+      "lane": "C",
+      "active_issue_count": 0,
+      "lane_wip_cap": 4,
+      "status": "pass",
+      "dispatch_state": "dispatch-open",
+      "intake_recommendation": "go",
+      "escalations": [],
+      "load_ratio": 0.0
+    },
+    {
+      "lane": "D",
+      "active_issue_count": 0,
+      "lane_wip_cap": 3,
+      "status": "pass",
+      "dispatch_state": "dispatch-open",
+      "intake_recommendation": "go",
+      "escalations": [],
+      "load_ratio": 0.0
+    }
+  ],
+  "overlap_conflicts": [],
+  "groups": [
+    {
+      "group": "A",
+      "count": 3,
+      "tasks": [
+        {
+          "task_id": "SPT-2003",
+          "title": "Open blocked alpha lane A",
+          "lane": "A",
+          "status": "open-blocked",
+          "path": "spec/planning/alpha.md",
+          "line": 12
+        },
+        {
+          "task_id": "SPT-2002",
+          "title": "Blocked alpha lane A",
+          "lane": "A",
+          "status": "blocked",
+          "path": "spec/planning/alpha.md",
+          "line": 30
+        },
+        {
+          "task_id": "SPT-2007",
+          "title": "Open beta lane A",
+          "lane": "A",
+          "status": "open",
+          "path": "spec/planning/beta.md",
+          "line": 7
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "count": 3,
+      "tasks": [
+        {
+          "task_id": "SPT-2005",
+          "title": "Open alpha lane B",
+          "lane": "B",
+          "status": "open",
+          "path": "spec/planning/alpha.md",
+          "line": 11
+        },
+        {
+          "task_id": "SPT-2008",
+          "title": "Blocked beta lane B",
+          "lane": "B",
+          "status": "blocked",
+          "path": "spec/planning/beta.md",
+          "line": 3
+        },
+        {
+          "task_id": "SPT-2001",
+          "title": "Open zeta lane B",
+          "lane": "B",
+          "status": "open",
+          "path": "spec/planning/zeta.md",
+          "line": 8
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "SPT-2003",
+      "title": "Open blocked alpha lane A",
+      "lane": "A",
+      "status": "open-blocked",
+      "path": "spec/planning/alpha.md",
+      "line": 12
+    },
+    {
+      "task_id": "SPT-2002",
+      "title": "Blocked alpha lane A",
+      "lane": "A",
+      "status": "blocked",
+      "path": "spec/planning/alpha.md",
+      "line": 30
+    },
+    {
+      "task_id": "SPT-2007",
+      "title": "Open beta lane A",
+      "lane": "A",
+      "status": "open",
+      "path": "spec/planning/beta.md",
+      "line": 7
+    },
+    {
+      "task_id": "SPT-2005",
+      "title": "Open alpha lane B",
+      "lane": "B",
+      "status": "open",
+      "path": "spec/planning/alpha.md",
+      "line": 11
+    },
+    {
+      "task_id": "SPT-2008",
+      "title": "Blocked beta lane B",
+      "lane": "B",
+      "status": "blocked",
+      "path": "spec/planning/beta.md",
+      "line": 3
+    },
+    {
+      "task_id": "SPT-2001",
+      "title": "Open zeta lane B",
+      "lane": "B",
+      "status": "open",
+      "path": "spec/planning/zeta.md",
+      "line": 8
+    }
+  ]
+}

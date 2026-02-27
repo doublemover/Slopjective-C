@@ -1,0 +1,1 @@
+error: open milestones snapshot rows must be sorted by 'number' in tests/tooling/fixtures/activation_triggers/drift_milestones_unsorted_numbers/milestones.json

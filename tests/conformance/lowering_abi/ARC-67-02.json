@@ -1,0 +1,59 @@
+{
+  "id": "ARC-67-02",
+  "title": "Diagnose ownership hazard after consumed transfer through lowered nil-coalescing path",
+  "feature": "ARC ownership hazard diagnostics for lowered feature control flow",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-2",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-5-1",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-5-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\nvoid consumeOwned(__attribute__((ns_consumed)) id value);\n\nid _Nonnull arc67_ownership_hazard(id _Nullable maybeValue,\n                                   id _Nonnull fallback) {\n    id candidate = maybeValue ?? fallback;\n    consumeOwned(candidate);\n    return candidate;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ARC-USE-AFTER-CONSUME",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 12 },
+          "end": { "line": 9, "column": 20 }
+        },
+        "message": "value used after transfer to consumed parameter; retain or copy before consume if post-call use is required",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "consumed transfer edge is represented in lowered ownership graph",
+            "post-consume use is diagnosed even when nil-coalescing lowers to conditional form"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "optimization does not remove consumed-transfer diagnostics",
+            "ownership hazard remains visible on merged optional path"
+          ]
+        }
+      ]
+    }
+  }
+}

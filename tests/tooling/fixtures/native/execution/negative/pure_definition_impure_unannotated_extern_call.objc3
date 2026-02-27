@@ -1,0 +1,11 @@
+module PureDefinitionImpureUnannotatedExternCallExecution;
+
+fn ext_impure() -> i32;
+
+pure fn touch() -> i32 {
+  return ext_impure();
+}
+
+fn main() -> i32 {
+  return touch();
+}

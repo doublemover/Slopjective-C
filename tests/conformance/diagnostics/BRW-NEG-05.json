@@ -1,0 +1,30 @@
+{
+  "id": "BRW-NEG-05",
+  "title": "Reject borrowed return without valid objc_returns_borrowed(owner_index=...)",
+  "feature": "borrowed pointer escape diagnostics (intra-procedural minimum)",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "borrowed const char *brw_neg05_missing_owner_marker(const char *owner) {\n    return owner;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-RETURN-OWNER-INDEX",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 72 }
+        },
+        "message": "borrowed return requires objc_returns_borrowed(owner_index=...) naming a valid owner parameter",
+        "fixits": []
+      }
+    ]
+  }
+}

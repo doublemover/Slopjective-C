@@ -1,0 +1,38 @@
+{
+  "id": "NUL-60-NEG-01",
+  "title": "Strict profile rejects exported declarations with missing nullability",
+  "feature": "strict missing-nullability diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface NUL60Missing : NSObject\n- (id)tokenForUser:(id)user;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 4 },
+          "end": { "line": 2, "column": 6 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer return types",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 21 },
+          "end": { "line": 2, "column": 23 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer parameters",
+        "fixits": []
+      }
+    ]
+  }
+}

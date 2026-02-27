@@ -1,0 +1,7 @@
+// Negative execution fixture: message-send lowering requires runtime dispatch shim at link time.
+module RuntimeDispatchUnresolvedSymbol;
+
+fn main() -> i32 {
+  let receiver = 3;
+  return [receiver ping];
+}

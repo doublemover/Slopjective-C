@@ -1,0 +1,17 @@
+// Negative fixture: Protocol return nullability suffix is unsupported.
+// Expected diagnostic code(s): O3S206.
+module NegativeProtocolReturnNullabilitySuffix;
+
+fn pick(flag: bool) -> Protocol? {
+  if (flag) {
+    return 1;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  if (pick(true) != 0) {
+    return 1;
+  }
+  return 0;
+}

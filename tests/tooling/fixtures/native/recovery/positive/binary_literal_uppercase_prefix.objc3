@@ -1,0 +1,8 @@
+module BinaryLiteralUppercasePrefix;
+
+let mask = 0B1010;
+let shift = 0B1;
+
+fn main() -> i32 {
+  return (mask >> shift) + 0b1;
+}

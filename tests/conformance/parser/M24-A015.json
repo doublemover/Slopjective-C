@@ -1,0 +1,26 @@
+{
+  "id": "M24-A015",
+  "title": "Accept M24 lane-A parser fixture baseline for issue #2698 task M24-A015 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m24 lane a parser conformance expansion performance release hardening enforce canonical syntax normalization determinism proof release hardening slice 15",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M24",
+    "milestone_number": 109,
+    "lane": "A",
+    "issue": 2698,
+    "task": "M24-A015",
+    "sequence": 15,
+    "slice": "release-hardening"
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M24_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__\\n#define __OBJC3_FEATURE_M24_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__ 1\\n#endif\\n\\nenum { M24A015_SLICE = 5 };\\n\\ntypedef struct M24A015_Probe {\\n    int enabled;\\n    int slice;\\n    int sequence;\\n    int issue;\\n} M24A015_Probe;\\n\\nM24A015_Probe m24a015_probe(void) {\\n#if __OBJC3_FEATURE_M24_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__\\n    M24A015_Probe probe = { 1, M24A015_SLICE, 15, 2698 };\\n#else\\n    M24A015_Probe probe = { 0, M24A015_SLICE, 15, 2698 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

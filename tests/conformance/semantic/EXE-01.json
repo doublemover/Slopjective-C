@@ -1,0 +1,33 @@
+{
+  "id": "EXE-01",
+  "title": "Require await for cross-executor entry and accept awaited hop to objc_executor(main)",
+  "feature": "executor affinity annotation and required hop behavior",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "id exe01_mainOnly(id seed) __attribute__((objc_executor(main)));\n\nid exe01_mainOnly(id seed) {\n    return seed;\n}\n\nid exe01_hopWithAwait(id seed) async __attribute__((objc_executor(global))) {\n    id hopped = await exe01_mainOnly(seed);\n    return hopped;\n}\n\nid exe01_missingAwait(id seed) async __attribute__((objc_executor(global))) {\n    return exe01_mainOnly(seed);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 13, "column": 12 },
+          "end": { "line": 13, "column": 31 }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'"
+      }
+    ]
+  }
+}

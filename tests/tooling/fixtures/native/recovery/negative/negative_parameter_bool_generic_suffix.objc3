@@ -1,0 +1,14 @@
+// Negative fixture: bool parameter generic suffix remains unsupported.
+// Expected diagnostic code(s): O3S206.
+module NegativeParameterBoolGenericSuffix;
+
+fn choose(flag: bool<NSObject>) -> i32 {
+  if (flag) {
+    return 1;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return 0;
+}

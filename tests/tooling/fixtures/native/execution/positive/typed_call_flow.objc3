@@ -1,0 +1,24 @@
+// Positive execution fixture: typed i32/bool call flow across helpers.
+module TypedCallFlow;
+
+fn add(left: i32, right: i32) -> i32 {
+  return left + right;
+}
+
+fn is_large(value: i32) -> bool {
+  return value > 20;
+}
+
+fn pick(flag: bool, when_true: i32, when_false: i32) -> i32 {
+  if (flag) {
+    return when_true;
+  } else {
+    return when_false;
+  }
+}
+
+fn main() -> i32 {
+  let total = add(8, 21);
+  let large = is_large(total);
+  return pick(large, total, 0);
+}

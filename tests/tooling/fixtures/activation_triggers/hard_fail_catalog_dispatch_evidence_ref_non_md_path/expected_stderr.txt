@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'execution_status_evidence_refs[0]' path component must reference a '.md' file

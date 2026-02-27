@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "block_comment_nested.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3L003",
+      "nested block comments are unsupported"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

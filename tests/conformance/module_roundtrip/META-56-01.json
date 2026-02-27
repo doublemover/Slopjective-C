@@ -1,0 +1,131 @@
+{
+  "id": "META-56-01",
+  "title": "Preserve D Table A metadata fields across module/interface round-trip",
+  "feature": "D Table A metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-4-0",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module META56.objcmod --emit-interface META56.obji %s\n// RUN: objc3c --verify-interface META56.objcmod META56.obji %s\n@interface META56Contract : NSObject\n- (id _Nullable)loadValue:(id _Nonnull)token;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "nullability_qualifiers",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "nonnull_by_default_regions",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "pragmatic_generics_parameters",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "optional_spellings_t_question_t_bang",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "throws_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "async_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "actor_type_and_actor_isolation",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "sendable_like_constraints",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "borrowed_pointer_qualifier",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_returns_borrowed_owner_index",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "task_spawn_recognition",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_direct",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_final",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_sealed",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "derive_or_macro_synthesized_declarations",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "error_bridging_markers_objc_nserror_objc_status_code",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "availability_and_platform_gates",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

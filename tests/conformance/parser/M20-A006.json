@@ -1,0 +1,25 @@
+{
+  "id": "M20-A006",
+  "title": "Accept M20 lane-A parser fixture baseline for issue #2401 task M20-A006 (Harden source-location fidelity (Regression Closure))",
+  "feature": "m20 lane-a parser frontend parsing ast realization core strict location fidelity slice 06",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M20",
+    "milestone_number": 105,
+    "lane": "A",
+    "issue": 2401,
+    "task": "M20-A006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/PROJECT_WIDE_GLOSSARY.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_LOCATION_FIDELITY_SLICE_S006__\\n#define __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_LOCATION_FIDELITY_SLICE_S006__ 1\\n#endif\\n\\ntypedef struct M20A006_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M20A006_Probe;\\n\\nM20A006_Probe m20a006_probe(void) {\\n#if __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_LOCATION_FIDELITY_SLICE_S006__\\n    M20A006_Probe probe = { 1, 6, 2401 };\\n#else\\n    M20A006_Probe probe = { 0, 6, 2401 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

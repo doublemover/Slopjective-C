@@ -1,0 +1,5 @@
+# Required dispatch lowering markers in emitted LLVM IR.
+@objc_msg_lookup
+!GNUObjCMessageSend
+!{!"value", !"", i1 false}
+_i_DispatchProbe__value

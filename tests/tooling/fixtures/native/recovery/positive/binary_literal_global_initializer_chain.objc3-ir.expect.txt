@@ -1,0 +1,5 @@
+# Binary global initializer chain markers.
+@a = global i32 5
+@b = global i32 7
+@c = global i32 14
+ret i32

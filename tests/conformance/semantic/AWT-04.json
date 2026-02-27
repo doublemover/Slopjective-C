@@ -1,0 +1,32 @@
+{
+  "id": "AWT-04",
+  "title": "Warn on unnecessary await while accepting required awaits for all suspension sources",
+  "feature": "await requirement and unnecessary-await warning behavior",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "id awt04_asyncCall(void) async;\nid awt04_mainOnly(id seed) __attribute__((objc_executor(main)));\nid awt04_syncValue(void);\n\nactor class AWT04Counter : NSObject\n- (int)current;\n@end\n\nid awt04_valid_and_unnecessary(AWT04Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    id first = await awt04_asyncCall();\n    id second = await awt04_mainOnly(seed);\n    int current = await [counter current];\n    id stable = await awt04_syncValue();\n    return current > 0 ? stable : (first ? first : second);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-UNNECESSARY-AWAIT",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 13, "column": 17 },
+          "end": { "line": 13, "column": 22 }
+        },
+        "message": "expression is not potentially suspending; remove unnecessary 'await'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "MIG-08",
+  "title": "Suggest await insertion for statically-determinable actor hop",
+  "feature": "migrator actor-hop fix-it for strict concurrency",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "actor class MIG08Counter : NSObject\n- (int)value;\n@end\n\nint mig08_actor_hop(MIG08Counter *counter) async {\n    return [counter value];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 12 },
+          "end": { "line": 6, "column": 27 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 6, "column": 12 },
+              "end": { "line": 6, "column": 12 }
+            },
+            "replacement": "await "
+          }
+        ]
+      }
+    ]
+  }
+}

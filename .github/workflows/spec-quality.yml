@@ -1,0 +1,22 @@
+name: Spec Quality
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Node dependencies
+        run: npm install
+      - name: Run spec structural lint suite
+        run: npm run lint:spec

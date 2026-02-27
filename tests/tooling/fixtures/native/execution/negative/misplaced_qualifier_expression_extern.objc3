@@ -1,0 +1,5 @@
+module MisplacedQualifierExpressionExtern;
+
+fn main() -> i32 {
+  return extern;
+}

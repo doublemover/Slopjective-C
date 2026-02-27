@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "fixture": "message_send_nil_bound_identifier_pre_reassignment_elision.objc3",
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

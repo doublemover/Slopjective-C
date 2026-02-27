@@ -1,0 +1,73 @@
+{
+  "id": "CORO-01",
+  "title": "Lower async functions to coroutine state machines with stable call ABI across optimization modes",
+  "feature": "coroutine-based async lowering ABI stability",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\nid coro01_read(id seed) async;\nid coro01_merge(id lhs, id rhs) async;\n\nid coro01_read(id seed) async {\n    return seed;\n}\n\nid coro01_merge(id lhs, id rhs) async {\n    return lhs ? lhs : rhs;\n}\n\nid coro01_pipeline(id seed) async {\n    id first = await coro01_read(seed);\n    id second = await coro01_merge(first, seed);\n    return second;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "async entry lowers to coroutine state machine entry and uses continuation-based call ABI",
+            "values live across await suspension points are materialized in a coroutine frame",
+            "await lowering emits suspend and resume edges without changing source-level async signature"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves coroutine-based async calling convention from -O0",
+            "optimization may simplify state transitions but cannot remove required suspend and resume ABI edges",
+            "frame-carried values needed after await remain ABI-visible to coroutine resume path"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "async_calling_convention",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "importers and exporters agree on continuation-based coroutine call ABI for async declarations",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "coroutine_suspend_resume_edges",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "await points lower to stable suspension and resumption ABI edges under all optimization modes",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

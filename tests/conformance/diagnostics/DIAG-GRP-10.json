@@ -1,0 +1,18 @@
+{
+  "id": "DIAG-GRP-10",
+  "title": "Performance group accepts objc_dynamic opt-out in objc_direct_members types",
+  "feature": "minimum diagnostic groups: performance controls",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-6",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5"
+  ],
+  "source": "__attribute__((objc_direct_members))\n@interface DIAGGRP10Mixed : NSObject\n- (int)directSlot;\n- (int)dynamicSlot __attribute__((objc_dynamic));\n@end\n\nid diaggrp10_dynamic_opt_out_ok(DIAGGRP10Mixed *obj) {\n    return [obj performSelector:@selector(dynamicSlot)];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

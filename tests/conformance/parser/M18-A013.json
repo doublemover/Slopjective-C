@@ -1,0 +1,25 @@
+{
+  "id": "M18-A013",
+  "title": "Accept M18 lane-A parser fixture baseline for issue #2264 task M18-A013 (Stabilize AST construction path (Negative-Path Hardening))",
+  "feature": "m18 lane-a parser correctness hardening determinism closure core strict ast hardening slice 13",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M18",
+    "milestone_number": 103,
+    "lane": "A",
+    "issue": 2264,
+    "task": "M18-A013",
+    "sequence": 13
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_AST_HARDENING_SLICE_S013__\\n#define __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_AST_HARDENING_SLICE_S013__ 1\\n#endif\\n\\ntypedef struct M18A013_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M18A013_Probe;\\n\\nM18A013_Probe m18a013_probe(void) {\\n#if __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_AST_HARDENING_SLICE_S013__\\n    M18A013_Probe probe = { 1, 13, 2264 };\\n#else\\n    M18A013_Probe probe = { 0, 13, 2264 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

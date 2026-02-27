@@ -1,0 +1,15 @@
+// Negative fixture: i32 parameter rejects bool call result.
+// Expected diagnostic code(s): O3S206.
+module NegativeI32ParamFromBoolCall;
+
+fn expects_i32(value: i32) -> i32 {
+  return value;
+}
+
+fn returns_bool() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  return expects_i32(returns_bool());
+}

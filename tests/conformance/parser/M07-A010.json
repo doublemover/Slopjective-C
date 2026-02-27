@@ -1,0 +1,25 @@
+{
+  "id": "M07-A010",
+  "title": "Accept M07 lane-A parser fixture baseline for issue #1467 task M07-A010 (Refactor parser pipeline for deterministic replay)",
+  "feature": "m07 lane-a parser semantic-core slice 10",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M07",
+    "milestone_number": 92,
+    "lane": "A",
+    "issue": 1467,
+    "task": "M07-A010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M07A010_Node {\n    int token;\n    int span_start;\n    int span_end;\n} M07A010_Node;\n\nM07A010_Node m07a010_slice(int token, int start, int end) {\n    M07A010_Node node = { token, start, end };\n    return node;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

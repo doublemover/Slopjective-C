@@ -1,0 +1,11 @@
+# Conditional lowering markers.
+define i32 @main()
+%cond.addr.3 = alloca i32, align 4
+br i1 %t2, label %cond_true_0, label %cond_false_1
+cond_true_0:
+store i32 11, ptr %cond.addr.3, align 4
+cond_false_1:
+store i32 22, ptr %cond.addr.3, align 4
+cond_merge_2:
+%t4 = load i32, ptr %cond.addr.3, align 4
+ret i32 %t6

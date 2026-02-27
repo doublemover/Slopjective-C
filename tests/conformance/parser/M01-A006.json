@@ -1,0 +1,37 @@
+{
+  "id": "M01-A006",
+  "title": "Reject postfix propagation without a follow-token boundary",
+  "feature": "postfix propagation grammar diagnostics",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "int m01a006_compute(void);\n\nint m01a006_invalid_follow_token(void) {\n    return m01a006_compute()? + 1;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-FOLLOWTOKEN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 30 }
+        },
+        "message": "postfix ? propagation requires a follow token boundary",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 30 }
+            },
+            "replacement": "(m01a006_compute()?)"
+          }
+        ]
+      }
+    ]
+  }
+}

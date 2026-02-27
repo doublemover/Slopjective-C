@@ -1,0 +1,40 @@
+{
+  "id": "NNB-59-02",
+  "title": "End canonical nonnull-by-default defaults at pragma boundaries",
+  "feature": "nonnull-by-default boundary scope semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-5-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-2-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fsyntax-only %s\nint consumeNonnull(id _Nonnull value);\n\n#pragma objc assume_nonnull begin\nid insideDefault(id value);\n#pragma objc assume_nonnull end\n\nid outsideUnspecified(id value);\n\nint probeBoundary(id _Nullable maybe) {\n    insideDefault(maybe);\n    consumeNonnull(outsideUnspecified(maybe));\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 5 },
+          "end": { "line": 11, "column": 24 }
+        },
+        "message": "unannotated parameters are nonnull only while the canonical region is active",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-UNSPECIFIED-TO-NONNULL",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 12, "column": 5 },
+          "end": { "line": 12, "column": 46 }
+        },
+        "message": "after #pragma objc assume_nonnull end, unannotated object pointers revert to unspecified",
+        "fixits": []
+      }
+    ]
+  }
+}

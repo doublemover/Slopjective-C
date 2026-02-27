@@ -1,0 +1,44 @@
+{
+  "id": "META-MAC-03",
+  "title": "Reject macro annotations when optional macro capability is disabled",
+  "feature": "macro expansion sandbox diagnostics",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-macros=off -fsyntax-only %s\\n@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint macro_feature_disabled(int value) {\\n    return value;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MACRO-FEATURE-DISABLED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 71 }
+        },
+        "message": "objc_macro requires the optional macro feature set to be enabled",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 1 },
+              "end": { "line": 2, "column": 1 }
+            },
+            "replacement": "#if __OBJC3_FEATURE_MACROS__\\n"
+          },
+          {
+            "range": {
+              "start": { "line": 5, "column": 1 },
+              "end": { "line": 5, "column": 1 }
+            },
+            "replacement": "#endif\\n"
+          }
+        ]
+      }
+    ]
+  }
+}

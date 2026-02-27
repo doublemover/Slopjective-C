@@ -1,0 +1,5 @@
+# Hex global initializer chain markers.
+@a = global i32 10
+@b = global i32 15
+@c = global i32 30
+ret i32

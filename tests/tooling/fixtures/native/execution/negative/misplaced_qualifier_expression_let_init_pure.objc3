@@ -1,0 +1,7 @@
+module MisplacedQualifierExpressionLetInitPure;
+
+fn main() -> i32 {
+  let seed = 1;
+  let rhs = pure;
+  return seed;
+}

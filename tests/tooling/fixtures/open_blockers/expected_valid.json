@@ -1,0 +1,29 @@
+[
+  {
+    "blocker_id": "BLK-900-01",
+    "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_alpha.md",
+    "line": 5,
+    "owner": "Team Alpha",
+    "due_date_utc": "2026-03-01",
+    "summary": "Alpha blocker requires action.",
+    "status": "OPEN"
+  },
+  {
+    "blocker_id": "BLK-900-02",
+    "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_alpha.md",
+    "line": 6,
+    "owner": "Team Beta",
+    "due_date_utc": "2026-03-02",
+    "summary": "Beta blocker has plain-text ID and status.",
+    "status": "OPEN"
+  },
+  {
+    "blocker_id": "BLK-901-01",
+    "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_beta.md",
+    "line": 7,
+    "owner": "Team Delta",
+    "due_date_utc": null,
+    "summary": "Missing publication index linkage.",
+    "status": "OPEN"
+  }
+]

@@ -1,0 +1,18 @@
+module SwitchNestedLoopBreak;
+
+fn main() -> i32 {
+  let sum = 0;
+  for (let i = 0; i < 4; i = i + 1) {
+    switch (i) {
+      case 1:
+        continue;
+      case 2:
+        break;
+      default:
+        sum = sum + 10;
+        break;
+    }
+    sum = sum + 1;
+  }
+  return sum;
+}

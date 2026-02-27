@@ -1,0 +1,7 @@
+// Positive fixture: direct nil receiver message-send is compile-time elided to zero without runtime dispatch.
+module MessageSendDirectNilReceiverElision;
+
+fn main() {
+  let sent = [nil ping];
+  return sent + 9;
+}

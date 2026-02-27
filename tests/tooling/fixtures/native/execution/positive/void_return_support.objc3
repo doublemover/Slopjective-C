@@ -1,0 +1,18 @@
+module VoidReturnSupport;
+
+let g = 1;
+
+fn bump() -> void {
+  g = g + 2;
+  return;
+}
+
+fn touch() -> void {
+  g = g + 3;
+}
+
+fn main() -> i32 {
+  bump();
+  touch();
+  return g;
+}

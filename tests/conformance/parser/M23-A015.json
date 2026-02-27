@@ -1,0 +1,25 @@
+{
+  "id": "M23-A015",
+  "title": "Accept M23 lane-A parser fixture baseline for issue #2626 task M23-A015 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m23 lane a parser end to end compilation artifact emission enforce canonical syntax normalization determinism proof slice 15",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "A",
+    "issue": 2626,
+    "task": "M23-A015",
+    "sequence": 15
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M23_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__\\n#define __OBJC3_FEATURE_M23_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__ 1\\n#endif\\n\\ntypedef struct M23A015_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23A015_Probe;\\n\\nM23A015_Probe m23a015_probe(void) {\\n#if __OBJC3_FEATURE_M23_A015_ENFORCE_CANONICAL_SYNTAX_NORMALIZATION_DETERMINIS__\\n    M23A015_Probe probe = { 1, 15, 2626 };\\n#else\\n    M23A015_Probe probe = { 0, 15, 2626 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

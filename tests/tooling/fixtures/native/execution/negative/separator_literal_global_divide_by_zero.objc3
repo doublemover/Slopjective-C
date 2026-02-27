@@ -1,0 +1,7 @@
+module SeparatorLiteralGlobalDivideByZero;
+
+let value = 1_0 / 0_0;
+
+fn main() -> i32 {
+  return value;
+}

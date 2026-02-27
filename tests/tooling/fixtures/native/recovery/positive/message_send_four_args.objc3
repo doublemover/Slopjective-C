@@ -1,0 +1,7 @@
+// Positive fixture: message-send supports up to four explicit arguments.
+module MessageSendFourArgs;
+
+fn main() {
+  let receiver = 5;
+  return [receiver mix: 1 with: 2 then: 3 finally: 4];
+}

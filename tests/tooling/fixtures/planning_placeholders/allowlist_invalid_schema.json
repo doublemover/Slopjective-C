@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "entries": [
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<COMMIT_SHA>",
+      "reason": "Schema-version fixture."
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "INT-C-09",
+  "title": "Enforce async-thunk status and error invariants for success, thrown failure, and cancellation outcomes",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC09Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nid intc09_work(int mode) async throws;\\nvoid intc09_work_async_c(int mode,\\n                         void * _Nullable context,\\n                         INTC09Completion _Nonnull completion);\\n\\ntypedef struct INTC09Probe {\\n    int successSeen;\\n    int errorSeen;\\n    int cancelledSeen;\\n    int invariantViolations;\\n} INTC09Probe;\\n\\nvoid intc09_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC09Probe *probe = (INTC09Probe *)context;\\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS) {\\n        probe->successSeen = probe->successSeen + 1;\\n        if (error != nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else if (status == OBJC_ASYNC_COMPLETION_ERROR) {\\n        probe->errorSeen = probe->errorSeen + 1;\\n        if (error == nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else if (status == OBJC_ASYNC_COMPLETION_CANCELLED) {\\n        probe->cancelledSeen = probe->cancelledSeen + 1;\\n        if (error == nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else {\\n        probe->invariantViolations = probe->invariantViolations + 1;\\n    }\\n    (void)result;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "success callback completion sets status to OBJC_ASYNC_COMPLETION_SUCCESS with error == nil",
+            "thrown failure sets status to OBJC_ASYNC_COMPLETION_ERROR with error != nil and result treated as unspecified",
+            "cancellation sets status to OBJC_ASYNC_COMPLETION_CANCELLED with distinguished non-nil cancellation error object"
+          ],
+          "runtime_assertions": [
+            "intc09_probe_callback records no invariant violations when exercised across success, error, and cancellation modes",
+            "C-side status dispatch logic can ignore result unless status is success without losing correctness"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves success/error/cancelled status mapping and associated error nullability rules",
+            "optimized code preserves unspecified-result behavior on non-success statuses",
+            "optimization does not collapse cancelled and failure statuses into success"
+          ],
+          "runtime_assertions": [
+            "invariant violation counter remains zero under optimization when all three paths are exercised",
+            "status partitioning remains observable and stable for C callback consumers"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_c_thunk_status_error_matrix",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "required_shape": "success => error nil; error/cancelled => error non-nil; result ignored unless success",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.async_c_thunk_cancellation_mapping",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "required_shape": "cancellation reported as OBJC_ASYNC_COMPLETION_CANCELLED with distinguished cancellation error",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

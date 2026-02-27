@@ -1,0 +1,42 @@
+{
+  "id": "INT-SWIFT-03",
+  "title": "Warn when Swift async-await and executor mapping metadata is dropped across ObjC import-export declarations",
+  "feature": "Swift interop mappings for async-await and executor affinity",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "id intswift03_fetch(id seed) async;\\nid intswift03_fetch_main(id seed) async __attribute__((objc_executor(main)));\\n\\nid intswift03_fetch_swift_bridge(id seed);\\nid intswift03_fetch_main_bridge(id seed) async __attribute__((objc_executor(global)));\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-SWIFT-ASYNC-MAPPING-LOSS",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 4, "column": 1 },
+          "end": { "line": 4, "column": 40 }
+        },
+        "message": "bridge declaration drops 'async'; Swift import will treat this API as synchronous"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-SWIFT-ASYNC-MAPPING-LOSS",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 5, "column": 1 },
+          "end": { "line": 5, "column": 86 }
+        },
+        "message": "bridge declaration changes objc_executor affinity and may mis-map Swift isolation semantics"
+      }
+    ]
+  }
+}

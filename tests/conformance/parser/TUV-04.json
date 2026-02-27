@@ -1,0 +1,36 @@
+{
+  "id": "TUV-04",
+  "title": "Reject post-declaration objc_language_version pragma",
+  "feature": "translation-unit language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-2",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "int predeclared = 0;\n#pragma objc_language_version(3)\nint selectedMode(void) {\n    return predeclared;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-LANGVERSION-LATE-SELECTION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 33 }
+        },
+        "message": "language-version pragma must appear before the first declaration",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 1 },
+              "end": { "line": 2, "column": 33 }
+            },
+            "replacement": ""
+          }
+        ]
+      }
+    ]
+  }
+}

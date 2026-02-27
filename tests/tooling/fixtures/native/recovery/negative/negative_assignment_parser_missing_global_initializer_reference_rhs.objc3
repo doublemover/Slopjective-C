@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeAssignmentParserMissingGlobalInitializerReferenceRhs;
+
+let seed = 1;
+let derived = seed + ;
+
+fn main() -> i32 {
+  return seed;
+}

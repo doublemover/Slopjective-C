@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3S211.
+module NegativeReturnNonvoidMissingValue;
+
+fn helper() -> i32 {
+  return;
+}
+
+fn main() -> i32 {
+  return helper();
+}

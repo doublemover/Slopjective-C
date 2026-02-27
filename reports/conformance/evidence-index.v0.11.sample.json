@@ -1,0 +1,127 @@
+{
+  "schema_id": "objc3-conformance-evidence-index/v1",
+  "index_version": 1,
+  "release_label": "v0.11",
+  "generated_at": "2026-02-23T00:00:00Z",
+  "input_root": "reports/conformance",
+  "artifact_count": 3,
+  "profile_count": 3,
+  "release_count": 2,
+  "artifacts": [
+    {
+      "artifact_path": "reports/conformance/manifests/objc3-abi-2025Q4.example.json",
+      "file_sha256": "sha256:200d84a4d5e373e9c55fed5f96d67c78c249e36554e8cd7b53940c3b73ac9f12",
+      "size_bytes": 1758,
+      "media_type": "application/json",
+      "profile_id": "objc3-abi",
+      "release_id": "2025Q4",
+      "artifact_id": "objc3-abi-2025Q4",
+      "manifest_kind": "objc3-abi-manifest",
+      "schema_ref": "objc3-abi-2025Q4",
+      "source_generated_at": "2026-02-23T05:15:00Z",
+      "issue_ref": "v0.11-A02/#116"
+    },
+    {
+      "artifact_path": "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json",
+      "file_sha256": "sha256:84229d46ab6ab735c25c9b70ff697f72bfdfe3e6207bed594abb029a16385d59",
+      "size_bytes": 1786,
+      "media_type": "application/json",
+      "profile_id": "objc3-runtime",
+      "release_id": "2025Q4",
+      "artifact_id": "objc3-runtime-2025Q4",
+      "manifest_kind": "objc3-runtime-artifact-manifest/v1",
+      "schema_ref": "objc3-runtime-artifact-manifest/v1",
+      "source_generated_at": "2025-10-15T12:00:00Z",
+      "issue_ref": null
+    },
+    {
+      "artifact_path": "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json",
+      "file_sha256": "sha256:822ce3cb6c73c3ace42c7bae2479957e0855a9b7835e23a1213fa4841d5fa956",
+      "size_bytes": 4705,
+      "media_type": "application/json",
+      "profile_id": "strict-v1",
+      "release_id": "v0.11",
+      "artifact_id": "objc3-conformance-evidence-bundle-v1",
+      "manifest_kind": "objc3-conformance-evidence-bundle",
+      "schema_ref": "objc3-conformance-evidence-bundle-v1",
+      "source_generated_at": "2026-02-23T06:45:00Z",
+      "issue_ref": "v0.11-B01/#122"
+    }
+  ],
+  "profiles": [
+    {
+      "profile_id": "objc3-abi",
+      "artifact_count": 1,
+      "releases": [
+        {
+          "release_id": "2025Q4",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/manifests/objc3-abi-2025Q4.example.json"
+          ]
+        }
+      ]
+    },
+    {
+      "profile_id": "objc3-runtime",
+      "artifact_count": 1,
+      "releases": [
+        {
+          "release_id": "2025Q4",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+          ]
+        }
+      ]
+    },
+    {
+      "profile_id": "strict-v1",
+      "artifact_count": 1,
+      "releases": [
+        {
+          "release_id": "v0.11",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json"
+          ]
+        }
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "release_id": "2025Q4",
+      "artifact_count": 2,
+      "profiles": [
+        {
+          "profile_id": "objc3-abi",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/manifests/objc3-abi-2025Q4.example.json"
+          ]
+        },
+        {
+          "profile_id": "objc3-runtime",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json"
+          ]
+        }
+      ]
+    },
+    {
+      "release_id": "v0.11",
+      "artifact_count": 1,
+      "profiles": [
+        {
+          "profile_id": "strict-v1",
+          "artifact_count": 1,
+          "artifact_paths": [
+            "reports/conformance/bundles/objc3-conformance-evidence-bundle-v0.11.example.json"
+          ]
+        }
+      ]
+    }
+  ]
+}

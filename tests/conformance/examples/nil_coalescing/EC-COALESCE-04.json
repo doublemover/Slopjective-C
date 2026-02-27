@@ -1,0 +1,35 @@
+{
+  "id": "EC-COALESCE-04",
+  "title": "Diagnose likely ternary intent in a??b:c",
+  "feature": "??",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-7"
+  ],
+  "source": "id choose(id condition, id whenTrue, id whenFalse) {\n    return condition??whenTrue:whenFalse;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-COALESCE-TERNARY-INTENT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 21 },
+          "end": { "line": 2, "column": 31 }
+        },
+        "message": "a??b:c tokenizes as nil-coalescing and is not a valid ternary expression",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 21 },
+              "end": { "line": 2, "column": 31 }
+            },
+            "replacement": "condition ? whenTrue : whenFalse"
+          }
+        ]
+      }
+    ]
+  }
+}

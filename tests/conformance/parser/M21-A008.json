@@ -1,0 +1,25 @@
+{
+  "id": "M21-A008",
+  "title": "Accept M21 lane-A parser fixture baseline for issue #2475 task M21-A008 (Add frontend negative path coverage (Integration Surface Stabilization))",
+  "feature": "m21 lane-a parser semantic analysis type system core add frontend negative path coverage integration surface stabilization slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M21",
+    "milestone_number": 106,
+    "lane": "A",
+    "issue": 2475,
+    "task": "M21-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M21_A_008_ADD_FRONTEND_NEGATIVE_PATH_COVERAGE_INTEGRATION___\\n#define __OBJC3_FEATURE_M21_A_008_ADD_FRONTEND_NEGATIVE_PATH_COVERAGE_INTEGRATION___ 1\\n#endif\\n\\ntypedef struct M21A008_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M21A008_Probe;\\n\\nM21A008_Probe m21a008_probe(void) {\\n#if __OBJC3_FEATURE_M21_A_008_ADD_FRONTEND_NEGATIVE_PATH_COVERAGE_INTEGRATION___\\n    M21A008_Probe probe = { 1, 8, 2475 };\\n#else\\n    M21A008_Probe probe = { 0, 8, 2475 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

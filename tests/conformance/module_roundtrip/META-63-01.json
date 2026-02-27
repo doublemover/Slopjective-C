@@ -1,0 +1,46 @@
+{
+  "id": "META-63-01",
+  "title": "Preserve optional/nullability metadata across module and interface round-trip",
+  "feature": "optional/nullability metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-4-0",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-6",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module META63.objcmod --emit-interface META63.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module META63-roundtrip.objcmod --import-interface META63.obji --emit-interface META63-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface META63.objcmod META63-roundtrip.obji %s\n// RUN: objc3c --verify-interface META63-roundtrip.objcmod META63.obji %s\n#pragma objc assume_nonnull begin\n@interface META63Contract : NSObject\n- (id _Nullable)nullablePayloadForKey:(id _Nonnull)key;\n- (id?)optionalPayloadForKey:(id?)key;\n- (id!)legacyPayload;\n- (id)defaultNonnullInRegion:(id)value;\n@end\n#pragma objc assume_nonnull end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "nullability_qualifiers",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "nonnull_by_default_regions",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "optional_spellings_t_question_t_bang",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

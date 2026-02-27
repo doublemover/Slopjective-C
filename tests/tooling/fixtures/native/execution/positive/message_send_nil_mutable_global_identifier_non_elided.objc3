@@ -1,0 +1,13 @@
+module MessageSendNilMutableGlobalIdentifierNonElidedExecution;
+
+let receiver = nil;
+
+fn read() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  receiver = read();
+  receiver = nil;
+  return [receiver ping];
+}

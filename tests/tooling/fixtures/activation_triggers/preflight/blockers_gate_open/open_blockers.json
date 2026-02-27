@@ -1,0 +1,17 @@
+{
+  "generated_at_utc": "2026-02-23T00:00:00Z",
+  "source": "fixture:tests/tooling/fixtures/activation_triggers/preflight/blockers_gate_open/open_blockers.json",
+  "open_blocker_count": 2,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-182-01",
+      "source_path": "spec/planning/issue_182_governance_v1_ratification_package.md",
+      "line_number": 410
+    },
+    {
+      "blocker_id": "BLK-182-02",
+      "source_path": "spec/planning/issue_182_governance_v1_ratification_package.md",
+      "line_number": 417
+    }
+  ]
+}

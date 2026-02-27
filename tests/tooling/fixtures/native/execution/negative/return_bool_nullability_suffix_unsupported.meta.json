@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "return_bool_nullability_suffix_unsupported.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "unsupported function return type suffix '?' for non-id/Class/instancetype return annotation"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

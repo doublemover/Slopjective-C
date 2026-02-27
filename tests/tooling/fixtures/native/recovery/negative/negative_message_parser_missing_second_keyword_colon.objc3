@@ -1,0 +1,8 @@
+// Negative fixture: high-arity keyword selector segment missing ':' token.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageParserMissingSecondKeywordColon;
+
+fn main() {
+  let receiver = 1;
+  return [receiver sum: 1 with: 2 then: 3 and 4 plus: 5 extra: 6];
+}

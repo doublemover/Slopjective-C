@@ -1,0 +1,27 @@
+{
+  "id": "M25-C009",
+  "title": "Document lowering/runtime invariants for integrators (Documentation and Evidence) (issue #2793 / task M25-C009)",
+  "feature": "m25 lane-c objective-c 3 message dispatch lowering and direct llvm ir emission document lowering runtime invariants for integrators documentation and evidence",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M25",
+    "milestone_number": 110,
+    "lane": "C",
+    "issue": 2793,
+    "task": "M25-C009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M25_C_009_DOCUMENT_LOWERING_RUNTIME_INVARIANTS_FOR_INTEGRATORS_DOCUMEN\n#define __OBJC3_FEATURE_M25_C_009_DOCUMENT_LOWERING_RUNTIME_INVARIANTS_FOR_INTEGRATORS_DOCUMEN 1\n#endif\n\ntypedef struct M25C009_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M25C009_Probe;\n\nM25C009_Probe m25c009_probe(void) {\n#if __OBJC3_FEATURE_M25_C_009_DOCUMENT_LOWERING_RUNTIME_INVARIANTS_FOR_INTEGRATORS_DOCUMEN\n    M25C009_Probe probe = { 1, 9, 2793 };\n#else\n    M25C009_Probe probe = { 0, 9, 2793 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

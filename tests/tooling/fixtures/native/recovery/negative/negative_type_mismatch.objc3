@@ -1,0 +1,11 @@
+// Negative fixture: return type mismatch.
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeMismatch;
+
+fn value() {
+  return 1;
+}
+
+fn main() {
+  return value;
+}

@@ -1,0 +1,19 @@
+{
+  "id": "M01-A007",
+  "title": "Accept canonical try-await composition for executor and actor-isolated entries",
+  "feature": "try/await composition with actor and executor call forms",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1"
+  ],
+  "source": "int m01a007_main_value(void) async __attribute__((objc_executor(main)));\n\nactor class M01A007Counter : NSObject\n- (int)next;\n@end\n\nint m01a007_sum(M01A007Counter *counter) async {\n    int lhs = try await m01a007_main_value();\n    int rhs = try await [counter next];\n    return lhs + rhs;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

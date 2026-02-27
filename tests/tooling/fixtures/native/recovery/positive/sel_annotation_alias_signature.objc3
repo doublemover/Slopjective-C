@@ -1,0 +1,12 @@
+module SELAnnotationAliasSignature;
+
+fn choose(flag: bool, when_true: SEL, when_false: SEL) -> SEL {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main() -> i32 {
+  return choose(true, 41, 9) + 1;
+}

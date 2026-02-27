@@ -1,0 +1,20 @@
+{
+  "id": "PERF-DYN-04",
+  "title": "Allow selector-based dispatch for objc_dynamic opt-outs inside objc_direct_members classes",
+  "feature": "direct-members and objc_dynamic interaction diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-6",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-6",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5"
+  ],
+  "source": "__attribute__((objc_direct_members))\n@interface PERFDYN04Mixed : NSObject\n- (int)directSlot;\n- (int)dynamicSlot __attribute__((objc_dynamic));\n@end\n\nid perfdyn04_dynamic_opt_out_ok(PERFDYN04Mixed *obj) {\n    return [obj performSelector:@selector(dynamicSlot)];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,1097 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3-conformance-evidence-bundle-v1.schema.json",
+  "title": "Objective-C 3 Conformance Evidence Bundle",
+  "description": "Machine-readable aggregation of conformance manifests, profile claims, test evidence, and known deviations for v0.11 publication.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_type",
+    "bundle_schema",
+    "bundle_version",
+    "issue_ref",
+    "generated_at",
+    "producer",
+    "spec_baseline",
+    "profile_claim",
+    "manifests",
+    "test_evidence",
+    "known_deviations",
+    "invariants"
+  ],
+  "properties": {
+    "bundle_type": {
+      "type": "string",
+      "const": "objc3-conformance-evidence-bundle"
+    },
+    "bundle_schema": {
+      "type": "string",
+      "const": "objc3-conformance-evidence-bundle-v1"
+    },
+    "bundle_version": {
+      "$ref": "#/$defs/semver"
+    },
+    "issue_ref": {
+      "type": "string",
+      "const": "v0.11-B01/#122"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/utcTimestamp"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "build_id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "version": {
+          "$ref": "#/$defs/semver"
+        },
+        "build_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9._-]+$",
+          "minLength": 3,
+          "maxLength": 64
+        }
+      }
+    },
+    "spec_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language_line",
+        "release_train",
+        "conformance_checklist_ref",
+        "minimum_conformance_suite_version"
+      ],
+      "properties": {
+        "language_line": {
+          "type": "string",
+          "const": "objc3-v1"
+        },
+        "release_train": {
+          "type": "string",
+          "const": "v0.11"
+        },
+        "conformance_checklist_ref": {
+          "type": "string",
+          "const": "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-2"
+        },
+        "minimum_conformance_suite_version": {
+          "$ref": "#/$defs/semver"
+        }
+      }
+    },
+    "profile_claim": {
+      "$ref": "#/$defs/profileClaim"
+    },
+    "manifests": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/manifestRecord"
+      }
+    },
+    "test_evidence": {
+      "$ref": "#/$defs/testEvidence"
+    },
+    "known_deviations": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/knownDeviation"
+      }
+    },
+    "invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deterministic_ordering",
+        "normalized_paths",
+        "digest_algorithm"
+      ],
+      "properties": {
+        "deterministic_ordering": {
+          "type": "boolean",
+          "const": true
+        },
+        "normalized_paths": {
+          "type": "boolean",
+          "const": true
+        },
+        "digest_algorithm": {
+          "type": "string",
+          "const": "sha256"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "manifests": {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "abi-manifest"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "minContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "manifests": {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "runtime-manifest"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "minContains": 1
+        }
+      }
+    },
+    {
+      "properties": {
+        "test_evidence": {
+          "type": "object",
+          "properties": {
+            "suites": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "suite_id": {
+                    "const": "parser"
+                  }
+                },
+                "required": [
+                  "suite_id"
+                ]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "test_evidence": {
+          "type": "object",
+          "properties": {
+            "suites": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "suite_id": {
+                    "const": "semantic"
+                  }
+                },
+                "required": [
+                  "suite_id"
+                ]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "test_evidence": {
+          "type": "object",
+          "properties": {
+            "suites": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "suite_id": {
+                    "const": "lowering_abi"
+                  }
+                },
+                "required": [
+                  "suite_id"
+                ]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "test_evidence": {
+          "type": "object",
+          "properties": {
+            "suites": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "suite_id": {
+                    "const": "module_roundtrip"
+                  }
+                },
+                "required": [
+                  "suite_id"
+                ]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "test_evidence": {
+          "type": "object",
+          "properties": {
+            "suites": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "suite_id": {
+                    "const": "diagnostics"
+                  }
+                },
+                "required": [
+                  "suite_id"
+                ]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile_claim": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "const": "conformant"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "known_deviations": {
+            "maxItems": 0
+          },
+          "test_evidence": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "const": "pass"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile_claim": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "const": "conformant-with-deviations"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "known_deviations": {
+            "minItems": 1
+          },
+          "test_evidence": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "const": "pass-with-known-deviations"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile_claim": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "const": "non-conformant"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "test_evidence": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "object",
+                "properties": {
+                  "result": {
+                    "const": "fail"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "utcDate": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^objc3\\.[a-z0-9]+(?:[._-][a-z0-9]+)*\\.v[0-9]+$"
+    },
+    "profileId": {
+      "type": "string",
+      "enum": [
+        "core-v1",
+        "strict-v1",
+        "strict-concurrency-v1",
+        "strict-system-v1"
+      ]
+    },
+    "profileClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "strictness",
+        "concurrency_mode",
+        "status",
+        "optional_feature_sets",
+        "claimed_capabilities"
+      ],
+      "properties": {
+        "profile": {
+          "$ref": "#/$defs/profileId"
+        },
+        "strictness": {
+          "type": "string",
+          "enum": [
+            "permissive",
+            "strict",
+            "strict-system"
+          ]
+        },
+        "concurrency_mode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "strict"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "conformant",
+            "conformant-with-deviations",
+            "non-conformant"
+          ]
+        },
+        "optional_feature_sets": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "opt-meta",
+              "opt-swift",
+              "opt-cxx"
+            ]
+          }
+        },
+        "claimed_capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "core-v1"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "strictness": {
+                "const": "permissive"
+              },
+              "concurrency_mode": {
+                "const": "off"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "strict-v1"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "strictness": {
+                "const": "strict"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "strict-concurrency-v1"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "strictness": {
+                "const": "strict"
+              },
+              "concurrency_mode": {
+                "const": "strict"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "strict-system-v1"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "strictness": {
+                "const": "strict-system"
+              },
+              "concurrency_mode": {
+                "const": "strict"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "manifestRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "schema_id",
+        "path",
+        "sha256",
+        "generated_at",
+        "status"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "abi-manifest",
+            "runtime-manifest"
+          ]
+        },
+        "schema_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256Digest"
+        },
+        "generated_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "superseded"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "abi-manifest"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "objc3-abi-2025Q4"
+              },
+              "path": {
+                "pattern": "^reports/conformance/manifests/objc3-abi-[A-Za-z0-9._-]+\\.json$"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "runtime-manifest"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "schema_id": {
+                "const": "objc3-runtime-artifact-manifest/v1"
+              },
+              "path": {
+                "pattern": "^reports/conformance/manifests/objc3-runtime-[A-Za-z0-9._-]+\\.json$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "testEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suite_run_id",
+        "runner",
+        "executed_at",
+        "summary",
+        "suites"
+      ],
+      "properties": {
+        "suite_run_id": {
+          "type": "string",
+          "pattern": "^run-[0-9]{8}T[0-9]{6}Z$"
+        },
+        "runner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "host_os",
+            "target_triples"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "version": {
+              "$ref": "#/$defs/semver"
+            },
+            "host_os": {
+              "type": "string",
+              "enum": [
+                "darwin",
+                "linux",
+                "windows"
+              ]
+            },
+            "target_triples": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+){2,4}$"
+              }
+            }
+          }
+        },
+        "executed_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "total_tests",
+            "passed",
+            "failed",
+            "expected_failures",
+            "skipped",
+            "result"
+          ],
+          "properties": {
+            "total_tests": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "passed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "expected_failures": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "result": {
+              "type": "string",
+              "enum": [
+                "pass",
+                "pass-with-known-deviations",
+                "fail"
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "result": {
+                    "const": "pass"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "failed": {
+                    "const": 0
+                  },
+                  "expected_failures": {
+                    "const": 0
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "result": {
+                    "const": "pass-with-known-deviations"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "failed": {
+                    "const": 0
+                  },
+                  "expected_failures": {
+                    "minimum": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "result": {
+                    "const": "fail"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "failed": {
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "suites": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/suiteEvidence"
+          }
+        }
+      }
+    },
+    "suiteEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "suite_id",
+        "result",
+        "executed",
+        "passed",
+        "failed",
+        "expected_failures",
+        "skipped",
+        "duration_seconds",
+        "evidence_paths"
+      ],
+      "properties": {
+        "suite_id": {
+          "type": "string",
+          "enum": [
+            "parser",
+            "semantic",
+            "lowering_abi",
+            "module_roundtrip",
+            "diagnostics"
+          ]
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "pass-with-expected-failures",
+            "fail"
+          ]
+        },
+        "executed": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expected_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duration_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "evidence_paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/relativePath"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "pass"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "failed": {
+                "const": 0
+              },
+              "expected_failures": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "pass-with-expected-failures"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "failed": {
+                "const": 0
+              },
+              "expected_failures": {
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "fail"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          },
+          "then": {
+            "properties": {
+              "failed": {
+                "minimum": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "knownDeviation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deviation_id",
+        "title",
+        "issue_ref",
+        "severity",
+        "status",
+        "affects_profiles",
+        "related_tests",
+        "rationale",
+        "mitigation",
+        "tracking_milestone",
+        "last_reviewed"
+      ],
+      "properties": {
+        "deviation_id": {
+          "type": "string",
+          "pattern": "^KD-[0-9]{3}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 120
+        },
+        "issue_ref": {
+          "type": "string",
+          "pattern": "^#[0-9]+$"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted-temporary",
+            "accepted-permanent",
+            "open"
+          ]
+        },
+        "affects_profiles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/profileId"
+          }
+        },
+        "related_tests": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9-]+-[0-9]{2}$"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 600
+        },
+        "mitigation": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 600
+        },
+        "tracking_milestone": {
+          "type": "string",
+          "pattern": "^v[0-9]+\\.[0-9]+(?:\\.[0-9]+)?$"
+        },
+        "last_reviewed": {
+          "$ref": "#/$defs/utcDate"
+        },
+        "sunset_target": {
+          "$ref": "#/$defs/utcDate"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "accepted-temporary"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "sunset_target"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

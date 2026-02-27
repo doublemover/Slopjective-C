@@ -1,0 +1,50 @@
+{
+  "id": "M08-D007",
+  "title": "Issue #1563 / M08-D007: Scope-freeze baseline: evidence traceability mapping keeps stable payload mapping",
+  "feature": "M08 lane D diagnostic payload/code mapping freeze (issue #1563, task M08-D007)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m08/lane_d_m08_scope_freeze.md",
+    "spec/planning/compiler/m08/lane_d_m08_execution_packet_20260226.md"
+  ],
+  "source": "void m08d007_trace(id lhs, id rhs);`n`nvoid m08d007_negative(void) {`n    m08d007_trace(@\"issue=1563\", @\"fixture=M08-D007\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-TRACEABILITY-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 34
+          },
+          "end": {
+            "line": 4,
+            "column": 53
+          }
+        },
+        "message": "issue #1563 task M08-D007: traceability tuple must map issue 1563 to fixture M08-D007 exactly",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 34
+              },
+              "end": {
+                "line": 4,
+                "column": 53
+              }
+            },
+            "replacement": "@\"fixture=M08-D007\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+module ModuloBasic;
+
+fn main() -> i32 {
+  let a = 17;
+  let b = 5;
+  let c = a % b;
+  let d = 20;
+  d %= 6;
+  return c + d;
+}

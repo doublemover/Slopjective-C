@@ -1,0 +1,17 @@
+{
+  "generated_at_utc": "2026-02-24T00:00:00Z",
+  "source": "fixtures/open_blockers",
+  "open_blocker_count": 2,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-900-02",
+      "source_path": "spec/planning/issue_900.md",
+      "line_number": 20
+    },
+    {
+      "blocker_id": "BLK-900-01",
+      "source_path": "spec/planning/issue_900.md",
+      "line_number": 10
+    }
+  ]
+}

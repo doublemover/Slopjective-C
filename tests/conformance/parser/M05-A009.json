@@ -1,0 +1,17 @@
+{
+  "id": "M05-A009",
+  "title": "Accept integrator invariant baseline for strict syntax gate and try-await composition",
+  "feature": "wave-0 integrator invariants and replay guidance baseline",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m05a009_fetch(void) async;\nint m05a009_default(void) {\n    return 9;\n}\n\nint m05a009_invariant(int gate) async {\n    return gate ? try await m05a009_fetch() : m05a009_default();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

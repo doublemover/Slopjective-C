@@ -1,0 +1,1 @@
+error: catalog task row 0 must include non-empty string 'execution_status' or legacy 'status' in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_missing_status/catalog.json

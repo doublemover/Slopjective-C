@@ -1,0 +1,16 @@
+{
+  "id": "EC-CROSS-01",
+  "title": "Canonical try await with optional chaining and postfix propagation",
+  "feature": "try await + postfix ? + ?.",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-6",
+    "spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md#am-6"
+  ],
+  "source": "id _Nullable nextToken(Client * _Nullable client) async throws {\n    return (try await client?.fetchToken())?;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

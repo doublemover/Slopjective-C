@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeForConditionFunctionValue;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  for (let i = 0; ready; i = i + 1) {
+    let x = i;
+  }
+  return 0;
+}
+

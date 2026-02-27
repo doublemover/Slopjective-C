@@ -1,0 +1,19 @@
+module LoopBreakContinueGuarded;
+
+fn main() -> i32 {
+  let i = 0;
+  let sum = 0;
+  while (i < 12) {
+    let next = i + 1;
+    let i = next;
+    if (next == 3) {
+      continue;
+    }
+    if (next == 9) {
+      break;
+    }
+    let sum = sum + next;
+  }
+  return sum;
+}
+

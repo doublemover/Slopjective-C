@@ -1,0 +1,26 @@
+{
+  "id": "M22-C005",
+  "title": "Enforce canonical lowering normalization (Determinism Proof) (issue #2573 / task M22-C005)",
+  "feature": "m22 lane-c lowering abi contracts runtime bridge enforce canonical lowering normalization determinism proof slice 05",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M22",
+    "milestone_number": 107,
+    "lane": "C",
+    "issue": 2573,
+    "task": "M22-C005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M22_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMI__\\n#define __OBJC3_FEATURE_M22_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMI__ 1\\n#endif\\n\\ntypedef struct M22C005_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M22C005_Probe;\\n\\nM22C005_Probe m22c005_probe(void) {\\n#if __OBJC3_FEATURE_M22_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMI__\\n    M22C005_Probe probe = { 1, 5, 2573 };\\n#else\\n    M22C005_Probe probe = { 0, 5, 2573 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

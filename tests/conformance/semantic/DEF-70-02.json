@@ -1,0 +1,21 @@
+{
+  "id": "DEF-70-02",
+  "title": "Accept nested defer ordering across early-return control-flow exits",
+  "feature": "defer LIFO scope-exit semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-2"
+  ],
+  "source": "int lifoNestedExit(int mode) {\\n    int trace = 0;\\n    defer { trace = trace * 10 + 1; };\\n\\n    if (mode > 0) {\\n        defer { trace = trace * 10 + 2; };\\n\\n        if (mode > 1) {\\n            defer { trace = trace * 10 + 3; };\\n            // Exiting here should run 3, then 2, then 1.\\n            return trace;\\n        }\\n\\n        // Exiting here should run 2, then 1.\\n        return trace;\\n    }\\n\\n    // Exiting here should run only 1.\\n    return trace;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

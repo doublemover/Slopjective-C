@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3-abi-2025Q4.schema.json",
+  "title": "Objective-C 3 ABI Manifest (2025Q4)",
+  "description": "Schema fragment for ABI manifest payloads keyed by manifest_schema=objc3-abi-2025Q4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_type",
+    "manifest_schema",
+    "manifest_version",
+    "issue_ref",
+    "generated_at",
+    "producer",
+    "target_triples",
+    "symbol_policy_id",
+    "mangling_policy_id",
+    "metadata_compatibility",
+    "artifacts"
+  ],
+  "properties": {
+    "manifest_type": {
+      "type": "string",
+      "const": "objc3-abi-manifest"
+    },
+    "manifest_schema": {
+      "type": "string",
+      "const": "objc3-abi-2025Q4"
+    },
+    "manifest_version": {
+      "$ref": "#/$defs/semver"
+    },
+    "manifest_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "issue_ref": {
+      "type": "string",
+      "pattern": "^v0\\.11-A02/#116$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "$ref": "#/$defs/producer"
+    },
+    "target_triples": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/targetTriple"
+      }
+    },
+    "symbol_policy_id": {
+      "$ref": "#/$defs/policyId"
+    },
+    "mangling_policy_id": {
+      "$ref": "#/$defs/policyId"
+    },
+    "metadata_compatibility": {
+      "$ref": "#/$defs/metadataCompatibility"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Non-normative extension metadata. Keys must not shadow required fields.",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "policyId": {
+      "type": "string",
+      "pattern": "^objc3\\.[a-z0-9]+(?:[._-][a-z0-9]+)*\\.v[0-9]+$"
+    },
+    "capabilityId": {
+      "type": "string",
+      "pattern": "^objc3\\.[a-z0-9]+(?:[._-][a-z0-9]+)*\\.v[0-9]+$"
+    },
+    "targetTriple": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+){2,4}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toolchain_id",
+        "toolchain_version",
+        "build_id"
+      ],
+      "properties": {
+        "toolchain_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "toolchain_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"
+        },
+        "build_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metadataCompatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "producer_schema_major",
+        "producer_schema_minor",
+        "minimum_importer_schema_major",
+        "minimum_importer_schema_minor",
+        "compatibility_mode",
+        "required_capabilities"
+      ],
+      "properties": {
+        "producer_schema_major": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "producer_schema_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_importer_schema_major": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_importer_schema_minor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compatibility_mode": {
+          "type": "string",
+          "enum": [
+            "strict",
+            "forward-compatible"
+          ]
+        },
+        "required_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/capabilityId"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "compatibility_mode": {
+                "const": "strict"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "minimum_importer_schema_major": {
+                "const": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "kind",
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "module-metadata",
+            "symbol-table",
+            "abi-diff",
+            "binary-interface-summary"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

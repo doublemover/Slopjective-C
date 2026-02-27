@@ -1,0 +1,25 @@
+{
+  "id": "M07-A009",
+  "title": "Accept M07 lane-A parser fixture baseline for issue #1466 task M07-A009 (Document frontend invariants for integrators)",
+  "feature": "m07 lane-a parser semantic-core slice 09",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M07",
+    "milestone_number": 92,
+    "lane": "A",
+    "issue": 1466,
+    "task": "M07-A009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M07A009_Trace {\n    int value;\n    int span_start;\n    int span_end;\n} M07A009_Trace;\n\nM07A009_Trace m07a009_trace(int token) {\n    M07A009_Trace trace = { token, 9, 19 };\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

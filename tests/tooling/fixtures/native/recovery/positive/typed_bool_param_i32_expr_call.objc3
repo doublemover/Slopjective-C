@@ -1,0 +1,26 @@
+// Positive fixture: bool parameter accepts i32 call-site coercion and typed bool return values.
+module TypedBoolParamI32ExprCall;
+
+fn choose(flag: bool, when_true: i32, when_false: i32) -> i32 {
+  if (flag) {
+    return when_true;
+  } else {
+    return when_false;
+  }
+}
+
+fn is_descending(lhs: i32, rhs: i32) -> bool {
+  return lhs > rhs;
+}
+
+fn main() -> i32 {
+  let coerced = choose((4 - 3), 11, 22);
+  let relational = is_descending(9, 2);
+  let selected = choose(relational, coerced, 0);
+
+  if (selected == 11) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

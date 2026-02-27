@@ -1,0 +1,25 @@
+{
+  "id": "M11-A005",
+  "title": "Accept M11 lane-A parser fixture baseline for issue #1672 task M11-A005 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m11 lane-a parser optional and iuo semantics slice 05",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M11",
+    "milestone_number": 96,
+    "lane": "A",
+    "issue": 1672,
+    "task": "M11-A005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-2"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_OPTIONAL_IUO_CANONICAL_NORMALIZATION__\n#define __OBJC3_FEATURE_OPTIONAL_IUO_CANONICAL_NORMALIZATION__ 1\n#endif\n\ntypedef struct M11A005_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M11A005_Probe;\n\nM11A005_Probe m11a005_probe(void) {\n#if __OBJC3_FEATURE_OPTIONAL_IUO_CANONICAL_NORMALIZATION__\n    M11A005_Probe probe = { 1, 5, 1672 };\n#else\n    M11A005_Probe probe = { 0, 5, 1672 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

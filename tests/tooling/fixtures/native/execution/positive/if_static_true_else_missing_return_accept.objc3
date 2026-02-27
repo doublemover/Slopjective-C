@@ -1,0 +1,9 @@
+module IfStaticTrueElseMissingReturnAccept;
+
+fn main() -> i32 {
+  if (true) {
+    return 42;
+  } else {
+    let fallback = 7;
+  }
+}

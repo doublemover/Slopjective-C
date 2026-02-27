@@ -1,0 +1,9 @@
+# Assignment loop lowering markers.
+define i32 @main()
+while_cond_0:
+while_body_1:
+store i32 %t7, ptr %i.addr.0, align 4
+store i32 %t10, ptr %sum.addr.1, align 4
+while_end_2:
+ret i32 %t11
+

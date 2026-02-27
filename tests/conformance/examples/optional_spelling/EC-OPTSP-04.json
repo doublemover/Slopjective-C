@@ -1,0 +1,33 @@
+{
+  "id": "EC-OPTSP-04",
+  "title": "Reject Optional forms in v1 reservation mode",
+  "feature": "optional spelling",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-6",
+    "spec/planning/issue_134_optional_spelling_diagnostics_package.md#issue-134-optional-spelling-diagnostics-package"
+  ],
+  "source": "// MODE: v1\nOptional<int> wrapV1(int value) {\n    return Optional<int>(value);\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OPT-SPELL-RESERVED-V1",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 9
+          }
+        },
+        "message": "optional constructor spellings are reserved in v1 mode",
+        "fixits": []
+      }
+    ]
+  }
+}

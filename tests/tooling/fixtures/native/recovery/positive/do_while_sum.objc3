@@ -1,0 +1,12 @@
+module DoWhileSum;
+
+fn main() -> i32 {
+  let i = 0;
+  let sum = 0;
+  do {
+    i = i + 1;
+    sum = sum + i;
+  } while (i < 5);
+  return sum;
+}
+

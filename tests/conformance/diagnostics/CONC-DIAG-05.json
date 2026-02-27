@@ -1,0 +1,31 @@
+{
+  "id": "CONC-DIAG-05",
+  "title": "Warn on unnecessary await when no suspension can occur in same-actor context",
+  "feature": "unnecessary await diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "actor class CONCDIAG05Counter : NSObject\n- (int)localCount;\n- (int)readWithAwait async;\n@end\n\n@implementation CONCDIAG05Counter\n- (int)readWithAwait async {\n    return await [self localCount];\n}\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-UNNECESSARY-AWAIT",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 17 }
+        },
+        "message": "expression is not potentially suspending; remove unnecessary 'await'"
+      }
+    ]
+  }
+}

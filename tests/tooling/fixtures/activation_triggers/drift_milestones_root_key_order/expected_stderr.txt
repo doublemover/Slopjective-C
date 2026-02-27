@@ -1,0 +1,1 @@
+error: open milestones snapshot object in tests/tooling/fixtures/activation_triggers/drift_milestones_root_key_order/milestones.json key order drift: expected=['generated_at_utc', 'source', 'count'] observed=['count', 'generated_at_utc', 'source']

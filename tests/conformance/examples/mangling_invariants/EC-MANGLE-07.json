@@ -1,0 +1,33 @@
+{
+  "id": "EC-MANGLE-07",
+  "title": "Reject import payload with unknown required mangling policy ID",
+  "feature": "mangling invariants",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_135_mangling_invariants_vectors_plan.md#issue-135-mangling-invariants-vectors-plan"
+  ],
+  "source": "// IMPORT: mangling_policy_id=unknown_policy\nint importedUnknownPolicy(void);\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "MANGLE-INV-UNKNOWN-POLICY",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 1,
+            "column": 1
+          },
+          "end": {
+            "line": 1,
+            "column": 44
+          }
+        },
+        "message": "import payload declares unsupported required mangling policy ID",
+        "fixits": []
+      }
+    ]
+  }
+}

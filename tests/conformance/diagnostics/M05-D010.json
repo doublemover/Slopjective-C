@@ -1,0 +1,49 @@
+{
+  "id": "M05-D010",
+  "title": "Scope-freeze baseline: CI determinism vectors keep stable payload mapping",
+  "feature": "M05 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m05/lane_d_m05_scope_freeze.md"
+  ],
+  "source": "void m05d010_ci_order(id lhs, id rhs);`n`nvoid m05d010_negative(void) {`n    m05d010_ci_order(@\"order=runtime\", @\"order=lexical\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-CI-ORDER-NONDETERMINISTIC",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 40
+          },
+          "end": {
+            "line": 4,
+            "column": 55
+          }
+        },
+        "message": "CI replay order must use canonical lexical diagnostics sequence",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 40
+              },
+              "end": {
+                "line": 4,
+                "column": 55
+              }
+            },
+            "replacement": "@\"order=canonical-lexical\""
+          }
+        ]
+      }
+    ]
+  }
+}

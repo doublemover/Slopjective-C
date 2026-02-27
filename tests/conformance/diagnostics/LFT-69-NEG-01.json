@@ -1,0 +1,54 @@
+{
+  "id": "LFT-69-NEG-01",
+  "title": "Strict diagnostics for suspicious lifetime extension, stack-bound escape, and unsafe bridging",
+  "feature": "strict lifetime and unsafe-escape diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-3-3",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef const char * (^LFT69Producer)(void);\nLFT69Producer lft69_sink;\n\nid lft69_makeOwner(void);\n\nvoid lft69_negative(void) {\n    __attribute__((objc_precise_lifetime)) id pinned = lft69_makeOwner();\n    const char stackBytes[] = \"lft69\";\n    lft69_sink = ^{\n        return stackBytes;\n    };\n    void *raw = (void *)pinned;\n    (void)raw;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ARC-SUSPICIOUS-LIFETIME-EXTENSION",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 5 },
+          "end": { "line": 7, "column": 42 }
+        },
+        "message": "objc_precise_lifetime extends value lifetime beyond inferred last use; remove the annotation unless an explicit extension is required",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-ARC-STACK-BOUND-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 16 },
+          "end": { "line": 10, "column": 25 }
+        },
+        "message": "stack-bound storage escapes through an escaping block; copy to owned storage or extend the backing owner lifetime explicitly",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-ARC-UNSAFE-BRIDGE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 17 },
+          "end": { "line": 12, "column": 24 }
+        },
+        "message": "implicit cast from Objective-C object pointer to 'void *' is unsafe in strict mode; use an explicit '__bridge' cast",
+        "fixits": []
+      }
+    ]
+  }
+}

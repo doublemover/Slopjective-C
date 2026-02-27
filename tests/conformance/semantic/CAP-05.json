@@ -1,0 +1,31 @@
+{
+  "id": "CAP-05",
+  "title": "Diagnose use-after-move on resource after move capture",
+  "feature": "move capture state diagnostics for resources",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef int cap_handle_t;\nvoid cap05_close(cap_handle_t handle);\ncap_handle_t cap05_open(void);\nint cap05_is_valid(cap_handle_t handle);\n\nint cap05_use_after_move_capture(void) {\n    cap_handle_t fd __attribute__((objc_resource(close=cap05_close, invalid=-1))) = cap05_open();\n    void (^handler)(void) = [move fd] {\n        (void)fd;\n    };\n    if (cap05_is_valid(fd)) {\n        handler();\n        return 1;\n    }\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-RESOURCE-USE-AFTER-MOVE-CAPTURE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 9 },
+          "end": { "line": 11, "column": 26 }
+        },
+        "message": "resource was moved by capture list item 'move fd'; reinitialize with reset before valid use",
+        "fixits": []
+      }
+    ]
+  }
+}

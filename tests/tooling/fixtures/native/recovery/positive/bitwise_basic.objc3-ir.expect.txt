@@ -1,0 +1,8 @@
+# Bitwise/shift lowering markers.
+define i32 @main()
+and i32
+or i32
+xor i32
+shl i32
+ashr i32
+ret i32

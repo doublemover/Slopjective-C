@@ -1,0 +1,38 @@
+{
+  "id": "OPT-61-02",
+  "title": "Reject postfix propagation from T? in non-optional carrier context",
+  "feature": "optional types T? with postfix propagation",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-3-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4"
+  ],
+  "source": "id requiredHandle(id? maybeHandle, id fallback) {\n    return maybeHandle?;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-OPTIONAL-RETURN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 24 }
+        },
+        "message": "postfix ? requires an optional-returning carrier context",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 24 }
+            },
+            "replacement": "maybeHandle != nil ? maybeHandle : fallback"
+          }
+        ]
+      }
+    ]
+  }
+}

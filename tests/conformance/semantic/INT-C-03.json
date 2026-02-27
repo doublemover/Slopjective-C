@@ -1,0 +1,29 @@
+{
+  "id": "INT-C-03",
+  "title": "Reject void-result async thunk callbacks that incorrectly include a result payload parameter",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "void intc03_flush(void) async throws;\\n\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC03FlushCompletionBad)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    int result,\\n    id<Error> _Nullable error);\\n\\nvoid intc03_flush_async_c(void * _Nullable context,\\n                          INTC03FlushCompletionBad _Nonnull completion);\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-THUNK-VOID-RESULT-SHAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 16 },
+          "end": { "line": 13, "column": 33 }
+        },
+        "message": "exported async thunk for a void-result function must omit the completion result parameter"
+      }
+    ]
+  }
+}

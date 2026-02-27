@@ -1,0 +1,30 @@
+{
+  "id": "ASY-02",
+  "title": "Reject await expression missing operand",
+  "feature": "async/await grammar",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-1-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id badAwaitSyntax(void) async {\n    return await;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-AWAIT-EXPECTED-EXPRESSION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 17 }
+        },
+        "message": "expected expression after 'await'"
+      }
+    ]
+  }
+}

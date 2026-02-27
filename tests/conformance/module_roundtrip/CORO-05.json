@@ -1,0 +1,76 @@
+{
+  "id": "CORO-05",
+  "title": "Reject async coroutine ABI metadata mismatches during interface verification",
+  "feature": "async coroutine metadata and ABI contract preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module CORO05Mismatch.objcmod --emit-interface CORO05Mismatch.obji %s\n// RUN: objc3c --verify-interface CORO05Mismatch.objcmod CORO05Mismatch.obji --assert-mismatch async:missing --assert-mismatch coroutine_model:v1:v0 --assert-mismatch async_call_abi:continuation:sync --assert-mismatch objc_executor(main):objc_executor(background)\n@interface CORO05Mismatch : NSObject\n- (id _Nonnull)fetch:(id _Nonnull)seed async __attribute__((objc_executor(main)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": 80
+          }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "metadata": {
+      "preserved_fields": [
+        "async_effect",
+        "async_coroutine_model_v1",
+        "async_calling_convention",
+        "executor_affinity_objc_executor"
+      ],
+      "mismatch_failures": [
+        {
+          "field_id": "async_effect",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "async_coroutine_model_v1",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "async_calling_convention",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        }
+      ]
+    }
+  }
+}

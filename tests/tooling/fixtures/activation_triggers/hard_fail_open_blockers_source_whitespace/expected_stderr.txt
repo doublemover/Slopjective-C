@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'source' must not contain leading/trailing whitespace in tests/tooling/fixtures/activation_triggers/hard_fail_open_blockers_source_whitespace/open_blockers.json

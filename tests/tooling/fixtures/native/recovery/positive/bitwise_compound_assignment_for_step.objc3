@@ -1,0 +1,29 @@
+module BitwiseCompoundAssignmentForStep;
+
+fn main() -> i32 {
+  let total = 0;
+
+  for (let mask = 15; mask > 0; mask &= (mask - 1)) {
+    total += mask;
+  }
+
+  for (let bits = 0; bits < 8; bits |= (bits + 1)) {
+    total += bits;
+  }
+
+  let flips = 0;
+  for (let x = 0; flips < 3; x ^= 1) {
+    total += x;
+    flips += 1;
+  }
+
+  for (let left = 1; left < 16; left <<= 1) {
+    total += left;
+  }
+
+  for (let right = 16; right > 0; right >>= 1) {
+    total += right;
+  }
+
+  return total;
+}

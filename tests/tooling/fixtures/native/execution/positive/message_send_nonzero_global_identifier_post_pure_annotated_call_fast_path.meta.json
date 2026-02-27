@@ -1,0 +1,7 @@
+{
+  "fixture": "message_send_nonzero_global_identifier_post_pure_annotated_call_fast_path.objc3",
+  "execution": {
+    "requires_runtime_shim": true,
+    "runtime_dispatch_symbol": "objc3_msgsend_i32"
+  }
+}

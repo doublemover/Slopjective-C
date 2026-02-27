@@ -1,0 +1,33 @@
+module BoolParamFlowRelational;
+
+fn pick(flag: bool, when_true: i32, when_false: i32) {
+  if (flag) {
+    return when_true;
+  } else {
+    return when_false;
+  }
+}
+
+fn score(lhs: i32, rhs: i32, strict: bool) {
+  let ahead = lhs > rhs;
+  let tied = lhs == rhs;
+
+  if (ahead && strict) {
+    return lhs;
+  }
+  if (tied && !strict) {
+    return lhs;
+  }
+  return rhs;
+}
+
+fn main() {
+  let strict_choice = score(9, 7, 1);
+  let relaxed_choice = score(5, 5, 0);
+
+  if ((strict_choice == 9) && (relaxed_choice == 5)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

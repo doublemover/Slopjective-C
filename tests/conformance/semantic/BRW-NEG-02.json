@@ -1,0 +1,49 @@
+{
+  "id": "BRW-NEG-02",
+  "title": "Reject storing borrowed pointers into heap/ivar/property storage",
+  "feature": "borrowed pointer escape analysis (intra-procedural minimum)",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "typedef struct BRWCell {\n    const char *slot;\n} BRWCell;\n\nBRWCell *brw_make_cell(void);\n\n@interface BRWOwner : NSObject {\n@public\n    const char *ivarSlot;\n}\n@property (nonatomic, assign) const char *propSlot;\n@end\n\nvoid brw_neg02_store_heap_ivar_property(BRWOwner *owner, borrowed const char *bytes) {\n    BRWCell *cell = brw_make_cell();\n    cell->slot = bytes;\n    owner->ivarSlot = bytes;\n    owner.propSlot = bytes;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 16, "column": 5 },
+          "end": { "line": 16, "column": 19 }
+        },
+        "message": "borrowed pointer escapes into heap-reachable storage; copy to owned storage, extend owner lifetime, or mark explicitly unsafe",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 17, "column": 5 },
+          "end": { "line": 17, "column": 24 }
+        },
+        "message": "borrowed pointer escapes into ivar storage; copy to owned storage, extend owner lifetime, or mark explicitly unsafe",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 18, "column": 5 },
+          "end": { "line": 18, "column": 23 }
+        },
+        "message": "borrowed pointer escapes into property storage; copy to owned storage, extend owner lifetime, or mark explicitly unsafe",
+        "fixits": []
+      }
+    ]
+  }
+}

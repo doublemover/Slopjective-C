@@ -1,0 +1,23 @@
+module ControlEmptyStatementBodies;
+
+fn main() -> i32 {
+  let x = 0;
+  ;
+
+  if (0)
+    ;
+  else
+    x = 1;
+
+  while (0)
+    ;
+
+  for (let j = 0; j < 3; j = j + 1)
+    ;
+
+  do
+    ;
+  while (0);
+
+  return x + 3;
+}

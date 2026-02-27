@@ -1,0 +1,75 @@
+{
+  "id": "M17-C003",
+  "title": "Preserve runtime hook identity and calling-convention tuple across lowering replay modes (issue #2098 / task M17-C003)",
+  "feature": "M17 Lane C runtime hook and calling-convention tuple stability; issue #2098; task M17-C003; sequence 3; dispatch title: [Compiler][M17][Lane C][M17-C003] Wire runtime hook and calling convention path (Negative-Path Hardening)",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\ntypedef int (*M17C003RuntimeHook)(\n    void * _Nullable context,\n    SEL _Nonnull selector,\n    int stateTag,\n    id _Nullable payload,\n    id<Error> _Nullable * _Nullable errorOut);\n\nM17C003RuntimeHook M17c003_resolve_hook(SEL _Nonnull selector);\n\nint M17c003_dispatch(void * _Nullable context,\n                     SEL _Nonnull selector,\n                     int stateTag,\n                     id _Nullable payload) {\n    M17C003RuntimeHook hook = M17c003_resolve_hook(selector);\n    if (hook == 0) {\n        return -1;\n    }\n\n    id<Error> err = nil;\n    int rc = hook(context, selector, stateTag, payload, &err);\n    if (rc == 0 && err == nil) {\n        return 1;\n    }\n    return -1;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "runtime hook identity is resolved deterministically from selector metadata before boundary dispatch",
+            "hook calling-convention tuple remains context, selector, stateTag, payload, errorOut",
+            "hook return and errorOut transport remain correlated in deterministic success/failure contract"
+          ],
+          "runtime_assertions": [
+            "M17c003_dispatch returns 1 for rc == 0 with nil errorOut",
+            "M17c003_dispatch returns -1 when hook is missing or returns error transport"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves hook identity lookup and tuple layout from -O0",
+            "optimization does not reorder hook argument tuple or collapse error transport semantics",
+            "hook dispatch fail-closed behavior remains deterministic under optimization"
+          ],
+          "runtime_assertions": [
+            "M17c003_dispatch behavior remains equivalent to -O0 under optimization",
+            "negative-path sentinel return (-1) remains stable for hook signature drift"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "runtime_hook.identity_selector_binding",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "runtime hook identity is bound to selector metadata without ambiguity",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "runtime_hook.calling_convention_tuple",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "hook tuple is context -> selector -> stateTag -> payload -> outError",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

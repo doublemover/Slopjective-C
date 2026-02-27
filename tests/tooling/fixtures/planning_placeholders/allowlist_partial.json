@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "token": "<COMMIT_SHA>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    },
+    {
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "token": "<status>",
+      "reason": "Allowed template placeholder for fixture coverage."
+    }
+  ]
+}

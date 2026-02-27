@@ -1,0 +1,25 @@
+{
+  "id": "M19-A004",
+  "title": "Accept M19 lane-A parser fixture baseline for issue #2327 task M19-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m19 lane-a parser compiler bootstrap build surface activation core strict recovery guard slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M19",
+    "milestone_number": 104,
+    "lane": "A",
+    "issue": 2327,
+    "task": "M19-A004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_4_CONCURRENCY_AND_EXECUTION.md#part-4-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_RECOVERY_GUARD_SLICE_S004__\\n#define __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_RECOVERY_GUARD_SLICE_S004__ 1\\n#endif\\n\\ntypedef struct M19A004_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M19A004_Probe;\\n\\nM19A004_Probe m19a004_probe(void) {\\n#if __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_RECOVERY_GUARD_SLICE_S004__\\n    M19A004_Probe probe = { 1, 4, 2327 };\\n#else\\n    M19A004_Probe probe = { 0, 4, 2327 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

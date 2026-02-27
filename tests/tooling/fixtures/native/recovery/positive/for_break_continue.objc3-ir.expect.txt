@@ -1,0 +1,14 @@
+# For-loop break/continue lowering markers.
+define i32 @main()
+for_cond_0:
+label %for_body_1, label %for_end_3
+for_body_1:
+if_then_4:
+br label %for_step_2
+if_then_7:
+br label %for_end_3
+for_step_2:
+store i32 %t18, ptr %i.addr.1, align 4
+br label %for_cond_0
+for_end_3:
+ret i32 %t19

@@ -1,0 +1,11 @@
+module MisplacedQualifierCaseLabelPure;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case pure:
+      return 1;
+    default:
+      return 0;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "INT-CXX-03",
+  "title": "Diagnose ObjC++ throws-to-C bridges that misplace or omit the canonical trailing outError",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -fsyntax-only %s\nstruct INTCXX03Token {\n    int value;\n};\n\nint intcxx03_parse(INTCXX03Token token, const char * _Nonnull text) throws;\n\nint intcxx03_parse_c(INTCXX03Token token, const char * _Nonnull text, id<Error> _Nullable * _Nullable outError);\n\nint intcxx03_parse_bad_order(id<Error> _Nullable * _Nullable outError, INTCXX03Token token, const char * _Nonnull text);\n\nint intcxx03_parse_bad_missing(INTCXX03Token token, const char * _Nonnull text);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-THROWS-THUNK-PARAM-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 1 },
+          "end": { "line": 10, "column": 122 }
+        },
+        "message": "ObjC++ throws-to-C thunk must place id<Error>* outError as the trailing parameter"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-THROWS-THUNK-MISSING-ERROR-OUT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 1 },
+          "end": { "line": 12, "column": 79 }
+        },
+        "message": "ObjC++ throws-to-C thunk must expose trailing outError so C and C++ callers can observe failure"
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+module InstancetypeReturnNullabilityAliasSignature;
+
+fn chooseMaybe(flag: bool, when_true: instancetype, when_false: instancetype) -> instancetype? {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn chooseAlways(flag: bool, when_true: instancetype, when_false: instancetype) -> instancetype! {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main() -> i32 {
+  return chooseMaybe(true, 30, 2) + chooseAlways(false, 5, 7);
+}

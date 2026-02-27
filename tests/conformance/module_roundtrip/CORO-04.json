@@ -1,0 +1,55 @@
+{
+  "id": "CORO-04",
+  "title": "Preserve async coroutine ABI metadata across module and textual interface round-trip",
+  "feature": "async coroutine metadata and ABI contract preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module CORO04.objcmod --emit-interface CORO04.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module CORO04-import.objcmod --import-interface CORO04.obji --emit-interface CORO04-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface CORO04.objcmod CORO04-roundtrip.obji %s\n// RUN: objc3c --verify-interface CORO04-import.objcmod CORO04.obji %s\n#pragma objc assume_nonnull begin\n@interface CORO04Surface : NSObject\n- (id _Nonnull)fetch:(id _Nonnull)seed async;\n- (id _Nonnull)fetchChecked:(id _Nonnull)seed throws async;\n- (id _Nonnull)fetchOnMain:(id _Nonnull)seed async __attribute__((objc_executor(main)));\n@end\n#pragma objc assume_nonnull end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "async_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "async_coroutine_model_v1",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "async_throws_effect_composition",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

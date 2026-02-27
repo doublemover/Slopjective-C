@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'open_blockers[0].source_path' must use '/' path separators

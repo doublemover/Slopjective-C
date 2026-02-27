@@ -1,0 +1,35 @@
+{
+  "id": "EC-COALESCE-05",
+  "title": "Reject RHS type mismatch in nil-coalescing",
+  "feature": "??",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7"
+  ],
+  "source": "NSString * ensureName(NSString * _Nullable maybeName) {\n    return maybeName ?? 42;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-COALESCE-TYPE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 27 }
+        },
+        "message": "right operand of ?? must convert to the unwrapped left operand type",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 25 },
+              "end": { "line": 2, "column": 27 }
+            },
+            "replacement": "@\"(unknown)\""
+          }
+        ]
+      }
+    ]
+  }
+}

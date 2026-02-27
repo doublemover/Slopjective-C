@@ -1,0 +1,29 @@
+{
+  "id": "META-MAC-02",
+  "title": "Reject non-deterministic macro expansion inputs",
+  "feature": "macro expansion sandbox diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12"
+  ],
+  "source": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint nondeterministic_seed(int value) {\\n    #macro_eval(\"emitTimestamp(now())\")\\n    return value;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MACRO-NONDETERMINISTIC-EXPANSION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 5 },
+          "end": { "line": 3, "column": 37 }
+        },
+        "message": "macro expansion is not deterministic under reproducible mode",
+        "fixits": []
+      }
+    ]
+  }
+}

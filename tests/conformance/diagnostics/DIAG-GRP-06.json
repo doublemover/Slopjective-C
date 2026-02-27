@@ -1,0 +1,16 @@
+{
+  "id": "DIAG-GRP-06",
+  "title": "Concurrency group accepts awaited actor-isolated access",
+  "feature": "minimum diagnostic groups: concurrency",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "actor class DIAGGRP06Actor : NSObject\n- (int)value;\n@end\n\nint diaggrp06_ok(DIAGGRP06Actor *actor) async {\n    return await [actor value];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

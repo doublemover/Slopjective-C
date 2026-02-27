@@ -1,0 +1,25 @@
+{
+  "id": "M13-A004",
+  "title": "Accept M13 lane-A parser fixture baseline for issue #1787 task M13-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m13 lane-a parser deterministic textual interface emitter slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M13",
+    "milestone_number": 98,
+    "lane": "A",
+    "issue": 1787,
+    "task": "M13-A004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_RECOVERY_GUARDS__\n#define __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_RECOVERY_GUARDS__ 1\n#endif\n\ntypedef struct M13A004_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M13A004_Probe;\n\nM13A004_Probe m13a004_probe(void) {\n#if __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_RECOVERY_GUARDS__\n    M13A004_Probe probe = { 1, 4, 1787 };\n#else\n    M13A004_Probe probe = { 0, 4, 1787 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

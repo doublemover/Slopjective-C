@@ -1,0 +1,1 @@
+error: catalog task status alias mismatch in tests/tooling/fixtures/activation_triggers/drift_catalog_status_alias_mismatch/catalog.json for row index 0: execution_status='todo' status='closed'

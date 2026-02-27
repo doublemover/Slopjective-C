@@ -1,0 +1,11 @@
+// Negative fixture: typed bool return rejects non-bool-compatible return expression.
+// Expected diagnostic code(s): O3S211.
+module NegativeReturnAnnotationTypeMismatch;
+
+fn bad() -> bool {
+  return 7;
+}
+
+fn main() -> i32 {
+  return 0;
+}

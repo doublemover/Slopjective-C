@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3S214.
+module NegativeAssignmentUpdateUnknownTarget;
+
+fn main() -> i32 {
+  value++;
+  return 0;
+}

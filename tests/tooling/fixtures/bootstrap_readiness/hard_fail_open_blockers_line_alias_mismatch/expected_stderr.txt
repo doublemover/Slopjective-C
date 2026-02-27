@@ -1,0 +1,1 @@
+error: open blockers snapshot line alias mismatch in tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_line_alias_mismatch/open_blockers.json for row index 0: line_number=21 line=18

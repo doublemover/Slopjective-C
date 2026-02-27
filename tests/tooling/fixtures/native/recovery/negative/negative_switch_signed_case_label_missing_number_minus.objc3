@@ -1,0 +1,13 @@
+// Negative fixture: signed switch case labels require numeric literals after sign tokens.
+// Expected diagnostic code(s): O3P103.
+module NegativeSwitchSignedCaseLabelMissingNumberMinus;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case -:
+      return 1;
+    default:
+      return 0;
+  }
+}

@@ -1,0 +1,7 @@
+module ForNoConditionBodyReturnAccept;
+
+fn main() -> i32 {
+  for (let i = 0; ; i = i + 1) {
+    return 42;
+  }
+}

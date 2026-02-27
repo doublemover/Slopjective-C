@@ -1,0 +1,8 @@
+module WhileIdentifierConstTrueBodyReturnAccept;
+
+fn main() -> i32 {
+  let gate = 1;
+  while (gate) {
+    return 42;
+  }
+}

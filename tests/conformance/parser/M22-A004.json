@@ -1,0 +1,25 @@
+{
+  "id": "M22-A004",
+  "title": "Accept M22 lane-A parser fixture baseline for issue #2543 task M22-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m22 lane a parser lowering abi contracts runtime bridge add parser recovery and ambiguity guard conformance expansion slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M22",
+    "milestone_number": 107,
+    "lane": "A",
+    "issue": 2543,
+    "task": "M22-A004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M22_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__\\n#define __OBJC3_FEATURE_M22_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__ 1\\n#endif\\n\\ntypedef struct M22A004_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M22A004_Probe;\\n\\nM22A004_Probe m22a004_probe(void) {\\n#if __OBJC3_FEATURE_M22_A004_ADD_PARSER_RECOVERY_AND_AMBIGUITY_GUARD_CONFORMAN__\\n    M22A004_Probe probe = { 1, 4, 2543 };\\n#else\\n    M22A004_Probe probe = { 0, 4, 2543 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

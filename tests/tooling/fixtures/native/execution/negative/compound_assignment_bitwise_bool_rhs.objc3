@@ -1,0 +1,8 @@
+module CompoundAssignmentBitwiseBoolRhs;
+
+fn main() -> i32 {
+  let value = 5;
+  let flag = true;
+  value ^= flag;
+  return value;
+}

@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeGlobalConstReferenceCycleInitializer;
+
+let left = right + 1;
+let right = left + 1;
+
+fn main() -> i32 {
+  return left + right;
+}

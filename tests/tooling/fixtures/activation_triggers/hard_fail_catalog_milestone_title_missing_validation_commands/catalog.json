@@ -1,0 +1,12 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-4102",
+      "milestone_title": "v0.15 Activation Execution Hardening W1",
+      "execution_status": "closed",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w1_tooling_validation_20260224.md:1"
+      ]
+    }
+  ]
+}

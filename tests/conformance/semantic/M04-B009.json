@@ -1,0 +1,28 @@
+{
+  "id": "M04-B009",
+  "title": "Document semantic invariants with paired throwing-call positive and edge-case negative paths",
+  "feature": "M04 lane B issue #1324 semantic invariants and edge-case documentation",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m04/lane_b_m04_scope_freeze.md"
+  ],
+  "source": "id m04b009_may_fail(void) throws;\n\nid m04b009_positive(void) throws {\n    return try m04b009_may_fail();\n}\n\nid m04b009_negative(void) throws {\n    return m04b009_may_fail();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-THROWS-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 30 }
+        },
+        "message": "calling a throwing function requires 'try' in Objective-C 3.0"
+      }
+    ]
+  }
+}

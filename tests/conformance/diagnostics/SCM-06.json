@@ -1,0 +1,97 @@
+{
+  "id": "SCM-06",
+  "title": "Verify conformance report mode/profile mapping for strictness and sub-mode",
+  "feature": "strictness and concurrency sub-mode selection",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-2",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10"
+  ],
+  "source": "int scm06_mode_report_probe(void) {\n    return 0;\n}\n",
+  "matrix": [
+    {
+      "name": "strict-off",
+      "flags": [
+        "-fobjc3-strictness=strict",
+        "-fobjc3-concurrency=off"
+      ],
+      "expect_report": {
+        "mode": {
+          "strictness": "strict",
+          "concurrency": "off"
+        },
+        "claimed_profiles": {
+          "must_exclude": [
+            "strict-concurrency",
+            "strict-system"
+          ]
+        }
+      }
+    },
+    {
+      "name": "strict-strict",
+      "flags": [
+        "-fobjc3-strictness=strict",
+        "-fobjc3-concurrency=strict"
+      ],
+      "expect_report": {
+        "mode": {
+          "strictness": "strict",
+          "concurrency": "strict"
+        },
+        "claimed_profiles": {
+          "must_include": [
+            "strict-concurrency"
+          ],
+          "must_exclude": [
+            "strict-system"
+          ]
+        }
+      }
+    },
+    {
+      "name": "strict-system-off",
+      "flags": [
+        "-fobjc3-strictness=strict-system",
+        "-fobjc3-concurrency=off"
+      ],
+      "expect_report": {
+        "mode": {
+          "strictness": "strict-system",
+          "concurrency": "off"
+        },
+        "claimed_profiles": {
+          "must_exclude": [
+            "strict-concurrency",
+            "strict-system"
+          ]
+        }
+      }
+    },
+    {
+      "name": "strict-system-strict",
+      "flags": [
+        "-fobjc3-strictness=strict-system",
+        "-fobjc3-concurrency=strict"
+      ],
+      "expect_report": {
+        "mode": {
+          "strictness": "strict-system",
+          "concurrency": "strict"
+        },
+        "claimed_profiles": {
+          "must_include": [
+            "strict-system"
+          ]
+        }
+      }
+    }
+  ],
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

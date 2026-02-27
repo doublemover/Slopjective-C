@@ -1,0 +1,29 @@
+{
+  "id": "M01-B003",
+  "title": "Preserve try-annotated positive path and diagnose unguarded throwing call",
+  "feature": "M01 lane B throws-effect call-site enforcement",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+  ],
+  "source": "id m01b003_may_fail(void) throws;\n\nid m01b003_positive(void) throws {\n    return try m01b003_may_fail();\n}\n\nid m01b003_negative(void) throws {\n    return m01b003_may_fail();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-THROWS-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 30 }
+        },
+        "message": "calling a throwing function requires 'try' in Objective-C 3.0"
+      }
+    ]
+  }
+}

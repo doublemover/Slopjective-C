@@ -1,0 +1,48 @@
+{
+  "id": "M05-A008",
+  "title": "Reject actor declaration when strict syntax gate routes parser to language version 2 mode",
+  "feature": "wave-0 negative-path coverage for mode-gated grammar",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(2)\nactor class m05a008Counter : NSObject\n@end\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-ACTOR-MODE-UNAVAILABLE",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 6
+          }
+        },
+        "message": "actor declarations require Objective-C language version 3 mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": 6
+              }
+            },
+            "replacement": "class"
+          }
+        ]
+      }
+    ]
+  }
+}

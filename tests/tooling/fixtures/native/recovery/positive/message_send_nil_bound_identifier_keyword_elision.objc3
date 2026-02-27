@@ -1,0 +1,8 @@
+// Positive fixture: immutable nil-bound identifier keyword message-send is compile-time elided.
+module MessageSendNilBoundIdentifierKeywordElision;
+
+fn main() {
+  let receiver = nil;
+  let sent = [receiver ping: 2 pong: 3];
+  return sent + 13;
+}

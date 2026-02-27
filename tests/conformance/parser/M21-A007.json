@@ -1,0 +1,25 @@
+{
+  "id": "M21-A007",
+  "title": "Accept M21 lane-A parser fixture baseline for issue #2474 task M21-A007 (Wire mode/flag behavior through frontend (Refactor and Simplification))",
+  "feature": "m21 lane-a parser semantic analysis type system core wire mode flag behavior through frontend refactor and simplification slice 07",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M21",
+    "milestone_number": 106,
+    "lane": "A",
+    "issue": 2474,
+    "task": "M21-A007",
+    "sequence": 7
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M21_A_007_WIRE_MODE_FLAG_BEHAVIOR_THROUGH_FRONTEND_REFACTO__\\n#define __OBJC3_FEATURE_M21_A_007_WIRE_MODE_FLAG_BEHAVIOR_THROUGH_FRONTEND_REFACTO__ 1\\n#endif\\n\\ntypedef struct M21A007_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M21A007_Probe;\\n\\nM21A007_Probe m21a007_probe(void) {\\n#if __OBJC3_FEATURE_M21_A_007_WIRE_MODE_FLAG_BEHAVIOR_THROUGH_FRONTEND_REFACTO__\\n    M21A007_Probe probe = { 1, 7, 2474 };\\n#else\\n    M21A007_Probe probe = { 0, 7, 2474 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

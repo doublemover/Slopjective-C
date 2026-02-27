@@ -1,0 +1,10 @@
+module NegativeLoopMalformedWhile;
+// Expected diagnostic code(s): O3P103, O3P100.
+
+fn main() -> i32 {
+  let i = 0;
+  while (i < ) {
+    let i = i + 1;
+  }
+  return i;
+}

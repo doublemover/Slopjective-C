@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeNilLiteralParserMissingRhs;
+
+let seed = nil + ;
+
+fn main() -> i32 {
+  return 0;
+}

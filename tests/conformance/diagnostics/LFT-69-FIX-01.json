@@ -1,0 +1,41 @@
+{
+  "id": "LFT-69-FIX-01",
+  "title": "Strict unsafe-bridge diagnostic includes machine-applicable explicit-bridge fix-it",
+  "feature": "strict lifetime and unsafe-escape diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-3-3",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-7",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-9-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "void lft69_consumeRaw(void *raw);\n\nvoid lft69_fix(id value) {\n    lft69_consumeRaw((void *)value);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ARC-UNSAFE-BRIDGE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 22 },
+          "end": { "line": 4, "column": 29 }
+        },
+        "message": "implicit cast from Objective-C object pointer to 'void *' is unsafe in strict mode; use an explicit '__bridge' cast",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 22 },
+              "end": { "line": 4, "column": 29 }
+            },
+            "replacement": "(__bridge void *)"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "IFC-54-02",
+  "title": "Reject nondeterministic textual interface emission requests in strict profile",
+  "feature": "textual interface emission mode",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-interface IFC5402.obji --emit-interface-mode=text --emit-interface-format=source-order %s\n#pragma objc_interface_emission(order=source)\n@interface IFC54SourceOrder : NSObject\n- (id _Nonnull)firstValue;\n- (id _Nonnull)secondValue;\n@end\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-DETERMINISTIC-EMIT-REQUIRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 43 }
+        },
+        "message": "strict profile requires deterministic textual interface emission order",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 1 },
+              "end": { "line": 2, "column": 43 }
+            },
+            "replacement": "#pragma objc_interface_emission(order=deterministic)"
+          }
+        ]
+      }
+    ]
+  }
+}

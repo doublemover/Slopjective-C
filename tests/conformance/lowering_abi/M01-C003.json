@@ -1,0 +1,78 @@
+{
+  "id": "M01-C003",
+  "title": "Preserve Objective-C throws IMP trailing outError ABI shape across replayable module builds",
+  "feature": "throws IMP ABI stability for replay-safe lowering",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/DECISIONS_LOG.md#decisions-d-009",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 --emit-module M01C003.objcmod --emit-interface M01C003.obji %s\n// RUN: objc3c -fobjc-version=3 -O2 --emit-module M01C003.opt.objcmod --emit-interface M01C003.opt.obji %s\n// RUN: objc3c --verify-interface M01C003.objcmod M01C003.obji %s\n// RUN: objc3c --verify-interface M01C003.opt.objcmod M01C003.opt.obji %s\n@interface M01C003Worker : NSObject\n- (int)work:(int)input throws;\n@end\n\n@implementation M01C003Worker\n- (int)work:(int)input throws {\n    return input + 7;\n}\n@end\n\ntypedef int (*M01C003WorkIMP)(id, SEL, int, id<Error> _Nullable * _Nullable);\n\nint m01c003_call_imp(M01C003Worker * _Nonnull worker, int value) {\n    M01C003WorkIMP imp = (M01C003WorkIMP)[worker methodForSelector:@selector(work:)];\n    id<Error> err = nil;\n    int result = imp(worker, @selector(work:), value, &err);\n    return err != nil ? -1 : result;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "throws method IMP type preserves trailing outError parameter while selector spelling remains unchanged",
+            "module and textual interface replay preserve throws ABI metadata consumed by separate-compilation callers",
+            "direct IMP call path remains ABI-compatible with throwing method lowering"
+          ],
+          "runtime_assertions": [
+            "m01c003_call_imp returns value + 7 when outError remains nil",
+            "m01c003_call_imp returns -1 on negative-path outcomes where outError is unexpectedly populated"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves trailing outError IMP shape from -O0",
+            "optimized module/interface replay does not drift throws ABI metadata fields",
+            "selector-level surface and ABI-level throws transport remain split and stable"
+          ],
+          "runtime_assertions": [
+            "m01c003_call_imp behavior remains equivalent to -O0 under optimization",
+            "negative-path outError sentinel (-1) remains deterministic under optimized lowering"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "effects.throws",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "throwing call surfaces preserve outError transport semantics across modes",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "objc_method_imp_throws_signature",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "IMP function-pointer shape for throws methods includes trailing outError",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

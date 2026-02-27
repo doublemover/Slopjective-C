@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'dependencies' must match deterministic W5 dependency set ['#1071', '#1072'] for lane-B dispatch-evidence contract rows in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_dispatch_w5_dependencies_mismatch/catalog.json: observed=['#1071', '#9999']

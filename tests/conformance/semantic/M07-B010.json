@@ -1,0 +1,36 @@
+{
+  "id": "M07-B010",
+  "title": "Require await on cross-executor call to preserve deterministic semantic pass ordering",
+  "feature": "M07 lane B issue #1482 deterministic semantic pass ordering constraints",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m07/lane_b_m07_scope_freeze.md"
+  ],
+  "source": "id m07b010_async_call(void) async;\nid m07b010_main_only(id seed) __attribute__((objc_executor(main)));\n\nid m07b010_positive(id seed) async __attribute__((objc_executor(main))) {\n    id value = await m07b010_async_call();\n    return m07b010_main_only(seed);\n}\n\nid m07b010_negative(id seed) async __attribute__((objc_executor(global))) {\n    id value = m07b010_main_only(seed);\n    return value;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 10,
+            "column": 16
+          },
+          "end": {
+            "line": 10,
+            "column": 39
+          }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'"
+      }
+    ]
+  }
+}

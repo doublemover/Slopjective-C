@@ -1,0 +1,25 @@
+{
+  "id": "M17-A035",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #2026 task M17-A035 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict normalization proof slice 35",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 2026,
+    "task": "M17-A035",
+    "sequence": 35
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_5_FRONTEND_PROCESSING_MODEL.md#part-5-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-11"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S035__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S035__ 1\\n#endif\\n\\ntypedef struct M17A035_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A035_Probe;\\n\\nM17A035_Probe m17a035_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S035__\\n    M17A035_Probe probe = { 1, 35, 2026 };\\n#else\\n    M17A035_Probe probe = { 0, 35, 2026 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

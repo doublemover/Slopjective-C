@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3P107, O3P100.
+module NegativeFoundationAliasParserMissingParamColon;
+
+fn pick(flag BOOL, value: NSInteger) -> NSUInteger {
+  return value;
+}
+
+fn main() -> i32 {
+  return pick(true, 7);
+}

@@ -1,0 +1,7 @@
+// Negative fixture: declaration qualifiers are invalid in message receiver expression position.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierMessageReceiverExtern;
+
+fn main() -> i32 {
+  return [extern ping];
+}

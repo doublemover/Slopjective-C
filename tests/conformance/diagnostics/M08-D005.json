@@ -1,0 +1,50 @@
+{
+  "id": "M08-D005",
+  "title": "Issue #1561 / M08-D005: Scope-freeze baseline: deterministic error rendering keeps stable payload mapping",
+  "feature": "M08 lane D diagnostic payload/code mapping freeze (issue #1561, task M08-D005)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m08/lane_d_m08_scope_freeze.md",
+    "spec/planning/compiler/m08/lane_d_m08_execution_packet_20260226.md"
+  ],
+  "source": "void m08d005_render(id lhs, id rhs);`n`nvoid m08d005_negative(void) {`n    m08d005_render(@\"order=runtime\", @\"order=lexical\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-RENDER-ORDER-NONDETERMINISTIC",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 39
+          },
+          "end": {
+            "line": 4,
+            "column": 54
+          }
+        },
+        "message": "issue #1561 task M08-D005: diagnostic rendering order must be canonical for deterministic M08 replay",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 39
+              },
+              "end": {
+                "line": 4,
+                "column": 54
+              }
+            },
+            "replacement": "@\"order=canonical-lexical\""
+          }
+        ]
+      }
+    ]
+  }
+}

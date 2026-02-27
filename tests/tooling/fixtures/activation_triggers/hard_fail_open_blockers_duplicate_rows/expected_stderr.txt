@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'open_blockers' contains duplicate blocker row ('BLK-M33-01', 'spec/planning/v015_dispatch_evidence_reliability_w2_acceptance_matrix_20260225.md', 121) in tests/tooling/fixtures/activation_triggers/hard_fail_open_blockers_duplicate_rows/open_blockers.json

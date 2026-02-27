@@ -1,0 +1,29 @@
+{
+  "id": "META-MAC-01",
+  "title": "Reject macro expansion that requests blocked host operations",
+  "feature": "macro expansion sandbox diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12"
+  ],
+  "source": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint blocked_host_call(int value) {\\n    #macro_eval(\"host.fs.read('/etc/passwd')\")\\n    return value;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MACRO-SANDBOX-VIOLATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 5 },
+          "end": { "line": 3, "column": 43 }
+        },
+        "message": "macro expansion attempted a blocked host capability",
+        "fixits": []
+      }
+    ]
+  }
+}

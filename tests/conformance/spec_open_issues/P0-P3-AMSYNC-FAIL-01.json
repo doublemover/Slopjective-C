@@ -1,0 +1,33 @@
+{
+  "id": "P0-P3-AMSYNC-FAIL-01",
+  "title": "Detect abstract-machine drift against seeded baseline anchors",
+  "feature": "part0 abstract-machine synchronization drift detection",
+  "bucket": "spec_open_issues",
+  "profile": "core",
+  "profile_scope": "all",
+  "seed_alias": "S1-P0-AMSYNC",
+  "required_outcome": "required-fail",
+  "dependency_ref": "Part0:A-03,A-04,B-12@spec-baseline",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_149_lane_a_consolidated_closure_bundle.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "baseline_hash=4f5c7a2\\ndrift_hash=13ce9b1\\nchanged_anchor=part-3-3-2-2\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "AMSYNC-DRIFT-DETECTED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 16 }
+        },
+        "message": "baseline and current abstract-machine anchor hashes differ",
+        "fixits": []
+      }
+    ],
+    "signal": "AMSYNC-DRIFT-DETECTED"
+  }
+}

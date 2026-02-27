@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "extern_pure_missing_fn_keyword.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P100",
+      "expected 'fn' after 'pure'"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

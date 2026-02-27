@@ -1,0 +1,21 @@
+{
+  "id": "RES-01",
+  "title": "Register resource cleanup actions on the unified scope-exit stack",
+  "feature": "resource cleanup registration and LIFO scope-exit semantics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef int res_handle_t;\nvoid res_close_primary(res_handle_t handle);\nvoid res_close_secondary(res_handle_t handle);\nres_handle_t res_open(int seed);\n\nint res01_register_cleanup_actions(int seed) {\n    int trace = 0;\n    res_handle_t primary __attribute__((objc_resource(close=res_close_primary, invalid=-1))) = res_open(seed);\n    defer { trace = trace * 10 + 1; };\n    res_handle_t secondary __attribute__((objc_resource(close=res_close_secondary, invalid=-1))) = res_open(seed + 1);\n    defer { trace = trace * 10 + 2; };\n    return trace + (primary >= 0 ? 100 : 0) + (secondary >= 0 ? 10 : 0);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

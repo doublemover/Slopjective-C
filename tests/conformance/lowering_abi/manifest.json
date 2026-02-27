@@ -1,0 +1,1069 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-conformance-lowering-abi-wave",
+  "description": "Lowering/ABI fixtures for ARC/defer-unwind/throws-ABI/async-coro/cancellation/executor/actor/system-resource/lifetime/interop lanes (issues #67, #68, #71, #76, #81, #82, #83, #84, #89, #90, #101, #102, #1189, #1190, #1191, #1192, #1193, #1194, #1195, #1196, #1232..#1240, #1278..#1286, #1326..#1334, #1378..#1389, #1432..#1440).",
+  "groups": [
+    {
+      "name": "issue_67_arc_semantic_preservation",
+      "feature": "ARC correctness under new-language lowering",
+      "issue": 67,
+      "files": [
+        "ARC-67-01.json",
+        "ARC-67-02.json"
+      ]
+    },
+    {
+      "name": "issue_68_suspension_autorelease_pool_contract",
+      "feature": "suspension-point autorelease pool behavior for async slices",
+      "issue": 68,
+      "files": [
+        "ARP-68-RT-01.json",
+        "ARP-68-RT-02.json"
+      ]
+    },
+    {
+      "name": "issue_71_defer_normal_and_unwind",
+      "feature": "defer execution on normal and unwind exits",
+      "issue": 71,
+      "files": [
+        "DEF-71-RT-01.json",
+        "DEF-71-RT-02.json"
+      ]
+    },
+    {
+      "name": "issue_76_throws_abi_stability",
+      "feature": "stable throws ABI and lowering contract",
+      "issue": 76,
+      "files": [
+        "THR-76-ABI-01.json",
+        "THR-76-ABI-02.json"
+      ]
+    },
+    {
+      "name": "issue_81_async_coroutine_lowering",
+      "feature": "coroutine-based async lowering and ABI stability",
+      "issue": 81,
+      "files": [
+        "CORO-01.json",
+        "CORO-02.json",
+        "CORO-03.json"
+      ]
+    },
+    {
+      "name": "issue_82_cancellation_lowering",
+      "feature": "cancellation propagation and task-context lowering behavior",
+      "issue": 82,
+      "files": [
+        "CAN-05.json",
+        "CAN-06.json",
+        "CAN-07.json"
+      ]
+    },
+    {
+      "name": "issue_83_executor_hop_lowering",
+      "feature": "executor hop insertion/elision and metadata-lowering checks",
+      "issue": 83,
+      "files": [
+        "EXE-04.json"
+      ]
+    },
+    {
+      "name": "issue_84_actor_isolation_lowering",
+      "feature": "actor isolation metadata and boundary-lowering checks",
+      "issue": 84,
+      "files": [
+        "ACT-05.json",
+        "ACT-06.json",
+        "ACT-07.json"
+      ]
+    },
+    {
+      "name": "issue_89_resource_cleanup_lowering",
+      "feature": "resource cleanup runtime ordering and aggregate cleanup contracts",
+      "issue": 89,
+      "files": [
+        "RES-04.json",
+        "RES-05.json",
+        "AGR-RT-01.json",
+        "AGR-RT-02.json",
+        "AGR-RT-03.json"
+      ]
+    },
+    {
+      "name": "issue_90_lifetime_extension_lowering",
+      "feature": "withLifetime/keepAlive ARC interaction at scope and suspension boundaries",
+      "issue": 90,
+      "files": [
+        "LIFE-04.json",
+        "LIFE-05.json"
+      ]
+    },
+    {
+      "name": "issue_101_c_interop_lowering",
+      "feature": "C/ObjC runtime async-thunk ABI and ownership boundary behavior",
+      "issue": 101,
+      "files": [
+        "INT-C-07.json",
+        "INT-C-08.json",
+        "INT-C-09.json",
+        "INT-C-10.json",
+        "INT-C-11.json",
+        "INT-C-12.json"
+      ]
+    },
+    {
+      "name": "issue_102_objcxx_interop_lowering",
+      "feature": "ObjC++ lowering parity for ownership, throws, and async thunk behavior",
+      "issue": 102,
+      "files": [
+        "INT-CXX-05.json",
+        "INT-CXX-06.json",
+        "INT-CXX-07.json",
+        "INT-CXX-08.json"
+      ]
+    },
+    {
+      "name": "issue_1189_m01_lane_c_async_completion_signature_order",
+      "feature": "M01 Lane C async C-boundary completion ordering and status/result/error contract",
+      "issue": 1189,
+      "files": [
+        "M01-C001.json"
+      ]
+    },
+    {
+      "name": "issue_1190_m01_lane_c_completion_status_width_replay_guard",
+      "feature": "M01 Lane C strict replay guard for async completion status-width metadata drift",
+      "issue": 1190,
+      "files": [
+        "M01-C002.json"
+      ]
+    },
+    {
+      "name": "issue_1191_m01_lane_c_throws_imp_shape_stability",
+      "feature": "M01 Lane C throws IMP trailing outError ABI shape stability",
+      "issue": 1191,
+      "files": [
+        "M01-C003.json"
+      ]
+    },
+    {
+      "name": "issue_1192_m01_lane_c_nonthrowing_cancellation_status_mapping",
+      "feature": "M01 Lane C non-throwing cancellation status ABI mapping",
+      "issue": 1192,
+      "files": [
+        "M01-C004.json"
+      ]
+    },
+    {
+      "name": "issue_1193_m01_lane_c_isolation_metadata_replay_guard",
+      "feature": "M01 Lane C actor isolation metadata replay verification fail-closed checks",
+      "issue": 1193,
+      "files": [
+        "M01-C005.json"
+      ]
+    },
+    {
+      "name": "issue_1194_m01_lane_c_executor_metadata_drift_guard",
+      "feature": "M01 Lane C executor-affinity metadata drift guard for hop lowering",
+      "issue": 1194,
+      "files": [
+        "M01-C006.json"
+      ]
+    },
+    {
+      "name": "issue_1195_m01_lane_c_coroutine_frame_cleanup_replay",
+      "feature": "M01 Lane C coroutine frame lifetime and defer cleanup replay checks",
+      "issue": 1195,
+      "files": [
+        "M01-C007.json"
+      ]
+    },
+    {
+      "name": "issue_1196_m01_lane_c_async_context_lifetime_guard",
+      "feature": "M01 Lane C strict async callback context lifetime boundary guard",
+      "issue": 1196,
+      "files": [
+        "M01-C008.json"
+      ]
+    },
+    {
+      "name": "m02_lane_c_issue_1232_1240_lowering_scope_freeze",
+      "feature": "M02 Lane C lowering scope-freeze coverage from issue_1232_m02_lane_c through issue_1240_m02_lane_c with deterministic fixture mapping",
+      "issue": 1232,
+      "issues": [
+        1232,
+        1233,
+        1234,
+        1235,
+        1236,
+        1237,
+        1238,
+        1239,
+        1240
+      ],
+      "files": [
+        "M02-C001.json",
+        "M02-C002.json",
+        "M02-C003.json",
+        "M02-C004.json",
+        "M02-C005.json",
+        "M02-C006.json",
+        "M02-C007.json",
+        "M02-C008.json",
+        "M02-C009.json"
+      ]
+    },
+    {
+      "name": "m03_lane_c_issue_1278_1286_lowering_scope_freeze",
+      "feature": "M03 Lane C lowering scope-freeze coverage from issue_1278_m03_lane_c through issue_1286_m03_lane_c with deterministic fixture mapping",
+      "issue": 1278,
+      "issues": [
+        1278,
+        1279,
+        1280,
+        1281,
+        1282,
+        1283,
+        1284,
+        1285,
+        1286
+      ],
+      "files": [
+        "M03-C001.json",
+        "M03-C002.json",
+        "M03-C003.json",
+        "M03-C004.json",
+        "M03-C005.json",
+        "M03-C006.json",
+        "M03-C007.json",
+        "M03-C008.json",
+        "M03-C009.json"
+      ]
+    },
+    {
+      "name": "m04_lane_c_issue_1326_1334_lowering_scope_freeze",
+      "feature": "M04 Lane C lowering scope-freeze coverage from issue_1326_m04_lane_c through issue_1334_m04_lane_c with deterministic fixture mapping",
+      "issue": 1326,
+      "issues": [
+        1326,
+        1327,
+        1328,
+        1329,
+        1330,
+        1331,
+        1332,
+        1333,
+        1334
+      ],
+      "files": [
+        "M04-C001.json",
+        "M04-C002.json",
+        "M04-C003.json",
+        "M04-C004.json",
+        "M04-C005.json",
+        "M04-C006.json",
+        "M04-C007.json",
+        "M04-C008.json",
+        "M04-C009.json"
+      ]
+    },
+    {
+      "name": "m05_lane_c_issue_1378_1389_lowering_scope_freeze",
+      "feature": "M05 Lane C lowering scope-freeze coverage from issue_1378_m05_lane_c through issue_1389_m05_lane_c with deterministic fixture mapping",
+      "issue": 1378,
+      "issues": [
+        1378,
+        1379,
+        1380,
+        1381,
+        1382,
+        1383,
+        1384,
+        1385,
+        1386,
+        1387,
+        1388,
+        1389
+      ],
+      "files": [
+        "M05-C001.json",
+        "M05-C002.json",
+        "M05-C003.json",
+        "M05-C004.json",
+        "M05-C005.json",
+        "M05-C006.json",
+        "M05-C007.json",
+        "M05-C008.json",
+        "M05-C009.json",
+        "M05-C010.json",
+        "M05-C011.json",
+        "M05-C012.json"
+      ]
+    },
+    {
+      "name": "m06_lane_c_issue_1432_1440_lowering_scope_freeze",
+      "feature": "M06 Lane C lowering scope-freeze coverage from issue_1432_m06_lane_c through issue_1440_m06_lane_c with deterministic fixture mapping",
+      "issue": 1432,
+      "issues": [
+        1432,
+        1433,
+        1434,
+        1435,
+        1436,
+        1437,
+        1438,
+        1439,
+        1440
+      ],
+      "files": [
+        "M06-C001.json",
+        "M06-C002.json",
+        "M06-C003.json",
+        "M06-C004.json",
+        "M06-C005.json",
+        "M06-C006.json",
+        "M06-C007.json",
+        "M06-C008.json",
+        "M06-C009.json"
+      ]
+    },
+    {
+      "name": "m07_lane_c_issue_1487_1500_lowering_scope_freeze",
+      "feature": "M07 Lane C lowering scope-freeze coverage from issue_1487_m07_lane_c through issue_1500_m07_lane_c with deterministic fixture mapping",
+      "issue": 1487,
+      "issues": [
+        1487,
+        1488,
+        1489,
+        1490,
+        1491,
+        1492,
+        1493,
+        1494,
+        1495,
+        1496,
+        1497,
+        1498,
+        1499,
+        1500
+      ],
+      "files": [
+        "M07-C001.json",
+        "M07-C002.json",
+        "M07-C003.json",
+        "M07-C004.json",
+        "M07-C005.json",
+        "M07-C006.json",
+        "M07-C007.json",
+        "M07-C008.json",
+        "M07-C009.json",
+        "M07-C010.json",
+        "M07-C011.json",
+        "M07-C012.json",
+        "M07-C013.json",
+        "M07-C014.json"
+      ]
+    },
+    {
+      "name": "m08_lane_c_issue_1548_1556_lowering_scope_freeze",
+      "feature": "M08 Lane C lowering scope-freeze coverage from issue_1548_m08_lane_c through issue_1556_m08_lane_c with deterministic fixture mapping",
+      "issue": 1548,
+      "issues": [
+        1548,
+        1549,
+        1550,
+        1551,
+        1552,
+        1553,
+        1554,
+        1555,
+        1556
+      ],
+      "files": [
+        "M08-C001.json",
+        "M08-C002.json",
+        "M08-C003.json",
+        "M08-C004.json",
+        "M08-C005.json",
+        "M08-C006.json",
+        "M08-C007.json",
+        "M08-C008.json",
+        "M08-C009.json"
+      ]
+    },
+    {
+      "name": "m09_lane_c_issue_1591_1598_lowering_scope_freeze",
+      "feature": "M09 Lane C lowering scope-freeze coverage from issue_1591_m09_lane_c through issue_1598_m09_lane_c with deterministic fixture mapping",
+      "issue": 1591,
+      "issues": [
+        1591,
+        1592,
+        1593,
+        1594,
+        1595,
+        1596,
+        1597,
+        1598
+      ],
+      "files": [
+        "M09-C001.json",
+        "M09-C002.json",
+        "M09-C003.json",
+        "M09-C004.json",
+        "M09-C005.json",
+        "M09-C006.json",
+        "M09-C007.json",
+        "M09-C008.json"
+      ]
+    },
+    {
+      "name": "m10_lane_c_issue_1637_1646_lowering_scope_freeze",
+      "feature": "M10 Lane C lowering scope-freeze coverage from issue_1637_m10_lane_c through issue_1646_m10_lane_c with deterministic fixture mapping",
+      "issue": 1637,
+      "issues": [
+        1637,
+        1638,
+        1639,
+        1640,
+        1641,
+        1642,
+        1643,
+        1644,
+        1645,
+        1646
+      ],
+      "files": [
+        "M10-C001.json",
+        "M10-C002.json",
+        "M10-C003.json",
+        "M10-C004.json",
+        "M10-C005.json",
+        "M10-C006.json",
+        "M10-C007.json",
+        "M10-C008.json",
+        "M10-C009.json",
+        "M10-C010.json"
+      ]
+    },
+    {
+      "name": "m11_lane_c_issue_1690_1700_lowering_scope_freeze",
+      "feature": "M11 Lane C lowering scope-freeze coverage from issue_1690_m11_lane_c through issue_1700_m11_lane_c with deterministic fixture mapping",
+      "issue": 1690,
+      "issues": [
+        1690,
+        1691,
+        1692,
+        1693,
+        1694,
+        1695,
+        1696,
+        1697,
+        1698,
+        1699,
+        1700
+      ],
+      "files": [
+        "M11-C001.json",
+        "M11-C002.json",
+        "M11-C003.json",
+        "M11-C004.json",
+        "M11-C005.json",
+        "M11-C006.json",
+        "M11-C007.json",
+        "M11-C008.json",
+        "M11-C009.json",
+        "M11-C010.json",
+        "M11-C011.json"
+      ]
+    },
+    {
+      "name": "m12_lane_c_issue_1748_1759_lowering_scope_freeze",
+      "feature": "M12 Lane C lowering scope-freeze coverage from issue_1748_m12_lane_c through issue_1759_m12_lane_c with deterministic fixture mapping",
+      "issue": 1748,
+      "issues": [
+        1748,
+        1749,
+        1750,
+        1751,
+        1752,
+        1753,
+        1754,
+        1755,
+        1756,
+        1757,
+        1758,
+        1759
+      ],
+      "files": [
+        "M12-C001.json",
+        "M12-C002.json",
+        "M12-C003.json",
+        "M12-C004.json",
+        "M12-C005.json",
+        "M12-C006.json",
+        "M12-C007.json",
+        "M12-C008.json",
+        "M12-C009.json",
+        "M12-C010.json",
+        "M12-C011.json",
+        "M12-C012.json"
+      ]
+    },
+    {
+      "name": "m13_lane_c_issue_1805_1814_lowering_scope_freeze",
+      "feature": "M13 Lane C lowering scope-freeze coverage from issue_1805_m13_lane_c through issue_1814_m13_lane_c with deterministic fixture mapping",
+      "issue": 1805,
+      "issues": [
+        1805,
+        1806,
+        1807,
+        1808,
+        1809,
+        1810,
+        1811,
+        1812,
+        1813,
+        1814
+      ],
+      "files": [
+        "M13-C001.json",
+        "M13-C002.json",
+        "M13-C003.json",
+        "M13-C004.json",
+        "M13-C005.json",
+        "M13-C006.json",
+        "M13-C007.json",
+        "M13-C008.json",
+        "M13-C009.json",
+        "M13-C010.json"
+      ]
+    },
+    {
+      "name": "m14_lane_c_issue_1860_1871_lowering_scope_freeze",
+      "feature": "M14 Lane C lowering scope-freeze coverage from issue_1860_m14_lane_c through issue_1871_m14_lane_c with deterministic fixture mapping",
+      "issue": 1860,
+      "issues": [
+        1860,
+        1861,
+        1862,
+        1863,
+        1864,
+        1865,
+        1866,
+        1867,
+        1868,
+        1869,
+        1870,
+        1871
+      ],
+      "files": [
+        "M14-C001.json",
+        "M14-C002.json",
+        "M14-C003.json",
+        "M14-C004.json",
+        "M14-C005.json",
+        "M14-C006.json",
+        "M14-C007.json",
+        "M14-C008.json",
+        "M14-C009.json",
+        "M14-C010.json",
+        "M14-C011.json",
+        "M14-C012.json"
+      ]
+    },
+    {
+      "name": "m15_lane_c_issue_1917_1926_lowering_scope_freeze",
+      "feature": "M15 Lane C lowering scope-freeze coverage from issue_1917_m15_lane_c through issue_1926_m15_lane_c with deterministic fixture mapping",
+      "issue": 1917,
+      "issues": [
+        1917,
+        1918,
+        1919,
+        1920,
+        1921,
+        1922,
+        1923,
+        1924,
+        1925,
+        1926
+      ],
+      "files": [
+        "M15-C001.json",
+        "M15-C002.json",
+        "M15-C003.json",
+        "M15-C004.json",
+        "M15-C005.json",
+        "M15-C006.json",
+        "M15-C007.json",
+        "M15-C008.json",
+        "M15-C009.json",
+        "M15-C010.json"
+      ]
+    },
+    {
+      "name": "m16_lane_c_issue_1966_1974_lowering_scope_freeze",
+      "feature": "M16 Lane C lowering scope-freeze coverage from issue_1966_m16_lane_c through issue_1974_m16_lane_c with deterministic fixture mapping",
+      "issue": 1966,
+      "issues": [
+        1966,
+        1967,
+        1968,
+        1969,
+        1970,
+        1971,
+        1972,
+        1973,
+        1974
+      ],
+      "files": [
+        "M16-C001.json",
+        "M16-C002.json",
+        "M16-C003.json",
+        "M16-C004.json",
+        "M16-C005.json",
+        "M16-C006.json",
+        "M16-C007.json",
+        "M16-C008.json",
+        "M16-C009.json"
+      ]
+    },
+    {
+      "name": "m17_lane_c_issue_2096_2147_lowering_scope_freeze",
+      "feature": "M17 Lane C lowering scope-freeze coverage from issue_2096_m17_lane_c through issue_2147_m17_lane_c with deterministic fixture mapping",
+      "issue": 2096,
+      "issues": [
+        2096,
+        2097,
+        2098,
+        2099,
+        2100,
+        2101,
+        2102,
+        2103,
+        2104,
+        2105,
+        2106,
+        2107,
+        2108,
+        2109,
+        2110,
+        2111,
+        2112,
+        2113,
+        2114,
+        2115,
+        2116,
+        2117,
+        2118,
+        2119,
+        2120,
+        2121,
+        2122,
+        2123,
+        2124,
+        2125,
+        2126,
+        2127,
+        2128,
+        2129,
+        2130,
+        2131,
+        2132,
+        2133,
+        2134,
+        2135,
+        2136,
+        2137,
+        2138,
+        2139,
+        2140,
+        2141,
+        2142,
+        2143,
+        2144,
+        2145,
+        2146,
+        2147
+      ],
+      "files": [
+        "M17-C001.json",
+        "M17-C002.json",
+        "M17-C003.json",
+        "M17-C004.json",
+        "M17-C005.json",
+        "M17-C006.json",
+        "M17-C007.json",
+        "M17-C008.json",
+        "M17-C009.json",
+        "M17-C010.json",
+        "M17-C011.json",
+        "M17-C012.json",
+        "M17-C013.json",
+        "M17-C014.json",
+        "M17-C015.json",
+        "M17-C016.json",
+        "M17-C017.json",
+        "M17-C018.json",
+        "M17-C019.json",
+        "M17-C020.json",
+        "M17-C021.json",
+        "M17-C022.json",
+        "M17-C023.json",
+        "M17-C024.json",
+        "M17-C025.json",
+        "M17-C026.json",
+        "M17-C027.json",
+        "M17-C028.json",
+        "M17-C029.json",
+        "M17-C030.json",
+        "M17-C031.json",
+        "M17-C032.json",
+        "M17-C033.json",
+        "M17-C034.json",
+        "M17-C035.json",
+        "M17-C036.json",
+        "M17-C037.json",
+        "M17-C038.json",
+        "M17-C039.json",
+        "M17-C040.json",
+        "M17-C041.json",
+        "M17-C042.json",
+        "M17-C043.json",
+        "M17-C044.json",
+        "M17-C045.json",
+        "M17-C046.json",
+        "M17-C047.json",
+        "M17-C048.json",
+        "M17-C049.json",
+        "M17-C050.json",
+        "M17-C051.json",
+        "M17-C052.json"
+      ]
+    },
+    {
+      "name": "m18_lane_c_issue_2281_2294_lowering_scope_freeze",
+      "feature": "M18 Lane C lowering scope-freeze coverage from issue_2281_m18_lane_c through issue_2294_m18_lane_c with deterministic fixture mapping",
+      "issue": 2281,
+      "issues": [
+        2281,
+        2282,
+        2283,
+        2284,
+        2285,
+        2286,
+        2287,
+        2288,
+        2289,
+        2290,
+        2291,
+        2292,
+        2293,
+        2294
+      ],
+      "files": [
+        "M18-C001.json",
+        "M18-C002.json",
+        "M18-C003.json",
+        "M18-C004.json",
+        "M18-C005.json",
+        "M18-C006.json",
+        "M18-C007.json",
+        "M18-C008.json",
+        "M18-C009.json",
+        "M18-C010.json",
+        "M18-C011.json",
+        "M18-C012.json",
+        "M18-C013.json",
+        "M18-C014.json"
+      ]
+    },
+    {
+      "name": "m19_lane_c_issue_2353_2366_lowering_scope_freeze",
+      "feature": "M19 Lane C lowering scope-freeze coverage from issue_2353_m19_lane_c through issue_2366_m19_lane_c with deterministic fixture mapping",
+      "issue": 2353,
+      "issues": [
+        2353,
+        2354,
+        2355,
+        2356,
+        2357,
+        2358,
+        2359,
+        2360,
+        2361,
+        2362,
+        2363,
+        2364,
+        2365,
+        2366
+      ],
+      "files": [
+        "M19-C001.json",
+        "M19-C002.json",
+        "M19-C003.json",
+        "M19-C004.json",
+        "M19-C005.json",
+        "M19-C006.json",
+        "M19-C007.json",
+        "M19-C008.json",
+        "M19-C009.json",
+        "M19-C010.json",
+        "M19-C011.json",
+        "M19-C012.json",
+        "M19-C013.json",
+        "M19-C014.json"
+      ]
+    },
+    {
+      "name": "m20_lane_c_issue_2425_2438_lowering_scope_freeze",
+      "feature": "M20 Lane C lowering scope-freeze coverage from issue_2425_m20_lane_c through issue_2438_m20_lane_c with deterministic fixture mapping",
+      "issue": 2425,
+      "issues": [
+        2425,
+        2426,
+        2427,
+        2428,
+        2429,
+        2430,
+        2431,
+        2432,
+        2433,
+        2434,
+        2435,
+        2436,
+        2437,
+        2438
+      ],
+      "files": [
+        "M20-C001.json",
+        "M20-C002.json",
+        "M20-C003.json",
+        "M20-C004.json",
+        "M20-C005.json",
+        "M20-C006.json",
+        "M20-C007.json",
+        "M20-C008.json",
+        "M20-C009.json",
+        "M20-C010.json",
+        "M20-C011.json",
+        "M20-C012.json",
+        "M20-C013.json",
+        "M20-C014.json"
+      ]
+    },
+    {
+      "name": "m21_lane_c_issue_2497_2510_lowering_scope_freeze",
+      "feature": "M21 Lane C lowering scope-freeze coverage from issue_2497_m21_lane_c through issue_2510_m21_lane_c with deterministic fixture mapping",
+      "issue": 2497,
+      "issues": [
+        2497,
+        2498,
+        2499,
+        2500,
+        2501,
+        2502,
+        2503,
+        2504,
+        2505,
+        2506,
+        2507,
+        2508,
+        2509,
+        2510
+      ],
+      "files": [
+        "M21-C001.json",
+        "M21-C002.json",
+        "M21-C003.json",
+        "M21-C004.json",
+        "M21-C005.json",
+        "M21-C006.json",
+        "M21-C007.json",
+        "M21-C008.json",
+        "M21-C009.json",
+        "M21-C010.json",
+        "M21-C011.json",
+        "M21-C012.json",
+        "M21-C013.json",
+        "M21-C014.json"
+      ]
+    },
+    {
+      "name": "m22_lane_c_issue_2569_2582_lowering_scope_freeze",
+      "feature": "M22 Lane C lowering scope-freeze coverage from issue_2569_m22_lane_c through issue_2582_m22_lane_c with deterministic fixture mapping",
+      "issue": 2569,
+      "issues": [
+        2569,
+        2570,
+        2571,
+        2572,
+        2573,
+        2574,
+        2575,
+        2576,
+        2577,
+        2578,
+        2579,
+        2580,
+        2581,
+        2582
+      ],
+      "files": [
+        "M22-C001.json",
+        "M22-C002.json",
+        "M22-C003.json",
+        "M22-C004.json",
+        "M22-C005.json",
+        "M22-C006.json",
+        "M22-C007.json",
+        "M22-C008.json",
+        "M22-C009.json",
+        "M22-C010.json",
+        "M22-C011.json",
+        "M22-C012.json",
+        "M22-C013.json",
+        "M22-C014.json"
+      ]
+    },
+    {
+      "name": "m23_lane_c_issue_2641_2654_lowering_scope_freeze",
+      "feature": "M23 Lane C lowering scope-freeze coverage from issue_2641_m23_lane_c through issue_2654_m23_lane_c with deterministic fixture mapping",
+      "issue": 2641,
+      "issues": [
+        2641,
+        2642,
+        2643,
+        2644,
+        2645,
+        2646,
+        2647,
+        2648,
+        2649,
+        2650,
+        2651,
+        2652,
+        2653,
+        2654
+      ],
+      "files": [
+        "M23-C001.json",
+        "M23-C002.json",
+        "M23-C003.json",
+        "M23-C004.json",
+        "M23-C005.json",
+        "M23-C006.json",
+        "M23-C007.json",
+        "M23-C008.json",
+        "M23-C009.json",
+        "M23-C010.json",
+        "M23-C011.json",
+        "M23-C012.json",
+        "M23-C013.json",
+        "M23-C014.json"
+      ]
+    },
+    {
+      "name": "m24_lane_c_issue_2713_2726_lowering_scope_freeze",
+      "feature": "M24 Lane C lowering scope-freeze coverage from issue_2713_m24_lane_c through issue_2726_m24_lane_c with deterministic fixture mapping",
+      "issue": 2713,
+      "issues": [
+        2713,
+        2714,
+        2715,
+        2716,
+        2717,
+        2718,
+        2719,
+        2720,
+        2721,
+        2722,
+        2723,
+        2724,
+        2725,
+        2726
+      ],
+      "files": [
+        "M24-C001.json",
+        "M24-C002.json",
+        "M24-C003.json",
+        "M24-C004.json",
+        "M24-C005.json",
+        "M24-C006.json",
+        "M24-C007.json",
+        "M24-C008.json",
+        "M24-C009.json",
+        "M24-C010.json",
+        "M24-C011.json",
+        "M24-C012.json",
+        "M24-C013.json",
+        "M24-C014.json"
+      ]
+    },
+    {
+      "name": "m25_lane_c_issue_2785_2798_lowering_scope_freeze",
+      "feature": "M25 Lane C lowering scope-freeze coverage from issue_2785_m25_lane_c through issue_2798_m25_lane_c with deterministic fixture mapping",
+      "issue": 2785,
+      "issues": [
+        2785,
+        2786,
+        2787,
+        2788,
+        2789,
+        2790,
+        2791,
+        2792,
+        2793,
+        2794,
+        2795,
+        2796,
+        2797,
+        2798
+      ],
+      "files": [
+        "M25-C001.json",
+        "M25-C002.json",
+        "M25-C003.json",
+        "M25-C004.json",
+        "M25-C005.json",
+        "M25-C006.json",
+        "M25-C007.json",
+        "M25-C008.json",
+        "M25-C009.json",
+        "M25-C010.json",
+        "M25-C011.json",
+        "M25-C012.json",
+        "M25-C013.json",
+        "M25-C014.json"
+      ]
+    },
+    {
+      "name": "m26_lane_c_issue_2856_2865_lowering_scope_freeze",
+      "feature": "M26 Lane C lowering scope-freeze coverage from issue_2856_m26_lane_c through issue_2865_m26_lane_c with deterministic fixture mapping",
+      "issue": 2856,
+      "issues": [
+        2856,
+        2857,
+        2858,
+        2859,
+        2860,
+        2861,
+        2862,
+        2863,
+        2864,
+        2865
+      ],
+      "files": [
+        "M26-C001.json",
+        "M26-C002.json",
+        "M26-C003.json",
+        "M26-C004.json",
+        "M26-C005.json",
+        "M26-C006.json",
+        "M26-C007.json",
+        "M26-C008.json",
+        "M26-C009.json",
+        "M26-C010.json"
+      ]
+    }
+  ]
+}

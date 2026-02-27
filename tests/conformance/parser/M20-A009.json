@@ -1,0 +1,25 @@
+{
+  "id": "M20-A009",
+  "title": "Accept M20 lane-A parser fixture baseline for issue #2404 task M20-A009 (Document frontend invariants for integrators (Documentation and Evidence))",
+  "feature": "m20 lane-a parser frontend parsing ast realization core strict invariant documentation slice 09",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M20",
+    "milestone_number": 105,
+    "lane": "A",
+    "issue": 2404,
+    "task": "M20-A009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_INVARIANT_DOC_SLICE_S009__\\n#define __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_INVARIANT_DOC_SLICE_S009__ 1\\n#endif\\n\\ntypedef struct M20A009_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M20A009_Probe;\\n\\nM20A009_Probe m20a009_probe(void) {\\n#if __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_INVARIANT_DOC_SLICE_S009__\\n    M20A009_Probe probe = { 1, 9, 2404 };\\n#else\\n    M20A009_Probe probe = { 0, 9, 2404 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

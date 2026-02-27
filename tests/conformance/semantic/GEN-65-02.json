@@ -1,0 +1,20 @@
+{
+  "id": "GEN-65-02",
+  "title": "Accept generic methods/functions only under an explicit extension flag",
+  "feature": "generic methods/functions deferral gate",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/DECISIONS_LOG.md#decisions-d-008",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-3-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-5-3-2",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-generic-methods=on -fsyntax-only %s\n@interface GenericProbe : NSObject\n- <T> (T)identity:(T)value;\n@end\n\n<T> T GenericIdentity(T value) {\n    return value;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

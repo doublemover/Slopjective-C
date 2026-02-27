@@ -1,0 +1,15 @@
+# Nested loop control-transfer lowering markers.
+define i32 @main()
+while_cond_0:
+while_body_1:
+while_cond_3:
+while_body_4:
+if_then_6:
+br label %while_cond_3
+if_then_9:
+br label %while_end_5
+while_end_5:
+br label %while_cond_0
+while_end_2:
+ret i32 %t29
+

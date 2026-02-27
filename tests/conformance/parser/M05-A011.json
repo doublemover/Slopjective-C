@@ -1,0 +1,17 @@
+{
+  "id": "M05-A011",
+  "title": "Accept secondary command and grammar contract slice for Wave-0 attribute and mode boundaries",
+  "feature": "wave-0 secondary command and grammar contract definition",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n__attribute__((objc_final))\n@interface M05A011Contract : NSObject\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

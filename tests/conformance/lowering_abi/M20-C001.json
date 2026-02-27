@@ -1,0 +1,76 @@
+{
+  "id": "M20-C001",
+  "title": "Define lowering/ABI contract slice (Contract Definition) (issue #2425 / task M20-C001)",
+  "feature": "M20 Lane C lowering scope-freeze deterministic evidence mapping; issue #2425; task M20-C001; sequence 1; dispatch title: [Compiler][M20][Lane C][M20-C001] Define lowering/ABI contract slice (Contract Definition)",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\ntypedef enum M20C001CompletionStatus {\n    M20C001_STATUS_SUCCESS = 0,\n    M20C001_STATUS_ERROR = 1,\n    M20C001_STATUS_CANCELLED = 2\n} M20C001CompletionStatus;\n\ntypedef void (*M20C001Completion)(\n    void * _Nullable context,\n    M20C001CompletionStatus status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nvoid M20c001_export_async(id _Nullable seed,\n                          void * _Nullable context,\n                          M20C001Completion _Nonnull completion);\n\ntypedef struct M20C001Probe {\n    int callbackCount;\n    M20C001CompletionStatus lastStatus;\n    id _Nullable lastResult;\n    id<Error> _Nullable lastError;\n} M20C001Probe;\n\nvoid M20c001_probe_callback(void * _Nullable context,\n                            M20C001CompletionStatus status,\n                            id _Nullable result,\n                            id<Error> _Nullable error) {\n    M20C001Probe *probe = (M20C001Probe *)context;\n    probe->callbackCount = probe->callbackCount + 1;\n    probe->lastStatus = status;\n    probe->lastResult = result;\n    probe->lastError = error;\n}\n\nint M20c001_validate_contract(id seed) {\n    M20C001Probe probe;\n    probe.callbackCount = 0;\n    probe.lastStatus = M20C001_STATUS_CANCELLED;\n    probe.lastResult = nil;\n    probe.lastError = nil;\n\n    M20c001_export_async(seed, &probe, M20c001_probe_callback);\n\n    if (probe.callbackCount != 1) {\n        return -1;\n    }\n    if (probe.lastStatus == M20C001_STATUS_SUCCESS && probe.lastError != nil) {\n        return -1;\n    }\n    if (probe.lastStatus != M20C001_STATUS_SUCCESS && probe.lastResult != nil) {\n        return -1;\n    }\n    return 1;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "async C thunk completion uses canonical call-shape order: context, status, result, error",
+            "status/result/error correlation is deterministic for success, error, and cancellation outcomes",
+            "callback invocation count remains exactly once per lowering dispatch"
+          ],
+          "runtime_assertions": [
+            "M20c001_validate_contract returns 1 for contract-compliant callback ordering and payload mapping",
+            "M20c001_validate_contract returns -1 for duplicate callback or status/payload ownership drift"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves canonical completion call-shape order from -O0",
+            "optimization does not reorder or fold status/result/error transport fields",
+            "exactly-once callback contract remains stable under optimization"
+          ],
+          "runtime_assertions": [
+            "M20c001_validate_contract still returns 1 under optimization",
+            "negative-path sentinel return (-1) remains reachable for contract drift"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "M20_lane_c.async_completion_call_shape",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "completion callback order is context -> status -> result -> error",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "M20_lane_c.async_completion_ownership_correlation",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "success status carries result without error and non-success status does not carry success payload",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

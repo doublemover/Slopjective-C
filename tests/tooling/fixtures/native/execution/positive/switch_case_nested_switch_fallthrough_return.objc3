@@ -1,0 +1,18 @@
+module SwitchCaseNestedSwitchFallthroughReturn;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case 1:
+      switch (value) {
+        case 1:
+          break;
+        default:
+          return 9;
+      }
+    case 2:
+      return 42;
+    default:
+      return 7;
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "AWT-05",
+  "title": "Strict diagnostics cover all D-011 suspension sources plus unnecessary await warning",
+  "feature": "strict concurrency diagnostics for potentially-suspending operations",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id awt05_asyncCall(void) async;\nid awt05_mainOnly(id seed) __attribute__((objc_executor(main)));\nid awt05_syncValue(void);\n\nactor class AWT05Counter : NSObject\n- (int)current;\n@end\n\nid awt05_diag(AWT05Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    id a = awt05_asyncCall();\n    id b = awt05_mainOnly(seed);\n    int c = [counter current];\n    id d = await awt05_syncValue();\n    return c > 0 ? d : (a ? a : b);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 12 },
+          "end": { "line": 10, "column": 29 }
+        },
+        "message": "potentially suspending call requires 'await' in strict concurrency checking"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 12 },
+          "end": { "line": 11, "column": 32 }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 12, "column": 13 },
+          "end": { "line": 12, "column": 30 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'"
+      },
+      {
+        "code": "OBJC3-D-CONC-UNNECESSARY-AWAIT",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 13, "column": 12 },
+          "end": { "line": 13, "column": 17 }
+        },
+        "message": "expression is not potentially suspending; remove unnecessary 'await'"
+      }
+    ]
+  }
+}

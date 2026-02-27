@@ -1,0 +1,77 @@
+{
+  "id": "M17-C020",
+  "title": "Refactor lowering pipeline for replay determinism with stable invariant drift signaling (issue #2115 / task M17-C020)",
+  "feature": "M17 Lane C replay determinism hardening for lowering pipeline invariants; issue #2115; task M17-C020; sequence 20; dispatch title: [Compiler][M17][Lane C][M17-C020] Refactor lowering pipeline for replay determinism (CI/Automation Enforcement)",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/conformance/compiler/M17_lane_c_lowering_runtime_invariants.md"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 -fsyntax-only %s\ntypedef enum M17C020InvariantStatus {\n    M17C020_INVARIANT_OK = 0,\n    M17C020_INVARIANT_CALL_SHAPE_DRIFT = 1,\n    M17C020_INVARIANT_CLEANUP_DRIFT = 2,\n    M17C020_INVARIANT_METADATA_DRIFT = 3\n} M17C020InvariantStatus;\n\nM17C020InvariantStatus M17C020_validate_invariants(int callShapeOk,\n                                                    int cleanupOk,\n                                                    int metadataOk) {\n    if (!callShapeOk) {\n        return M17C020_INVARIANT_CALL_SHAPE_DRIFT;\n    }\n    if (!cleanupOk) {\n        return M17C020_INVARIANT_CLEANUP_DRIFT;\n    }\n    if (!metadataOk) {\n        return M17C020_INVARIANT_METADATA_DRIFT;\n    }\n    return M17C020_INVARIANT_OK;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "documented lane-C invariants map directly to deterministic fixture evidence for call-shape, cleanup, and metadata parity",
+            "invariant checks are explicit and fail closed when evidence does not satisfy documented contracts",
+            "fixture/manifest evidence parity remains stable for issue-closeout replay"
+          ],
+          "runtime_assertions": [
+            "M17C020_validate_invariants returns INVARIANT_OK only when all invariant inputs are true",
+            "M17C020_validate_invariants returns deterministic drift codes for call-shape, cleanup, or metadata failures"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves invariant-to-evidence mapping behavior from -O0",
+            "optimization does not alter deterministic drift-code selection for invariant failures",
+            "documentation parity checks remain replay-stable under optimization"
+          ],
+          "runtime_assertions": [
+            "invariant status outcomes remain equivalent to -O0 under optimization",
+            "evidence drift remains observable through deterministic non-OK invariant status codes"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "invariants.call_shape_contract_evidence",
+          "contract_anchor": "spec/conformance/compiler/M17_lane_c_lowering_runtime_invariants.md",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "call-shape invariants remain documented and evidenced by fixture and manifest mapping",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "invariants.cleanup_and_metadata_evidence",
+          "contract_anchor": "spec/conformance/compiler/M17_lane_c_lowering_runtime_invariants.md",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "cleanup and metadata invariants remain documented with deterministic replay evidence",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Objective-C literal alias global lowering markers.
+@yes_value = global i32 1
+@no_value = global i32 0
+@null_value = global i32 0
+@folded = global i32 1
+ret i32

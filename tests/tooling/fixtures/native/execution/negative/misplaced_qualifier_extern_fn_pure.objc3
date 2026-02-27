@@ -1,0 +1,7 @@
+module MisplacedQualifierExternFnPure;
+
+extern fn pure add(lhs: i32, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

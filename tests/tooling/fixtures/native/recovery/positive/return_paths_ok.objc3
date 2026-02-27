@@ -1,0 +1,40 @@
+module ReturnPathsOk;
+
+fn classify(value: i32, strict: bool) {
+  if (value < 0) {
+    return -1;
+  } else {
+    if (value == 0) {
+      return 0;
+    } else {
+      if (strict && value > 10) {
+        return 2;
+      } else {
+        return 1;
+      }
+    }
+  }
+}
+
+fn choose(primary: i32, fallback: i32, allow_fallback: bool) {
+  if (primary != 0) {
+    return primary;
+  }
+  if (allow_fallback && fallback != 0) {
+    return fallback;
+  }
+  return -99;
+}
+
+fn main() {
+  let c1 = classify(-2, 0 == 1);
+  let c2 = classify(0, 1 == 1);
+  let c3 = classify(20, 2 < 3);
+  let chosen = choose(c1 + c2, c3, c3 > 0);
+
+  if (chosen > 0) {
+    return chosen;
+  } else {
+    return 0;
+  }
+}

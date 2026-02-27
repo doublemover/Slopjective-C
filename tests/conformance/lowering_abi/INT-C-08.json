@@ -1,0 +1,64 @@
+{
+  "id": "INT-C-08",
+  "title": "Preserve void-result async export shape where C completion omits result while retaining status and error lanes",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC08Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id<Error> _Nullable error);\\n\\nvoid intc08_flush(void) async throws;\\nvoid intc08_flush_async_c(void * _Nullable context,\\n                          INTC08Completion _Nonnull completion);\\n\\ntypedef struct INTC08Probe {\\n    int callbackCount;\\n    objc_async_completion_status_t lastStatus;\\n    id<Error> _Nullable lastError;\\n} INTC08Probe;\\n\\nvoid intc08_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id<Error> _Nullable error) {\\n    INTC08Probe *probe = (INTC08Probe *)context;\\n    probe->callbackCount = probe->callbackCount + 1;\\n    probe->lastStatus = status;\\n    probe->lastError = error;\\n}\\n\\nvoid intc08_start_probe(INTC08Probe *probe) {\\n    probe->callbackCount = 0;\\n    intc08_flush_async_c(probe, intc08_probe_callback);\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "for void-result async exports, thunk completion callback omits result payload while preserving status and error channels",
+            "completion callback remains the final thunk parameter after context",
+            "exactly-once callback delivery applies on success, thrown error, and cancellation paths"
+          ],
+          "runtime_assertions": [
+            "intc08_probe_callback executes exactly once per thunk invocation",
+            "status and error are observable without any result argument in the callback ABI"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimization preserves void-result callback shape without reintroducing a result parameter",
+            "optimized thunk retains canonical trailing context and completion ordering",
+            "optimized code preserves exactly-once callback delivery contract"
+          ],
+          "runtime_assertions": [
+            "callback count remains exactly one under optimization",
+            "status/error observation behavior remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_c_thunk_void_result_callback_shape",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "required_shape": "callback(context, status, error) for R == void",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

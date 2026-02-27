@@ -1,0 +1,21 @@
+{
+  "id": "SND-01",
+  "title": "Accept task-spawn capture set containing only transitively Sendable-like scalar aggregates",
+  "feature": "sendable-like checking for task-spawn capture boundaries",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "typedef id SND01TaskHandle;\ntypedef struct SND01Pair {\n    int left;\n    unsigned long right;\n} SND01Pair;\n\nSND01TaskHandle snd01_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nid snd01_join(SND01TaskHandle handle) async;\nid snd01_pack_pair(SND01Pair value);\n\nid snd01_scalar_aggregate_capture(int seed, unsigned long salt) async {\n    SND01Pair pair = { seed, salt };\n    SND01TaskHandle handle = snd01_spawn(^id(void) async {\n        return snd01_pack_pair(pair);\n    });\n    return await snd01_join(handle);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

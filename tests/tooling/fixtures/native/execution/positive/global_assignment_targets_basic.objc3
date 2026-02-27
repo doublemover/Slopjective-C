@@ -1,0 +1,15 @@
+module GlobalAssignmentTargetsBasic;
+
+let counter = 3;
+
+fn bump() -> i32 {
+  counter += 4;
+  ++counter;
+  return counter;
+}
+
+fn main() -> i32 {
+  counter = 10;
+  counter <<= 1;
+  return bump();
+}

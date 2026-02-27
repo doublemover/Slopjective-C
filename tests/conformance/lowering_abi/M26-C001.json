@@ -1,0 +1,26 @@
+{
+  "id": "M26-C001",
+  "title": "Define typed bool/i32 lowering ABI contract slice for native objc3c frontend (Contract Definition) (issue #2856 / task M26-C001)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering abi contract contract definition",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2856,
+    "task": "M26-C001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_001_TYPED_BOOL_I32_LOWERING_ABI_CONTRACT\n#define __OBJC3_FEATURE_M26_C_001_TYPED_BOOL_I32_LOWERING_ABI_CONTRACT 1\n#endif\n\ntypedef signed int m26c001_i32;\ntypedef _Bool m26c001_bool;\n\ntypedef m26c001_i32 (*M26C001_BoolToI32Fn)(m26c001_bool flag);\ntypedef m26c001_bool (*M26C001_I32ToBoolFn)(m26c001_i32 value);\n\nstatic m26c001_i32 m26c001_lower_bool_to_i32(m26c001_bool flag) {\n    return flag ? 1 : 0;\n}\n\nstatic m26c001_bool m26c001_lower_i32_to_bool(m26c001_i32 value) {\n    return value != 0;\n}\n\ntypedef struct M26C001_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c001_i32 true_as_i32;\n    m26c001_bool one_as_bool;\n} M26C001_Probe;\n\nM26C001_Probe m26c001_probe(void) {\n#if __OBJC3_FEATURE_M26_C_001_TYPED_BOOL_I32_LOWERING_ABI_CONTRACT\n    M26C001_BoolToI32Fn lower_bool = m26c001_lower_bool_to_i32;\n    M26C001_I32ToBoolFn lower_i32 = m26c001_lower_i32_to_bool;\n    M26C001_Probe probe = { 1, 1, 2856, lower_bool(1), lower_i32(1) };\n#else\n    M26C001_Probe probe = { 0, 1, 2856, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

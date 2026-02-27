@@ -1,0 +1,8 @@
+// Negative fixture: nil-bound identifier receiver message-send missing selector identifier.
+// Expected diagnostic code(s): O3P113.
+module NegativeMessageParserNilBoundIdentifierMissingSelector;
+
+fn main() {
+  let receiver = nil;
+  return [receiver : 1];
+}

@@ -1,0 +1,9 @@
+// Positive execution fixture: nil-bound identifier send-site before reassignment elides and links without runtime shim.
+module MessageSendNilBoundIdentifierPreReassignmentElisionExecution;
+
+fn main() {
+  let receiver = nil;
+  let sent = [receiver ping];
+  receiver = 1;
+  return sent + 16;
+}

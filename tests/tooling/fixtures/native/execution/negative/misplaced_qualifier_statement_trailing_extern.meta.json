@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "misplaced_qualifier_statement_trailing_extern.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P100",
+      "unexpected qualifier 'extern' in statement position"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

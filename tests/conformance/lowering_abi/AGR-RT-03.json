@@ -1,0 +1,60 @@
+{
+  "id": "AGR-RT-03",
+  "title": "Aggregate normal destruction cleans annotated fields in reverse declaration order",
+  "feature": "aggregate resource normal-exit cleanup ordering",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-13"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -O2 -fsyntax-only %s\ntypedef int agr_handle_t;\nstatic int agr_rt03_trace = 0;\nstatic int agr_rt03_close_count_a = 0;\nstatic int agr_rt03_close_count_b = 0;\nstatic int agr_rt03_close_count_c = 0;\n\nvoid agr_rt03_close_a(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt03_trace = agr_rt03_trace * 10 + 1;\n        agr_rt03_close_count_a = agr_rt03_close_count_a + 1;\n    }\n}\n\nvoid agr_rt03_close_b(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt03_trace = agr_rt03_trace * 10 + 2;\n        agr_rt03_close_count_b = agr_rt03_close_count_b + 1;\n    }\n}\n\nvoid agr_rt03_close_c(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt03_trace = agr_rt03_trace * 10 + 3;\n        agr_rt03_close_count_c = agr_rt03_close_count_c + 1;\n    }\n}\n\nstruct AGRRT03Triple {\n    agr_handle_t a __attribute__((objc_resource(close=agr_rt03_close_a, invalid=-1)));\n    agr_handle_t b __attribute__((objc_resource(close=agr_rt03_close_b, invalid=-1)));\n    agr_handle_t c __attribute__((objc_resource(close=agr_rt03_close_c, invalid=-1)));\n};\n\nint agr_rt03_normal_destruction_trace(void) {\n    agr_rt03_trace = 0;\n    agr_rt03_close_count_a = 0;\n    agr_rt03_close_count_b = 0;\n    agr_rt03_close_count_c = 0;\n\n    {\n        struct AGRRT03Triple triple = { .a = 7, .b = 8, .c = 9 };\n        (void)triple;\n    }\n\n    if (agr_rt03_close_count_a != 1 || agr_rt03_close_count_b != 1 || agr_rt03_close_count_c != 1) {\n        return -1;\n    }\n\n    return agr_rt03_trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-O0"
+          ],
+          "aggregate_requirements": [
+            "successful aggregate destruction runs cleanup in reverse declaration order",
+            "all initialized annotated fields are cleaned exactly once on scope exit",
+            "aggregate field cleanup order is consistent with the Part 8.1 unified scope-exit model"
+          ],
+          "runtime_assertions": [
+            "agr_rt03_normal_destruction_trace returns 321",
+            "function returns -1 if any annotated field is cleaned zero or multiple times"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-O2"
+          ],
+          "aggregate_requirements": [
+            "optimization preserves reverse declaration order for aggregate destruction cleanup",
+            "optimization preserves exactly-once cleanup counters for all annotated fields"
+          ],
+          "runtime_assertions": [
+            "agr_rt03_normal_destruction_trace still returns 321 under optimization",
+            "optimized lowering does not fold away required aggregate cleanup callbacks"
+          ]
+        }
+      ]
+    }
+  }
+}

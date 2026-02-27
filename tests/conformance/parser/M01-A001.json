@@ -1,0 +1,37 @@
+{
+  "id": "M01-A001",
+  "title": "Reject reserved keyword 'actor' used as an identifier",
+  "feature": "keyword reservation in Objective-C 3.0 mode",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-9",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-1-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "int actor(void) {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-KEYWORD-RESERVED-ACTOR",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 5 },
+          "end": { "line": 1, "column": 10 }
+        },
+        "message": "reserved keyword 'actor' cannot be used as an identifier in Objective-C 3.0 mode",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 5 },
+              "end": { "line": 1, "column": 10 }
+            },
+            "replacement": "actor_"
+          }
+        ]
+      }
+    ]
+  }
+}

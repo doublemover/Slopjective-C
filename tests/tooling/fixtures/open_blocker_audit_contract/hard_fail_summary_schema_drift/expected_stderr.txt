@@ -1,0 +1,4 @@
+summary schema drift
+contract_id
+contract_version
+key order drift

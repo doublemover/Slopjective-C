@@ -1,0 +1,144 @@
+{
+  "schema_id": "objc3-rc-blocker-triage-status/v1",
+  "schema_version": 1,
+  "release_label": "v0.11",
+  "release_id": "20260223-issue173-laneb-011",
+  "dry_run_id": "RC-DRY-20260223-001",
+  "generated_at": "2026-02-23T19:10:00Z",
+  "source_revision": "7f3c2b1f4f2f0df1f2e35a5d7ef6f71f5ebbf3a1",
+  "gate_recommendation": "no-go",
+  "owners": {
+    "triage_owner": "B-LEAD",
+    "gate_delegate": "D-LEAD"
+  },
+  "artifact_refs": [
+    "reports/releases/rc_v011_dry_run.md",
+    "reports/releases/rc_v011_blocker_triage.md",
+    "reports/conformance/dashboard_v011.status.json"
+  ],
+  "blockers": [
+    {
+      "blocker_id": "B14-BLK-20260223-001",
+      "source_blocker_id": "BLK-B11-RESULT-FAIL-001",
+      "title": "Seeded required-fail expectation mismatch in strict-concurrency run.",
+      "severity": "critical",
+      "state": "triaged",
+      "affected_profiles": [
+        "strict-concurrency"
+      ],
+      "source_signal": {
+        "dependency_id": "B-11",
+        "failure_code": "DASH-B11-RESULT-FAIL",
+        "taxonomy": "test-failure"
+      },
+      "detection_timestamp_utc": "2026-02-23T17:50:00Z",
+      "owner_primary": "B-LEAD",
+      "owner_backup": "D-LEAD",
+      "target_milestone": "v0.11-rc-unblock",
+      "sla_due_utc": "2026-02-24T01:50:00Z",
+      "sla_state": "on-time",
+      "mitigation_summary": "Re-run strict-concurrency seeded suite, fix required-fail expectation mismatch, and republish seed trace plus manifest.",
+      "validation_evidence_refs": [
+        "reports/conformance/dashboard_v011.status.json",
+        "reports/releases/rc_v011_dry_run.md"
+      ],
+      "release_gate_impact": "Immediate no-go until resolved"
+    },
+    {
+      "blocker_id": "B14-BLK-20260223-002",
+      "source_blocker_id": "BLK-B10-PROFILE-GAP-001",
+      "title": "Capability profile rows incomplete for strict-system.",
+      "severity": "high",
+      "state": "triaged",
+      "affected_profiles": [
+        "strict-system"
+      ],
+      "source_signal": {
+        "dependency_id": "B-10",
+        "failure_code": "DASH-B10-PROFILE-GAP",
+        "taxonomy": "dependency-ingest"
+      },
+      "detection_timestamp_utc": "2026-02-23T18:05:00Z",
+      "owner_primary": "B-LEAD",
+      "owner_backup": "D-LEAD",
+      "target_milestone": "v0.11-rc-unblock",
+      "sla_due_utc": "2026-02-25T18:05:00Z",
+      "sla_state": "on-time",
+      "mitigation_summary": "Complete strict-system capability row coverage and revalidate capability contract output.",
+      "validation_evidence_refs": [
+        "reports/conformance/dashboard_v011.status.json",
+        "reports/releases/rc_v011_dry_run.md"
+      ],
+      "release_gate_impact": "Blocks pass; contributes to no-go"
+    },
+    {
+      "blocker_id": "B14-BLK-20260223-003",
+      "source_blocker_id": "BLK-B12-STALE-001",
+      "title": "Drift-lint input exceeded freshness threshold.",
+      "severity": "high",
+      "state": "triaged",
+      "affected_profiles": [
+        "strict",
+        "strict-concurrency",
+        "strict-system"
+      ],
+      "source_signal": {
+        "dependency_id": "B-12",
+        "failure_code": "DASH-B12-EXCEPTION-STALE",
+        "taxonomy": "staleness"
+      },
+      "detection_timestamp_utc": "2026-02-23T18:00:00Z",
+      "owner_primary": "B-LEAD",
+      "owner_backup": "D-LEAD",
+      "target_milestone": "v0.11-rc-unblock",
+      "sla_due_utc": "2026-02-25T18:00:00Z",
+      "sla_state": "on-time",
+      "mitigation_summary": "Refresh drift-lint output and republish timestamped evidence before next gate review.",
+      "validation_evidence_refs": [
+        "reports/conformance/dashboard_v011.status.json",
+        "reports/releases/rc_v011_dry_run.md"
+      ],
+      "release_gate_impact": "Blocks pass; contributes to no-go"
+    }
+  ],
+  "summary": {
+    "open_total": 3,
+    "open_by_severity": {
+      "critical": 1,
+      "high": 2,
+      "medium": 0,
+      "low": 0
+    },
+    "state_counts": {
+      "new": 0,
+      "triaged": 3,
+      "in-progress": 0,
+      "mitigated": 0,
+      "resolved": 0,
+      "deferred": 0,
+      "accepted-risk": 0
+    },
+    "sla_counts": {
+      "on-time": 3,
+      "at-risk": 0,
+      "overdue": 0
+    }
+  },
+  "ac_links": {
+    "AC-179-01": {
+      "status": "pass",
+      "evidence": [
+        "spec/planning/issue_179_rc_toolchain_dry_run_package.md#3-dry-run-scope-contract",
+        "reports/releases/rc_v011_dry_run.md#4-execution-matrix-results-rcm-01rcm-04"
+      ]
+    },
+    "AC-179-06": {
+      "status": "pass",
+      "evidence": [
+        "reports/releases/rc_v011_dry_run.md",
+        "reports/releases/rc_v011_blocker_triage.md",
+        "reports/releases/rc_v011_blocker_triage.status.json"
+      ]
+    }
+  }
+}

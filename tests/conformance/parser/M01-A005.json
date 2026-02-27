@@ -1,0 +1,18 @@
+{
+  "id": "M01-A005",
+  "title": "Accept parenthesized postfix propagation before nil-coalescing",
+  "feature": "postfix propagation and coalescing disambiguation",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4"
+  ],
+  "source": "id m01a005_normalize(id value);\n\nid m01a005_postfix_or_fallback(id value, id fallback) {\n    return (m01a005_normalize(value)?) ?? fallback;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

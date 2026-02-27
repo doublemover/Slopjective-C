@@ -1,0 +1,22 @@
+{
+  "generated_on": "2026-02-23",
+  "task_count": 2,
+  "tasks": [
+    {
+      "task_id": "SPT-9101",
+      "title": "[SPT-9101][Lane B] Valid checked hash",
+      "path": "tests/tooling/fixtures/hb02_close/source.md",
+      "line": 2,
+      "task_key": "hb02:valid-apply",
+      "source_line_hash": "a59e10d8020e13c4c8275976967ecf8b9951d832ca503075196f6abb1f2b2002"
+    },
+    {
+      "task_id": "SPT-9102",
+      "title": "[SPT-9102][Lane B] Valid unchecked hash",
+      "path": "tests/tooling/fixtures/hb02_close/source.md",
+      "line": 4,
+      "task_key": "hb02:valid-unchecked",
+      "source_line_hash": "sha256:0afb4c0517cefd564b4ef29258704169fcc44856e7c48940079587a391c91933"
+    }
+  ]
+}

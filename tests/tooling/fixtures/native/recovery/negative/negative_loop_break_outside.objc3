@@ -1,0 +1,7 @@
+module NegativeLoopBreakOutside;
+// Expected diagnostic code(s): O3S212.
+
+fn main() -> i32 {
+  break;
+  return 0;
+}

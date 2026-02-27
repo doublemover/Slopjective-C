@@ -1,0 +1,21 @@
+{
+  "id": "INT-SWIFT-01",
+  "title": "Accept Swift-facing optional/nullability import-export mappings across canonical ObjC 3.0 spellings",
+  "feature": "Swift interop mappings for optionals and nullability",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "#pragma objc assume_nonnull begin\\n@interface INTSWIFT01Bridge : NSObject\\n- (id _Nullable)findNullable:(id _Nullable)key;\\n- (id?)findOptional:(id?)key;\\n- (id!)legacyCache;\\n@end\\n#pragma objc assume_nonnull end\\n\\nid? intswift01_pick(INTSWIFT01Bridge *bridge, id? seed) {\\n    id? lhs = [bridge findOptional:seed];\\n    id _Nullable rhs = [bridge findNullable:seed];\\n    return lhs ? lhs : rhs;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

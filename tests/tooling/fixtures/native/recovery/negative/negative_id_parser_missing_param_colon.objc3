@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3P107, O3P100.
+module NegativeIdParserMissingParamColon;
+
+fn pick(value id) -> i32 {
+  return value;
+}
+
+fn main() -> i32 {
+  return pick(1);
+}

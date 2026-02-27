@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'dependencies' must match deterministic W4 dependency set ['#1111', '#1112'] for lane-B release-scale-foundation contract rows in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_release_scale_w4_dependencies_mismatch/catalog.json: observed=['#1111', '#9999']

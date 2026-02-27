@@ -1,0 +1,48 @@
+{
+  "id": "THR-75-02",
+  "title": "Reject typed throws payloads, missing try calls, and override effect mismatches",
+  "feature": "untyped throws v1 model",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/DECISIONS_LOG.md#decisions-d-002",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-7",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-11"
+  ],
+  "source": "id typedDecl(void) throws(int);\nid mayFail(void) throws;\n\nid badCall(void) {\n    return mayFail();\n}\n\n@interface ThrowBase : NSObject\n- (id)load throws;\n@end\n\n@interface ThrowMismatch : ThrowBase\n- (id)load;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-THROWS-TYPED-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 21 },
+          "end": { "line": 1, "column": 31 }
+        },
+        "message": "typed throws is deferred in Objective-C 3.0 v1; use bare 'throws'"
+      },
+      {
+        "code": "OBJC3-D-THROWS-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 12 },
+          "end": { "line": 5, "column": 20 }
+        },
+        "message": "calling a throwing function requires 'try' in Objective-C 3.0"
+      },
+      {
+        "code": "OBJC3-D-THROWS-OVERRIDE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 13, "column": 3 },
+          "end": { "line": 13, "column": 11 }
+        },
+        "message": "override must preserve the base method's throws effect"
+      }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "INT-SWIFT-05",
+  "title": "Preserve Swift optional/nullability and throws import-export mappings across module/interface round-trip",
+  "feature": "Swift interop metadata preservation for optionals and throws mappings",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-4-1",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-9",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-1",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module INTSWIFT05.objcmod --emit-interface INTSWIFT05.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\\n// RUN: objc3c --emit-module INTSWIFT05-import.objcmod --import-interface INTSWIFT05.obji --emit-interface INTSWIFT05-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\\n// RUN: objc3c --verify-interface INTSWIFT05.objcmod INTSWIFT05-roundtrip.obji %s\\n// RUN: objc3c --verify-interface INTSWIFT05-import.objcmod INTSWIFT05.obji %s\\n#pragma objc assume_nonnull begin\\n@interface INTSWIFT05Surface : NSObject\\n- (id _Nullable)lookup:(id _Nullable)key;\\n- (id?)lookupAlias:(id?)key;\\n- (id!)legacyValue;\\n- (id _Nonnull)decode:(id _Nonnull)payload throws;\\n- (BOOL)decodeNSError:(id _Nonnull)payload\\n                value:(id _Nullable * _Nullable)outValue\\n                error:(id<Error> _Nullable * _Nullable)outError __attribute__((objc_nserror));\\n@end\\n#pragma objc assume_nonnull end\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "nullability_qualifiers",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "optional_spellings_t_question_t_bang",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "throws_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "error_bridging_markers_objc_nserror_objc_status_code",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "swift_interop_optional_mapping",
+          "part11_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "swift_interop_throws_mapping",
+          "part11_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "number": 42,
+    "title": "Résumé parser\r\nnaïve mode",
+    "labels": [
+      {"name": "café"},
+      {"name": "δοκιμή"},
+      {"name": "東京"},
+      {"name": "line\r\nbreak"},
+      "  München  "
+    ]
+  }
+]

@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeNilLiteralGlobalDivideByZero;
+
+let seed = nil / 0;
+
+fn main() -> i32 {
+  return seed;
+}

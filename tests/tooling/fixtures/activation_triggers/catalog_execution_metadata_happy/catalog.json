@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-4200",
+      "lane": "B",
+      "lane_name": "Tooling Validation",
+      "milestone_title": "v0.15 Activation Execution Hardening W2",
+      "labels": [
+        "lane:B",
+        "type:tooling"
+      ],
+      "dependencies": [
+        "#991",
+        "#992"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q",
+        "python scripts/check_activation_execution_hardening_w2_contract.py"
+      ],
+      "execution_status": "open-blocked",
+      "blocker_owner": "lane:C",
+      "blocker_notes": "Awaiting CI/workflow integration handoff.",
+      "execution_status_rationale": "Execution-ready once lane C publishes deterministic CI entrypoints.",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w2_tooling_validation_20260224.md:1"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w2_tooling_validation_20260224.md"
+    }
+  ]
+}

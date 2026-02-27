@@ -1,0 +1,31 @@
+{
+  "id": "CAP-08",
+  "title": "Warn on strong self capture in async registration context",
+  "feature": "capture-list retain-cycle diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "void cap08_register_async(void (^operation)(void));\n\nvoid cap08_strong_self_async(id self) {\n    cap08_register_async(^[strong self] {\n        [self description];\n    });\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-CAPTURE-STRONG-SELF-ASYNC",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 4, "column": 28 },
+          "end": { "line": 4, "column": 39 }
+        },
+        "message": "strong capture of self in async registration may form a retain cycle; prefer weak or unowned capture",
+        "fixits": []
+      }
+    ]
+  }
+}

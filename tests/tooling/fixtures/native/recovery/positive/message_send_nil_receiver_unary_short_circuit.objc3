@@ -1,0 +1,9 @@
+// Positive fixture: explicit reassignment to nil enables compile-time unary send elision.
+module MessageSendNilReceiverUnaryShortCircuit;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver ping];
+  return sent + 9;
+}

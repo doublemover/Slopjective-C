@@ -1,0 +1,35 @@
+{
+  "id": "EC-OPTCHAIN-05",
+  "title": "Require parentheses when postfix ? is followed by +",
+  "feature": "?.",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "int scoreOr(int delta, User * _Nullable user) {\n    return user?.profile? + delta;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-FOLLOWTOKEN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 25 }
+        },
+        "message": "postfix ? propagation requires a follow token boundary",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 25 }
+            },
+            "replacement": "(user?.profile?)"
+          }
+        ]
+      }
+    ]
+  }
+}

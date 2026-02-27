@@ -1,0 +1,25 @@
+{
+  "id": "M14-A009",
+  "title": "Accept M14 lane-A parser fixture baseline for issue #1844 task M14-A009 (Document frontend invariants for integrators (Documentation and Evidence))",
+  "feature": "m14 lane-a parser module metadata serialization and table-a coverage slice 09",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M14",
+    "milestone_number": 99,
+    "lane": "A",
+    "issue": 1844,
+    "task": "M14-A009",
+    "sequence": 9
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_INVARIANT_DOCUMENTATION__\n#define __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_INVARIANT_DOCUMENTATION__ 1\n#endif\n\ntypedef struct M14A009_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M14A009_Probe;\n\nM14A009_Probe m14a009_probe(void) {\n#if __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_INVARIANT_DOCUMENTATION__\n    M14A009_Probe probe = { 1, 9, 1844 };\n#else\n    M14A009_Probe probe = { 0, 9, 1844 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

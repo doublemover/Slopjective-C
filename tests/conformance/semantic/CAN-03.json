@@ -1,0 +1,23 @@
+{
+  "id": "CAN-03",
+  "title": "Model group failure cancellation of unfinished siblings before failure propagation",
+  "feature": "cancellation propagation and task-context semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-2-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/STANDARD_LIBRARY_CONTRACT.md#s-3-2"
+  ],
+  "source": "typedef id CAN03TaskGroup;\nid can03_with_group(id (^body)(CAN03TaskGroup group) async throws) async throws __attribute__((objc_task_group));\nvoid can03_group_add(CAN03TaskGroup group, id (^work)(void) async throws);\nid can03_group_wait_next(CAN03TaskGroup group) async throws;\nid can03_make_group_failure(void);\nint can03_task_is_cancelled(void);\nid can03_checkpoint(void) async;\n\nid can03_group_failure_cancels_siblings(id seed) async throws {\n    return try await can03_with_group(^id(CAN03TaskGroup group) async throws {\n        can03_group_add(group, ^id(void) async throws {\n            throw can03_make_group_failure();\n        });\n        can03_group_add(group, ^id(void) async throws {\n            while (can03_task_is_cancelled() == 0) {\n                (void)await can03_checkpoint();\n            }\n            return seed;\n        });\n        return try await can03_group_wait_next(group);\n    });\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

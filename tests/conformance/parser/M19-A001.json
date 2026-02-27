@@ -1,0 +1,25 @@
+{
+  "id": "M19-A001",
+  "title": "Accept M19 lane-A parser fixture baseline for issue #2324 task M19-A001 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m19 lane-a parser compiler bootstrap build surface activation core strict contract slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M19",
+    "milestone_number": 104,
+    "lane": "A",
+    "issue": 2324,
+    "task": "M19-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_CONTRACT_SLICE_S001__\\n#define __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_CONTRACT_SLICE_S001__ 1\\n#endif\\n\\ntypedef struct M19A001_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M19A001_Probe;\\n\\nM19A001_Probe m19a001_probe(void) {\\n#if __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_CONTRACT_SLICE_S001__\\n    M19A001_Probe probe = { 1, 1, 2324 };\\n#else\\n    M19A001_Probe probe = { 0, 1, 2324 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "id": "M07-C005",
+  "title": "Fail strict replay verification when lowering-consumed metadata parity fields drift (issue #1491 / task M07-C005)",
+  "feature": "M07 Lane C metadata/lowering parity fail-closed guard; issue #1491; task M07-C005; sequence 5; dispatch title: [Compiler][M07][Lane C][M07-C005] Harden metadata/lowering parity checks (Determinism Proof)",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M07C005.objcmod --emit-interface M07C005.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M07C005.opt.objcmod --emit-interface M07C005.opt.obji %s\n// RUN: objc3c --verify-interface M07C005.objcmod M07C005.obji --assert-mismatch metadata.executor_affinity:missing --assert-mismatch metadata.isolation.actor:missing\n// RUN: objc3c --verify-interface M07C005.opt.objcmod M07C005.opt.obji --assert-mismatch metadata.executor_affinity:missing --assert-mismatch metadata.isolation.actor:missing\nactor class M07C005Mailbox : NSObject\n- (id _Nonnull)dequeue;\n- (id _Nullable)cachedToken __attribute__((objc_nonisolated));\n- (id _Nonnull)run:(id _Nonnull)seed async __attribute__((objc_executor(main)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": 167
+          }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "executor-affinity and actor-isolation metadata consumed by lowering remain explicit and one-to-one",
+            "strict replay verification fails closed when required lowering metadata fields are missing",
+            "metadata parity checks execute before importer lowering consumes declarations"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized emission preserves lowering-consumed metadata parity fields",
+            "optimization does not suppress strict mismatch diagnostics for metadata drift",
+            "fail-closed replay behavior remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "metadata.executor_affinity",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "executor-affinity metadata remains parity-stable for lowering decisions",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "metadata.isolation.actor",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "actor-isolation metadata remains parity-stable for boundary lowering",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

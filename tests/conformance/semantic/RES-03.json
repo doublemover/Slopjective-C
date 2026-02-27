@@ -1,0 +1,33 @@
+{
+  "id": "RES-03",
+  "title": "Diagnose strict-system use-after-take on moved-from resources",
+  "feature": "resource move-state diagnostics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+  ],
+  "source": "typedef int res_handle_t;\nvoid res_close(res_handle_t handle);\nres_handle_t res_open(void);\nint res_is_valid(res_handle_t handle);\n\nint res03_use_after_take(void) {\n    res_handle_t fd __attribute__((objc_resource(close=res_close, invalid=-1))) = res_open();\n    res_handle_t moved = take(fd);\n    if (res_is_valid(fd)) {\n        return (int)fd;\n    }\n    return (int)moved;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-RESOURCE-USE-AFTER-TAKE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 9 },
+          "end": { "line": 9, "column": 24 }
+        },
+        "message": "resource was moved by take(fd); reinitialize with reset before valid use",
+        "fixits": []
+      }
+    ]
+  }
+}

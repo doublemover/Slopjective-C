@@ -1,0 +1,11 @@
+module GlobalConstReferenceFunctionInitializer;
+
+fn helper() -> i32 {
+  return 1;
+}
+
+let value = helper;
+
+fn main() -> i32 {
+  return value;
+}

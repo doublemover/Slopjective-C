@@ -1,0 +1,61 @@
+{
+  "id": "DEF-71-RT-01",
+  "title": "Lower defer execution on normal scope exit with LIFO and exactly-once guarantees",
+  "feature": "defer runtime/lowering normal-exit semantics",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\nint def71_normal_exit_trace(void) {\n    int trace = 0;\n    int once1 = 0;\n    int once2 = 0;\n    int once3 = 0;\n\n    {\n        defer { trace = trace * 10 + 1; once1 = once1 + 1; };\n        defer { trace = trace * 10 + 2; once2 = once2 + 1; };\n        defer { trace = trace * 10 + 3; once3 = once3 + 1; };\n        trace = 9;\n    }\n\n    if (once1 != 1 || once2 != 1 || once3 != 1) {\n        return -1;\n    }\n\n    // Normal exit from the block must run 3, then 2, then 1.\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-O0"
+          ],
+          "defer_requirements": [
+            "normal lexical scope exit executes defer actions in reverse registration order (3, 2, 1)",
+            "each defer registration executes exactly once on scope exit",
+            "counter checks remain true (once1 == 1, once2 == 1, once3 == 1)"
+          ],
+          "runtime_assertions": [
+            "def71_normal_exit_trace returns 9321",
+            "function returns -1 if any defer action executes zero or multiple times"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-O2"
+          ],
+          "defer_requirements": [
+            "optimization preserves normal-exit defer LIFO ordering",
+            "optimization does not duplicate or elide registered defer actions"
+          ],
+          "runtime_assertions": [
+            "def71_normal_exit_trace still returns 9321 under optimization",
+            "exactly-once counter checks are preserved after lowering and optimization"
+          ]
+        }
+      ]
+    }
+  }
+}

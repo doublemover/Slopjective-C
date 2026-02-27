@@ -1,0 +1,9 @@
+module IdParserMissingParamColon;
+
+fn pick(value id) -> i32 {
+  return value;
+}
+
+fn main() -> i32 {
+  return pick(1);
+}

@@ -1,0 +1,10 @@
+// Positive fixture: nil reassignment elision remains stable in mixed expression/conditional flow.
+module MessageSendNilReceiverMixedExpressionFlow;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver ping];
+  let adjusted = sent + 4;
+  return (adjusted == 4) ? adjusted : 0;
+}

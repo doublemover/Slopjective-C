@@ -1,0 +1,16 @@
+{
+  "id": "EC-CROSS-05",
+  "title": "Accept cross-feature expression with nil-coalescing fallback",
+  "feature": "try await + postfix ? + ?.",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id tokenOrFallback(Client * _Nullable client, id fallback) async throws {\n    return (try await client?.fetchToken())? ?? fallback;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

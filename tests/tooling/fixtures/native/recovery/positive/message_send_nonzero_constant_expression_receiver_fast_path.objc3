@@ -1,0 +1,5 @@
+module MessageSendNonzeroConstantExpressionReceiverFastPath;
+
+fn main() -> i32 {
+  return [(3 + 4) ping];
+}

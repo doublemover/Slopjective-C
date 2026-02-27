@@ -1,0 +1,11 @@
+// Negative fixture: missing return in non-void function.
+// Expected diagnostic code(s): O3S205.
+module NegativeMissingReturn;
+
+fn helper(value: i32) {
+  let bumped = value + 1;
+}
+
+fn main() {
+  return 0;
+}

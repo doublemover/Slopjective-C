@@ -1,0 +1,1246 @@
+{
+  "schema_version": "1.0.0",
+  "suite": "objc3-conformance-semantic-types-wave",
+  "description": "Semantic fixtures for type-system/control-flow/errors/concurrency/system/performance/metaprogramming/interop lanes (issues #58, #59, #61, #62, #64, #65, #66, #70, #72, #73, #75, #77, #78, #80, #82, #83, #84, #86, #87, #89, #90, #91, #93, #96, #98, #99, #101, #102, #103, #1181, #1182, #1183, #1184, #1185, #1186, #1187, #1188, #1223..#1231, #1268..#1277, #1316..#1325, #1366..#1377, #1423..#1431).",
+  "groups": [
+    {
+      "name": "issue_58_nullability_qualifiers",
+      "feature": "nullability qualifiers in type system",
+      "issue": 58,
+      "files": [
+        "TYP-58-01.json",
+        "TYP-58-02.json"
+      ]
+    },
+    {
+      "name": "issue_59_nonnull_default_regions",
+      "feature": "nonnull-by-default region behavior",
+      "issue": 59,
+      "files": [
+        "NNB-59-01.json",
+        "NNB-59-02.json"
+      ]
+    },
+    {
+      "name": "issue_61_optional_and_iuo_types",
+      "feature": "optional and implicitly-unwrapped optional behavior",
+      "issue": 61,
+      "files": [
+        "OPT-61-01.json",
+        "OPT-61-02.json",
+        "OPT-61-03.json"
+      ]
+    },
+    {
+      "name": "issue_62_reference_only_optional_chaining",
+      "feature": "v1 reference-only optional chaining restriction",
+      "issue": 62,
+      "files": [
+        "OPT-62-NEG-01.json",
+        "OPT-62-POS-01.json"
+      ]
+    },
+    {
+      "name": "issue_64_pragmatic_generic_types",
+      "feature": "pragmatic generic types",
+      "issue": 64,
+      "files": [
+        "GEN-64-01.json",
+        "GEN-64-02.json"
+      ]
+    },
+    {
+      "name": "issue_65_generic_methods_deferral_gate",
+      "feature": "generic method/function deferral and extension gating",
+      "issue": 65,
+      "files": [
+        "GEN-65-01.json",
+        "GEN-65-02.json"
+      ]
+    },
+    {
+      "name": "issue_66_key_path_literal_support",
+      "feature": "key path literal support and unsupported-mode diagnostics",
+      "issue": 66,
+      "files": [
+        "KPATH-66-01.json",
+        "KPATH-66-02.json"
+      ]
+    },
+    {
+      "name": "issue_70_defer_lifo_semantics",
+      "feature": "defer LIFO scope-exit semantics",
+      "issue": 70,
+      "files": [
+        "DEF-70-01.json",
+        "DEF-70-02.json"
+      ]
+    },
+    {
+      "name": "issue_72_guard_refinement_rules",
+      "feature": "guard early-exit and refinement semantics",
+      "issue": 72,
+      "files": [
+        "GRD-72-01.json",
+        "GRD-72-02.json"
+      ]
+    },
+    {
+      "name": "issue_73_match_or_gating",
+      "feature": "match semantics and provisional feature gating",
+      "issue": 73,
+      "files": [
+        "MTC-73-01.json",
+        "MTC-73-GATE-01.json"
+      ]
+    },
+    {
+      "name": "issue_75_untyped_throws_v1",
+      "feature": "untyped throws v1 semantics",
+      "issue": 75,
+      "files": [
+        "THR-75-01.json",
+        "THR-75-02.json"
+      ]
+    },
+    {
+      "name": "issue_77_try_do_catch_propagation",
+      "feature": "try/do-catch and propagation behavior",
+      "issue": 77,
+      "files": [
+        "TRY-77-01.json",
+        "TRY-77-02.json"
+      ]
+    },
+    {
+      "name": "issue_78_bridging_attributes_semantic",
+      "feature": "NSError/status-code bridging semantic checks",
+      "issue": 78,
+      "files": [
+        "BRG-78-01.json",
+        "BRG-78-02.json"
+      ]
+    },
+    {
+      "name": "issue_80_async_await_typing",
+      "feature": "async context typing and await placement semantics",
+      "issue": 80,
+      "files": [
+        "ASY-03.json",
+        "ASY-04.json"
+      ]
+    },
+    {
+      "name": "issue_82_cancellation_propagation_semantic",
+      "feature": "cancellation propagation and task-context semantic behavior",
+      "issue": 82,
+      "files": [
+        "CAN-01.json",
+        "CAN-02.json",
+        "CAN-03.json",
+        "CAN-04.json"
+      ]
+    },
+    {
+      "name": "issue_83_executor_affinity_semantic",
+      "feature": "executor affinity hops, proof/elision, and attribute legality checks",
+      "issue": 83,
+      "files": [
+        "EXE-01.json",
+        "EXE-02.json",
+        "EXE-03.json",
+        "EXEC-ATTR-01.json",
+        "EXEC-ATTR-02.json"
+      ]
+    },
+    {
+      "name": "issue_84_actor_isolation_semantic",
+      "feature": "actor declaration, isolation, and reentrancy semantics",
+      "issue": 84,
+      "files": [
+        "ACT-01.json",
+        "ACT-02.json",
+        "ACT-03.json",
+        "ACT-04.json"
+      ]
+    },
+    {
+      "name": "issue_86_sendable_constraints_semantic",
+      "feature": "sendable-like constraints across task, actor, and executor boundaries",
+      "issue": 86,
+      "files": [
+        "SND-01.json",
+        "SND-02.json",
+        "SND-03.json",
+        "SND-04.json",
+        "SND-05.json",
+        "SND-06.json"
+      ]
+    },
+    {
+      "name": "issue_87_d011_await_requirement_semantic",
+      "feature": "await requirement semantics for potentially-suspending operations",
+      "issue": 87,
+      "files": [
+        "AWT-03.json",
+        "AWT-04.json"
+      ]
+    },
+    {
+      "name": "issue_89_resource_cleanup_semantic",
+      "feature": "resource cleanup semantics and misuse checks",
+      "issue": 89,
+      "files": [
+        "RES-01.json",
+        "RES-02.json",
+        "RES-03.json"
+      ]
+    },
+    {
+      "name": "issue_90_lifetime_extension_semantic",
+      "feature": "withLifetime and keepAlive semantic behavior",
+      "issue": 90,
+      "files": [
+        "LIFE-01.json",
+        "LIFE-02.json",
+        "LIFE-03.json"
+      ]
+    },
+    {
+      "name": "issue_91_borrowed_pointer_rules_semantic",
+      "feature": "borrowed pointer escape rule positives and early negatives",
+      "issue": 91,
+      "files": [
+        "BRW-NEG-01.json",
+        "BRW-NEG-02.json",
+        "BRW-POS-01.json",
+        "BRW-POS-02.json",
+        "BRW-POS-03.json",
+        "BRW-POS-04.json"
+      ]
+    },
+    {
+      "name": "issue_93_capture_list_semantic",
+      "feature": "capture-list evaluation order and modifier semantics",
+      "issue": 93,
+      "files": [
+        "CAP-03.json",
+        "CAP-04.json",
+        "CAP-05.json"
+      ]
+    },
+    {
+      "name": "issue_96_performance_legality_semantic",
+      "feature": "direct/final/sealed legality across inheritance and categories",
+      "issue": 96,
+      "files": [
+        "PERF-DIRMEM-01.json",
+        "PERF-DIRMEM-02.json",
+        "PERF-DIRMEM-03.json",
+        "PERF-LEG-01.json",
+        "PERF-LEG-02.json"
+      ]
+    },
+    {
+      "name": "issue_98_derive_expansion_semantic",
+      "feature": "deterministic derive expansion and capability gating",
+      "issue": 98,
+      "files": [
+        "META-DRV-01.json",
+        "META-DRV-02.json",
+        "META-DRV-03.json"
+      ]
+    },
+    {
+      "name": "issue_99_macro_package_resolution_semantic",
+      "feature": "macro package resolution determinism and sandbox source policy",
+      "issue": 99,
+      "files": [
+        "META-PKG-01.json",
+        "META-PKG-02.json",
+        "META-PKG-03.json"
+      ]
+    },
+    {
+      "name": "issue_101_c_interop_semantic",
+      "feature": "C/ObjC runtime interop semantic checks for async/throws thunk surfaces",
+      "issue": 101,
+      "files": [
+        "INT-C-01.json",
+        "INT-C-02.json",
+        "INT-C-03.json",
+        "INT-C-04.json",
+        "INT-C-05.json",
+        "INT-C-06.json"
+      ]
+    },
+    {
+      "name": "issue_102_objcxx_interop_semantic",
+      "feature": "ObjC++ interop semantic checks for ownership, throws, and async parity",
+      "issue": 102,
+      "files": [
+        "INT-CXX-01.json",
+        "INT-CXX-02.json",
+        "INT-CXX-03.json",
+        "INT-CXX-04.json"
+      ]
+    },
+    {
+      "name": "issue_103_swift_interop_semantic",
+      "feature": "Swift interop semantic mapping checks for optionals, throws, async, and actors",
+      "issue": 103,
+      "files": [
+        "INT-SWIFT-01.json",
+        "INT-SWIFT-02.json",
+        "INT-SWIFT-03.json",
+        "INT-SWIFT-04.json"
+      ]
+    },
+    {
+      "name": "issue_1181_m01_lane_b_nullability_transfer",
+      "feature": "M01 lane B nullability transfer determinism",
+      "issue": 1181,
+      "files": [
+        "M01-B001.json"
+      ]
+    },
+    {
+      "name": "issue_1182_m01_lane_b_optional_send_category",
+      "feature": "M01 lane B optional-send return-category enforcement",
+      "issue": 1182,
+      "files": [
+        "M01-B002.json"
+      ]
+    },
+    {
+      "name": "issue_1183_m01_lane_b_throws_callsites",
+      "feature": "M01 lane B throws-effect call-site enforcement",
+      "issue": 1183,
+      "files": [
+        "M01-B003.json"
+      ]
+    },
+    {
+      "name": "issue_1184_m01_lane_b_await_requirements",
+      "feature": "M01 lane B await requirement determinism",
+      "issue": 1184,
+      "files": [
+        "M01-B004.json"
+      ]
+    },
+    {
+      "name": "issue_1185_m01_lane_b_actor_nonisolated_access",
+      "feature": "M01 lane B actor nonisolated access enforcement",
+      "issue": 1185,
+      "files": [
+        "M01-B005.json"
+      ]
+    },
+    {
+      "name": "issue_1186_m01_lane_b_sendability_boundaries",
+      "feature": "M01 lane B sendability boundary checks",
+      "issue": 1186,
+      "files": [
+        "M01-B006.json"
+      ]
+    },
+    {
+      "name": "issue_1187_m01_lane_b_borrowed_escape",
+      "feature": "M01 lane B borrowed pointer escape determinism",
+      "issue": 1187,
+      "files": [
+        "M01-B007.json"
+      ]
+    },
+    {
+      "name": "issue_1188_m01_lane_b_resource_move_state",
+      "feature": "M01 lane B resource move-state diagnostics",
+      "issue": 1188,
+      "files": [
+        "M01-B008.json"
+      ]
+    },
+    {
+      "name": "issue_1223_m02_lane_b_through_issue_1231_m02_lane_b_semantic_scope_freeze",
+      "feature": "M02 lane B semantic fixture scaffolding for issues #1223 through #1231",
+      "issue": 1223,
+      "issues": [
+        1223,
+        1224,
+        1225,
+        1226,
+        1227,
+        1228,
+        1229,
+        1230,
+        1231
+      ],
+      "files": [
+        "M02-B001.json",
+        "M02-B002.json",
+        "M02-B003.json",
+        "M02-B004.json",
+        "M02-B005.json",
+        "M02-B006.json",
+        "M02-B007.json",
+        "M02-B008.json",
+        "M02-B009.json"
+      ]
+    },
+    {
+      "name": "issue_1268_m03_lane_b_through_issue_1277_m03_lane_b_semantic_scope_freeze",
+      "feature": "M03 lane B semantic fixture scaffolding for issues #1268 through #1277",
+      "issue": 1268,
+      "issues": [
+        1268,
+        1269,
+        1270,
+        1271,
+        1272,
+        1273,
+        1274,
+        1275,
+        1276,
+        1277
+      ],
+      "files": [
+        "M03-B001.json",
+        "M03-B002.json",
+        "M03-B003.json",
+        "M03-B004.json",
+        "M03-B005.json",
+        "M03-B006.json",
+        "M03-B007.json",
+        "M03-B008.json",
+        "M03-B009.json",
+        "M03-B010.json"
+      ]
+    },
+    {
+      "name": "issue_1316_m04_lane_b_through_issue_1325_m04_lane_b_semantic_scope_freeze",
+      "feature": "M04 lane B semantic fixture scaffolding for issues #1316 through #1325",
+      "issue": 1316,
+      "issues": [
+        1316,
+        1317,
+        1318,
+        1319,
+        1320,
+        1321,
+        1322,
+        1323,
+        1324,
+        1325
+      ],
+      "files": [
+        "M04-B001.json",
+        "M04-B002.json",
+        "M04-B003.json",
+        "M04-B004.json",
+        "M04-B005.json",
+        "M04-B006.json",
+        "M04-B007.json",
+        "M04-B008.json",
+        "M04-B009.json",
+        "M04-B010.json"
+      ]
+    },
+    {
+      "name": "issue_1366_m05_lane_b_through_issue_1377_m05_lane_b_semantic_scope_freeze",
+      "feature": "M05 lane B semantic fixture scaffolding for issues #1366 through #1377",
+      "issue": 1366,
+      "issues": [
+        1366,
+        1367,
+        1368,
+        1369,
+        1370,
+        1371,
+        1372,
+        1373,
+        1374,
+        1375,
+        1376,
+        1377
+      ],
+      "files": [
+        "M05-B001.json",
+        "M05-B002.json",
+        "M05-B003.json",
+        "M05-B004.json",
+        "M05-B005.json",
+        "M05-B006.json",
+        "M05-B007.json",
+        "M05-B008.json",
+        "M05-B009.json",
+        "M05-B010.json",
+        "M05-B011.json",
+        "M05-B012.json"
+      ]
+    },
+    {
+      "name": "issue_1423_m06_lane_b_through_issue_1431_m06_lane_b_semantic_scope_freeze",
+      "feature": "M06 lane B semantic fixture scaffolding for issues #1423 through #1431",
+      "issue": 1423,
+      "issues": [
+        1423,
+        1424,
+        1425,
+        1426,
+        1427,
+        1428,
+        1429,
+        1430,
+        1431
+      ],
+      "files": [
+        "M06-B001.json",
+        "M06-B002.json",
+        "M06-B003.json",
+        "M06-B004.json",
+        "M06-B005.json",
+        "M06-B006.json",
+        "M06-B007.json",
+        "M06-B008.json",
+        "M06-B009.json"
+      ]
+    },
+    {
+      "name": "issue_1473_m07_lane_b_through_issue_1486_m07_lane_b_semantic_scope_freeze",
+      "feature": "M07 lane B semantic fixture scaffolding for issues #1473 through #1486",
+      "issue": 1473,
+      "issues": [
+        1473,
+        1474,
+        1475,
+        1476,
+        1477,
+        1478,
+        1479,
+        1480,
+        1481,
+        1482,
+        1483,
+        1484,
+        1485,
+        1486
+      ],
+      "files": [
+        "M07-B001.json",
+        "M07-B002.json",
+        "M07-B003.json",
+        "M07-B004.json",
+        "M07-B005.json",
+        "M07-B006.json",
+        "M07-B007.json",
+        "M07-B008.json",
+        "M07-B009.json",
+        "M07-B010.json",
+        "M07-B011.json",
+        "M07-B012.json",
+        "M07-B013.json",
+        "M07-B014.json"
+      ]
+    },
+    {
+      "name": "issue_1539_m08_lane_b_through_issue_1547_m08_lane_b_semantic_scope_freeze",
+      "feature": "M08 lane B semantic fixture scaffolding for issues #1539 through #1547",
+      "issue": 1539,
+      "issues": [
+        1539,
+        1540,
+        1541,
+        1542,
+        1543,
+        1544,
+        1545,
+        1546,
+        1547
+      ],
+      "files": [
+        "M08-B001.json",
+        "M08-B002.json",
+        "M08-B003.json",
+        "M08-B004.json",
+        "M08-B005.json",
+        "M08-B006.json",
+        "M08-B007.json",
+        "M08-B008.json",
+        "M08-B009.json"
+      ]
+    },
+    {
+      "name": "issue_1583_m09_lane_b_through_issue_1590_m09_lane_b_semantic_scope_freeze",
+      "feature": "M09 lane B semantic fixture scaffolding for issues #1583 through #1590",
+      "issue": 1583,
+      "issues": [
+        1583,
+        1584,
+        1585,
+        1586,
+        1587,
+        1588,
+        1589,
+        1590
+      ],
+      "files": [
+        "M09-B001.json",
+        "M09-B002.json",
+        "M09-B003.json",
+        "M09-B004.json",
+        "M09-B005.json",
+        "M09-B006.json",
+        "M09-B007.json",
+        "M09-B008.json"
+      ]
+    },
+    {
+      "name": "issue_1627_m10_lane_b_through_issue_1636_m10_lane_b_semantic_scope_freeze",
+      "feature": "M10 lane B semantic fixture scaffolding for issues #1627 through #1636",
+      "issue": 1627,
+      "issues": [
+        1627,
+        1628,
+        1629,
+        1630,
+        1631,
+        1632,
+        1633,
+        1634,
+        1635,
+        1636
+      ],
+      "files": [
+        "M10-B001.json",
+        "M10-B002.json",
+        "M10-B003.json",
+        "M10-B004.json",
+        "M10-B005.json",
+        "M10-B006.json",
+        "M10-B007.json",
+        "M10-B008.json",
+        "M10-B009.json",
+        "M10-B010.json"
+      ]
+    },
+    {
+      "name": "m10_lane_b_issue_1627_1636_semantic_scope",
+      "issue": 1627,
+      "issues": [
+        1627,
+        1628,
+        1629,
+        1630,
+        1631,
+        1632,
+        1633,
+        1634,
+        1635,
+        1636
+      ],
+      "files": [
+        "M10-B001.json",
+        "M10-B002.json",
+        "M10-B003.json",
+        "M10-B004.json",
+        "M10-B005.json",
+        "M10-B006.json",
+        "M10-B007.json",
+        "M10-B008.json",
+        "M10-B009.json",
+        "M10-B010.json"
+      ]
+    },
+    {
+      "name": "issue_1679_m11_lane_b_through_issue_1689_m11_lane_b_semantic_scope_freeze",
+      "feature": "M11 lane B semantic fixture scaffolding for issues #1679 through #1689",
+      "issue": 1679,
+      "issues": [
+        1679,
+        1680,
+        1681,
+        1682,
+        1683,
+        1684,
+        1685,
+        1686,
+        1687,
+        1688,
+        1689
+      ],
+      "files": [
+        "M11-B001.json",
+        "M11-B002.json",
+        "M11-B003.json",
+        "M11-B004.json",
+        "M11-B005.json",
+        "M11-B006.json",
+        "M11-B007.json",
+        "M11-B008.json",
+        "M11-B009.json",
+        "M11-B010.json",
+        "M11-B011.json"
+      ]
+    },
+    {
+      "name": "issue_1736_m12_lane_b_through_issue_1747_m12_lane_b_semantic_scope_freeze",
+      "feature": "M12 lane B semantic fixture scaffolding for issues #1736 through #1747",
+      "issue": 1736,
+      "issues": [
+        1736,
+        1737,
+        1738,
+        1739,
+        1740,
+        1741,
+        1742,
+        1743,
+        1744,
+        1745,
+        1746,
+        1747
+      ],
+      "files": [
+        "M12-B001.json",
+        "M12-B002.json",
+        "M12-B003.json",
+        "M12-B004.json",
+        "M12-B005.json",
+        "M12-B006.json",
+        "M12-B007.json",
+        "M12-B008.json",
+        "M12-B009.json",
+        "M12-B010.json",
+        "M12-B011.json",
+        "M12-B012.json"
+      ]
+    },
+    {
+      "name": "issue_1795_m13_lane_b_through_issue_1804_m13_lane_b_semantic_scope_freeze",
+      "feature": "M13 lane B semantic fixture scaffolding for issues #1795 through #1804",
+      "issue": 1795,
+      "issues": [
+        1795,
+        1796,
+        1797,
+        1798,
+        1799,
+        1800,
+        1801,
+        1802,
+        1803,
+        1804
+      ],
+      "files": [
+        "M13-B001.json",
+        "M13-B002.json",
+        "M13-B003.json",
+        "M13-B004.json",
+        "M13-B005.json",
+        "M13-B006.json",
+        "M13-B007.json",
+        "M13-B008.json",
+        "M13-B009.json",
+        "M13-B010.json"
+      ]
+    },
+    {
+      "name": "issue_1848_m14_lane_b_through_issue_1859_m14_lane_b_semantic_scope_freeze",
+      "feature": "M14 lane B semantic fixture scaffolding for issues #1848 through #1859",
+      "issue": 1848,
+      "issues": [
+        1848,
+        1849,
+        1850,
+        1851,
+        1852,
+        1853,
+        1854,
+        1855,
+        1856,
+        1857,
+        1858,
+        1859
+      ],
+      "files": [
+        "M14-B001.json",
+        "M14-B002.json",
+        "M14-B003.json",
+        "M14-B004.json",
+        "M14-B005.json",
+        "M14-B006.json",
+        "M14-B007.json",
+        "M14-B008.json",
+        "M14-B009.json",
+        "M14-B010.json",
+        "M14-B011.json",
+        "M14-B012.json"
+      ]
+    },
+    {
+      "name": "issue_1907_m15_lane_b_through_issue_1916_m15_lane_b_semantic_scope_freeze",
+      "feature": "M15 lane B semantic fixture scaffolding for issues #1907 through #1916",
+      "issue": 1907,
+      "issues": [
+        1907,
+        1908,
+        1909,
+        1910,
+        1911,
+        1912,
+        1913,
+        1914,
+        1915,
+        1916
+      ],
+      "files": [
+        "M15-B001.json",
+        "M15-B002.json",
+        "M15-B003.json",
+        "M15-B004.json",
+        "M15-B005.json",
+        "M15-B006.json",
+        "M15-B007.json",
+        "M15-B008.json",
+        "M15-B009.json",
+        "M15-B010.json"
+      ]
+    },
+    {
+      "name": "issue_1957_m16_lane_b_through_issue_1965_m16_lane_b_semantic_scope_freeze",
+      "feature": "M16 lane B semantic fixture scaffolding for issues #1957 through #1965",
+      "issue": 1957,
+      "issues": [
+        1957,
+        1958,
+        1959,
+        1960,
+        1961,
+        1962,
+        1963,
+        1964,
+        1965
+      ],
+      "files": [
+        "M16-B001.json",
+        "M16-B002.json",
+        "M16-B003.json",
+        "M16-B004.json",
+        "M16-B005.json",
+        "M16-B006.json",
+        "M16-B007.json",
+        "M16-B008.json",
+        "M16-B009.json"
+      ]
+    },
+    {
+      "name": "issue_2044_m17_lane_b_through_issue_2095_m17_lane_b_semantic_scope_freeze",
+      "feature": "M17 lane B semantic fixture scaffolding for issues #2044 through #2095",
+      "issue": 2044,
+      "issues": [
+        2044,
+        2045,
+        2046,
+        2047,
+        2048,
+        2049,
+        2050,
+        2051,
+        2052,
+        2053,
+        2054,
+        2055,
+        2056,
+        2057,
+        2058,
+        2059,
+        2060,
+        2061,
+        2062,
+        2063,
+        2064,
+        2065,
+        2066,
+        2067,
+        2068,
+        2069,
+        2070,
+        2071,
+        2072,
+        2073,
+        2074,
+        2075,
+        2076,
+        2077,
+        2078,
+        2079,
+        2080,
+        2081,
+        2082,
+        2083,
+        2084,
+        2085,
+        2086,
+        2087,
+        2088,
+        2089,
+        2090,
+        2091,
+        2092,
+        2093,
+        2094,
+        2095
+      ],
+      "files": [
+        "M17-B001.json",
+        "M17-B002.json",
+        "M17-B003.json",
+        "M17-B004.json",
+        "M17-B005.json",
+        "M17-B006.json",
+        "M17-B007.json",
+        "M17-B008.json",
+        "M17-B009.json",
+        "M17-B010.json",
+        "M17-B011.json",
+        "M17-B012.json",
+        "M17-B013.json",
+        "M17-B014.json",
+        "M17-B015.json",
+        "M17-B016.json",
+        "M17-B017.json",
+        "M17-B018.json",
+        "M17-B019.json",
+        "M17-B020.json",
+        "M17-B021.json",
+        "M17-B022.json",
+        "M17-B023.json",
+        "M17-B024.json",
+        "M17-B025.json",
+        "M17-B026.json",
+        "M17-B027.json",
+        "M17-B028.json",
+        "M17-B029.json",
+        "M17-B030.json",
+        "M17-B031.json",
+        "M17-B032.json",
+        "M17-B033.json",
+        "M17-B034.json",
+        "M17-B035.json",
+        "M17-B036.json",
+        "M17-B037.json",
+        "M17-B038.json",
+        "M17-B039.json",
+        "M17-B040.json",
+        "M17-B041.json",
+        "M17-B042.json",
+        "M17-B043.json",
+        "M17-B044.json",
+        "M17-B045.json",
+        "M17-B046.json",
+        "M17-B047.json",
+        "M17-B048.json",
+        "M17-B049.json",
+        "M17-B050.json",
+        "M17-B051.json",
+        "M17-B052.json"
+      ]
+    },
+    {
+      "name": "issue_2267_m18_lane_b_through_issue_2280_m18_lane_b_semantic_scope_freeze",
+      "feature": "M18 lane B semantic fixture scaffolding for issues #2267 through #2280",
+      "issue": 2267,
+      "issues": [
+        2267,
+        2268,
+        2269,
+        2270,
+        2271,
+        2272,
+        2273,
+        2274,
+        2275,
+        2276,
+        2277,
+        2278,
+        2279,
+        2280
+      ],
+      "files": [
+        "M18-B001.json",
+        "M18-B002.json",
+        "M18-B003.json",
+        "M18-B004.json",
+        "M18-B005.json",
+        "M18-B006.json",
+        "M18-B007.json",
+        "M18-B008.json",
+        "M18-B009.json",
+        "M18-B010.json",
+        "M18-B011.json",
+        "M18-B012.json",
+        "M18-B013.json",
+        "M18-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2339_m19_lane_b_through_issue_2352_m19_lane_b_semantic_scope_freeze",
+      "feature": "M19 lane B semantic fixture scaffolding for issues #2339 through #2352",
+      "issue": 2339,
+      "issues": [
+        2339,
+        2340,
+        2341,
+        2342,
+        2343,
+        2344,
+        2345,
+        2346,
+        2347,
+        2348,
+        2349,
+        2350,
+        2351,
+        2352
+      ],
+      "files": [
+        "M19-B001.json",
+        "M19-B002.json",
+        "M19-B003.json",
+        "M19-B004.json",
+        "M19-B005.json",
+        "M19-B006.json",
+        "M19-B007.json",
+        "M19-B008.json",
+        "M19-B009.json",
+        "M19-B010.json",
+        "M19-B011.json",
+        "M19-B012.json",
+        "M19-B013.json",
+        "M19-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2411_m20_lane_b_through_issue_2424_m20_lane_b_semantic_scope_freeze",
+      "feature": "M20 lane B semantic fixture scaffolding for issues #2411 through #2424",
+      "issue": 2411,
+      "issues": [
+        2411,
+        2412,
+        2413,
+        2414,
+        2415,
+        2416,
+        2417,
+        2418,
+        2419,
+        2420,
+        2421,
+        2422,
+        2423,
+        2424
+      ],
+      "files": [
+        "M20-B001.json",
+        "M20-B002.json",
+        "M20-B003.json",
+        "M20-B004.json",
+        "M20-B005.json",
+        "M20-B006.json",
+        "M20-B007.json",
+        "M20-B008.json",
+        "M20-B009.json",
+        "M20-B010.json",
+        "M20-B011.json",
+        "M20-B012.json",
+        "M20-B013.json",
+        "M20-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2483_m21_lane_b_through_issue_2496_m21_lane_b_semantic_scope_freeze",
+      "feature": "M21 lane B semantic fixture scaffolding for issues #2483 through #2496",
+      "issue": 2483,
+      "issues": [
+        2483,
+        2484,
+        2485,
+        2486,
+        2487,
+        2488,
+        2489,
+        2490,
+        2491,
+        2492,
+        2493,
+        2494,
+        2495,
+        2496
+      ],
+      "files": [
+        "M21-B001.json",
+        "M21-B002.json",
+        "M21-B003.json",
+        "M21-B004.json",
+        "M21-B005.json",
+        "M21-B006.json",
+        "M21-B007.json",
+        "M21-B008.json",
+        "M21-B009.json",
+        "M21-B010.json",
+        "M21-B011.json",
+        "M21-B012.json",
+        "M21-B013.json",
+        "M21-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2555_m22_lane_b_through_issue_2568_m22_lane_b_semantic_scope_freeze",
+      "feature": "M22 lane B semantic fixture scaffolding for issues #2555 through #2568",
+      "issue": 2555,
+      "issues": [
+        2555,
+        2556,
+        2557,
+        2558,
+        2559,
+        2560,
+        2561,
+        2562,
+        2563,
+        2564,
+        2565,
+        2566,
+        2567,
+        2568
+      ],
+      "files": [
+        "M22-B001.json",
+        "M22-B002.json",
+        "M22-B003.json",
+        "M22-B004.json",
+        "M22-B005.json",
+        "M22-B006.json",
+        "M22-B007.json",
+        "M22-B008.json",
+        "M22-B009.json",
+        "M22-B010.json",
+        "M22-B011.json",
+        "M22-B012.json",
+        "M22-B013.json",
+        "M22-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2627_m23_lane_b_through_issue_2640_m23_lane_b_semantic_scope_freeze",
+      "feature": "M23 lane B semantic fixture scaffolding for issues #2627 through #2640",
+      "issue": 2627,
+      "issues": [
+        2627,
+        2628,
+        2629,
+        2630,
+        2631,
+        2632,
+        2633,
+        2634,
+        2635,
+        2636,
+        2637,
+        2638,
+        2639,
+        2640
+      ],
+      "files": [
+        "M23-B001.json",
+        "M23-B002.json",
+        "M23-B003.json",
+        "M23-B004.json",
+        "M23-B005.json",
+        "M23-B006.json",
+        "M23-B007.json",
+        "M23-B008.json",
+        "M23-B009.json",
+        "M23-B010.json",
+        "M23-B011.json",
+        "M23-B012.json",
+        "M23-B013.json",
+        "M23-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2699_m24_lane_b_through_issue_2712_m24_lane_b_semantic_scope_freeze",
+      "feature": "M24 lane B semantic fixture scaffolding for issues #2699 through #2712",
+      "issue": 2699,
+      "issues": [
+        2699,
+        2700,
+        2701,
+        2702,
+        2703,
+        2704,
+        2705,
+        2706,
+        2707,
+        2708,
+        2709,
+        2710,
+        2711,
+        2712
+      ],
+      "files": [
+        "M24-B001.json",
+        "M24-B002.json",
+        "M24-B003.json",
+        "M24-B004.json",
+        "M24-B005.json",
+        "M24-B006.json",
+        "M24-B007.json",
+        "M24-B008.json",
+        "M24-B009.json",
+        "M24-B010.json",
+        "M24-B011.json",
+        "M24-B012.json",
+        "M24-B013.json",
+        "M24-B014.json"
+      ]
+    },
+    {
+      "name": "issue_2771_m25_lane_b_through_issue_2784_m25_lane_b_semantic_scope_freeze",
+      "feature": "M25 lane B semantic fixture scaffolding for issues #2771 through #2784",
+      "issue": 2771,
+      "issues": [
+        2771,
+        2772,
+        2773,
+        2774,
+        2775,
+        2776,
+        2777,
+        2778,
+        2779,
+        2780,
+        2781,
+        2782,
+        2783,
+        2784
+      ],
+      "files": [
+        "M25-B001.json",
+        "M25-B002.json",
+        "M25-B003.json",
+        "M25-B004.json",
+        "M25-B005.json",
+        "M25-B006.json",
+        "M25-B007.json",
+        "M25-B008.json",
+        "M25-B009.json",
+        "M25-B010.json",
+        "M25-B011.json",
+        "M25-B012.json",
+        "M25-B013.json",
+        "M25-B014.json"
+      ]
+    }
+  ]
+}

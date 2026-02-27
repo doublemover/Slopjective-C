@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are not valid parameter type annotations.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierInParamTypePure;
+
+fn add(lhs: pure, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

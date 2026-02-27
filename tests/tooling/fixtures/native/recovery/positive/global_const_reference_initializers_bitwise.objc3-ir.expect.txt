@@ -1,0 +1,6 @@
+# Global const-reference bitwise lowering markers.
+@seed = global i32 5
+@shifted = global i32 10
+@mask = global i32 15
+@folded = global i32 12
+ret i32

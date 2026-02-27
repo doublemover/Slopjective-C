@@ -1,0 +1,7 @@
+module PrototypeExecutionUnresolvedExternal;
+
+fn external_add(lhs: i32, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return external_add(1, 2);
+}

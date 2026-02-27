@@ -1,0 +1,12 @@
+{
+  "generated_at_utc": "2026-02-24T00:00:00Z",
+  "source": "fixture/catalog",
+  "task_count": 2,
+  "tasks": [
+    {
+      "task_id": "SPT-0001",
+      "execution_status": "closed"
+    }
+  ]
+}
+

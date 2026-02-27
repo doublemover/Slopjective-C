@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P104.
+module NegativeBinaryLiteralParserTrailingDecimalDigit;
+
+let value = 0b102;
+
+fn main() -> i32 {
+  return 0;
+}

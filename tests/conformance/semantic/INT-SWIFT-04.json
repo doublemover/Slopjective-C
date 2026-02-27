@@ -1,0 +1,42 @@
+{
+  "id": "INT-SWIFT-04",
+  "title": "Diagnose actor-isolation metadata drops that would break Swift-facing import-export isolation guarantees",
+  "feature": "Swift interop mappings for actor and isolation metadata",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "actor class INTSWIFT04Counter : NSObject\\n- (int)nextValue;\\n@end\\n\\n@interface INTSWIFT04CounterBridge : NSObject\\n- (int)nextValue;\\n@end\\n\\nint intswift04_cross_actor_missing_await(INTSWIFT04Counter *counter) async {\\n    return [counter nextValue];\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-SWIFT-ACTOR-METADATA-LOSS",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 5, "column": 1 },
+          "end": { "line": 7, "column": 5 }
+        },
+        "message": "non-actor mirror declaration drops actor isolation metadata required for Swift interop"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 12 },
+          "end": { "line": 10, "column": 30 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'"
+      }
+    ]
+  }
+}

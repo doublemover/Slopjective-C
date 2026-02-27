@@ -1,0 +1,8 @@
+module BlockCommentNested;
+
+/* outer block comment
+   /* nested block comment */
+*/
+fn main() -> i32 {
+  return 0;
+}

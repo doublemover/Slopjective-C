@@ -1,0 +1,41 @@
+{
+  "id": "EXE-05",
+  "title": "Round-trip executor-affinity metadata required by finite executor-queue progress checks",
+  "feature": "executor progress smoke-test metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module EXE05.objcmod --emit-interface EXE05.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module EXE05-import.objcmod --import-interface EXE05.obji --emit-interface EXE05-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface EXE05.objcmod EXE05-roundtrip.obji %s\n// RUN: objc3c --verify-interface EXE05-import.objcmod EXE05.obji %s\n@interface EXE05Queue : NSObject\n- (id _Nonnull)drainStep:(id _Nonnull)token async __attribute__((objc_executor(global)));\n- (id _Nonnull)finishOnMain:(id _Nonnull)token async __attribute__((objc_executor(main)));\n@end\n\nid _Nonnull exe05_progress(EXE05Queue * _Nonnull queue, id _Nonnull seed) async __attribute__((objc_executor(global))) {\n    id _Nonnull drained = await [queue drainStep:seed];\n    return await [queue finishOnMain:drained];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "async_effect",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "syntax_anchor": "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-6",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

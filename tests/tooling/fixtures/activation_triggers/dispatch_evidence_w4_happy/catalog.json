@@ -1,0 +1,33 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-5300",
+      "lane": "B",
+      "lane_name": "Tooling Validation",
+      "milestone_title": "v0.15 Dispatch Evidence Reliability W4",
+      "labels": [
+        "lane:B",
+        "type:tooling"
+      ],
+      "dependencies": [
+        "#1061",
+        "#1062"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q",
+        "python scripts/check_dispatch_evidence_reliability_w4_contract.py"
+      ],
+      "execution_status": "open-blocked",
+      "blocker_owner": "lane:C",
+      "blocker_notes": "Awaiting CI/workflow wiring handoff.",
+      "execution_status_rationale": "Execution-ready once lane C publishes deterministic W4 entrypoints.",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w4_tooling_validation_20260225.md:2",
+        "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w4_tooling_validation_20260225.md:10"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w4_tooling_validation_20260225.md"
+    }
+  ]
+}
+
+

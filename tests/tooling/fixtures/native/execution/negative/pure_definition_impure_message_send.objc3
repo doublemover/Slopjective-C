@@ -1,0 +1,9 @@
+module PureDefinitionImpureMessageSendExecution;
+
+pure fn touch() -> i32 {
+  return [1 ping];
+}
+
+fn main() -> i32 {
+  return touch();
+}

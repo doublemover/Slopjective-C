@@ -1,0 +1,55 @@
+{
+  "report_id": "RET-SWEEP-20260223-7010",
+  "generated_at_utc": "2026-02-23T10:41:00Z",
+  "mode": "dry-run",
+  "source_revision": "9f4b95f2c6d8a1e7b4a392a7f4c662d6fb6f4c2a",
+  "hold_aware": true,
+  "minimum_windows_enforced": true,
+  "scan_summary": {
+    "evaluated": 5,
+    "eligible_for_delete": 2,
+    "blocked_by_hold": 2,
+    "blocked_by_minimum_window": 1
+  },
+  "entries": [
+    {
+      "artifact_path": "manifests/objc3-runtime-2024Q1/sha256/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/manifest.json",
+      "retention_class": "release-evidence",
+      "retention_expiry_utc": "2025-01-01T00:00:00Z",
+      "hold_state": false,
+      "decision": "eligible"
+    },
+    {
+      "artifact_path": "manifests/objc3-abi-2024Q1/sha256/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/manifest.json",
+      "retention_class": "release-evidence",
+      "retention_expiry_utc": "2025-01-01T00:00:00Z",
+      "hold_state": true,
+      "decision": "blocked-hold"
+    },
+    {
+      "artifact_path": "manifests/objc3-runtime-2025Q4/sha256/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc/manifest.json",
+      "retention_class": "release-evidence",
+      "retention_expiry_utc": "2028-10-01T00:00:00Z",
+      "hold_state": false,
+      "decision": "blocked-window"
+    },
+    {
+      "artifact_path": "publish/index/snapshots/main_20240223_4001.json",
+      "retention_class": "index-audit",
+      "retention_expiry_utc": "2025-02-23T00:00:00Z",
+      "hold_state": false,
+      "decision": "eligible"
+    },
+    {
+      "artifact_path": "publish/index/snapshots/main_20240224_4002.json",
+      "retention_class": "index-audit",
+      "retention_expiry_utc": "2025-02-24T00:00:00Z",
+      "hold_state": true,
+      "decision": "blocked-hold"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "signature_sha256": "sha256:8b94dca15258c8909028a18f662ab5dca7aa0d52cbf6dd96c6582f257616f04c"
+  }
+}

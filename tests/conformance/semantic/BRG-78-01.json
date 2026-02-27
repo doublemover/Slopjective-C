@@ -1,0 +1,17 @@
+{
+  "id": "BRG-78-01",
+  "title": "Accept supported NSError/status-code bridging attributes",
+  "feature": "NSError/status-code bridging attributes",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6"
+  ],
+  "source": "@interface API : NSObject\n- (BOOL)loadData:(NSError * _Nullable * _Nullable)error __attribute__((objc_error_out(error)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

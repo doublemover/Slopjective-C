@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P107.
+module NegativeConditionalParserMissingColon;
+
+fn main() -> i32 {
+  let x = true ? 1 2;
+  return x;
+}

@@ -1,0 +1,12 @@
+{
+  "generated_at_utc": "2026-02-24T00:00:00Z",
+  "source": "fixtures/open_blockers",
+  "open_blocker_count": 1,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-910-01",
+      "line_number": 12,
+      "source_path": "spec/planning/issue_910.md"
+    }
+  ]
+}

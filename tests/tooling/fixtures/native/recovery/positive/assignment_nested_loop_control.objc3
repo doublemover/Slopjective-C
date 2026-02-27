@@ -1,0 +1,22 @@
+module AssignmentNestedLoopControl;
+
+fn main() -> i32 {
+  let outer = 0;
+  let acc = 0;
+  while (outer < 4) {
+    let inner = 0;
+    while (inner < 5) {
+      inner = inner + 1;
+      if (inner == 2) {
+        continue;
+      }
+      acc = acc + inner;
+      if (inner == 4) {
+        break;
+      }
+    }
+    outer = outer + 1;
+  }
+  return acc;
+}
+

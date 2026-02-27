@@ -1,0 +1,7 @@
+// Positive execution fixture: compile with --objc3-max-message-args 6 for high-arity dispatch coverage.
+module MessageSendSixArgsCustomCap;
+
+fn main() {
+  let receiver = 5;
+  return [receiver sum: 1 with: 2 then: 3 and: 4 plus: 6 extra: 7];
+}

@@ -1,0 +1,77 @@
+{
+  "id": "EXE-04",
+  "title": "Diagnose executor metadata loss/mismatch as a strict-profile hop-lowering guard",
+  "feature": "executor hop lowering metadata loss guard",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-7",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module EXE04.objcmod --emit-interface EXE04.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module EXE04.opt.objcmod --emit-interface EXE04.opt.obji %s\n// RUN: objc3c --verify-interface EXE04.objcmod EXE04.obji --assert-mismatch objc_executor(main):objc_executor(global)\n// RUN: objc3c --verify-interface EXE04.opt.objcmod EXE04.opt.obji --assert-mismatch objc_executor(main):objc_executor(global)\n@interface EXE04HopSurface : NSObject\n- (id _Nonnull)mainOnly:(id _Nonnull)seed async __attribute__((objc_executor(main)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 1 },
+          "end": { "line": 6, "column": 86 }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "executor-affinity metadata is required input to call-site hop lowering decisions",
+            "strict import/verification rejects missing or mismatched objc_executor metadata instead of assuming no-hop",
+            "cross-executor entry remains classified as potentially suspending when proof metadata is unavailable"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimization preserves strict-profile metadata validation outcomes for executor-affinity fields",
+            "optimized hop lowering does not treat metadata loss as proof of same-executor execution",
+            "executor-affinity mismatch remains diagnosable under interface verification in optimized builds"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-5",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "importers keep executor metadata as required semantic input for hop insertion and await enforcement",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

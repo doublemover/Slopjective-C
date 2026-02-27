@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeForParserMissingBodyStatement;
+
+fn main() -> i32 {
+  for (let i = 0; i < 1; i = i + 1)
+}

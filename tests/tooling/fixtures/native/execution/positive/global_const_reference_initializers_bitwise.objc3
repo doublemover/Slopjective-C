@@ -1,0 +1,10 @@
+module GlobalConstReferenceInitializersBitwise;
+
+let seed = 5;
+let shifted = seed << 1;
+let mask = shifted | seed;
+let folded = (mask & 7) + seed;
+
+fn main() -> i32 {
+  return folded;
+}

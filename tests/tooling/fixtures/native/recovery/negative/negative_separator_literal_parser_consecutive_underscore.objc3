@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeSeparatorLiteralParserConsecutiveUnderscore;
+
+let value = 1__2;
+
+fn main() -> i32 {
+  return 0;
+}

@@ -1,0 +1,90 @@
+{
+  "id": "M12-C002",
+  "title": "Require explicit one-to-one IR-to-lowering route keys for replayable async boundary mapping (issue #1749 / task M12-C002)",
+  "feature": "M12 Lane C deterministic IR-to-lowering mapping route enforcement; issue #1749; task M12-C002; sequence 2; dispatch title: [Compiler][M12][Lane C][M12-C002] Implement IR/lowering mapping slice (Primary Implementation)",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M12C002.objcmod --emit-interface M12C002.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M12C002.opt.objcmod --emit-interface M12C002.opt.obji %s\n// RUN: objc3c --verify-interface M12C002.objcmod M12C002.obji --assert-mismatch ir_route.await_resume:ir_route.await_error\n// RUN: objc3c --verify-interface M12C002.opt.objcmod M12C002.opt.obji --assert-mismatch ir_route.await_resume:ir_route.await_error\ntypedef id M12C002TaskHandle;\nid M12c002_await_resume(M12C002TaskHandle handle) async;\nid M12c002_await_error(M12C002TaskHandle handle, id<Error> _Nullable * _Nullable outError) async;\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 3,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": 114
+          }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "IR route keys consumed by lowering are explicit and one-to-one for await resume and error transport paths",
+            "strict replay verification rejects ambiguous or renamed IR route keys",
+            "route-key validation runs before importer-side lowering selects runtime boundaries"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized module/interface emission preserves deterministic IR route-key mapping fields",
+            "optimization does not suppress strict mismatch diagnostics for route-key drift",
+            "fail-closed replay behavior remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "ir_route.await_resume",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "await-resume IR route key maps to one deterministic lowering path",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "ir_route.await_error",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "await-error transport route key remains explicit and unambiguous for lowering selection",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}
+

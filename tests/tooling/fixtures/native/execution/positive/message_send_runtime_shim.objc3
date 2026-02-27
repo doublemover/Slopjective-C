@@ -1,0 +1,8 @@
+// Positive execution fixture: message-send path requires runtime dispatch shim at link time.
+module MessageSendRuntimeShim;
+
+fn main() -> i32 {
+  let receiver = 9;
+  let sent = [receiver sum: 3 with: 4];
+  return sent - 82583;
+}

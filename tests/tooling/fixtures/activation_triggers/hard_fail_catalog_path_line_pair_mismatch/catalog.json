@@ -1,0 +1,10 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-4301",
+      "path": "spec/planning/v015_activation_execution_hardening_w5_dispatch_review_20260225.md",
+      "execution_status": "closed"
+    }
+  ]
+}
+

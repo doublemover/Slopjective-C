@@ -1,0 +1,50 @@
+{
+  "id": "AWT-03",
+  "title": "Reject missing await for async call, executor hop, and cross-actor isolated access",
+  "feature": "await requirements for potentially-suspending operations",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "id awt03_asyncCall(void) async;\nid awt03_mainOnly(id seed) __attribute__((objc_executor(main)));\n\nactor class AWT03Counter : NSObject\n- (void)bump;\n@end\n\nid awt03_missing_all(AWT03Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    id first = awt03_asyncCall();\n    id second = awt03_mainOnly(seed);\n    [counter bump];\n    return first ? first : second;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 16 },
+          "end": { "line": 9, "column": 33 }
+        },
+        "message": "potentially suspending call requires 'await' in strict concurrency checking"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 17 },
+          "end": { "line": 10, "column": 37 }
+        },
+        "message": "calling an executor-annotated declaration across executors requires 'await'"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 5 },
+          "end": { "line": 11, "column": 19 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'"
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "INT-C-06",
+  "title": "Diagnose throws-to-C thunk declarations that omit or misplace trailing error-out ABI parameter",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2"
+  ],
+  "source": "int intc06_parse_int(const char * _Nonnull text) throws;\\n\\nint intc06_parse_int_c(const char * _Nonnull text,\\n                      id<Error> _Nullable * _Nullable outError);\\n\\nint intc06_parse_int_bad_order(id<Error> _Nullable * _Nullable outError,\\n                               const char * _Nonnull text);\\n\\nint intc06_parse_int_bad_missing(const char * _Nonnull text);\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-THROWS-THUNK-PARAM-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 1 },
+          "end": { "line": 7, "column": 61 }
+        },
+        "message": "throws-to-C thunk must place id<Error>* outError as the trailing parameter"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-THROWS-THUNK-MISSING-ERROR-OUT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 1 },
+          "end": { "line": 9, "column": 60 }
+        },
+        "message": "throws-to-C thunk must expose trailing outError so C callers can observe failure"
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "M05-A012",
+  "title": "Accept secondary parser frontend execution slice for Wave-0 precedence coverage",
+  "feature": "wave-0 secondary parser execution-path acceptance",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m05a012_fetch(void) async;\n\nint m05a012_execute(int gate) async {\n    return gate ? (try await m05a012_fetch()) : 12;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

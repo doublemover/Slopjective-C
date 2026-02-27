@@ -1,0 +1,7 @@
+// Positive fixture: numeric zero receiver is non-elided and keeps runtime dispatch branch/call shape.
+module MessageSendNumericZeroReceiverNonElided;
+
+fn main() {
+  let sent = [0 ping];
+  return sent + 4;
+}

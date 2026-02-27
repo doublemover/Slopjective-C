@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-6401",
+      "title": "Release and scale foundation W1 row missing required spec lint command",
+      "lane": "B",
+      "lane_name": "Tooling Validation",
+      "milestone_title": "v0.16 Release and Scale Foundation W1",
+      "labels": [
+        "lane:B",
+        "type:tooling"
+      ],
+      "dependencies": [
+        "#1081",
+        "#1082"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q",
+        "python scripts/check_release_and_scale_foundation_w1_contract.py"
+      ],
+      "execution_status": "open",
+      "execution_status_rationale": "Contract validation in progress.",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w1_tooling_validation_20260225.md:4"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w1_tooling_validation_20260225.md"
+    }
+  ]
+}
+

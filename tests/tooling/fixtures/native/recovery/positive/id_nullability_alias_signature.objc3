@@ -1,0 +1,12 @@
+module IdNullabilityAliasSignature;
+
+fn choose(flag: bool, maybe: id?, always: id!) -> id {
+  if (flag) {
+    return maybe;
+  }
+  return always;
+}
+
+fn main() -> i32 {
+  return choose(true, 33, 9) + 4;
+}

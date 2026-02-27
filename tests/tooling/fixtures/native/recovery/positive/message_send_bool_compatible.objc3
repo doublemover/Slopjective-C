@@ -1,0 +1,8 @@
+// Positive fixture: bool-like receiver and argument values are accepted as i32-compatible.
+module MessageSendBoolCompatible;
+
+fn main() {
+  let receiver = 1 < 2;
+  let flag = 3 >= 3;
+  return [receiver setFlag: flag];
+}

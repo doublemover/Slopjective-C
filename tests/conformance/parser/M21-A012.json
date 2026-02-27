@@ -1,0 +1,25 @@
+{
+  "id": "M21-A012",
+  "title": "Accept M21 lane-A parser fixture baseline for issue #2479 task M21-A012 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m21 lane-a parser semantic analysis type system core implement parser frontend execution slice primary implementation slice 12",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M21",
+    "milestone_number": 106,
+    "lane": "A",
+    "issue": 2479,
+    "task": "M21-A012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M21_A_012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMAR__\\n#define __OBJC3_FEATURE_M21_A_012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMAR__ 1\\n#endif\\n\\ntypedef struct M21A012_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M21A012_Probe;\\n\\nM21A012_Probe m21a012_probe(void) {\\n#if __OBJC3_FEATURE_M21_A_012_IMPLEMENT_PARSER_FRONTEND_EXECUTION_SLICE_PRIMAR__\\n    M21A012_Probe probe = { 1, 12, 2479 };\\n#else\\n    M21A012_Probe probe = { 0, 12, 2479 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

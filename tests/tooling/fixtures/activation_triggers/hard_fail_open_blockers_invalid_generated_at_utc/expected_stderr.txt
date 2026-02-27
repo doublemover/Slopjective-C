@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'generated_at_utc' must include a timezone (for example 'Z') in tests/tooling/fixtures/activation_triggers/hard_fail_open_blockers_invalid_generated_at_utc/open_blockers.json

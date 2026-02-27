@@ -1,0 +1,17 @@
+{
+  "generated_at_utc": "2026-02-23T00:00:00Z",
+  "source": "fixtures/open_blockers",
+  "open_blocker_count": 2,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-170-03",
+      "source_path": "spec/planning/issue_170_extension_policy_sync_package.md",
+      "line_number": 312
+    },
+    {
+      "blocker_id": "BLK-185-04",
+      "source_path": "spec/planning/issue_185_quality_gates_thresholds_package.md",
+      "line_number": 287
+    }
+  ]
+}

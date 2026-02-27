@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "block_comment_unterminated.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3L002",
+      "unterminated block comment"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

@@ -1,0 +1,9 @@
+// Positive fixture: bracketed Objective-C message-send expressions lower to native dispatch IR.
+module MessageSendBasic;
+
+fn main() {
+  let receiver = 7;
+  let ping = [receiver ping];
+  let add = [receiver add: 3];
+  return ping + add;
+}

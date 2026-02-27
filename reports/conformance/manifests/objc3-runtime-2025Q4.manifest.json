@@ -1,0 +1,58 @@
+{
+  "schema_id": "objc3-runtime-artifact-manifest/v1",
+  "artifact_id": "objc3-runtime-2025Q4",
+  "release_stamp": "2025Q4",
+  "manifest_version": 1,
+  "generated_at": "2025-10-15T12:00:00Z",
+  "producer": {
+    "name": "objc3-manifest-tool",
+    "version": "0.11.0",
+    "build_id": "ci-2025q4-001"
+  },
+  "target": {
+    "runtime_family": "objc3",
+    "os": "darwin",
+    "arch": "arm64",
+    "abi": "apple-arm64e"
+  },
+  "normative_reference": {
+    "id": "NR-OBJC-RUNTIME",
+    "canonical_ref": "objc3-runtime-2025Q4",
+    "date_stamp": "2025Q4",
+    "commit_or_artifact_hash": "sha256:4f7c2d88a2f1c9f761adf6dbd7df4d4c86f9f90c2c8fcf6b88cbf8b49ce58297"
+  },
+  "artifacts": [
+    {
+      "role": "runtime-library",
+      "path": "runtime/libobjc3-runtime.a",
+      "media_type": "application/x-archive",
+      "size_bytes": 1843200,
+      "sha256": "sha256:6e2a1bd9dbce1d4fbf3b4546fdb90c49df83f5d90f3b7f8dce95f2d0a647e2d1"
+    },
+    {
+      "role": "headers",
+      "path": "runtime/include/objc3-runtime-headers.tar.gz",
+      "media_type": "application/gzip",
+      "size_bytes": 245760,
+      "sha256": "sha256:2c9b8f79e5a9ad6be0b3f4978d4f4c53a267f6f1f513f73f4783b7a5d5f4c0be"
+    },
+    {
+      "role": "symbol-map",
+      "path": "runtime/objc3-runtime-symbol-map.json",
+      "media_type": "application/json",
+      "size_bytes": 32768,
+      "sha256": "sha256:ac4f84f53fbd8ad8d4ef7a7f7d4e96931588f8d4943f0a6f4c98ec6053b45745"
+    }
+  ],
+  "invariants": {
+    "deterministic_ordering": true,
+    "reproducible": true,
+    "source_date_epoch": 1760529600
+  },
+  "capabilities": [
+    "objc3.runtime.class_model.v1",
+    "objc3.runtime.selector_identity.v1",
+    "objc3.runtime.category_attachment.v1"
+  ],
+  "notes": "Pinned runtime bundle for v0.11 conformance publication."
+}

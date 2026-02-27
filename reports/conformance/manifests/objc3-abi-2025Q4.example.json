@@ -1,0 +1,54 @@
+{
+  "manifest_type": "objc3-abi-manifest",
+  "manifest_schema": "objc3-abi-2025Q4",
+  "manifest_version": "1.0.0",
+  "manifest_revision": 0,
+  "issue_ref": "v0.11-A02/#116",
+  "generated_at": "2026-02-23T05:15:00Z",
+  "producer": {
+    "toolchain_id": "objc3c",
+    "toolchain_version": "0.11.0-dev.2",
+    "build_id": "ci-2026q1-000417"
+  },
+  "target_triples": [
+    "arm64-apple-darwin23",
+    "x86_64-apple-darwin23"
+  ],
+  "symbol_policy_id": "objc3.symbols.core.v1",
+  "mangling_policy_id": "objc3.mangling.generic_fn.v1",
+  "metadata_compatibility": {
+    "producer_schema_major": 1,
+    "producer_schema_minor": 0,
+    "minimum_importer_schema_major": 1,
+    "minimum_importer_schema_minor": 0,
+    "compatibility_mode": "forward-compatible",
+    "required_capabilities": [
+      "objc3.abi.throws.v1",
+      "objc3.abi.async.v1",
+      "objc3.metadata.executor_affinity.v1"
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "objc3-abi-summary-arm64.json",
+      "kind": "binary-interface-summary",
+      "path": "reports/conformance/manifests/objc3-abi-summary-arm64.json",
+      "sha256": "6eec16de6f4c145f171a1be6db4451981e7f31c8996c22ac7f6164f57f6a5cc6"
+    },
+    {
+      "name": "objc3-symbol-table-arm64.json",
+      "kind": "symbol-table",
+      "path": "reports/conformance/manifests/objc3-symbol-table-arm64.json",
+      "sha256": "1844ff4a84391e7dbe1f3b5c0fd7efc14b8fbd8bca5894f77283808d9e6383a4"
+    },
+    {
+      "name": "objc3-abi-diff-arm64-vs-x64.json",
+      "kind": "abi-diff",
+      "path": "reports/conformance/manifests/objc3-abi-diff-arm64-vs-x64.json",
+      "sha256": "0f16f4a6a11af4f7542b6e8965fe1c6ce40ee3f050321bf5fdbf65b2ec91fd88"
+    }
+  ],
+  "extensions": {
+    "notes": "Example payload for issue #116 v0.11-A02."
+  }
+}

@@ -1,0 +1,1 @@
+error: open milestones snapshot rows contain duplicate milestone number 26 in tests/tooling/fixtures/activation_triggers/drift_milestones_duplicate_number/milestones.json

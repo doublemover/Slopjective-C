@@ -1,0 +1,7 @@
+// Positive execution fixture: compile-time conditional nil receiver elides runtime dispatch.
+module MessageSendNilConditionalReceiverElisionExecution;
+
+fn main() {
+  let sent = [(1 ? nil : 1) ping];
+  return sent + 22;
+}

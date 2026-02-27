@@ -1,0 +1,26 @@
+{
+  "id": "M26-C010",
+  "title": "Shape CI automation enforcement for typed bool/i32 lowering ABI gates in native objc3c frontend (CI Enforcement Shape) (issue #2865 / task M26-C010)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 ci automation enforcement shape",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2865,
+    "task": "M26-C010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_010_CI_AUTOMATION_ENFORCEMENT_SHAPE\n#define __OBJC3_FEATURE_M26_C_010_CI_AUTOMATION_ENFORCEMENT_SHAPE 1\n#endif\n\ntypedef signed int m26c010_i32;\ntypedef _Bool m26c010_bool;\n\ntypedef m26c010_i32 (*M26C010_BuildStepFn)(m26c010_bool strict_mode, m26c010_i32 baseline);\ntypedef m26c010_bool (*M26C010_EnforcementGateFn)(m26c010_i32 step_code);\n\nstatic m26c010_i32 m26c010_build_step(m26c010_bool strict_mode, m26c010_i32 baseline) {\n    return strict_mode ? baseline + 2 : baseline + 1;\n}\n\nstatic m26c010_bool m26c010_enforcement_gate(m26c010_i32 step_code) {\n    return step_code >= 4;\n}\n\nstatic m26c010_i32 m26c010_ci_shape_digest(M26C010_BuildStepFn build_step, M26C010_EnforcementGateFn gate) {\n    m26c010_i32 step_a = build_step(0, 2);\n    m26c010_i32 step_b = build_step(1, 2);\n    m26c010_i32 step_c = build_step(1, 3);\n    return (gate(step_a) ? 1 : 0) | ((gate(step_b) ? 1 : 0) << 1) | ((gate(step_c) ? 1 : 0) << 2);\n}\n\ntypedef struct M26C010_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c010_i32 ci_shape_digest;\n    m26c010_bool final_gate_state;\n} M26C010_Probe;\n\nM26C010_Probe m26c010_probe(void) {\n#if __OBJC3_FEATURE_M26_C_010_CI_AUTOMATION_ENFORCEMENT_SHAPE\n    M26C010_BuildStepFn build_step = m26c010_build_step;\n    M26C010_EnforcementGateFn gate = m26c010_enforcement_gate;\n    m26c010_i32 digest = m26c010_ci_shape_digest(build_step, gate);\n    M26C010_Probe probe = { 1, 10, 2865, digest, gate(digest) };\n#else\n    M26C010_Probe probe = { 0, 10, 2865, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

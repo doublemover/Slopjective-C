@@ -1,0 +1,33 @@
+module TypedI32Bool;
+
+let base = 7;
+
+fn prefer_left(left: i32, right: i32) {
+  return left > right;
+}
+
+fn select_i32(when_true: i32, when_false: i32, flag: bool) {
+  if (flag) {
+    return when_true;
+  } else {
+    return when_false;
+  }
+}
+
+fn is_nonzero(value: i32) {
+  return value != 0;
+}
+
+fn main() {
+  let left = base + 5;
+  let right = base - 2;
+  let pick_left = prefer_left(left, right);
+  let picked = select_i32(left, right, pick_left);
+  let nonzero = is_nonzero(picked);
+
+  if (nonzero) {
+    return picked;
+  } else {
+    return 0;
+  }
+}

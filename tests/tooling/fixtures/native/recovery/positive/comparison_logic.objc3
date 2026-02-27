@@ -1,0 +1,36 @@
+module ComparisonLogic;
+
+fn relation_score(lhs: i32, rhs: i32) {
+  let eq = lhs == rhs;
+  let ne = lhs != rhs;
+  let lt = lhs < rhs;
+  let le = lhs <= rhs;
+  let gt = lhs > rhs;
+  let ge = lhs >= rhs;
+
+  if (eq && le && ge) {
+    return 100;
+  }
+  if (ne && lt && !gt) {
+    return 200;
+  }
+  if (ne && gt && !lt) {
+    return 300;
+  }
+  if (ne && (le || ge)) {
+    return 400;
+  }
+  return 500;
+}
+
+fn main() {
+  let a = relation_score(4, 4);
+  let b = relation_score(2, 9);
+  let c = relation_score(12, 3);
+
+  if ((a == 100) && (b == 200) && (c == 300)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

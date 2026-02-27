@@ -1,0 +1,11 @@
+module BitwiseCompoundAssignmentBasic;
+
+fn main() -> i32 {
+  let value = 12;
+  value &= 10;
+  value |= 3;
+  value ^= 1;
+  value <<= 2;
+  value >>= 3;
+  return value;
+}

@@ -1,0 +1,9 @@
+// Positive execution fixture: explicit reassignment to nil enables compile-time elision.
+module MessageSendNilReceiverShortCircuitExecution;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver sum: 3 with: 4];
+  return sent + 5;
+}

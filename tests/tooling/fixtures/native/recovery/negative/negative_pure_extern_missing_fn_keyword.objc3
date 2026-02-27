@@ -1,0 +1,9 @@
+// Negative fixture: pure/extern qualifier chains require the `fn` keyword.
+// Expected diagnostic code(s): O3P100.
+module NegativePureExternMissingFnKeyword;
+
+pure extern let value = 1;
+
+fn main() -> i32 {
+  return value;
+}

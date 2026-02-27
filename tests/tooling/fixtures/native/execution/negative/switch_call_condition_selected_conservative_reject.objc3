@@ -1,0 +1,14 @@
+module SwitchCallConditionSelectedConservativeReject;
+
+fn choose() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  switch (choose()) {
+    case 1:
+      return 42;
+    default:
+      let fallback = 7;
+  }
+}

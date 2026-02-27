@@ -1,0 +1,25 @@
+{
+  "id": "M13-A005",
+  "title": "Accept M13 lane-A parser fixture baseline for issue #1788 task M13-A005 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m13 lane-a parser deterministic textual interface emitter slice 05",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M13",
+    "milestone_number": 98,
+    "lane": "A",
+    "issue": 1788,
+    "task": "M13-A005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-2"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_CANONICAL_NORMALIZATION__\n#define __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_CANONICAL_NORMALIZATION__ 1\n#endif\n\ntypedef struct M13A005_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M13A005_Probe;\n\nM13A005_Probe m13a005_probe(void) {\n#if __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_CANONICAL_NORMALIZATION__\n    M13A005_Probe probe = { 1, 5, 1788 };\n#else\n    M13A005_Probe probe = { 0, 5, 1788 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

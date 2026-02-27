@@ -1,0 +1,19 @@
+{
+  "id": "META-DRV-01",
+  "title": "Accept Core claim without requiring portable derive capabilities",
+  "feature": "optional metaprogramming derive gating",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-4",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=off -fsyntax-only %s\n#if __OBJC3_FEATURE_DERIVE_EQUALITY__ || __OBJC3_FEATURE_DERIVE_HASH__ || __OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__ || __OBJC3_FEATURE_DERIVE_CODABLE__\n#error \"META-DRV-01 expects derive feature macros to be disabled when OPT-META is off\"\n#endif\n\n#if __OBJC3_FEATURE_DERIVE_EQUALITY__\n__attribute__((objc_derive(\"Equality\")))\n@interface METADRV01Model : NSObject\n@property (nonatomic) int value;\n@end\n#else\n@interface METADRV01Model : NSObject\n@property (nonatomic) int value;\n- (BOOL)isEqual:(id _Nullable)other;\n@end\n#endif\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

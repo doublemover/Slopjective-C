@@ -1,0 +1,17 @@
+// Positive fixture: typed i32 return accepts bool expressions at return boundary.
+module TypedI32ReturnFromBoolExpr;
+
+fn as_score(lhs: i32, rhs: i32) -> i32 {
+  return lhs < rhs;
+}
+
+fn main() -> i32 {
+  let pass = as_score(2, 5);
+  let fail = as_score(9, 1);
+
+  if ((pass == 1) && (fail == 0)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

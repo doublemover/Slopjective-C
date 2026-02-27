@@ -1,0 +1,4 @@
+# Nil literal lowering markers.
+@seed = global i32 0
+add i32
+ret i32

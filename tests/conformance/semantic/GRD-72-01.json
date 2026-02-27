@@ -1,0 +1,27 @@
+{
+  "id": "GRD-72-01",
+  "title": "Reject guard else blocks that do not perform a mandatory early exit",
+  "feature": "guard mandatory early-exit semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-3"
+  ],
+  "source": "id _Nullable badGuard(id _Nullable maybeName) {\n    guard let name = maybeName else {\n        id fallback = @\"guest\";\n    }\n    return name;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-GUARD-ELSE-NONEXIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 5 },
+          "end": { "line": 4, "column": 6 }
+        },
+        "message": "guard else block must exit the current scope on every control-flow path"
+      }
+    ]
+  }
+}

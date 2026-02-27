@@ -1,0 +1,9 @@
+# Assignment bool-branch lowering markers.
+define i32 @main()
+store i32 1, ptr %flag.addr.0, align 4
+br i1 %t2, label %if_then_0, label %if_else_1
+if_then_0:
+ret i32 1
+if_end_2:
+ret i32 0
+

@@ -1,0 +1,17 @@
+{
+  "id": "M05-A001",
+  "title": "Accept Wave-0 command and grammar contract baseline for parser lane freeze",
+  "feature": "wave-0 frontend command and grammar contract definition",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m05a001_contract(int input) {\n    return input + 5;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

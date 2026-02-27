@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3P104.
+module NegativeReturnParserMissingSemicolon;
+
+fn helper() -> void {
+  return 1
+}
+
+fn main() -> i32 {
+  helper();
+  return 0;
+}

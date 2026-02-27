@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "duplicate_extern_qualifier.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P100",
+      "duplicate 'extern' qualifier in function declaration"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

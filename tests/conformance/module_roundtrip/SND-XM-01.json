@@ -1,0 +1,49 @@
+{
+  "id": "SND-XM-01",
+  "title": "Round-trip sendable boundary and unsafe marker metadata across module export/import",
+  "feature": "sendability metadata preservation for task and actor boundaries",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-3",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module SNDXM01.objcmod --emit-interface SNDXM01.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module SNDXM01-import.objcmod --import-interface SNDXM01.obji --emit-interface SNDXM01-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface SNDXM01.objcmod SNDXM01-roundtrip.obji %s\n// RUN: objc3c --verify-interface SNDXM01-import.objcmod SNDXM01.obji %s\n__attribute__((objc_unsafe_sendable))\n@interface SNDXM01UnsafeBox : NSObject\n@property (nonatomic) int value;\n@end\n\ntypedef id SNDXM01TaskHandle;\nSNDXM01TaskHandle sndxm01_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\n\nactor class SNDXM01Bridge : NSObject\n- (SNDXM01UnsafeBox * _Nonnull)echo:(SNDXM01UnsafeBox * _Nonnull)value;\n@end\n\nid sndxm01_use_boundaries(SNDXM01Bridge *bridge, SNDXM01UnsafeBox *box) async {\n    SNDXM01TaskHandle handle = sndxm01_spawn(^id(void) async {\n        return box;\n    });\n    (void)await [bridge echo:box];\n    return handle;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "sendable.boundary",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "sendable.unsafe_marker",
+          "syntax_anchor": "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-3",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-5",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "task_spawn_recognition",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

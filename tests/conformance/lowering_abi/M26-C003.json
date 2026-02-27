@@ -1,0 +1,26 @@
+{
+  "id": "M26-C003",
+  "title": "Harden bool-slot canonicalization and i32 edge call paths in lowering ABI (Negative-Path Hardening) (issue #2858 / task M26-C003)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering abi hardening negative path hardening",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2858,
+    "task": "M26-C003",
+    "sequence": 3
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_003_BOOL_SLOT_CANONICALIZATION_HARDENING\n#define __OBJC3_FEATURE_M26_C_003_BOOL_SLOT_CANONICALIZATION_HARDENING 1\n#endif\n\ntypedef signed int m26c003_i32;\ntypedef _Bool m26c003_bool;\n\ntypedef m26c003_bool (*M26C003_CanonicalizeBoolFn)(m26c003_i32 raw_bool_slot);\ntypedef m26c003_i32 (*M26C003_GuardedI32Fn)(m26c003_i32 raw_bool_slot, m26c003_i32 payload);\n\nstatic m26c003_bool m26c003_canonicalize_bool(m26c003_i32 raw_bool_slot) {\n    return raw_bool_slot != 0;\n}\n\nstatic m26c003_i32 m26c003_guarded_i32(m26c003_i32 raw_bool_slot, m26c003_i32 payload) {\n    m26c003_bool enabled = m26c003_canonicalize_bool(raw_bool_slot);\n    return enabled ? payload : -payload;\n}\n\ntypedef struct M26C003_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c003_bool canonicalized_nonzero;\n    m26c003_bool canonicalized_zero;\n    m26c003_i32 guarded_nonzero;\n    m26c003_i32 guarded_zero;\n} M26C003_Probe;\n\nM26C003_Probe m26c003_probe(void) {\n#if __OBJC3_FEATURE_M26_C_003_BOOL_SLOT_CANONICALIZATION_HARDENING\n    M26C003_CanonicalizeBoolFn canonicalize = m26c003_canonicalize_bool;\n    M26C003_GuardedI32Fn guarded = m26c003_guarded_i32;\n    M26C003_Probe probe = { 1, 3, 2858, canonicalize(-7), canonicalize(0), guarded(9, 21), guarded(0, 21) };\n#else\n    M26C003_Probe probe = { 0, 3, 2858, 0, 0, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

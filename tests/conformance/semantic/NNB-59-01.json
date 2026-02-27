@@ -1,0 +1,50 @@
+{
+  "id": "NNB-59-01",
+  "title": "Apply canonical nonnull-by-default pragmas across nested regions",
+  "feature": "nonnull-by-default nested region semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-4-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-2-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fsyntax-only %s\nint consumeNonnull(id _Nonnull value);\n\n#pragma objc assume_nonnull begin\nid outerDefault(id value);\n#pragma objc assume_nonnull begin\nid innerDefault(id value);\nid _Nullable innerNullable(void);\n#pragma objc assume_nonnull end\nid outerStillDefault(id value);\n#pragma objc assume_nonnull end\n\nint probeNested(id _Nullable maybe) {\n    outerDefault(maybe);\n    innerDefault(maybe);\n    consumeNonnull(innerNullable());\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 5 },
+          "end": { "line": 14, "column": 24 }
+        },
+        "message": "outer region default treats unannotated parameters as nonnull",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 15, "column": 5 },
+          "end": { "line": 15, "column": 24 }
+        },
+        "message": "nested region default also treats unannotated parameters as nonnull",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 16, "column": 5 },
+          "end": { "line": 16, "column": 36 }
+        },
+        "message": "explicit nullable annotations override region defaults",
+        "fixits": []
+      }
+    ]
+  }
+}

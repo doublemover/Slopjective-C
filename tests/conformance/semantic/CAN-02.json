@@ -1,0 +1,23 @@
+{
+  "id": "CAN-02",
+  "title": "Model detached tasks as non-inheriting for parent cancellation by default",
+  "feature": "cancellation propagation and task-context semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-2-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/STANDARD_LIBRARY_CONTRACT.md#s-3-2"
+  ],
+  "source": "typedef id CAN02TaskHandle;\nCAN02TaskHandle can02_spawn_child(id (^work)(void) async) __attribute__((objc_task_spawn));\nCAN02TaskHandle can02_spawn_detached(id (^work)(void) async) __attribute__((objc_task_detached));\nid can02_join_nonthrowing(CAN02TaskHandle handle) async;\nvoid can02_request_parent_cancellation(void);\nint can02_task_is_cancelled(void);\n\nid can02_detached_does_not_inherit(id seed) async {\n    CAN02TaskHandle child = can02_spawn_child(^id(void) async {\n        return can02_task_is_cancelled() != 0 ? nil : seed;\n    });\n    CAN02TaskHandle detached = can02_spawn_detached(^id(void) async {\n        return can02_task_is_cancelled() != 0 ? nil : seed;\n    });\n    can02_request_parent_cancellation();\n    (void)child;\n    return await can02_join_nonthrowing(detached);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

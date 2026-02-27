@@ -1,0 +1,25 @@
+{
+  "id": "M14-A001",
+  "title": "Accept M14 lane-A parser fixture baseline for issue #1836 task M14-A001 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m14 lane-a parser module metadata serialization and table-a coverage slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M14",
+    "milestone_number": 99,
+    "lane": "A",
+    "issue": 1836,
+    "task": "M14-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_SLICE__\n#define __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_SLICE__ 1\n#endif\n\ntypedef struct M14A001_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M14A001_Probe;\n\nM14A001_Probe m14a001_probe(void) {\n#if __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_SLICE__\n    M14A001_Probe probe = { 1, 1, 1836 };\n#else\n    M14A001_Probe probe = { 0, 1, 1836 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

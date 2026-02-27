@@ -1,0 +1,30 @@
+{
+  "id": "ACT-08",
+  "title": "Reject objc_actor_nonreentrant attribute usage in v1 actor-member declarations",
+  "feature": "deferred explicit actor nonreentrancy controls in v1",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module ACT08.objcmod --emit-interface ACT08.obji %s\nactor class ACT08Gate : NSObject\n- (id _Nonnull)step:(id _Nonnull)seed async __attribute__((objc_actor_nonreentrant));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-ACTOR-NONREENTRANT-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 44 },
+          "end": { "line": 3, "column": 82 }
+        },
+        "message": "explicit actor nonreentrancy is deferred in v1"
+      }
+    ]
+  }
+}

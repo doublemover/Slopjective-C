@@ -1,0 +1,14 @@
+module GlobalAssignmentTargetsForStep;
+
+let total = 1;
+
+fn main() -> i32 {
+  for (let i = 0; i < 3; i += 1) {
+    total += i;
+  }
+  for (let j = 0; j < 2; j += 1) {
+    total <<= 1;
+  }
+  total >>= 2;
+  return total;
+}

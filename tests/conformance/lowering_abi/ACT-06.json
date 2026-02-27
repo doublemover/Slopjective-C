@@ -1,0 +1,91 @@
+{
+  "id": "ACT-06",
+  "title": "Preserve actor-isolation metadata across module verification and diagnose isolation metadata mismatch",
+  "feature": "actor isolation metadata preservation across module boundaries",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module ACT06.objcmod --emit-interface ACT06.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module ACT06.opt.objcmod --emit-interface ACT06.opt.obji %s\n// RUN: objc3c --verify-interface ACT06.objcmod ACT06.obji --assert-mismatch isolation.actor:missing --assert-mismatch isolation.nonisolated:missing\n// RUN: objc3c --verify-interface ACT06.opt.objcmod ACT06.opt.obji --assert-mismatch isolation.actor:missing --assert-mismatch isolation.nonisolated:missing\nactor class ACT06Mailbox : NSObject\n- (id _Nonnull)dequeue;\n- (id _Nullable)cachedToken __attribute__((objc_nonisolated));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 1 },
+          "end": { "line": 4, "column": 147 }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "actor-isolated declarations preserve actor-binding metadata for importer hop and await requirements",
+            "objc_nonisolated markers are preserved as explicit isolation metadata in emitted module and interface artifacts",
+            "strict verification reports isolation metadata mismatch as an interface-verification error"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized emission preserves actor-isolation and nonisolated metadata fields used by importers",
+            "optimization does not erase required isolation metadata from module/interface artifacts",
+            "strict isolation metadata mismatch diagnostics remain equivalent to -O0 under verification"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "isolation.actor",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "importers retain actor-isolation metadata needed to enforce cross-actor await and hop rules",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "isolation.nonisolated",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
+          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "stability_property": "nonisolated boundary semantics remain explicitly encoded for cross-module import and verification",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "M19-A005",
+  "title": "Accept M19 lane-A parser fixture baseline for issue #2328 task M19-A005 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m19 lane-a parser compiler bootstrap build surface activation core strict normalization proof slice 05",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M19",
+    "milestone_number": 104,
+    "lane": "A",
+    "issue": 2328,
+    "task": "M19-A005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__\\n#define __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__ 1\\n#endif\\n\\ntypedef struct M19A005_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M19A005_Probe;\\n\\nM19A005_Probe m19a005_probe(void) {\\n#if __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__\\n    M19A005_Probe probe = { 1, 5, 2328 };\\n#else\\n    M19A005_Probe probe = { 0, 5, 2328 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

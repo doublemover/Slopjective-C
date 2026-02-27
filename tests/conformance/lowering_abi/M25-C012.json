@@ -1,0 +1,27 @@
+{
+  "id": "M25-C012",
+  "title": "Implement direct LLVM IR dispatch emission slice (Primary Implementation) (issue #2796 / task M25-C012)",
+  "feature": "m25 lane-c objective-c 3 message dispatch lowering and direct llvm ir emission implement direct llvm ir dispatch emission slice primary implementation",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M25",
+    "milestone_number": 110,
+    "lane": "C",
+    "issue": 2796,
+    "task": "M25-C012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M25_C_012_IMPLEMENT_DIRECT_LLVM_IR_DISPATCH_EMISSION_SLICE_PRIMARY_IMP\n#define __OBJC3_FEATURE_M25_C_012_IMPLEMENT_DIRECT_LLVM_IR_DISPATCH_EMISSION_SLICE_PRIMARY_IMP 1\n#endif\n\ntypedef struct M25C012_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M25C012_Probe;\n\nM25C012_Probe m25c012_probe(void) {\n#if __OBJC3_FEATURE_M25_C_012_IMPLEMENT_DIRECT_LLVM_IR_DISPATCH_EMISSION_SLICE_PRIMARY_IMP\n    M25C012_Probe probe = { 1, 12, 2796 };\n#else\n    M25C012_Probe probe = { 0, 12, 2796 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

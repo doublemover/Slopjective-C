@@ -1,0 +1,9 @@
+// Positive execution fixture: nil-provenance alias identifier receiver elides runtime dispatch.
+module MessageSendNilAliasIdentifierElisionExecution;
+
+fn main() {
+  let receiver = nil;
+  let alias = receiver;
+  let sent = [alias ping];
+  return sent + 21;
+}

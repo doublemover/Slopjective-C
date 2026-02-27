@@ -1,0 +1,7 @@
+module MisplacedQualifierInParamTypeExtern;
+
+fn add(lhs: extern, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

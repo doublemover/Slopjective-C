@@ -1,0 +1,23 @@
+{
+  "id": "CAN-01",
+  "title": "Model parent cancellation propagation to live structured child tasks",
+  "feature": "cancellation propagation and task-context semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/STANDARD_LIBRARY_CONTRACT.md#s-3-2"
+  ],
+  "source": "typedef id CAN01TaskHandle;\nCAN01TaskHandle can01_spawn_child(id (^work)(void) async) __attribute__((objc_task_spawn));\nid can01_join_throwing(CAN01TaskHandle handle) async throws;\nvoid can01_request_parent_cancellation(void);\nint can01_task_is_cancelled(void);\n\nid can01_parent_to_child(id seed) async throws {\n    CAN01TaskHandle child = can01_spawn_child(^id(void) async {\n        if (can01_task_is_cancelled() != 0) {\n            return nil;\n        }\n        return seed;\n    });\n    can01_request_parent_cancellation();\n    return try await can01_join_throwing(child);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

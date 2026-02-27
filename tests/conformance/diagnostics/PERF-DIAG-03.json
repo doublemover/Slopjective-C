@@ -1,0 +1,31 @@
+{
+  "id": "PERF-DIAG-03",
+  "title": "Emit required diagnostic for cross-module subclassing of objc_sealed classes",
+  "feature": "sealed cross-module subclass diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-4",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -DPERFDIAG03_BUILD_BASE --emit-module PERFDIAG03Base.objcmod --module-name PERFDIAG03Base %s\n// RUN: objc3c -fobjc-version=3 --import-module PERFDIAG03Base.objcmod -fsyntax-only %s\n#if defined(PERFDIAG03_BUILD_BASE)\n__attribute__((objc_sealed))\n@interface PERFDIAG03SealedBase : NSObject\n- (int)entryPoint;\n@end\n#else\n@import PERFDIAG03Base;\n@interface PERFDIAG03ExternalSubclass : PERFDIAG03SealedBase\n@end\n#endif\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-SEALED-CROSS-MODULE-SUBCLASS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 12 },
+          "end": { "line": 10, "column": 39 }
+        },
+        "message": "cannot subclass PERFDIAG03SealedBase outside its defining module because it is declared objc_sealed"
+      }
+    ]
+  }
+}

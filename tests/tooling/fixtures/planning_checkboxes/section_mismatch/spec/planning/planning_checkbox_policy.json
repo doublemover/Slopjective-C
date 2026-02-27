@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "allowed_unchecked_sections": [
+    {
+      "path": "spec/planning/plan.md",
+      "section": "Runbook Fixture > 1. Historical Checklist",
+      "reason": "Intentional mismatch to verify strict section matching."
+    }
+  ]
+}

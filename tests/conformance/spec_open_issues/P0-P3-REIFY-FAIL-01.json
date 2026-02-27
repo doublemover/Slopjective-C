@@ -1,0 +1,33 @@
+{
+  "id": "P0-P3-REIFY-FAIL-01",
+  "title": "Reject unknown capability key in reification capability report",
+  "feature": "part3 reification capability signaling unknown capability path",
+  "bucket": "spec_open_issues",
+  "profile": "strict",
+  "profile_scope": "core|strict|strict-concurrency|strict-system",
+  "seed_alias": "S1-P3-REIFY",
+  "required_outcome": "required-fail",
+  "dependency_ref": "B-10/#140@UNPINNED-EXTERNAL",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_140_capability_report_outputs_plan.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "capability=meta.reify.unknown\\nstatus=enabled\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "CAPREP-UNKNOWN-CAPABILITY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 30 }
+        },
+        "message": "capability report references unsupported capability key",
+        "fixits": []
+      }
+    ],
+    "signal": "CAPREP-UNKNOWN-CAPABILITY"
+  }
+}

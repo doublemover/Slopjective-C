@@ -1,0 +1,75 @@
+{
+  "id": "INT-C-11",
+  "title": "Preserve ownership and lifetime boundary rules for +0 values delivered through async C thunk completions",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC11Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nid intc11_fetch(int token) async throws;\\nvoid intc11_fetch_async_c(int token,\\n                          void * _Nullable context,\\n                          INTC11Completion _Nonnull completion);\\n\\nid intc11_retain(id value);\\nvoid intc11_release(id value);\\n\\ntypedef struct INTC11Probe {\\n    void * _Nullable contextEcho;\\n    id _Nullable retainedResult;\\n    id<Error> _Nullable retainedError;\\n    int retainedAnyValue;\\n} INTC11Probe;\\n\\nvoid intc11_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC11Probe *probe = (INTC11Probe *)context;\\n    probe->contextEcho = context;\\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS && result != nil) {\\n        probe->retainedResult = intc11_retain(result);\\n        probe->retainedAnyValue = 1;\\n    }\\n    if (error != nil) {\\n        probe->retainedError = (id<Error>)intc11_retain((id)error);\\n        probe->retainedAnyValue = 1;\\n    }\\n}\\n\\nint intc11_consume_retained(INTC11Probe *probe) {\\n    int ok = probe->retainedAnyValue != 0 ? 1 : 0;\\n    if (probe->retainedResult != nil) {\\n        intc11_release(probe->retainedResult);\\n    }\\n    if (probe->retainedError != nil) {\\n        intc11_release((id)probe->retainedError);\\n    }\\n    return ok;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "result and error objects delivered to completion are passed at +0 ownership",
+            "implementation keeps delivered +0 objects alive for dynamic extent of completion callback execution",
+            "caller-retained values inside completion remain valid after callback returns while unretained values are not required to outlive callback scope",
+            "context pointer is forwarded unchanged and is caller-owned; thunk does not retain or free context"
+          ],
+          "runtime_assertions": [
+            "retaining result/error within callback succeeds and retained references remain consumable after callback return",
+            "contextEcho matches original context pointer provided to intc11_fetch_async_c"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves +0 delivery ownership contract for result and error callback values",
+            "optimized lowering preserves callback dynamic-extent lifetime guarantee for delivered objects",
+            "optimized lowering preserves caller-owned pass-through context contract"
+          ],
+          "runtime_assertions": [
+            "retained-value post-callback consumption behavior matches -O0 under optimization",
+            "context pointer identity remains unchanged under optimization"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_c_thunk_callback_plus0_delivery",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "required_shape": "result/error delivered at +0 and kept alive for completion dynamic extent",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.async_c_thunk_context_nonownership",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "required_shape": "context is opaque caller-owned state passed through without retain/free",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

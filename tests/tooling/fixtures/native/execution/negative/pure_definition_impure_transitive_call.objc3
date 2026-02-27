@@ -1,0 +1,16 @@
+module PureDefinitionImpureTransitiveCallExecution;
+
+let counter = 0;
+
+fn bump() -> i32 {
+  counter = counter + 1;
+  return counter;
+}
+
+pure fn touch() -> i32 {
+  return bump();
+}
+
+fn main() -> i32 {
+  return touch();
+}

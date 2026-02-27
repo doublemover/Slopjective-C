@@ -1,0 +1,20 @@
+{
+  "id": "CAP-03",
+  "title": "Accept left-to-right move capture evaluation with reset reinitialization",
+  "feature": "capture-list evaluation order and move-state semantics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4-2"
+  ],
+  "source": "typedef int cap_handle_t;\nvoid cap03_close(cap_handle_t handle);\ncap_handle_t cap03_open(int seed);\nvoid cap03_consume(cap_handle_t handle);\n\nvoid cap03_left_to_right_capture_order(int seed) {\n    cap_handle_t first __attribute__((objc_resource(close=cap03_close, invalid=-1))) = cap03_open(seed);\n    cap_handle_t second __attribute__((objc_resource(close=cap03_close, invalid=-1))) = cap03_open(seed + 1);\n    void (^handler)(void) = [move first, move second] {\n        cap03_consume(first);\n        cap03_consume(second);\n    };\n    reset(first, cap03_open(seed + 2));\n    reset(second, cap03_open(seed + 3));\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

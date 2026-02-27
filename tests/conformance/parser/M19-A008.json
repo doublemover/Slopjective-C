@@ -1,0 +1,25 @@
+{
+  "id": "M19-A008",
+  "title": "Accept M19 lane-A parser fixture baseline for issue #2331 task M19-A008 (Add frontend negative path coverage (Integration Surface Stabilization))",
+  "feature": "m19 lane-a parser compiler bootstrap build surface activation core strict negative path slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M19",
+    "milestone_number": 104,
+    "lane": "A",
+    "issue": 2331,
+    "task": "M19-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_4_CONCURRENCY_AND_EXECUTION.md#part-4-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__\\n#define __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__ 1\\n#endif\\n\\ntypedef struct M19A008_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M19A008_Probe;\\n\\nM19A008_Probe m19a008_probe(void) {\\n#if __OBJC3_FEATURE_COMPILER_BOOTSTRAP_BUILD_SURFACE_ACTIVATION_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__\\n    M19A008_Probe probe = { 1, 8, 2331 };\\n#else\\n    M19A008_Probe probe = { 0, 8, 2331 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

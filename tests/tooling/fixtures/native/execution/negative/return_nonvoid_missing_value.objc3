@@ -1,0 +1,9 @@
+module ReturnNonvoidMissingValue;
+
+fn helper() -> i32 {
+  return;
+}
+
+fn main() -> i32 {
+  return helper();
+}

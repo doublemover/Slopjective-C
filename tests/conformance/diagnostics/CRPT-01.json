@@ -1,0 +1,30 @@
+{
+  "id": "CRPT-01",
+  "title": "Emit machine-readable JSON conformance report with schema identifier and mode fields",
+  "feature": "conformance report emission surface",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9"
+  ],
+  "source": "// RUN: objc3c --emit-objc3-conformance=crpt01.json --emit-objc3-conformance-format=json %s\n// RUN: objc3c --validate-objc3-conformance=crpt01.json %s\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "report": {
+      "required_top_level_keys": [
+        "schema_id",
+        "toolchain",
+        "mode",
+        "profiles",
+        "optional_features",
+        "known_deviations",
+        "versions"
+      ],
+      "schema_id": "objc3-conformance-report/v1"
+    }
+  }
+}

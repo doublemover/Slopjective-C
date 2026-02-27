@@ -1,0 +1,67 @@
+{
+  "runner": "open-blocker-audit-runner/v0.1",
+  "contract_id": "open-blocker-audit-runner",
+  "contract_version": "v0.1",
+  "inputs": {
+    "audit_root": "tests/tooling/fixtures/open_blocker_audit_runner/zero_open",
+    "effective_audit_root": "tests/tooling/fixtures/open_blocker_audit_runner/zero_open",
+    "include_globs": [],
+    "exclude_paths": [
+      ".git/**",
+      ".github/**",
+      ".pytest_cache/**",
+      "node_modules/**",
+      "reports/**",
+      "tests/**",
+      "tmp/**"
+    ],
+    "extractor_exclude_paths": [
+      "reports/*",
+      "reports/*/*"
+    ],
+    "generated_at_utc": "2026-02-25T13:30:00Z",
+    "source": "fixture:open-blocker-audit-contract-happy"
+  },
+  "scope": {
+    "included_markdown_count": 1,
+    "excluded_markdown_count": 2
+  },
+  "artifacts": {
+    "output_dir": "tests/tooling/fixtures/open_blocker_audit_contract/happy",
+    "snapshot_json": "tests/tooling/fixtures/open_blocker_audit_contract/happy/inputs/open_blockers.snapshot.json",
+    "extract_log": "extract_open_blockers.log",
+    "summary_json": "open_blocker_audit_summary.json",
+    "report_markdown": "open_blocker_audit_report.md"
+  },
+  "audit": {
+    "extract_attempted": true,
+    "extract_exit_code": 0,
+    "open_blocker_count": 0
+  },
+  "commands": {
+    "extract_open_blockers_snapshot_json": {
+      "argv": [
+        "python",
+        "scripts/extract_open_blockers.py",
+        "--root",
+        "tests/tooling/fixtures/open_blocker_audit_runner/zero_open",
+        "--format",
+        "snapshot-json",
+        "--generated-at-utc",
+        "2026-02-25T13:30:00Z",
+        "--source",
+        "fixture:open-blocker-audit-contract-happy",
+        "--exclude-path",
+        "reports/*",
+        "--exclude-path",
+        "reports/*/*"
+      ],
+      "exit_code": 0,
+      "stdout_bytes": 156,
+      "stderr_bytes": 0
+    }
+  },
+  "errors": [],
+  "final_status": "ok",
+  "final_exit_code": 0
+}

@@ -1,0 +1,19 @@
+{
+  "id": "MTC-73-01",
+  "title": "Accept statement-form match with ordered case selection and binding fallback",
+  "feature": "match statement implementation semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-4-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-4-3",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-5-3"
+  ],
+  "source": "int selectTag(int tag) {\n    match (tag) {\n      case 0: {\n        return 7;\n      }\n      case let observed: {\n        return observed;\n      }\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

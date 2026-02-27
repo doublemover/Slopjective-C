@@ -1,0 +1,9 @@
+module HexLiteralGlobalInitializerChain;
+
+let a = 0xA;
+let b = a + 0x5;
+let c = b << 0x1;
+
+fn main() -> i32 {
+  return c;
+}

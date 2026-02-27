@@ -1,0 +1,29 @@
+{
+  "id": "M01-A009",
+  "title": "Reject explicit actor nonreentrancy modifier in v1 mode",
+  "feature": "actor reentrancy reserved syntax gate",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "actor class M01A009Counter : NSObject\nnonreentrant - (void)tick;\n@end\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-ACTOR-NONREENTRANT-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 13 }
+        },
+        "message": "explicit actor nonreentrancy controls are deferred in v1 mode",
+        "fixits": []
+      }
+    ]
+  }
+}

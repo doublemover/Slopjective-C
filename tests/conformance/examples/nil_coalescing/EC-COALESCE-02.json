@@ -1,0 +1,16 @@
+{
+  "id": "EC-COALESCE-02",
+  "title": "Parse ?? tighter than ternary",
+  "feature": "??",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id select(id _Nullable left, id right, id whenTrue, id whenFalse) {\n    return left ?? right ? whenTrue : whenFalse;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

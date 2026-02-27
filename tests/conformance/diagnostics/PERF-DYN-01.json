@@ -1,0 +1,30 @@
+{
+  "id": "PERF-DYN-01",
+  "title": "Warn when objc_direct calls are forced through selector-based dynamic dispatch",
+  "feature": "strict-performance dynamic-dispatch misuse diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface PERFDYN01Box : NSObject\n- (int)fastPath __attribute__((objc_direct));\n@end\n\nint perfdyn01_warn_direct_selector_send(PERFDYN01Box *box) {\n    SEL sel = @selector(fastPath);\n    return ((int (*)(id, SEL))objc_msgSend)(box, sel);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-DIRECT-DYNAMIC-DISPATCH",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 32 },
+          "end": { "line": 7, "column": 43 }
+        },
+        "message": "objc_direct method 'fastPath' is invoked through dynamic selector dispatch; use a direct call expression unless dynamic behavior is required"
+      }
+    ]
+  }
+}

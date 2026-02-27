@@ -1,0 +1,9 @@
+module MessageSendNonzeroImmutableGlobalIdentifierFastPath;
+
+let receiver = 7;
+let scratch = 1;
+
+fn main() -> i32 {
+  scratch = 0;
+  return [receiver ping];
+}

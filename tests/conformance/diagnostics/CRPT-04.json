@@ -1,0 +1,28 @@
+{
+  "id": "CRPT-04",
+  "title": "Reject reports missing required top-level keys",
+  "feature": "conformance report required-key validation",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "{\n  \"schema_id\": \"objc3-conformance-report/v1\",\n  \"toolchain\": {\"name\": \"objc3c\", \"version\": \"1.0.0\"},\n  \"mode\": {\"language_version\": 3, \"strictness\": \"strict\", \"concurrency\": \"strict\"},\n  \"profiles\": [{\"id\": \"core\"}],\n  \"optional_features\": []\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONF-REPORT-MISSING-KEY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 7, "column": 2 }
+        },
+        "message": "report is missing required top-level keys: known_deviations, versions"
+      }
+    ]
+  }
+}

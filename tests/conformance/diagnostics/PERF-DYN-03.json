@@ -1,0 +1,30 @@
+{
+  "id": "PERF-DYN-03",
+  "title": "Warn for NSInvocation-based dispatch to objc_direct methods",
+  "feature": "dynamic facility misuse diagnostics for objc_direct members",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface PERFDYN03Box : NSObject\n- (int)fastPath __attribute__((objc_direct));\n@end\n\nvoid perfdyn03_warn_nsinvocation(PERFDYN03Box *box) {\n    NSMethodSignature *sig = [box methodSignatureForSelector:@selector(fastPath)];\n    NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];\n    [inv setSelector:@selector(fastPath)];\n    [inv invokeWithTarget:box];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-DIRECT-DYNAMIC-DISPATCH",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 8, "column": 10 },
+          "end": { "line": 8, "column": 21 }
+        },
+        "message": "NSInvocation selector dispatch to objc_direct method 'fastPath' bypasses direct-call guarantees"
+      }
+    ]
+  }
+}

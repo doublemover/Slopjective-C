@@ -1,0 +1,9 @@
+// Negative fixture: extern declarations require the `fn` keyword.
+// Expected diagnostic code(s): O3P100.
+module NegativeExternMissingFnKeyword;
+
+extern let value = 1;
+
+fn main() -> i32 {
+  return value;
+}

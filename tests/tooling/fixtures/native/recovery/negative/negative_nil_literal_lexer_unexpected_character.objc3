@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3L001.
+@module NegativeNilLiteralLexerUnexpectedCharacter;
+
+fn main() -> i32 {
+  let seed = nil;
+  return seed;
+}

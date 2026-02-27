@@ -1,0 +1,25 @@
+{
+  "id": "M17-A008",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #1999 task M17-A008 (Add frontend negative path coverage (Integration Surface Stabilization))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict negative path slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 1999,
+    "task": "M17-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_4_CONCURRENCY_AND_EXECUTION.md#part-4-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__ 1\\n#endif\\n\\ntypedef struct M17A008_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A008_Probe;\\n\\nM17A008_Probe m17a008_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_NEGATIVE_PATH_SLICE_S008__\\n    M17A008_Probe probe = { 1, 8, 1999 };\\n#else\\n    M17A008_Probe probe = { 0, 8, 1999 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

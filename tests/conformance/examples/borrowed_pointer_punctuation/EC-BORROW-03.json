@@ -1,0 +1,35 @@
+{
+  "id": "EC-BORROW-03",
+  "title": "Reject storing borrowed pointer in static storage",
+  "feature": "borrowed pointer punctuation",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-13"
+  ],
+  "source": "static borrowed const char *gBytes;\nvoid saveBorrowed(borrowed const char *bytes) {\n    gBytes = bytes;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-BORROWED-STORE-STATIC",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 5 },
+          "end": { "line": 3, "column": 18 }
+        },
+        "message": "borrowed pointer cannot escape into static storage",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 3, "column": 13 },
+              "end": { "line": 3, "column": 18 }
+            },
+            "replacement": "makeOwnedCopy(bytes)"
+          }
+        ]
+      }
+    ]
+  }
+}

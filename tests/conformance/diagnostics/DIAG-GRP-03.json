@@ -1,0 +1,36 @@
+{
+  "id": "DIAG-GRP-03",
+  "title": "Throws group emits missing-try error with machine-applicable insertion fix-it",
+  "feature": "minimum diagnostic groups: throws",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id diaggrp03Normalize(id payload) throws;\n\nid diaggrp03_missing_try(id payload) {\n    return diaggrp03Normalize(payload);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ERROR-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 38 }
+        },
+        "message": "call to throwing function requires try in strict mode",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 12 }
+            },
+            "replacement": "try "
+          }
+        ]
+      }
+    ]
+  }
+}

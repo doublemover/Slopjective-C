@@ -1,0 +1,19 @@
+{
+  "t4_override": true,
+  "activation_required": false,
+  "t4_new_scope_publish": true,
+  "t4_source": "cli-flag",
+  "gate_open": true,
+  "queue_state": "dispatch-open",
+  "exit_code": 1,
+  "tooling_trigger_counts": {
+    "T1-ISSUES": 0,
+    "T2-MILESTONES": 0,
+    "T3-ACTIONABLE-ROWS": 0
+  },
+  "tooling_trigger_fired": {
+    "T1-ISSUES": false,
+    "T2-MILESTONES": false,
+    "T3-ACTIONABLE-ROWS": false
+  }
+}

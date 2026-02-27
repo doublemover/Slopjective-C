@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'validation_commands[0]' contains forbidden shell token '&&'; dispatch-evidence lane-B contract commands must be single deterministic commands in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_dispatch_validation_command_forbidden_token/catalog.json

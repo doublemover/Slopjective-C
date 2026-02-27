@@ -1,0 +1,11 @@
+// Negative fixture: message receiver resolves to function value.
+// Expected diagnostic code(s): O3S206, O3S207.
+module NegativeMessageReceiverFunction;
+
+fn callback() {
+  return 1;
+}
+
+fn main() {
+  return [callback ping];
+}

@@ -1,0 +1,26 @@
+{
+  "id": "M23-C006",
+  "title": "Close lowering/runtime regressions (Regression Closure) (issue #2646 / task M23-C006)",
+  "feature": "m23 lane-c end to end compilation and artifact emission close lowering runtime regressions regression closure slice 06",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "C",
+    "issue": 2646,
+    "task": "M23-C006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M23_C_006_CLOSE_LOWERING_RUNTIME_REGRESSIONS_REGRESSION_CLOSURE__\\n#define __OBJC3_FEATURE_M23_C_006_CLOSE_LOWERING_RUNTIME_REGRESSIONS_REGRESSION_CLOSURE__ 1\\n#endif\\n\\ntypedef struct M23C006_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23C006_Probe;\\n\\nM23C006_Probe m23c006_probe(void) {\\n#if __OBJC3_FEATURE_M23_C_006_CLOSE_LOWERING_RUNTIME_REGRESSIONS_REGRESSION_CLOSURE__\\n    M23C006_Probe probe = { 1, 6, 2646 };\\n#else\\n    M23C006_Probe probe = { 0, 6, 2646 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

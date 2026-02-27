@@ -1,0 +1,11 @@
+// Positive fixture: mixed immutable/mutable nil-bound receiver flows both elide and stay i32-compatible.
+module MessageSendNilBoundIdentifierMixedFlow;
+
+fn main() {
+  let stable = nil;
+  let mutable = 1;
+  mutable = nil;
+  let stable_sent = [stable ping];
+  let mutable_sent = [mutable pong];
+  return stable_sent + mutable_sent + 14;
+}

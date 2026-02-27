@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are not allowed after function return annotations.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierAfterReturnExternFnPure;
+
+extern fn add(lhs: i32, rhs: i32) -> i32 pure;
+
+fn main() -> i32 {
+  return 0;
+}

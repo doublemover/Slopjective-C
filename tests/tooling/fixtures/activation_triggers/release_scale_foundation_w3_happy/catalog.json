@@ -1,0 +1,36 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-6400",
+      "lane": "B",
+      "lane_name": "Tooling Validation",
+      "milestone_title": "v0.16 Release and Scale Foundation W3",
+      "labels": [
+        "lane:B",
+        "type:tooling"
+      ],
+      "dependencies": [
+        "#1101",
+        "#1102"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q",
+        "python scripts/check_release_and_scale_foundation_w3_contract.py",
+        "python scripts/spec_lint.py"
+      ],
+      "execution_status": "open-blocked",
+      "blocker_owner": "lane:C",
+      "blocker_notes": "Awaiting CI/workflow wiring handoff.",
+      "execution_status_rationale": "Execution-ready once lane C publishes deterministic M37 entrypoints.",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w3_tooling_validation_20260225.md:2",
+        "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w3_tooling_validation_20260225.md:12"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w3_tooling_validation_20260225.md"
+    }
+  ]
+}
+
+
+
+

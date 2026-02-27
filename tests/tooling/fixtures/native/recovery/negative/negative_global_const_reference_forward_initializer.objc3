@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeGlobalConstReferenceForwardInitializer;
+
+let derived = seed + 1;
+let seed = 4;
+
+fn main() -> i32 {
+  return derived;
+}

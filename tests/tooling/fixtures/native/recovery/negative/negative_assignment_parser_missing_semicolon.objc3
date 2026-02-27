@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3P104.
+module NegativeAssignmentParserMissingSemicolon;
+
+fn main() -> i32 {
+  let value = 0;
+  value = value + 1
+  return value;
+}
+

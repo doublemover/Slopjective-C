@@ -1,0 +1,31 @@
+{
+  "id": "CAP-07",
+  "title": "Warn on unowned capture of potentially nil object without explicit guard",
+  "feature": "capture-list safety diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "void cap07_consume(id value);\n\nvoid cap07_unowned_nullable_capture(id _Nullable maybeOwner) {\n    void (^handler)(void) = [unowned maybeOwner] {\n        cap07_consume(maybeOwner);\n    };\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-CAPTURE-UNOWNED-POTENTIALLY-NIL",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 4, "column": 30 },
+          "end": { "line": 4, "column": 47 }
+        },
+        "message": "unowned capture of nullable value 'maybeOwner' may dangle; guard for nil or use weak capture",
+        "fixits": []
+      }
+    ]
+  }
+}

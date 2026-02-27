@@ -1,0 +1,8 @@
+# Compound assignment lowering markers.
+define i32 @main()
+%value.addr.0 = alloca i32, align 4
+add i32
+sub i32
+mul i32
+sdiv i32
+ret i32

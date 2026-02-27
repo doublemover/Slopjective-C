@@ -1,0 +1,13 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeSwitchDuplicateDefault;
+
+fn main() -> i32 {
+  let x = 1;
+  switch (x) {
+    default:
+      return 1;
+    default:
+      return 2;
+  }
+  return 0;
+}

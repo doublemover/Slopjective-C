@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "misplaced_qualifier_message_selector_head_pure.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P100",
+      "unexpected qualifier 'pure' in message selector position"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

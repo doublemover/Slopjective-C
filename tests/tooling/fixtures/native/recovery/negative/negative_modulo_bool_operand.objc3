@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeModuloBoolOperand;
+
+fn main() -> i32 {
+  let flag = true;
+  let x = flag % 2;
+  return x;
+}

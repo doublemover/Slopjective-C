@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeBitwiseParserMissingAndRhs;
+
+fn main() -> i32 {
+  let x = 1 & ;
+  return x;
+}

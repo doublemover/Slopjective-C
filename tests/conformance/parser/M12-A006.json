@@ -1,0 +1,25 @@
+{
+  "id": "M12-A006",
+  "title": "Accept M12 lane-A parser fixture baseline for issue #1729 task M12-A006 (Harden source-location fidelity (Regression Closure))",
+  "feature": "m12 lane-a parser module import and name lookup core slice 06",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M12",
+    "milestone_number": 97,
+    "lane": "A",
+    "issue": 1729,
+    "task": "M12-A006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_SOURCE_LOCATION_FIDELITY__\n#define __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_SOURCE_LOCATION_FIDELITY__ 1\n#endif\n\ntypedef struct M12A006_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M12A006_Probe;\n\nM12A006_Probe m12a006_probe(void) {\n#if __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_SOURCE_LOCATION_FIDELITY__\n    M12A006_Probe probe = { 1, 6, 1729 };\n#else\n    M12A006_Probe probe = { 0, 6, 1729 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

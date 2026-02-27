@@ -1,0 +1,17 @@
+{
+  "id": "FTM-50-03",
+  "title": "Keep recognized-but-disabled feature macro values deterministic",
+  "feature": "feature-test macros",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-2",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-4"
+  ],
+  "source": "#if !defined(__OBJC3_FEATURE_DERIVES_MACROS__)\n#error \"missing feature-recognition macro\"\n#endif\n#if __OBJC3_FEATURE_DERIVES_MACROS__ != 0\n#error \"recognized-but-disabled feature macro must be 0\"\n#endif\nint ftm50_disabled_feature_value(void) { return __OBJC3_FEATURE_DERIVES_MACROS__; }\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

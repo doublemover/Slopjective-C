@@ -1,0 +1,35 @@
+{
+  "id": "EC-OPTCHAIN-03",
+  "title": "Reject optional message send returning scalar",
+  "feature": "?.",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-1-2",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "int lengthOf(NSString * _Nullable value) {\n    return [value? length];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-OPTSEND-NONREF",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 27 }
+        },
+        "message": "optional message send requires object or block pointer return in v1",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 27 }
+            },
+            "replacement": "value != nil ? [value length] : 0"
+          }
+        ]
+      }
+    ]
+  }
+}

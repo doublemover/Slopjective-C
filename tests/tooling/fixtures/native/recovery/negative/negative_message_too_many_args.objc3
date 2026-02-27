@@ -1,0 +1,8 @@
+// Negative fixture: native message-send path supports at most 4 arguments.
+// Expected diagnostic code(s): O3S208.
+module NegativeMessageTooManyArgs;
+
+fn main() {
+  let receiver = 1;
+  return [receiver send: 1 next: 2 more: 3 extra: 4 overflow: 5];
+}

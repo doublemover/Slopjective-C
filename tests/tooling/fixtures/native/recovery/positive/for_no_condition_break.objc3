@@ -1,0 +1,13 @@
+module ForNoConditionBreak;
+
+fn main() -> i32 {
+  let count = 0;
+  for (let i = 0; ; i = i + 1) {
+    if (i == 4) {
+      break;
+    }
+    count = count + 1;
+  }
+  return count;
+}
+

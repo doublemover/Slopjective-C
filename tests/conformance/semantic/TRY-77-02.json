@@ -1,0 +1,41 @@
+{
+  "id": "TRY-77-02",
+  "title": "Diagnose nested propagation misuse across try/do-catch with optional carriers",
+  "feature": "try/do-catch and optional-carrier propagation integration",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-5-3",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-7-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-11",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-3-3"
+  ],
+  "source": "id loadPrimary(id seed) throws;\nid loadSecondary(id seed) throws;\nid<Error> upgradeFailure(void);\n\nid badPropagation(id seed) throws {\n    do {\n        do {\n            id? candidate = try? loadPrimary(seed);\n            return candidate?;\n        } catch {\n            throw upgradeFailure();\n        }\n    } catch {\n        return loadSecondary(seed);\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-CARRIER-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 20 },
+          "end": { "line": 9, "column": 30 }
+        },
+        "message": "carrier-preserving propagation forbids implicit nil to error conversion"
+      },
+      {
+        "code": "OBJC3-D-THROWS-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 16 },
+          "end": { "line": 14, "column": 34 }
+        },
+        "message": "calling a throwing function requires 'try' in Objective-C 3.0"
+      }
+    ]
+  }
+}

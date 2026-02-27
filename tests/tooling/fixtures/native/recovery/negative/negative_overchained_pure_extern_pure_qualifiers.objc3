@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers reject over-chained duplicate `pure` entries.
+// Expected diagnostic code(s): O3P100.
+module NegativeOverchainedPureExternPureQualifiers;
+
+pure extern pure fn add(lhs: i32, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return add(1, 2);
+}

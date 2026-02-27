@@ -1,0 +1,21 @@
+module SwitchSignedMatch;
+
+fn main() -> i32 {
+  let value = -2;
+  let out = 0;
+  switch (value) {
+    case -3:
+      out = 1;
+      break;
+    case -2:
+      out = 42;
+      break;
+    case +5:
+      out = 7;
+      break;
+    default:
+      out = 9;
+      break;
+  }
+  return out;
+}

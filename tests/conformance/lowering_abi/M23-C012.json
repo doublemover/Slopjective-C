@@ -1,0 +1,26 @@
+{
+  "id": "M23-C012",
+  "title": "Implement IR/lowering execution slice (Primary Implementation) (issue #2652 / task M23-C012)",
+  "feature": "m23 lane-c end to end compilation and artifact emission implement ir lowering execution slice primary implementation slice 12",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "C",
+    "issue": 2652,
+    "task": "M23-C012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M23_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTA__\\n#define __OBJC3_FEATURE_M23_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTA__ 1\\n#endif\\n\\ntypedef struct M23C012_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23C012_Probe;\\n\\nM23C012_Probe m23c012_probe(void) {\\n#if __OBJC3_FEATURE_M23_C_012_IMPLEMENT_IR_LOWERING_EXECUTION_SLICE_PRIMARY_IMPLEMENTA__\\n    M23C012_Probe probe = { 1, 12, 2652 };\\n#else\\n    M23C012_Probe probe = { 0, 12, 2652 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

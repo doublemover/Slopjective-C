@@ -1,0 +1,21 @@
+{
+  "id": "ASY-01",
+  "title": "Accept async/await declaration and expression grammar forms",
+  "feature": "async/await grammar",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-1"
+  ],
+  "source": "id fetchValue(void) async;\nid fetchFailing(void) throws async;\nid fetchAlt(void) async throws;\n\nid parse_async_grammar(void) async throws {\n    id a = await fetchValue();\n    id b = try await fetchFailing();\n    id c = await try fetchFailing();\n    id d = await (fetchAlt());\n    return a ? b : (c ? c : d);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

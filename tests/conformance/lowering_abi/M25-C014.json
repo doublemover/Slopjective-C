@@ -1,0 +1,27 @@
+{
+  "id": "M25-C014",
+  "title": "Expand dispatch lowering conformance matrix (Conformance Expansion) (issue #2798 / task M25-C014)",
+  "feature": "m25 lane-c objective-c 3 message dispatch lowering and direct llvm ir emission expand dispatch lowering conformance matrix conformance expansion",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M25",
+    "milestone_number": 110,
+    "lane": "C",
+    "issue": 2798,
+    "task": "M25-C014",
+    "sequence": 14
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M25_C_014_EXPAND_DISPATCH_LOWERING_CONFORMANCE_MATRIX_CONFORMANCE_EXPA\n#define __OBJC3_FEATURE_M25_C_014_EXPAND_DISPATCH_LOWERING_CONFORMANCE_MATRIX_CONFORMANCE_EXPA 1\n#endif\n\ntypedef struct M25C014_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M25C014_Probe;\n\nM25C014_Probe m25c014_probe(void) {\n#if __OBJC3_FEATURE_M25_C_014_EXPAND_DISPATCH_LOWERING_CONFORMANCE_MATRIX_CONFORMANCE_EXPA\n    M25C014_Probe probe = { 1, 14, 2798 };\n#else\n    M25C014_Probe probe = { 0, 14, 2798 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

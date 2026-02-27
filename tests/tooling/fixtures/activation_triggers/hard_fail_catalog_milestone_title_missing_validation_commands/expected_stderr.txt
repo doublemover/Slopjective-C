@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'milestone_title' requires non-empty field 'validation_commands' in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_milestone_title_missing_validation_commands/catalog.json

@@ -1,0 +1,12 @@
+module PureDefinitionImpureGlobalWriteExecution;
+
+let counter = 0;
+
+pure fn touch() -> i32 {
+  counter = counter + 1;
+  return counter;
+}
+
+fn main() -> i32 {
+  return touch();
+}

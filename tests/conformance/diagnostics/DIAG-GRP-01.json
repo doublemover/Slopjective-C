@@ -1,0 +1,36 @@
+{
+  "id": "DIAG-GRP-01",
+  "title": "Nullability group emits strict missing-annotation error with machine-applicable fix-it",
+  "feature": "minimum diagnostic groups: nullability and optionals",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface DIAGGRP01Missing : NSObject\n- (id)displayName;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-MISSING-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 4 },
+          "end": { "line": 2, "column": 6 }
+        },
+        "message": "strict mode requires explicit nullability on exported object and block pointer return types",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 4 },
+              "end": { "line": 2, "column": 6 }
+            },
+            "replacement": "id _Nonnull"
+          }
+        ]
+      }
+    ]
+  }
+}

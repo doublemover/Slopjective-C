@@ -1,0 +1,34 @@
+{
+  "id": "M06-A003",
+  "title": "Reject malformed typed-node initializer to harden deterministic AST construction failure path",
+  "feature": "m06 AST construction negative-path hardening",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef struct M06A003_Node {\n    int kind;\n    int span_start;\n    int span_end;\n} M06A003_Node;\n\nM06A003_Node m06a003_build(void) {\n    M06A003_Node node = { .kind = 3, .span_start =, .span_end = 9 };\n    return node;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-AST-EXPECTED-EXPRESSION",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 8,
+            "column": 49
+          },
+          "end": {
+            "line": 8,
+            "column": 50
+          }
+        },
+        "message": "expected expression after '=' in designated initializer",
+        "fixits": []
+      }
+    ]
+  }
+}

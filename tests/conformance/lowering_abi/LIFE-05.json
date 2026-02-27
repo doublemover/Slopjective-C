@@ -1,0 +1,53 @@
+{
+  "id": "LIFE-05",
+  "title": "Keep keepAlive owner retention stable across suspension and withLifetime composition",
+  "feature": "keepAlive ARC suspension-boundary preservation",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-7-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O2 -fsyntax-only %s\nid _Nonnull life90_suspend_point(id _Nonnull value) async;\nvoid life90_sink(id _Nonnull value);\n\nid _Nonnull life05_keep_alive_async(id _Nonnull owner) async {\n    keepAlive(owner);\n    id _Nonnull resumed = await life90_suspend_point(owner);\n    withLifetime(owner) {\n        life90_sink(resumed);\n    }\n    return resumed;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "keepAlive lowers to an implicit precise-lifetime binding that keeps owner retained through lexical scope end",
+            "owner retention remains valid across await suspension and resume boundaries",
+            "withLifetime around post-resume use adds and releases its temporary after the protected statement"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "optimized async lowering preserves keepAlive retention across suspension points",
+            "autorelease-pool drains at suspension do not release keepAlive-protected owners early",
+            "withLifetime and keepAlive ownership edges remain equivalent to -O0 after optimization"
+          ]
+        }
+      ]
+    }
+  }
+}

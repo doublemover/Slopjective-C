@@ -1,0 +1,20 @@
+[
+  {
+    "consumer_seed": "V013-CONF-03",
+    "required_inputs": [
+      "EV-07",
+      "EV-08"
+    ],
+    "handoff_state": "ready-after-close",
+    "handoff_note": "Consume QG-04 + recommendation_signal from EV-07/EV-08 only after V013-CONF-02 is merged/closed; then finalize v0.12 dress rehearsal verdict publication."
+  },
+  {
+    "consumer_seed": "V013-REL-01",
+    "required_inputs": [
+      "EV-07",
+      "EV-08"
+    ],
+    "handoff_state": "ready-after-close",
+    "handoff_note": "Use no-go decision state and unresolved BLK-189 posture as hard inputs to readiness dossier final recommendation gating."
+  }
+]

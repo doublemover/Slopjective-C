@@ -1,0 +1,7 @@
+# Global assignment target lowering markers.
+@counter = global i32 3
+load i32, ptr @counter
+store i32
+shl i32
+add i32
+ret i32

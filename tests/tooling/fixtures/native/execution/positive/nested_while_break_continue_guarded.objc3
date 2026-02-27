@@ -1,0 +1,12 @@
+// Positive execution fixture: nested while control flow with guarded continue and deterministic break.
+module NestedWhileBreakContinueGuarded;
+
+fn main() -> i32 {
+  while (1) {
+    while (0) {
+      continue;
+    }
+    break;
+  }
+  return 58;
+}

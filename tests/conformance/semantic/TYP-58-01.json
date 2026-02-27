@@ -1,0 +1,18 @@
+{
+  "id": "TYP-58-01",
+  "title": "Accept safe nullability qualifier conversions",
+  "feature": "nullability qualifiers as type-system properties",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-1",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3"
+  ],
+  "source": "id _Nullable takesNullable(id _Nullable value);\nid _Nonnull takesNonnull(id _Nonnull value);\n\nid _Nonnull keepNonnull(id _Nonnull token) {\n    id _Nullable widened = token;\n    (void)takesNullable(widened);\n    return takesNonnull(token);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

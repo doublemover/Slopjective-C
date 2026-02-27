@@ -1,0 +1,6 @@
+# Nil receiver semantic-compatibility lowering markers.
+define i32 @main()
+icmp eq i32
+phi i32 [0, %msg_nil_
+zext i1
+ret i32

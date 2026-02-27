@@ -1,0 +1,19 @@
+{
+  "id": "INT-C-04",
+  "title": "Accept non-throwing async C thunk status handling that enforces success and cancellation error invariants",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4"
+  ],
+  "source": "typedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC04Completion)(void * _Nullable context,\\n                                 objc_async_completion_status_t status,\\n                                 id _Nullable result,\\n                                 id<Error> _Nullable error);\\n\\nid intc04_lookup(int token) async;\\nvoid intc04_lookup_async_c(int token,\\n                           void * _Nullable context,\\n                           INTC04Completion _Nonnull completion);\\n\\nint intc04_validate_boundary(objc_async_completion_status_t status,\\n                             id<Error> _Nullable error) {\\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS) {\\n        return error == nil ? 1 : 0;\\n    }\\n    if (status == OBJC_ASYNC_COMPLETION_CANCELLED) {\\n        return error != nil ? 1 : 0;\\n    }\\n    return 0;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

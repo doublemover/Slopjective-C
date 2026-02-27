@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "fixture": "missing_entrypoint.objc3",
+  "expect_failure": {
+    "stage": "link",
+    "required_diagnostic_tokens": [
+      "entry point"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

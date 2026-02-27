@@ -1,0 +1,14 @@
+// Positive fixture: explicit function return annotations parse and type-check.
+module FunctionReturnAnnotationBool;
+
+fn is_zero(value: i32) -> bool {
+  return value == 0;
+}
+
+fn main() -> i32 {
+  if (is_zero(0)) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

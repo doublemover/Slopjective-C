@@ -1,0 +1,9 @@
+module OctalLiteralGlobalInitializerChain;
+
+let a = 0o7;
+let b = a + 0o2;
+let c = b << 0o1;
+
+fn main() -> i32 {
+  return c;
+}

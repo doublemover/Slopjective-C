@@ -1,0 +1,43 @@
+{
+  "id": "PERF-ATTR-04",
+  "title": "Preserve objc_direct/objc_final/objc_sealed metadata across module and interface round-trip",
+  "feature": "performance and dynamism metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-5",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-4-0",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module PERFATTR04.objcmod --emit-interface PERFATTR04.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module PERFATTR04-roundtrip.objcmod --import-interface PERFATTR04.obji --emit-interface PERFATTR04-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface PERFATTR04.objcmod PERFATTR04-roundtrip.obji %s\n// RUN: objc3c --verify-interface PERFATTR04-roundtrip.objcmod PERFATTR04.obji %s\n__attribute__((objc_final))\n@interface PERFATTR04FinalRoot : NSObject\n- (int)directEntry __attribute__((objc_direct));\n- (int)nonoverridableEntry __attribute__((objc_final));\n@end\n__attribute__((objc_sealed))\n@interface PERFATTR04SealedRoot : NSObject\n- (int)sealedEntry;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "objc_direct",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_final",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        },
+        {
+          "field_id": "objc_sealed",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

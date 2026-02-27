@@ -1,0 +1,30 @@
+{
+  "id": "CONC-DIAG-03",
+  "title": "Warn on suspicious dynamic selector calls that cross actor isolation boundaries",
+  "feature": "suspicious cross-actor call diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "actor class CONCDIAG03Worker : NSObject\n- (id _Nonnull)step:(id _Nonnull)seed;\n@end\n\nid concdiag03_suspicious_dynamic_call(CONCDIAG03Worker *worker) async {\n    return [worker performSelector:@selector(step:) withObject:nil];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-SUSPICIOUS-CROSS-ACTOR-CALL",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 6, "column": 20 },
+          "end": { "line": 6, "column": 35 }
+        },
+        "message": "dynamic selector call to actor-isolated member obscures required await/hop analysis; prefer a typed awaited call"
+      }
+    ]
+  }
+}

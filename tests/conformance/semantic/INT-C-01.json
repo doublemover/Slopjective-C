@@ -1,0 +1,20 @@
+{
+  "id": "INT-C-01",
+  "title": "Accept canonical C-callable async thunk signature with trailing context and completion",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5"
+  ],
+  "source": "typedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC01FetchCompletion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nvoid intc01_fetch_async_c(int token,\\n                          void * _Nullable context,\\n                          INTC01FetchCompletion _Nonnull completion);\\n\\nvoid intc01_call_from_c(int token,\\n                        void * _Nullable context,\\n                        INTC01FetchCompletion _Nonnull completion) {\\n    intc01_fetch_async_c(token, context, completion);\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

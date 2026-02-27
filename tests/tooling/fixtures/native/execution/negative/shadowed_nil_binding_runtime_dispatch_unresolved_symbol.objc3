@@ -1,0 +1,11 @@
+// Negative execution fixture: shadowed nil-bound receiver with non-nil inner binding must retain runtime dispatch linkage.
+module ShadowedNilBindingRuntimeDispatchUnresolvedSymbol;
+
+fn main() -> i32 {
+  let receiver = nil;
+  if (1) {
+    let receiver = 7;
+    return [receiver ping];
+  }
+  return [receiver ping];
+}

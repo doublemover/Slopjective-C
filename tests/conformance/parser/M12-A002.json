@@ -1,0 +1,25 @@
+{
+  "id": "M12-A002",
+  "title": "Accept M12 lane-A parser fixture baseline for issue #1725 task M12-A002 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m12 lane-a parser module import and name lookup core slice 02",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M12",
+    "milestone_number": 97,
+    "lane": "A",
+    "issue": 1725,
+    "task": "M12-A002",
+    "sequence": 2
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_EXECUTION_SLICE__\n#define __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_EXECUTION_SLICE__ 1\n#endif\n\ntypedef struct M12A002_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M12A002_Probe;\n\nM12A002_Probe m12a002_probe(void) {\n#if __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_EXECUTION_SLICE__\n    M12A002_Probe probe = { 1, 2, 1725 };\n#else\n    M12A002_Probe probe = { 0, 2, 1725 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

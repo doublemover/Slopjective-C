@@ -1,0 +1,5 @@
+module MisplacedQualifierMessageReceiverExtern;
+
+fn main() -> i32 {
+  return [extern ping];
+}

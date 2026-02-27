@@ -1,0 +1,35 @@
+{
+  "id": "EC-OPTCHAIN-02",
+  "title": "Require contiguous ?.",
+  "feature": "?.",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-2-2",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-7"
+  ],
+  "source": "id accessMaybe(id value) {\n    return value ? .member;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-TOKEN-OPTIONAL-DOT-CONTIGUOUS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 18 },
+          "end": { "line": 2, "column": 20 }
+        },
+        "message": "optional member punctuator requires contiguous ?.",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 18 },
+              "end": { "line": 2, "column": 20 }
+            },
+            "replacement": "?."
+          }
+        ]
+      }
+    ]
+  }
+}

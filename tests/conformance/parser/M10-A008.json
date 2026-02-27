@@ -1,0 +1,25 @@
+{
+  "id": "M10-A008",
+  "title": "Accept M10 lane-A parser fixture baseline for issue #1623 task M10-A008 (Add frontend negative path coverage (Integration Surface Stabilization))",
+  "feature": "m10 lane-a parser nullability and nonnull region slice 08",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M10",
+    "milestone_number": 95,
+    "lane": "A",
+    "issue": 1623,
+    "task": "M10-A008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_NULLABILITY_NEGATIVE_PATH_COVERAGE__\n#define __OBJC3_FEATURE_NULLABILITY_NEGATIVE_PATH_COVERAGE__ 1\n#endif\n\ntypedef struct M10A008_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M10A008_Probe;\n\nM10A008_Probe m10a008_probe(void) {\n#if __OBJC3_FEATURE_NULLABILITY_NEGATIVE_PATH_COVERAGE__\n    M10A008_Probe probe = { 1, 8, 1623 };\n#else\n    M10A008_Probe probe = { 0, 8, 1623 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

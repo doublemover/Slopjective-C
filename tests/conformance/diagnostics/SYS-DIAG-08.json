@@ -1,0 +1,32 @@
+{
+  "id": "SYS-DIAG-08",
+  "title": "Diagnose weak plus move capture pattern that causes resource use-after-move",
+  "feature": "strict-system diagnostics for resource move-state hazards",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef int cap_handle_t;\nvoid cap06_close(cap_handle_t handle);\ncap_handle_t cap06_open(void);\nint cap06_is_valid(cap_handle_t handle);\n\nvoid cap06_mixed_weak_move_hazard(id owner) {\n    cap_handle_t fd __attribute__((objc_resource(close=cap06_close, invalid=-1))) = cap06_open();\n    void (^handler)(void) = [weak owner, move fd] {\n        if (owner) {\n            (void)fd;\n        }\n    };\n    if (owner) {\n        cap06_is_valid(fd);\n    }\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-CAPTURE-WEAK-MOVE-USE-AFTER-MOVE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 9 },
+          "end": { "line": 14, "column": 26 }
+        },
+        "message": "mixed weak and move captures moved fd at block creation; outer-scope use of fd is a use-after-move hazard",
+        "fixits": []
+      }
+    ]
+  }
+}

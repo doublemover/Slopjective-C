@@ -1,0 +1,25 @@
+{
+  "id": "M18-A015",
+  "title": "Accept M18 lane-A parser fixture baseline for issue #2266 task M18-A015 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m18 lane-a parser correctness hardening determinism closure core strict normalization proof slice 15",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M18",
+    "milestone_number": 103,
+    "lane": "A",
+    "issue": 2266,
+    "task": "M18-A015",
+    "sequence": 15
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_5_FRONTEND_ACTIONS_AND_SELECTIONS.md#part-5-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-11"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S015__\\n#define __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S015__ 1\\n#endif\\n\\ntypedef struct M18A015_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M18A015_Probe;\\n\\nM18A015_Probe m18a015_probe(void) {\\n#if __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S015__\\n    M18A015_Probe probe = { 1, 15, 2266 };\\n#else\\n    M18A015_Probe probe = { 0, 15, 2266 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

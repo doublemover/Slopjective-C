@@ -1,0 +1,66 @@
+{
+  "id": "AGR-RT-01",
+  "title": "Aggregate resource partial initialization failure cleans initialized prefix in reverse order",
+  "feature": "aggregate resource partial-init cleanup semantics",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-13"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -fexceptions -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -fexceptions -O2 -fsyntax-only %s\ntypedef int agr_handle_t;\nstatic int agr_rt01_trace = 0;\nstatic int agr_rt01_close_count_a = 0;\nstatic int agr_rt01_close_count_b = 0;\nstatic int agr_rt01_close_count_c = 0;\n\nvoid agr_rt01_close_a(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt01_trace = agr_rt01_trace * 10 + 1;\n        agr_rt01_close_count_a = agr_rt01_close_count_a + 1;\n    }\n}\n\nvoid agr_rt01_close_b(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt01_trace = agr_rt01_trace * 10 + 2;\n        agr_rt01_close_count_b = agr_rt01_close_count_b + 1;\n    }\n}\n\nvoid agr_rt01_close_c(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt01_trace = agr_rt01_trace * 10 + 3;\n        agr_rt01_close_count_c = agr_rt01_close_count_c + 1;\n    }\n}\n\nagr_handle_t agr_rt01_open_or_throw(int slot, int failAt) {\n    if (slot == failAt) {\n        throw slot;\n    }\n    return slot + 40;\n}\n\nstruct AGRRT01Triple {\n    agr_handle_t a __attribute__((objc_resource(close=agr_rt01_close_a, invalid=-1)));\n    agr_handle_t b __attribute__((objc_resource(close=agr_rt01_close_b, invalid=-1)));\n    agr_handle_t c __attribute__((objc_resource(close=agr_rt01_close_c, invalid=-1)));\n};\n\nint agr_rt01_partial_failure_trace(int failAt) {\n    agr_rt01_trace = 0;\n    agr_rt01_close_count_a = 0;\n    agr_rt01_close_count_b = 0;\n    agr_rt01_close_count_c = 0;\n\n    try {\n        struct AGRRT01Triple triple = { .a = -1, .b = -1, .c = -1 };\n        triple.a = agr_rt01_open_or_throw(0, failAt);\n        triple.b = agr_rt01_open_or_throw(1, failAt);\n        triple.c = agr_rt01_open_or_throw(2, failAt);\n        (void)triple;\n    } catch (...) {\n    }\n\n    if (failAt == 0 && (agr_rt01_close_count_a != 0 || agr_rt01_close_count_b != 0 || agr_rt01_close_count_c != 0)) {\n        return -1;\n    }\n    if (failAt == 1 && (agr_rt01_close_count_a != 1 || agr_rt01_close_count_b != 0 || agr_rt01_close_count_c != 0)) {\n        return -1;\n    }\n    if (failAt == 2 && (agr_rt01_close_count_a != 1 || agr_rt01_close_count_b != 1 || agr_rt01_close_count_c != 0)) {\n        return -1;\n    }\n\n    return agr_rt01_trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-fexceptions",
+            "-O0"
+          ],
+          "aggregate_requirements": [
+            "field initialization follows declaration order for aggregate resources",
+            "on failure at field k, initialized fields [0..k-1] are cleaned exactly once in reverse declaration order",
+            "partial-init unwind uses the same LIFO scope-exit model as Part 8.1"
+          ],
+          "runtime_assertions": [
+            "agr_rt01_partial_failure_trace(0) returns 0",
+            "agr_rt01_partial_failure_trace(1) returns 1",
+            "agr_rt01_partial_failure_trace(2) returns 21",
+            "function returns -1 if exactly-once counts are violated for any failure position"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-fexceptions",
+            "-O2"
+          ],
+          "aggregate_requirements": [
+            "optimization preserves reverse-order cleanup of initialized field prefixes on failure",
+            "optimization preserves exactly-once aggregate field cleanup counts"
+          ],
+          "runtime_assertions": [
+            "agr_rt01_partial_failure_trace(2) still returns 21 under optimization",
+            "optimized lowering does not add duplicate cleanup callbacks for aggregate fields"
+          ]
+        }
+      ]
+    }
+  }
+}

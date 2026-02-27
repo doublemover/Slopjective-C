@@ -1,0 +1,33 @@
+{
+  "id": "EC-MANGLE-08",
+  "title": "Reject metadata missing required semantic signature payload",
+  "feature": "mangling invariants",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_135_mangling_invariants_vectors_plan.md#issue-135-mangling-invariants-vectors-plan"
+  ],
+  "source": "// IMPORT: mangling_policy_id=canonical\n// IMPORT: semantic_signature=<missing>\nint importedMissingPayload(void);\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "MANGLE-INV-MISSING-PAYLOAD",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 38
+          }
+        },
+        "message": "required semantic signature payload is missing from interface metadata",
+        "fixits": []
+      }
+    ]
+  }
+}

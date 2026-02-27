@@ -1,0 +1,25 @@
+{
+  "generated_at_utc": "2026-02-25T01:02:03Z",
+  "source": "fixture:tests/tooling/fixtures/open_blockers/valid",
+  "open_blocker_count": 3,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-900-01",
+      "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_alpha.md",
+      "line_number": 5,
+      "line": 5
+    },
+    {
+      "blocker_id": "BLK-900-02",
+      "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_alpha.md",
+      "line_number": 6,
+      "line": 6
+    },
+    {
+      "blocker_id": "BLK-901-01",
+      "source_path": "tests/tooling/fixtures/open_blockers/valid/issue_beta.md",
+      "line_number": 7,
+      "line": 7
+    }
+  ]
+}

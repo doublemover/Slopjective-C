@@ -1,0 +1,1 @@
+error: open blockers snapshot field 'open_blockers' canonical rows must be sorted by 'source_path', then line number, then 'blocker_id' in tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_unsorted_rows/open_blockers.json

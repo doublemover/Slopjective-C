@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "conditional_missing_colon.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P107",
+      "missing ':' in conditional expression"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

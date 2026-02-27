@@ -1,0 +1,31 @@
+{
+  "id": "M01-D007",
+  "title": "Scope-freeze baseline: direct dynamic-dispatch warning keeps stable payload mapping",
+  "feature": "M01 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+  ],
+  "source": "@interface M01D007Box : NSObject\n- (int)fastPath __attribute__((objc_direct));\n@end\n\nint m01d007_negative(M01D007Box *box) {\n    SEL sel = @selector(fastPath);\n    return ((int (*)(id, SEL))objc_msgSend)(box, sel);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-DIRECT-DYNAMIC-DISPATCH",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 32 },
+          "end": { "line": 7, "column": 43 }
+        },
+        "message": "objc_direct method 'fastPath' is invoked through dynamic selector dispatch; use a direct call expression unless dynamic behavior is required",
+        "fixits": []
+      }
+    ]
+  }
+}

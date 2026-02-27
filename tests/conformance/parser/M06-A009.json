@@ -1,0 +1,17 @@
+{
+  "id": "M06-A009",
+  "title": "Accept integrator invariant baseline for typed AST handoff and source-span continuity",
+  "feature": "m06 integrator invariants and replay guidance baseline",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m06a009_fetch(void) async;\n\ntypedef struct M06A009_Trace {\n    int value;\n    int span_start;\n    int span_end;\n} M06A009_Trace;\n\nM06A009_Trace m06a009_invariant(int gate) async {\n    M06A009_Trace trace = { 0, 10, 20 };\n    if (gate) {\n        trace.value = try await m06a009_fetch();\n    }\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

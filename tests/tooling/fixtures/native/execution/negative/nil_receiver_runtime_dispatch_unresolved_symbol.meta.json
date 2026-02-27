@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "nil_receiver_runtime_dispatch_unresolved_symbol.objc3",
+  "expect_failure": {
+    "stage": "link",
+    "required_diagnostic_tokens": [
+      "objc3_msgsend_i32"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": true,
+    "runtime_dispatch_symbol": "objc3_msgsend_i32"
+  }
+}

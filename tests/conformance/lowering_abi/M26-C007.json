@@ -1,0 +1,26 @@
+{
+  "id": "M26-C007",
+  "title": "Validate typed bool/i32 call-return lowering boundaries for native objc3c frontend (Boundary Validation) (issue #2862 / task M26-C007)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 call return lowering boundaries boundary validation",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2862,
+    "task": "M26-C007",
+    "sequence": 7
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_007_TYPED_BOOL_I32_CALL_RETURN_BOUNDARIES\n#define __OBJC3_FEATURE_M26_C_007_TYPED_BOOL_I32_CALL_RETURN_BOUNDARIES 1\n#endif\n\ntypedef signed int m26c007_i32;\ntypedef _Bool m26c007_bool;\n\ntypedef m26c007_bool (*M26C007_I32ToBoolFn)(m26c007_i32 value);\ntypedef m26c007_i32 (*M26C007_BoolToI32Fn)(m26c007_bool value);\n\nstatic m26c007_bool m26c007_i32_to_bool(m26c007_i32 value) {\n    return value != 0;\n}\n\nstatic m26c007_i32 m26c007_bool_to_i32(m26c007_bool value) {\n    return value ? 1 : 0;\n}\n\nstatic m26c007_i32 m26c007_boundary_digest(M26C007_I32ToBoolFn i32_to_bool, M26C007_BoolToI32Fn bool_to_i32) {\n    m26c007_i32 digest = 0;\n    digest = (digest << 2) | bool_to_i32(i32_to_bool(0));\n    digest = (digest << 2) | bool_to_i32(i32_to_bool(1));\n    digest = (digest << 2) | bool_to_i32(i32_to_bool(-2147483647 - 1));\n    digest = (digest << 2) | bool_to_i32(i32_to_bool(2147483647));\n    return digest;\n}\n\ntypedef struct M26C007_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c007_i32 boundary_digest;\n    m26c007_bool min_roundtrip;\n    m26c007_bool max_roundtrip;\n} M26C007_Probe;\n\nM26C007_Probe m26c007_probe(void) {\n#if __OBJC3_FEATURE_M26_C_007_TYPED_BOOL_I32_CALL_RETURN_BOUNDARIES\n    M26C007_I32ToBoolFn i32_to_bool = m26c007_i32_to_bool;\n    M26C007_BoolToI32Fn bool_to_i32 = m26c007_bool_to_i32;\n    M26C007_Probe probe = {\n        1,\n        7,\n        2862,\n        m26c007_boundary_digest(i32_to_bool, bool_to_i32),\n        i32_to_bool(-2147483647 - 1),\n        i32_to_bool(2147483647)\n    };\n#else\n    M26C007_Probe probe = { 0, 7, 2862, 0, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

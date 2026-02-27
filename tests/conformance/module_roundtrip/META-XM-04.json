@@ -1,0 +1,29 @@
+{
+  "id": "META-XM-04",
+  "title": "Detect interface/metadata mismatch for expanded declarations",
+  "feature": "macro/derive expansion metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2"
+  ],
+  "source": "// RUN: objc3c --verify-interface MetaXM-corrupt.objcmod MetaXM-corrupt.obji %s\\n@interface XMMismatch : NSObject\\n- (id _Nonnull)expandedMember;\\n@end\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-META-EXPANSION-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 74 }
+        },
+        "message": "textual interface expansion set does not match module metadata expansion set",
+        "fixits": []
+      }
+    ]
+  }
+}

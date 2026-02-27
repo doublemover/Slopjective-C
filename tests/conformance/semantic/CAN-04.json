@@ -1,0 +1,23 @@
+{
+  "id": "CAN-04",
+  "title": "Model cancellation-driven unwind with defer and resource cleanup obligations",
+  "feature": "cancellation propagation and task-context semantics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/STANDARD_LIBRARY_CONTRACT.md#s-3-2"
+  ],
+  "source": "typedef int can04_handle_t;\nvoid can04_close(can04_handle_t handle);\nvoid can04_cancellation_checkpoint(void) async throws;\n\nint can04_cleanup_on_cancellation_unwind(void) async throws {\n    int trace = 0;\n    can04_handle_t handle __attribute__((objc_resource(close=can04_close, invalid=-1))) = 42;\n    defer { trace = trace * 10 + 1; };\n    try await can04_cancellation_checkpoint();\n    (void)handle;\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

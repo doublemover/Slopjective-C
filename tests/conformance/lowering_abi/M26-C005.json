@@ -1,0 +1,26 @@
+{
+  "id": "M26-C005",
+  "title": "Enforce canonical typed bool/i32 lowering normalization for native objc3c frontend (Determinism Proof) (issue #2860 / task M26-C005)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering normalization determinism proof",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2860,
+    "task": "M26-C005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_005_TYPED_BOOL_I32_NORMALIZATION_DETERMINISM\n#define __OBJC3_FEATURE_M26_C_005_TYPED_BOOL_I32_NORMALIZATION_DETERMINISM 1\n#endif\n\ntypedef signed int m26c005_i32;\ntypedef _Bool m26c005_bool;\n\nstatic m26c005_i32 m26c005_bool_to_i32(m26c005_bool value) {\n    return value ? 1 : 0;\n}\n\nstatic m26c005_bool m26c005_i32_to_bool(m26c005_i32 value) {\n    return value != 0;\n}\n\nstatic m26c005_i32 m26c005_normalize_case(m26c005_i32 lhs, m26c005_i32 rhs) {\n    m26c005_bool lhs_flag = m26c005_i32_to_bool(lhs);\n    m26c005_bool rhs_flag = m26c005_i32_to_bool(rhs);\n    return (m26c005_bool_to_i32(lhs_flag) << 1) | m26c005_bool_to_i32(rhs_flag);\n}\n\ntypedef struct M26C005_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c005_i32 normalization_digest;\n} M26C005_Probe;\n\nM26C005_Probe m26c005_probe(void) {\n#if __OBJC3_FEATURE_M26_C_005_TYPED_BOOL_I32_NORMALIZATION_DETERMINISM\n    m26c005_i32 digest = 0;\n    digest = (digest << 3) ^ m26c005_normalize_case(0, 0);\n    digest = (digest << 3) ^ m26c005_normalize_case(0, 7);\n    digest = (digest << 3) ^ m26c005_normalize_case(-9, 0);\n    digest = (digest << 3) ^ m26c005_normalize_case(-9, 5);\n    M26C005_Probe probe = { 1, 5, 2860, digest };\n#else\n    M26C005_Probe probe = { 0, 5, 2860, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

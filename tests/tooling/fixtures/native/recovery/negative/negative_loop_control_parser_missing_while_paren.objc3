@@ -1,0 +1,8 @@
+// Negative fixture: malformed while statement missing '('.
+// Expected diagnostic code(s): O3P106.
+module NegativeLoopControlParserMissingWhileParen;
+
+fn main() -> i32 {
+  while ) ;
+  return 0;
+}

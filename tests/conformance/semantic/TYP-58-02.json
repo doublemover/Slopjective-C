@@ -1,0 +1,37 @@
+{
+  "id": "TYP-58-02",
+  "title": "Reject nullable-to-nonnull qualifier mismatches",
+  "feature": "nullability qualifiers as type-system properties",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-1",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3"
+  ],
+  "source": "id _Nonnull takesNonnull(id _Nonnull value);\nid _Nullable sourceMaybe(void);\n\nid _Nonnull mustFail(void) {\n    id _Nullable maybe = sourceMaybe();\n    id _Nonnull forced = maybe;\n    return takesNonnull(maybe);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 25 },
+          "end": { "line": 6, "column": 30 }
+        },
+        "message": "cannot assign nullable value to nonnull storage without an explicit check"
+      },
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 12 },
+          "end": { "line": 7, "column": 31 }
+        },
+        "message": "cannot pass nullable argument to nonnull parameter without an explicit check"
+      }
+    ]
+  }
+}

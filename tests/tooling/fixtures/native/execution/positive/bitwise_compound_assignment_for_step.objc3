@@ -1,0 +1,13 @@
+module BitwiseCompoundAssignmentForStep;
+
+fn main() -> i32 {
+  let mask = 1;
+  let acc = 0;
+  for (let i = 0; i < 4; i += 1) {
+    acc |= mask;
+    mask <<= 1;
+  }
+  mask >>= 2;
+  acc ^= mask;
+  return acc;
+}

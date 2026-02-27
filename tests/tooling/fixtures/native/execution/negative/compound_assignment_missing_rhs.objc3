@@ -1,0 +1,7 @@
+module CompoundAssignmentMissingRhs;
+
+fn main() -> i32 {
+  let value = 1;
+  value += ;
+  return value;
+}

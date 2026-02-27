@@ -1,0 +1,1 @@
+error: catalog task row 0 fields 'execution_status_rationale' and 'execution_status_override_source' must either both be present or both be absent in tests/tooling/fixtures/activation_triggers/drift_catalog_execution_metadata_pair_mismatch/catalog.json

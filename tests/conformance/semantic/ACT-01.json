@@ -1,0 +1,41 @@
+{
+  "id": "ACT-01",
+  "title": "Reject cross-actor isolated member access without await in strict concurrency mode",
+  "feature": "actor declarations and isolation-boundary await requirements",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "actor class ACT01Counter : NSObject\n- (int)current;\n- (void)bump;\n@end\n\nint act01_cross_actor_missing_await(ACT01Counter *counter) async {\n    [counter bump];\n    return [counter current];\n}\n\nint act01_cross_actor_with_await(ACT01Counter *counter) async {\n    await [counter bump];\n    return await [counter current];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 5 },
+          "end": { "line": 7, "column": 18 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'"
+      },
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 28 }
+        },
+        "message": "cross-actor access to an actor-isolated member requires 'await'"
+      }
+    ]
+  }
+}

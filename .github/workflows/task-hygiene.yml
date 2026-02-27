@@ -1,0 +1,75 @@
+name: Task Hygiene
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  task-hygiene:
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Python tooling dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jsonschema
+      - name: Install Node dependencies
+        run: npm install
+      - name: 01 Run M20 release-gate integration W2 gate (strict deterministic gate)
+        run: npm run check:release-gate-integration:w2:strict
+      - name: 02 Check catalog status integrity (strict default)
+        run: npm run check:catalog-status-integrity
+      - name: 03 Check catalog status integrity diagnostics
+        run: npm run check:catalog-status-integrity:diagnostics
+      - name: 04 Check catalog status metadata completeness
+        run: npm run check:catalog-status-metadata
+      - name: 05 Run M41 release-and-scale foundation W5 gate (strict deterministic gate)
+        run: npm run check:release-scale-foundation:w5:strict
+      - name: 06 Check M02 seed-contract parity (strict deterministic gate)
+        run: npm run check:seed-contract:m02:strict
+      - name: 07 Run M04 activation preflight parity gate (strict deterministic gate)
+        run: npm run check:activation-preflight:m04:strict
+      - name: 08 Run bootstrap readiness strict gate (runner + planning hygiene)
+        run: npm run check:bootstrap-readiness:strict
+      - name: 09 Run repo-root open-blocker audit contract strict gate (runner + checker + evidence artifacts)
+        run: npm run check:open-blocker-audit:contract:strict
+      - name: 10 Run native lane-E perf/cache/repro gate (windows only)
+        if: matrix.os == 'windows-latest'
+        run: npm run test:objc3c:lane-e
+
+  tooling-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Python test/tooling dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest jsonschema
+      - name: 01 Run tooling pytest suite
+        run: python -m pytest tests/tooling -q

@@ -1,0 +1,7 @@
+module ConditionalBasicSelect;
+
+fn main() -> i32 {
+  let flag = true;
+  let out = flag ? 11 : 22;
+  return out;
+}

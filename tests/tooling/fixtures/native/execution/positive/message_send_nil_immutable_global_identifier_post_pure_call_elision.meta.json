@@ -1,0 +1,7 @@
+{
+  "fixture": "message_send_nil_immutable_global_identifier_post_pure_call_elision.objc3",
+  "execution": {
+    "requires_runtime_shim": false,
+    "runtime_dispatch_symbol": "objc3_msgsend_i32"
+  }
+}

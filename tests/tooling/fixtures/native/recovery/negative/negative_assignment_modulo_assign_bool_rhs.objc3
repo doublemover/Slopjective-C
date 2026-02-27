@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeAssignmentModuloAssignBoolRhs;
+
+fn main() -> i32 {
+  let x = 5;
+  let flag = true;
+  x %= flag;
+  return x;
+}

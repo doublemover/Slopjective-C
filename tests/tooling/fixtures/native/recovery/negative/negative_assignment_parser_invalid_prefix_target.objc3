@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeAssignmentParserInvalidPrefixTarget;
+
+fn main() -> i32 {
+  ++1;
+  return 0;
+}

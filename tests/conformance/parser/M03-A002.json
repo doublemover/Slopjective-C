@@ -1,0 +1,17 @@
+{
+  "id": "M03-A002",
+  "title": "Accept primary parser frontend execution slice with canonical try-await composition",
+  "feature": "frontend parser execution-path acceptance",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "int m03a002_fetch(void) async;\n\nint m03a002_driver(void) async {\n    return try await m03a002_fetch();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

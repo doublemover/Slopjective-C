@@ -1,0 +1,80 @@
+{
+  "id": "M09-C008",
+  "title": "Stabilize runtime boundary preconditions and postconditions for replay-safe lowering checks (issue #1598 / task M09-C008)",
+  "feature": "M09 Lane C runtime boundary assumption stabilization for lowering conformance; issue #1598; task M09-C008; sequence 8; dispatch title: [Compiler][M09][Lane C][M09-C008] Stabilize runtime boundary assumptions (Integration Surface Stabilization)",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\ntypedef enum M09C008BoundaryStatus {\n    M09C008_BOUNDARY_OK = 0,\n    M09C008_BOUNDARY_PRECONDITION_FAILURE = 1,\n    M09C008_BOUNDARY_POSTCONDITION_FAILURE = 2\n} M09C008BoundaryStatus;\n\ntypedef struct M09C008BoundaryProbe {\n    int callbackCount;\n    int entered;\n    int exited;\n} M09C008BoundaryProbe;\n\nvoid M09c008_invoke_boundary(M09C008BoundaryProbe * _Nonnull probe,\n                             void (^_Nonnull body)(M09C008BoundaryProbe * _Nonnull probe));\n\nM09C008BoundaryStatus M09c008_validate_boundary(M09C008BoundaryProbe * _Nullable probe) {\n    if (probe == nil) {\n        return M09C008_BOUNDARY_PRECONDITION_FAILURE;\n    }\n    if (probe->entered != 1 || probe->exited != 1 || probe->callbackCount != 1) {\n        return M09C008_BOUNDARY_POSTCONDITION_FAILURE;\n    }\n    return M09C008_BOUNDARY_OK;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "runtime boundary preconditions (nonnull probe and stable callback context) are explicit inputs to lowering checks",
+            "postconditions require exactly-once callback execution and balanced enter/exit boundary accounting",
+            "boundary assumption validation is deterministic and fail-closed for drifted pre/post state"
+          ],
+          "runtime_assertions": [
+            "M09c008_validate_boundary returns PRECONDITION_FAILURE for nil boundary probe",
+            "M09c008_validate_boundary returns POSTCONDITION_FAILURE for enter/exit or callback-count drift",
+            "M09c008_validate_boundary returns OK only when all boundary assumptions hold"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves explicit pre/post boundary assumptions from -O0",
+            "optimization does not relax boundary assumption checks or fail-closed behavior",
+            "boundary validation outcomes remain deterministic under optimization"
+          ],
+          "runtime_assertions": [
+            "boundary status outcomes remain equivalent to -O0 under optimization",
+            "pre/postcondition drift remains observable as deterministic non-OK status values"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "boundary.precondition.context_nonnull",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "boundary context precondition remains explicit and replay-stable",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "boundary.postcondition.exactly_once_callback",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "boundary callback count and enter/exit postconditions remain deterministic",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

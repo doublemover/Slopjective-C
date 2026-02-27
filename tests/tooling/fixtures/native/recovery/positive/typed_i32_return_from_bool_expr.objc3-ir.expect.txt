@@ -1,0 +1,7 @@
+# Typed i32 return from bool expression ABI expectation markers.
+define i32 @as_score(i32 %arg0, i32 %arg1)
+icmp slt i32 %t2, %t3
+zext i1 %t4 to i32
+call i32 @as_score(i32 2, i32 5)
+call i32 @as_score(i32 9, i32 1)
+define i32 @objc3c_entry()

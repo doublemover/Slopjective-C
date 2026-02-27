@@ -1,0 +1,40 @@
+{
+  "id": "CONC-DIAG-02",
+  "title": "Strict-concurrency diagnostics reject invalid executor annotation forms and targets",
+  "feature": "executor annotation misuse diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id concdiag02_badToken(id seed) __attribute__((objc_executor(ui)));\n\n@interface CONCDIAG02BadPlacement : NSObject\n@property (nonatomic) id token __attribute__((objc_executor(main)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-INVALID-EXECUTOR-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 44 },
+          "end": { "line": 1, "column": 61 }
+        },
+        "message": "objc_executor accepts only main, global, or named(\"...\")"
+      },
+      {
+        "code": "OBJC3-D-CONC-INVALID-EXECUTOR-TARGET",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 31 },
+          "end": { "line": 4, "column": 50 }
+        },
+        "message": "objc_executor may only annotate functions, methods, or Objective-C types"
+      }
+    ]
+  }
+}

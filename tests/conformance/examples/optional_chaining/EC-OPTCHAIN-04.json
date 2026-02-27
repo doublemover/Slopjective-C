@@ -1,0 +1,16 @@
+{
+  "id": "EC-OPTCHAIN-04",
+  "title": "Parse left-to-right chaining with optional member access",
+  "feature": "?.",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id readDisplayName(User * _Nullable user) {\n    return user?.profile.displayName;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

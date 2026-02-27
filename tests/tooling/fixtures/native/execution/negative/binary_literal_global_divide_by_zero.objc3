@@ -1,0 +1,7 @@
+module BinaryLiteralGlobalDivideByZero;
+
+let value = 0b10 / 0b0;
+
+fn main() -> i32 {
+  return value;
+}

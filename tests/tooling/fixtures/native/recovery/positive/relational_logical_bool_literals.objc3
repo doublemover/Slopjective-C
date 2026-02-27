@@ -1,0 +1,17 @@
+module RelationalLogicalBoolLiterals;
+
+fn to_i32(flag: bool) {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+fn main() {
+  let lt = 3 < 4;
+  let ge = 8 >= 8;
+  let checks = (lt == 1) && (ge != 0) && ((lt && ge) || 0);
+
+  return to_i32(checks);
+}

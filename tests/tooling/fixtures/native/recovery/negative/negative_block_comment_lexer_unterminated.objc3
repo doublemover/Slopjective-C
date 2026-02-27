@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3L002.
+module NegativeBlockCommentLexerUnterminated;
+
+let value = 3;
+
+/* unterminated block comment
+fn main() -> i32 {
+  return value;
+}

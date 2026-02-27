@@ -1,0 +1,1 @@
+error: catalog tasks must be sorted by 'task_id' in tests/tooling/fixtures/activation_triggers/drift_catalog_unsorted_task_ids/catalog.json

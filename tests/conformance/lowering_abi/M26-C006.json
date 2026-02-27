@@ -1,0 +1,26 @@
+{
+  "id": "M26-C006",
+  "title": "Close typed bool/i32 lowering regression vectors in native objc3c frontend (Regression Closure) (issue #2861 / task M26-C006)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering regression closure",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2861,
+    "task": "M26-C006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_006_TYPED_BOOL_I32_REGRESSION_CLOSURE\n#define __OBJC3_FEATURE_M26_C_006_TYPED_BOOL_I32_REGRESSION_CLOSURE 1\n#endif\n\ntypedef signed int m26c006_i32;\ntypedef _Bool m26c006_bool;\n\nstatic m26c006_bool m26c006_threshold_gate(m26c006_i32 value) {\n    return value > 3;\n}\n\nstatic m26c006_i32 m26c006_merge_gate(m26c006_i32 lhs, m26c006_i32 rhs, m26c006_bool gate) {\n    return gate ? lhs : rhs;\n}\n\nstatic m26c006_i32 m26c006_run_vector(m26c006_i32 a, m26c006_i32 b) {\n    m26c006_bool gate = m26c006_threshold_gate(a + b);\n    m26c006_i32 merged = m26c006_merge_gate(a, b, gate);\n    return merged + (gate ? 1 : 0);\n}\n\ntypedef struct M26C006_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c006_i32 regression_score;\n    m26c006_bool gate_state;\n} M26C006_Probe;\n\nM26C006_Probe m26c006_probe(void) {\n#if __OBJC3_FEATURE_M26_C_006_TYPED_BOOL_I32_REGRESSION_CLOSURE\n    m26c006_i32 score = 0;\n    score += m26c006_run_vector(2, 1);\n    score += m26c006_run_vector(3, 2);\n    score += m26c006_run_vector(4, 1);\n    M26C006_Probe probe = { 1, 6, 2861, score, m26c006_threshold_gate(score) };\n#else\n    M26C006_Probe probe = { 0, 6, 2861, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

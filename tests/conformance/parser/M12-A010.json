@@ -1,0 +1,25 @@
+{
+  "id": "M12-A010",
+  "title": "Accept M12 lane-A parser fixture baseline for issue #1733 task M12-A010 (Refactor parser pipeline for deterministic replay (CI/Automation Enforcement))",
+  "feature": "m12 lane-a parser module import and name lookup core slice 10",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M12",
+    "milestone_number": 97,
+    "lane": "A",
+    "issue": 1733,
+    "task": "M12-A010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__\n#define __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__ 1\n#endif\n\ntypedef struct M12A010_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M12A010_Probe;\n\nM12A010_Probe m12a010_probe(void) {\n#if __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__\n    M12A010_Probe probe = { 1, 10, 1733 };\n#else\n    M12A010_Probe probe = { 0, 10, 1733 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

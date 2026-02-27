@@ -1,0 +1,48 @@
+{
+  "id": "M06-A005",
+  "title": "Reject non-canonical attribute spelling to preserve M06 syntax normalization determinism",
+  "feature": "m06 canonical attribute spelling normalization",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#pragma objc_language_version(3)\n__attribute__((objc final))\nint m06a005_noncanonical(void) {\n    return 5;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-ATTR-CANONICAL-SPELLING",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 16
+          },
+          "end": {
+            "line": 2,
+            "column": 26
+          }
+        },
+        "message": "expected canonical attribute spelling 'objc_final'",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 16
+              },
+              "end": {
+                "line": 2,
+                "column": 26
+              }
+            },
+            "replacement": "objc_final"
+          }
+        ]
+      }
+    ]
+  }
+}

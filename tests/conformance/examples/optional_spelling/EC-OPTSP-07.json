@@ -1,0 +1,16 @@
+{
+  "id": "EC-OPTSP-07",
+  "title": "Canonicalize Optional spelling in emitted interface/module surface",
+  "feature": "optional spelling",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-6",
+    "spec/planning/issue_134_optional_spelling_diagnostics_package.md#issue-134-optional-spelling-diagnostics-package"
+  ],
+  "source": "// RUN: objc3c --emit-interface out.obji %s\n// CHECK: Optional<int> exportedValue\noptional<int> exportedValue(void);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

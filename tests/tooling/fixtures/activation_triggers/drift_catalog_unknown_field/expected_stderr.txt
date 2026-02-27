@@ -1,0 +1,1 @@
+error: catalog snapshot object in tests/tooling/fixtures/activation_triggers/drift_catalog_unknown_field/catalog.json contains unexpected field(s) ['unexpected']; allowed fields are ['generated_at_utc', 'source', 'generated_on', 'task_count', 'count', 'tasks']

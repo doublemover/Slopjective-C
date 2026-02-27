@@ -1,0 +1,29 @@
+[
+  {
+    "blocker_id": "BLK-ALPHA-02",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_alpha.md",
+    "line": 5,
+    "owner": "TEAM-A",
+    "due_date_utc": null,
+    "summary": "Validate docs table rendering.",
+    "status": "OPEN"
+  },
+  {
+    "blocker_id": "BLK-ALPHA-01",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_alpha.md",
+    "line": 6,
+    "owner": "TEAM-A",
+    "due_date_utc": "2026-02-27",
+    "summary": "Stabilize parser.",
+    "status": "OPEN"
+  },
+  {
+    "blocker_id": "BLK-ZETA-01",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_zeta.md",
+    "line": 7,
+    "owner": "TEAM-Z",
+    "due_date_utc": "2026-03-01",
+    "summary": "Wait for release tag.",
+    "status": "OPEN"
+  }
+]

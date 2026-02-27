@@ -1,0 +1,6 @@
+module MisplacedQualifierStatementPure;
+
+fn main() -> i32 {
+  pure let value = 1;
+  return value;
+}

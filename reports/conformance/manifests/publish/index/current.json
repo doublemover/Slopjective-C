@@ -1,0 +1,10 @@
+{
+  "schema_id": "objc3-manifest-publish-index/v1",
+  "index_schema_version": 1,
+  "current_snapshot": "reports/conformance/manifests/publish/index/snapshots/main_20260223_7001.json",
+  "source_revision": "9f4b95f2c6d8a1e7b4a392a7f4c662d6fb6f4c2a",
+  "ci_workflow": "objc3-manifest-publish",
+  "ci_run_id": 7001,
+  "ci_run_attempt": 1,
+  "published_at_utc": "2026-02-23T09:30:15Z"
+}

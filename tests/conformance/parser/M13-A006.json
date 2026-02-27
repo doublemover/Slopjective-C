@@ -1,0 +1,25 @@
+{
+  "id": "M13-A006",
+  "title": "Accept M13 lane-A parser fixture baseline for issue #1789 task M13-A006 (Harden source-location fidelity (Regression Closure))",
+  "feature": "m13 lane-a parser deterministic textual interface emitter slice 06",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M13",
+    "milestone_number": 98,
+    "lane": "A",
+    "issue": 1789,
+    "task": "M13-A006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-3",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_SOURCE_LOCATION_FIDELITY__\n#define __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_SOURCE_LOCATION_FIDELITY__ 1\n#endif\n\ntypedef struct M13A006_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M13A006_Probe;\n\nM13A006_Probe m13a006_probe(void) {\n#if __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_SOURCE_LOCATION_FIDELITY__\n    M13A006_Probe probe = { 1, 6, 1789 };\n#else\n    M13A006_Probe probe = { 0, 6, 1789 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

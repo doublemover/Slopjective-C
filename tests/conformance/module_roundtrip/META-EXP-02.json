@@ -1,0 +1,57 @@
+{
+  "id": "META-EXP-02",
+  "title": "Reject module/interface import when required derive capability is unavailable",
+  "feature": "derive expansion capability gating in metadata",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-2-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-2-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=on --emit-module METAEXP02.objcmod --emit-interface METAEXP02.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --verify-interface METAEXP02.objcmod METAEXP02.obji -fobjc3-feature-derive-codable=off --assert-missing-required-capability objc3.meta.derive.codable.v1\n__attribute__((objc_derive(\"Codable\")))\n@interface METAEXP02Envelope : NSObject\n@property (nonatomic, copy) NSString * _Nonnull token;\n@property (nonatomic) int revision;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MODULE-REQUIRED-CAPABILITY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 1 },
+          "end": { "line": 3, "column": 39 }
+        },
+        "message": "module import requires capability objc3.meta.derive.codable.v1; enable __OBJC3_FEATURE_DERIVE_CODABLE__ or remove the derive request",
+        "fixits": []
+      }
+    ],
+    "metadata": {
+      "required_capabilities": [
+        "objc3.meta.derive.codable.v1"
+      ],
+      "preserved_fields": [
+        {
+          "field_id": "derive_or_macro_synthesized_declarations",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "gate_failures": [
+        {
+          "capability_id": "objc3.meta.derive.codable.v1",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-MODULE-REQUIRED-CAPABILITY",
+          "expected_severity": "error",
+          "feature_macro_hint": "__OBJC3_FEATURE_DERIVE_CODABLE__"
+        }
+      ]
+    }
+  }
+}

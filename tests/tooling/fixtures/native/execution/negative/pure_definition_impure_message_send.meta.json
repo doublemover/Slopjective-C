@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "pure_definition_impure_message_send.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "error:3:9",
+      "O3S215",
+      "pure contract violation",
+      "declared 'pure' has side effects",
+      "cause: message-send",
+      "cause-site:4:10",
+      "detail:message-send@4:10"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

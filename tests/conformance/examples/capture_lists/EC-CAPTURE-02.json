@@ -1,0 +1,35 @@
+{
+  "id": "EC-CAPTURE-02",
+  "title": "Reject trailing comma in capture list",
+  "feature": "capture lists",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6"
+  ],
+  "source": "void (^block)(void) = [weak self, ] {\n    [self refresh];\n};\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-CAPTURELIST-TRAILING-COMMA",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 34 },
+          "end": { "line": 1, "column": 35 }
+        },
+        "message": "capture list cannot end with a trailing comma",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 33 },
+              "end": { "line": 1, "column": 35 }
+            },
+            "replacement": "]"
+          }
+        ]
+      }
+    ]
+  }
+}

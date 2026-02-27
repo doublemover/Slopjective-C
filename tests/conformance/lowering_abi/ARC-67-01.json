@@ -1,0 +1,46 @@
+{
+  "id": "ARC-67-01",
+  "title": "Preserve ARC retain/release balance when lowering optional-send and nil-coalescing",
+  "feature": "ARC semantic preservation across optional lowering",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-2",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-1",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-4",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-2-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\n@interface ARC67Node : NSObject\n- (ARC67Node * _Nullable)next;\n- (id _Nonnull)payload;\n@end\n\nid _Nullable arc67_preserve_arc_lowering(ARC67Node * _Nullable root,\n                                         ARC67Node * _Nonnull fallback) {\n    ARC67Node * _Nullable selected = [root? next] ?? fallback;\n    return [selected? payload];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "retain/release around optional-send temporary remains balanced",
+            "merged nil-coalescing path does not introduce early release before final optional-send"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "ARC optimization preserves observable ownership equivalence with -O0",
+            "no duplicated release on the fallback merge path"
+          ]
+        }
+      ]
+    }
+  }
+}

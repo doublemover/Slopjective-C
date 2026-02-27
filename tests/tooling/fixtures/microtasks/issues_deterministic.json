@@ -1,0 +1,28 @@
+[
+  {
+    "number": 12,
+    "title": "Stabilize parser behavior",
+    "labels": [
+      {"name": "Roadmap"},
+      {"name": "automation"},
+      {"name": "alpha"},
+      {"name": "Alpha"}
+    ]
+  },
+  {
+    "number": "7",
+    "title": "Close gap in planner",
+    "labels": [
+      "P1",
+      "determinism",
+      "P1"
+    ]
+  },
+  {
+    "number": 9,
+    "title": "Improve report output",
+    "labels": [
+      {"name": "verification"}
+    ]
+  }
+]

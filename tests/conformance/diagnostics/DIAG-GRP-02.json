@@ -1,0 +1,16 @@
+{
+  "id": "DIAG-GRP-02",
+  "title": "Nullability group accepts explicitly annotated declarations without diagnostics",
+  "feature": "minimum diagnostic groups: nullability and optionals",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1"
+  ],
+  "source": "@interface DIAGGRP02Annotated : NSObject\n- (id _Nonnull)displayName;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

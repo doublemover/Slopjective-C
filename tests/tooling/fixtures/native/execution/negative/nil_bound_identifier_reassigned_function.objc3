@@ -1,0 +1,12 @@
+// Negative execution fixture: mutable nil-bound identifier reassignment to function value is invalid.
+module NilBoundIdentifierReassignedFunction;
+
+fn payload() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  let receiver = nil;
+  receiver = payload;
+  return [receiver ping];
+}

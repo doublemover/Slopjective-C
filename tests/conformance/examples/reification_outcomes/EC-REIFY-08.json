@@ -1,0 +1,47 @@
+{
+  "id": "EC-REIFY-08",
+  "title": "Reject override mismatch between base and override reification status",
+  "feature": "reification outcomes",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_136_reification_grammar_semantics_package.md#issue-136-reification-grammar-semantics-package"
+  ],
+  "source": "@interface Base\n@reify_generics\n- (Box<T>)make<T>:(T)value;\n@end\n@interface Derived : Base\n- (Box<T>)make<T>:(T)value;\n@end\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "REIFY-05",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 6,
+            "column": 1
+          },
+          "end": {
+            "line": 6,
+            "column": 24
+          }
+        },
+        "message": "override reification status must match base declaration",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 6,
+                "column": 1
+              },
+              "end": {
+                "line": 6,
+                "column": 1
+              }
+            },
+            "replacement": "@reify_generics\n"
+          }
+        ]
+      }
+    ]
+  }
+}

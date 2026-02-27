@@ -1,0 +1,47 @@
+{
+  "id": "M02-D006",
+  "title": "Scope-freeze baseline: strict failure-path assertions keep stable payload mapping",
+  "feature": "M02 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/planning/compiler/m02/lane_d_m02_scope_freeze.md"
+  ],
+  "source": "void objc3c_driver_mode(id mode);\nvoid objc3c_driver_flag(id arg);\n\nvoid m02d006_negative(void) {\n    objc3c_driver_mode(@\"strict-system\");\n    objc3c_driver_flag(@\"--sdk-root=\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-DRIVER-STRICT-MODE-REQUIRES-CANONICAL-DIAGNOSTICS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 5 },
+          "end": { "line": 5, "column": 40 }
+        },
+        "message": "strict-system mode requires canonical diagnostics payload output to be enabled",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-DRIVER-SDK-ROOT-EMPTY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 24 },
+          "end": { "line": 6, "column": 37 }
+        },
+        "message": "strict-system mode requires a non-empty --sdk-root path",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 6, "column": 24 },
+              "end": { "line": 6, "column": 37 }
+            },
+            "replacement": "@\"--sdk-root=/opt/objc3c-sdk\""
+          }
+        ]
+      }
+    ]
+  }
+}

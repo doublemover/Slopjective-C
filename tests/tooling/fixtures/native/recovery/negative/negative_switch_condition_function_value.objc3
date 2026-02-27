@@ -1,0 +1,16 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeSwitchConditionFunctionValue;
+
+fn ready() -> bool {
+  return true;
+}
+
+fn main() -> i32 {
+  switch (ready) {
+    case 1:
+      return 1;
+    default:
+      return 0;
+  }
+  return 0;
+}

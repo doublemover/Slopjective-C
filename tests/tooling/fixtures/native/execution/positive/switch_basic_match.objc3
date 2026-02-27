@@ -1,0 +1,18 @@
+module SwitchBasicMatchExec;
+
+fn main() -> i32 {
+  let x = 2;
+  let out = 0;
+  switch (x) {
+    case 1:
+      out = 11;
+      break;
+    case 2:
+      out = 22;
+      break;
+    default:
+      out = 33;
+      break;
+  }
+  return out;
+}

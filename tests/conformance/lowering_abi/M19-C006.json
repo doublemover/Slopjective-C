@@ -1,0 +1,75 @@
+{
+  "id": "M19-C006",
+  "title": "Close lowering/runtime regressions (Regression Closure) (issue #2358 / task M19-C006)",
+  "feature": "M19 Lane C lowering scope-freeze deterministic evidence mapping; issue #2358; task M19-C006; sequence 6; dispatch title: [Compiler][M19][Lane C][M19-C006] Close lowering/runtime regressions (Regression Closure)",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 --emit-module M19C006A.objcmod --emit-interface M19C006A.obji %s\n// RUN: objc3c -fobjc-version=3 -O0 --emit-module M19C006B.objcmod --emit-interface M19C006B.obji %s\n// RUN: objc3c -fobjc-version=3 -O2 --emit-module M19C006A.opt.objcmod --emit-interface M19C006A.opt.obji %s\n// RUN: objc3c -fobjc-version=3 -O2 --emit-module M19C006B.opt.objcmod --emit-interface M19C006B.opt.obji %s\n// RUN: objc3c --verify-interface M19C006A.objcmod M19C006A.obji %s\n// RUN: objc3c --verify-interface M19C006B.objcmod M19C006B.obji %s\n// RUN: objc3c --verify-interface M19C006A.opt.objcmod M19C006A.opt.obji %s\n// RUN: objc3c --verify-interface M19C006B.opt.objcmod M19C006B.opt.obji %s\ntypedef enum M19C006CompletionStatus {\n    M19C006_STATUS_SUCCESS = 0,\n    M19C006_STATUS_ERROR = 1,\n    M19C006_STATUS_CANCELLED = 2\n} M19C006CompletionStatus;\n\ntypedef void (*M19C006Completion)(\n    void * _Nullable context,\n    M19C006CompletionStatus status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nvoid M19c006_export_async_module_a(int token,\n                                   void * _Nullable context,\n                                   M19C006Completion _Nonnull completion);\nvoid M19c006_export_async_module_b(int token,\n                                   void * _Nullable context,\n                                   M19C006Completion _Nonnull completion);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "equivalent source contracts in module A and module B lower to identical async completion ABI boundaries",
+            "cross-module lowering keeps status/result/error transport fields normalized and replay-stable",
+            "module/interface replay preserves equivalent imported signatures for both modules"
+          ],
+          "runtime_assertions": [
+            "module A and module B exported completion signatures remain structurally equivalent under replay",
+            "cross-module normalization rejects divergence in status transport semantics"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves cross-module completion ABI normalization from -O0",
+            "optimization does not introduce module-specific divergence for equivalent contracts",
+            "cross-module replay equivalence remains deterministic under optimization"
+          ],
+          "runtime_assertions": [
+            "module A and module B signature equivalence remains stable under optimization",
+            "normalization failure remains detectable as deterministic conformance drift"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "cross_module.async_completion_signature",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "equivalent source contracts produce identical completion signature shape across modules",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "cross_module.status_result_error_transport",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "status, result, and error transport mapping remains equivalent across module boundaries",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

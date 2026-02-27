@@ -1,0 +1,37 @@
+name: Conformance Evidence Gate
+
+on:
+  pull_request:
+    paths:
+      - "schemas/**"
+      - "reports/conformance/**"
+      - "scripts/check_release_evidence.py"
+      - "scripts/generate_conformance_evidence_index.py"
+      - ".github/workflows/conformance-evidence-gate.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "schemas/**"
+      - "reports/conformance/**"
+      - "scripts/check_release_evidence.py"
+      - "scripts/generate_conformance_evidence_index.py"
+      - ".github/workflows/conformance-evidence-gate.yml"
+
+jobs:
+  conformance-evidence-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Python validator dependency
+        run: python -m pip install --upgrade jsonschema
+
+      - name: Validate release evidence artifacts
+        run: python scripts/check_release_evidence.py

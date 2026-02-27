@@ -1,0 +1,13 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeAssignmentBoolTypeMismatch;
+
+fn produce_i32() -> i32 {
+  return 2;
+}
+
+fn main() -> i32 {
+  let flag = true;
+  flag = produce_i32();
+  return 0;
+}
+

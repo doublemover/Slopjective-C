@@ -1,0 +1,18 @@
+# Switch-in-loop lowering markers.
+define i32 @main()
+br label %for_cond_0
+for_body_1:
+br label %switch_test_8
+switch_test_8:
+label %switch_case_5, label %switch_test_9
+switch_test_9:
+label %switch_case_6, label %switch_default_7
+switch_case_5:
+br label %for_step_2
+switch_case_6:
+br label %switch_end_4
+switch_default_7:
+store i32 %t10, ptr %sum.addr.0, align 4
+switch_end_4:
+for_end_3:
+ret i32 %t15

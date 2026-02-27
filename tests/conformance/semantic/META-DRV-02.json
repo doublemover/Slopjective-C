@@ -1,0 +1,34 @@
+{
+  "id": "META-DRV-02",
+  "title": "Require OPT-META portable derive set and feature macros",
+  "feature": "optional metaprogramming derive gating",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-4",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=on -fsyntax-only %s\n#if !__OBJC3_FEATURE_DERIVE_EQUALITY__\n#error \"META-DRV-02 requires __OBJC3_FEATURE_DERIVE_EQUALITY__ under OPT-META\"\n#endif\n#if !__OBJC3_FEATURE_DERIVE_HASH__\n#error \"META-DRV-02 requires __OBJC3_FEATURE_DERIVE_HASH__ under OPT-META\"\n#endif\n#if !__OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__\n#error \"META-DRV-02 requires __OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__ under OPT-META\"\n#endif\n#if !__OBJC3_FEATURE_DERIVE_CODABLE__\n#error \"META-DRV-02 requires __OBJC3_FEATURE_DERIVE_CODABLE__ under OPT-META\"\n#endif\n__attribute__((objc_derive(\"Equality\")))\n__attribute__((objc_derive(\"Hash\")))\n__attribute__((objc_derive(\"DebugDescription\")))\n__attribute__((objc_derive(\"Codable\")))\n@interface METADRV02Payload : NSObject\n@property (nonatomic, copy) NSString * _Nonnull token;\n@property (nonatomic) int revision;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "derive_capabilities": {
+      "required_feature_macros": [
+        "__OBJC3_FEATURE_DERIVE_EQUALITY__",
+        "__OBJC3_FEATURE_DERIVE_HASH__",
+        "__OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__",
+        "__OBJC3_FEATURE_DERIVE_CODABLE__"
+      ],
+      "required_traits": [
+        "Equality",
+        "Hash",
+        "DebugDescription",
+        "Codable"
+      ]
+    }
+  }
+}

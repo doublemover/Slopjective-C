@@ -1,0 +1,19 @@
+{
+  "annual_review_due_utc": "2026-01-31T23:59:59Z",
+  "annual_review_completed_utc": "2026-01-24T17:00:00Z",
+  "cadence": {
+    "utc_anchor": "2026-02-26T16:00:00Z"
+  },
+  "quorum": {
+    "present_voters": 5,
+    "vendor_count": 3,
+    "spec_editor_present": true,
+    "tooling_owner_present": true,
+    "recusal_ratio": 0.2
+  },
+  "publication_windows": {
+    "attestation_deadline_utc": "2026-02-26T20:00:00Z",
+    "minutes_deadline_utc": "2026-02-27T16:00:00Z",
+    "packet_deadline_utc": "2026-03-01T16:00:00Z"
+  }
+}

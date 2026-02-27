@@ -1,0 +1,52 @@
+{
+  "id": "EXEC-ATTR-03",
+  "title": "Canonicalize and preserve executor affinity attribute spellings across module/interface round-trip",
+  "feature": "executor affinity canonical spelling and metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module EXECATTR03.objcmod --emit-interface EXECATTR03.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module EXECATTR03-import.objcmod --import-interface EXECATTR03.obji --emit-interface EXECATTR03-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface EXECATTR03.objcmod EXECATTR03-roundtrip.obji %s\n#define EXECATTR03_MAIN __attribute__((objc_executor(main)))\n#define EXECATTR03_WORKER __attribute__((objc_executor(named(\"com.example.execattr03\"))))\nEXECATTR03_WORKER\n@interface EXECATTR03Surface : NSObject\n- (id _Nonnull)enqueueMain:(id _Nonnull)seed EXECATTR03_MAIN;\n- (id _Nonnull)enqueueWorker:(id _Nonnull)seed EXECATTR03_WORKER;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "__attribute__((objc_executor(named(\"com.example.execattr03\"))))\n@interface EXECATTR03Surface : NSObject\n- (id _Nonnull)enqueueMain:(id _Nonnull)seed __attribute__((objc_executor(main)));\n- (id _Nonnull)enqueueWorker:(id _Nonnull)seed __attribute__((objc_executor(named(\"com.example.execattr03\"))));\n@end\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": true,
+      "normalization_pairs": [
+        {
+          "from": "EXECATTR03_MAIN",
+          "to": "__attribute__((objc_executor(main)))"
+        },
+        {
+          "from": "EXECATTR03_WORKER",
+          "to": "__attribute__((objc_executor(named(\"com.example.execattr03\"))))"
+        }
+      ],
+      "forbidden_noncanonical_spellings": [
+        "EXECATTR03_MAIN",
+        "EXECATTR03_WORKER"
+      ]
+    },
+    "metadata": {
+      "preserved_fields": [
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "syntax_anchor": "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "must_record_in_module_metadata": true,
+          "must_emit_in_textual_interface": true
+        }
+      ],
+      "mismatch_failures": []
+    }
+  }
+}

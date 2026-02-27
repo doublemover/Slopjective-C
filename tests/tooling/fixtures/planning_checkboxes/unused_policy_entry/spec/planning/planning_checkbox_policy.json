@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "allowed_unchecked_sections": [
+    {
+      "path": "spec/planning/plan.md",
+      "section": "Unused Fixture > 1. Historical Checklist",
+      "reason": "Intentional stale policy entry to verify strict detection."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "IFV-57-02",
+  "title": "Accept matching metadata/interface pair in verification mode",
+  "feature": "interface verification mode",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module Bar.objcmod --emit-interface Bar.obji %s\n// RUN: objc3c --verify-interface Bar.objcmod Bar.obji %s\n@interface BarAPI : NSObject\n- (id _Nullable)maybeValue;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

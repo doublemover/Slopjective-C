@@ -1,0 +1,8 @@
+module OctalLiteralUppercasePrefix;
+
+let mask = 0O12;
+let shift = 0O1;
+
+fn main() -> i32 {
+  return (mask >> shift) + 0o1;
+}

@@ -1,0 +1,13 @@
+module BitwiseBasic;
+
+fn main() -> i32 {
+  let a = 6;
+  let b = 3;
+  let c = a & b;
+  let d = a | b;
+  let e = a ^ b;
+  let f = a << 1;
+  let g = f >> 2;
+  let h = ~b;
+  return c + d + e + f + g + h;
+}

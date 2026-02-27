@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3S200.
+module NegativeModuleDuplicateDeclaration;
+module SecondModuleDeclaration;
+
+fn main() -> i32 {
+  return 0;
+}

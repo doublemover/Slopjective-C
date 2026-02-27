@@ -1,0 +1,25 @@
+{
+  "id": "M15-A004",
+  "title": "Accept M15 lane-A parser fixture baseline for issue #1899 task M15-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m15 lane-a parser interface verifier and drift diagnostics slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M15",
+    "milestone_number": 100,
+    "lane": "A",
+    "issue": 1899,
+    "task": "M15-A004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_RECOVERY_GUARDS__\n#define __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_RECOVERY_GUARDS__ 1\n#endif\n\ntypedef struct M15A004_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M15A004_Probe;\n\nM15A004_Probe m15a004_probe(void) {\n#if __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_RECOVERY_GUARDS__\n    M15A004_Probe probe = { 1, 4, 1899 };\n#else\n    M15A004_Probe probe = { 0, 4, 1899 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

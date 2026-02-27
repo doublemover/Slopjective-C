@@ -1,0 +1,68 @@
+name: Roadmap Execution Task
+description: Track a roadmap/process/governance task with explicit delivery criteria.
+title: "[ROADMAP] <short objective>"
+labels:
+  - priority:P1
+  - type:process
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for roadmap/process/governance execution tasks.
+        Keep scope concrete and machine-verifiable.
+  - type: input
+    id: objective
+    attributes:
+      label: Objective
+      description: One sentence describing the required outcome.
+      placeholder: Define a stable ownership/dependency model for 4 parallel lanes.
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Required Artifacts
+      description: List files, docs, or workflows that must be delivered.
+      placeholder: |
+        - spec/planning/<file>.md
+        - .github/workflows/<file>.yml
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List prerequisite issues or state “None”.
+      placeholder: |
+        - #111
+        - #112
+    validations:
+      required: true
+  - type: textarea
+    id: done_criteria
+    attributes:
+      label: Done Criteria
+      description: Explicit acceptance conditions.
+      placeholder: |
+        - Lane boundaries and handoff rules are explicit.
+        - Governance model is referenced in roadmap docs.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation Plan
+      description: Commands/checks to verify completion.
+      placeholder: |
+        - python scripts/spec_lint.py
+        - npm run check:task-hygiene
+    validations:
+      required: true
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent Epic
+      description: Epic issue number.
+      placeholder: "#114"
+    validations:
+      required: true

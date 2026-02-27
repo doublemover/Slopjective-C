@@ -1,0 +1,17 @@
+{
+  "id": "M01-A002",
+  "title": "Accept 'nonreentrant' as an identifier outside reserved actor-member modifier positions",
+  "feature": "contextual keyword parsing boundaries",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-9"
+  ],
+  "source": "int nonreentrant(int base) {\n    return base + 1;\n}\n\nint m01a002_call(void) {\n    return nonreentrant(41);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

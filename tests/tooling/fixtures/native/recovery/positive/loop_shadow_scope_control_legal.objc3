@@ -1,0 +1,28 @@
+module LoopShadowScopeControlLegal;
+
+fn keep_running(i: i32) -> bool {
+  return i < 7;
+}
+
+fn main() -> i32 {
+  let i = 0;
+  let acc = 0;
+  while (keep_running(i)) {
+    let i = i + 1;
+    let lane = i;
+    if (lane < 100) {
+      let lane = lane + 10;
+      if (lane == 12) {
+        continue;
+      }
+    }
+    if (lane < 100) {
+      let lane = lane;
+      if (lane == 5) {
+        break;
+      }
+      let acc = acc + lane;
+    }
+  }
+  return acc;
+}

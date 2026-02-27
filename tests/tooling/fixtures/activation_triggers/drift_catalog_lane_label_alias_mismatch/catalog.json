@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-4101",
+      "lane": "B",
+      "milestone_title": "v0.15 Activation Execution Hardening W1",
+      "labels": [
+        "lane:C",
+        "type:tooling"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q"
+      ],
+      "execution_status": "open",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w1_tooling_validation_20260224.md:1"
+      ]
+    }
+  ]
+}

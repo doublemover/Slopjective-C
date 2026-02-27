@@ -1,0 +1,50 @@
+{
+  "id": "M07-D014",
+  "title": "Issue #1514 / M07-D014: Scope-freeze baseline: extension mismatch drift detection keeps stable payload mapping",
+  "feature": "M07 lane D diagnostic payload/code mapping freeze (issue #1514, task M07-D014)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m07/lane_d_m07_scope_freeze.md",
+    "spec/planning/compiler/m07/lane_d_m07_execution_packet_20260226.md"
+  ],
+  "source": "void m07d014_compare(id lhs, id rhs);`n`nvoid m07d014_negative(void) {`n    m07d014_compare(@\"code=OBJC3-D-OTHER\", @\"expected=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-EXTENSION-DIAGNOSTIC-CODE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 21
+          },
+          "end": {
+            "line": 4,
+            "column": 42
+          }
+        },
+        "message": "issue #1514 task M07-D014: extension diagnostic code drift detected; expected canonical lane-D code mapping",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 21
+              },
+              "end": {
+                "line": 4,
+                "column": 42
+              }
+            },
+            "replacement": "@\"code=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\""
+          }
+        ]
+      }
+    ]
+  }
+}

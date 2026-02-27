@@ -1,0 +1,6 @@
+// Negative execution fixture: numeric zero receiver is non-elided and retains runtime-dispatch linkage dependency.
+module NumericZeroReceiverRuntimeDispatchUnresolvedSymbol;
+
+fn main() -> i32 {
+  return [0 ping];
+}

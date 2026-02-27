@@ -1,0 +1,40 @@
+{
+  "id": "PERF-LEG-02",
+  "title": "Reject objc_final class subclassing and objc_final method overrides in inheritance chains",
+  "feature": "inheritance legality for final declarations",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-3-3",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-8",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "__attribute__((objc_final))\n@interface PERFLEG02FinalBase : NSObject\n- (int)stablePath;\n@end\n\n@interface PERFLEG02IllegalSubclass : PERFLEG02FinalBase\n@end\n\n@interface PERFLEG02MethodBase : NSObject\n- (int)lockedPath __attribute__((objc_final));\n@end\n\n@interface PERFLEG02MethodChild : PERFLEG02MethodBase\n- (int)lockedPath;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-FINAL-CLASS-SUBCLASS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 12 },
+          "end": { "line": 6, "column": 35 }
+        },
+        "message": "cannot subclass PERFLEG02FinalBase because the base class is declared objc_final"
+      },
+      {
+        "code": "OBJC3-D-PERF-FINAL-OVERRIDE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 3 },
+          "end": { "line": 14, "column": 18 }
+        },
+        "message": "cannot override 'lockedPath': method is declared objc_final in PERFLEG02MethodBase"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "M01-B006",
+  "title": "Accept actor capture and reject non-Sendable class capture across task boundary",
+  "feature": "M01 lane B sendability boundary checks",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+  ],
+  "source": "typedef id M01B006TaskHandle;\nM01B006TaskHandle m01b006_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nid m01b006_join(M01B006TaskHandle handle) async;\n\nactor class M01B006ActorBox : NSObject\n@property (atomic) int value;\n@end\n\n@interface M01B006MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nid m01b006_positive(M01B006ActorBox *box) async {\n    M01B006TaskHandle handle = m01b006_spawn(^id(void) async {\n        return box;\n    });\n    return await m01b006_join(handle);\n}\n\nid m01b006_negative(M01B006MutableBox *box) async {\n    M01B006TaskHandle handle = m01b006_spawn(^id(void) async {\n        return box;\n    });\n    return await m01b006_join(handle);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-CAPTURE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 22, "column": 16 },
+          "end": { "line": 22, "column": 19 }
+        },
+        "message": "capturing non-Sendable class value 'box' in an objc_task_spawn closure requires explicit sendability admission"
+      }
+    ]
+  }
+}

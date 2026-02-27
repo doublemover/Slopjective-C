@@ -1,0 +1,80 @@
+{
+  "id": "INT-CXX-06",
+  "title": "Lower ObjC++ throws exports through canonical trailing outError ABI without implicit C++ exception lanes",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 -O2 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 --emit-module INTCXX06.objcmod --emit-interface INTCXX06.obji %s\n// RUN: objc3c -x objective-c++ --verify-interface INTCXX06.objcmod INTCXX06.obji %s\nstruct INTCXX06Token {\n    int value;\n};\n\nint intcxx06_parse(INTCXX06Token token, const char * _Nonnull text) throws;\nint intcxx06_parse_c(INTCXX06Token token,\n                     const char * _Nonnull text,\n                     id<Error> _Nullable * _Nullable outError);\n\ntypedef struct INTCXX06Probe {\n    int parsedValue;\n    id<Error> _Nullable parsedError;\n} INTCXX06Probe;\n\nvoid intcxx06_run_probe(INTCXX06Token token,\n                        const char * _Nonnull text,\n                        INTCXX06Probe *probe) {\n    probe->parsedError = nil;\n    probe->parsedValue = intcxx06_parse_c(token, text, &probe->parsedError);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "ObjC++ throws exports lower to the same trailing id<Error>* outError call ABI used in ObjC mode",
+            "all thrown-error propagation across the C/ObjC++ boundary uses outError and not an implicit C++ exception channel",
+            "success path stores nil to outError when non-null and failure path stores a non-nil id<Error>",
+            "separate compilation preserves the same callable thunk shape through emitted module/interface artifacts"
+          ],
+          "runtime_assertions": [
+            "intcxx06_run_probe can observe success/failure exclusively through parsedError nullability and returned value slot",
+            "C and C++ callers that import only declarations can invoke intcxx06_parse_c with ABI-compatible trailing outError"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized ObjC++ lowering preserves trailing outError placement and store semantics from -O0",
+            "optimization does not introduce hidden exception ABI lanes for ObjC 3.0 throws declarations",
+            "optimized code preserves separate-compilation compatibility for imported thunk declarations"
+          ],
+          "runtime_assertions": [
+            "parsedError success/failure observations remain equivalent to -O0 under optimization",
+            "caller-visible throws bridge behavior remains outError-driven under optimization"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.objcxx_throws_c_thunk_error_out_shape",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "throws-to-C bridge uses trailing id<Error> _Nullable * _Nullable outError in ObjC++ mode",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.objcxx_throws_no_implicit_cpp_exception_lane",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "ObjC 3.0 throws remains distinct from C++ exceptions at ABI boundary unless an explicit bridge is declared",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

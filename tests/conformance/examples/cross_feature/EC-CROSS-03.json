@@ -1,0 +1,35 @@
+{
+  "id": "EC-CROSS-03",
+  "title": "Reject postfix propagation followed by + in try await optional chain",
+  "feature": "try await + postfix ? + ?.",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id _Nullable appendToken(Client * _Nullable client, id suffix) async throws {\n    return try await client?.fetchToken()? + suffix;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-FOLLOWTOKEN",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 42 }
+        },
+        "message": "postfix ? propagation requires a follow token boundary",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 42 }
+            },
+            "replacement": "(try await client?.fetchToken()?)"
+          }
+        ]
+      }
+    ]
+  }
+}

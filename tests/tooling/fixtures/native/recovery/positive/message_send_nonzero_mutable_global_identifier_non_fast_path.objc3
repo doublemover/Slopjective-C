@@ -1,0 +1,12 @@
+module MessageSendNonzeroMutableGlobalIdentifierNonFastPath;
+
+let receiver = 7;
+
+fn read() -> i32 {
+  return 0;
+}
+
+fn main() -> i32 {
+  receiver = read();
+  return [receiver ping];
+}

@@ -1,0 +1,6 @@
+# Nil receiver mixed-expression lowering markers.
+define i32 @main()
+icmp eq i32
+phi i32 [0, %msg_nil_
+cond_true_
+ret i32

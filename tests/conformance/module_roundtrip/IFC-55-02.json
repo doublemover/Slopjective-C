@@ -1,0 +1,49 @@
+{
+  "id": "IFC-55-02",
+  "title": "Normalize non-canonical source spellings to canonical textual-interface output",
+  "feature": "non-canonical spelling normalization in interface emission",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-1",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-2-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-7",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-1"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module IFC55B.objcmod --emit-interface IFC55B.obji %s\n// RUN: objc3c --verify-interface IFC55B.objcmod IFC55B.obji %s\n#define NS_ASSUME_NONNULL_BEGIN _Pragma(\"clang assume_nonnull begin\")\n#define NS_ASSUME_NONNULL_END _Pragma(\"clang assume_nonnull end\")\n#define OBJC3_UNSAFE_SENDABLE __attribute__((objc_unsafe_sendable))\n#define OBJC3_NONISOLATED __attribute__((objc_nonisolated))\nNS_ASSUME_NONNULL_BEGIN\nOBJC3_UNSAFE_SENDABLE\n@interface IFC55NormalizedBox : NSObject\n- (id _Nullable)currentToken OBJC3_NONISOLATED;\n@end\nNS_ASSUME_NONNULL_END\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "canonical_interface": "#pragma objc assume_nonnull begin\n__attribute__((objc_unsafe_sendable))\n@interface IFC55NormalizedBox : NSObject\n- (id _Nullable)currentToken __attribute__((objc_nonisolated));\n@end\n#pragma objc assume_nonnull end\n",
+    "canonicalization": {
+      "normalizes_noncanonical_input": true,
+      "normalization_pairs": [
+        {
+          "from": "NS_ASSUME_NONNULL_BEGIN",
+          "to": "#pragma objc assume_nonnull begin"
+        },
+        {
+          "from": "NS_ASSUME_NONNULL_END",
+          "to": "#pragma objc assume_nonnull end"
+        },
+        {
+          "from": "OBJC3_UNSAFE_SENDABLE",
+          "to": "__attribute__((objc_unsafe_sendable))"
+        },
+        {
+          "from": "OBJC3_NONISOLATED",
+          "to": "__attribute__((objc_nonisolated))"
+        }
+      ],
+      "forbidden_noncanonical_spellings": [
+        "NS_ASSUME_NONNULL_BEGIN",
+        "NS_ASSUME_NONNULL_END",
+        "_Pragma(\"clang assume_nonnull begin\")",
+        "_Pragma(\"clang assume_nonnull end\")",
+        "OBJC3_UNSAFE_SENDABLE",
+        "OBJC3_NONISOLATED"
+      ]
+    }
+  }
+}

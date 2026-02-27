@@ -1,0 +1,66 @@
+{
+  "id": "AGR-RT-02",
+  "title": "Aggregate multi-field failure matrix preserves reverse-order cleanup for initialized prefixes",
+  "feature": "aggregate resource multi-field partial-failure cleanup ordering",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-13"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -fexceptions -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc3-strictness=strict-system -fobjc3-feature-aggregate-resources=on -fexceptions -O2 -fsyntax-only %s\ntypedef int agr_handle_t;\nstatic int agr_rt02_trace = 0;\n\nvoid agr_rt02_close_a(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt02_trace = agr_rt02_trace * 10 + 1;\n    }\n}\n\nvoid agr_rt02_close_b(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt02_trace = agr_rt02_trace * 10 + 2;\n    }\n}\n\nvoid agr_rt02_close_c(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt02_trace = agr_rt02_trace * 10 + 3;\n    }\n}\n\nvoid agr_rt02_close_d(agr_handle_t handle) {\n    if (handle != -1) {\n        agr_rt02_trace = agr_rt02_trace * 10 + 4;\n    }\n}\n\nagr_handle_t agr_rt02_open_or_throw(int slot, int failAt) {\n    if (slot == failAt) {\n        throw slot;\n    }\n    return slot + 60;\n}\n\nstruct AGRRT02Quad {\n    agr_handle_t a __attribute__((objc_resource(close=agr_rt02_close_a, invalid=-1)));\n    agr_handle_t b __attribute__((objc_resource(close=agr_rt02_close_b, invalid=-1)));\n    agr_handle_t c __attribute__((objc_resource(close=agr_rt02_close_c, invalid=-1)));\n    agr_handle_t d __attribute__((objc_resource(close=agr_rt02_close_d, invalid=-1)));\n};\n\nint agr_rt02_trace_for_fail_at(int failAt) {\n    agr_rt02_trace = 0;\n\n    try {\n        struct AGRRT02Quad quad = { .a = -1, .b = -1, .c = -1, .d = -1 };\n        quad.a = agr_rt02_open_or_throw(0, failAt);\n        quad.b = agr_rt02_open_or_throw(1, failAt);\n        quad.c = agr_rt02_open_or_throw(2, failAt);\n        quad.d = agr_rt02_open_or_throw(3, failAt);\n        (void)quad;\n    } catch (...) {\n    }\n\n    return agr_rt02_trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-fexceptions",
+            "-O0"
+          ],
+          "aggregate_requirements": [
+            "for aggregates with three or more annotated fields, each injected failure position cleans only the initialized prefix",
+            "cleanup order for initialized fields is reverse declaration order for every failure position",
+            "each initialized field contributes at most one cleanup callback on failure paths"
+          ],
+          "runtime_assertions": [
+            "agr_rt02_trace_for_fail_at(0) returns 0",
+            "agr_rt02_trace_for_fail_at(1) returns 1",
+            "agr_rt02_trace_for_fail_at(2) returns 21",
+            "agr_rt02_trace_for_fail_at(3) returns 321"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc3-strictness=strict-system",
+            "-fobjc3-feature-aggregate-resources=on",
+            "-fexceptions",
+            "-O2"
+          ],
+          "aggregate_requirements": [
+            "optimization preserves per-position reverse-prefix cleanup ordering across all failure injection points",
+            "optimization preserves one-callback-per-initialized-field behavior on partial-init failure"
+          ],
+          "runtime_assertions": [
+            "agr_rt02_trace_for_fail_at(3) still returns 321 under optimization",
+            "optimized lowering does not reorder cleanup callbacks within a failed aggregate initialization"
+          ]
+        }
+      ]
+    }
+  }
+}

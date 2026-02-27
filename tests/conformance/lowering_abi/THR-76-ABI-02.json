@@ -1,0 +1,83 @@
+{
+  "id": "THR-76-ABI-02",
+  "title": "Preserve throws ABI field stability for Objective-C method IMPs across optimization modes",
+  "feature": "stable throws ABI lowering contract",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/DECISIONS_LOG.md#decisions-d-009",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module THR76ABI.objcmod --emit-interface THR76ABI.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module THR76ABI.opt.objcmod --emit-interface THR76ABI.opt.obji %s\n// RUN: objc3c --verify-interface THR76ABI.objcmod THR76ABI.obji %s\n// RUN: objc3c --verify-interface THR76ABI.opt.objcmod THR76ABI.opt.obji %s\n@interface THR76Worker : NSObject\n- (int)compute:(int)input throws;\n@end\n\n@implementation THR76Worker\n- (int)compute:(int)input throws {\n    return input + 1;\n}\n@end\n\ntypedef int (*THR76ComputeIMP)(id, SEL, int, id<Error> _Nullable * _Nullable);\n\nint thr76_call_imp(THR76Worker * _Nonnull worker, int value) {\n    THR76ComputeIMP imp = (THR76ComputeIMP)[worker methodForSelector:@selector(compute:)];\n    id<Error> err = nil;\n    int result = imp(worker, @selector(compute:), value, &err);\n    return err != nil ? -1 : result;\n}\n\nint thr76_entry(THR76Worker * _Nonnull worker, int value) throws {\n    return try [worker compute:value];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "throws method call ABI includes trailing outError even though selector spelling excludes throws",
+            "methodForSelector IMP typing for throwing methods includes trailing outError parameter",
+            "module/interface emission preserves throws ABI field needed for separate-compilation callers"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves selector-vs-ABI split for throws methods",
+            "IMP signature shape for throws methods is unchanged from -O0",
+            "throws ABI metadata field remains stable across optimized module/interface emission"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "effects.throws",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "importers and exporters agree on throwing calling convention across modules",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "objc_method_imp_throws_signature",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "IMP function pointer shape for throws methods includes trailing outError parameter",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "throws_selector_surface_stability",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "selector spelling remains source-level while ABI carries implicit trailing outError",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

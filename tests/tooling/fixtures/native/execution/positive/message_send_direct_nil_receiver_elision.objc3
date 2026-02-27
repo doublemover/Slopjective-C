@@ -1,0 +1,7 @@
+// Positive execution fixture: direct nil receiver send should link and run without runtime shim.
+module MessageSendDirectNilReceiverElisionExecution;
+
+fn main() -> i32 {
+  let sent = [nil ping];
+  return sent + 9;
+}

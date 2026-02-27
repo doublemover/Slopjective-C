@@ -1,0 +1,50 @@
+{
+  "id": "M08-D004",
+  "title": "Issue #1560 / M08-D004: Scope-freeze baseline: mismatch drift detection keeps stable payload mapping",
+  "feature": "M08 lane D diagnostic payload/code mapping freeze (issue #1560, task M08-D004)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m08/lane_d_m08_scope_freeze.md",
+    "spec/planning/compiler/m08/lane_d_m08_execution_packet_20260226.md"
+  ],
+  "source": "void m08d004_compare(id lhs, id rhs);`n`nvoid m08d004_negative(void) {`n    m08d004_compare(@\"code=OBJC3-D-OTHER\", @\"expected=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 21
+          },
+          "end": {
+            "line": 4,
+            "column": 42
+          }
+        },
+        "message": "issue #1560 task M08-D004: diagnostic code drift detected; expected canonical lane-D code mapping",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 21
+              },
+              "end": {
+                "line": 4,
+                "column": 42
+              }
+            },
+            "replacement": "@\"code=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\""
+          }
+        ]
+      }
+    ]
+  }
+}

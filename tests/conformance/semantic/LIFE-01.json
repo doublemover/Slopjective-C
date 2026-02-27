@@ -1,0 +1,20 @@
+{
+  "id": "LIFE-01",
+  "title": "Accept withLifetime owner pinning for borrowed use within statement scope",
+  "feature": "explicit lifetime control semantics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2"
+  ],
+  "source": "borrowed const char *life90_window(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));\nvoid life90_consume(const char *bytes);\n\nvoid life01_with_lifetime_basic(id owner) {\n    withLifetime(owner) {\n        borrowed const char *bytes = life90_window(owner);\n        life90_consume(bytes);\n    }\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

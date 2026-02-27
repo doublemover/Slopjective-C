@@ -1,0 +1,38 @@
+{
+  "id": "M01-D008",
+  "title": "Scope-freeze baseline: macro lockfile mismatch diagnostic keeps stable payload mapping",
+  "feature": "M01 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+  ],
+  "source": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint m01d008_negative(int value) {\\n    return value;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MACRO-LOCKFILE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 1 },
+          "end": { "line": 1, "column": 71 }
+        },
+        "message": "macro package checksum does not match lockfile entry",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 1 },
+              "end": { "line": 1, "column": 71 }
+            },
+            "replacement": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\", checksum=\"sha256:7f90b0\")"
+          }
+        ]
+      }
+    ]
+  }
+}

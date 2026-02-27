@@ -1,0 +1,44 @@
+{
+  "id": "RES-06",
+  "title": "Strict-system diagnostics for use-after-take and double-cleanup resource misuse",
+  "feature": "resource cleanup correctness diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-4",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef int res_handle_t;\nvoid res_close(res_handle_t handle);\n\nvoid res06_strict_system_diagnostics(int input) {\n    res_handle_t fd __attribute__((objc_resource(close=res_close, invalid=-1))) = input;\n    res_handle_t moved = take(fd);\n    res_close(fd);\n    discard(moved);\n    discard(moved);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-RESOURCE-USE-AFTER-TAKE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 5 },
+          "end": { "line": 7, "column": 17 }
+        },
+        "message": "resource value was moved by take(fd) and cannot be used as valid until reinitialized",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-SYSTEM-RESOURCE-DOUBLE-CLEANUP",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 5 },
+          "end": { "line": 9, "column": 18 }
+        },
+        "message": "resource value is cleaned more than once; moved-from or discarded handles must not be cleaned again",
+        "fixits": []
+      }
+    ]
+  }
+}

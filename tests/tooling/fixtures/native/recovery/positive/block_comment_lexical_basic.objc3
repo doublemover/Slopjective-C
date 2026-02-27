@@ -1,0 +1,11 @@
+module BlockCommentLexicalBasic;
+
+/* Multi-line block comments should be ignored by the lexer.
+   Tokens inside this comment must not affect parsing. */
+let a = 10;
+let b = a /* plus nine */ + 9;
+
+fn main() -> i32 {
+  /* comment inside function body */
+  return b;
+}

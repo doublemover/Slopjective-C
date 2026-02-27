@@ -1,0 +1,40 @@
+{
+  "id": "MIG-05",
+  "title": "Rewrite nullable receiver sends to explicit nil-guard when scalar fallback is required",
+  "feature": "migrator nullable-send rewrite to guard-style safe idiom",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "@interface MIG05Probe : NSObject\n- (int)count;\n@end\n\nint mig05_guard_rewrite(MIG05Probe * _Nullable probe) {\n    return [probe count];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-RECEIVER-SEND",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 12 },
+          "end": { "line": 6, "column": 25 }
+        },
+        "message": "message send on nullable receiver in strict mode requires an explicit nil-safe rewrite for scalar results",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 6, "column": 12 },
+              "end": { "line": 6, "column": 25 }
+            },
+            "replacement": "probe != nil ? [probe count] : 0"
+          }
+        ]
+      }
+    ]
+  }
+}

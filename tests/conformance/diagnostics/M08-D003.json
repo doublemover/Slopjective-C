@@ -1,0 +1,50 @@
+{
+  "id": "M08-D003",
+  "title": "Issue #1559 / M08-D003: Scope-freeze baseline: negative-path oracle expansion keeps stable payload mapping",
+  "feature": "M08 lane D diagnostic payload/code mapping freeze (issue #1559, task M08-D003)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m08/lane_d_m08_scope_freeze.md",
+    "spec/planning/compiler/m08/lane_d_m08_execution_packet_20260226.md"
+  ],
+  "source": "void m08d003_oracle(id lhs, id rhs);`n`nvoid m08d003_negative(void) {`n    m08d003_oracle(@\"oracle=unset\", @\"path=none\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-ORACLE-PATH-REQUIRED",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 35
+          },
+          "end": {
+            "line": 4,
+            "column": 47
+          }
+        },
+        "message": "issue #1559 task M08-D003: oracle path token must be canonical for M08 diagnostics replay",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 35
+              },
+              "end": {
+                "line": 4,
+                "column": 47
+              }
+            },
+            "replacement": "@\"path=canonical\""
+          }
+        ]
+      }
+    ]
+  }
+}

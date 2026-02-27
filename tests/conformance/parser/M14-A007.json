@@ -1,0 +1,25 @@
+{
+  "id": "M14-A007",
+  "title": "Accept M14 lane-A parser fixture baseline for issue #1842 task M14-A007 (Wire mode/flag behavior through frontend (Refactor and Simplification))",
+  "feature": "m14 lane-a parser module metadata serialization and table-a coverage slice 07",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M14",
+    "milestone_number": 99,
+    "lane": "A",
+    "issue": 1842,
+    "task": "M14-A007",
+    "sequence": 7
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-4"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_MODE_FLAG_ROUTING__\n#define __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_MODE_FLAG_ROUTING__ 1\n#endif\n\ntypedef struct M14A007_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M14A007_Probe;\n\nM14A007_Probe m14a007_probe(void) {\n#if __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_MODE_FLAG_ROUTING__\n    M14A007_Probe probe = { 1, 7, 1842 };\n#else\n    M14A007_Probe probe = { 0, 7, 1842 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

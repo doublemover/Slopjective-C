@@ -1,0 +1,76 @@
+{
+  "id": "CORO-02",
+  "title": "Preserve async method ABI metadata for separate-compilation callers across optimization modes",
+  "feature": "coroutine-based async lowering ABI stability",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module CORO02.objcmod --emit-interface CORO02.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module CORO02.opt.objcmod --emit-interface CORO02.opt.obji %s\n// RUN: objc3c --verify-interface CORO02.objcmod CORO02.obji %s\n// RUN: objc3c --verify-interface CORO02.opt.objcmod CORO02.opt.obji %s\n@interface CORO02Worker : NSObject\n- (id _Nonnull)load:(id _Nonnull)seed async;\n@end\n\n@implementation CORO02Worker\n- (id _Nonnull)load:(id _Nonnull)seed async {\n    return seed;\n}\n@end\n\nid coro02_call(CORO02Worker * _Nonnull worker, id _Nonnull seed) async {\n    id stage = await [worker load:seed];\n    return stage;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "async method entry and call-site lowering use coroutine-based async ABI instead of synchronous return ABI",
+            "module and textual interface both retain async effect metadata needed by separate-compilation importers",
+            "call-site lowering preserves await-required suspension boundary for async method dispatch"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized async method lowering preserves entry and call ABI shape from -O0",
+            "selector spelling remains source-level while async ABI metadata drives importer lowering",
+            "optimized module/interface emission keeps async ABI metadata fields stable"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "effects.async",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "importers and exporters agree that declaration uses async coroutine ABI",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "objc_method_async_call_lowering",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "async method dispatch lowers through await suspension boundary with a stable ABI contract",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

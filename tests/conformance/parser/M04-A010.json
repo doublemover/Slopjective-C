@@ -1,0 +1,17 @@
+{
+  "id": "M04-A010",
+  "title": "Accept deterministic replay baseline for parser pipeline refactor coverage",
+  "feature": "parser replay determinism and automation-facing baseline",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "#pragma objc_language_version(3)\nint m04a010_fetch(void) async;\n\nint m04a010_replay(int enabled) async {\n    return enabled ? try await m04a010_fetch() : 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

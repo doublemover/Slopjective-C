@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "conditional_missing_then_statement.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3P103",
+      "invalid expression"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

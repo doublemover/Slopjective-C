@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are invalid after a parameter name before ':'.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierAfterParamNameTrailingPure;
+
+fn add(lhs: i32, rhs pure: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

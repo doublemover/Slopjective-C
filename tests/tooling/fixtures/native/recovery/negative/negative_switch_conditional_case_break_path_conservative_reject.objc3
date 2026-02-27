@@ -1,0 +1,17 @@
+// Negative fixture: conditional case bodies with break escape paths remain conservative in switch return-path analysis.
+// Expected diagnostic code(s): O3S205.
+module NegativeSwitchConditionalCaseBreakPathConservativeReject;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case 1:
+      if (value == 0) {
+        break;
+      }
+    case 2:
+      return 42;
+    default:
+      return 9;
+  }
+}

@@ -1,0 +1,4 @@
+# Hex literal lowering markers.
+@base = global i32 16
+add i32
+ret i32

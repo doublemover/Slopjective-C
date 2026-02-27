@@ -1,0 +1,17 @@
+{
+  "id": "TUV-01",
+  "title": "Accept TU-wide language mode selection via -fobjc-version=3",
+  "feature": "language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fsyntax-only %s\nint choose(int lhs, int rhs) {\n    return lhs > rhs ? lhs : rhs;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

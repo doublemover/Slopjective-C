@@ -1,0 +1,25 @@
+{
+  "id": "M21-A001",
+  "title": "Accept M21 lane-A parser fixture baseline for issue #2468 task M21-A001 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m21 lane-a parser semantic analysis type system core define command grammar contract slice contract definition slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M21",
+    "milestone_number": 106,
+    "lane": "A",
+    "issue": 2468,
+    "task": "M21-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M21_A_001_DEFINE_COMMAND_GRAMMAR_CONTRACT_SLICE_CONTRACT_D__\\n#define __OBJC3_FEATURE_M21_A_001_DEFINE_COMMAND_GRAMMAR_CONTRACT_SLICE_CONTRACT_D__ 1\\n#endif\\n\\ntypedef struct M21A001_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M21A001_Probe;\\n\\nM21A001_Probe m21a001_probe(void) {\\n#if __OBJC3_FEATURE_M21_A_001_DEFINE_COMMAND_GRAMMAR_CONTRACT_SLICE_CONTRACT_D__\\n    M21A001_Probe probe = { 1, 1, 2468 };\\n#else\\n    M21A001_Probe probe = { 0, 1, 2468 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

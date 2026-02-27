@@ -1,0 +1,13 @@
+// Negative fixture: declaration qualifiers are invalid in case-label expression positions.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierCaseLabelExtern;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case extern:
+      return 1;
+    default:
+      return 0;
+  }
+}

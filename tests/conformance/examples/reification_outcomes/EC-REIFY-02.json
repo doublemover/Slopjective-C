@@ -1,0 +1,16 @@
+{
+  "id": "EC-REIFY-02",
+  "title": "Accept unmarked generic declaration as erased_default with both gates enabled",
+  "feature": "reification outcomes",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_136_reification_grammar_semantics_package.md#issue-136-reification-grammar-semantics-package"
+  ],
+  "source": "Box<T> makeErased<T>(T value) { return Box<T>(value); }\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,7 @@
+module MessageSendNilImmutableGlobalIdentifierElisionExecution;
+
+let receiver = nil;
+
+fn main() -> i32 {
+  return [receiver ping];
+}

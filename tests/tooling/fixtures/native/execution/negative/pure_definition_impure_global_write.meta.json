@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "pure_definition_impure_global_write.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "error:5:9",
+      "O3S215",
+      "pure contract violation",
+      "declared 'pure' has side effects",
+      "cause: global-write",
+      "cause-site:6:3",
+      "detail:global-write@6:3"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

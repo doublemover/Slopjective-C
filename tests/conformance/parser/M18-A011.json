@@ -1,0 +1,25 @@
+{
+  "id": "M18-A011",
+  "title": "Accept M18 lane-A parser fixture baseline for issue #2262 task M18-A011 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m18 lane-a parser correctness hardening determinism closure core strict contract slice 11",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M18",
+    "milestone_number": 103,
+    "lane": "A",
+    "issue": 2262,
+    "task": "M18-A011",
+    "sequence": 11
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_5_FRONTEND_ACTIONS_AND_SELECTIONS.md#part-5-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-11"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__\\n#define __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__ 1\\n#endif\\n\\ntypedef struct M18A011_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M18A011_Probe;\\n\\nM18A011_Probe m18a011_probe(void) {\\n#if __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__\\n    M18A011_Probe probe = { 1, 11, 2262 };\\n#else\\n    M18A011_Probe probe = { 0, 11, 2262 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "id": "SCM-05",
+  "title": "Verify strictness/sub-mode macro values for each matrix point",
+  "feature": "strictness and concurrency sub-mode selection",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-3",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-6-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10"
+  ],
+  "source": "#if __OBJC3_STRICTNESS_LEVEL__ != EXPECT_STRICTNESS_LEVEL\n#error \"SCM-05 strictness level mismatch\"\n#endif\n#if __OBJC3_CONCURRENCY_MODE__ != EXPECT_CONCURRENCY_MODE\n#error \"SCM-05 concurrency mode mismatch\"\n#endif\n#if __OBJC3_CONCURRENCY_STRICT__ != EXPECT_CONCURRENCY_STRICT\n#error \"SCM-05 concurrency strict alias mismatch\"\n#endif\nint scm05_mode_macro_probe(void) {\n    return __OBJC3_STRICTNESS_LEVEL__ + __OBJC3_CONCURRENCY_MODE__ + __OBJC3_CONCURRENCY_STRICT__;\n}\n",
+  "matrix": [
+    {
+      "name": "strict-off",
+      "flags": [
+        "-fobjc3-strictness=strict",
+        "-fobjc3-concurrency=off",
+        "-DEXPECT_STRICTNESS_LEVEL=1",
+        "-DEXPECT_CONCURRENCY_MODE=0",
+        "-DEXPECT_CONCURRENCY_STRICT=0"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "strict-strict",
+      "flags": [
+        "-fobjc3-strictness=strict",
+        "-fobjc3-concurrency=strict",
+        "-DEXPECT_STRICTNESS_LEVEL=1",
+        "-DEXPECT_CONCURRENCY_MODE=1",
+        "-DEXPECT_CONCURRENCY_STRICT=1"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "strict-system-off",
+      "flags": [
+        "-fobjc3-strictness=strict-system",
+        "-fobjc3-concurrency=off",
+        "-DEXPECT_STRICTNESS_LEVEL=2",
+        "-DEXPECT_CONCURRENCY_MODE=0",
+        "-DEXPECT_CONCURRENCY_STRICT=0"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "strict-system-strict",
+      "flags": [
+        "-fobjc3-strictness=strict-system",
+        "-fobjc3-concurrency=strict",
+        "-DEXPECT_STRICTNESS_LEVEL=2",
+        "-DEXPECT_CONCURRENCY_MODE=1",
+        "-DEXPECT_CONCURRENCY_STRICT=1"
+      ],
+      "expect": {
+        "parse": "accept",
+        "diagnostics": []
+      }
+    }
+  ],
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

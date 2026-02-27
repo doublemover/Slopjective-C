@@ -1,0 +1,25 @@
+{
+  "id": "M17-A044",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #2035 task M17-A044 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict recovery guard slice 44",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 2035,
+    "task": "M17-A044",
+    "sequence": 44
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_4_CONCURRENCY_AND_EXECUTION.md#part-4-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_RECOVERY_GUARD_SLICE_S044__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_RECOVERY_GUARD_SLICE_S044__ 1\\n#endif\\n\\ntypedef struct M17A044_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A044_Probe;\\n\\nM17A044_Probe m17a044_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_RECOVERY_GUARD_SLICE_S044__\\n    M17A044_Probe probe = { 1, 44, 2035 };\\n#else\\n    M17A044_Probe probe = { 0, 44, 2035 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "M13-A010",
+  "title": "Accept M13 lane-A parser fixture baseline for issue #1793 task M13-A010 (Refactor parser pipeline for deterministic replay (CI/Automation Enforcement))",
+  "feature": "m13 lane-a parser deterministic textual interface emitter slice 10",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M13",
+    "milestone_number": 98,
+    "lane": "A",
+    "issue": 1793,
+    "task": "M13-A010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_REPLAY_DETERMINISM__\n#define __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_REPLAY_DETERMINISM__ 1\n#endif\n\ntypedef struct M13A010_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M13A010_Probe;\n\nM13A010_Probe m13a010_probe(void) {\n#if __OBJC3_FEATURE_TEXTUAL_INTERFACE_EMITTER_REPLAY_DETERMINISM__\n    M13A010_Probe probe = { 1, 10, 1793 };\n#else\n    M13A010_Probe probe = { 0, 10, 1793 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

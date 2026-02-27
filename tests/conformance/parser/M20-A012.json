@@ -1,0 +1,25 @@
+{
+  "id": "M20-A012",
+  "title": "Accept M20 lane-A parser fixture baseline for issue #2407 task M20-A012 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m20 lane-a parser frontend parsing ast realization core strict execution slice 12",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M20",
+    "milestone_number": 105,
+    "lane": "A",
+    "issue": 2407,
+    "task": "M20-A012",
+    "sequence": 12
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_4_CONCURRENCY_AND_EXECUTION.md#part-4-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_EXECUTION_SLICE_S012__\\n#define __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_EXECUTION_SLICE_S012__ 1\\n#endif\\n\\ntypedef struct M20A012_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M20A012_Probe;\\n\\nM20A012_Probe m20a012_probe(void) {\\n#if __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_EXECUTION_SLICE_S012__\\n    M20A012_Probe probe = { 1, 12, 2407 };\\n#else\\n    M20A012_Probe probe = { 0, 12, 2407 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

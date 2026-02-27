@@ -1,0 +1,65 @@
+{
+  "id": "INT-C-10",
+  "title": "Lower async non-throwing exports so C completions never report error status",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC10Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nid intc10_lookup(int token) async;\\nvoid intc10_lookup_async_c(int token,\\n                           void * _Nullable context,\\n                           INTC10Completion _Nonnull completion);\\n\\ntypedef struct INTC10Probe {\\n    int successCount;\\n    int cancelledCount;\\n    int errorStatusCount;\\n} INTC10Probe;\\n\\nvoid intc10_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC10Probe *probe = (INTC10Probe *)context;\\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS) {\\n        probe->successCount = probe->successCount + 1;\\n    } else if (status == OBJC_ASYNC_COMPLETION_CANCELLED) {\\n        probe->cancelledCount = probe->cancelledCount + 1;\\n    } else if (status == OBJC_ASYNC_COMPLETION_ERROR) {\\n        probe->errorStatusCount = probe->errorStatusCount + 1;\\n    }\\n    (void)result;\\n    (void)error;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "for async declarations without throws, thunk completion never uses OBJC_ASYNC_COMPLETION_ERROR",
+            "success and cancellation remain representable status outcomes with canonical callback shape",
+            "error slot remains nil on success and non-nil when cancellation uses cancellation error representation"
+          ],
+          "runtime_assertions": [
+            "INTC10Probe.errorStatusCount stays 0 across exercised non-throwing async paths",
+            "callback remains exactly-once while status domain excludes OBJC_ASYNC_COMPLETION_ERROR"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves exclusion of OBJC_ASYNC_COMPLETION_ERROR for non-throwing async exports",
+            "optimization does not introduce synthetic error-status paths for non-throwing callbacks",
+            "status and error-slot behavior remains equivalent to -O0 for success/cancelled paths"
+          ],
+          "runtime_assertions": [
+            "errorStatusCount remains 0 under optimization",
+            "optimized callbacks still report only success or cancelled statuses"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.async_nonthrows_status_domain",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "required_shape": "non-throwing async exports do not emit OBJC_ASYNC_COMPLETION_ERROR",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

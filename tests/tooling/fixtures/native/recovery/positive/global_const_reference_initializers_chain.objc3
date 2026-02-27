@@ -1,0 +1,10 @@
+module GlobalConstReferenceInitializersChain;
+
+let base = 2;
+let doubled = base * 2;
+let biased = doubled + base - 1;
+let selected = base < doubled ? biased : base;
+
+fn main() -> i32 {
+  return selected;
+}

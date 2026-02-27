@@ -1,0 +1,25 @@
+{
+  "id": "M20-A005",
+  "title": "Accept M20 lane-A parser fixture baseline for issue #2400 task M20-A005 (Enforce canonical syntax normalization (Determinism Proof))",
+  "feature": "m20 lane-a parser frontend parsing ast realization core strict normalization proof slice 05",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M20",
+    "milestone_number": 105,
+    "lane": "A",
+    "issue": 2400,
+    "task": "M20-A005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__\\n#define __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__ 1\\n#endif\\n\\ntypedef struct M20A005_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M20A005_Probe;\\n\\nM20A005_Probe m20a005_probe(void) {\\n#if __OBJC3_FEATURE_FRONTEND_PARSING_AST_REALIZATION_CORE_STRICT_NORMALIZATION_PROOF_SLICE_S005__\\n    M20A005_Probe probe = { 1, 5, 2400 };\\n#else\\n    M20A005_Probe probe = { 0, 5, 2400 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

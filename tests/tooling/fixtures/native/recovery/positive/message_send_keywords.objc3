@@ -1,0 +1,8 @@
+// Positive fixture: keyword-segment message-send expressions parse and lower deterministically.
+module MessageSendKeywords;
+
+fn main() {
+  let receiver = 11;
+  let value = [receiver sum: 3 with: 4];
+  return value;
+}

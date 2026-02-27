@@ -1,0 +1,25 @@
+{
+  "id": "M08-A003",
+  "title": "Accept M08 lane-A parser fixture baseline for issue #1532 task M08-A003 (Stabilize AST construction path)",
+  "feature": "m08 lane-a parser strictness-concurrency slice 03",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M08",
+    "milestone_number": 93,
+    "lane": "A",
+    "issue": 1532,
+    "task": "M08-A003",
+    "sequence": 3
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M08A003_Trace {\n    int value;\n    int span_start;\n    int span_end;\n} M08A003_Trace;\n\nM08A003_Trace m08a003_trace(int token) {\n    M08A003_Trace trace = { token, 3, 13 };\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

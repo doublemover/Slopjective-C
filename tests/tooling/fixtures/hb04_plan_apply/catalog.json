@@ -1,0 +1,30 @@
+{
+  "generated_on": "2026-02-23",
+  "task_count": 3,
+  "tasks": [
+    {
+      "task_id": "SPT-9201",
+      "title": "[SPT-9201][Lane A] Plan/apply first task",
+      "path": "tests/tooling/fixtures/hb04_plan_apply/source.md",
+      "line": 2,
+      "task_key": "hb04:first",
+      "source_line_hash": "sha256:6c6654976fcd2ddcc160ef992d4eb75fcbce6faab5f6c61bffa7383e2acb1ffe"
+    },
+    {
+      "task_id": "SPT-9202",
+      "title": "[SPT-9202][Lane A] Plan/apply second task",
+      "path": "tests/tooling/fixtures/hb04_plan_apply/source.md",
+      "line": 3,
+      "task_key": "hb04:second",
+      "source_line_hash": "sha256:1d88647b98c97229b852cb2b172e8b9fe6c39901049dc0dff8b3a5f4175c0544"
+    },
+    {
+      "task_id": "SPT-9203",
+      "title": "[SPT-9203][Lane A] Plan/apply unchecked task",
+      "path": "tests/tooling/fixtures/hb04_plan_apply/source.md",
+      "line": 4,
+      "task_key": "hb04:unchecked",
+      "source_line_hash": "sha256:0931dbb3066fdeed6a1a463618849a4211065ff92a1873d6f7bf8dbe72986275"
+    }
+  ]
+}

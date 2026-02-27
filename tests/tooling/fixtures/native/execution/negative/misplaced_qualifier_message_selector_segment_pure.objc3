@@ -1,0 +1,6 @@
+module MisplacedQualifierMessageSelectorSegmentPure;
+
+fn main() -> i32 {
+  let receiver = 1;
+  return [receiver head: 1 pure: 2];
+}

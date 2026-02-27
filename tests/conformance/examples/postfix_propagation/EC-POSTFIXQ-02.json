@@ -1,0 +1,35 @@
+{
+  "id": "EC-POSTFIXQ-02",
+  "title": "Disambiguate cast-plus-propagation spellings",
+  "feature": "postfix ?",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-5",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "id maybeCast(id value) {\n    return (Token)value?;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-CAST-AMBIGUOUS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 25 }
+        },
+        "message": "cast and postfix ? are ambiguous without parenthesizing the cast result",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 25 }
+            },
+            "replacement": "((Token)value)?"
+          }
+        ]
+      }
+    ]
+  }
+}

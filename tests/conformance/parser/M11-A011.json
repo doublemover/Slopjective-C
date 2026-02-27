@@ -1,0 +1,25 @@
+{
+  "id": "M11-A011",
+  "title": "Accept M11 lane-A parser fixture baseline for issue #1678 task M11-A011 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m11 lane-a parser optional and iuo semantics slice 11",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M11",
+    "milestone_number": 96,
+    "lane": "A",
+    "issue": 1678,
+    "task": "M11-A011",
+    "sequence": 11
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-6-1"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_OPTIONAL_IUO_CONTRACT_RELOCK__\n#define __OBJC3_FEATURE_OPTIONAL_IUO_CONTRACT_RELOCK__ 1\n#endif\n\ntypedef struct M11A011_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M11A011_Probe;\n\nM11A011_Probe m11a011_probe(void) {\n#if __OBJC3_FEATURE_OPTIONAL_IUO_CONTRACT_RELOCK__\n    M11A011_Probe probe = { 1, 11, 1678 };\n#else\n    M11A011_Probe probe = { 0, 11, 1678 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S210.
+module NegativeGlobalInitializerForwardReference;
+
+let folded = base + 1;
+let base = 3;
+
+fn main() -> i32 {
+  return base;
+}

@@ -1,0 +1,40 @@
+{
+  "id": "INT-CXX-04",
+  "title": "Diagnose ObjC++ async thunk declarations that drift from canonical callback and trailing parameter shape",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -fsyntax-only %s\ntypedef enum objc_async_completion_status {\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\n} objc_async_completion_status_t;\n\ntypedef void (*INTCXX04Completion)(void * _Nullable context,\n                                   objc_async_completion_status_t status,\n                                   id _Nullable result,\n                                   id<Error> _Nullable error);\n\nstruct INTCXX04Token {\n    int value;\n};\n\nid intcxx04_load(INTCXX04Token token) async throws;\nvoid intcxx04_load_async_c_bad(INTCXX04Token token,\n                               INTCXX04Completion _Nonnull completion,\n                               void * _Nullable context);\n\nvoid intcxx04_flush(void) async throws;\ntypedef void (*INTCXX04FlushCompletionBad)(void * _Nullable context,\n                                           objc_async_completion_status_t status,\n                                           id _Nullable result,\n                                           id<Error> _Nullable error);\nvoid intcxx04_flush_async_c(void * _Nullable context,\n                            INTCXX04FlushCompletionBad _Nonnull completion);\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-THUNK-PARAM-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 18, "column": 1 },
+          "end": { "line": 20, "column": 57 }
+        },
+        "message": "ObjC++ exported async thunk must place source parameters first, then trailing context, then trailing completion callback"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-ASYNC-THUNK-VOID-RESULT-SHAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 23, "column": 16 },
+          "end": { "line": 26, "column": 71 }
+        },
+        "message": "ObjC++ exported async thunk for a void-result function must omit the completion result parameter"
+      }
+    ]
+  }
+}

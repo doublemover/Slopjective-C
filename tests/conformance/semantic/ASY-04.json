@@ -1,0 +1,38 @@
+{
+  "id": "ASY-04",
+  "title": "Reject missing await at async call sites and await outside async context",
+  "feature": "async/await typing",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10"
+  ],
+  "source": "id fetchToken(void) async;\n\nid badMissingAwait(void) async {\n    return fetchToken();\n}\n\nid badAwaitContext(void) {\n    return await fetchToken();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-MISSING-AWAIT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 24 }
+        },
+        "message": "calling an async function requires 'await'"
+      },
+      {
+        "code": "OBJC3-D-CONC-AWAIT-OUTSIDE-ASYNC",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 17 }
+        },
+        "message": "await is only permitted in async functions, methods, or blocks"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "SYS-DIAG-03",
+  "title": "Strict-system borrowed escape diagnostics for escaping block capture",
+  "feature": "strict-system diagnostics for borrowed escape hazards",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef void (^BRWTask)(void);\nvoid brw_enqueue(BRWTask task);\nvoid brw_consume(const char *bytes);\n\nvoid brw_neg03_capture_escaping_block(borrowed const char *bytes) {\n    brw_enqueue(^{\n        brw_consume(bytes);\n    });\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 7, "column": 21 },
+          "end": { "line": 7, "column": 25 }
+        },
+        "message": "borrowed pointer cannot be captured by an escaping block; copy to owned storage, extend owner lifetime, or mark explicitly unsafe",
+        "fixits": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "id": "M14-A004",
+  "title": "Accept M14 lane-A parser fixture baseline for issue #1839 task M14-A004 (Add parser recovery and ambiguity guard (Conformance Expansion))",
+  "feature": "m14 lane-a parser module metadata serialization and table-a coverage slice 04",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M14",
+    "milestone_number": 99,
+    "lane": "A",
+    "issue": 1839,
+    "task": "M14-A004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_RECOVERY_GUARDS__\n#define __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_RECOVERY_GUARDS__ 1\n#endif\n\ntypedef struct M14A004_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M14A004_Probe;\n\nM14A004_Probe m14a004_probe(void) {\n#if __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_RECOVERY_GUARDS__\n    M14A004_Probe probe = { 1, 4, 1839 };\n#else\n    M14A004_Probe probe = { 0, 4, 1839 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

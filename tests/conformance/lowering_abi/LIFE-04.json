@@ -1,0 +1,52 @@
+{
+  "id": "LIFE-04",
+  "title": "Preserve ARC release points for withLifetime temporaries at lexical scope boundaries",
+  "feature": "withLifetime ARC lowering preservation",
+  "bucket": "lowering_abi",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-1",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O2 -fsyntax-only %s\n@interface LIFE90Box : NSObject\n- (id _Nonnull)payload;\n@end\n\nid _Nonnull life04_with_lifetime_arc(LIFE90Box * _Nonnull box,\n                                     id _Nonnull fallback) {\n    __attribute__((objc_precise_lifetime)) id _Nonnull pinned = fallback;\n    withLifetime(box) {\n        pinned = [box payload];\n    }\n    return pinned;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-O0"
+          ],
+          "arc_requirements": [
+            "withLifetime lowers to a single implicit strong precise-lifetime binding for its expression",
+            "the implicit withLifetime binding is released only after the statement body completes",
+            "objc_precise_lifetime local release is not shortened before lexical scope exit"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict-system",
+            "-O2"
+          ],
+          "arc_requirements": [
+            "ARC optimization preserves withLifetime post-statement release ordering",
+            "optimization keeps precise-lifetime scope guarantees equivalent to -O0",
+            "no early release is introduced on the withLifetime protected value"
+          ]
+        }
+      ]
+    }
+  }
+}

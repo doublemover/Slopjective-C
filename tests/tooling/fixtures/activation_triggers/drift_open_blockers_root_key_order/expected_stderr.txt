@@ -1,0 +1,1 @@
+error: open blockers snapshot object in tests/tooling/fixtures/activation_triggers/drift_open_blockers_root_key_order/open_blockers.json key order drift: expected=['generated_at_utc', 'open_blocker_count', 'open_blockers'] observed=['generated_at_utc', 'open_blockers', 'open_blocker_count']

@@ -1,0 +1,43 @@
+{
+  "id": "TUV-03",
+  "title": "Reject region-scoped objc_language_version push/pop form",
+  "feature": "translation-unit language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-2",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(push, 3)\nint selectedMode(void) {\n    return 3;\n}\n#pragma objc_language_version(pop)\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-LANGVERSION-REGION-SWITCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 31 },
+          "end": { "line": 1, "column": 35 }
+        },
+        "message": "language-version pragma does not support region-scoped push/pop forms",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 31 },
+              "end": { "line": 1, "column": 38 }
+            },
+            "replacement": "3"
+          },
+          {
+            "range": {
+              "start": { "line": 5, "column": 1 },
+              "end": { "line": 5, "column": 35 }
+            },
+            "replacement": ""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "CONC-DIAG-06",
+  "title": "Accept explicit awaited actor calls and valid executor-annotated entry in strict mode",
+  "feature": "strict-concurrency positive controls for isolation and executor diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "id concdiag06_mainOnly(id seed) __attribute__((objc_executor(main)));\n\nactor class CONCDIAG06Actor : NSObject\n- (id _Nonnull)token;\n@end\n\nid concdiag06_positive(CONCDIAG06Actor *actor, id seed) async __attribute__((objc_executor(global))) {\n    id hopped = await concdiag06_mainOnly(seed);\n    id token = await [actor token];\n    return token ? token : hopped;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "CAP-01",
+  "title": "Accept canonical strong/weak/unowned/move capture-list entries",
+  "feature": "capture-list grammar and canonical capture modifiers",
+  "bucket": "parser",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-2",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-8-5"
+  ],
+  "source": "typedef int cap_handle_t;\nvoid cap01_consume_id(id value);\nvoid cap01_consume_handle(cap_handle_t value);\n\nvoid cap01_parse_modifiers(id strongOwner, id weakOwner, id unsafePeer, cap_handle_t fd) {\n    void (^handler)(void) = [strong strongOwner, weak weakOwner, unowned unsafePeer, move fd] {\n        cap01_consume_id(strongOwner);\n        cap01_consume_id(weakOwner);\n        cap01_consume_id(unsafePeer);\n        cap01_consume_handle(fd);\n    };\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

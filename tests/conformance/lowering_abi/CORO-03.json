@@ -1,0 +1,80 @@
+{
+  "id": "CORO-03",
+  "title": "Preserve suspension-point frame lifetimes and task-context ABI edges in coroutine lowering",
+  "feature": "coroutine-based async lowering ABI stability",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\nid coro03_make(id seed) async;\nid coro03_bump(id seed) async;\n\nid coro03_make(id seed) async {\n    return seed;\n}\n\nid coro03_bump(id seed) async {\n    return seed;\n}\n\nint coro03_trace(id seed) async {\n    id live = await coro03_make(seed);\n    defer { (void)live; };\n    id done = await coro03_bump(live);\n    return done != nil ? 1 : 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "locals used after await are carried in coroutine frame storage across suspension",
+            "defer cleanup remains attached to coroutine completion and unwind paths after suspension",
+            "task-context handoff across suspend and resume edges follows async ABI lowering contract"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc-arc",
+            "-fobjc3-strictness=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimization preserves frame-carried lifetimes required for values that cross await",
+            "optimization preserves defer cleanup reachability on coroutine completion and unwind exits",
+            "optimization does not alter task-context ABI shape across suspend and resume boundaries"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "coroutine_frame_lifetime_across_suspend",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "values that cross await suspension remain in stable coroutine frame storage",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "async_task_context_resume_contract",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "stability_property": "suspend and resume edges preserve task-context ABI metadata needed by importers",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

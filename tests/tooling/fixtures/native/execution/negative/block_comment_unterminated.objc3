@@ -1,0 +1,8 @@
+module BlockCommentUnterminated;
+
+let value = 3;
+
+/* unterminated block comment
+fn main() -> i32 {
+  return value;
+}

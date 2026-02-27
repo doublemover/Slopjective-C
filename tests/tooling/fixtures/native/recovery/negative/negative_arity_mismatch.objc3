@@ -1,0 +1,11 @@
+// Negative fixture: function call arity mismatch.
+// Expected diagnostic code(s): O3S204.
+module NegativeArityMismatch;
+
+fn add(x: i32, y: i32) {
+  return x + y;
+}
+
+fn main() {
+  return add(1);
+}

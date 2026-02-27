@@ -1,0 +1,7 @@
+module NegativeLoopContinueOutside;
+// Expected diagnostic code(s): O3S213.
+
+fn main() -> i32 {
+  continue;
+  return 0;
+}

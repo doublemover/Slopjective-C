@@ -1,0 +1,7 @@
+module DuplicatePureQualifier;
+
+pure pure fn touch() -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

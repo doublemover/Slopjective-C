@@ -1,0 +1,39 @@
+{
+  "id": "MIG-06",
+  "title": "Generate throws wrapper from NSError-out bridging helper",
+  "feature": "migrator NSError-out to throws wrapper generation",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "typedef id NSErrorRef;\nint mig06_fetch(id key, id * _Nullable outValue, NSErrorRef * _Nullable outError);\n\nid mig06_legacy_bridge(id key, NSErrorRef * _Nullable outError) {\n    id value = nil;\n    if (!mig06_fetch(key, &value, outError)) {\n        return nil;\n    }\n    return value;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-MIG-NSError-OUT-THROWS-WRAPPER",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 4, "column": 1 },
+          "end": { "line": 4, "column": 61 }
+        },
+        "message": "NSError-out helper can be migrated to a throws wrapper for safer, effect-typed propagation",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 1 },
+              "end": { "line": 10, "column": 2 }
+            },
+            "replacement": "id mig06_legacy_bridge(id key) throws {\n    id value = nil;\n    NSErrorRef error = nil;\n    if (!mig06_fetch(key, &value, &error)) {\n        throw error;\n    }\n    return value;\n}\n"
+          }
+        ]
+      }
+    ]
+  }
+}

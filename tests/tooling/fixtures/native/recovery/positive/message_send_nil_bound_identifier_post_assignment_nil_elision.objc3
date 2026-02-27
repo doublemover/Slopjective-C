@@ -1,0 +1,9 @@
+// Positive fixture: explicit reassignment to nil regains nil-bound elision at send-site.
+module MessageSendNilBoundIdentifierPostAssignmentNilElision;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver ping];
+  return sent + 16;
+}

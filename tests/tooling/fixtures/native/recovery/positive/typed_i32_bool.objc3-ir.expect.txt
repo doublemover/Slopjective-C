@@ -1,0 +1,5 @@
+# Mixed bool/i32 ABI expectation markers for native objc3 lowering replay.
+define i32 @select_i32(i32 %arg0, i32 %arg1, i1 %arg2)
+zext i1 %arg2 to i32
+call i32 @select_i32(i32
+define i32 @objc3c_entry()

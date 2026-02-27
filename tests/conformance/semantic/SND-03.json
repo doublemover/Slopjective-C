@@ -1,0 +1,39 @@
+{
+  "id": "SND-03",
+  "title": "Reject spawned and detached task captures of ordinary mutable class instances",
+  "feature": "sendable-like rejection for non-actor class captures across task boundaries",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "typedef id SND03TaskHandle;\nSND03TaskHandle snd03_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nSND03TaskHandle snd03_detached(id (^work)(void) async) __attribute__((objc_task_detached));\nid snd03_join(SND03TaskHandle handle) async;\n\n@interface SND03MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nid snd03_nonsendable_capture(SND03MutableBox *box) async {\n    SND03TaskHandle child = snd03_spawn(^id(void) async {\n        return box;\n    });\n    SND03TaskHandle detached = snd03_detached(^id(void) async {\n        return box;\n    });\n    (void)child;\n    return await snd03_join(detached);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-CAPTURE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 16 },
+          "end": { "line": 11, "column": 19 }
+        },
+        "message": "capturing non-Sendable class value 'box' in an objc_task_spawn closure requires explicit sendability admission"
+      },
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-CAPTURE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 16 },
+          "end": { "line": 14, "column": 19 }
+        },
+        "message": "capturing non-Sendable class value 'box' in an objc_task_detached closure requires explicit sendability admission"
+      }
+    ]
+  }
+}

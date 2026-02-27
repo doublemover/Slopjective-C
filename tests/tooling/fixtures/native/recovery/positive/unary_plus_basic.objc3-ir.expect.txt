@@ -1,0 +1,4 @@
+# Unary-plus lowering markers.
+define i32 @main()
+add i32 0,
+ret i32

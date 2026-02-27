@@ -1,0 +1,35 @@
+{
+  "id": "EC-COALESCE-03",
+  "title": "Require contiguous ?? tokenization",
+  "feature": "??",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-2-2",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-7"
+  ],
+  "source": "id collapse(id _Nullable left, id right) {\n    return left ? ? right;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-TOKEN-COALESCE-CONTIGUOUS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 17 },
+          "end": { "line": 2, "column": 20 }
+        },
+        "message": "nil-coalescing operator must be written as contiguous ??",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 17 },
+              "end": { "line": 2, "column": 20 }
+            },
+            "replacement": "??"
+          }
+        ]
+      }
+    ]
+  }
+}

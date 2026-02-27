@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeConditionalBranchFunctionValue;
+
+fn bad() -> i32 {
+  return 9;
+}
+
+fn main() -> i32 {
+  let x = true ? bad : 0;
+  return 0;
+}

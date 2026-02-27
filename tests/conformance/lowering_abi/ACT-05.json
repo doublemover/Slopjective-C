@@ -1,0 +1,77 @@
+{
+  "id": "ACT-05",
+  "title": "Reject non-Sendable objc_nonisolated actor-member boundaries in strict concurrency lowering",
+  "feature": "actor nonisolated boundary sendability checks",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -fobjc3-concurrency=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -fobjc3-concurrency=strict -O2 -fsyntax-only %s\n@interface ACT05MutableBox : NSObject\n@property (nonatomic) int counter;\n@end\n\nactor class ACT05Bridge : NSObject\n- (ACT05MutableBox * _Nonnull)echo:(ACT05MutableBox * _Nonnull)value __attribute__((objc_nonisolated));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-BOUNDARY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 3 },
+          "end": { "line": 8, "column": 103 }
+        },
+        "message": "objc_nonisolated member parameters and returns must be Sendable-like in strict concurrency mode",
+        "fixits": []
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-fobjc3-concurrency=strict",
+            "-O0"
+          ],
+          "abi_requirements": [
+            "nonisolated actor-member boundary sendability checks run before callable entry-thunk emission",
+            "non-Sendable parameter and result types on objc_nonisolated members are rejected in strict concurrency mode",
+            "rejected declarations do not produce boundary metadata that can be consumed as valid cross-domain contracts"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-fobjc3-strictness=strict",
+            "-fobjc3-concurrency=strict",
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves strict-concurrency nonisolated boundary sendability rejection",
+            "optimization does not bypass boundary sendability checks for objc_nonisolated members",
+            "diagnostic behavior for invalid nonisolated boundary types remains equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "sendable.boundary",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
+          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
+          "stability_property": "strict-concurrency lowering rejects objc_nonisolated boundaries that cannot satisfy sendable boundary contracts",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

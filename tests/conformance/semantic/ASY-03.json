@@ -1,0 +1,20 @@
+{
+  "id": "ASY-03",
+  "title": "Accept async effect typing for declarations, blocks, and await use",
+  "feature": "async/await typing",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2"
+  ],
+  "source": "id fetchToken(void) async;\ntypedef id (^AsyncProducer)(void) async;\n\nid runProducer(AsyncProducer producer) async {\n    id first = await producer();\n    id second = await fetchToken();\n    return first ? first : second;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

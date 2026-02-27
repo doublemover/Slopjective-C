@@ -1,0 +1,47 @@
+{
+  "id": "EC-REIFY-04",
+  "title": "Reject marker when generic declarations are deferred",
+  "feature": "reification outcomes",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-7",
+    "spec/planning/issue_136_reification_grammar_semantics_package.md#issue-136-reification-grammar-semantics-package"
+  ],
+  "source": "// MODE: generic=0\n@reify_generics\nBox<T> deferredGeneric<T>(T value) { return Box<T>(value); }\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "REIFY-01",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 16
+          }
+        },
+        "message": "generic declarations are not available in current mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 2,
+                "column": 1
+              },
+              "end": {
+                "line": 2,
+                "column": 16
+              }
+            },
+            "replacement": ""
+          }
+        ]
+      }
+    ]
+  }
+}

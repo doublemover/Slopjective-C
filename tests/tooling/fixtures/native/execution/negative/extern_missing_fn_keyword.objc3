@@ -1,0 +1,7 @@
+module ExternMissingFnKeyword;
+
+extern let value = 1;
+
+fn main() -> i32 {
+  return value;
+}

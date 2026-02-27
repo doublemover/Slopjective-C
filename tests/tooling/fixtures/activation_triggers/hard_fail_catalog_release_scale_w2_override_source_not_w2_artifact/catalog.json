@@ -1,0 +1,33 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-6404",
+      "title": "Release and scale foundation W2 row with non-W2 override source",
+      "lane": "B",
+      "lane_name": "Tooling Validation",
+      "milestone_title": "v0.16 Release and Scale Foundation W2",
+      "labels": [
+        "lane:B",
+        "type:tooling"
+      ],
+      "dependencies": [
+        "#1091",
+        "#1092"
+      ],
+      "validation_commands": [
+        "python -m pytest tests/tooling -q",
+        "python scripts/check_release_and_scale_foundation_w2_contract.py",
+        "python scripts/spec_lint.py"
+      ],
+      "execution_status": "open",
+      "execution_status_rationale": "Contract validation in progress.",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w4_tooling_validation_20260225.md:4"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w4_tooling_validation_20260225.md"
+    }
+  ]
+}
+
+
+

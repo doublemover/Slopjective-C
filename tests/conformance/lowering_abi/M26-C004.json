@@ -1,0 +1,26 @@
+{
+  "id": "M26-C004",
+  "title": "Expand typed bool/i32 lowering ABI conformance matrix for native objc3c frontend (Conformance Expansion) (issue #2859 / task M26-C004)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 lowering abi conformance matrix conformance expansion",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2859,
+    "task": "M26-C004",
+    "sequence": 4
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_004_TYPED_BOOL_I32_CONFORMANCE_MATRIX\n#define __OBJC3_FEATURE_M26_C_004_TYPED_BOOL_I32_CONFORMANCE_MATRIX 1\n#endif\n\ntypedef signed int m26c004_i32;\ntypedef _Bool m26c004_bool;\n\ntypedef m26c004_i32 (*M26C004_BoolToI32Fn)(m26c004_bool value);\ntypedef m26c004_bool (*M26C004_I32ToBoolFn)(m26c004_i32 value);\n\nstatic m26c004_i32 m26c004_bool_to_i32(m26c004_bool value) {\n    return value ? 1 : 0;\n}\n\nstatic m26c004_bool m26c004_i32_to_bool(m26c004_i32 value) {\n    return value != 0;\n}\n\nstatic m26c004_i32 m26c004_case_score(m26c004_bool flag_arg, m26c004_i32 value_arg) {\n    m26c004_i32 flag_lane = m26c004_bool_to_i32(flag_arg);\n    m26c004_i32 value_lane = m26c004_bool_to_i32(m26c004_i32_to_bool(value_arg));\n    return (flag_lane << 1) | value_lane;\n}\n\ntypedef struct M26C004_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c004_i32 matrix_checksum;\n    m26c004_bool roundtrip_nonzero;\n} M26C004_Probe;\n\nM26C004_Probe m26c004_probe(void) {\n#if __OBJC3_FEATURE_M26_C_004_TYPED_BOOL_I32_CONFORMANCE_MATRIX\n    M26C004_BoolToI32Fn bool_to_i32 = m26c004_bool_to_i32;\n    M26C004_I32ToBoolFn i32_to_bool = m26c004_i32_to_bool;\n    m26c004_i32 checksum = 0;\n    checksum += m26c004_case_score(0, 0);\n    checksum += m26c004_case_score(0, 7);\n    checksum += m26c004_case_score(1, 0);\n    checksum += m26c004_case_score(1, -3);\n    M26C004_Probe probe = { 1, 4, 2859, checksum + bool_to_i32(i32_to_bool(42)), i32_to_bool(-3) };\n#else\n    M26C004_Probe probe = { 0, 4, 2859, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

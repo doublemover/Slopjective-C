@@ -1,0 +1,31 @@
+{
+  "id": "AWT-02",
+  "title": "Reject await expression missing operand in potentially-suspending call context",
+  "feature": "await operand grammar diagnostics",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/DECISIONS_LOG.md#decisions-d-011",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id awt02_fetch(void) async;\n\nid awt02_bad(void) async {\n    id token = await;\n    return token;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-AWAIT-EXPECTED-EXPRESSION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 16 },
+          "end": { "line": 4, "column": 21 }
+        },
+        "message": "expected expression after 'await'"
+      }
+    ]
+  }
+}

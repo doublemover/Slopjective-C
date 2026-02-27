@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3P103, O3P100.
+module NegativeForStepParserMissingBitwiseCompoundRhs;
+
+fn main() -> i32 {
+  for (let i = 0; i < 4; i ^= ) {
+    let keep = i;
+  }
+  return 0;
+}

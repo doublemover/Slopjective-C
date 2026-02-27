@@ -1,0 +1,7 @@
+module SeparatorLiteralDecimalBasic;
+
+let base = 1_2;
+
+fn main() -> i32 {
+  return base + 3_1;
+}

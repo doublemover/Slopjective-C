@@ -1,0 +1,11 @@
+// Negative fixture: reassigned loop-entry identifiers remain conservative in function return-path analysis.
+// Expected diagnostic code(s): O3S205.
+module NegativeWhileIdentifierReassignedBodyReturnConservativeReject;
+
+fn main() -> i32 {
+  let gate = 1;
+  gate = 0;
+  while (gate) {
+    return 42;
+  }
+}

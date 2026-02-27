@@ -1,0 +1,29 @@
+{
+  "id": "BRW-NEG-04",
+  "title": "Reject passing borrowed pointers to parameters not proven non-escaping",
+  "feature": "borrowed pointer escape diagnostics (intra-procedural minimum)",
+  "bucket": "diagnostics",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "void brw_store_for_later(const char *bytes);\n\nvoid brw_neg04_pass_unproven_parameter(borrowed const char *bytes) {\n    brw_store_for_later(bytes);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-SYSTEM-BORROWED-ESCAPE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 25 },
+          "end": { "line": 4, "column": 29 }
+        },
+        "message": "borrowed pointer passed to parameter not proven non-escaping; copy to owned storage, extend owner lifetime, or mark explicitly unsafe",
+        "fixits": []
+      }
+    ]
+  }
+}

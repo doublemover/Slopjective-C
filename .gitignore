@@ -1,0 +1,15 @@
+__pycache__/
+node_modules/
+tmp/
+
+# Generated report artifacts (local/CI scratch outputs)
+reports/**/*.log
+reports/bootstrap_readiness/**
+reports/open_blocker_audit/**
+reports/activation_preflight/**
+spec/planning/evidence/**/*.log
+
+# Milestone execution scratch evidence (not source-controlled)
+artifacts/tooling/**
+artifacts/compilation/**
+artifacts/bin/**

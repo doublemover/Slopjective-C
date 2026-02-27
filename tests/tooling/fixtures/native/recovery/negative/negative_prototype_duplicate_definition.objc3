@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S200.
+module NegativePrototypeDuplicateDefinition;
+
+fn tick() -> i32;
+fn tick() -> i32 {
+  return 1;
+}
+fn tick() -> i32 {
+  return 2;
+}
+
+fn main() -> i32 {
+  return tick();
+}

@@ -1,0 +1,18 @@
+{
+  "id": "META-XM-02",
+  "title": "Preserve macro expansion canonical output in textual interfaces",
+  "feature": "macro/derive expansion metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module MetaXM.objcmod --emit-interface MetaXM.obji %s\\n@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\n@interface XMFormatter : NSObject\\n- (NSString * _Nonnull)format:(int)value;\\n@end\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

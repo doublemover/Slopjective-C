@@ -1,0 +1,13 @@
+// Negative fixture: unresolved while-loop entry conditions remain conservative in function return-path analysis.
+// Expected diagnostic code(s): O3S205.
+module NegativeWhileCallConditionBodyReturnConservativeReject;
+
+fn predicate() -> i32 {
+  return 1;
+}
+
+fn main() -> i32 {
+  while (predicate()) {
+    return 42;
+  }
+}

@@ -1,0 +1,7 @@
+# Compound assignment in for-step lowering markers.
+define i32 @main()
+for_cond_
+for_body_
+for_step_
+add i32
+ret i32

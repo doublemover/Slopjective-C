@@ -1,0 +1,25 @@
+{
+  "id": "M23-A006",
+  "title": "Accept M23 lane-A parser fixture baseline for issue #2617 task M23-A006 (Harden source-location fidelity (Regression Closure))",
+  "feature": "m23 lane a parser end to end compilation artifact emission harden source location fidelity regression closure slice 06",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "A",
+    "issue": 2617,
+    "task": "M23-A006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_M23_A006_HARDEN_SOURCE_LOCATION_FIDELITY_REGRESSION_CLOSUR__\\n#define __OBJC3_FEATURE_M23_A006_HARDEN_SOURCE_LOCATION_FIDELITY_REGRESSION_CLOSUR__ 1\\n#endif\\n\\ntypedef struct M23A006_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23A006_Probe;\\n\\nM23A006_Probe m23a006_probe(void) {\\n#if __OBJC3_FEATURE_M23_A006_HARDEN_SOURCE_LOCATION_FIDELITY_REGRESSION_CLOSUR__\\n    M23A006_Probe probe = { 1, 6, 2617 };\\n#else\\n    M23A006_Probe probe = { 0, 6, 2617 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

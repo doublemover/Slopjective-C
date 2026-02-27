@@ -1,0 +1,28 @@
+{
+  "id": "M03-B001",
+  "title": "Define semantic rule matrix slice with explicit positive and negative controls",
+  "feature": "M03 lane B issue #1268 semantic rule matrix contract definition",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/planning/compiler/m03/lane_b_m03_scope_freeze.md"
+  ],
+  "source": "id _Nonnull m03b001_require_nonnull(id _Nonnull value);\nid _Nullable m03b001_maybe_value(void);\n\nid _Nonnull m03b001_positive(void) {\n    id _Nullable maybe = m03b001_maybe_value();\n    if (maybe != nil) {\n        return m03b001_require_nonnull(maybe);\n    }\n    return (id _Nonnull)@\"fallback\";\n}\n\nid _Nonnull m03b001_negative(void) {\n    id _Nullable maybe = m03b001_maybe_value();\n    return m03b001_require_nonnull(maybe);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-NULLABILITY-NULLABLE-TO-NONNULL",
+        "severity": "error",
+        "span": {
+          "start": { "line": 14, "column": 12 },
+          "end": { "line": 14, "column": 40 }
+        },
+        "message": "cannot pass nullable argument to nonnull parameter without an explicit check"
+      }
+    ]
+  }
+}

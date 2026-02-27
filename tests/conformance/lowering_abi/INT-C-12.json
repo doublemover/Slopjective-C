@@ -1,0 +1,79 @@
+{
+  "id": "INT-C-12",
+  "title": "Preserve Objective-C runtime selector compatibility while exporting async throws method surfaces as C thunks",
+  "feature": "C/ObjC runtime interop for async/throws ABI surfaces",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 --emit-module INTC12.objcmod --emit-interface INTC12.obji %s\\n// RUN: objc3c --verify-interface INTC12.objcmod INTC12.obji %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC12Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\n@interface INTC12Service : NSObject\\n- (id _Nullable)compute:(int)token async throws;\\n@end\\n\\nvoid intc12_service_compute_async_c(INTC12Service * _Nonnull service,\\n                                    int token,\\n                                    void * _Nullable context,\\n                                    INTC12Completion _Nonnull completion);\\n\\nSEL intc12_runtime_selector(void) {\\n    return @selector(compute:);\\n}\\n\\ntypedef struct INTC12Probe {\\n    int callbackCount;\\n    objc_async_completion_status_t lastStatus;\\n    id<Error> _Nullable lastError;\\n} INTC12Probe;\\n\\nvoid intc12_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC12Probe *probe = (INTC12Probe *)context;\\n    probe->callbackCount = probe->callbackCount + 1;\\n    probe->lastStatus = status;\\n    probe->lastError = error;\\n    (void)result;\\n}\\n\\nvoid intc12_start_probe(INTC12Service *service, int token, INTC12Probe *probe) {\\n    probe->callbackCount = 0;\\n    intc12_service_compute_async_c(service, token, probe, intc12_probe_callback);\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "Objective-C method selector surface remains compute: while C thunk exports async throws behavior through canonical completion ABI",
+            "C thunk for method export preserves trailing context and completion parameters after source method arguments",
+            "status/error mapping for method thunk matches async-throws C boundary invariants for success, failure, and cancellation",
+            "separate compilation preserves callable method thunk declaration for C and Objective-C translation units"
+          ],
+          "runtime_assertions": [
+            "intc12_runtime_selector resolves to @selector(compute:) without async/throws ABI suffix changes",
+            "intc12_probe_callback executes exactly once per thunk invocation and observes stable status/error contract"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized lowering preserves selector-surface and method-thunk ABI split from -O0",
+            "optimized lowering preserves separate-compilation compatibility for exported method thunk signatures",
+            "optimized lowering preserves status/error invariants for async throws method callbacks"
+          ],
+          "runtime_assertions": [
+            "selector identity and exactly-once callback behavior remain stable under optimization",
+            "status/error observations in callback remain equivalent to -O0"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.objc_method_async_c_thunk_signature",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "method-exported thunk uses canonical async completion signature and trailing context/completion order",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "objc_selector_surface_vs_async_throws_abi",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "selector spelling remains source-level while ABI details live in lowered call surface and metadata",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

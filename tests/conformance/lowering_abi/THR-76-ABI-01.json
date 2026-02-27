@@ -1,0 +1,69 @@
+{
+  "id": "THR-76-ABI-01",
+  "title": "Lower throwing functions with stable trailing error-out ABI across optimization modes",
+  "feature": "stable throws ABI lowering contract",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/DECISIONS_LOG.md#decisions-d-009",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n@interface THR76Service : NSObject\n- (id _Nonnull)load:(id _Nonnull)seed throws;\n@end\n\n@implementation THR76Service\n- (id _Nonnull)load:(id _Nonnull)seed throws {\n    return seed;\n}\n@end\n\nid _Nonnull thr76_identity(id _Nonnull value) throws {\n    return value;\n}\n\nid _Nonnull thr76_dispatch(THR76Service * _Nonnull service,\n                           id _Nonnull seed) throws {\n    id _Nonnull direct = try thr76_identity(seed);\n    return try [service load:direct];\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "throwing calls lower with a trailing id<Error> _Nullable * _Nullable outError argument",
+            "success path clears outError to nil before observable return",
+            "error path stores thrown object into outError and returns an unspecified payload value"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "throws call ABI remains the same as -O0 with trailing outError placement",
+            "optimization preserves outError success/failure store semantics",
+            "optimized lowering does not fold away required throw-effect ABI edges"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "throws_calling_convention",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "trailing id<Error> _Nullable * _Nullable outError parameter in call ABI",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "throws_error_out_store_rules",
+          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-009",
+          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "success stores nil and failure stores thrown error through outError when non-null",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

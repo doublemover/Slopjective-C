@@ -1,0 +1,32 @@
+{
+  "id": "PERF-LEG-01",
+  "title": "Reject category declarations that collide with objc_direct selectors",
+  "feature": "category legality for direct methods",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-3",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-5-1",
+    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-8",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "@interface PERFLEG01Root : NSObject\n- (int)directToken __attribute__((objc_direct));\n@end\n\n@interface PERFLEG01Root (CollidingCategory)\n- (int)directToken;\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-PERF-DIRECT-CATEGORY-COLLISION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 3 },
+          "end": { "line": 6, "column": 19 }
+        },
+        "message": "category method 'directToken' collides with an existing objc_direct selector on PERFLEG01Root"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+// Negative fixture: malformed continue statement missing ';'.
+// Expected diagnostic code(s): O3P104.
+module NegativeLoopControlParserContinueMissingSemicolon;
+
+fn main() -> i32 {
+  while (1) {
+    continue
+  }
+  return 0;
+}

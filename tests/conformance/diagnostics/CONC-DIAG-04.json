@@ -1,0 +1,31 @@
+{
+  "id": "CONC-DIAG-04",
+  "title": "Reject objc_nonisolated members that read actor-isolated mutable state",
+  "feature": "nonisolated isolation-boundary diagnostics",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "actor class CONCDIAG04Store : NSObject\n@property (atomic) int state;\n- (int)snapshot __attribute__((objc_nonisolated));\n@end\n\n@implementation CONCDIAG04Store\n- (int)snapshot {\n    return self.state;\n}\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONISOLATED-ISOLATED-ACCESS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 8, "column": 12 },
+          "end": { "line": 8, "column": 22 }
+        },
+        "message": "objc_nonisolated members may not access actor-isolated mutable state without an explicit hop"
+      }
+    ]
+  }
+}

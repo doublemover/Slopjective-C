@@ -1,0 +1,19 @@
+{
+  "id": "BRW-POS-04",
+  "title": "Accept temporary local stack assignments that do not outlive owner lifetime",
+  "feature": "borrowed pointer escape analysis (intra-procedural minimum)",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+  ],
+  "source": "borrowed const char *brw_window(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));\nvoid brw_consume(const char *bytes);\n\nvoid brw_pos04_local_stack_assignment(id owner) {\n    borrowed const char *bytes = brw_window(owner);\n    const char *local = bytes;\n    brw_consume(local);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

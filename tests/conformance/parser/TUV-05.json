@@ -1,0 +1,35 @@
+{
+  "id": "TUV-05",
+  "title": "Reject source language version conflicting with command-line selection",
+  "feature": "translation-unit language mode selection",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(2)\nint selectedMode(void) {\n    return 2;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-LANGVERSION-CONFLICT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 31 },
+          "end": { "line": 1, "column": 32 }
+        },
+        "message": "source language version conflicts with command-line translation-unit selection",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 31 },
+              "end": { "line": 1, "column": 32 }
+            },
+            "replacement": "3"
+          }
+        ]
+      }
+    ]
+  }
+}

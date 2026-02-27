@@ -1,0 +1,20 @@
+{
+  "id": "LIFE-02",
+  "title": "Accept keepAlive lexical-scope extension for borrowed values derived from local owners",
+  "feature": "explicit lifetime control semantics",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2"
+  ],
+  "source": "id life90_make_owner(void);\nborrowed const char *life90_slice(id owner) __attribute__((objc_returns_borrowed(owner_index=0)));\nvoid life90_use(const char *bytes);\n\nvoid life02_keep_alive_scope(void) {\n    id owner = life90_make_owner();\n    borrowed const char *bytes = life90_slice(owner);\n    keepAlive(owner);\n    life90_use(bytes);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

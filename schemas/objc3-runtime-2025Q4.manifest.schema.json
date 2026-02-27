@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.objc3.dev/conformance/objc3-runtime-2025Q4.manifest.schema.json",
+  "title": "objc3-runtime-2025Q4 Manifest (Schema Fragment)",
+  "description": "JSON Schema fragment for the objc3-runtime-2025Q4 artifact manifest used by conformance reporting.",
+  "$comment": "Issue #115 (v0.11-A01). Runtime-specific fragment intended for composition into a broader artifact-manifest schema.",
+  "$ref": "#/$defs/runtimeManifest",
+  "$defs": {
+    "sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "utcTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "artifactEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "path",
+        "media_type",
+        "size_bytes",
+        "sha256"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "runtime-library",
+            "headers",
+            "symbol-map",
+            "metadata"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9._\\-/]+$"
+        },
+        "media_type": {
+          "type": "string",
+          "pattern": "^[a-z]+/[a-z0-9.+-]+$"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256Digest"
+        }
+      }
+    },
+    "runtimeManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_id",
+        "artifact_id",
+        "release_stamp",
+        "manifest_version",
+        "generated_at",
+        "producer",
+        "target",
+        "normative_reference",
+        "artifacts",
+        "invariants",
+        "capabilities"
+      ],
+      "properties": {
+        "schema_id": {
+          "type": "string",
+          "const": "objc3-runtime-artifact-manifest/v1"
+        },
+        "artifact_id": {
+          "type": "string",
+          "const": "objc3-runtime-2025Q4"
+        },
+        "release_stamp": {
+          "type": "string",
+          "const": "2025Q4"
+        },
+        "manifest_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "generated_at": {
+          "$ref": "#/$defs/utcTimestamp"
+        },
+        "producer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "build_id"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+            },
+            "build_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9._-]+$",
+              "minLength": 3,
+              "maxLength": 64
+            }
+          }
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "runtime_family",
+            "os",
+            "arch",
+            "abi"
+          ],
+          "properties": {
+            "runtime_family": {
+              "type": "string",
+              "const": "objc3"
+            },
+            "os": {
+              "type": "string",
+              "enum": [
+                "darwin",
+                "linux",
+                "windows"
+              ]
+            },
+            "arch": {
+              "type": "string",
+              "enum": [
+                "arm64",
+                "x86_64"
+              ]
+            },
+            "abi": {
+              "type": "string",
+              "pattern": "^[a-z0-9_+.-]+$",
+              "minLength": 3,
+              "maxLength": 64
+            }
+          }
+        },
+        "normative_reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "canonical_ref",
+            "date_stamp",
+            "commit_or_artifact_hash"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "const": "NR-OBJC-RUNTIME"
+            },
+            "canonical_ref": {
+              "type": "string",
+              "const": "objc3-runtime-2025Q4"
+            },
+            "date_stamp": {
+              "type": "string",
+              "const": "2025Q4"
+            },
+            "commit_or_artifact_hash": {
+              "$ref": "#/$defs/sha256Digest"
+            }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/artifactEntry"
+          }
+        },
+        "invariants": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deterministic_ordering",
+            "reproducible",
+            "source_date_epoch"
+          ],
+          "properties": {
+            "deterministic_ordering": {
+              "type": "boolean",
+              "const": true
+            },
+            "reproducible": {
+              "type": "boolean"
+            },
+            "source_date_epoch": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^objc3\\.runtime\\.[a-z0-9_.]+\\.v[0-9]+$"
+          }
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    }
+  }
+}

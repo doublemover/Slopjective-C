@@ -1,0 +1,60 @@
+{
+  "id": "BRW-META-03",
+  "title": "Reject strict-system import when borrowed/lifetime metadata is missing",
+  "feature": "borrowed/lifetime metadata preservation",
+  "bucket": "module_roundtrip",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-3",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict-system --emit-module BRWMETA03.objcmod --emit-interface BRWMETA03.obji %s\n// RUN: objc3c --verify-interface BRWMETA03-missing-meta.objcmod BRWMETA03.obji --assert-mismatch borrowed:missing --assert-mismatch objc_returns_borrowed(owner_index=0):missing\nborrowed const char *borrow_payload(const char *owner, unsigned long offset) __attribute__((objc_returns_borrowed(owner_index=0)));\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 178
+          }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "metadata": {
+      "preserved_fields": [
+        "borrowed_pointer_qualifier",
+        "objc_returns_borrowed_owner_index"
+      ],
+      "mismatch_failures": [
+        {
+          "field_id": "borrowed_pointer_qualifier",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "objc_returns_borrowed_owner_index",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+// Negative fixture: declaration qualifiers are invalid in message selector positions.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierMessageSelectorHeadExtern;
+
+fn main() -> i32 {
+  let receiver = 1;
+  return [receiver extern];
+}

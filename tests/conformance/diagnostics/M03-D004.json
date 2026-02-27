@@ -1,0 +1,29 @@
+{
+  "id": "M03-D004",
+  "title": "Scope-freeze baseline: mismatch drift detection keeps stable payload mapping",
+  "feature": "M03 lane D diagnostic payload/code mapping freeze",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m03/lane_d_m03_scope_freeze.md"
+  ],
+  "source": "void m03d004_expect_code(id code);\n\nvoid m03d004_negative(void) {\n    m03d004_expect_code(@\"OBJC3-D-CONFORMANCE-MAP-LEGACY\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 23 },
+          "end": { "line": 4, "column": 55 }
+        },
+        "message": "expected diagnostic code does not match emitted payload; drift is fail-closed until explicitly rebaselined",
+        "fixits": []
+      }
+    ]
+  }
+}

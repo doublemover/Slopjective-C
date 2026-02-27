@@ -1,0 +1,11 @@
+# Do-while lowering markers.
+define i32 @main()
+br label %do_body_0
+do_body_0:
+store i32 %t3, ptr %i.addr.0, align 4
+store i32 %t6, ptr %sum.addr.1, align 4
+do_cond_1:
+label %do_body_0, label %do_end_2
+do_end_2:
+ret i32 %t11
+

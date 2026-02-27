@@ -1,0 +1,27 @@
+{
+  "id": "DIAG-GRP-05",
+  "title": "Concurrency group keeps capture diagnostics at warning severity in non-strict-concurrency mode",
+  "feature": "minimum diagnostic groups: concurrency profile-aware severities",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -fobjc3-concurrency=off -fsyntax-only %s\nvoid spawnDetached(void (^operation)(void));\nvoid useSharedState(id value);\n\nasync void diaggrp05_warn_capture(id sharedState) {\n    spawnDetached(^{\n        useSharedState(sharedState);\n    });\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-CAPTURE",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 9 },
+          "end": { "line": 7, "column": 35 }
+        },
+        "message": "concurrency-only diagnostics follow non-strict-concurrency policy when -fobjc3-concurrency=off"
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "parameter_bool_generic_suffix_unsupported.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "generic parameter type suffix '<NSObject>' is unsupported for non-id/Class/instancetype parameter annotation 'flag'"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

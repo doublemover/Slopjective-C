@@ -1,0 +1,19 @@
+{
+  "id": "CAP-04",
+  "title": "Accept strong/weak/unowned reference capture semantics",
+  "feature": "capture storage semantics for reference modifiers",
+  "bucket": "semantic",
+  "profile": "strict-system",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-5",
+    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-3-2"
+  ],
+  "source": "void cap04_consume(id value);\n\nvoid cap04_reference_capture_semantics(id _Nonnull owner, id _Nullable maybeOwner, id _Nonnull delegate) {\n    void (^handler)(void) = [strong owner, weak maybeOwner, unowned delegate] {\n        cap04_consume(owner);\n        if (maybeOwner) {\n            cap04_consume(maybeOwner);\n        }\n        cap04_consume(delegate);\n    };\n    handler();\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

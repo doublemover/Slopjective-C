@@ -1,0 +1,6 @@
+module UnaryPlusBoolOperand;
+
+fn main() -> i32 {
+  let flag = true;
+  return +flag;
+}

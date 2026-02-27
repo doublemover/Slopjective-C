@@ -1,0 +1,25 @@
+{
+  "id": "M09-A001",
+  "title": "Accept M09 lane-A parser fixture baseline for issue #1574 task M09-A001 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m09 lane-a parser feature-test macro engine slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M09",
+    "milestone_number": 94,
+    "lane": "A",
+    "issue": 1574,
+    "task": "M09-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_TEST_MACRO_ENGINE__\n#define __OBJC3_FEATURE_TEST_MACRO_ENGINE__ 1\n#endif\n\ntypedef struct M09A001_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M09A001_Probe;\n\nM09A001_Probe m09a001_probe(void) {\n#if __OBJC3_FEATURE_TEST_MACRO_ENGINE__\n    M09A001_Probe probe = { 1, 1, 1574 };\n#else\n    M09A001_Probe probe = { 0, 1, 1574 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

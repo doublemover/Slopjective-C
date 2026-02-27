@@ -1,0 +1,11 @@
+module PrototypeDeclThenDefinition;
+
+fn add(lhs: i32, rhs: i32) -> i32;
+
+fn add(lhs: i32, rhs: i32) -> i32 {
+  return lhs + rhs;
+}
+
+fn main() -> i32 {
+  return add(20, 22);
+}

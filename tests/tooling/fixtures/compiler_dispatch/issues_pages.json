@@ -1,0 +1,146 @@
+[
+  [
+    {
+      "number": 1172,
+      "title": "[Compiler][M01][Lane A][M01-A001] Define command/grammar contract slice (Contract Definition)",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:A"
+        }
+      ]
+    },
+    {
+      "number": 1181,
+      "title": "[Compiler][M01][Lane B][M01-B001] Define semantic rule matrix slice (Contract Definition)",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:B"
+        }
+      ]
+    },
+    {
+      "number": 1189,
+      "title": "[Compiler][M01][Lane C][M01-C001] Define lowering/ABI contract slice (Contract Definition)",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:C"
+        }
+      ]
+    },
+    {
+      "number": 1197,
+      "title": "[Compiler][M01][Lane D][M01-D001] Define diagnostics/conformance contract slice (Contract Definition)",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:D"
+        }
+      ]
+    },
+    {
+      "number": 1205,
+      "title": "[Compiler][M01][Lane E][M01-E001] Define tooling/CI contract slice (Contract Definition)",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:E"
+        }
+      ]
+    },
+    {
+      "number": 1213,
+      "title": "[Compiler][M01][INT-RG-01] Cross-lane regroup, soundness gate, and milestone closure readiness",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:INT"
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "number": 1301,
+      "title": "[Compiler][M02][Lane A][M02-A001] Define driver invocation contract slice (Contract Definition)",
+      "milestone": {
+        "number": 87,
+        "title": "M02 objc3c Driver and Invocation Surface"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:A"
+        }
+      ]
+    },
+    {
+      "number": 1309,
+      "title": "[Compiler][M02][INT-RG-01] Cross-lane regroup, soundness gate, and milestone closure readiness",
+      "milestone": {
+        "number": 87,
+        "title": "M02 objc3c Driver and Invocation Surface"
+      },
+      "labels": [
+        {
+          "name": "compiler-impl"
+        },
+        {
+          "name": "lane:INT"
+        }
+      ]
+    },
+    {
+      "number": 9999,
+      "title": "PR mirror row that should be ignored",
+      "milestone": {
+        "number": 86,
+        "title": "M01 Compiler Charter and Core/Strict Scope Freeze"
+      },
+      "labels": [],
+      "pull_request": {
+        "url": "https://api.github.com/repos/example/pulls/1"
+      }
+    }
+  ]
+]

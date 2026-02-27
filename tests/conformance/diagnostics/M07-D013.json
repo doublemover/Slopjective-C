@@ -1,0 +1,50 @@
+{
+  "id": "M07-D013",
+  "title": "Issue #1513 / M07-D013: Scope-freeze baseline: extension negative-path oracle expansion keeps stable payload mapping",
+  "feature": "M07 lane D diagnostic payload/code mapping freeze (issue #1513, task M07-D013)",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m07/lane_d_m07_scope_freeze.md",
+    "spec/planning/compiler/m07/lane_d_m07_execution_packet_20260226.md"
+  ],
+  "source": "void m07d013_oracle(id lhs, id rhs);`n`nvoid m07d013_negative(void) {`n    m07d013_oracle(@\"oracle=unset\", @\"path=none\");`n}`n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-ORACLE-EXTENSION-PATH-REQUIRED",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 35
+          },
+          "end": {
+            "line": 4,
+            "column": 47
+          }
+        },
+        "message": "issue #1513 task M07-D013: extension oracle path token must be canonical for M07 diagnostics replay",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 4,
+                "column": 35
+              },
+              "end": {
+                "line": 4,
+                "column": 47
+              }
+            },
+            "replacement": "@\"path=canonical-extension\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "open_blocker_count": 1,
+  "open_blockers": [
+    {
+      "blocker_id": "BLK-100-01",
+      "source_path": "spec/planning/example.md",
+      "line_number": 14,
+      "line": 12
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3L003.
+module NegativeBlockCommentLexerNested;
+
+/* outer block comment
+   /* nested block comment */
+*/
+fn main() -> i32 {
+  return 0;
+}

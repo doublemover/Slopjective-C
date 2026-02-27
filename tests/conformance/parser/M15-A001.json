@@ -1,0 +1,25 @@
+{
+  "id": "M15-A001",
+  "title": "Accept M15 lane-A parser fixture baseline for issue #1896 task M15-A001 (Define command/grammar contract slice (Contract Definition))",
+  "feature": "m15 lane-a parser interface verifier and drift diagnostics slice 01",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M15",
+    "milestone_number": 100,
+    "lane": "A",
+    "issue": 1896,
+    "task": "M15-A001",
+    "sequence": 1
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_CONTRACT_SLICE__\n#define __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_CONTRACT_SLICE__ 1\n#endif\n\ntypedef struct M15A001_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M15A001_Probe;\n\nM15A001_Probe m15a001_probe(void) {\n#if __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_CONTRACT_SLICE__\n    M15A001_Probe probe = { 1, 1, 1896 };\n#else\n    M15A001_Probe probe = { 0, 1, 1896 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

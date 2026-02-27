@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "fixture": "prototype_unresolved_external.objc3",
+  "expect_failure": {
+    "stage": "link",
+    "required_diagnostic_tokens": [
+      "external_add"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

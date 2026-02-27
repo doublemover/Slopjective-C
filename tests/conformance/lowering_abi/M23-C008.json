@@ -1,0 +1,26 @@
+{
+  "id": "M23-C008",
+  "title": "Stabilize lowering integration surfaces (Integration Surface Stabilization) (issue #2648 / task M23-C008)",
+  "feature": "m23 lane-c end to end compilation and artifact emission stabilize lowering integration surfaces integration surface stabilization slice 08",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M23",
+    "milestone_number": 108,
+    "lane": "C",
+    "issue": 2648,
+    "task": "M23-C008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M23_C_008_STABILIZE_LOWERING_INTEGRATION_SURFACES_INTEGRATION_SURF__\\n#define __OBJC3_FEATURE_M23_C_008_STABILIZE_LOWERING_INTEGRATION_SURFACES_INTEGRATION_SURF__ 1\\n#endif\\n\\ntypedef struct M23C008_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M23C008_Probe;\\n\\nM23C008_Probe m23c008_probe(void) {\\n#if __OBJC3_FEATURE_M23_C_008_STABILIZE_LOWERING_INTEGRATION_SURFACES_INTEGRATION_SURF__\\n    M23C008_Probe probe = { 1, 8, 2648 };\\n#else\\n    M23C008_Probe probe = { 0, 8, 2648 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

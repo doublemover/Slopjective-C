@@ -1,0 +1,137 @@
+{
+  "id": "EC-OPTSP-05",
+  "title": "Diagnose nested non-canonical optional spellings per occurrence",
+  "feature": "optional spelling",
+  "bucket": "diagnostics",
+  "profile": "core",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-6",
+    "spec/planning/issue_134_optional_spelling_diagnostics_package.md#issue-134-optional-spelling-diagnostics-package"
+  ],
+  "source": "optional<optional<int>> nest(optional<optional<int>> input) {\n    return input;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OPT-SPELL-NONCANON",
+        "severity": "warning",
+        "span": {
+          "start": {
+            "line": 1,
+            "column": 1
+          },
+          "end": {
+            "line": 1,
+            "column": 9
+          }
+        },
+        "message": "non-canonical optional spelling in compatibility mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "line": 1,
+                "column": 9
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      },
+      {
+        "code": "OPT-SPELL-NONCANON",
+        "severity": "warning",
+        "span": {
+          "start": {
+            "line": 1,
+            "column": 10
+          },
+          "end": {
+            "line": 1,
+            "column": 18
+          }
+        },
+        "message": "non-canonical optional spelling in compatibility mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 1,
+                "column": 10
+              },
+              "end": {
+                "line": 1,
+                "column": 18
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      },
+      {
+        "code": "OPT-SPELL-NONCANON",
+        "severity": "warning",
+        "span": {
+          "start": {
+            "line": 1,
+            "column": 30
+          },
+          "end": {
+            "line": 1,
+            "column": 38
+          }
+        },
+        "message": "non-canonical optional spelling in compatibility mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 1,
+                "column": 30
+              },
+              "end": {
+                "line": 1,
+                "column": 38
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      },
+      {
+        "code": "OPT-SPELL-NONCANON",
+        "severity": "warning",
+        "span": {
+          "start": {
+            "line": 1,
+            "column": 39
+          },
+          "end": {
+            "line": 1,
+            "column": 47
+          }
+        },
+        "message": "non-canonical optional spelling in compatibility mode",
+        "fixits": [
+          {
+            "range": {
+              "start": {
+                "line": 1,
+                "column": 39
+              },
+              "end": {
+                "line": 1,
+                "column": 47
+              }
+            },
+            "replacement": "Optional"
+          }
+        ]
+      }
+    ]
+  }
+}

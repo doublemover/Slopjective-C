@@ -1,0 +1,500 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/registries/experimental_extensions/index.schema.json",
+  "title": "Experimental Extension Registry Index",
+  "description": "Schema and governance compatibility validation contract for V013-GOV-02.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "generated_at_utc",
+    "governance_contract",
+    "extensions"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "registry_id": {
+      "type": "string",
+      "const": "experimental_extensions"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "governance_contract": {
+      "$ref": "#/$defs/governance_contract"
+    },
+    "extensions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/extension_entry"
+      }
+    }
+  },
+  "$defs": {
+    "extension_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extension_id",
+        "extension_version",
+        "lifecycle_state",
+        "compatibility"
+      ],
+      "properties": {
+        "extension_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]*$"
+        },
+        "extension_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "lifecycle_state": {
+          "type": "string",
+          "enum": [
+            "experimental",
+            "provisional",
+            "stable",
+            "deprecated",
+            "retired"
+          ]
+        },
+        "compatibility": {
+          "$ref": "#/$defs/entry_compatibility"
+        }
+      }
+    },
+    "entry_compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "min_consumer_schema",
+        "max_consumer_schema",
+        "backward_policy",
+        "forward_policy",
+        "required_fields"
+      ],
+      "properties": {
+        "min_consumer_schema": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "max_consumer_schema": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "backward_policy": {
+          "type": "string",
+          "enum": [
+            "compatible",
+            "conditional",
+            "incompatible"
+          ]
+        },
+        "forward_policy": {
+          "type": "string",
+          "enum": [
+            "compatible",
+            "conditional",
+            "incompatible"
+          ]
+        },
+        "required_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        }
+      }
+    },
+    "governance_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_version",
+        "acceptance_gate_id",
+        "compatibility_matrix",
+        "required_field_policy",
+        "validators",
+        "waiver_policy",
+        "acceptance_checklist"
+      ],
+      "properties": {
+        "contract_version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "acceptance_gate_id": {
+          "type": "string",
+          "const": "AC-V013-GOV-02"
+        },
+        "compatibility_matrix": {
+          "type": "array",
+          "minItems": 8,
+          "items": {
+            "$ref": "#/$defs/compatibility_matrix_row"
+          }
+        },
+        "required_field_policy": {
+          "$ref": "#/$defs/required_field_policy"
+        },
+        "validators": {
+          "type": "array",
+          "minItems": 6,
+          "items": {
+            "$ref": "#/$defs/validator_contract"
+          }
+        },
+        "waiver_policy": {
+          "$ref": "#/$defs/waiver_policy"
+        },
+        "acceptance_checklist": {
+          "type": "array",
+          "minItems": 5,
+          "items": {
+            "$ref": "#/$defs/acceptance_checklist_item"
+          }
+        }
+      }
+    },
+    "compatibility_matrix_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matrix_id",
+        "change_class",
+        "schema_versioning_rule",
+        "required_field_rule",
+        "backward_result",
+        "forward_result",
+        "required_action",
+        "validator_ids"
+      ],
+      "properties": {
+        "matrix_id": {
+          "type": "string",
+          "pattern": "^CM-RC-[0-9]{2}$"
+        },
+        "change_class": {
+          "type": "string",
+          "enum": [
+            "patch_nonsemantic",
+            "minor_optional_addition",
+            "minor_enum_expansion",
+            "minor_required_addition",
+            "major_required_removal",
+            "major_required_rename_without_alias",
+            "unknown_major_input",
+            "required_field_type_drift"
+          ]
+        },
+        "schema_versioning_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_field_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "backward_result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "conditional",
+            "fail"
+          ]
+        },
+        "forward_result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "conditional",
+            "fail"
+          ]
+        },
+        "required_action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validator_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^VAL-RC-[0-9]{2}$"
+          }
+        }
+      }
+    },
+    "required_field_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_fields",
+        "missing_required_field_behavior",
+        "added_required_field_policy",
+        "removed_required_field_policy",
+        "incompatible_type_change_behavior"
+      ],
+      "properties": {
+        "required_fields": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "missing_required_field_behavior": {
+          "type": "string",
+          "enum": [
+            "hard_fail"
+          ]
+        },
+        "added_required_field_policy": {
+          "type": "string",
+          "enum": [
+            "major_only"
+          ]
+        },
+        "removed_required_field_policy": {
+          "type": "string",
+          "enum": [
+            "major_only_with_migration"
+          ]
+        },
+        "incompatible_type_change_behavior": {
+          "type": "string",
+          "enum": [
+            "hard_fail"
+          ]
+        }
+      }
+    },
+    "validator_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validator_id",
+        "command",
+        "expected_exit_code",
+        "deterministic_pass_signal",
+        "failure_escalation_level"
+      ],
+      "properties": {
+        "validator_id": {
+          "type": "string",
+          "enum": [
+            "VAL-RC-01",
+            "VAL-RC-02",
+            "VAL-RC-03",
+            "VAL-RC-04",
+            "VAL-RC-05",
+            "VAL-RC-06"
+          ]
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_exit_code": {
+          "type": "integer",
+          "const": 0
+        },
+        "deterministic_pass_signal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failure_escalation_level": {
+          "type": "string",
+          "enum": [
+            "E1",
+            "E2",
+            "E3",
+            "E4"
+          ]
+        }
+      }
+    },
+    "waiver_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "waiver_classes",
+        "non_waiverable_conditions",
+        "escalation_levels",
+        "max_waiver_duration_days",
+        "requires_owner_and_expiry",
+        "hard_block_on_expired_waiver"
+      ],
+      "properties": {
+        "waiver_classes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/waiver_class"
+          }
+        },
+        "non_waiverable_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "escalation_levels": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "$ref": "#/$defs/escalation_level"
+          }
+        },
+        "max_waiver_duration_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "requires_owner_and_expiry": {
+          "type": "boolean",
+          "const": true
+        },
+        "hard_block_on_expired_waiver": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "waiver_class": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "waiver_id",
+        "description",
+        "max_severity",
+        "approval_role"
+      ],
+      "properties": {
+        "waiver_id": {
+          "type": "string",
+          "pattern": "^WVR-RC-[0-9]{2}$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "max_severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium"
+          ]
+        },
+        "approval_role": {
+          "type": "string",
+          "enum": [
+            "governance-lane-owner",
+            "review-board-delegate",
+            "release-owner"
+          ]
+        }
+      }
+    },
+    "escalation_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "trigger",
+        "owner",
+        "response_sla",
+        "required_action"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "E1",
+            "E2",
+            "E3",
+            "E4"
+          ]
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_sla": {
+          "type": "string",
+          "pattern": "^(T\\+[0-9]+h|immediate)$"
+        },
+        "required_action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "acceptance_checklist_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checklist_id",
+        "criterion",
+        "deterministic_pass_rule",
+        "artifact_refs",
+        "status"
+      ],
+      "properties": {
+        "checklist_id": {
+          "type": "string",
+          "enum": [
+            "AC-V013-GOV-02-01",
+            "AC-V013-GOV-02-02",
+            "AC-V013-GOV-02-03",
+            "AC-V013-GOV-02-04",
+            "AC-V013-GOV-02-05"
+          ]
+        },
+        "criterion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deterministic_pass_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "pending"
+          ]
+        }
+      }
+    }
+  }
+}

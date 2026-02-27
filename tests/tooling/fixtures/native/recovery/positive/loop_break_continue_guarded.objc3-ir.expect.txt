@@ -1,0 +1,12 @@
+# Loop break/continue lowering determinism markers.
+define i32 @main()
+while_cond_0:
+while_body_1:
+if_then_3:
+br label %while_cond_0
+if_then_6:
+br label %while_end_2
+if_end_8:
+while_end_2:
+ret i32 %t23
+

@@ -1,0 +1,33 @@
+{
+  "id": "P0-P3-MANIFEST-FAIL-01",
+  "title": "Reject schema-mutated runtime or ABI manifest fixture",
+  "feature": "part0 runtime and abi manifest schema rejection",
+  "bucket": "spec_open_issues",
+  "profile": "core",
+  "profile_scope": "all",
+  "seed_alias": "S1-P0-MANIFEST",
+  "required_outcome": "required-fail",
+  "dependency_ref": "Part0:B-01,B-02,B-03,B-04@spec-baseline",
+  "references": [
+    "spec/FUTURE_WORK_V011.md",
+    "spec/planning/issue_149_lane_a_consolidated_closure_bundle.md",
+    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+  ],
+  "source": "{\\n  \\\"manifest_kind\\\": \\\"runtime\\\",\\n  \\\"schema_version\\\": \\\"broken-1\\\",\\n  \\\"artifacts\\\": [\\\"runtime.bin\\\"],\\n  \\\"signature\\\": null\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "MANIFEST-VALIDATION-SCHEMA-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 3 },
+          "end": { "line": 3, "column": 28 }
+        },
+        "message": "manifest schema_version is not compatible with required runtime/abi schema",
+        "fixits": []
+      }
+    ],
+    "signal": "MANIFEST-VALIDATION-SCHEMA-MISMATCH"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "IFC-54-01",
+  "title": "Emit deterministic textual interface and preserve semantics across round-trip import",
+  "feature": "textual interface emission mode",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-3-5",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module IFC5401.objcmod --emit-interface IFC5401.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: FileCheck %s --input-file=IFC5401.obji --check-prefix=IFC5401\n// RUN: objc3c --emit-module IFC5401-import.objcmod --import-interface IFC5401.obji --emit-interface IFC5401-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: diff -u IFC5401.obji IFC5401-roundtrip.obji\n// RUN: objc3c --verify-interface IFC5401.objcmod IFC5401-roundtrip.obji %s\n@interface IFC54Deterministic : NSObject\n- (id _Nonnull)tokenForKey:(NSString * _Nonnull)key;\n- (void)recordValue:(id _Nullable)value forKey:(NSString * _Nonnull)key;\n@end\n// IFC5401: module IFC54Deterministic\n// IFC5401: @interface IFC54Deterministic : NSObject\n// IFC5401: - (id _Nonnull)tokenForKey:(NSString * _Nonnull)key;\n// IFC5401: - (void)recordValue:(id _Nullable)value forKey:(NSString * _Nonnull)key;\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

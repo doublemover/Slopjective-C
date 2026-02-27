@@ -1,0 +1,25 @@
+{
+  "id": "M15-A010",
+  "title": "Accept M15 lane-A parser fixture baseline for issue #1905 task M15-A010 (Refactor parser pipeline for deterministic replay (CI/Automation Enforcement))",
+  "feature": "m15 lane-a parser interface verifier and drift diagnostics slice 10",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M15",
+    "milestone_number": 100,
+    "lane": "A",
+    "issue": 1905,
+    "task": "M15-A010",
+    "sequence": 10
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-8"
+  ],
+  "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_REPLAY_DETERMINISM__\n#define __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_REPLAY_DETERMINISM__ 1\n#endif\n\ntypedef struct M15A010_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M15A010_Probe;\n\nM15A010_Probe m15a010_probe(void) {\n#if __OBJC3_FEATURE_INTERFACE_VERIFIER_DRIFT_DIAGNOSTICS_REPLAY_DETERMINISM__\n    M15A010_Probe probe = { 1, 10, 1905 };\n#else\n    M15A010_Probe probe = { 0, 10, 1905 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

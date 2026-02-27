@@ -1,0 +1,6 @@
+// Positive fixture: bool main entrypoint ABI bridge lowers to i32 return in objc3c_entry.
+module MainBoolEntrypoint;
+
+fn main() -> bool {
+  return true;
+}

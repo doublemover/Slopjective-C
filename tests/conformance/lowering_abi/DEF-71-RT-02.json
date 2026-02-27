@@ -1,0 +1,67 @@
+{
+  "id": "DEF-71-RT-02",
+  "title": "Lower defer execution on exception unwind exits with LIFO and exactly-once guarantees",
+  "feature": "defer runtime/lowering unwind-exit semantics",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-2",
+    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2-5",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-2",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2-4",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-5"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fexceptions -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fexceptions -O2 -fsyntax-only %s\nint def71_unwind_exit_trace(void) {\n    int trace = 0;\n    int onceOuter = 0;\n    int onceInner = 0;\n    int onceLeaf = 0;\n\n    try {\n        defer { trace = trace * 10 + 1; onceOuter = onceOuter + 1; };\n        trace = 9;\n        {\n            defer { trace = trace * 10 + 2; onceInner = onceInner + 1; };\n            defer { trace = trace * 10 + 3; onceLeaf = onceLeaf + 1; };\n            throw 71;\n        }\n    } catch (...) {\n        trace = trace * 10 + 7;\n    }\n\n    if (onceOuter != 1 || onceInner != 1 || onceLeaf != 1) {\n        return -1;\n    }\n\n    // Unwind across nested cleanup scopes must run 3, then 2, then 1 before catch.\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc-arc",
+            "-fexceptions",
+            "-O0"
+          ],
+          "defer_requirements": [
+            "exception unwind across nested cleanup scopes executes defer actions in reverse registration order (3, 2, 1)",
+            "each registered defer action executes exactly once during unwind",
+            "catch observes completion of all unwind defer actions before handler logic"
+          ],
+          "runtime_assertions": [
+            "def71_unwind_exit_trace returns 93217",
+            "function returns -1 if any unwind defer action executes zero or multiple times"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-x objective-c++",
+            "-fobjc-arc",
+            "-fexceptions",
+            "-O2"
+          ],
+          "defer_requirements": [
+            "optimization preserves unwind defer LIFO ordering",
+            "optimization preserves exactly-once cleanup execution on unwind paths"
+          ],
+          "runtime_assertions": [
+            "def71_unwind_exit_trace still returns 93217 under optimization",
+            "no duplicated cleanup execution appears on exceptional exit lowering"
+          ]
+        }
+      ]
+    }
+  }
+}

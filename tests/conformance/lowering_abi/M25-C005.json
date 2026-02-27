@@ -1,0 +1,27 @@
+{
+  "id": "M25-C005",
+  "title": "Enforce canonical lowering normalization (Determinism Proof) (issue #2789 / task M25-C005)",
+  "feature": "m25 lane-c objective-c 3 message dispatch lowering and direct llvm ir emission enforce canonical lowering normalization determinism proof",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M25",
+    "milestone_number": 110,
+    "lane": "C",
+    "issue": 2789,
+    "task": "M25-C005",
+    "sequence": 5
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M25_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMINISM_PROOF__\n#define __OBJC3_FEATURE_M25_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMINISM_PROOF__ 1\n#endif\n\ntypedef struct M25C005_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M25C005_Probe;\n\nM25C005_Probe m25c005_probe(void) {\n#if __OBJC3_FEATURE_M25_C_005_ENFORCE_CANONICAL_LOWERING_NORMALIZATION_DETERMINISM_PROOF__\n    M25C005_Probe probe = { 1, 5, 2789 };\n#else\n    M25C005_Probe probe = { 0, 5, 2789 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

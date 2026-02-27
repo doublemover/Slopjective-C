@@ -1,0 +1,1 @@
+error: catalog task row 0 field 'execution_status_evidence_refs[0]' must reference lane-B evidence under 'spec/planning/evidence/lane_b/' in tests/tooling/fixtures/activation_triggers/hard_fail_catalog_dispatch_evidence_ref_outside_lane_b/catalog.json

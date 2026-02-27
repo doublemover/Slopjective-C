@@ -1,0 +1,10 @@
+module SwitchStaticLiteralConditionSelectedReturnAccept;
+
+fn main() -> i32 {
+  switch (1) {
+    case 1:
+      return 42;
+    default:
+      let fallback = 7;
+  }
+}

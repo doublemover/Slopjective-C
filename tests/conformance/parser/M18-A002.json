@@ -1,0 +1,25 @@
+{
+  "id": "M18-A002",
+  "title": "Accept M18 lane-A parser fixture baseline for issue #2253 task M18-A002 (Implement parser/frontend execution slice (Primary Implementation))",
+  "feature": "m18 lane-a parser correctness hardening determinism closure core strict execution slice 02",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M18",
+    "milestone_number": 103,
+    "lane": "A",
+    "issue": 2253,
+    "task": "M18-A002",
+    "sequence": 2
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-9",
+    "spec/PROJECT_WIDE_GLOSSARY.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_EXECUTION_SLICE_S002__\\n#define __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_EXECUTION_SLICE_S002__ 1\\n#endif\\n\\ntypedef struct M18A002_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M18A002_Probe;\\n\\nM18A002_Probe m18a002_probe(void) {\\n#if __OBJC3_FEATURE_CORRECTNESS_HARDENING_DETERMINISM_CLOSURE_CORE_STRICT_EXECUTION_SLICE_S002__\\n    M18A002_Probe probe = { 1, 2, 2253 };\\n#else\\n    M18A002_Probe probe = { 0, 2, 2253 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

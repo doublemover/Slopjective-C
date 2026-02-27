@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeAssignmentParserMalformedShiftRightAssignTokenization;
+
+fn main() -> i32 {
+  let value = 8;
+  value >> = 1;
+  return value;
+}

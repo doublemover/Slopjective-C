@@ -1,0 +1,12 @@
+module LoopWhileSum;
+
+fn main() -> i32 {
+  let i = 0;
+  let sum = 0;
+  while (i < 6) {
+    let sum = sum + i;
+    let i = i + 1;
+  }
+  return sum;
+}
+

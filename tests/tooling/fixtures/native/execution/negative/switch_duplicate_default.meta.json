@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "switch_duplicate_default.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "duplicate default label in switch"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "id": "EC-POSTFIXQ-05",
+  "title": "Reject nil-to-throw conversion through postfix propagation",
+  "feature": "postfix ?",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "int parseValue(NSNumber * _Nullable value) throws {\n    return value?;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-POSTFIXQ-CARRIER-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 18 }
+        },
+        "message": "carrier-preserving propagation forbids implicit nil to error conversion",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 18 }
+            },
+            "replacement": "value != nil ? [value intValue] : ({ throw NilValueError(); })"
+          }
+        ]
+      }
+    ]
+  }
+}

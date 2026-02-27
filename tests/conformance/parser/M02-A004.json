@@ -1,0 +1,28 @@
+{
+  "id": "M02-A004",
+  "title": "Reject nil-coalescing operator without a right-hand expression",
+  "feature": "parser recovery and ambiguity-guard diagnostics",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id m02a004_recovery(id _Nullable value, id fallback) {\n    return value ?? ;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-NILCOALESCE-EXPECTED-RHS",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 18 },
+          "end": { "line": 2, "column": 21 }
+        },
+        "message": "expected expression after nil-coalescing operator '??'",
+        "fixits": []
+      }
+    ]
+  }
+}

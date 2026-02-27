@@ -1,0 +1,13 @@
+// Positive fixture: nil reassignment elision preserves i32-compatible semantic expression flow.
+module MessageSendNilReceiverSemanticCompatibility;
+
+fn main() {
+  let receiver = 1;
+  receiver = nil;
+  let sent = [receiver ping];
+  let eq = sent == 0;
+  if (eq) {
+    return sent + 11;
+  }
+  return 99;
+}

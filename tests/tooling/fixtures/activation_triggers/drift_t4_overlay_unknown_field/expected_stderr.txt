@@ -1,0 +1,1 @@
+error: T4 governance overlay JSON object contains unexpected field(s) ['unexpected']; allowed fields are ['t4_new_scope_publish', 'T4_NEW_SCOPE_PUBLISH']

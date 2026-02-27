@@ -1,0 +1,20 @@
+{
+  "id": "ACT-03",
+  "title": "Model actor reentrancy at await suspension points inside isolated methods",
+  "feature": "actor reentrancy behavior at suspension boundaries",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6-2"
+  ],
+  "source": "id act03_yield_once(void) async;\n\nactor class ACT03TurnBox : NSObject\n@property (atomic) int turn;\n- (int)observeTurnChange:(int)seed async;\n@end\n\n@implementation ACT03TurnBox\n- (int)observeTurnChange:(int)seed async {\n    int before = self.turn;\n    await act03_yield_once();\n    int after = self.turn;\n    return before == after ? seed : (seed + 1);\n}\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

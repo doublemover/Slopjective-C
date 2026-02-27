@@ -1,0 +1,80 @@
+{
+  "id": "INT-CXX-07",
+  "title": "Lower ObjC++ async throws exports with canonical thunk shape and status mapping parity to ObjC mode",
+  "feature": "ObjC++ interop for ownership, throws, and async lowering parity",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 -O2 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 --emit-module INTCXX07.objcmod --emit-interface INTCXX07.obji %s\n// RUN: objc3c -x objective-c++ --verify-interface INTCXX07.objcmod INTCXX07.obji %s\ntypedef enum objc_async_completion_status {\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\n} objc_async_completion_status_t;\n\nstruct INTCXX07Token {\n    int value;\n};\n\ntypedef void (*INTCXX07Completion)(\n    void * _Nullable context,\n    objc_async_completion_status_t status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nid intcxx07_lookup(INTCXX07Token token) async throws;\nvoid intcxx07_lookup_async_c(INTCXX07Token token,\n                             void * _Nullable context,\n                             INTCXX07Completion _Nonnull completion);\n\ntypedef struct INTCXX07Probe {\n    int callbackCount;\n    int statusInvariantViolations;\n    objc_async_completion_status_t lastStatus;\n    id<Error> _Nullable lastError;\n} INTCXX07Probe;\n\nvoid intcxx07_probe_callback(void * _Nullable context,\n                             objc_async_completion_status_t status,\n                             id _Nullable result,\n                             id<Error> _Nullable error) {\n    INTCXX07Probe *probe = (INTCXX07Probe *)context;\n    probe->callbackCount = probe->callbackCount + 1;\n    probe->lastStatus = status;\n    probe->lastError = error;\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS && error != nil) {\n        probe->statusInvariantViolations = probe->statusInvariantViolations + 1;\n    }\n    if ((status == OBJC_ASYNC_COMPLETION_ERROR || status == OBJC_ASYNC_COMPLETION_CANCELLED) && error == nil) {\n        probe->statusInvariantViolations = probe->statusInvariantViolations + 1;\n    }\n    (void)result;\n}\n\nvoid intcxx07_start_probe(INTCXX07Token token, INTCXX07Probe *probe) {\n    probe->callbackCount = 0;\n    probe->statusInvariantViolations = 0;\n    intcxx07_lookup_async_c(token, probe, intcxx07_probe_callback);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "debug-o0",
+          "flags": [
+            "-O0"
+          ],
+          "abi_requirements": [
+            "ObjC++ async-throws exports preserve canonical thunk parameter order: source parameters, then context, then completion callback",
+            "completion status/error matrix in ObjC++ mode matches ObjC-mode behavior for success, thrown failure, and cancellation",
+            "callback ABI shape remains (context, status, result, error) for non-void async results",
+            "separate compilation preserves a stable callable thunk declaration for C and ObjC++ importers"
+          ],
+          "runtime_assertions": [
+            "intcxx07_probe_callback executes exactly once per thunk invocation",
+            "statusInvariantViolations remains zero when success/error/cancelled paths are exercised",
+            "C-side status dispatch remains valid in ObjC++ mode without depending on result for non-success statuses"
+          ]
+        },
+        {
+          "name": "optimized-o2",
+          "flags": [
+            "-O2"
+          ],
+          "abi_requirements": [
+            "optimized ObjC++ lowering preserves canonical thunk ordering and callback shape from -O0",
+            "optimized ObjC++ lowering preserves status/error mapping invariants for success, failure, and cancellation",
+            "optimization does not collapse status domain distinctions or break separate-compilation thunk compatibility"
+          ],
+          "runtime_assertions": [
+            "callback count and status invariants remain equivalent to -O0 under optimization",
+            "lastStatus/lastError observations remain ABI-stable under optimization"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "interop.objcxx_async_c_thunk_signature_order",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "A1..An, then void *context, then nonnull completion callback in ObjC++ mode",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        },
+        {
+          "field_id": "interop.objcxx_async_c_thunk_status_error_matrix",
+          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "required_shape": "success => error nil; error/cancelled => error non-nil; status partition preserved in ObjC++ mode",
+          "must_match_modes": [
+            "debug-o0",
+            "optimized-o2"
+          ]
+        }
+      ]
+    }
+  }
+}

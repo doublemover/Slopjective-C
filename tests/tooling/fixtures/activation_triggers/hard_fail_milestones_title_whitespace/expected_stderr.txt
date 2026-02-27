@@ -1,0 +1,1 @@
+error: open milestones snapshot entries[0].title must not contain leading/trailing whitespace

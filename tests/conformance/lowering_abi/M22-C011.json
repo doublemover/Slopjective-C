@@ -1,0 +1,26 @@
+{
+  "id": "M22-C011",
+  "title": "Define lowering/ABI contract slice (Contract Definition) (issue #2579 / task M22-C011)",
+  "feature": "m22 lane-c lowering abi contracts runtime bridge define lowering abi contract slice contract definition slice 11",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M22",
+    "milestone_number": 107,
+    "lane": "C",
+    "issue": 2579,
+    "task": "M22-C011",
+    "sequence": 11
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n#ifndef __OBJC3_FEATURE_M22_C_011_DEFINE_LOWERING_ABI_CONTRACT_SLICE_CONTRACT_DEFI__\\n#define __OBJC3_FEATURE_M22_C_011_DEFINE_LOWERING_ABI_CONTRACT_SLICE_CONTRACT_DEFI__ 1\\n#endif\\n\\ntypedef struct M22C011_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M22C011_Probe;\\n\\nM22C011_Probe m22c011_probe(void) {\\n#if __OBJC3_FEATURE_M22_C_011_DEFINE_LOWERING_ABI_CONTRACT_SLICE_CONTRACT_DEFI__\\n    M22C011_Probe probe = { 1, 11, 2579 };\\n#else\\n    M22C011_Probe probe = { 0, 11, 2579 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

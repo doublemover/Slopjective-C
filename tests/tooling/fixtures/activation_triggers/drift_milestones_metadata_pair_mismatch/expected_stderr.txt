@@ -1,0 +1,1 @@
+error: open milestones snapshot object must include both 'generated_at_utc' and 'source' when either field is present in tests/tooling/fixtures/activation_triggers/drift_milestones_metadata_pair_mismatch/milestones.json

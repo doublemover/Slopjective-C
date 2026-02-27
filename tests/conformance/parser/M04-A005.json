@@ -1,0 +1,36 @@
+{
+  "id": "M04-A005",
+  "title": "Reject non-canonical await-try ordering to preserve syntax normalization determinism",
+  "feature": "canonical syntax normalization and determinism",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "int m04a005_fetch(void) async;\n\nint m04a005_noncanonical(void) async {\n    return await try m04a005_fetch();\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-TRYAWAIT-ORDER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 4, "column": 12 },
+          "end": { "line": 4, "column": 21 }
+        },
+        "message": "expected canonical effect composition order 'try await'",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 4, "column": 12 },
+              "end": { "line": 4, "column": 21 }
+            },
+            "replacement": "try await"
+          }
+        ]
+      }
+    ]
+  }
+}

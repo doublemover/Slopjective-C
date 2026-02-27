@@ -1,0 +1,41 @@
+name: Task Hygiene Live Drift Audit
+
+on:
+  schedule:
+    - cron: "15 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  live-drift-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run live issue checkbox drift audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p artifacts
+          set -o pipefail
+          python scripts/check_issue_checkbox_drift.py \
+            --live-gh \
+            --glob "spec/planning/active/**/*.md" \
+            --glob "tests/conformance/workpacks/*.md" \
+            2>&1 | tee artifacts/issue-drift-live.log
+
+      - name: Upload live drift diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-drift-live-${{ github.run_id }}
+          path: artifacts/issue-drift-live.log
+          if-no-files-found: error
+          retention-days: 14

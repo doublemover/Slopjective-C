@@ -1,0 +1,6 @@
+module MisplacedQualifierMessageSelectorHeadPure;
+
+fn main() -> i32 {
+  let receiver = 1;
+  return [receiver pure];
+}

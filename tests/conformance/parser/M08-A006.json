@@ -1,0 +1,25 @@
+{
+  "id": "M08-A006",
+  "title": "Accept M08 lane-A parser fixture baseline for issue #1535 task M08-A006 (Harden source-location fidelity)",
+  "feature": "m08 lane-a parser strictness-concurrency slice 06",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M08",
+    "milestone_number": 93,
+    "lane": "A",
+    "issue": 1535,
+    "task": "M08-A006",
+    "sequence": 6
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-3"
+  ],
+  "source": "#pragma objc_language_version(3)\ntypedef struct M08A006_Trace {\n    int value;\n    int span_start;\n    int span_end;\n} M08A006_Trace;\n\nM08A006_Trace m08a006_trace(int token) {\n    M08A006_Trace trace = { token, 6, 16 };\n    return trace;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

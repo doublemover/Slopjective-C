@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeUnaryPlusParserMissingOperand;
+
+fn main() -> i32 {
+  let value = +;
+  return value;
+}

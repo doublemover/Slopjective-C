@@ -1,0 +1,7 @@
+// Negative fixture: unsupported function return annotation type.
+// Expected diagnostic code(s): O3P114.
+module NegativeReturnAnnotationUnsupportedType;
+
+fn main() -> token {
+  return 0;
+}

@@ -1,0 +1,11 @@
+# Loop while lowering determinism markers.
+define i32 @main()
+br label %while_cond_0
+while_cond_0:
+label %while_body_1, label %while_end_2
+while_body_1:
+store i32 %t8, ptr %sum.addr.
+store i32 %t11, ptr %i.addr.
+while_end_2:
+ret i32 %t13
+

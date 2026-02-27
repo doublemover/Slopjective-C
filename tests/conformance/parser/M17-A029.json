@@ -1,0 +1,25 @@
+{
+  "id": "M17-A029",
+  "title": "Accept M17 lane-A parser fixture baseline for issue #2020 task M17-A029 (Document frontend invariants for integrators (Documentation and Evidence))",
+  "feature": "m17 lane-a parser runtime lowering closure core strict invariant documentation slice 29",
+  "bucket": "parser",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M17",
+    "milestone_number": 102,
+    "lane": "A",
+    "issue": 2020,
+    "task": "M17-A029",
+    "sequence": 29
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-1",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-8"
+  ],
+  "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_INVARIANT_DOC_SLICE_S029__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_INVARIANT_DOC_SLICE_S029__ 1\\n#endif\\n\\ntypedef struct M17A029_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A029_Probe;\\n\\nM17A029_Probe m17a029_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_INVARIANT_DOC_SLICE_S029__\\n    M17A029_Probe probe = { 1, 29, 2020 };\\n#else\\n    M17A029_Probe probe = { 0, 29, 2020 };\\n#endif\\n    return probe;\\n}\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

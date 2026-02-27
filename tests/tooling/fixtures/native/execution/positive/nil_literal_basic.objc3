@@ -1,0 +1,8 @@
+module NilLiteralBasic;
+
+let seed = nil;
+
+fn main() -> i32 {
+  let x = seed + 3;
+  return x;
+}

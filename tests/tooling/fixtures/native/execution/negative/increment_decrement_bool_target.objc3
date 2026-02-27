@@ -1,0 +1,7 @@
+module IncrementDecrementBoolTarget;
+
+fn main() -> i32 {
+  let flag = true;
+  flag++;
+  return 0;
+}

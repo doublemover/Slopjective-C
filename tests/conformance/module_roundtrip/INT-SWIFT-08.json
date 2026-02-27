@@ -1,0 +1,89 @@
+{
+  "id": "INT-SWIFT-08",
+  "title": "Reject Swift async-await and actor-isolation import-export mapping mismatches during interface verification",
+  "feature": "Swift interop metadata mismatch checks for async-await and actor isolation mappings",
+  "bucket": "module_roundtrip",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/DECISIONS_LOG.md#decisions-d-010",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-3",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
+    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module INTSWIFT08Mismatch.objcmod --emit-interface INTSWIFT08Mismatch.obji %s\\n// RUN: objc3c --verify-interface INTSWIFT08Mismatch-corrupt.objcmod INTSWIFT08Mismatch.obji --assert-mismatch async:missing --assert-mismatch coroutine_model:v1:v0 --assert-mismatch objc_executor(main):objc_executor(global) --assert-mismatch actor_isolation:missing --assert-mismatch swift_async_mapping:missing --assert-mismatch swift_actor_mapping:missing\\nactor class INTSWIFT08Mismatch : NSObject\\n- (id _Nonnull)load:(id _Nonnull)seed async __attribute__((objc_executor(main)));\\n@end\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-IFACE-MISMATCH",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 1 },
+          "end": { "line": 2, "column": 366 }
+        },
+        "message": "compiled module metadata does not match emitted textual interface",
+        "fixits": []
+      }
+    ],
+    "metadata": {
+      "preserved_fields": [
+        "async_effect",
+        "async_coroutine_model_v1",
+        "executor_affinity_objc_executor",
+        "actor_type_and_actor_isolation",
+        "swift_interop_async_mapping",
+        "swift_interop_actor_isolation_mapping"
+      ],
+      "mismatch_failures": [
+        {
+          "field_id": "async_effect",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "async_coroutine_model_v1",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "executor_affinity_objc_executor",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "actor_type_and_actor_isolation",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "swift_interop_async_mapping",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        },
+        {
+          "field_id": "swift_interop_actor_isolation_mapping",
+          "verification_mode": "interface_vs_module",
+          "expected_diagnostic_code": "OBJC3-D-IFACE-MISMATCH",
+          "expected_severity": "error"
+        }
+      ]
+    }
+  }
+}

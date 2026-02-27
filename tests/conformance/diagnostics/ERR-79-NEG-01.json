@@ -1,0 +1,49 @@
+{
+  "id": "ERR-79-NEG-01",
+  "title": "Strict diagnostics for missing try, ignored throw results, and invalid bridge forms",
+  "feature": "strict diagnostics for error-handling misuse",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2"
+  ],
+  "source": "@interface ERR79Bridge : NSObject\n+- (BOOL)perform:(NSError * _Nullable * _Nullable)error __attribute__((objc_error_out(error)));\n+@end\n+\n+id loadPayload(void) throws;\n+void consume(id value);\n+\n+void err79_negative(ERR79Bridge *bridge) {\n+    loadPayload();\n+    [bridge perform:(NSError * _Nullable * _Nullable)0];\n+    consume(loadPayload());\n+}\n+",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-ERROR-MISSING-TRY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 9, "column": 5 },
+          "end": { "line": 9, "column": 18 }
+        },
+        "message": "call to throwing function requires try in strict mode",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-BRIDGE-INVALID-ERROR-OUT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 10, "column": 20 },
+          "end": { "line": 10, "column": 52 }
+        },
+        "message": "objc_error_out parameter expects addressable NSError* storage",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-D-ERROR-IGNORED-THROWING-VALUE",
+        "severity": "error",
+        "span": {
+          "start": { "line": 11, "column": 13 },
+          "end": { "line": 11, "column": 26 }
+        },
+        "message": "result of throwing expression is consumed without explicit try handling",
+        "fixits": []
+      }
+    ]
+  }
+}

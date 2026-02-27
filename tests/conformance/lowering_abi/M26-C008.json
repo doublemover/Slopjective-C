@@ -1,0 +1,26 @@
+{
+  "id": "M26-C008",
+  "title": "Stabilize typed bool/i32 integration handoff paths in native objc3c frontend (Integration Stabilization) (issue #2863 / task M26-C008)",
+  "feature": "m26 lane-c native objc3c frontend typed function signatures bool i32 integration handoff stabilization",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M26",
+    "milestone_number": 111,
+    "lane": "C",
+    "issue": 2863,
+    "task": "M26-C008",
+    "sequence": 8
+  },
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\n#ifndef __OBJC3_FEATURE_M26_C_008_TYPED_BOOL_I32_INTEGRATION_STABILIZATION\n#define __OBJC3_FEATURE_M26_C_008_TYPED_BOOL_I32_INTEGRATION_STABILIZATION 1\n#endif\n\ntypedef signed int m26c008_i32;\ntypedef _Bool m26c008_bool;\n\ntypedef m26c008_i32 (*M26C008_ProducerFn)(m26c008_bool gate, m26c008_i32 payload);\ntypedef m26c008_bool (*M26C008_ConsumerFn)(m26c008_i32 lane_value);\n\nstatic m26c008_i32 m26c008_producer(m26c008_bool gate, m26c008_i32 payload) {\n    return gate ? payload : -payload;\n}\n\nstatic m26c008_bool m26c008_consumer(m26c008_i32 lane_value) {\n    return lane_value > 0;\n}\n\nstatic m26c008_i32 m26c008_stabilize(M26C008_ProducerFn producer, M26C008_ConsumerFn consumer, m26c008_bool gate, m26c008_i32 payload) {\n    m26c008_i32 lane_value = producer(gate, payload);\n    return lane_value + (consumer(lane_value) ? 1 : 0);\n}\n\ntypedef struct M26C008_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n    m26c008_i32 integration_score;\n    m26c008_bool stabilized_gate;\n} M26C008_Probe;\n\nM26C008_Probe m26c008_probe(void) {\n#if __OBJC3_FEATURE_M26_C_008_TYPED_BOOL_I32_INTEGRATION_STABILIZATION\n    M26C008_ProducerFn producer = m26c008_producer;\n    M26C008_ConsumerFn consumer = m26c008_consumer;\n    m26c008_i32 score = 0;\n    score += m26c008_stabilize(producer, consumer, 1, 9);\n    score += m26c008_stabilize(producer, consumer, 0, 9);\n    score += m26c008_stabilize(producer, consumer, 1, 3);\n    M26C008_Probe probe = { 1, 8, 2863, score, consumer(score) };\n#else\n    M26C008_Probe probe = { 0, 8, 2863, 0, 0 };\n#endif\n    return probe;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

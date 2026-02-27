@@ -1,0 +1,16 @@
+{
+  "tasks": [
+    {
+      "task_id": "SPT-4201",
+      "milestone_title": "v0.15 Activation Execution Hardening W2",
+      "validation_commands": [
+        "python -m pytest tests/tooling -q"
+      ],
+      "execution_status": "open",
+      "execution_status_evidence_refs": [
+        "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w2_tooling_validation_20260224.md:1"
+      ],
+      "execution_status_override_source": "spec/planning/evidence/lane_b/v015_activation_execution_hardening_w2_tooling_validation_20260224.md"
+    }
+  ]
+}

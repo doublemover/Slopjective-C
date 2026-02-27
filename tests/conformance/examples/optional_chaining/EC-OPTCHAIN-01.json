@@ -1,0 +1,35 @@
+{
+  "id": "EC-OPTCHAIN-01",
+  "title": "Reject optional chaining on scalar property return",
+  "feature": "?.",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-1",
+    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+  ],
+  "source": "int readCount(User * _Nullable user) {\n    return user?.count;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-OPTCHAIN-NONREF",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 12 },
+          "end": { "line": 2, "column": 23 }
+        },
+        "message": "optional member access requires object or block pointer result in v1",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 12 },
+              "end": { "line": 2, "column": 23 }
+            },
+            "replacement": "user != nil ? user.count : 0"
+          }
+        ]
+      }
+    ]
+  }
+}

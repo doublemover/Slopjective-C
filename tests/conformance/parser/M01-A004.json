@@ -1,0 +1,28 @@
+{
+  "id": "M01-A004",
+  "title": "Reject optional chaining token without a member name",
+  "feature": "optional member access grammar diagnostics",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
+    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-4-1",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+  ],
+  "source": "id m01a004_missing_member(id _Nullable user) {\n    return user?.;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-OPTCHAIN-EXPECTED-MEMBER",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 16 },
+          "end": { "line": 2, "column": 18 }
+        },
+        "message": "expected member name after optional access token '?.'",
+        "fixits": []
+      }
+    ]
+  }
+}

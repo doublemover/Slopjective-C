@@ -1,0 +1,35 @@
+{
+  "id": "EC-CAPTURE-01",
+  "title": "Require comma between capture items",
+  "feature": "capture lists",
+  "bucket": "parser",
+  "profile": "core",
+  "references": [
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
+    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6"
+  ],
+  "source": "void (^block)(void) = [weak self move fd] {\n    use(self);\n    close(fd);\n};\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-CAPTURELIST-MISSING-COMMA",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 34 },
+          "end": { "line": 1, "column": 38 }
+        },
+        "message": "capture list items must be comma-separated",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 1, "column": 34 },
+              "end": { "line": 1, "column": 34 }
+            },
+            "replacement": ","
+          }
+        ]
+      }
+    ]
+  }
+}

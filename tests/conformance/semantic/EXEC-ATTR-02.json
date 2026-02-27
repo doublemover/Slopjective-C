@@ -1,0 +1,50 @@
+{
+  "id": "EXEC-ATTR-02",
+  "title": "Reject invalid objc_executor argument forms and unsupported declaration targets",
+  "feature": "executor affinity annotation diagnostics",
+  "bucket": "semantic",
+  "profile": "core",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-1",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+  ],
+  "source": "id execattr02_badToken(id seed) __attribute__((objc_executor(ui)));\nid execattr02_badNamed(id seed) __attribute__((objc_executor(named(42))));\n\n@interface EXECATTR02BadPlacement : NSObject\n@property (nonatomic) id token __attribute__((objc_executor(main)));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-INVALID-EXECUTOR-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 47 },
+          "end": { "line": 1, "column": 64 }
+        },
+        "message": "objc_executor accepts only main, global, or named(\"...\")"
+      },
+      {
+        "code": "OBJC3-D-CONC-INVALID-EXECUTOR-ANNOTATION",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 47 },
+          "end": { "line": 2, "column": 71 }
+        },
+        "message": "objc_executor named(...) requires a string literal name"
+      },
+      {
+        "code": "OBJC3-D-CONC-INVALID-EXECUTOR-TARGET",
+        "severity": "error",
+        "span": {
+          "start": { "line": 5, "column": 31 },
+          "end": { "line": 5, "column": 50 }
+        },
+        "message": "objc_executor may only annotate functions, methods, or Objective-C types"
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "SND-05",
+  "title": "Reject objc_nonisolated actor-member signatures with non-Sendable boundary types",
+  "feature": "nonisolated actor-member boundary sendability enforcement",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
+    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+  ],
+  "source": "@interface SND05MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nactor class SND05Bridge : NSObject\n- (SND05MutableBox * _Nonnull)echo:(SND05MutableBox * _Nonnull)value __attribute__((objc_nonisolated));\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONC-NONSENDABLE-BOUNDARY",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 3 },
+          "end": { "line": 6, "column": 103 }
+        },
+        "message": "objc_nonisolated member parameters and returns must be Sendable-like in strict concurrency mode"
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+module ConditionalNestedSelect;
+
+fn main() -> i32 {
+  let a = 0;
+  let out = (a < 1) ? ((a == 0) ? 7 : 8) : 9;
+  return out;
+}

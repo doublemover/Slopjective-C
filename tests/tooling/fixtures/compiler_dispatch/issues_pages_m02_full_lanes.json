@@ -1,0 +1,73 @@
+[
+  [
+    {
+      "number": 1214,
+      "title": "[Compiler][M02][Lane A][M02-A001] Define command/grammar contract slice (Contract Definition)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:A" }]
+    },
+    {
+      "number": 1215,
+      "title": "[Compiler][M02][Lane A][M02-A002] Implement parser/frontend execution slice (Primary Implementation)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:A" }]
+    },
+    {
+      "number": 1223,
+      "title": "[Compiler][M02][Lane B][M02-B001] Define semantic rule matrix slice (Contract Definition)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:B" }]
+    },
+    {
+      "number": 1232,
+      "title": "[Compiler][M02][Lane C][M02-C001] Define lowering/ABI contract slice (Contract Definition)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:C" }]
+    },
+    {
+      "number": 1241,
+      "title": "[Compiler][M02][Lane D][M02-D001] Define diagnostics/conformance contract slice (Contract Definition)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:D" }]
+    },
+    {
+      "number": 1249,
+      "title": "[Compiler][M02][Lane E][M02-E001] Define tooling/CI contract slice (Contract Definition)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:E" }]
+    }
+  ],
+  [
+    {
+      "number": 1224,
+      "title": "[Compiler][M02][Lane B][M02-B002] Implement symbol/type analysis slice (Primary Implementation)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:B" }]
+    },
+    {
+      "number": 1233,
+      "title": "[Compiler][M02][Lane C][M02-C002] Implement IR/lowering mapping slice (Primary Implementation)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:C" }]
+    },
+    {
+      "number": 1250,
+      "title": "[Compiler][M02][Lane E][M02-E002] Implement harness/runner orchestration path (Primary Implementation)",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:E" }]
+    },
+    {
+      "number": 1257,
+      "title": "[Compiler][M02][INT-RG-01] Cross-lane regroup, soundness gate, and milestone closure readiness",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [{ "name": "compiler-impl" }, { "name": "lane:INT" }]
+    },
+    {
+      "number": 9001,
+      "title": "Ignored PR row",
+      "milestone": { "number": 87, "title": "M02 objc3c Driver and Invocation Surface" },
+      "labels": [],
+      "pull_request": { "url": "https://api.github.com/repos/example/pulls/9001" }
+    }
+  ]
+]

@@ -1,0 +1,15 @@
+module SwitchCaseDoWhileTrueBreakConservativeReject;
+
+fn main() -> i32 {
+  let value = 1;
+  switch (value) {
+    case 1:
+      do {
+        break;
+      } while (true);
+    case 2:
+      return 42;
+    default:
+      return 9;
+  }
+}

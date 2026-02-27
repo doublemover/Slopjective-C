@@ -1,0 +1,5 @@
+module MisplacedQualifierMessageReceiverPure;
+
+fn main() -> i32 {
+  return [pure ping];
+}

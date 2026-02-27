@@ -1,0 +1,1 @@
+error: open blockers snapshot object must include both 'generated_at_utc' and 'source' when either field is present in tests/tooling/fixtures/bootstrap_readiness/hard_fail_open_blockers_metadata_pair_mismatch/open_blockers.json

@@ -1,0 +1,41 @@
+{
+  "id": "INT-SWIFT-02",
+  "title": "Warn when Swift throws bridging metadata is dropped across ObjC import-export declarations",
+  "feature": "Swift interop mappings for throws and NSError bridging",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
+    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-4-1",
+    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-9",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-4-2",
+    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-5",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+  ],
+  "source": "id intswift02_decode(id payload) throws;\\nBOOL intswift02_decode_nserror(id payload,\\n                               id _Nullable * _Nullable outValue,\\n                               id<Error> _Nullable * _Nullable outError) __attribute__((objc_nserror));\\n\\nid intswift02_decode_swift_bridge(id payload);\\nBOOL intswift02_decode_nserror_unannotated(id payload,\\n                                           id _Nullable * _Nullable outValue,\\n                                           id<Error> _Nullable * _Nullable outError);\\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-INTEROP-SWIFT-THROWS-MAPPING-LOSS",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 6, "column": 1 },
+          "end": { "line": 6, "column": 42 }
+        },
+        "message": "bridge declaration drops 'throws'; Swift import will treat this API as non-throwing"
+      },
+      {
+        "code": "OBJC3-D-INTEROP-SWIFT-THROWS-MAPPING-LOSS",
+        "severity": "warning",
+        "span": {
+          "start": { "line": 7, "column": 1 },
+          "end": { "line": 9, "column": 80 }
+        },
+        "message": "NSError-out signature should be annotated with objc_nserror so Swift import preserves throws bridging"
+      }
+    ]
+  }
+}

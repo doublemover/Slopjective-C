@@ -1,0 +1,6 @@
+// Positive execution fixture: basic i32-return main path.
+module BasicI32ReturnMain;
+
+fn main() -> i32 {
+  return 17;
+}

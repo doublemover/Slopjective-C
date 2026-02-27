@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "loop_control_continue_outside_loop.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S213",
+      "loop-control misuse: 'continue' outside loop"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

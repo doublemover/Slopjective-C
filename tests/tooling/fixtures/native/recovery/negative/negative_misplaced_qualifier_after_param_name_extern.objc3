@@ -1,0 +1,9 @@
+// Negative fixture: declaration qualifiers are invalid after a parameter name before ':'.
+// Expected diagnostic code(s): O3P100.
+module NegativeMisplacedQualifierAfterParamNameExtern;
+
+fn add(lhs extern: i32, rhs: i32) -> i32;
+
+fn main() -> i32 {
+  return 0;
+}
