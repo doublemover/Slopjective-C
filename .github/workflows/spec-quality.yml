@@ -18,5 +18,9 @@ jobs:
           python-version: "3.x"
       - name: Install Node dependencies
         run: npm install
+      - name: Site index contract hook plan (M132-C002)
+        run: |
+          echo "Planned generated-only drift gate:"
+          echo "python scripts/build_site_index.py --check-contract"
       - name: Run spec structural lint suite
         run: npm run lint:spec
