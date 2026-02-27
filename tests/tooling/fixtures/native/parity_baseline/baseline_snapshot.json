@@ -1,0 +1,20 @@
+{
+  "snapshot_version": 1,
+  "suite": "objc3c-parity-baseline",
+  "entries": [
+    {
+      "path": "corpus/positive/bool_branch_return.objc3",
+      "bytes": 149,
+      "line_count": 8,
+      "sha256": "9e1c547dadb67b5378cfeeb9de59791e2e7715324bc43ddd070c67dd42239022"
+    },
+    {
+      "path": "corpus/positive/message_dispatch_probe.m",
+      "bytes": 203,
+      "line_count": 12,
+      "sha256": "bbe144a76bac7074133bad66e8ae6bd8d1788269ed5184c62287bcd0ded1665d"
+    }
+  ],
+  "entry_count": 2,
+  "corpus_sha256": "121e83d5c0455b20c8b0e6e5e914125f01565a75f39271c7d818d225758a43a7"
+}

@@ -1,0 +1,8 @@
+// Baseline parity fixture: simple objc3 branch + return flow.
+int main() {
+  int seed = 3;
+  if (seed > 1) {
+    return seed + 4;
+  }
+  return 0;
+}
