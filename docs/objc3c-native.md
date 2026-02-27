@@ -1271,22 +1271,38 @@ Lowering/runtime status (implemented):
 
 ## Semantic pipeline boundaries (M25-B007/B008)
 
-The native `.objc3` frontend now runs as explicit deterministic stages:
+M132-B001 freezes the stage contract in
+`native/objc3c/src/pipeline/frontend_pipeline_contract.h` with concrete
+`FrontendPipeline`, `StageResult`, and `DiagnosticsEnvelope` interfaces.
 
-- Stage `lexer`: tokenization + lexer diagnostics.
-- Stage `parser`: AST construction + parser diagnostics.
-- Stage `semantic`: integration-surface build (symbol tables) + semantic validation.
+Deterministic stage order is now modeled explicitly as:
 
-On successful `.objc3` compiles, the manifest includes a stable frontend semantic integration surface:
+- Stage `lex`: tokenization + lexer diagnostics.
+- Stage `parse`: AST construction + parser diagnostics.
+- Stage `sema`: integration-surface build + semantic validation.
+- Stage `lower`: native IR lowering + lowering metadata.
+- Stage `emit`: diagnostics/manifest/object artifact emission.
 
-- `frontend.pipeline.semantic_skipped`
-- `frontend.pipeline.stages.{lexer,parser,semantic}.diagnostics`
-- `frontend.pipeline.semantic_surface.declared_globals`
-- `frontend.pipeline.semantic_surface.declared_functions`
-- `frontend.pipeline.semantic_surface.resolved_global_symbols`
-- `frontend.pipeline.semantic_surface.resolved_function_symbols`
-- `frontend.pipeline.semantic_surface.function_signature_surface.{scalar_return_i32,scalar_return_bool,scalar_return_void,scalar_param_i32,scalar_param_bool}`
-- `functions[].param_types` (deterministic per-function scalar signature metadata)
+Error propagation and diagnostics semantics are fail-closed and no-throw:
+
+- Each stage returns a `StageResult` with `status`, `skip_reason`, and a
+  stage-local `DiagnosticsEnvelope`.
+- Any `error` or `fatal` severity marks stage failure.
+- Downstream stages are reported as skipped with upstream-failure reason.
+- The top-level pipeline exposes `error_model = NoThrowFailClosed`.
+
+Every currently shipped `.objc3` stage behavior is mapped to contract fields:
+
+- `sema_output.semantic_skipped` maps manifest
+  `frontend.pipeline.semantic_skipped`.
+- Stage diagnostics counts map
+  `frontend.pipeline.stages.{lexer,parser,semantic}.diagnostics`.
+- Semantic surface counters map
+  `frontend.pipeline.semantic_surface.{declared_globals,declared_functions,resolved_global_symbols,resolved_function_symbols}`.
+- Function signature surface counters map
+  `frontend.pipeline.semantic_surface.function_signature_surface.{scalar_return_i32,scalar_return_bool,scalar_return_void,scalar_param_i32,scalar_param_bool}`.
+- Lowering options/metadata map `lowering.{runtime_dispatch_symbol,runtime_dispatch_arg_slots,selector_global_ordering}`.
+- Emit stage result captures diagnostics/manifest/object artifact write status and object compile exit status.
 
 ## M25 Message-Send Contract Matrix
 
