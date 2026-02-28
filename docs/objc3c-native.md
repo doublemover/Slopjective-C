@@ -9608,6 +9608,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m160_validation_runtime_shim_host_link_contract.py`
   - `tests/tooling/test_objc3c_m160_integration_runtime_shim_host_link_contract.py`
 
+## M161 integration ownership-qualifier semantics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m161-ownership-qualifier-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m161`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m161_frontend_ownership_qualifier_parser_contract.py`
+  - `tests/tooling/test_objc3c_m161_sema_ownership_qualifier_contract.py`
+  - `tests/tooling/test_objc3c_m161_lowering_ownership_qualifier_contract.py`
+  - `tests/tooling/test_objc3c_m161_validation_ownership_qualifier_contract.py`
+  - `tests/tooling/test_objc3c_m161_integration_ownership_qualifier_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
