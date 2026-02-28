@@ -81,7 +81,8 @@ program         = { module_decl | global_let | function_decl } EOF ;
 
 module_decl     = "module" ident ";" ;
 global_let      = "let" ident "=" expr ";" ;
-function_decl   = "fn" ident "(" [ param { "," param } ] ")" [ "->" return_type ] ( block | ";" ) ;
+function_decl   = "fn" ident "(" [ param { "," param } ] ")" [ throws_clause ] [ "->" return_type ] [ throws_clause ] ( block | ";" ) ;
+throws_clause   = "throws" ;
 param           = ident ":" param_type [ param_suffix ] ;
 param_type      = "i32" | "bool" | "BOOL" | "NSInteger" | "NSUInteger" | "id" ;
 param_suffix    = "<" ident { "<" | ">" | ident } ">" [ "?" | "!" ] | "?" | "!" ;
@@ -1209,6 +1210,179 @@ Deterministic grammar intent:
 Recommended M179 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q`
+
+## M180 frontend cross-module conformance suite parser/AST surface (M180-A001)
+
+Frontend parser/AST now emits deterministic cross-module conformance suite
+profiles for parameter/property/return type annotations.
+
+M180 parser/AST surface details:
+
+- cross-module conformance suite anchors:
+  - `BuildCrossModuleConformanceProfile(...)`
+  - `IsCrossModuleConformanceProfileNormalized(...)`
+- parser assignment anchors:
+  - `cross_module_conformance_profile`
+  - `cross_module_conformance_profile_is_normalized`
+  - `return_cross_module_conformance_profile`
+  - `return_cross_module_conformance_profile_is_normalized`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `CopyPropertyTypeFromParam(...)`
+  - `target.return_cross_module_conformance_profile_is_normalized = source.return_cross_module_conformance_profile_is_normalized;`
+  - `target.return_cross_module_conformance_profile = source.return_cross_module_conformance_profile;`
+  - `target.cross_module_conformance_profile_is_normalized = source.cross_module_conformance_profile_is_normalized;`
+  - `target.cross_module_conformance_profile = source.cross_module_conformance_profile;`
+
+Deterministic grammar intent:
+
+- parser derives cross-module boundary engagement and conformance-surface
+  readiness from object-pointer spelling, generic suffix packets,
+  namespace-segment shape, and pointer declarator participation.
+- parameter/profile normalization remains deterministic across direct parameter
+  parsing and property/method type transfer surfaces, including normalized-flag
+  transfer anchors.
+- profile normalization is fail-closed for malformed packets that would
+  destabilize cross-module conformance replay and handoff.
+
+Recommended M180 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py -q`
+
+## M181 frontend throws declarations and propagation parser/AST surface (M181-A001)
+
+Frontend parser/AST now emits deterministic throws-declaration profiles for
+function and Objective-C method declarations, with explicit propagation anchors
+across parser transfer surfaces.
+
+M181 parser/AST surface details:
+
+- throws declaration/profile anchors:
+  - `BuildThrowsDeclarationProfile(...)`
+  - `IsThrowsDeclarationProfileNormalized(...)`
+  - `AtThrowsClauseKeyword()`
+  - `ParseOptionalThrowsClause(FunctionDecl &fn)`
+  - `ParseOptionalThrowsClause(Objc3MethodDecl &method)`
+  - `FinalizeThrowsDeclarationProfile(FunctionDecl &fn, bool has_return_annotation)`
+  - `FinalizeThrowsDeclarationProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `throws_declared`
+  - `throws_declaration_profile`
+  - `throws_declaration_profile_is_normalized`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.throws_declared = source.throws_declared;`
+  - `target.throws_declaration_profile = source.throws_declaration_profile;`
+
+Deterministic grammar intent:
+
+- `throws` is recognized as a declaration-tail modifier for function and
+  Objective-C method declarations.
+- throws packet normalization is fail-closed for malformed declaration-shape
+  combinations that would destabilize parser-to-sema propagation.
+- throws profile emission remains deterministic across direct parse surfaces and
+  parser transfer anchors.
+
+Recommended M181 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q`
+
+## M182 frontend result-like control-flow/lowering preparatory parser/AST surface (M182-A001)
+
+Frontend parser/AST now emits deterministic result-like control-flow profile
+packets on function and Objective-C method declarations so lowering can consume
+a stable preparatory lane-A handoff.
+
+M182 parser/AST surface details:
+
+- result-like profile anchors:
+  - `BuildResultLikeProfile(...)`
+  - `IsResultLikeProfileNormalized(...)`
+  - `CollectResultLikeExprProfile(...)`
+  - `CollectResultLikeStmtProfile(...)`
+  - `BuildResultLikeProfileFromBody(...)`
+  - `BuildResultLikeProfileFromOpaqueBody(...)`
+  - `FinalizeResultLikeProfile(FunctionDecl &fn)`
+  - `FinalizeResultLikeProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `result_like_profile`
+  - `result_like_profile_is_normalized`
+  - `deterministic_result_like_lowering_handoff`
+  - `result_like_sites`
+  - `result_success_sites`
+  - `result_failure_sites`
+  - `result_branch_sites`
+  - `result_payload_sites`
+  - `result_normalized_sites`
+  - `result_branch_merge_sites`
+  - `result_contract_violation_sites`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.result_like_profile = source.result_like_profile;`
+  - `target.deterministic_result_like_lowering_handoff = source.deterministic_result_like_lowering_handoff;`
+
+Deterministic grammar intent:
+
+- return and control-flow statement surfaces are reduced into stable
+  result-like site counters for lowering replay preparation.
+- parser profile normalization is fail-closed and invariant-checked for
+  `normalized_sites + branch_merge_sites == result_like_sites`.
+- Objective-C method declarations with opaque implementation bodies still
+  emit deterministic preparatory packets through explicit opaque-body anchors.
+
+Recommended M182 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q`
+
+## M183 frontend NSError-bridging parser/AST surface (M183-A001)
+
+Frontend parser/AST now emits deterministic `NSError`-bridging convention
+profiles on function and Objective-C method declaration surfaces so lowering can
+consume a stable lane-A handoff packet for bridge-path analysis.
+
+M183 parser/AST surface details:
+
+- NSError-bridging profile anchors:
+  - `BuildNSErrorBridgingProfile(...)`
+  - `IsNSErrorBridgingProfileNormalized(...)`
+  - `IsNSErrorTypeSpelling(...)`
+  - `IsNSErrorOutParameterSite(...)`
+  - `IsFailableCallSymbol(...)`
+  - `CountFailableCallSitesInExpr(...)`
+  - `BuildNSErrorBridgingProfileFromParameters(...)`
+  - `BuildNSErrorBridgingProfileFromFunction(...)`
+  - `BuildNSErrorBridgingProfileFromOpaqueBody(...)`
+  - `FinalizeNSErrorBridgingProfile(FunctionDecl &fn)`
+  - `FinalizeNSErrorBridgingProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `ns_error_bridging_profile`
+  - `ns_error_bridging_profile_is_normalized`
+  - `deterministic_ns_error_bridging_lowering_handoff`
+  - `ns_error_bridging_sites`
+  - `ns_error_parameter_sites`
+  - `ns_error_out_parameter_sites`
+  - `ns_error_bridge_path_sites`
+  - `failable_call_sites`
+  - `ns_error_bridging_normalized_sites`
+  - `ns_error_bridge_boundary_sites`
+  - `ns_error_bridging_contract_violation_sites`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.ns_error_bridging_profile = source.ns_error_bridging_profile;`
+  - `target.deterministic_ns_error_bridging_lowering_handoff = source.deterministic_ns_error_bridging_lowering_handoff;`
+
+Deterministic grammar intent:
+
+- parser detects `NSError` parameter and out-parameter conventions directly from
+  parameter type spelling and pointer declarator evidence.
+- failable call spelling evidence is reduced into deterministic packet counters
+  for bridge-path preparation.
+- profile normalization is fail-closed and invariant-checked for
+  `normalized_sites + bridge_boundary_sites == ns_error_bridging_sites`.
+
+Recommended M183 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q`
 
 ## Language-version pragma prelude contract
 
@@ -5389,6 +5563,108 @@ Deterministic sema intent:
 Recommended M179 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q`
+
+<a id="m180-sema-type-cross-module-conformance-contract-m180-b001"></a>
+## M180 sema/type cross-module conformance contract (M180-B001)
+
+M180-B defines deterministic sema summaries for cross-module conformance
+handoff safety over incremental module cache invalidation packets.
+
+M180 sema/type surface details:
+
+- `Objc3CrossModuleConformanceSummary`
+- `BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary`
+- parity counters:
+  - `cross_module_conformance_sites_total`
+  - `cross_module_conformance_namespace_segment_sites_total`
+  - `cross_module_conformance_import_edge_candidate_sites_total`
+  - `cross_module_conformance_object_pointer_type_sites_total`
+  - `cross_module_conformance_pointer_declarator_sites_total`
+  - `cross_module_conformance_normalized_sites_total`
+  - `cross_module_conformance_cache_invalidation_candidate_sites_total`
+  - `cross_module_conformance_contract_violation_sites_total`
+  - `deterministic_cross_module_conformance_handoff`
+
+Deterministic sema intent:
+
+- cross-module conformance summaries are derived from deterministic incremental
+  module cache invalidation packets and preserve handoff parity constraints.
+- normalized and cache-invalidation-candidate counters remain partitioned:
+  `cross_module_conformance_normalized_sites_total + cross_module_conformance_cache_invalidation_candidate_sites_total == cross_module_conformance_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M180 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q`
+
+<a id="m181-sema-type-throws-propagation-contract-m181-b001"></a>
+## M181 sema/type throws propagation contract (M181-B001)
+
+M181-B defines deterministic sema summaries for throws propagation handoff
+safety over cross-module conformance packets.
+
+M181 sema/type surface details:
+
+- `Objc3ThrowsPropagationSummary`
+- `BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary`
+- parity counters:
+  - `throws_propagation_sites_total`
+  - `throws_propagation_namespace_segment_sites_total`
+  - `throws_propagation_import_edge_candidate_sites_total`
+  - `throws_propagation_object_pointer_type_sites_total`
+  - `throws_propagation_pointer_declarator_sites_total`
+  - `throws_propagation_normalized_sites_total`
+  - `throws_propagation_cache_invalidation_candidate_sites_total`
+  - `throws_propagation_contract_violation_sites_total`
+  - `deterministic_throws_propagation_handoff`
+
+Deterministic sema intent:
+
+- throws propagation summaries are derived from deterministic cross-module
+  conformance packets and preserve handoff parity constraints.
+- normalized and cache-invalidation-candidate counters remain partitioned:
+  `throws_propagation_normalized_sites_total + throws_propagation_cache_invalidation_candidate_sites_total == throws_propagation_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M181 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q`
+
+<a id="m182-sema-type-result-like-lowering-contract-m182-b001"></a>
+## M182 sema/type result-like lowering contract (M182-B001)
+
+M182-B defines deterministic sema summaries for result-like lowering handoff
+safety over parser result-like profiles.
+
+M182 sema/type surface details:
+
+- `Objc3ResultLikeLoweringSummary`
+- `BuildResultLikeLoweringSummaryFromProgramAst`
+- parity counters:
+  - `result_like_lowering_sites_total`
+  - `result_like_lowering_result_success_sites_total`
+  - `result_like_lowering_result_failure_sites_total`
+  - `result_like_lowering_result_branch_sites_total`
+  - `result_like_lowering_result_payload_sites_total`
+  - `result_like_lowering_normalized_sites_total`
+  - `result_like_lowering_branch_merge_sites_total`
+  - `result_like_lowering_contract_violation_sites_total`
+  - `deterministic_result_like_lowering_handoff`
+
+Deterministic sema intent:
+
+- result-like lowering summaries are aggregated from parser-emitted
+  deterministic result-like profiles and preserved across sema/type handoff.
+- normalized and branch-merge counters remain partitioned:
+  `result_like_lowering_normalized_sites_total + result_like_lowering_branch_merge_sites_total == result_like_lowering_sites_total`.
+- normalized result-like counters remain success/failure partitioned:
+  `result_like_lowering_result_success_sites_total + result_like_lowering_result_failure_sites_total == result_like_lowering_normalized_sites_total`.
+
+Recommended M182 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -9115,6 +9391,125 @@ Recommended M178 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_lowering_public_private_api_partition_contract.py -q`
 
+## Incremental module cache and invalidation lowering artifact contract (M179-C001)
+
+M179-C lowers sema-authored incremental module cache/invalidation summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M179-C lowering contract anchors:
+
+- `kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract`
+- `Objc3IncrementalModuleCacheInvalidationLoweringContract`
+- `IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(...)`
+- `Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(...)`
+- `BuildIncrementalModuleCacheInvalidationLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_incremental_module_cache_invalidation_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface`
+- `lowering_incremental_module_cache_invalidation.replay_key`
+- `; incremental_module_cache_invalidation_lowering = incremental_module_cache_invalidation_sites=<N>...`
+- `; frontend_objc_incremental_module_cache_invalidation_lowering_profile = incremental_module_cache_invalidation_sites=<N>...`
+- `!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}`
+
+Recommended M179 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py -q`
+
+## Cross-module conformance suite lowering artifact contract (M180-C001)
+
+M180-C lowers sema-authored cross-module conformance summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M180-C lowering contract anchors:
+
+- `kObjc3CrossModuleConformanceLoweringLaneContract`
+- `Objc3CrossModuleConformanceLoweringContract`
+- `IsValidObjc3CrossModuleConformanceLoweringContract(...)`
+- `Objc3CrossModuleConformanceLoweringReplayKey(...)`
+- `BuildCrossModuleConformanceLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_cross_module_conformance_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface`
+- `lowering_cross_module_conformance.replay_key`
+- `; cross_module_conformance_lowering = cross_module_conformance_sites=<N>...`
+- `; frontend_objc_cross_module_conformance_lowering_profile = cross_module_conformance_sites=<N>...`
+- `!objc3.objc_cross_module_conformance_lowering = !{!33}`
+
+Recommended M180 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_lowering_cross_module_conformance_contract.py -q`
+
+## Throws propagation lowering artifact contract (M181-C001)
+
+M181-C lowers sema-authored throws propagation summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M181-C lowering contract anchors:
+
+- `kObjc3ThrowsPropagationLoweringLaneContract`
+- `Objc3ThrowsPropagationLoweringContract`
+- `IsValidObjc3ThrowsPropagationLoweringContract(...)`
+- `Objc3ThrowsPropagationLoweringReplayKey(...)`
+- `BuildThrowsPropagationLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_throws_propagation_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface`
+- `lowering_throws_propagation.replay_key`
+- `; throws_propagation_lowering = throws_propagation_sites=<N>...`
+- `; frontend_objc_throws_propagation_lowering_profile = throws_propagation_sites=<N>...`
+- `!objc3.objc_throws_propagation_lowering = !{!34}`
+
+Recommended M181 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q`
+
+## Result-like lowering artifact contract (M182-C001)
+
+M182-C publishes deterministic lowering replay metadata for result-like
+control-flow handoff.
+
+M182-C lowering contract anchors:
+
+- `kObjc3ResultLikeLoweringLaneContract`
+- `Objc3ResultLikeLoweringContract`
+- `IsValidObjc3ResultLikeLoweringContract(...)`
+- `Objc3ResultLikeLoweringReplayKey(...)`
+
+Deterministic handoff checks:
+
+- `normalized_sites + branch_merge_sites == result_like_sites`
+- each of `result_success_sites`, `result_failure_sites`, `result_branch_sites`,
+  `result_payload_sites`, and `contract_violation_sites` is bounded by
+  `result_like_sites`
+- `deterministic_result_like_lowering_handoff` requires zero contract violations
+
+IR replay publication marker:
+
+- `result_like_lowering = result_like_sites=<N>;result_success_sites=<N>;result_failure_sites=<N>;result_branch_sites=<N>;result_payload_sites=<N>;normalized_sites=<N>;branch_merge_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m182-result-like-lowering-v1`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m182_lowering_result_like_contract.py -q`
+
+## NSError bridging lowering artifact contract (M183-C001)
+
+M183-C lowers sema-authored NSError bridging summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M183-C lowering contract anchors:
+
+- `kObjc3NSErrorBridgingLoweringLaneContract`
+- `Objc3NSErrorBridgingLoweringContract`
+- `IsValidObjc3NSErrorBridgingLoweringContract(...)`
+- `Objc3NSErrorBridgingLoweringReplayKey(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_ns_error_bridging_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface`
+- `lowering_ns_error_bridging.replay_key`
+- `; ns_error_bridging_lowering = ns_error_bridging_sites=<N>;ns_error_parameter_sites=<N>;ns_error_out_parameter_sites=<N>;ns_error_bridge_path_sites=<N>;failable_call_sites=<N>;normalized_sites=<N>;bridge_boundary_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m183-ns-error-bridging-lowering-v1`
+- `; frontend_objc_ns_error_bridging_lowering_profile = ns_error_bridging_sites=<N>...`
+- `!objc3.objc_ns_error_bridging_lowering = !{!36}`
+
+Recommended M183 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -11487,6 +11882,290 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
 ```
 
+## M179 validation/conformance/perf incremental module cache and invalidation runbook
+
+Deterministic M179 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m179_validation_incremental_module_cache_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_incremental_module_cache_invalidation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_incremental_module_cache_invalidation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface.deterministic_handoff`
+  - `lowering_incremental_module_cache_invalidation.replay_key`
+- `replay_run_1/module.ll`
+  - `incremental_module_cache_invalidation_lowering`
+  - `frontend_objc_incremental_module_cache_invalidation_lowering_profile`
+  - `!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+M179-C source emission now includes dedicated IR markers; fixture IR markers above are pinned replay anchors for deterministic validation/conformance coverage.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py -q
+```
+
+## M180 integration cross-module conformance contract runbook (M180-E001)
+
+Deterministic M180 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_lowering_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m180-cross-module-conformance-contracts`
+- `npm run check:compiler-closeout:m180`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M180 cross-module conformance packet/docs contract`
+  - `Run M180 cross-module conformance integration gate`
+
+Scope assumptions:
+
+- M180-A001 through M180-D001 surfaces are landed in this workspace.
+- This runbook enforces parser/sema/lowering/validation/conformance surfaces plus M180-E001 integration wiring.
+
+## M180 validation/conformance/perf cross-module conformance runbook (M180-D001)
+
+Deterministic M180 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m180_validation_cross_module_conformance_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_cross_module_conformance_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_cross_module_conformance_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface.deterministic_handoff`
+  - `lowering_cross_module_conformance.replay_key`
+- `replay_run_1/module.ll`
+  - `cross_module_conformance_lowering`
+  - `frontend_objc_cross_module_conformance_lowering_profile`
+  - `!objc3.objc_cross_module_conformance_lowering = !{!33}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + cache_invalidation_candidate_sites == cross_module_conformance_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
+```
+
+## M181 integration throws propagation contract runbook (M181-E001)
+
+Deterministic M181 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m181-throws-propagation-contracts`
+- `npm run check:compiler-closeout:m181`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M181 throws propagation packet/docs contract`
+  - `Run M181 throws propagation integration gate`
+
+Scope assumptions:
+
+- M181-A001 through M181-D001 surfaces are landed in this workspace.
+- This runbook enforces landed parser/sema/lowering/validation/conformance surfaces plus M181-E001 integration wiring.
+
+## M181 validation/conformance/perf throws propagation runbook (M181-D001)
+
+Deterministic M181 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m181_validation_throws_propagation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_throws_propagation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_throws_propagation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface.deterministic_handoff`
+  - `lowering_throws_propagation.replay_key`
+- `replay_run_1/module.ll`
+  - `throws_propagation_lowering`
+  - `frontend_objc_throws_propagation_lowering_profile`
+  - `!objc3.objc_throws_propagation_lowering = !{!34}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + propagation_boundary_sites == throws_propagation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+```
+
+## M182 integration result-like lowering contract runbook (M182-E001)
+
+Deterministic M182 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m182-result-like-contracts`
+- `npm run check:compiler-closeout:m182`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M182 result-like lowering packet/docs contract`
+  - `Run M182 result-like lowering integration gate`
+
+Scope assumptions:
+
+- M182-A001, M182-B001, and M182-C001 surfaces are not yet landed in this workspace.
+- This runbook enforces the landed M182-D001 validation/conformance surface plus M182-E001 integration wiring.
+
+## M182 validation/conformance/perf result-like lowering runbook (M182-D001)
+
+Deterministic M182 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m182_validation_result_like_lowering_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_result_like_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_result_like_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_result_like_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_result_like_lowering_surface.deterministic_handoff`
+  - `lowering_result_like.replay_key`
+- `replay_run_1/module.ll`
+  - `result_like_lowering`
+  - `frontend_objc_result_like_lowering_profile`
+  - `!objc3.objc_result_like_lowering = !{!35}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + branch_merge_sites == result_like_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
+```
+
+## M183 integration NSError bridging contract runbook (M183-E001)
+
+Deterministic M183 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m183-ns-error-bridging-contracts`
+- `npm run check:compiler-closeout:m183`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M183 NSError bridging packet/docs contract`
+  - `Run M183 NSError bridging integration gate`
+
+Scope assumptions:
+
+- M183-A001, M183-B001, and M183-C001 surfaces are not yet landed in this workspace.
+- This runbook enforces the landed M183-D001 validation/conformance surface plus M183-E001 integration wiring.
+
+## M183 validation/conformance/perf NSError bridging runbook (M183-D001)
+
+Deterministic M183 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m183_validation_ns_error_bridging_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_ns_error_bridging_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_ns_error_bridging_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface.deterministic_handoff`
+  - `lowering_ns_error_bridging.replay_key`
+- `replay_run_1/module.ll`
+  - `ns_error_bridging_lowering`
+  - `frontend_objc_ns_error_bridging_lowering_profile`
+  - `!objc3.objc_ns_error_bridging_lowering = !{!36}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + bridge_boundary_sites == ns_error_bridging_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -12331,6 +13010,95 @@ int objc3c_frontend_startup_check(void) {
 - Assumptions:
   - M178-C001 and M178-D001 outputs are not yet landed in this workspace.
   - The integration gate fail-closes on M178-A001 plus M178-B001 surfaces and this M178-E001 wiring contract, while remaining forward-compatible for future M178-C001/M178-D001 additions.
+
+## M179 integration incremental module cache and invalidation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m179-incremental-module-cache-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m179`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py`
+  - `tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_conformance_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_integration_incremental_module_cache_contract.py`
+- Assumptions:
+  - M179-A001 through M179-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M179-E001 wiring contract.
+
+## M180 integration cross-module conformance contract
+
+- Integration gate:
+  - `npm run check:objc3c:m180-cross-module-conformance-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m180`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py`
+  - `tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_lowering_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py`
+- Assumptions:
+  - M180-A001 through M180-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M180-E001 wiring contract.
+
+## M181 integration throws propagation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m181-throws-propagation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m181`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py`
+  - `tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py`
+- Assumptions:
+  - M181-A001 through M181-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.
+
+## M182 integration result-like lowering contract
+
+- Integration gate:
+  - `npm run check:objc3c:m182-result-like-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m182`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py`
+- Assumptions:
+  - M182-A001, M182-B001, and M182-C001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M182-D001 surfaces plus this M182-E001 wiring contract, while remaining forward-compatible for future M182-A001/M182-B001/M182-C001 additions.
+
+## M183 integration NSError bridging contract
+
+- Integration gate:
+  - `npm run check:objc3c:m183-ns-error-bridging-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m183`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py`
+- Assumptions:
+  - M183-A001, M183-B001, and M183-C001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M183-D001 surfaces plus this M183-E001 wiring contract, while remaining forward-compatible for future M183-A001/M183-B001/M183-C001 additions.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
