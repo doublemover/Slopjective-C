@@ -26,7 +26,12 @@ add_executable(objc3c-native
 
 # Placeholder interface targets so boundary rules can map to concrete target
 # names before extraction work lands.
-add_library(objc3c_lex INTERFACE)
+add_library(objc3c_lex STATIC
+  src/lex/objc3_lexer.cpp
+)
+target_include_directories(objc3c_lex PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 add_library(objc3c_parse INTERFACE)
 add_library(objc3c_sema INTERFACE)
 add_library(objc3c_lower INTERFACE)
@@ -40,4 +45,4 @@ target_include_directories(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver INTERFACE)
 
-target_link_libraries(objc3c-native PRIVATE objc3c_frontend)
+target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_frontend)
