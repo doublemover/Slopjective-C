@@ -1298,6 +1298,19 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m142_frontend_lowering_parity_contract.py`
   - `npm run check:compiler-closeout:m142`
 
+## Frontend sema/type CLI-C-API parity contract (M142-B001)
+
+- Lane-B sema/type parity surface remains deterministic through:
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`:
+  - pass diagnostics counters: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, `diagnostics_emitted_by_validate_pure_contract`, `diagnostics_monotonic`, and `diagnostics_total`.
+  - type-system parity counters: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, `ready`, `parity_ready`, `globals_total`, `functions_total`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+  - sema/type extension parity counters: `deterministic_atomic_memory_order_mapping`, `atomic_memory_order_mapping_total`, `atomic_relaxed_ops`, `atomic_acquire_ops`, `atomic_release_ops`, `atomic_acq_rel_ops`, `atomic_seq_cst_ops`, `atomic_unmapped_ops`, `deterministic_vector_type_lowering`, `vector_type_lowering_total`, `vector_return_annotations`, `vector_param_annotations`, `vector_i32_annotations`, `vector_bool_annotations`, `vector_lane2_annotations`, `vector_lane4_annotations`, `vector_lane8_annotations`, `vector_lane16_annotations`, and `vector_unsupported_annotations`.
+- Contract validation command:
+  - `python -m pytest tests/tooling/test_objc3c_m142_sema_cli_c_api_parity_contract.py -q`
+
 ## Artifact tmp-path governance contract (M143-D001)
 
 - Source-mode parity replay is partitioned by deterministic `--work-key`:

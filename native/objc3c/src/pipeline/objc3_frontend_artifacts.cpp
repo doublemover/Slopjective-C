@@ -199,6 +199,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"diagnostics_emitted_by_validate_pure_contract\":"
            << pipeline_result.sema_parity_surface.diagnostics_emitted_by_pass[2] << ",\"diagnostics_monotonic\":"
            << (pipeline_result.sema_parity_surface.diagnostics_after_pass_monotonic ? "true" : "false")
+           << ",\"diagnostics_total\":"
+           << pipeline_result.sema_parity_surface.diagnostics_total
            << ",\"deterministic_semantic_diagnostics\":"
            << (pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
@@ -241,8 +243,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_parity_surface.vector_type_lowering.lane16_annotations
            << ",\"vector_unsupported_annotations\":"
            << pipeline_result.sema_parity_surface.vector_type_lowering.unsupported_annotations
+           << ",\"ready\":"
+           << (pipeline_result.sema_parity_surface.ready ? "true" : "false")
            << ",\"parity_ready\":"
            << (IsReadyObjc3SemaParityContractSurface(pipeline_result.sema_parity_surface) ? "true" : "false")
+           << ",\"globals_total\":"
+           << pipeline_result.sema_parity_surface.globals_total
+           << ",\"functions_total\":"
+           << pipeline_result.sema_parity_surface.functions_total
            << ",\"type_metadata_global_entries\":"
            << pipeline_result.sema_parity_surface.type_metadata_global_entries
            << ",\"type_metadata_function_entries\":"
