@@ -151,6 +151,8 @@ jobs:
         run: npm run check:objc3c:m150-object-pointer-nullability-generics
       - name: 44f Run M151 symbol-graph/scope-resolution gate
         run: npm run check:objc3c:m151-symbol-graph-scope-resolution
+      - name: 44g Run M152 class-protocol-category semantic-linking gate
+        run: npm run check:objc3c:m152-class-protocol-category-linking
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 

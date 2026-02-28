@@ -404,6 +404,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py`
   - `tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py`
   - `tests/tooling/test_objc3c_m151_integration_symbol_graph_scope_resolution_contract.py`
+
+## M152 integration class-protocol-category semantic linking
+
+- Integration gate:
+  - `npm run check:objc3c:m152-class-protocol-category-linking`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_integration_class_protocol_category_linking_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
