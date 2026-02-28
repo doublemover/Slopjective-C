@@ -195,6 +195,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain conformance anchors.
 
+## M215 integration SDK/toolchain packaging
+
+- Gate intent: enforce deterministic SDK/toolchain packaging evidence for IDE consumption.
+### 1.1 SDK packaging integration chain
+- Deterministic SDK gate:
+  - `npm run check:objc3c:m215-sdk-packaging`
+- Chain order:
+  - replays `check:objc3c:m216-conformance-suite-v1`.
+  - enforces all M215 lane contracts:
+    `tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_lowering_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_validation_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_integration_sdk_packaging_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through SDK packaging validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain packaging anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

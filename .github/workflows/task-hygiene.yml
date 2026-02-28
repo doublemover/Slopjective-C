@@ -93,6 +93,8 @@ jobs:
         run: npm run check:objc3c:m217-differential-parity
       - name: 21 Run M216 conformance suite v1 integration gate
         run: npm run check:objc3c:m216-conformance-suite-v1
+      - name: 22 Run M215 SDK/toolchain packaging integration gate
+        run: npm run check:objc3c:m215-sdk-packaging
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
