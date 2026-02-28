@@ -214,6 +214,63 @@ LSP semantic profile capture commands (lowering/runtime lane):
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
 
+## M210 lowering/runtime performance budgets and regression gates
+
+Lowering/LLVM/runtime perf regression evidence is captured as a deterministic packet rooted under `tmp/` so throughput budget and cache-proof gates fail closed.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/`
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.manifest.json`
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/perf-regression-gates.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `perf regression gate markers` (required in gate extracts):
+  - `tmp/artifacts/objc3c-native/perf-budget`
+  - `summary.json`
+  - `defaultMaxElapsedMs`
+  - `defaultPerFixtureBudgetMs`
+  - `cache_hit=(true|false)`
+  - `dispatch_fixture_count`
+  - `max_elapsed_ms`
+  - `total_elapsed_ms`
+  - `budget_breached`
+  - `cache_proof`
+  - `status`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `$perfRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/perf-budget"`
+  - `$summaryPath = Join-Path $runDir "summary.json"`
+  - `$defaultMaxElapsedMs = 4000`
+  - `$defaultPerFixtureBudgetMs = 150`
+  - `$matches = [regex]::Matches($OutputText, "(?m)^cache_hit=(true|false)\s*$")`
+  - `throw "perf-budget FAIL: cache-proof run2 expected cache_hit=true, observed false"`
+  - `dispatch_fixture_count = $dispatchFixtureCount`
+- `closure criteria`:
+  - rerunning the same source + lowering options must preserve byte-identical `module.ll` and `module.manifest.json` plus stable perf-budget summary gate markers.
+  - perf-budget packets remain fail-closed when `status != "PASS"`, `budget_breached == true`, or cache-proof gates drift.
+  - closure remains open if any required packet artifact, ABI/IR anchor, perf regression gate marker, or source anchor is missing.
+
+Performance-budget capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression --emit-prefix module`
+2. `npm run test:objc3c:perf-budget`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.ll tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.manifest.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/abi-ir-anchors.txt`
+4. `rg -n "tmp/artifacts/objc3c-native/perf-budget|summary.json|defaultMaxElapsedMs|defaultPerFixtureBudgetMs|cache_hit=|dispatch_fixture_count|max_elapsed_ms|total_elapsed_ms|budget_breached|cache_proof|status" scripts/check_objc3c_native_perf_budget.ps1 tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/perf-regression-gates.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m210_lowering_perf_regression_contract.py -q`
+
 ## M214 lowering/runtime daemonized compiler profile
 
 Lowering/runtime daemon/watch mode evidence is captured as deterministic packet artifacts under `tmp/` for incremental replay validation.
