@@ -166,6 +166,9 @@ struct FuncParam {
   std::string generic_suffix_text;
   unsigned generic_line = 1;
   unsigned generic_column = 1;
+  bool has_pointer_declarator = false;
+  unsigned pointer_declarator_depth = 0;
+  std::vector<Token> pointer_declarator_tokens;
   std::vector<Token> nullability_suffix_tokens;
   unsigned line = 1;
   unsigned column = 1;
@@ -183,6 +186,9 @@ struct FunctionDecl {
   std::string return_generic_suffix_text;
   unsigned return_generic_line = 1;
   unsigned return_generic_column = 1;
+  bool has_return_pointer_declarator = false;
+  unsigned return_pointer_declarator_depth = 0;
+  std::vector<Token> return_pointer_declarator_tokens;
   std::vector<Token> return_nullability_suffix_tokens;
   bool is_prototype = false;
   bool is_pure = false;

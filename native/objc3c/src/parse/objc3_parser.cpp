@@ -552,6 +552,9 @@ class Objc3Parser {
     fn.return_generic_suffix_text.clear();
     fn.return_generic_line = 1;
     fn.return_generic_column = 1;
+    fn.has_return_pointer_declarator = false;
+    fn.return_pointer_declarator_depth = 0;
+    fn.return_pointer_declarator_tokens.clear();
     fn.return_nullability_suffix_tokens.clear();
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
@@ -603,40 +606,56 @@ class Objc3Parser {
       return false;
     }
 
-    if (Match(TokenKind::Less)) {
-      const Token &open = Previous();
-      fn.has_return_generic_suffix = true;
-      fn.return_generic_suffix_terminated = false;
-      fn.return_generic_line = open.line;
-      fn.return_generic_column = open.column;
-      fn.return_generic_suffix_text = "<";
-      int depth = 1;
-      while (depth > 0 && !At(TokenKind::Eof)) {
-        if (Match(TokenKind::Less)) {
-          fn.return_generic_suffix_text += "<";
-          ++depth;
-          continue;
-        }
-        if (Match(TokenKind::Greater)) {
-          fn.return_generic_suffix_text += ">";
-          --depth;
-          if (depth == 0) {
-            fn.return_generic_suffix_terminated = true;
+    bool parsed_generic_suffix = false;
+    while (true) {
+      if (At(TokenKind::Less) && !parsed_generic_suffix) {
+        Match(TokenKind::Less);
+        const Token &open = Previous();
+        fn.has_return_generic_suffix = true;
+        fn.return_generic_suffix_terminated = false;
+        fn.return_generic_line = open.line;
+        fn.return_generic_column = open.column;
+        fn.return_generic_suffix_text = "<";
+        int depth = 1;
+        while (depth > 0 && !At(TokenKind::Eof)) {
+          if (Match(TokenKind::Less)) {
+            fn.return_generic_suffix_text += "<";
+            ++depth;
+            continue;
           }
-          continue;
+          if (Match(TokenKind::Greater)) {
+            fn.return_generic_suffix_text += ">";
+            --depth;
+            if (depth == 0) {
+              fn.return_generic_suffix_terminated = true;
+            }
+            continue;
+          }
+          fn.return_generic_suffix_text += Advance().text;
         }
-        fn.return_generic_suffix_text += Advance().text;
+        if (!fn.return_generic_suffix_terminated) {
+          diagnostics_.push_back(
+              MakeDiag(fn.return_generic_line, fn.return_generic_column, "O3P114",
+                       "unterminated generic function return type suffix"));
+          return false;
+        }
+        parsed_generic_suffix = true;
+        continue;
       }
-      if (!fn.return_generic_suffix_terminated) {
-        diagnostics_.push_back(
-            MakeDiag(fn.return_generic_line, fn.return_generic_column, "O3P114",
-                     "unterminated generic function return type suffix"));
-        return false;
-      }
-    }
 
-    while (At(TokenKind::Question) || At(TokenKind::Bang)) {
-      fn.return_nullability_suffix_tokens.push_back(Advance());
+      if (Match(TokenKind::Star)) {
+        fn.has_return_pointer_declarator = true;
+        fn.return_pointer_declarator_depth += 1;
+        fn.return_pointer_declarator_tokens.push_back(Previous());
+        continue;
+      }
+
+      if (At(TokenKind::Question) || At(TokenKind::Bang)) {
+        fn.return_nullability_suffix_tokens.push_back(Advance());
+        continue;
+      }
+
+      break;
     }
 
     return true;
@@ -646,6 +665,15 @@ class Objc3Parser {
     param.id_spelling = false;
     param.class_spelling = false;
     param.instancetype_spelling = false;
+    param.has_generic_suffix = false;
+    param.generic_suffix_terminated = true;
+    param.generic_suffix_text.clear();
+    param.generic_line = 1;
+    param.generic_column = 1;
+    param.has_pointer_declarator = false;
+    param.pointer_declarator_depth = 0;
+    param.pointer_declarator_tokens.clear();
+    param.nullability_suffix_tokens.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -705,37 +733,55 @@ class Objc3Parser {
   }
 
   void ParseParameterTypeSuffix(FuncParam &param) {
-    if (Match(TokenKind::Less)) {
-      const Token &open = Previous();
-      param.has_generic_suffix = true;
-      param.generic_suffix_terminated = false;
-      param.generic_line = open.line;
-      param.generic_column = open.column;
-      param.generic_suffix_text = "<";
-      int depth = 1;
-      while (depth > 0 && !At(TokenKind::Eof)) {
-        if (Match(TokenKind::Less)) {
-          param.generic_suffix_text += "<";
-          ++depth;
-          continue;
-        }
-        if (Match(TokenKind::Greater)) {
-          param.generic_suffix_text += ">";
-          --depth;
-          if (depth == 0) {
-            param.generic_suffix_terminated = true;
+    bool parsed_generic_suffix = false;
+    while (true) {
+      if (At(TokenKind::Less) && !parsed_generic_suffix) {
+        Match(TokenKind::Less);
+        const Token &open = Previous();
+        param.has_generic_suffix = true;
+        param.generic_suffix_terminated = false;
+        param.generic_line = open.line;
+        param.generic_column = open.column;
+        param.generic_suffix_text = "<";
+        int depth = 1;
+        while (depth > 0 && !At(TokenKind::Eof)) {
+          if (Match(TokenKind::Less)) {
+            param.generic_suffix_text += "<";
+            ++depth;
+            continue;
           }
-          continue;
+          if (Match(TokenKind::Greater)) {
+            param.generic_suffix_text += ">";
+            --depth;
+            if (depth == 0) {
+              param.generic_suffix_terminated = true;
+            }
+            continue;
+          }
+          param.generic_suffix_text += Advance().text;
         }
-        param.generic_suffix_text += Advance().text;
+        if (!param.generic_suffix_terminated) {
+          diagnostics_.push_back(MakeDiag(open.line, open.column, "O3P108",
+                                          "unterminated generic parameter type suffix"));
+          return;
+        }
+        parsed_generic_suffix = true;
+        continue;
       }
-      if (!param.generic_suffix_terminated) {
-        diagnostics_.push_back(MakeDiag(open.line, open.column, "O3P108",
-                                        "unterminated generic parameter type suffix"));
+
+      if (Match(TokenKind::Star)) {
+        param.has_pointer_declarator = true;
+        param.pointer_declarator_depth += 1;
+        param.pointer_declarator_tokens.push_back(Previous());
+        continue;
       }
-    }
-    while (At(TokenKind::Question) || At(TokenKind::Bang)) {
-      param.nullability_suffix_tokens.push_back(Advance());
+
+      if (At(TokenKind::Question) || At(TokenKind::Bang)) {
+        param.nullability_suffix_tokens.push_back(Advance());
+        continue;
+      }
+
+      break;
     }
   }
 
@@ -1968,4 +2014,3 @@ Objc3ParseResult ParseObjc3Program(const std::vector<Token> &tokens) {
   result.diagnostics = parser.TakeDiagnostics();
   return result;
 }
-

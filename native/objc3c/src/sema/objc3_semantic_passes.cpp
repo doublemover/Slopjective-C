@@ -203,6 +203,10 @@ static bool SupportsNullabilityParamTypeSuffix(const FuncParam &param) {
   return param.id_spelling || param.class_spelling || param.instancetype_spelling;
 }
 
+static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
+  return param.id_spelling || param.class_spelling || param.instancetype_spelling;
+}
+
 static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
 }
@@ -211,11 +215,17 @@ static bool SupportsNullabilityReturnTypeSuffix(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
 }
 
+static bool SupportsPointerReturnTypeDeclarator(const FunctionDecl &fn) {
+  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
+}
+
 static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
   const bool has_unsupported_generic_suffix = param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param);
+  const bool has_unsupported_pointer_declarator =
+      param.has_pointer_declarator && !SupportsPointerParamTypeDeclarator(param);
   const bool has_unsupported_nullability_suffix =
       !param.nullability_suffix_tokens.empty() && !SupportsNullabilityParamTypeSuffix(param);
-  return has_unsupported_generic_suffix || has_unsupported_nullability_suffix;
+  return has_unsupported_generic_suffix || has_unsupported_pointer_declarator || has_unsupported_nullability_suffix;
 }
 
 static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<std::string> &diagnostics) {
@@ -229,6 +239,14 @@ static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<st
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for non-id/Class/instancetype parameter annotation '" +
                                          param.name + "'"));
+    }
+    if (!SupportsPointerParamTypeDeclarator(param)) {
+      for (const auto &token : param.pointer_declarator_tokens) {
+        diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                       "type mismatch: pointer parameter type declarator '" + token.text +
+                                           "' is unsupported for non-id/Class/instancetype parameter annotation '" +
+                                           param.name + "'"));
+      }
     }
     if (!SupportsNullabilityParamTypeSuffix(param)) {
       for (const auto &token : param.nullability_suffix_tokens) {
@@ -251,6 +269,14 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
                                    "type mismatch: unsupported function return type suffix '" + suffix +
                                        "' for non-id/Class/instancetype return annotation in function '" + fn.name +
                                        "'"));
+  }
+  if (!SupportsPointerReturnTypeDeclarator(fn)) {
+    for (const auto &token : fn.return_pointer_declarator_tokens) {
+      diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                     "type mismatch: unsupported function return type declarator '" + token.text +
+                                         "' for non-id/Class/instancetype return annotation in function '" + fn.name +
+                                         "'"));
+    }
   }
   if (!SupportsNullabilityReturnTypeSuffix(fn)) {
     for (const auto &token : fn.return_nullability_suffix_tokens) {
@@ -1209,7 +1235,6 @@ void ValidateSemanticBodies(const Objc3Program &program, const Objc3SemanticInte
     }
   }
 }
-
 
 
 
