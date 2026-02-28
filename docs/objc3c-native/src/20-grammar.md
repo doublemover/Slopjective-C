@@ -523,6 +523,22 @@ Frontend C++ interop-shim contract relies on deterministic message-send parse bo
   3. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
 
+## M196 frontend C interop headers and ABI alignment
+
+Frontend C-interop header/ABI-alignment contract relies on deterministic C ABI wrapper declarations, stable compile-option/result alias surfaces, and explicit frontend-option normalization boundaries.
+
+- Required frontend C-interop header/ABI-alignment signals:
+  - C wrapper header anchor remains `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`.
+  - C wrapper alias surfaces remain `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;` and `typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;`.
+  - wrapper ABI/layout guards remain `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,` and companion compile-result/context checks.
+  - frontend option normalization remains `BuildFrontendOptions(const objc3c_frontend_compile_options_t &options)` plus `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+  - pipeline ABI defaults remain `kRuntimeDispatchDefaultArgs = 4`, `kRuntimeDispatchMaxArgs = 16`, and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+- Required frontend C-interop header/ABI-alignment commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
