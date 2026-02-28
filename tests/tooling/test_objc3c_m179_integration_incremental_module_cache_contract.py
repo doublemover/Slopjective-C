@@ -21,9 +21,12 @@ def test_m179_integration_incremental_module_cache_is_documented() -> None:
         "check:compiler-closeout:m179",
         "tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py",
         "tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py",
+        "tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py",
+        "tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py",
+        "tests/tooling/test_objc3c_m179_conformance_incremental_module_cache_contract.py",
         "tests/tooling/test_objc3c_m179_integration_incremental_module_cache_contract.py",
-        "M179-C001 and M179-D001 outputs are not yet landed in this workspace.",
-        "while remaining forward-compatible for future M179-C001/M179-D001 additions.",
+        "M179-A001 through M179-D001 outputs are landed in this workspace.",
+        "The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M179-E001 wiring contract.",
     ):
         assert text in library_api_doc
 
@@ -37,6 +40,9 @@ def test_m179_integration_incremental_module_cache_gate_is_wired() -> None:
     assert scripts["check:objc3c:m179-incremental-module-cache-contracts"] == (
         "python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py "
         "tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py "
+        "tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py "
+        "tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py "
+        "tests/tooling/test_objc3c_m179_conformance_incremental_module_cache_contract.py "
         "tests/tooling/test_objc3c_m179_integration_incremental_module_cache_contract.py -q"
     )
 

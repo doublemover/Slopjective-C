@@ -814,10 +814,28 @@ int objc3c_frontend_startup_check(void) {
 - Gate coverage files:
   - `tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py`
   - `tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_conformance_incremental_module_cache_contract.py`
   - `tests/tooling/test_objc3c_m179_integration_incremental_module_cache_contract.py`
 - Assumptions:
-  - M179-C001 and M179-D001 outputs are not yet landed in this workspace.
-  - The integration gate fail-closes on M179-A001 plus M179-B001 surfaces and this M179-E001 wiring contract, while remaining forward-compatible for future M179-C001/M179-D001 additions.
+  - M179-A001 through M179-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M179-E001 wiring contract.
+
+## M180 integration cross-module conformance contract
+
+- Integration gate:
+  - `npm run check:objc3c:m180-cross-module-conformance-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m180`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py`
+- Assumptions:
+  - M180-A001, M180-C001, and M180-D001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M180-B001 sema/type cross-module conformance surface and this M180-E001 wiring contract, while remaining forward-compatible for future M180-A001/M180-C001/M180-D001 additions.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
