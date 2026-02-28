@@ -1,0 +1,33 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_autoreleasepool_scope_lowering_handoff": true,
+        "autoreleasepool_scope_lowering_scope_sites": 3,
+        "autoreleasepool_scope_lowering_scope_symbolized_sites": 3,
+        "autoreleasepool_scope_lowering_max_scope_depth": 2,
+        "autoreleasepool_scope_lowering_scope_entry_transition_sites": 3,
+        "autoreleasepool_scope_lowering_scope_exit_transition_sites": 3,
+        "autoreleasepool_scope_lowering_contract_violation_sites": 0,
+        "lowering_autoreleasepool_scope_replay_key": "scope_sites=3;scope_symbolized_sites=3;max_scope_depth=2;scope_entry_transition_sites=3;scope_exit_transition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m163-autoreleasepool-scope-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_autoreleasepool_scope_lowering_surface": {
+          "scope_sites": 3,
+          "scope_symbolized_sites": 3,
+          "max_scope_depth": 2,
+          "scope_entry_transition_sites": 3,
+          "scope_exit_transition_sites": 3,
+          "contract_violation_sites": 0,
+          "replay_key": "scope_sites=3;scope_symbolized_sites=3;max_scope_depth=2;scope_entry_transition_sites=3;scope_exit_transition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m163-autoreleasepool-scope-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_autoreleasepool_scope": {
+    "replay_key": "scope_sites=3;scope_symbolized_sites=3;max_scope_depth=2;scope_entry_transition_sites=3;scope_exit_transition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m163-autoreleasepool-scope-lowering-v1",
+    "lane_contract": "m163-autoreleasepool-scope-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

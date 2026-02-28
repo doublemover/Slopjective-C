@@ -606,6 +606,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_retain_release_operation_lowering_profile`
 - `!objc3.objc_retain_release_operation_lowering = !{!15}`
 
+## M163 validation/conformance/perf autoreleasepool scope runbook
+
+From repo root, execute deterministic M163 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m163_frontend_autorelease_pool_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m163_sema_autorelease_pool_scope_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m163_lowering_autoreleasepool_scope_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m163_validation_autoreleasepool_scope_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_autoreleasepool_scope.replay_key`
+- `deterministic_autoreleasepool_scope_lowering_handoff`
+- `autoreleasepool_scope_lowering`
+- `frontend_objc_autoreleasepool_scope_lowering_profile`
+- `!objc3.objc_autoreleasepool_scope_lowering = !{!16}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
