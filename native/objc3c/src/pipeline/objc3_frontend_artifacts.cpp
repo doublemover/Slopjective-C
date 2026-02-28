@@ -190,8 +190,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
 
+  Objc3IRFrontendMetadata ir_frontend_metadata;
+  ir_frontend_metadata.language_version = options.language_version;
+  ir_frontend_metadata.compatibility_mode = CompatibilityModeName(options.compatibility_mode);
+  ir_frontend_metadata.migration_assist = options.migration_assist;
+  ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;
+  ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;
+  ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;
+
   std::string ir_error;
-  if (!EmitObjc3IRText(pipeline_result.program, options.lowering, bundle.ir_text, ir_error)) {
+  if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
     bundle.post_pipeline_diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     bundle.manifest_json.clear();

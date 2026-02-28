@@ -13,8 +13,10 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
 
 class Objc3IREmitter {
  public:
-  Objc3IREmitter(const Objc3Program &program, const Objc3LoweringContract &lowering_contract)
-      : program_(program) {
+  Objc3IREmitter(const Objc3Program &program,
+                 const Objc3LoweringContract &lowering_contract,
+                 const Objc3IRFrontendMetadata &frontend_metadata)
+      : program_(program), frontend_metadata_(frontend_metadata) {
     if (!TryBuildObjc3LoweringIRBoundary(lowering_contract, lowering_ir_boundary_, boundary_error_)) {
       return;
     }
@@ -89,7 +91,12 @@ class Objc3IREmitter {
     std::ostringstream out;
     out << "; objc3c native frontend IR\n";
     out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
+    out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
+        << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
+        << ", migration_assist=" << (frontend_metadata_.migration_assist ? "true" : "false")
+        << ", migration_legacy_total=" << frontend_metadata_.migration_legacy_total() << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
+    EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
       out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
       for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
@@ -190,6 +197,17 @@ class Objc3IREmitter {
       out << "\\" << value;
     }
     return out.str();
+  }
+
+  void EmitFrontendMetadata(std::ostringstream &out) const {
+    out << "!objc3.frontend = !{!0}\n";
+    out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
+        << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
+        << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_yes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_no) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_null) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_total()) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
@@ -2078,6 +2096,7 @@ class Objc3IREmitter {
   }
 
   const Objc3Program &program_;
+  Objc3IRFrontendMetadata frontend_metadata_;
   Objc3LoweringIRBoundary lowering_ir_boundary_;
   std::string boundary_error_;
   std::unordered_set<std::string> globals_;
@@ -2097,8 +2116,9 @@ class Objc3IREmitter {
 
 bool EmitObjc3IRText(const Objc3ParsedProgram &program,
                      const Objc3LoweringContract &lowering_contract,
+                     const Objc3IRFrontendMetadata &frontend_metadata,
                      std::string &ir,
                      std::string &error) {
-  Objc3IREmitter emitter(Objc3ParsedProgramAst(program), lowering_contract);
+  Objc3IREmitter emitter(Objc3ParsedProgramAst(program), lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }

@@ -31,6 +31,8 @@ def test_ir_emitter_module_exists_and_pipeline_artifacts_use_api() -> None:
     assert "; lowering_ir_boundary = " in ir_source
     assert "message send exceeds runtime dispatch arg slots" in ir_source
     assert "Objc3LoweringIRBoundaryReplayKey(" in ir_source
+    assert "struct Objc3IRFrontendMetadata {" in ir_header
+    assert "std::size_t migration_legacy_total() const" in ir_header
     assert '#include "ast/objc3_ast.h"' not in ir_header
     assert '#include "lex/objc3_lexer.h"' not in ir_header
     assert '#include "lex/objc3_lexer.h"' not in ir_source
@@ -40,7 +42,7 @@ def test_ir_emitter_module_exists_and_pipeline_artifacts_use_api() -> None:
     artifacts_cpp = _read(PIPELINE_ARTIFACTS_CPP)
     assert '#include "ir/objc3_ir_emitter.h"' in artifacts_cpp
     assert "class Objc3IREmitter {" not in artifacts_cpp
-    assert "EmitObjc3IRText(pipeline_result.program, options.lowering, bundle.ir_text, ir_error)" in artifacts_cpp
+    assert "EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)" in artifacts_cpp
 
 
 def test_ir_emitter_validates_boundary_and_arity_before_emit() -> None:
@@ -79,12 +81,15 @@ def test_ir_emitter_validates_boundary_and_arity_before_emit() -> None:
 
 def test_ir_emitter_prologue_pins_canonical_lowering_replay_comment() -> None:
     ir_source = _read(IR_SOURCE)
+    assert 'out << "!objc3.frontend = !{!0}\\n";' in ir_source
     _assert_in_order(
         ir_source,
         [
             'out << "; objc3c native frontend IR\\n";',
             'out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\\n";',
+            'out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)',
             'out << "source_filename = \\"" << program_.module_name << ".objc3\\"\\n\\n";',
+            "EmitFrontendMetadata(out);",
             'out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";',
             "for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {",
         ],

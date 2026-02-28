@@ -65,6 +65,13 @@ def test_m222_driver_cli_supports_language_version_and_migration_controls() -> N
     assert 'return "canonical";' in frontend_artifacts_source
     assert "\\\"compatibility_mode\\\":\\\"" in frontend_artifacts_source
     assert "\\\"migration_assist\\\":" in frontend_artifacts_source
+    assert "Objc3IRFrontendMetadata ir_frontend_metadata;" in frontend_artifacts_source
+    assert "ir_frontend_metadata.language_version = options.language_version;" in frontend_artifacts_source
+    assert "ir_frontend_metadata.compatibility_mode = CompatibilityModeName(options.compatibility_mode);" in frontend_artifacts_source
+    assert "ir_frontend_metadata.migration_assist = options.migration_assist;" in frontend_artifacts_source
+    assert "ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;" in frontend_artifacts_source
+    assert "ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;" in frontend_artifacts_source
+    assert "ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;" in frontend_artifacts_source
     _assert_in_order(
         frontend_artifacts_source,
         [
@@ -73,6 +80,8 @@ def test_m222_driver_cli_supports_language_version_and_migration_controls() -> N
             'manifest << "    \\"compatibility_mode\\":\\""',
             'manifest << "    \\"migration_assist\\":"',
             'manifest << "    \\"max_message_send_args\\":"',
+            "Objc3IRFrontendMetadata ir_frontend_metadata;",
+            "EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)",
         ],
     )
 
