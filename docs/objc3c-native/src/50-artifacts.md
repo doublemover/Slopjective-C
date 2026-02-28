@@ -51,6 +51,43 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M218 lowering/runtime RC provenance profile
+
+Release-candidate lowering/runtime provenance is captured as a deterministic packet rooted under `tmp/`.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.manifest.json`
+  - `tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+  - `tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/attestation-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each RC packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors to include in packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `attestation markers` (contract markers to include in RC packet attestation notes):
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `RC provenance closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - replay and attestation marker reports stay stable across reruns (no added/removed markers).
+  - closure remains open if any required packet artifact, ABI/IR anchor, replay marker, or attestation marker is missing.
+
+RC provenance capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.ll > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.manifest.json >> tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+4. `rg -n "Objc3LoweringIRBoundaryReplayKey|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/attestation-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m218_lowering_rc_provenance_contract.py -q`
+
 ## M219 lowering/runtime cross-platform parity profile
 
 Cross-platform lowering/runtime parity evidence is captured as deterministic packet artifacts under `tmp/` across windows/linux/macos.
