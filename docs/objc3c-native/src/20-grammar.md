@@ -491,6 +491,22 @@ Frontend foreign-type import diagnostics contract relies on deterministic parser
   3. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
 
+## M198 frontend swift metadata bridge
+
+Frontend Swift metadata-bridge contract relies on deterministic parser token-metadata capture, explicit AST carrier fields, and stable frontend-to-sema transport boundaries.
+
+- Required frontend Swift metadata-bridge signals:
+  - parser token metadata remains `MakeSemaTokenMetadata(...)`.
+  - pointer/nullability metadata kinds remain `Objc3SemaTokenKind::PointerDeclarator` and `Objc3SemaTokenKind::NullabilitySuffix`.
+  - AST metadata carriers remain `std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens`, `std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens`, `std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens`, and `std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens`.
+  - frontend handoff bridge remains `BuildObjc3AstFromTokens(tokens)` and `sema_input.program = &result.program;`.
+  - metadata bridge parity anchors remain `result.type_metadata_handoff` and `result.deterministic_type_metadata_handoff`.
+- Required frontend Swift metadata-bridge commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
