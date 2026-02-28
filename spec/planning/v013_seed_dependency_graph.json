@@ -1,0 +1,1845 @@
+{
+  "contract_id": "V013-TOOL-03-SEED-DAG-v1",
+  "seed_id": "V013-TOOL-03",
+  "snapshot_date": "2026-02-23",
+  "source_matrix_path": "spec/planning/v013_future_work_seed_matrix.md",
+  "determinism": {
+    "ordering_rules": [
+      "Within each documented wave, order seeds by priority score descending.",
+      "Tie-break seed ordering by DUV descending, then DC ascending, then Seed ID ascending.",
+      "Order batches by min covered wave ascending, then class rank (small<medium<large), then Batch ID ascending."
+    ],
+    "required_edge_ids": [
+      "EDGE-V013-001",
+      "EDGE-V013-002",
+      "EDGE-V013-003",
+      "EDGE-V013-004",
+      "EDGE-V013-005",
+      "EDGE-V013-006",
+      "EDGE-V013-007",
+      "EDGE-V013-008",
+      "EDGE-V013-009",
+      "EDGE-V013-010",
+      "EDGE-V013-011",
+      "EDGE-V013-012",
+      "EDGE-V013-013",
+      "EDGE-V013-014",
+      "EDGE-V013-015",
+      "EDGE-V013-016",
+      "EDGE-V013-017",
+      "EDGE-V013-018",
+      "EDGE-V013-019",
+      "EDGE-V013-020",
+      "EDGE-V013-021"
+    ],
+    "required_wave_ids": [
+      "W0",
+      "W1",
+      "W2",
+      "W3",
+      "W4",
+      "W5",
+      "W6",
+      "W7"
+    ],
+    "cycle_check": "pass",
+    "documented_wave_topology_check": "pass"
+  },
+  "graph": {
+    "seed_count": 20,
+    "edge_count": 21,
+    "seeds": [
+      {
+        "seed_id": "V013-SPEC-02",
+        "family": "FAM-SPEC",
+        "worklane": "WL-SPEC",
+        "proposed_issue_title": "[v0.13][spec] Establish native syntax baseline contracts",
+        "artifact_targets": [
+          "spec/IMPLEMENTATION_EXECUTION_ROADMAP.md"
+        ],
+        "depends_on": [],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-SPEC-02",
+        "priority": {
+          "cpi": 5,
+          "duv": 5,
+          "rbv": 4,
+          "erc": 4,
+          "ecp": 5,
+          "dc": 1,
+          "priority_score": 90,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W0"
+      },
+      {
+        "seed_id": "V013-SPEC-01",
+        "family": "FAM-SPEC",
+        "worklane": "WL-SPEC",
+        "proposed_issue_title": "[v0.13][spec] Lock deterministic planning validation profile",
+        "artifact_targets": [
+          "spec/CONFORMANCE_PROFILE_CHECKLIST.md"
+        ],
+        "depends_on": [],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-SPEC-01",
+        "priority": {
+          "cpi": 5,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 1,
+          "priority_score": 84,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W0"
+      },
+      {
+        "seed_id": "V013-TOOL-01",
+        "family": "FAM-TOOL",
+        "worklane": "WL-TOOL",
+        "proposed_issue_title": "[v0.13][tooling] Stabilize issue/task hygiene contracts",
+        "artifact_targets": [
+          "scripts/check_issue_checkbox_drift.py"
+        ],
+        "depends_on": [],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-TOOL-01",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 3,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 76,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W0"
+      },
+      {
+        "seed_id": "V013-TOOL-03",
+        "family": "FAM-TOOL",
+        "worklane": "WL-TOOL",
+        "proposed_issue_title": "[v0.13][tooling] Generate seed DAG and batch skeletons from matrix",
+        "artifact_targets": [
+          "scripts/generate_seed_batches.py",
+          "spec/planning/v013_seed_dependency_graph.json"
+        ],
+        "depends_on": [
+          "V013-SPEC-02"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-TOOL-03",
+        "priority": {
+          "cpi": 5,
+          "duv": 5,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 5,
+          "dc": 2,
+          "priority_score": 88,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W1"
+      },
+      {
+        "seed_id": "V013-TOOL-02",
+        "family": "FAM-TOOL",
+        "worklane": "WL-TOOL",
+        "proposed_issue_title": "[v0.13][tooling] Deterministic seed payload build path",
+        "artifact_targets": [
+          "scripts/generate_seed_issue_payloads.py"
+        ],
+        "depends_on": [
+          "V013-SPEC-01"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-TOOL-02",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 78,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W1"
+      },
+      {
+        "seed_id": "V013-GOV-01",
+        "family": "FAM-GOV",
+        "worklane": "WL-GOV",
+        "proposed_issue_title": "[v0.13][governance] Publish initial board workflow contract",
+        "artifact_targets": [
+          "reports/reviews/v013_review_board_calendar.md"
+        ],
+        "depends_on": [
+          "V013-SPEC-02"
+        ],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-GOV-01",
+        "priority": {
+          "cpi": 4,
+          "duv": 3,
+          "rbv": 3,
+          "erc": 3,
+          "ecp": 3,
+          "dc": 2,
+          "priority_score": 70,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W1"
+      },
+      {
+        "seed_id": "V013-SPEC-03",
+        "family": "FAM-SPEC",
+        "worklane": "WL-SPEC",
+        "proposed_issue_title": "[v0.13][spec] Normalize abstract-machine sync ledger",
+        "artifact_targets": [
+          "reports/spec_sync/abstract_machine_audit_2026Q2.md"
+        ],
+        "depends_on": [
+          "V013-TOOL-02"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-SPEC-03",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 4,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 80,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W2"
+      },
+      {
+        "seed_id": "V013-GOV-02",
+        "family": "FAM-GOV",
+        "worklane": "WL-GOV",
+        "proposed_issue_title": "[v0.13][governance] Expand extension registry compat policy",
+        "artifact_targets": [
+          "tests/governance/registry_compat/README.md"
+        ],
+        "depends_on": [
+          "V013-GOV-01"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-GOV-02",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 79,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W2"
+      },
+      {
+        "seed_id": "V013-DOC-01",
+        "family": "FAM-TOOL",
+        "worklane": "WL-TOOL",
+        "proposed_issue_title": "[v0.13][tooling] Harden seed generation diagnostics docs",
+        "artifact_targets": [
+          "docs/objc3c-native/src/library-api.md"
+        ],
+        "depends_on": [
+          "V013-TOOL-03"
+        ],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-DOC-01",
+        "priority": {
+          "cpi": 3,
+          "duv": 3,
+          "rbv": 3,
+          "erc": 2,
+          "ecp": 3,
+          "dc": 2,
+          "priority_score": 63,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W2"
+      },
+      {
+        "seed_id": "V013-CONF-01",
+        "family": "FAM-CONF",
+        "worklane": "WL-CONF",
+        "proposed_issue_title": "[v0.13][conformance] Publish baseline release evidence schema",
+        "artifact_targets": [
+          "reports/conformance/release_evidence_contract.v013.json"
+        ],
+        "depends_on": [
+          "V013-SPEC-03",
+          "V013-GOV-02"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-CONF-01",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 4,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 81,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W3"
+      },
+      {
+        "seed_id": "V013-GOV-03",
+        "family": "FAM-GOV",
+        "worklane": "WL-GOV",
+        "proposed_issue_title": "[v0.13][governance] Lock cadence and quorum package",
+        "artifact_targets": [
+          "spec/governance/review_board_operating_model_v1.md"
+        ],
+        "depends_on": [
+          "V013-GOV-02"
+        ],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-GOV-03",
+        "priority": {
+          "cpi": 4,
+          "duv": 3,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 3,
+          "dc": 2,
+          "priority_score": 71,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W3"
+      },
+      {
+        "seed_id": "V013-TOOL-04",
+        "family": "FAM-TOOL",
+        "worklane": "WL-TOOL",
+        "proposed_issue_title": "[v0.13][tooling] Refresh dispatch planning evidence packet",
+        "artifact_targets": [
+          "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"
+        ],
+        "depends_on": [
+          "V013-DOC-01"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-TOOL-04",
+        "priority": {
+          "cpi": 4,
+          "duv": 3,
+          "rbv": 3,
+          "erc": 3,
+          "ecp": 3,
+          "dc": 2,
+          "priority_score": 69,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W3"
+      },
+      {
+        "seed_id": "V013-SPEC-04",
+        "family": "FAM-SPEC",
+        "worklane": "WL-SPEC",
+        "proposed_issue_title": "[v0.13][spec] Capture profile-gate delta package",
+        "artifact_targets": [
+          "spec/CONFORMANCE_PROFILE_CHECKLIST.md"
+        ],
+        "depends_on": [
+          "V013-GOV-03",
+          "V013-TOOL-04"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-SPEC-04",
+        "priority": {
+          "cpi": 5,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 4,
+          "ecp": 5,
+          "dc": 2,
+          "priority_score": 86,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W4"
+      },
+      {
+        "seed_id": "V013-CONF-02",
+        "family": "FAM-CONF",
+        "worklane": "WL-CONF",
+        "proposed_issue_title": "[v0.13][conformance] Generate quality-gate decision rollup",
+        "artifact_targets": [
+          "reports/conformance/spec_open_issues_v013_summary.md"
+        ],
+        "depends_on": [
+          "V013-CONF-01"
+        ],
+        "shard_class": "small",
+        "acceptance_gate_id": "AC-V013-CONF-02",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 3,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 77,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W4"
+      },
+      {
+        "seed_id": "V013-GOV-04",
+        "family": "FAM-GOV",
+        "worklane": "WL-GOV",
+        "proposed_issue_title": "[v0.13][governance] Publish macro tabletop closeout controls",
+        "artifact_targets": [
+          "spec/governance/macro_security_incident_playbook_v1.md"
+        ],
+        "depends_on": [
+          "V013-GOV-03"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-GOV-04",
+        "priority": {
+          "cpi": 4,
+          "duv": 3,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 3,
+          "dc": 2,
+          "priority_score": 72,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W4"
+      },
+      {
+        "seed_id": "V013-REL-01",
+        "family": "FAM-REL",
+        "worklane": "WL-REL",
+        "proposed_issue_title": "[v0.13][release] Assemble seed wave readiness package",
+        "artifact_targets": [
+          "spec/FUTURE_WORK_V013_BOOTSTRAP.md"
+        ],
+        "depends_on": [
+          "V013-SPEC-04",
+          "V013-CONF-02"
+        ],
+        "shard_class": "large",
+        "acceptance_gate_id": "AC-V013-REL-01",
+        "priority": {
+          "cpi": 5,
+          "duv": 5,
+          "rbv": 5,
+          "erc": 4,
+          "ecp": 5,
+          "dc": 2,
+          "priority_score": 92,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W5"
+      },
+      {
+        "seed_id": "V013-CONF-03",
+        "family": "FAM-CONF",
+        "worklane": "WL-CONF",
+        "proposed_issue_title": "[v0.13][conformance] Certify dispatch replay quality gates",
+        "artifact_targets": [
+          "reports/security/v013_macro_tabletop.md"
+        ],
+        "depends_on": [
+          "V013-GOV-04"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-CONF-03",
+        "priority": {
+          "cpi": 4,
+          "duv": 4,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 78,
+          "tier": "Tier-1"
+        },
+        "wave_id": "W5"
+      },
+      {
+        "seed_id": "V013-REL-02",
+        "family": "FAM-REL",
+        "worklane": "WL-REL",
+        "proposed_issue_title": "[v0.13][release] Integrate cross-lane closeout packet",
+        "artifact_targets": [
+          "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"
+        ],
+        "depends_on": [
+          "V013-REL-01"
+        ],
+        "shard_class": "large",
+        "acceptance_gate_id": "AC-V013-REL-02",
+        "priority": {
+          "cpi": 5,
+          "duv": 4,
+          "rbv": 5,
+          "erc": 4,
+          "ecp": 5,
+          "dc": 2,
+          "priority_score": 89,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W6"
+      },
+      {
+        "seed_id": "V013-CONF-04",
+        "family": "FAM-CONF",
+        "worklane": "WL-CONF",
+        "proposed_issue_title": "[v0.13][conformance] Finalize parity and reproducibility evidence",
+        "artifact_targets": [
+          "reports/conformance/release_evidence_contract.v013.json"
+        ],
+        "depends_on": [
+          "V013-CONF-03"
+        ],
+        "shard_class": "medium",
+        "acceptance_gate_id": "AC-V013-CONF-04",
+        "priority": {
+          "cpi": 4,
+          "duv": 3,
+          "rbv": 4,
+          "erc": 3,
+          "ecp": 4,
+          "dc": 2,
+          "priority_score": 73,
+          "tier": "Tier-2"
+        },
+        "wave_id": "W6"
+      },
+      {
+        "seed_id": "V013-REL-03",
+        "family": "FAM-REL",
+        "worklane": "WL-REL",
+        "proposed_issue_title": "[v0.13][release] Publish signoff and evidence consolidation package",
+        "artifact_targets": [
+          "spec/FUTURE_WORK_V013_BOOTSTRAP.md"
+        ],
+        "depends_on": [
+          "V013-REL-02",
+          "V013-CONF-04"
+        ],
+        "shard_class": "large",
+        "acceptance_gate_id": "AC-V013-REL-03",
+        "priority": {
+          "cpi": 5,
+          "duv": 5,
+          "rbv": 5,
+          "erc": 5,
+          "ecp": 5,
+          "dc": 2,
+          "priority_score": 95,
+          "tier": "Tier-0"
+        },
+        "wave_id": "W7"
+      }
+    ],
+    "edges": [
+      {
+        "edge_id": "EDGE-V013-001",
+        "predecessor": "V013-SPEC-01",
+        "successor": "V013-TOOL-02",
+        "type": "hard",
+        "rationale": "Issue hygiene contract must be stable before payload synthesis."
+      },
+      {
+        "edge_id": "EDGE-V013-002",
+        "predecessor": "V013-SPEC-02",
+        "successor": "V013-TOOL-03",
+        "type": "hard",
+        "rationale": "Matrix-driven DAG generation depends on baseline syntax contract."
+      },
+      {
+        "edge_id": "EDGE-V013-003",
+        "predecessor": "V013-SPEC-02",
+        "successor": "V013-GOV-01",
+        "type": "hard",
+        "rationale": "Governance baseline follows spec baseline publication."
+      },
+      {
+        "edge_id": "EDGE-V013-004",
+        "predecessor": "V013-GOV-01",
+        "successor": "V013-GOV-02",
+        "type": "hard",
+        "rationale": "Registry compatibility policy extends initial governance rules."
+      },
+      {
+        "edge_id": "EDGE-V013-005",
+        "predecessor": "V013-TOOL-02",
+        "successor": "V013-SPEC-03",
+        "type": "hard",
+        "rationale": "Spec sync normalization consumes deterministic payload outputs."
+      },
+      {
+        "edge_id": "EDGE-V013-006",
+        "predecessor": "V013-TOOL-03",
+        "successor": "V013-DOC-01",
+        "type": "soft",
+        "rationale": "Diagnostics docs are grounded in generated DAG contract."
+      },
+      {
+        "edge_id": "EDGE-V013-007",
+        "predecessor": "V013-SPEC-03",
+        "successor": "V013-CONF-01",
+        "type": "hard",
+        "rationale": "Conformance schema requires normalized spec sync data."
+      },
+      {
+        "edge_id": "EDGE-V013-008",
+        "predecessor": "V013-GOV-02",
+        "successor": "V013-CONF-01",
+        "type": "hard",
+        "rationale": "Conformance schema must map governance compatibility policy."
+      },
+      {
+        "edge_id": "EDGE-V013-009",
+        "predecessor": "V013-GOV-02",
+        "successor": "V013-GOV-03",
+        "type": "hard",
+        "rationale": "Cadence package builds on established governance policy."
+      },
+      {
+        "edge_id": "EDGE-V013-010",
+        "predecessor": "V013-DOC-01",
+        "successor": "V013-TOOL-04",
+        "type": "soft",
+        "rationale": "Dispatch evidence packet updates rely on diagnostics guidance."
+      },
+      {
+        "edge_id": "EDGE-V013-011",
+        "predecessor": "V013-CONF-01",
+        "successor": "V013-CONF-02",
+        "type": "hard",
+        "rationale": "Quality-gate rollup depends on baseline evidence schema."
+      },
+      {
+        "edge_id": "EDGE-V013-012",
+        "predecessor": "V013-GOV-03",
+        "successor": "V013-SPEC-04",
+        "type": "hard",
+        "rationale": "Profile-gate deltas require current governance cadence controls."
+      },
+      {
+        "edge_id": "EDGE-V013-013",
+        "predecessor": "V013-TOOL-04",
+        "successor": "V013-SPEC-04",
+        "type": "hard",
+        "rationale": "Spec profile deltas depend on refreshed dispatch evidence."
+      },
+      {
+        "edge_id": "EDGE-V013-014",
+        "predecessor": "V013-GOV-03",
+        "successor": "V013-GOV-04",
+        "type": "hard",
+        "rationale": "Macro tabletop controls extend quorum package outputs."
+      },
+      {
+        "edge_id": "EDGE-V013-015",
+        "predecessor": "V013-SPEC-04",
+        "successor": "V013-REL-01",
+        "type": "hard",
+        "rationale": "Release readiness requires profile-gate delta completion."
+      },
+      {
+        "edge_id": "EDGE-V013-016",
+        "predecessor": "V013-CONF-02",
+        "successor": "V013-REL-01",
+        "type": "hard",
+        "rationale": "Release readiness requires quality-gate rollup completion."
+      },
+      {
+        "edge_id": "EDGE-V013-017",
+        "predecessor": "V013-GOV-04",
+        "successor": "V013-CONF-03",
+        "type": "hard",
+        "rationale": "Replay quality gates depend on macro tabletop closeout controls."
+      },
+      {
+        "edge_id": "EDGE-V013-018",
+        "predecessor": "V013-REL-01",
+        "successor": "V013-REL-02",
+        "type": "hard",
+        "rationale": "Cross-lane packet integration follows readiness assembly."
+      },
+      {
+        "edge_id": "EDGE-V013-019",
+        "predecessor": "V013-CONF-03",
+        "successor": "V013-CONF-04",
+        "type": "hard",
+        "rationale": "Final parity evidence depends on replay quality gate certification."
+      },
+      {
+        "edge_id": "EDGE-V013-020",
+        "predecessor": "V013-REL-02",
+        "successor": "V013-REL-03",
+        "type": "hard",
+        "rationale": "Final signoff requires integrated closeout packet state."
+      },
+      {
+        "edge_id": "EDGE-V013-021",
+        "predecessor": "V013-CONF-04",
+        "successor": "V013-REL-03",
+        "type": "hard",
+        "rationale": "Final signoff requires reproducibility evidence completion."
+      }
+    ]
+  },
+  "wave_eligibility": [
+    {
+      "wave_id": "W0",
+      "eligible_seed_ids": [
+        "V013-SPEC-02",
+        "V013-SPEC-01",
+        "V013-TOOL-01"
+      ],
+      "ordered_seed_ids": [
+        "V013-SPEC-02",
+        "V013-SPEC-01",
+        "V013-TOOL-01"
+      ]
+    },
+    {
+      "wave_id": "W1",
+      "eligible_seed_ids": [
+        "V013-TOOL-02",
+        "V013-TOOL-03",
+        "V013-GOV-01"
+      ],
+      "ordered_seed_ids": [
+        "V013-TOOL-03",
+        "V013-TOOL-02",
+        "V013-GOV-01"
+      ]
+    },
+    {
+      "wave_id": "W2",
+      "eligible_seed_ids": [
+        "V013-GOV-02",
+        "V013-SPEC-03",
+        "V013-DOC-01"
+      ],
+      "ordered_seed_ids": [
+        "V013-SPEC-03",
+        "V013-GOV-02",
+        "V013-DOC-01"
+      ]
+    },
+    {
+      "wave_id": "W3",
+      "eligible_seed_ids": [
+        "V013-CONF-01",
+        "V013-GOV-03",
+        "V013-TOOL-04"
+      ],
+      "ordered_seed_ids": [
+        "V013-CONF-01",
+        "V013-GOV-03",
+        "V013-TOOL-04"
+      ]
+    },
+    {
+      "wave_id": "W4",
+      "eligible_seed_ids": [
+        "V013-CONF-02",
+        "V013-SPEC-04",
+        "V013-GOV-04"
+      ],
+      "ordered_seed_ids": [
+        "V013-SPEC-04",
+        "V013-CONF-02",
+        "V013-GOV-04"
+      ]
+    },
+    {
+      "wave_id": "W5",
+      "eligible_seed_ids": [
+        "V013-REL-01",
+        "V013-CONF-03"
+      ],
+      "ordered_seed_ids": [
+        "V013-REL-01",
+        "V013-CONF-03"
+      ]
+    },
+    {
+      "wave_id": "W6",
+      "eligible_seed_ids": [
+        "V013-REL-02",
+        "V013-CONF-04"
+      ],
+      "ordered_seed_ids": [
+        "V013-REL-02",
+        "V013-CONF-04"
+      ]
+    },
+    {
+      "wave_id": "W7",
+      "eligible_seed_ids": [
+        "V013-REL-03"
+      ],
+      "ordered_seed_ids": [
+        "V013-REL-03"
+      ]
+    }
+  ],
+  "execution_order": [
+    "V013-SPEC-02",
+    "V013-SPEC-01",
+    "V013-TOOL-01",
+    "V013-TOOL-03",
+    "V013-TOOL-02",
+    "V013-GOV-01",
+    "V013-SPEC-03",
+    "V013-GOV-02",
+    "V013-DOC-01",
+    "V013-CONF-01",
+    "V013-GOV-03",
+    "V013-TOOL-04",
+    "V013-SPEC-04",
+    "V013-CONF-02",
+    "V013-GOV-04",
+    "V013-REL-01",
+    "V013-CONF-03",
+    "V013-REL-02",
+    "V013-CONF-04",
+    "V013-REL-03"
+  ],
+  "batch_skeletons": {
+    "batch_count": 1,
+    "batches": [
+      {
+        "batch_id": "BATCH-V013-L-01",
+        "class": "large",
+        "included_seed_ids": [
+          "V013-SPEC-02",
+          "V013-SPEC-01",
+          "V013-TOOL-01",
+          "V013-TOOL-02",
+          "V013-TOOL-03",
+          "V013-GOV-01",
+          "V013-GOV-02",
+          "V013-SPEC-03",
+          "V013-DOC-01",
+          "V013-CONF-01",
+          "V013-GOV-03",
+          "V013-TOOL-04",
+          "V013-CONF-02",
+          "V013-SPEC-04",
+          "V013-GOV-04",
+          "V013-REL-01",
+          "V013-CONF-03",
+          "V013-REL-02",
+          "V013-CONF-04",
+          "V013-REL-03"
+        ],
+        "entry_prerequisites": "V013-TOOL-03` matrix contract locked and lane evidence synchronized.",
+        "entry_dependency_ids": [
+          "V013-TOOL-03"
+        ],
+        "exit_signal": "AC-V013-REL-03` closeout packet published with deterministic replay evidence.",
+        "wave_coverage": [
+          "W0",
+          "W1",
+          "W2",
+          "W3",
+          "W4",
+          "W5",
+          "W6",
+          "W7"
+        ],
+        "wave_span": {
+          "min_wave_id": "W0",
+          "max_wave_id": "W7"
+        },
+        "ordered_seed_ids": [
+          "V013-SPEC-02",
+          "V013-SPEC-01",
+          "V013-TOOL-01",
+          "V013-TOOL-03",
+          "V013-TOOL-02",
+          "V013-GOV-01",
+          "V013-SPEC-03",
+          "V013-GOV-02",
+          "V013-DOC-01",
+          "V013-CONF-01",
+          "V013-GOV-03",
+          "V013-TOOL-04",
+          "V013-SPEC-04",
+          "V013-CONF-02",
+          "V013-GOV-04",
+          "V013-REL-01",
+          "V013-CONF-03",
+          "V013-REL-02",
+          "V013-CONF-04",
+          "V013-REL-03"
+        ],
+        "issue_templates": [
+          {
+            "seed_id": "V013-SPEC-02",
+            "title": "[v0.13][spec] Establish native syntax baseline contracts",
+            "body_fields": {
+              "seed_id": "V013-SPEC-02",
+              "family_tag": "FAM-SPEC",
+              "worklane": "WL-SPEC",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [],
+              "shard_class": "small",
+              "objective": [
+                "Establish native syntax baseline contracts"
+              ],
+              "artifact_targets": [
+                "spec/IMPLEMENTATION_EXECUTION_ROADMAP.md"
+              ],
+              "acceptance_gate_id": "AC-V013-SPEC-02",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-spec-a",
+              "owner_backup": "lane-spec-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:spec",
+              "lane:spec",
+              "seed:V013-SPEC-02",
+              "shard:small",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 90,
+              "duv": 5,
+              "dc": 1,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W0"
+          },
+          {
+            "seed_id": "V013-SPEC-01",
+            "title": "[v0.13][spec] Lock deterministic planning validation profile",
+            "body_fields": {
+              "seed_id": "V013-SPEC-01",
+              "family_tag": "FAM-SPEC",
+              "worklane": "WL-SPEC",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [],
+              "shard_class": "small",
+              "objective": [
+                "Lock deterministic planning validation profile"
+              ],
+              "artifact_targets": [
+                "spec/CONFORMANCE_PROFILE_CHECKLIST.md"
+              ],
+              "acceptance_gate_id": "AC-V013-SPEC-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-spec-a",
+              "owner_backup": "lane-spec-b"
+            },
+            "labels": [
+              "phase:v013",
+              "family:spec",
+              "lane:spec",
+              "seed:V013-SPEC-01",
+              "shard:small",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 84,
+              "duv": 4,
+              "dc": 1,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W0"
+          },
+          {
+            "seed_id": "V013-TOOL-01",
+            "title": "[v0.13][tooling] Stabilize issue/task hygiene contracts",
+            "body_fields": {
+              "seed_id": "V013-TOOL-01",
+              "family_tag": "FAM-TOOL",
+              "worklane": "WL-TOOL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [],
+              "shard_class": "small",
+              "objective": [
+                "Stabilize issue/task hygiene contracts"
+              ],
+              "artifact_targets": [
+                "scripts/check_issue_checkbox_drift.py"
+              ],
+              "acceptance_gate_id": "AC-V013-TOOL-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-tool-a",
+              "owner_backup": "lane-tool-b"
+            },
+            "labels": [
+              "phase:v013",
+              "family:tooling",
+              "lane:tooling",
+              "seed:V013-TOOL-01",
+              "shard:small",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 76,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W0"
+          },
+          {
+            "seed_id": "V013-TOOL-03",
+            "title": "[v0.13][tooling] Generate seed DAG and batch skeletons from matrix",
+            "body_fields": {
+              "seed_id": "V013-TOOL-03",
+              "family_tag": "FAM-TOOL",
+              "worklane": "WL-TOOL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-SPEC-02"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Generate seed DAG and batch skeletons from matrix"
+              ],
+              "artifact_targets": [
+                "scripts/generate_seed_batches.py",
+                "spec/planning/v013_seed_dependency_graph.json"
+              ],
+              "acceptance_gate_id": "AC-V013-TOOL-03",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-tool-b",
+              "owner_backup": "lane-tool-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:tooling",
+              "lane:tooling",
+              "seed:V013-TOOL-03",
+              "shard:medium",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 88,
+              "duv": 5,
+              "dc": 2,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W1"
+          },
+          {
+            "seed_id": "V013-TOOL-02",
+            "title": "[v0.13][tooling] Deterministic seed payload build path",
+            "body_fields": {
+              "seed_id": "V013-TOOL-02",
+              "family_tag": "FAM-TOOL",
+              "worklane": "WL-TOOL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-SPEC-01"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Deterministic seed payload build path"
+              ],
+              "artifact_targets": [
+                "scripts/generate_seed_issue_payloads.py"
+              ],
+              "acceptance_gate_id": "AC-V013-TOOL-02",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-tool-a",
+              "owner_backup": "lane-tool-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:tooling",
+              "lane:tooling",
+              "seed:V013-TOOL-02",
+              "shard:medium",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 78,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W1"
+          },
+          {
+            "seed_id": "V013-GOV-01",
+            "title": "[v0.13][governance] Publish initial board workflow contract",
+            "body_fields": {
+              "seed_id": "V013-GOV-01",
+              "family_tag": "FAM-GOV",
+              "worklane": "WL-GOV",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-SPEC-02"
+              ],
+              "shard_class": "small",
+              "objective": [
+                "Publish initial board workflow contract"
+              ],
+              "artifact_targets": [
+                "reports/reviews/v013_review_board_calendar.md"
+              ],
+              "acceptance_gate_id": "AC-V013-GOV-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-gov-a",
+              "owner_backup": "lane-gov-b"
+            },
+            "labels": [
+              "phase:v013",
+              "family:governance",
+              "lane:governance",
+              "seed:V013-GOV-01",
+              "shard:small",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 70,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W1"
+          },
+          {
+            "seed_id": "V013-SPEC-03",
+            "title": "[v0.13][spec] Normalize abstract-machine sync ledger",
+            "body_fields": {
+              "seed_id": "V013-SPEC-03",
+              "family_tag": "FAM-SPEC",
+              "worklane": "WL-SPEC",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-TOOL-02"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Normalize abstract-machine sync ledger"
+              ],
+              "artifact_targets": [
+                "reports/spec_sync/abstract_machine_audit_2026Q2.md"
+              ],
+              "acceptance_gate_id": "AC-V013-SPEC-03",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-spec-b",
+              "owner_backup": "lane-spec-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:spec",
+              "lane:spec",
+              "seed:V013-SPEC-03",
+              "shard:medium",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 80,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W2"
+          },
+          {
+            "seed_id": "V013-GOV-02",
+            "title": "[v0.13][governance] Expand extension registry compat policy",
+            "body_fields": {
+              "seed_id": "V013-GOV-02",
+              "family_tag": "FAM-GOV",
+              "worklane": "WL-GOV",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-GOV-01"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Expand extension registry compat policy"
+              ],
+              "artifact_targets": [
+                "tests/governance/registry_compat/README.md"
+              ],
+              "acceptance_gate_id": "AC-V013-GOV-02",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-gov-a",
+              "owner_backup": "lane-gov-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:governance",
+              "lane:governance",
+              "seed:V013-GOV-02",
+              "shard:medium",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 79,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W2"
+          },
+          {
+            "seed_id": "V013-DOC-01",
+            "title": "[v0.13][tooling] Harden seed generation diagnostics docs",
+            "body_fields": {
+              "seed_id": "V013-DOC-01",
+              "family_tag": "FAM-TOOL",
+              "worklane": "WL-TOOL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-TOOL-03"
+              ],
+              "shard_class": "small",
+              "objective": [
+                "Harden seed generation diagnostics docs"
+              ],
+              "artifact_targets": [
+                "docs/objc3c-native/src/library-api.md"
+              ],
+              "acceptance_gate_id": "AC-V013-DOC-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-tool-c",
+              "owner_backup": "lane-tool-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:tooling",
+              "lane:tooling",
+              "seed:V013-DOC-01",
+              "shard:small",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 63,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W2"
+          },
+          {
+            "seed_id": "V013-CONF-01",
+            "title": "[v0.13][conformance] Publish baseline release evidence schema",
+            "body_fields": {
+              "seed_id": "V013-CONF-01",
+              "family_tag": "FAM-CONF",
+              "worklane": "WL-CONF",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-SPEC-03",
+                "V013-GOV-02"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Publish baseline release evidence schema"
+              ],
+              "artifact_targets": [
+                "reports/conformance/release_evidence_contract.v013.json"
+              ],
+              "acceptance_gate_id": "AC-V013-CONF-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-conf-a",
+              "owner_backup": "lane-conf-b"
+            },
+            "labels": [
+              "phase:v013",
+              "family:conformance",
+              "lane:conformance",
+              "seed:V013-CONF-01",
+              "shard:medium",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 81,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W3"
+          },
+          {
+            "seed_id": "V013-GOV-03",
+            "title": "[v0.13][governance] Lock cadence and quorum package",
+            "body_fields": {
+              "seed_id": "V013-GOV-03",
+              "family_tag": "FAM-GOV",
+              "worklane": "WL-GOV",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-GOV-02"
+              ],
+              "shard_class": "small",
+              "objective": [
+                "Lock cadence and quorum package"
+              ],
+              "artifact_targets": [
+                "spec/governance/review_board_operating_model_v1.md"
+              ],
+              "acceptance_gate_id": "AC-V013-GOV-03",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-gov-b",
+              "owner_backup": "lane-gov-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:governance",
+              "lane:governance",
+              "seed:V013-GOV-03",
+              "shard:small",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 71,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W3"
+          },
+          {
+            "seed_id": "V013-TOOL-04",
+            "title": "[v0.13][tooling] Refresh dispatch planning evidence packet",
+            "body_fields": {
+              "seed_id": "V013-TOOL-04",
+              "family_tag": "FAM-TOOL",
+              "worklane": "WL-TOOL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-DOC-01"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Refresh dispatch planning evidence packet"
+              ],
+              "artifact_targets": [
+                "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"
+              ],
+              "acceptance_gate_id": "AC-V013-TOOL-04",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-tool-c",
+              "owner_backup": "lane-tool-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:tooling",
+              "lane:tooling",
+              "seed:V013-TOOL-04",
+              "shard:medium",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 69,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W3"
+          },
+          {
+            "seed_id": "V013-SPEC-04",
+            "title": "[v0.13][spec] Capture profile-gate delta package",
+            "body_fields": {
+              "seed_id": "V013-SPEC-04",
+              "family_tag": "FAM-SPEC",
+              "worklane": "WL-SPEC",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-GOV-03",
+                "V013-TOOL-04"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Capture profile-gate delta package"
+              ],
+              "artifact_targets": [
+                "spec/CONFORMANCE_PROFILE_CHECKLIST.md"
+              ],
+              "acceptance_gate_id": "AC-V013-SPEC-04",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-spec-c",
+              "owner_backup": "lane-spec-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:spec",
+              "lane:spec",
+              "seed:V013-SPEC-04",
+              "shard:medium",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 86,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W4"
+          },
+          {
+            "seed_id": "V013-CONF-02",
+            "title": "[v0.13][conformance] Generate quality-gate decision rollup",
+            "body_fields": {
+              "seed_id": "V013-CONF-02",
+              "family_tag": "FAM-CONF",
+              "worklane": "WL-CONF",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-CONF-01"
+              ],
+              "shard_class": "small",
+              "objective": [
+                "Generate quality-gate decision rollup"
+              ],
+              "artifact_targets": [
+                "reports/conformance/spec_open_issues_v013_summary.md"
+              ],
+              "acceptance_gate_id": "AC-V013-CONF-02",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-conf-a",
+              "owner_backup": "lane-conf-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:conformance",
+              "lane:conformance",
+              "seed:V013-CONF-02",
+              "shard:small",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 77,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W4"
+          },
+          {
+            "seed_id": "V013-GOV-04",
+            "title": "[v0.13][governance] Publish macro tabletop closeout controls",
+            "body_fields": {
+              "seed_id": "V013-GOV-04",
+              "family_tag": "FAM-GOV",
+              "worklane": "WL-GOV",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-GOV-03"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Publish macro tabletop closeout controls"
+              ],
+              "artifact_targets": [
+                "spec/governance/macro_security_incident_playbook_v1.md"
+              ],
+              "acceptance_gate_id": "AC-V013-GOV-04",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-gov-c",
+              "owner_backup": "lane-gov-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:governance",
+              "lane:governance",
+              "seed:V013-GOV-04",
+              "shard:medium",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 72,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W4"
+          },
+          {
+            "seed_id": "V013-REL-01",
+            "title": "[v0.13][release] Assemble seed wave readiness package",
+            "body_fields": {
+              "seed_id": "V013-REL-01",
+              "family_tag": "FAM-REL",
+              "worklane": "WL-REL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-SPEC-04",
+                "V013-CONF-02"
+              ],
+              "shard_class": "large",
+              "objective": [
+                "Assemble seed wave readiness package"
+              ],
+              "artifact_targets": [
+                "spec/FUTURE_WORK_V013_BOOTSTRAP.md"
+              ],
+              "acceptance_gate_id": "AC-V013-REL-01",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-rel-a",
+              "owner_backup": "lane-rel-b"
+            },
+            "labels": [
+              "phase:v013",
+              "family:release",
+              "lane:release",
+              "seed:V013-REL-01",
+              "shard:large",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 92,
+              "duv": 5,
+              "dc": 2,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W5"
+          },
+          {
+            "seed_id": "V013-CONF-03",
+            "title": "[v0.13][conformance] Certify dispatch replay quality gates",
+            "body_fields": {
+              "seed_id": "V013-CONF-03",
+              "family_tag": "FAM-CONF",
+              "worklane": "WL-CONF",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-GOV-04"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Certify dispatch replay quality gates"
+              ],
+              "artifact_targets": [
+                "reports/security/v013_macro_tabletop.md"
+              ],
+              "acceptance_gate_id": "AC-V013-CONF-03",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-conf-b",
+              "owner_backup": "lane-conf-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:conformance",
+              "lane:conformance",
+              "seed:V013-CONF-03",
+              "shard:medium",
+              "priority:tier-1"
+            ],
+            "priority": {
+              "priority_score": 78,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-1"
+            },
+            "wave_id": "W5"
+          },
+          {
+            "seed_id": "V013-REL-02",
+            "title": "[v0.13][release] Integrate cross-lane closeout packet",
+            "body_fields": {
+              "seed_id": "V013-REL-02",
+              "family_tag": "FAM-REL",
+              "worklane": "WL-REL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-REL-01"
+              ],
+              "shard_class": "large",
+              "objective": [
+                "Integrate cross-lane closeout packet"
+              ],
+              "artifact_targets": [
+                "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"
+              ],
+              "acceptance_gate_id": "AC-V013-REL-02",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-rel-b",
+              "owner_backup": "lane-rel-c"
+            },
+            "labels": [
+              "phase:v013",
+              "family:release",
+              "lane:release",
+              "seed:V013-REL-02",
+              "shard:large",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 89,
+              "duv": 4,
+              "dc": 2,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W6"
+          },
+          {
+            "seed_id": "V013-CONF-04",
+            "title": "[v0.13][conformance] Finalize parity and reproducibility evidence",
+            "body_fields": {
+              "seed_id": "V013-CONF-04",
+              "family_tag": "FAM-CONF",
+              "worklane": "WL-CONF",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-CONF-03"
+              ],
+              "shard_class": "medium",
+              "objective": [
+                "Finalize parity and reproducibility evidence"
+              ],
+              "artifact_targets": [
+                "reports/conformance/release_evidence_contract.v013.json"
+              ],
+              "acceptance_gate_id": "AC-V013-CONF-04",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-conf-c",
+              "owner_backup": "lane-conf-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:conformance",
+              "lane:conformance",
+              "seed:V013-CONF-04",
+              "shard:medium",
+              "priority:tier-2"
+            ],
+            "priority": {
+              "priority_score": 73,
+              "duv": 3,
+              "dc": 2,
+              "tier": "Tier-2"
+            },
+            "wave_id": "W6"
+          },
+          {
+            "seed_id": "V013-REL-03",
+            "title": "[v0.13][release] Publish signoff and evidence consolidation package",
+            "body_fields": {
+              "seed_id": "V013-REL-03",
+              "family_tag": "FAM-REL",
+              "worklane": "WL-REL",
+              "source_refs": [
+                "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+              ],
+              "depends_on": [
+                "V013-REL-02",
+                "V013-CONF-04"
+              ],
+              "shard_class": "large",
+              "objective": [
+                "Publish signoff and evidence consolidation package"
+              ],
+              "artifact_targets": [
+                "spec/FUTURE_WORK_V013_BOOTSTRAP.md"
+              ],
+              "acceptance_gate_id": "AC-V013-REL-03",
+              "validation_commands": [
+                "python scripts/spec_lint.py",
+                "python scripts/check_issue_checkbox_drift.py"
+              ],
+              "batch_id": "BATCH-V013-L-01",
+              "owner_primary": "lane-rel-c",
+              "owner_backup": "lane-rel-a"
+            },
+            "labels": [
+              "phase:v013",
+              "family:release",
+              "lane:release",
+              "seed:V013-REL-03",
+              "shard:large",
+              "priority:tier-0"
+            ],
+            "priority": {
+              "priority_score": 95,
+              "duv": 5,
+              "dc": 2,
+              "tier": "Tier-0"
+            },
+            "wave_id": "W7"
+          }
+        ]
+      }
+    ],
+    "wave_to_batches": [
+      {
+        "wave_id": "W0",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W1",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W2",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W3",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W4",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W5",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W6",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      },
+      {
+        "wave_id": "W7",
+        "batch_ids": [
+          "BATCH-V013-L-01"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "contract_id": "V013-SEED-OWNER-REGISTRY-v1",
+  "seed_id": "V013-TOOL-03",
+  "snapshot_date": "2026-02-23",
+  "source_matrix_path": "spec/planning/v013_future_work_seed_matrix.md",
+  "owner_registry": [
+    {
+      "seed_id": "V013-CONF-01",
+      "owner_primary": "lane-conf-a",
+      "owner_backup": "lane-conf-b"
+    },
+    {
+      "seed_id": "V013-CONF-02",
+      "owner_primary": "lane-conf-a",
+      "owner_backup": "lane-conf-c"
+    },
+    {
+      "seed_id": "V013-CONF-03",
+      "owner_primary": "lane-conf-b",
+      "owner_backup": "lane-conf-c"
+    },
+    {
+      "seed_id": "V013-CONF-04",
+      "owner_primary": "lane-conf-c",
+      "owner_backup": "lane-conf-a"
+    },
+    {
+      "seed_id": "V013-DOC-01",
+      "owner_primary": "lane-tool-c",
+      "owner_backup": "lane-tool-a"
+    },
+    {
+      "seed_id": "V013-GOV-01",
+      "owner_primary": "lane-gov-a",
+      "owner_backup": "lane-gov-b"
+    },
+    {
+      "seed_id": "V013-GOV-02",
+      "owner_primary": "lane-gov-a",
+      "owner_backup": "lane-gov-c"
+    },
+    {
+      "seed_id": "V013-GOV-03",
+      "owner_primary": "lane-gov-b",
+      "owner_backup": "lane-gov-c"
+    },
+    {
+      "seed_id": "V013-GOV-04",
+      "owner_primary": "lane-gov-c",
+      "owner_backup": "lane-gov-a"
+    },
+    {
+      "seed_id": "V013-REL-01",
+      "owner_primary": "lane-rel-a",
+      "owner_backup": "lane-rel-b"
+    },
+    {
+      "seed_id": "V013-REL-02",
+      "owner_primary": "lane-rel-b",
+      "owner_backup": "lane-rel-c"
+    },
+    {
+      "seed_id": "V013-REL-03",
+      "owner_primary": "lane-rel-c",
+      "owner_backup": "lane-rel-a"
+    },
+    {
+      "seed_id": "V013-SPEC-01",
+      "owner_primary": "lane-spec-a",
+      "owner_backup": "lane-spec-b"
+    },
+    {
+      "seed_id": "V013-SPEC-02",
+      "owner_primary": "lane-spec-a",
+      "owner_backup": "lane-spec-c"
+    },
+    {
+      "seed_id": "V013-SPEC-03",
+      "owner_primary": "lane-spec-b",
+      "owner_backup": "lane-spec-c"
+    },
+    {
+      "seed_id": "V013-SPEC-04",
+      "owner_primary": "lane-spec-c",
+      "owner_backup": "lane-spec-a"
+    },
+    {
+      "seed_id": "V013-TOOL-01",
+      "owner_primary": "lane-tool-a",
+      "owner_backup": "lane-tool-b"
+    },
+    {
+      "seed_id": "V013-TOOL-02",
+      "owner_primary": "lane-tool-a",
+      "owner_backup": "lane-tool-c"
+    },
+    {
+      "seed_id": "V013-TOOL-03",
+      "owner_primary": "lane-tool-b",
+      "owner_backup": "lane-tool-c"
+    },
+    {
+      "seed_id": "V013-TOOL-04",
+      "owner_primary": "lane-tool-c",
+      "owner_backup": "lane-tool-a"
+    }
+  ]
+}

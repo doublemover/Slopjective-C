@@ -1,0 +1,686 @@
+{
+  "contract_id": "V013-TOOL-03-SEED-ISSUE-PAYLOAD-v1",
+  "seed_id": "V013-TOOL-03",
+  "source_contract_id": "V013-TOOL-03-SEED-DAG-v1",
+  "source_seed_id": "V013-TOOL-03",
+  "source_graph_path": "spec/planning/v013_seed_dependency_graph.json",
+  "record_count": 20,
+  "records": [
+    {
+      "seed_id": "V013-SPEC-02",
+      "title": "[v0.13][spec] Establish native syntax baseline contracts",
+      "milestone": "v0.13 Seed Wave W0",
+      "milestone_title": "v0.13 Seed Wave W0",
+      "wave_id": "W0",
+      "dependencies": [],
+      "depends_on": [],
+      "labels": [
+        "phase:v013",
+        "family:spec",
+        "lane:spec",
+        "seed:V013-SPEC-02",
+        "shard:small",
+        "priority:tier-0"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-SPEC-02",
+      "acceptance_gate_id": "AC-V013-SPEC-02",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 90,
+        "duv": 5,
+        "dc": 1,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-SPEC-01",
+      "title": "[v0.13][spec] Lock deterministic planning validation profile",
+      "milestone": "v0.13 Seed Wave W0",
+      "milestone_title": "v0.13 Seed Wave W0",
+      "wave_id": "W0",
+      "dependencies": [],
+      "depends_on": [],
+      "labels": [
+        "phase:v013",
+        "family:spec",
+        "lane:spec",
+        "seed:V013-SPEC-01",
+        "shard:small",
+        "priority:tier-0"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-SPEC-01",
+      "acceptance_gate_id": "AC-V013-SPEC-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 84,
+        "duv": 4,
+        "dc": 1,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-TOOL-01",
+      "title": "[v0.13][tooling] Stabilize issue/task hygiene contracts",
+      "milestone": "v0.13 Seed Wave W0",
+      "milestone_title": "v0.13 Seed Wave W0",
+      "wave_id": "W0",
+      "dependencies": [],
+      "depends_on": [],
+      "labels": [
+        "phase:v013",
+        "family:tooling",
+        "lane:tooling",
+        "seed:V013-TOOL-01",
+        "shard:small",
+        "priority:tier-1"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-TOOL-01",
+      "acceptance_gate_id": "AC-V013-TOOL-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 76,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-TOOL-03",
+      "title": "[v0.13][tooling] Generate seed DAG and batch skeletons from matrix",
+      "milestone": "v0.13 Seed Wave W1",
+      "milestone_title": "v0.13 Seed Wave W1",
+      "wave_id": "W1",
+      "dependencies": [
+        "V013-SPEC-02"
+      ],
+      "depends_on": [
+        "V013-SPEC-02"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:tooling",
+        "lane:tooling",
+        "seed:V013-TOOL-03",
+        "shard:medium",
+        "priority:tier-0"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-TOOL-03",
+      "acceptance_gate_id": "AC-V013-TOOL-03",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 88,
+        "duv": 5,
+        "dc": 2,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-TOOL-02",
+      "title": "[v0.13][tooling] Deterministic seed payload build path",
+      "milestone": "v0.13 Seed Wave W1",
+      "milestone_title": "v0.13 Seed Wave W1",
+      "wave_id": "W1",
+      "dependencies": [
+        "V013-SPEC-01"
+      ],
+      "depends_on": [
+        "V013-SPEC-01"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:tooling",
+        "lane:tooling",
+        "seed:V013-TOOL-02",
+        "shard:medium",
+        "priority:tier-1"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-TOOL-02",
+      "acceptance_gate_id": "AC-V013-TOOL-02",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 78,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-GOV-01",
+      "title": "[v0.13][governance] Publish initial board workflow contract",
+      "milestone": "v0.13 Seed Wave W1",
+      "milestone_title": "v0.13 Seed Wave W1",
+      "wave_id": "W1",
+      "dependencies": [
+        "V013-SPEC-02"
+      ],
+      "depends_on": [
+        "V013-SPEC-02"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:governance",
+        "lane:governance",
+        "seed:V013-GOV-01",
+        "shard:small",
+        "priority:tier-2"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-GOV-01",
+      "acceptance_gate_id": "AC-V013-GOV-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 70,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-SPEC-03",
+      "title": "[v0.13][spec] Normalize abstract-machine sync ledger",
+      "milestone": "v0.13 Seed Wave W2",
+      "milestone_title": "v0.13 Seed Wave W2",
+      "wave_id": "W2",
+      "dependencies": [
+        "V013-TOOL-02"
+      ],
+      "depends_on": [
+        "V013-TOOL-02"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:spec",
+        "lane:spec",
+        "seed:V013-SPEC-03",
+        "shard:medium",
+        "priority:tier-1"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-SPEC-03",
+      "acceptance_gate_id": "AC-V013-SPEC-03",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 80,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-GOV-02",
+      "title": "[v0.13][governance] Expand extension registry compat policy",
+      "milestone": "v0.13 Seed Wave W2",
+      "milestone_title": "v0.13 Seed Wave W2",
+      "wave_id": "W2",
+      "dependencies": [
+        "V013-GOV-01"
+      ],
+      "depends_on": [
+        "V013-GOV-01"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:governance",
+        "lane:governance",
+        "seed:V013-GOV-02",
+        "shard:medium",
+        "priority:tier-1"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-GOV-02",
+      "acceptance_gate_id": "AC-V013-GOV-02",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 79,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-DOC-01",
+      "title": "[v0.13][tooling] Harden seed generation diagnostics docs",
+      "milestone": "v0.13 Seed Wave W2",
+      "milestone_title": "v0.13 Seed Wave W2",
+      "wave_id": "W2",
+      "dependencies": [
+        "V013-TOOL-03"
+      ],
+      "depends_on": [
+        "V013-TOOL-03"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:tooling",
+        "lane:tooling",
+        "seed:V013-DOC-01",
+        "shard:small",
+        "priority:tier-2"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-DOC-01",
+      "acceptance_gate_id": "AC-V013-DOC-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 63,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-CONF-01",
+      "title": "[v0.13][conformance] Publish baseline release evidence schema",
+      "milestone": "v0.13 Seed Wave W3",
+      "milestone_title": "v0.13 Seed Wave W3",
+      "wave_id": "W3",
+      "dependencies": [
+        "V013-GOV-02",
+        "V013-SPEC-03"
+      ],
+      "depends_on": [
+        "V013-GOV-02",
+        "V013-SPEC-03"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:conformance",
+        "lane:conformance",
+        "seed:V013-CONF-01",
+        "shard:medium",
+        "priority:tier-1"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-CONF-01",
+      "acceptance_gate_id": "AC-V013-CONF-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 81,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-GOV-03",
+      "title": "[v0.13][governance] Lock cadence and quorum package",
+      "milestone": "v0.13 Seed Wave W3",
+      "milestone_title": "v0.13 Seed Wave W3",
+      "wave_id": "W3",
+      "dependencies": [
+        "V013-GOV-02"
+      ],
+      "depends_on": [
+        "V013-GOV-02"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:governance",
+        "lane:governance",
+        "seed:V013-GOV-03",
+        "shard:small",
+        "priority:tier-2"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-GOV-03",
+      "acceptance_gate_id": "AC-V013-GOV-03",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 71,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-TOOL-04",
+      "title": "[v0.13][tooling] Refresh dispatch planning evidence packet",
+      "milestone": "v0.13 Seed Wave W3",
+      "milestone_title": "v0.13 Seed Wave W3",
+      "wave_id": "W3",
+      "dependencies": [
+        "V013-DOC-01"
+      ],
+      "depends_on": [
+        "V013-DOC-01"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:tooling",
+        "lane:tooling",
+        "seed:V013-TOOL-04",
+        "shard:medium",
+        "priority:tier-2"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-TOOL-04",
+      "acceptance_gate_id": "AC-V013-TOOL-04",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 69,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-SPEC-04",
+      "title": "[v0.13][spec] Capture profile-gate delta package",
+      "milestone": "v0.13 Seed Wave W4",
+      "milestone_title": "v0.13 Seed Wave W4",
+      "wave_id": "W4",
+      "dependencies": [
+        "V013-GOV-03",
+        "V013-TOOL-04"
+      ],
+      "depends_on": [
+        "V013-GOV-03",
+        "V013-TOOL-04"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:spec",
+        "lane:spec",
+        "seed:V013-SPEC-04",
+        "shard:medium",
+        "priority:tier-0"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-SPEC-04",
+      "acceptance_gate_id": "AC-V013-SPEC-04",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 86,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-CONF-02",
+      "title": "[v0.13][conformance] Generate quality-gate decision rollup",
+      "milestone": "v0.13 Seed Wave W4",
+      "milestone_title": "v0.13 Seed Wave W4",
+      "wave_id": "W4",
+      "dependencies": [
+        "V013-CONF-01"
+      ],
+      "depends_on": [
+        "V013-CONF-01"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:conformance",
+        "lane:conformance",
+        "seed:V013-CONF-02",
+        "shard:small",
+        "priority:tier-1"
+      ],
+      "shard_class": "small",
+      "acceptance_gate": "AC-V013-CONF-02",
+      "acceptance_gate_id": "AC-V013-CONF-02",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 77,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-GOV-04",
+      "title": "[v0.13][governance] Publish macro tabletop closeout controls",
+      "milestone": "v0.13 Seed Wave W4",
+      "milestone_title": "v0.13 Seed Wave W4",
+      "wave_id": "W4",
+      "dependencies": [
+        "V013-GOV-03"
+      ],
+      "depends_on": [
+        "V013-GOV-03"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:governance",
+        "lane:governance",
+        "seed:V013-GOV-04",
+        "shard:medium",
+        "priority:tier-2"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-GOV-04",
+      "acceptance_gate_id": "AC-V013-GOV-04",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 72,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-REL-01",
+      "title": "[v0.13][release] Assemble seed wave readiness package",
+      "milestone": "v0.13 Seed Wave W5",
+      "milestone_title": "v0.13 Seed Wave W5",
+      "wave_id": "W5",
+      "dependencies": [
+        "V013-CONF-02",
+        "V013-SPEC-04"
+      ],
+      "depends_on": [
+        "V013-CONF-02",
+        "V013-SPEC-04"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:release",
+        "lane:release",
+        "seed:V013-REL-01",
+        "shard:large",
+        "priority:tier-0"
+      ],
+      "shard_class": "large",
+      "acceptance_gate": "AC-V013-REL-01",
+      "acceptance_gate_id": "AC-V013-REL-01",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 92,
+        "duv": 5,
+        "dc": 2,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-CONF-03",
+      "title": "[v0.13][conformance] Certify dispatch replay quality gates",
+      "milestone": "v0.13 Seed Wave W5",
+      "milestone_title": "v0.13 Seed Wave W5",
+      "wave_id": "W5",
+      "dependencies": [
+        "V013-GOV-04"
+      ],
+      "depends_on": [
+        "V013-GOV-04"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:conformance",
+        "lane:conformance",
+        "seed:V013-CONF-03",
+        "shard:medium",
+        "priority:tier-1"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-CONF-03",
+      "acceptance_gate_id": "AC-V013-CONF-03",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 78,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-1"
+      }
+    },
+    {
+      "seed_id": "V013-REL-02",
+      "title": "[v0.13][release] Integrate cross-lane closeout packet",
+      "milestone": "v0.13 Seed Wave W6",
+      "milestone_title": "v0.13 Seed Wave W6",
+      "wave_id": "W6",
+      "dependencies": [
+        "V013-REL-01"
+      ],
+      "depends_on": [
+        "V013-REL-01"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:release",
+        "lane:release",
+        "seed:V013-REL-02",
+        "shard:large",
+        "priority:tier-0"
+      ],
+      "shard_class": "large",
+      "acceptance_gate": "AC-V013-REL-02",
+      "acceptance_gate_id": "AC-V013-REL-02",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 89,
+        "duv": 4,
+        "dc": 2,
+        "tier": "Tier-0"
+      }
+    },
+    {
+      "seed_id": "V013-CONF-04",
+      "title": "[v0.13][conformance] Finalize parity and reproducibility evidence",
+      "milestone": "v0.13 Seed Wave W6",
+      "milestone_title": "v0.13 Seed Wave W6",
+      "wave_id": "W6",
+      "dependencies": [
+        "V013-CONF-03"
+      ],
+      "depends_on": [
+        "V013-CONF-03"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:conformance",
+        "lane:conformance",
+        "seed:V013-CONF-04",
+        "shard:medium",
+        "priority:tier-2"
+      ],
+      "shard_class": "medium",
+      "acceptance_gate": "AC-V013-CONF-04",
+      "acceptance_gate_id": "AC-V013-CONF-04",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 73,
+        "duv": 3,
+        "dc": 2,
+        "tier": "Tier-2"
+      }
+    },
+    {
+      "seed_id": "V013-REL-03",
+      "title": "[v0.13][release] Publish signoff and evidence consolidation package",
+      "milestone": "v0.13 Seed Wave W7",
+      "milestone_title": "v0.13 Seed Wave W7",
+      "wave_id": "W7",
+      "dependencies": [
+        "V013-CONF-04",
+        "V013-REL-02"
+      ],
+      "depends_on": [
+        "V013-CONF-04",
+        "V013-REL-02"
+      ],
+      "labels": [
+        "phase:v013",
+        "family:release",
+        "lane:release",
+        "seed:V013-REL-03",
+        "shard:large",
+        "priority:tier-0"
+      ],
+      "shard_class": "large",
+      "acceptance_gate": "AC-V013-REL-03",
+      "acceptance_gate_id": "AC-V013-REL-03",
+      "validation_commands": [
+        "python scripts/spec_lint.py",
+        "python scripts/check_issue_checkbox_drift.py"
+      ],
+      "priority": {
+        "priority_score": 95,
+        "duv": 5,
+        "dc": 2,
+        "tier": "Tier-0"
+      }
+    }
+  ]
+}
