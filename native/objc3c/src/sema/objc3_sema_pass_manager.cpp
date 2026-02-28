@@ -139,6 +139,18 @@ bool IsEquivalentNullabilityFlowWarningPrecisionSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentProtocolQualifiedObjectTypeSummary(
+    const Objc3ProtocolQualifiedObjectTypeSummary &lhs,
+    const Objc3ProtocolQualifiedObjectTypeSummary &rhs) {
+  return lhs.protocol_qualified_object_type_sites == rhs.protocol_qualified_object_type_sites &&
+         lhs.protocol_composition_sites == rhs.protocol_composition_sites &&
+         lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
+         lhs.terminated_protocol_composition_sites == rhs.terminated_protocol_composition_sites &&
+         lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
+         lhs.normalized_protocol_composition_sites == rhs.normalized_protocol_composition_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
                                                    const Objc3SymbolGraphScopeResolutionSummary &rhs) {
   return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
@@ -563,6 +575,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
           result.type_metadata_handoff.nullability_flow_warning_precision_summary.nullable_suffix_sites +
               result.type_metadata_handoff.nullability_flow_warning_precision_summary.nonnull_suffix_sites;
+  result.protocol_qualified_object_type_summary =
+      result.integration_surface.protocol_qualified_object_type_summary;
+  result.deterministic_protocol_qualified_object_type_handoff =
+      result.type_metadata_handoff.protocol_qualified_object_type_summary.deterministic &&
+      result.integration_surface.protocol_qualified_object_type_summary.deterministic &&
+      IsEquivalentProtocolQualifiedObjectTypeSummary(
+          result.integration_surface.protocol_qualified_object_type_summary,
+          result.type_metadata_handoff.protocol_qualified_object_type_summary) &&
+      result.type_metadata_handoff.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
+          result.type_metadata_handoff.protocol_qualified_object_type_summary.protocol_composition_sites &&
+      result.type_metadata_handoff.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
+          result.type_metadata_handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+      result.type_metadata_handoff.protocol_qualified_object_type_summary.contract_violation_sites <=
+          result.type_metadata_handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1100,6 +1126,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.nullability_flow_warning_precision_summary.normalized_sites;
   result.parity_surface.nullability_flow_contract_violation_sites_total =
       result.parity_surface.nullability_flow_warning_precision_summary.contract_violation_sites;
+  result.parity_surface.protocol_qualified_object_type_summary =
+      result.type_metadata_handoff.protocol_qualified_object_type_summary;
+  result.parity_surface.protocol_qualified_object_type_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites;
+  result.parity_surface.protocol_qualified_object_type_protocol_composition_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.protocol_composition_sites;
+  result.parity_surface.protocol_qualified_object_type_object_pointer_type_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.object_pointer_type_sites;
+  result.parity_surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites;
+  result.parity_surface.protocol_qualified_object_type_pointer_declarator_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.pointer_declarator_sites;
+  result.parity_surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites;
+  result.parity_surface.protocol_qualified_object_type_contract_violation_sites_total =
+      result.parity_surface.protocol_qualified_object_type_summary.contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -1674,6 +1716,29 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.nullability_flow_warning_precision_summary.nullable_suffix_sites +
               result.parity_surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
       result.parity_surface.nullability_flow_warning_precision_summary.deterministic;
+  result.parity_surface.deterministic_protocol_qualified_object_type_handoff =
+      result.deterministic_protocol_qualified_object_type_handoff &&
+      result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites ==
+          result.parity_surface.protocol_qualified_object_type_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.protocol_composition_sites ==
+          result.parity_surface.protocol_qualified_object_type_protocol_composition_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.object_pointer_type_sites ==
+          result.parity_surface.protocol_qualified_object_type_object_pointer_type_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites ==
+          result.parity_surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.pointer_declarator_sites ==
+          result.parity_surface.protocol_qualified_object_type_pointer_declarator_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites ==
+          result.parity_surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.contract_violation_sites ==
+          result.parity_surface.protocol_qualified_object_type_contract_violation_sites_total &&
+      result.parity_surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
+          result.parity_surface.protocol_qualified_object_type_summary.protocol_composition_sites &&
+      result.parity_surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
+          result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+      result.parity_surface.protocol_qualified_object_type_summary.contract_violation_sites <=
+          result.parity_surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+      result.parity_surface.protocol_qualified_object_type_summary.deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -2353,6 +2418,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_lightweight_generic_constraint_handoff &&
       result.parity_surface.nullability_flow_warning_precision_summary.deterministic &&
       result.parity_surface.deterministic_nullability_flow_warning_precision_handoff &&
+      result.parity_surface.protocol_qualified_object_type_summary.deterministic &&
+      result.parity_surface.deterministic_protocol_qualified_object_type_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&

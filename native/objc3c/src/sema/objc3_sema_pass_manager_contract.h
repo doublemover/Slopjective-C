@@ -147,6 +147,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t nullability_flow_nonnull_suffix_sites_total = 0;
   std::size_t nullability_flow_normalized_sites_total = 0;
   std::size_t nullability_flow_contract_violation_sites_total = 0;
+  std::size_t protocol_qualified_object_type_sites_total = 0;
+  std::size_t protocol_qualified_object_type_protocol_composition_sites_total = 0;
+  std::size_t protocol_qualified_object_type_object_pointer_type_sites_total = 0;
+  std::size_t protocol_qualified_object_type_terminated_protocol_composition_sites_total = 0;
+  std::size_t protocol_qualified_object_type_pointer_declarator_sites_total = 0;
+  std::size_t protocol_qualified_object_type_normalized_protocol_composition_sites_total = 0;
+  std::size_t protocol_qualified_object_type_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -329,6 +336,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_type_annotation_surface_handoff = false;
   bool deterministic_lightweight_generic_constraint_handoff = false;
   bool deterministic_nullability_flow_warning_precision_handoff = false;
+  bool deterministic_protocol_qualified_object_type_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -355,6 +363,7 @@ struct Objc3SemaParityContractSurface {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
   Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
+  Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -559,6 +568,28 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
          surface.nullability_flow_warning_precision_summary.deterministic &&
          surface.deterministic_nullability_flow_warning_precision_handoff &&
+         surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites ==
+             surface.protocol_qualified_object_type_sites_total &&
+         surface.protocol_qualified_object_type_summary.protocol_composition_sites ==
+             surface.protocol_qualified_object_type_protocol_composition_sites_total &&
+         surface.protocol_qualified_object_type_summary.object_pointer_type_sites ==
+             surface.protocol_qualified_object_type_object_pointer_type_sites_total &&
+         surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites ==
+             surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total &&
+         surface.protocol_qualified_object_type_summary.pointer_declarator_sites ==
+             surface.protocol_qualified_object_type_pointer_declarator_sites_total &&
+         surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites ==
+             surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total &&
+         surface.protocol_qualified_object_type_summary.contract_violation_sites ==
+             surface.protocol_qualified_object_type_contract_violation_sites_total &&
+         surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
+             surface.protocol_qualified_object_type_summary.protocol_composition_sites &&
+         surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
+             surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+         surface.protocol_qualified_object_type_summary.contract_violation_sites <=
+             surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+         surface.protocol_qualified_object_type_summary.deterministic &&
+         surface.deterministic_protocol_qualified_object_type_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1200,6 +1231,8 @@ struct Objc3SemaPassManagerResult {
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
   bool deterministic_nullability_flow_warning_precision_handoff = false;
   Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
+  bool deterministic_protocol_qualified_object_type_handoff = false;
+  Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

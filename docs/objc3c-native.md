@@ -1019,6 +1019,33 @@ Recommended M172 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q`
 
+## M173 frontend protocol-qualified object type parser/AST surface (M173-A001)
+
+Frontend parser/AST now emits deterministic protocol-qualified object type
+profiles for parameter and return type annotations.
+
+M173 parser/AST surface details:
+
+- protocol-qualified object type anchors:
+  - `BuildProtocolQualifiedObjectTypeProfile(...)`
+  - `IsProtocolQualifiedObjectTypeProfileNormalized(...)`
+- parser assignment anchors:
+  - `protocol_qualified_object_type_profile`
+  - `protocol_qualified_object_type_profile_is_normalized`
+  - `return_protocol_qualified_object_type_profile`
+  - `return_protocol_qualified_object_type_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser computes protocol-composition validity from object-pointer spelling,
+  suffix termination, and pointer declarator participation.
+- profile normalization is fail-closed for malformed/unterminated protocol
+  composition suffixes.
+
+Recommended M173 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m173_frontend_protocol_qualified_object_type_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4986,6 +5013,36 @@ Deterministic sema intent:
 Recommended M172 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q`
+
+## M173 sema/type protocol-qualified object type contract (M173-B001)
+
+M173-B defines deterministic sema summaries for protocol-qualified object type
+semantics and fail-closed composition contract consistency.
+
+M173 sema/type surface details:
+
+- `Objc3ProtocolQualifiedObjectTypeSummary`
+- `BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `protocol_qualified_object_type_sites_total`
+  - `protocol_qualified_object_type_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_object_pointer_type_sites_total`
+  - `protocol_qualified_object_type_terminated_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_pointer_declarator_sites_total`
+  - `protocol_qualified_object_type_normalized_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_contract_violation_sites_total`
+  - `deterministic_protocol_qualified_object_type_handoff`
+
+Deterministic sema intent:
+
+- protocol-qualified object type packets are derived from deterministic
+  type-annotation counters.
+- malformed protocol composition packets and non-object-pointer protocol
+  qualification usage are surfaced as contract violations.
+
+Recommended M173 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m173_sema_protocol_qualified_object_type_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

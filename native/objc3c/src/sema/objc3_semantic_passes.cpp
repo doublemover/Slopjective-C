@@ -3115,6 +3115,32 @@ BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
   return summary;
 }
 
+static Objc3ProtocolQualifiedObjectTypeSummary
+BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
+  Objc3ProtocolQualifiedObjectTypeSummary summary;
+  summary.protocol_qualified_object_type_sites = type_annotation_summary.generic_suffix_sites;
+  summary.protocol_composition_sites = type_annotation_summary.generic_suffix_sites;
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.terminated_protocol_composition_sites =
+      type_annotation_summary.generic_suffix_sites - type_annotation_summary.invalid_generic_suffix_sites;
+  summary.pointer_declarator_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.normalized_protocol_composition_sites =
+      std::min(summary.terminated_protocol_composition_sites, summary.object_pointer_type_sites);
+  summary.contract_violation_sites =
+      type_annotation_summary.invalid_generic_suffix_sites +
+      (summary.protocol_composition_sites > summary.object_pointer_type_sites
+           ? summary.protocol_composition_sites - summary.object_pointer_type_sites
+           : 0u);
+  summary.deterministic =
+      type_annotation_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.terminated_protocol_composition_sites <= summary.protocol_composition_sites &&
+      summary.normalized_protocol_composition_sites <= summary.protocol_qualified_object_type_sites &&
+      summary.contract_violation_sites <= summary.protocol_qualified_object_type_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7231,6 +7257,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.nullability_flow_warning_precision_summary =
       BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
           surface.type_annotation_surface_summary);
+  surface.protocol_qualified_object_type_summary =
+      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
+          surface.type_annotation_surface_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8221,6 +8250,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.nullability_flow_warning_precision_summary =
       BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  handoff.protocol_qualified_object_type_summary =
+      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -8951,6 +8983,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary =
       BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  const Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary =
+      BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9111,6 +9146,27 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
              handoff.nullability_flow_warning_precision_summary.nullable_suffix_sites +
                  handoff.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
+         handoff.protocol_qualified_object_type_summary.deterministic &&
+         handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites ==
+             protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+         handoff.protocol_qualified_object_type_summary.protocol_composition_sites ==
+             protocol_qualified_object_type_summary.protocol_composition_sites &&
+         handoff.protocol_qualified_object_type_summary.object_pointer_type_sites ==
+             protocol_qualified_object_type_summary.object_pointer_type_sites &&
+         handoff.protocol_qualified_object_type_summary.terminated_protocol_composition_sites ==
+             protocol_qualified_object_type_summary.terminated_protocol_composition_sites &&
+         handoff.protocol_qualified_object_type_summary.pointer_declarator_sites ==
+             protocol_qualified_object_type_summary.pointer_declarator_sites &&
+         handoff.protocol_qualified_object_type_summary.normalized_protocol_composition_sites ==
+             protocol_qualified_object_type_summary.normalized_protocol_composition_sites &&
+         handoff.protocol_qualified_object_type_summary.contract_violation_sites ==
+             protocol_qualified_object_type_summary.contract_violation_sites &&
+         handoff.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
+             handoff.protocol_qualified_object_type_summary.protocol_composition_sites &&
+         handoff.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
+             handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+         handoff.protocol_qualified_object_type_summary.contract_violation_sites <=
+             handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

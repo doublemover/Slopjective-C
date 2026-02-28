@@ -3402,3 +3402,33 @@ Deterministic sema intent:
 Recommended M172 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q`
+
+## M173 sema/type protocol-qualified object type contract (M173-B001)
+
+M173-B defines deterministic sema summaries for protocol-qualified object type
+semantics and fail-closed composition contract consistency.
+
+M173 sema/type surface details:
+
+- `Objc3ProtocolQualifiedObjectTypeSummary`
+- `BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `protocol_qualified_object_type_sites_total`
+  - `protocol_qualified_object_type_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_object_pointer_type_sites_total`
+  - `protocol_qualified_object_type_terminated_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_pointer_declarator_sites_total`
+  - `protocol_qualified_object_type_normalized_protocol_composition_sites_total`
+  - `protocol_qualified_object_type_contract_violation_sites_total`
+  - `deterministic_protocol_qualified_object_type_handoff`
+
+Deterministic sema intent:
+
+- protocol-qualified object type packets are derived from deterministic
+  type-annotation counters.
+- malformed protocol composition packets and non-object-pointer protocol
+  qualification usage are surfaced as contract violations.
+
+Recommended M173 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m173_sema_protocol_qualified_object_type_contract.py -q`
