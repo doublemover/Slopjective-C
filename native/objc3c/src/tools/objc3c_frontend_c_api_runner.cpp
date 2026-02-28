@@ -23,6 +23,8 @@ struct RunnerOptions {
   fs::path clang_path = fs::path("clang");
   fs::path llc_path = fs::path("llc");
   objc3c_frontend_c_ir_object_backend_t ir_object_backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
+  std::uint8_t compatibility_mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL;
+  bool migration_assist = false;
   std::uint32_t max_message_send_args = 0;
   std::string runtime_dispatch_symbol;
   bool emit_manifest = true;
@@ -35,7 +37,8 @@ std::string Usage() {
   return "usage: objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] "
          "[--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
-         ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-ir-object-backend <clang|llvm-direct>] "
+         ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] "
+         "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object]";
 }
 
@@ -46,6 +49,18 @@ bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_
   }
   if (value == "llvm-direct") {
     backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
+    return true;
+  }
+  return false;
+}
+
+bool ParseCompatibilityMode(const std::string &value, std::uint8_t &mode) {
+  if (value == "canonical") {
+    mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL;
+    return true;
+  }
+  if (value == "legacy") {
+    mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY;
     return true;
   }
   return false;
@@ -85,6 +100,14 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.max_message_send_args = static_cast<std::uint32_t>(parsed);
     } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
       options.runtime_dispatch_symbol = argv[++i];
+    } else if (arg == "--objc3-compat-mode" && i + 1 < argc) {
+      const std::string mode_text = argv[++i];
+      if (!ParseCompatibilityMode(mode_text, options.compatibility_mode)) {
+        error = "invalid --objc3-compat-mode (expected canonical|legacy): " + mode_text;
+        return false;
+      }
+    } else if (arg == "--objc3-migration-assist") {
+      options.migration_assist = true;
     } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
       if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {
@@ -185,6 +208,8 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              const std::string &last_error) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
+  const char *compatibility_mode_name =
+      options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY ? "legacy" : "canonical";
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -192,6 +217,8 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << "  \"out_dir\": \"" << EscapeJsonString(options.out_dir.generic_string()) << "\",\n";
   out << "  \"emit_prefix\": \"" << EscapeJsonString(options.emit_prefix) << "\",\n";
   out << "  \"ir_object_backend\": \"" << backend_name << "\",\n";
+  out << "  \"compatibility_mode\": \"" << compatibility_mode_name << "\",\n";
+  out << "  \"migration_assist\": " << (options.migration_assist ? "true" : "false") << ",\n";
   out << "  \"status\": " << static_cast<unsigned>(status) << ",\n";
   out << "  \"process_exit_code\": " << result.process_exit_code << ",\n";
   out << "  \"success\": " << (result.success != 0 ? "true" : "false") << ",\n";
@@ -305,6 +332,8 @@ int main(int argc, char **argv) {
           : nullptr;
   compile_options.runtime_dispatch_symbol = runtime_symbol;
   compile_options.max_message_send_args = options.max_message_send_args;
+  compile_options.compatibility_mode = options.compatibility_mode;
+  compile_options.migration_assist = options.migration_assist ? 1u : 0u;
   compile_options.emit_manifest = options.emit_manifest ? 1u : 0u;
   compile_options.emit_ir = options.emit_ir ? 1u : 0u;
   compile_options.emit_object = options.emit_object ? 1u : 0u;

@@ -28,8 +28,15 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
     assert "wrote summary: " in source
     assert "--llc <path>" in source
     assert "--objc3-ir-object-backend <clang|llvm-direct>" in source
+    assert "--objc3-compat-mode <canonical|legacy>" in source
+    assert "--objc3-migration-assist" in source
     assert "--objc3-max-message-args" in source
     assert "--objc3-runtime-dispatch-symbol" in source
+    assert "invalid --objc3-compat-mode (expected canonical|legacy): " in source
+    assert '\\"compatibility_mode\\": \\"' in source
+    assert '\\"migration_assist\\": ' in source
     assert "compile_options.llc_path =" in source
+    assert "compile_options.compatibility_mode = options.compatibility_mode;" in source
+    assert "compile_options.migration_assist = options.migration_assist ? 1u : 0u;" in source
     assert "compile_options.ir_object_backend = options.ir_object_backend;" in source
     assert "ExitCodeFromStatus" in source

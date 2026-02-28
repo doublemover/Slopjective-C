@@ -32,7 +32,15 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "#include \"api.h\"" in header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in api_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in api_header
+    assert "#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL 0u" in api_header
+    assert "#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY 1u" in api_header
+    assert (
+        "#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_DEFAULT "
+        "OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL"
+    ) in api_header
     assert "uint8_t language_version;" in api_header
+    assert "uint8_t compatibility_mode;" in api_header
+    assert "uint8_t migration_assist;" in api_header
     assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header

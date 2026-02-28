@@ -51,6 +51,13 @@ static uint8_t NormalizeLanguageVersion(uint8_t requested_language_version) {
   return requested_language_version;
 }
 
+static uint8_t NormalizeCompatibilityMode(uint8_t requested_compatibility_mode) {
+  if (requested_compatibility_mode == 0u) {
+    return static_cast<uint8_t>(OBJC3C_FRONTEND_COMPATIBILITY_MODE_DEFAULT);
+  }
+  return requested_compatibility_mode;
+}
+
 static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {
   const uint8_t normalized_language_version = NormalizeLanguageVersion(requested_language_version);
   if (normalized_language_version == static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3)) {
@@ -59,6 +66,18 @@ static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version,
 
   error = "unsupported compile_options.language_version: " + std::to_string(normalized_language_version) +
           " (only Objective-C version 3 is supported).";
+  return false;
+}
+
+static bool ValidateSupportedCompatibilityMode(uint8_t requested_compatibility_mode, std::string &error) {
+  const uint8_t normalized_compatibility_mode = NormalizeCompatibilityMode(requested_compatibility_mode);
+  if (normalized_compatibility_mode == static_cast<uint8_t>(OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL) ||
+      normalized_compatibility_mode == static_cast<uint8_t>(OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY)) {
+    return true;
+  }
+
+  error = "unsupported compile_options.compatibility_mode: " + std::to_string(normalized_compatibility_mode) +
+          " (expected canonical=0 or legacy=1).";
   return false;
 }
 
@@ -341,6 +360,12 @@ static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context
 static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {
   Objc3FrontendOptions frontend_options;
   frontend_options.language_version = NormalizeLanguageVersion(options.language_version);
+  frontend_options.compatibility_mode =
+      NormalizeCompatibilityMode(options.compatibility_mode) ==
+              static_cast<uint8_t>(OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY)
+          ? Objc3FrontendCompatibilityMode::kLegacy
+          : Objc3FrontendCompatibilityMode::kCanonical;
+  frontend_options.migration_assist = options.migration_assist != 0;
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }
@@ -565,6 +590,10 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
   }
+  std::string compatibility_mode_error;
+  if (!ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)) {
+    return SetUsageError(context, result, compatibility_mode_error);
+  }
   if (IsNullOrEmpty(options->input_path)) {
     return SetUsageError(context, result, "compile_file requires compile_options.input_path.");
   }
@@ -588,6 +617,10 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   std::string language_version_error;
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
+  }
+  std::string compatibility_mode_error;
+  if (!ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)) {
+    return SetUsageError(context, result, compatibility_mode_error);
   }
   if (IsNullOrEmpty(options->source_text)) {
     return SetUsageError(context, result, "compile_source requires compile_options.source_text.");

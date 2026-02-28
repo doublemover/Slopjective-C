@@ -34,9 +34,14 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     assert "OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT" in source
     assert "RunIRCompileLLVMDirect(" in source
     assert "NormalizeLanguageVersion(options.language_version)" in source
+    assert "NormalizeCompatibilityMode(options.compatibility_mode)" in source
     assert "ValidateSupportedLanguageVersion(options->language_version, language_version_error)" in source
+    assert "ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)" in source
     assert "unsupported compile_options.language_version:" in source
+    assert "unsupported compile_options.compatibility_mode:" in source
     assert "Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
+    assert "frontend_options.migration_assist = options.migration_assist != 0;" in source
+    assert "OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY" in source
     assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);" in source
     assert "std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;" in source
     assert "product.pipeline_result.stage_diagnostics" in source
@@ -57,6 +62,8 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
         [
             "if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {",
             "return SetUsageError(context, result, language_version_error);",
+            "if (!ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)) {",
+            "return SetUsageError(context, result, compatibility_mode_error);",
             "if (IsNullOrEmpty(options->input_path)) {",
         ],
     )
