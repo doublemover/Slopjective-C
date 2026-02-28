@@ -395,3 +395,19 @@ Frontend canonical optimization stage-1 relies on deterministic parser/module su
   3. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
 
+## M205 frontend macro security policy enforcement
+
+Frontend macro-security policy enforcement relies on deterministic prelude-directive parsing and fail-closed diagnostics for malformed, unsupported, duplicate, or non-leading directives.
+
+- Required frontend macro-security signals:
+  - prelude directive ingest remains `ConsumeLanguageVersionPragmas(diagnostics)`.
+  - directive parser entry remains `ConsumeLanguageVersionPragmaDirective(...)`.
+  - directive placement enforcement remains `LanguageVersionPragmaPlacement::kNonLeading`.
+  - fail-closed diagnostics remain `O3L005`, `O3L006`, `O3L007`, and `O3L008`.
+  - manifest policy packet remains `frontend.language_version_pragma_contract` with `directive_count`, `duplicate`, and `non_leading`.
+- Required frontend macro-security commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
+
