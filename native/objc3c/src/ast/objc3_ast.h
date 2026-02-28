@@ -106,6 +106,9 @@ struct Expr {
   std::string block_copy_dispose_profile;
   std::string block_copy_helper_symbol;
   std::string block_dispose_helper_symbol;
+  std::size_t block_determinism_perf_baseline_weight = 0;
+  bool block_determinism_perf_baseline_profile_is_normalized = false;
+  std::string block_determinism_perf_baseline_profile;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

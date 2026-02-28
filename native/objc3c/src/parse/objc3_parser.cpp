@@ -442,6 +442,43 @@ static std::string BuildBlockDisposeHelperSymbol(unsigned line,
   return out.str();
 }
 
+static std::size_t BuildBlockDeterminismPerfBaselineWeight(std::size_t parameter_count,
+                                                           std::size_t capture_count,
+                                                           std::size_t body_statement_count,
+                                                           bool copy_helper_required,
+                                                           bool dispose_helper_required) {
+  std::size_t weight = parameter_count * 2u + capture_count * 8u + body_statement_count * 4u;
+  if (copy_helper_required) {
+    weight += 6u;
+  }
+  if (dispose_helper_required) {
+    weight += 6u;
+  }
+  return weight;
+}
+
+static std::string BuildBlockDeterminismPerfBaselineProfile(std::size_t parameter_count,
+                                                            std::size_t capture_count,
+                                                            std::size_t body_statement_count,
+                                                            bool copy_helper_required,
+                                                            bool dispose_helper_required,
+                                                            bool deterministic_capture_set,
+                                                            bool copy_dispose_profile_is_normalized,
+                                                            std::size_t baseline_weight) {
+  const char *tier = baseline_weight <= 24u ? "light" : (baseline_weight <= 64u ? "medium" : "heavy");
+  std::ostringstream out;
+  out << "block-det-perf-baseline:params=" << parameter_count
+      << ";captures=" << capture_count
+      << ";body-statements=" << body_statement_count
+      << ";copy-helper=" << (copy_helper_required ? "enabled" : "elided")
+      << ";dispose-helper=" << (dispose_helper_required ? "enabled" : "elided")
+      << ";deterministic-captures=" << (deterministic_capture_set ? "true" : "false")
+      << ";normalized=" << (copy_dispose_profile_is_normalized ? "true" : "false")
+      << ";weight=" << baseline_weight
+      << ";tier=" << tier;
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3710,6 +3747,26 @@ class Objc3Parser {
     block->block_copy_dispose_profile_is_normalized =
         block->block_storage_escape_profile_is_normalized &&
         block->block_copy_helper_required == block->block_dispose_helper_required;
+    block->block_determinism_perf_baseline_weight =
+        BuildBlockDeterminismPerfBaselineWeight(
+            block->block_parameter_count,
+            block->block_capture_count,
+            block->block_body_statement_count,
+            block->block_copy_helper_required,
+            block->block_dispose_helper_required);
+    block->block_determinism_perf_baseline_profile =
+        BuildBlockDeterminismPerfBaselineProfile(
+            block->block_parameter_count,
+            block->block_capture_count,
+            block->block_body_statement_count,
+            block->block_copy_helper_required,
+            block->block_dispose_helper_required,
+            block->block_capture_set_deterministic,
+            block->block_copy_dispose_profile_is_normalized,
+            block->block_determinism_perf_baseline_weight);
+    block->block_determinism_perf_baseline_profile_is_normalized =
+        block->block_copy_dispose_profile_is_normalized &&
+        block->block_determinism_perf_baseline_weight >= block->block_capture_count;
     return block;
   }
 

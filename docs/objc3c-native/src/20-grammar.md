@@ -862,6 +862,35 @@ Recommended M169 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q`
 
+## M170 frontend block determinism/perf baseline parser/AST surface (M170-A001)
+
+Frontend parser/AST now emits deterministic block determinism/perf baseline
+metadata so validation and release lanes can replay a stable baseline profile.
+
+M170 parser/AST surface details:
+
+- determinism/perf baseline anchors:
+  - `BuildBlockDeterminismPerfBaselineWeight(...)`
+  - `BuildBlockDeterminismPerfBaselineProfile(...)`
+- parser assignment anchors:
+  - `block_determinism_perf_baseline_weight`
+  - `block_determinism_perf_baseline_profile`
+  - `block_determinism_perf_baseline_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable block baseline metrics from canonical block shape:
+  - baseline weight uses deterministic parameter/capture/body counts plus helper
+    enablement.
+  - baseline profile remains normalized only when capture and copy/dispose
+    metadata are normalized.
+  - profile tiering (`light`/`medium`/`heavy`) is deterministic from baseline
+    weight thresholds.
+
+Recommended M170 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
