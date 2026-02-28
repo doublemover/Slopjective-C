@@ -2331,6 +2331,40 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
 
+## Object-pointer/nullability/generics lowering artifact contract (M150-C001)
+
+M150-C extends lowering/runtime ABI artifact publication with object-pointer declarator, nullability suffix, and lightweight-generic parse envelope markers.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/object-pointer-nullability-generics-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_object_pointer_nullability_generics_handoff`
+- `frontend.pipeline.sema_pass_manager.object_pointer_type_spellings`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_entries`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_depth_total`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_token_entries`
+- `frontend.pipeline.sema_pass_manager.nullability_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.generic_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.terminated_generic_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.unterminated_generic_suffix_entries`
+- `frontend.pipeline.semantic_surface.objc_object_pointer_nullability_generics_surface`
+
+IR publication markers:
+
+- `; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings=<N>, pointer_declarator_entries=<N>, pointer_declarator_depth_total=<N>, pointer_declarator_token_entries=<N>, nullability_suffix_entries=<N>, generic_suffix_entries=<N>, terminated_generic_suffix_entries=<N>, unterminated_generic_suffix_entries=<N>, deterministic_object_pointer_nullability_generics_handoff=<bool>`
+- `!objc3.objc_object_pointer_nullability_generics = !{!5}`
+- `!5 = !{i64 <object_pointer_type_spellings>, i64 <pointer_declarator_entries>, i64 <pointer_declarator_depth_total>, i64 <pointer_declarator_token_entries>, i64 <nullability_suffix_entries>, i64 <generic_suffix_entries>, i64 <terminated_generic_suffix_entries>, i64 <unterminated_generic_suffix_entries>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

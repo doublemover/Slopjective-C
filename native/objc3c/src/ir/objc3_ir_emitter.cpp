@@ -135,6 +135,17 @@ class Objc3IREmitter {
         << ", property_setter_selector_entries=" << frontend_metadata_.property_setter_selector_entries
         << ", deterministic_property_attribute_handoff="
         << (frontend_metadata_.deterministic_property_attribute_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
+        << frontend_metadata_.object_pointer_type_spellings
+        << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
+        << ", pointer_declarator_depth_total=" << frontend_metadata_.pointer_declarator_depth_total
+        << ", pointer_declarator_token_entries=" << frontend_metadata_.pointer_declarator_token_entries
+        << ", nullability_suffix_entries=" << frontend_metadata_.nullability_suffix_entries
+        << ", generic_suffix_entries=" << frontend_metadata_.generic_suffix_entries
+        << ", terminated_generic_suffix_entries=" << frontend_metadata_.terminated_generic_suffix_entries
+        << ", unterminated_generic_suffix_entries=" << frontend_metadata_.unterminated_generic_suffix_entries
+        << ", deterministic_object_pointer_nullability_generics_handoff="
+        << (frontend_metadata_.deterministic_object_pointer_nullability_generics_handoff ? "true" : "false") << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
@@ -260,6 +271,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_protocol_category = !{!2}\n";
     out << "!objc3.objc_selector_normalization = !{!3}\n";
     out << "!objc3.objc_property_attribute = !{!4}\n";
+    out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -295,6 +307,15 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.property_getter_selector_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.property_setter_selector_entries) << ", i1 "
         << (frontend_metadata_.deterministic_property_attribute_handoff ? 1 : 0) << "}\n\n";
+    out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_token_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.nullability_suffix_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.generic_suffix_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.terminated_generic_suffix_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.unterminated_generic_suffix_entries) << ", i1 "
+        << (frontend_metadata_.deterministic_object_pointer_nullability_generics_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

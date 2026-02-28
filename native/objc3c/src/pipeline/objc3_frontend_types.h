@@ -75,6 +75,18 @@ struct Objc3FrontendPropertyAttributeSummary {
   bool deterministic_property_attribute_handoff = true;
 };
 
+struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
+  std::size_t object_pointer_type_spellings = 0;
+  std::size_t pointer_declarator_entries = 0;
+  std::size_t pointer_declarator_depth_total = 0;
+  std::size_t pointer_declarator_token_entries = 0;
+  std::size_t nullability_suffix_entries = 0;
+  std::size_t generic_suffix_entries = 0;
+  std::size_t terminated_generic_suffix_entries = 0;
+  std::size_t unterminated_generic_suffix_entries = 0;
+  bool deterministic_object_pointer_nullability_generics_handoff = true;
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
@@ -85,6 +97,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendProtocolCategorySummary protocol_category_summary;
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
+  Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };

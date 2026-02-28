@@ -155,6 +155,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.selector_normalization_summary;
   const Objc3FrontendPropertyAttributeSummary &property_attribute_summary =
       pipeline_result.property_attribute_summary;
+  const Objc3FrontendObjectPointerNullabilityGenericsSummary &object_pointer_nullability_generics_summary =
+      pipeline_result.object_pointer_nullability_generics_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -345,6 +347,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_attribute_summary.property_getter_selector_entries
            << ",\"property_setter_selector_entries\":"
            << property_attribute_summary.property_setter_selector_entries
+           << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
+           << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
+                   ? "true"
+                   : "false")
+           << ",\"object_pointer_type_spellings\":"
+           << object_pointer_nullability_generics_summary.object_pointer_type_spellings
+           << ",\"pointer_declarator_entries\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_entries
+           << ",\"pointer_declarator_depth_total\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_depth_total
+           << ",\"pointer_declarator_token_entries\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_token_entries
+           << ",\"nullability_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.nullability_suffix_entries
+           << ",\"generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.generic_suffix_entries
+           << ",\"terminated_generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.terminated_generic_suffix_entries
+           << ",\"unterminated_generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries
            << "},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
@@ -422,6 +444,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_attribute_summary.property_setter_selector_entries
            << ",\"deterministic_handoff\":"
            << (property_attribute_summary.deterministic_property_attribute_handoff ? "true" : "false")
+           << "}"
+           << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
+           << object_pointer_nullability_generics_summary.object_pointer_type_spellings
+           << ",\"pointer_declarator_entries\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_entries
+           << ",\"pointer_declarator_depth_total\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_depth_total
+           << ",\"pointer_declarator_token_entries\":"
+           << object_pointer_nullability_generics_summary.pointer_declarator_token_entries
+           << ",\"nullability_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.nullability_suffix_entries
+           << ",\"generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.generic_suffix_entries
+           << ",\"terminated_generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.terminated_generic_suffix_entries
+           << ",\"unterminated_generic_suffix_entries\":"
+           << object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries
+           << ",\"deterministic_handoff\":"
+           << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
+                   ? "true"
+                   : "false")
            << "}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
@@ -545,6 +588,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.property_accessor_modifier_entries = property_attribute_summary.property_accessor_modifier_entries;
   ir_frontend_metadata.property_getter_selector_entries = property_attribute_summary.property_getter_selector_entries;
   ir_frontend_metadata.property_setter_selector_entries = property_attribute_summary.property_setter_selector_entries;
+  ir_frontend_metadata.object_pointer_type_spellings =
+      object_pointer_nullability_generics_summary.object_pointer_type_spellings;
+  ir_frontend_metadata.pointer_declarator_entries =
+      object_pointer_nullability_generics_summary.pointer_declarator_entries;
+  ir_frontend_metadata.pointer_declarator_depth_total =
+      object_pointer_nullability_generics_summary.pointer_declarator_depth_total;
+  ir_frontend_metadata.pointer_declarator_token_entries =
+      object_pointer_nullability_generics_summary.pointer_declarator_token_entries;
+  ir_frontend_metadata.nullability_suffix_entries =
+      object_pointer_nullability_generics_summary.nullability_suffix_entries;
+  ir_frontend_metadata.generic_suffix_entries = object_pointer_nullability_generics_summary.generic_suffix_entries;
+  ir_frontend_metadata.terminated_generic_suffix_entries =
+      object_pointer_nullability_generics_summary.terminated_generic_suffix_entries;
+  ir_frontend_metadata.unterminated_generic_suffix_entries =
+      object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries;
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
       interface_implementation_summary.deterministic;
@@ -554,6 +612,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       selector_normalization_summary.deterministic_selector_normalization_handoff;
   ir_frontend_metadata.deterministic_property_attribute_handoff =
       property_attribute_summary.deterministic_property_attribute_handoff;
+  ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
+      object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
