@@ -3630,6 +3630,52 @@ Recommended M179 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py -q`
 
+## Cross-module conformance suite lowering artifact contract (M180-C001)
+
+M180-C lowers sema-authored cross-module conformance summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M180-C lowering contract anchors:
+
+- `kObjc3CrossModuleConformanceLoweringLaneContract`
+- `Objc3CrossModuleConformanceLoweringContract`
+- `IsValidObjc3CrossModuleConformanceLoweringContract(...)`
+- `Objc3CrossModuleConformanceLoweringReplayKey(...)`
+- `BuildCrossModuleConformanceLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_cross_module_conformance_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface`
+- `lowering_cross_module_conformance.replay_key`
+- `; cross_module_conformance_lowering = cross_module_conformance_sites=<N>...`
+- `; frontend_objc_cross_module_conformance_lowering_profile = cross_module_conformance_sites=<N>...`
+- `!objc3.objc_cross_module_conformance_lowering = !{!33}`
+
+Recommended M180 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_lowering_cross_module_conformance_contract.py -q`
+
+## Throws propagation lowering artifact contract (M181-C001)
+
+M181-C lowers sema-authored throws propagation summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M181-C lowering contract anchors:
+
+- `kObjc3ThrowsPropagationLoweringLaneContract`
+- `Objc3ThrowsPropagationLoweringContract`
+- `IsValidObjc3ThrowsPropagationLoweringContract(...)`
+- `Objc3ThrowsPropagationLoweringReplayKey(...)`
+- `BuildThrowsPropagationLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_throws_propagation_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface`
+- `lowering_throws_propagation.replay_key`
+- `; throws_propagation_lowering = throws_propagation_sites=<N>...`
+- `; frontend_objc_throws_propagation_lowering_profile = throws_propagation_sites=<N>...`
+- `!objc3.objc_throws_propagation_lowering = !{!34}`
+
+Recommended M181 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

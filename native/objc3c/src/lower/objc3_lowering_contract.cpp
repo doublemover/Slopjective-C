@@ -1184,3 +1184,99 @@ std::string Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
          ";lane_contract=" +
          kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract;
 }
+
+bool IsValidObjc3CrossModuleConformanceLoweringContract(
+    const Objc3CrossModuleConformanceLoweringContract &contract) {
+  if (contract.namespace_segment_sites >
+          contract.cross_module_conformance_sites ||
+      contract.import_edge_candidate_sites >
+          contract.cross_module_conformance_sites ||
+      contract.object_pointer_type_sites < contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites >
+          contract.cross_module_conformance_sites ||
+      contract.normalized_sites > contract.cross_module_conformance_sites ||
+      contract.cache_invalidation_candidate_sites >
+          contract.cross_module_conformance_sites ||
+      contract.contract_violation_sites >
+          contract.cross_module_conformance_sites) {
+    return false;
+  }
+  if (contract.normalized_sites +
+          contract.cache_invalidation_candidate_sites >
+      contract.cross_module_conformance_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.cross_module_conformance_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3CrossModuleConformanceLoweringReplayKey(
+    const Objc3CrossModuleConformanceLoweringContract &contract) {
+  return std::string("cross_module_conformance_sites=") +
+             std::to_string(contract.cross_module_conformance_sites) +
+         ";namespace_segment_sites=" +
+         std::to_string(contract.namespace_segment_sites) +
+         ";import_edge_candidate_sites=" +
+         std::to_string(contract.import_edge_candidate_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";cache_invalidation_candidate_sites=" +
+         std::to_string(contract.cache_invalidation_candidate_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3CrossModuleConformanceLoweringLaneContract;
+}
+
+bool IsValidObjc3ThrowsPropagationLoweringContract(
+    const Objc3ThrowsPropagationLoweringContract &contract) {
+  if (contract.namespace_segment_sites > contract.throws_propagation_sites ||
+      contract.import_edge_candidate_sites > contract.throws_propagation_sites ||
+      contract.object_pointer_type_sites < contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites > contract.throws_propagation_sites ||
+      contract.normalized_sites > contract.throws_propagation_sites ||
+      contract.cache_invalidation_candidate_sites >
+          contract.throws_propagation_sites ||
+      contract.contract_violation_sites > contract.throws_propagation_sites) {
+    return false;
+  }
+  if (contract.normalized_sites +
+          contract.cache_invalidation_candidate_sites >
+      contract.throws_propagation_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.throws_propagation_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ThrowsPropagationLoweringReplayKey(
+    const Objc3ThrowsPropagationLoweringContract &contract) {
+  return std::string("throws_propagation_sites=") +
+             std::to_string(contract.throws_propagation_sites) +
+         ";namespace_segment_sites=" +
+         std::to_string(contract.namespace_segment_sites) +
+         ";import_edge_candidate_sites=" +
+         std::to_string(contract.import_edge_candidate_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";cache_invalidation_candidate_sites=" +
+         std::to_string(contract.cache_invalidation_candidate_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ThrowsPropagationLoweringLaneContract;
+}

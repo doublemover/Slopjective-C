@@ -70,6 +70,10 @@ inline constexpr const char *kObjc3PublicPrivateApiPartitionLoweringLaneContract
     "m178-public-private-api-partition-lowering-v1";
 inline constexpr const char *kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract =
     "m179-incremental-module-cache-invalidation-lowering-v1";
+inline constexpr const char *kObjc3CrossModuleConformanceLoweringLaneContract =
+    "m180-cross-module-conformance-lowering-v1";
+inline constexpr const char *kObjc3ThrowsPropagationLoweringLaneContract =
+    "m181-throws-propagation-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -404,6 +408,30 @@ struct Objc3IncrementalModuleCacheInvalidationLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3CrossModuleConformanceLoweringContract {
+  std::size_t cross_module_conformance_sites = 0;
+  std::size_t namespace_segment_sites = 0;
+  std::size_t import_edge_candidate_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t cache_invalidation_candidate_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3ThrowsPropagationLoweringContract {
+  std::size_t throws_propagation_sites = 0;
+  std::size_t namespace_segment_sites = 0;
+  std::size_t import_edge_candidate_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t cache_invalidation_candidate_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -529,3 +557,11 @@ bool IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
     const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract);
 std::string Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
     const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract);
+bool IsValidObjc3CrossModuleConformanceLoweringContract(
+    const Objc3CrossModuleConformanceLoweringContract &contract);
+std::string Objc3CrossModuleConformanceLoweringReplayKey(
+    const Objc3CrossModuleConformanceLoweringContract &contract);
+bool IsValidObjc3ThrowsPropagationLoweringContract(
+    const Objc3ThrowsPropagationLoweringContract &contract);
+std::string Objc3ThrowsPropagationLoweringReplayKey(
+    const Objc3ThrowsPropagationLoweringContract &contract);
