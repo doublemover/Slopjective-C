@@ -355,6 +355,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain WMO anchors.
 
+## M207 integration dispatch-specific optimization passes
+
+- Gate intent: enforce deterministic dispatch-specific optimization evidence across all lanes.
+### 1.1 Dispatch-optimization integration chain
+- Deterministic dispatch-optimization gate:
+  - `npm run check:objc3c:m207-dispatch-optimizations`
+- Chain order:
+  - replays `check:objc3c:m208-whole-module-optimization`.
+  - enforces all M207 lane contracts:
+    `tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_lowering_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_validation_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_integration_dispatch_optimizations_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through dispatch-optimization validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain dispatch-optimization anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

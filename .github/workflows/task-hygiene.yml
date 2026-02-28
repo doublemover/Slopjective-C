@@ -109,6 +109,8 @@ jobs:
         run: npm run check:objc3c:m209-pgo-hooks
       - name: 29 Run M208 whole-module optimization integration gate
         run: npm run check:objc3c:m208-whole-module-optimization
+      - name: 30 Run M207 dispatch-optimization integration gate
+        run: npm run check:objc3c:m207-dispatch-optimizations
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
