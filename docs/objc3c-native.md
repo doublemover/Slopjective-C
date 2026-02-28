@@ -2407,6 +2407,24 @@ python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py
 ```
 
+## M223 operator quickstart (docs+CI parity)
+
+For deterministic day-to-day operator usage, run this minimal sequence from repo root:
+
+```powershell
+npm run build:objc3c-native
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m223/quickstart --emit-prefix module
+npm run test:objc3c:m222-compatibility-migration
+python scripts/build_objc3c_native_docs.py --check
+```
+
+Operational intent:
+
+- `build:objc3c-native` verifies native toolchain wiring and executable output.
+- `compile:objc3c` verifies deterministic compile artifact generation under `tmp/`.
+- `test:objc3c:m222-compatibility-migration` verifies compatibility/migration contract surfaces.
+- `build_objc3c_native_docs.py --check` verifies generated docs are in sync with source fragments.
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.

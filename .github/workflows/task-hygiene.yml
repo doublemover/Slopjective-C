@@ -75,6 +75,8 @@ jobs:
         run: npm run test:objc3c:lane-e
       - name: 12 Run M222 compatibility+migration contract gate
         run: npm run test:objc3c:m222-compatibility-migration
+      - name: 13 Run M223 operator-guides docs+CI parity gate
+        run: npm run check:objc3c:m223-operator-guides
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
