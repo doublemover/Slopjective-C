@@ -555,6 +555,28 @@ Frontend system-extension conformance/policy contract relies on deterministic co
   3. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
 
+## M194 frontend atomics and memory-order mapping
+
+Frontend atomics and memory-order mapping contract relies on deterministic compound-assignment token capture, replay-stable opcode lowering mapping, and fail-closed pipeline behavior.
+
+- Required frontend atomics/memory-order signals:
+  - assignment-token classification remains `IsAssignmentOperatorToken(TokenKind kind)`.
+  - assignment-token decode remains `MatchAssignmentOperator(std::string &op)`.
+  - bitwise/shift assignment forms remain explicit parser anchors:
+    `if (Match(TokenKind::AmpersandEqual)) {`,
+    `if (Match(TokenKind::PipeEqual)) {`,
+    `if (Match(TokenKind::CaretEqual)) {`,
+    `if (Match(TokenKind::LessLessEqual)) {`,
+    and `if (Match(TokenKind::GreaterGreaterEqual)) {`.
+  - compound assignment lowering mapping remains `TryGetCompoundAssignmentBinaryOpcode(...)` for `and`/`or`/`xor`/`shl`/`ashr`.
+  - fail-closed pipeline posture remains `NoThrowFailClosed`.
+  - lowering defaults remain `kRuntimeDispatchDefaultArgs = 4` and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+- Required frontend atomics/memory-order commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
