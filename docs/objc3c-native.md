@@ -269,6 +269,21 @@ Cross-platform frontend parity (Windows/Linux/macOS) is tracked via deterministi
   3. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
 
+## M218 frontend RC provenance packet
+
+Release-candidate automation for frontend/parser requires deterministic boundary evidence and provenance-ready replay markers.
+
+- Required RC provenance signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required RC commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1774,6 +1789,30 @@ Recommended burn-down commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py -q`
 
+## M218 sema/type RC provenance profile
+
+For release-candidate automation and provenance attestation on the sema/type lane, capture deterministic evidence packets from replay-stable sema/type execution.
+
+### 1.1 Deterministic semantic diagnostics RC evidence packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest RC diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic release-candidate packet key for automation/attestation: `rc_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata RC provenance packet
+
+- Sema handoff and parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest RC parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface provenance anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic release-candidate packet key for automation/attestation: `rc_type_metadata_handoff_packet`.
+
+Recommended RC provenance commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -1943,6 +1982,43 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M218 lowering/runtime RC provenance profile
+
+Release-candidate lowering/runtime provenance is captured as a deterministic packet rooted under `tmp/`.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.manifest.json`
+  - `tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+  - `tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/attestation-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each RC packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors to include in packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `attestation markers` (contract markers to include in RC packet attestation notes):
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `RC provenance closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - replay and attestation marker reports stay stable across reruns (no added/removed markers).
+  - closure remains open if any required packet artifact, ABI/IR anchor, replay marker, or attestation marker is missing.
+
+RC provenance capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.ll > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.manifest.json >> tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
+4. `rg -n "Objc3LoweringIRBoundaryReplayKey|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/attestation-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m218_lowering_rc_provenance_contract.py -q`
 
 ## M219 lowering/runtime cross-platform parity profile
 
@@ -3047,6 +3123,52 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m219_validation_cross_platform_contract.py -q
 ```
 
+## M218 validation/perf RC provenance runbook
+
+RC provenance validation runs deterministic test commands and captures attestable evidence packets.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+RC provenance evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `attestation_sha256`
+  - `provenance.bundle_id`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `attestation_sha256`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `attestation_sha256`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `attestation_sha256`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m218_validation_rc_provenance_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3204,6 +3326,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain parity anchors.
+
+## M218 integration RC automation and provenance
+
+- Gate intent: enforce deterministic RC automation and provenance attestation chain across all lanes.
+### 1.1 RC integration chain
+- Deterministic RC gate:
+  - `npm run check:objc3c:m218-rc-provenance`
+- Chain order:
+  - replays `check:objc3c:m219-cross-platform-parity`.
+  - enforces all M218 lane contracts:
+    `tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_lowering_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_validation_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_integration_rc_provenance_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through RC automation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain provenance anchors.
 
 ## Current call contract
 
