@@ -92,6 +92,7 @@ class Objc3IREmitter {
     std::ostringstream out;
     out << "; objc3c native frontend IR\n";
     out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
+    out << "; runtime_dispatch_decl = " << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n";
     out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
@@ -101,11 +102,7 @@ class Objc3IREmitter {
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
-      out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
-      for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
-        out << ", i32";
-      }
-      out << ")\n\n";
+      out << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n\n";
     }
     out << body.str();
     ir = out.str();

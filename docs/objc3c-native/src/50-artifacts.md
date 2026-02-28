@@ -2080,6 +2080,21 @@ Object backend note for harness replay:
 - M142 parity dimensions exclude `module.object-backend.txt`; it is a provenance note, not a compared artifact payload.
 - Source-mode parity command pins `--cli-ir-object-backend clang` so CLI and C API object outputs are backend-aligned.
 
+Lane-C lowering/LLVM IR/runtime-ABI parity anchors (`M142-C001`):
+
+- Native IR prologue emits deterministic ABI replay markers:
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; runtime_dispatch_decl = declare i32 @<symbol>(i32, ptr[, i32...])`
+  - `; simd_vector_lowering = <canonical replay key>`
+- Runtime dispatch declaration emission reuses the same replay key shape as the prologue marker.
+- Manifest parity still records lowering/runtime ABI controls under:
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+  - `"lowering_vector_abi":{"replay_key":"<canonical replay key>"}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_lowering_cli_c_api_parity_contract.py -q`
+
 `npm run check:compiler-closeout:m142` fail-closes on parity harness source/docs/package drift via:
 
 - `python scripts/check_m142_frontend_lowering_parity_contract.py`

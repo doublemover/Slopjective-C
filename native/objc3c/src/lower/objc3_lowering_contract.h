@@ -44,6 +44,7 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
                                      Objc3LoweringIRBoundary &boundary,
                                      std::string &error);
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary);
+std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
 const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);

@@ -1,6 +1,7 @@
 #include "lower/objc3_lowering_contract.h"
 
 #include <cctype>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -86,6 +87,16 @@ std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boun
   return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +
          ";runtime_dispatch_arg_slots=" + std::to_string(boundary.runtime_dispatch_arg_slots) +
          ";selector_global_ordering=" + boundary.selector_global_ordering;
+}
+
+std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
+  std::ostringstream out;
+  out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";
+  for (std::size_t i = 0; i < boundary.runtime_dispatch_arg_slots; ++i) {
+    out << ", i32";
+  }
+  out << ")";
+  return out.str();
 }
 
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode) {
