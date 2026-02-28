@@ -5186,6 +5186,36 @@ Deterministic sema intent:
 Recommended M175 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m175_sema_generic_metadata_abi_contract.py -q`
+
+## M176 sema/type module map ingestion and import graph contract (M176-B001)
+
+M176-B defines deterministic sema summaries for module-map ingestion and
+import-graph handoff safety over object-pointer type annotations.
+
+M176 sema/type surface details:
+
+- `Objc3ModuleImportGraphSummary`
+- `BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary`
+- parity counters:
+  - `module_import_graph_sites_total`
+  - `module_import_graph_import_edge_candidate_sites_total`
+  - `module_import_graph_namespace_segment_sites_total`
+  - `module_import_graph_object_pointer_type_sites_total`
+  - `module_import_graph_pointer_declarator_sites_total`
+  - `module_import_graph_normalized_sites_total`
+  - `module_import_graph_contract_violation_sites_total`
+  - `deterministic_module_import_graph_handoff`
+
+Deterministic sema intent:
+
+- module import-graph summaries are derived from deterministic type-annotation
+  and generic-metadata ABI packets.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M176 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m176_sema_module_import_graph_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

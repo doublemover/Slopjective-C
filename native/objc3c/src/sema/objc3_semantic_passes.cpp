@@ -3192,6 +3192,33 @@ static Objc3GenericMetadataAbiSummary BuildGenericMetadataAbiSummaryFromTypeAnno
   return summary;
 }
 
+static Objc3ModuleImportGraphSummary BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary,
+    const Objc3GenericMetadataAbiSummary &generic_metadata_summary) {
+  Objc3ModuleImportGraphSummary summary;
+  summary.module_import_graph_sites = generic_metadata_summary.generic_metadata_abi_sites;
+  summary.import_edge_candidate_sites = generic_metadata_summary.generic_suffix_sites;
+  summary.namespace_segment_sites =
+      std::min(generic_metadata_summary.protocol_composition_sites +
+                   generic_metadata_summary.object_pointer_type_sites,
+               summary.module_import_graph_sites);
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.normalized_sites =
+      std::min(summary.import_edge_candidate_sites, summary.object_pointer_type_sites);
+  summary.contract_violation_sites =
+      generic_metadata_summary.contract_violation_sites +
+      type_annotation_summary.invalid_generic_suffix_sites;
+  summary.deterministic =
+      type_annotation_summary.deterministic && generic_metadata_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.import_edge_candidate_sites <= summary.module_import_graph_sites &&
+      summary.namespace_segment_sites <= summary.module_import_graph_sites &&
+      summary.normalized_sites <= summary.module_import_graph_sites &&
+      summary.contract_violation_sites <= summary.module_import_graph_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7320,6 +7347,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           surface.type_annotation_surface_summary,
           surface.lightweight_generic_constraint_summary,
           surface.variance_bridge_cast_summary);
+  surface.module_import_graph_summary =
+      BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
+          surface.type_annotation_surface_summary,
+          surface.generic_metadata_abi_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8322,6 +8353,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.type_annotation_surface_summary,
           handoff.lightweight_generic_constraint_summary,
           handoff.variance_bridge_cast_summary);
+  handoff.module_import_graph_summary =
+      BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
+          handoff.type_annotation_surface_summary,
+          handoff.generic_metadata_abi_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9064,6 +9099,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           handoff.type_annotation_surface_summary,
           handoff.lightweight_generic_constraint_summary,
           handoff.variance_bridge_cast_summary);
+  const Objc3ModuleImportGraphSummary module_import_graph_summary =
+      BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
+          handoff.type_annotation_surface_summary,
+          handoff.generic_metadata_abi_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9291,6 +9330,29 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
          handoff.generic_metadata_abi_summary.contract_violation_sites <=
              handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         handoff.module_import_graph_summary.deterministic &&
+         handoff.module_import_graph_summary.module_import_graph_sites ==
+             module_import_graph_summary.module_import_graph_sites &&
+         handoff.module_import_graph_summary.import_edge_candidate_sites ==
+             module_import_graph_summary.import_edge_candidate_sites &&
+         handoff.module_import_graph_summary.namespace_segment_sites ==
+             module_import_graph_summary.namespace_segment_sites &&
+         handoff.module_import_graph_summary.object_pointer_type_sites ==
+             module_import_graph_summary.object_pointer_type_sites &&
+         handoff.module_import_graph_summary.pointer_declarator_sites ==
+             module_import_graph_summary.pointer_declarator_sites &&
+         handoff.module_import_graph_summary.normalized_sites ==
+             module_import_graph_summary.normalized_sites &&
+         handoff.module_import_graph_summary.contract_violation_sites ==
+             module_import_graph_summary.contract_violation_sites &&
+         handoff.module_import_graph_summary.import_edge_candidate_sites <=
+             handoff.module_import_graph_summary.module_import_graph_sites &&
+         handoff.module_import_graph_summary.namespace_segment_sites <=
+             handoff.module_import_graph_summary.module_import_graph_sites &&
+         handoff.module_import_graph_summary.normalized_sites <=
+             handoff.module_import_graph_summary.module_import_graph_sites &&
+         handoff.module_import_graph_summary.contract_violation_sites <=
+             handoff.module_import_graph_summary.module_import_graph_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
