@@ -218,6 +218,10 @@ class Objc3IREmitter {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_ns_error_bridging_replay_key.empty()) {
+      out << "; ns_error_bridging_lowering = "
+          << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -790,6 +794,33 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_ns_error_bridging_lowering_profile = ns_error_bridging_sites="
+        << frontend_metadata_.ns_error_bridging_lowering_sites
+        << ", ns_error_parameter_sites="
+        << frontend_metadata_
+               .ns_error_bridging_lowering_ns_error_parameter_sites
+        << ", ns_error_out_parameter_sites="
+        << frontend_metadata_
+               .ns_error_bridging_lowering_ns_error_out_parameter_sites
+        << ", ns_error_bridge_path_sites="
+        << frontend_metadata_
+               .ns_error_bridging_lowering_ns_error_bridge_path_sites
+        << ", failable_call_sites="
+        << frontend_metadata_.ns_error_bridging_lowering_failable_call_sites
+        << ", normalized_sites="
+        << frontend_metadata_.ns_error_bridging_lowering_normalized_sites
+        << ", bridge_boundary_sites="
+        << frontend_metadata_
+               .ns_error_bridging_lowering_bridge_boundary_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .ns_error_bridging_lowering_contract_violation_sites
+        << ", deterministic_ns_error_bridging_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_ns_error_bridging_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -987,6 +1018,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}\n";
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
+    out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1737,6 +1769,41 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_throws_propagation_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!36 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ns_error_bridging_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ns_error_bridging_lowering_ns_error_parameter_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ns_error_bridging_lowering_ns_error_out_parameter_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ns_error_bridging_lowering_ns_error_bridge_path_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ns_error_bridging_lowering_failable_call_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ns_error_bridging_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ns_error_bridging_lowering_bridge_boundary_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ns_error_bridging_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_ns_error_bridging_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

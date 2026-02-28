@@ -3676,6 +3676,28 @@ Recommended M181 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q`
 
+## NSError bridging lowering artifact contract (M183-C001)
+
+M183-C lowers sema-authored NSError bridging summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M183-C lowering contract anchors:
+
+- `kObjc3NSErrorBridgingLoweringLaneContract`
+- `Objc3NSErrorBridgingLoweringContract`
+- `IsValidObjc3NSErrorBridgingLoweringContract(...)`
+- `Objc3NSErrorBridgingLoweringReplayKey(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_ns_error_bridging_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface`
+- `lowering_ns_error_bridging.replay_key`
+- `; ns_error_bridging_lowering = ns_error_bridging_sites=<N>;ns_error_parameter_sites=<N>;ns_error_out_parameter_sites=<N>;ns_error_bridge_path_sites=<N>;failable_call_sites=<N>;normalized_sites=<N>;bridge_boundary_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m183-ns-error-bridging-lowering-v1`
+- `; frontend_objc_ns_error_bridging_lowering_profile = ns_error_bridging_sites=<N>...`
+- `!objc3.objc_ns_error_bridging_lowering = !{!36}`
+
+Recommended M183 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

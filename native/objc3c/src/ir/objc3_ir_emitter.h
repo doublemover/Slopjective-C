@@ -316,6 +316,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t throws_propagation_lowering_cache_invalidation_candidate_sites = 0;
   std::size_t throws_propagation_lowering_contract_violation_sites = 0;
   bool deterministic_throws_propagation_lowering_handoff = false;
+  std::string lowering_ns_error_bridging_replay_key;
+  std::size_t ns_error_bridging_lowering_sites = 0;
+  std::size_t ns_error_bridging_lowering_ns_error_parameter_sites = 0;
+  std::size_t ns_error_bridging_lowering_ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridging_lowering_ns_error_bridge_path_sites = 0;
+  std::size_t ns_error_bridging_lowering_failable_call_sites = 0;
+  std::size_t ns_error_bridging_lowering_normalized_sites = 0;
+  std::size_t ns_error_bridging_lowering_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_lowering_contract_violation_sites = 0;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

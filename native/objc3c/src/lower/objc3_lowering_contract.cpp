@@ -1321,3 +1321,45 @@ std::string Objc3ResultLikeLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ResultLikeLoweringLaneContract;
 }
+
+bool IsValidObjc3NSErrorBridgingLoweringContract(
+    const Objc3NSErrorBridgingLoweringContract &contract) {
+  if (contract.ns_error_parameter_sites > contract.ns_error_bridging_sites ||
+      contract.ns_error_out_parameter_sites > contract.ns_error_parameter_sites ||
+      contract.ns_error_bridge_path_sites > contract.ns_error_out_parameter_sites ||
+      contract.ns_error_bridge_path_sites > contract.failable_call_sites ||
+      contract.failable_call_sites > contract.ns_error_bridging_sites ||
+      contract.normalized_sites > contract.ns_error_bridging_sites ||
+      contract.bridge_boundary_sites > contract.ns_error_bridging_sites ||
+      contract.contract_violation_sites > contract.ns_error_bridging_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.bridge_boundary_sites !=
+      contract.ns_error_bridging_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3NSErrorBridgingLoweringReplayKey(
+    const Objc3NSErrorBridgingLoweringContract &contract) {
+  return std::string("ns_error_bridging_sites=") +
+             std::to_string(contract.ns_error_bridging_sites) +
+         ";ns_error_parameter_sites=" +
+         std::to_string(contract.ns_error_parameter_sites) +
+         ";ns_error_out_parameter_sites=" +
+         std::to_string(contract.ns_error_out_parameter_sites) +
+         ";ns_error_bridge_path_sites=" +
+         std::to_string(contract.ns_error_bridge_path_sites) +
+         ";failable_call_sites=" +
+         std::to_string(contract.failable_call_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";bridge_boundary_sites=" + std::to_string(contract.bridge_boundary_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3NSErrorBridgingLoweringLaneContract;
+}
