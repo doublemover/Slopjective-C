@@ -155,6 +155,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t method_lookup_override_conflict_override_misses_total = 0;
   std::size_t method_lookup_override_conflict_override_conflicts_total = 0;
   std::size_t method_lookup_override_conflict_unresolved_base_interfaces_total = 0;
+  std::size_t property_synthesis_ivar_binding_property_synthesis_sites_total = 0;
+  std::size_t property_synthesis_ivar_binding_explicit_ivar_bindings_total = 0;
+  std::size_t property_synthesis_ivar_binding_default_ivar_bindings_total = 0;
+  std::size_t property_synthesis_ivar_binding_ivar_binding_sites_total = 0;
+  std::size_t property_synthesis_ivar_binding_ivar_binding_resolved_total = 0;
+  std::size_t property_synthesis_ivar_binding_ivar_binding_missing_total = 0;
+  std::size_t property_synthesis_ivar_binding_ivar_binding_conflicts_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -166,6 +173,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_type_annotation_surface_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
+  bool deterministic_property_synthesis_ivar_binding_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -174,6 +182,7 @@ struct Objc3SemaParityContractSurface {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -391,7 +400,32 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.method_lookup_override_conflict_summary.override_conflicts <=
              surface.method_lookup_override_conflict_summary.override_lookup_hits &&
          surface.method_lookup_override_conflict_summary.deterministic &&
-         surface.deterministic_method_lookup_override_conflict_handoff;
+         surface.deterministic_method_lookup_override_conflict_handoff &&
+         surface.property_synthesis_ivar_binding_summary.property_synthesis_sites ==
+             surface.property_synthesis_ivar_binding_property_synthesis_sites_total &&
+         surface.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings ==
+             surface.property_synthesis_ivar_binding_explicit_ivar_bindings_total &&
+         surface.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
+             surface.property_synthesis_ivar_binding_default_ivar_bindings_total &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
+             surface.property_synthesis_ivar_binding_ivar_binding_sites_total &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_resolved ==
+             surface.property_synthesis_ivar_binding_ivar_binding_resolved_total &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_missing ==
+             surface.property_synthesis_ivar_binding_ivar_binding_missing_total &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
+             surface.property_synthesis_ivar_binding_ivar_binding_conflicts_total &&
+         surface.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings +
+                 surface.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
+             surface.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
+             surface.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+         surface.property_synthesis_ivar_binding_summary.ivar_binding_resolved +
+                 surface.property_synthesis_ivar_binding_summary.ivar_binding_missing +
+                 surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
+             surface.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
+         surface.property_synthesis_ivar_binding_summary.deterministic &&
+         surface.deterministic_property_synthesis_ivar_binding_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -416,6 +450,8 @@ struct Objc3SemaPassManagerResult {
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  bool deterministic_property_synthesis_ivar_binding_handoff = false;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

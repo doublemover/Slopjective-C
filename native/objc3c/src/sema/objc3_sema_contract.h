@@ -192,6 +192,17 @@ struct Objc3MethodLookupOverrideConflictSummary {
   std::size_t total_lookup_misses() const { return method_lookup_misses + override_lookup_misses; }
 };
 
+struct Objc3PropertySynthesisIvarBindingSummary {
+  std::size_t property_synthesis_sites = 0;
+  std::size_t property_synthesis_explicit_ivar_bindings = 0;
+  std::size_t property_synthesis_default_ivar_bindings = 0;
+  std::size_t ivar_binding_sites = 0;
+  std::size_t ivar_binding_resolved = 0;
+  std::size_t ivar_binding_missing = 0;
+  std::size_t ivar_binding_conflicts = 0;
+  bool deterministic = true;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -351,6 +362,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   bool built = false;
 };
 
@@ -507,6 +519,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
+  Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
 };
 
 struct Objc3SemanticValidationOptions {

@@ -162,6 +162,17 @@ bool IsEquivalentMethodLookupOverrideConflictSummary(const Objc3MethodLookupOver
          lhs.unresolved_base_interfaces == rhs.unresolved_base_interfaces;
 }
 
+bool IsEquivalentPropertySynthesisIvarBindingSummary(const Objc3PropertySynthesisIvarBindingSummary &lhs,
+                                                     const Objc3PropertySynthesisIvarBindingSummary &rhs) {
+  return lhs.property_synthesis_sites == rhs.property_synthesis_sites &&
+         lhs.property_synthesis_explicit_ivar_bindings == rhs.property_synthesis_explicit_ivar_bindings &&
+         lhs.property_synthesis_default_ivar_bindings == rhs.property_synthesis_default_ivar_bindings &&
+         lhs.ivar_binding_sites == rhs.ivar_binding_sites &&
+         lhs.ivar_binding_resolved == rhs.ivar_binding_resolved &&
+         lhs.ivar_binding_missing == rhs.ivar_binding_missing &&
+         lhs.ivar_binding_conflicts == rhs.ivar_binding_conflicts;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -334,6 +345,25 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_sites &&
       result.type_metadata_handoff.method_lookup_override_conflict_summary.override_conflicts <=
           result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_hits;
+  result.property_synthesis_ivar_binding_summary =
+      result.integration_surface.property_synthesis_ivar_binding_summary;
+  result.deterministic_property_synthesis_ivar_binding_handoff =
+      result.type_metadata_handoff.property_synthesis_ivar_binding_summary.deterministic &&
+      result.integration_surface.property_synthesis_ivar_binding_summary.deterministic &&
+      IsEquivalentPropertySynthesisIvarBindingSummary(
+          result.integration_surface.property_synthesis_ivar_binding_summary,
+          result.type_metadata_handoff.property_synthesis_ivar_binding_summary) &&
+      result.type_metadata_handoff.property_synthesis_ivar_binding_summary
+              .property_synthesis_explicit_ivar_bindings +
+              result.type_metadata_handoff.property_synthesis_ivar_binding_summary
+                  .property_synthesis_default_ivar_bindings ==
+          result.type_metadata_handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+      result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
+          result.type_metadata_handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+      result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_resolved +
+              result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_missing +
+              result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
+          result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -490,6 +520,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.method_lookup_override_conflict_summary.override_conflicts;
   result.parity_surface.method_lookup_override_conflict_unresolved_base_interfaces_total =
       result.parity_surface.method_lookup_override_conflict_summary.unresolved_base_interfaces;
+  result.parity_surface.property_synthesis_ivar_binding_summary =
+      result.type_metadata_handoff.property_synthesis_ivar_binding_summary;
+  result.parity_surface.property_synthesis_ivar_binding_property_synthesis_sites_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_sites;
+  result.parity_surface.property_synthesis_ivar_binding_explicit_ivar_bindings_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings;
+  result.parity_surface.property_synthesis_ivar_binding_default_ivar_bindings_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings;
+  result.parity_surface.property_synthesis_ivar_binding_ivar_binding_sites_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_sites;
+  result.parity_surface.property_synthesis_ivar_binding_ivar_binding_resolved_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_resolved;
+  result.parity_surface.property_synthesis_ivar_binding_ivar_binding_missing_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_missing;
+  result.parity_surface.property_synthesis_ivar_binding_ivar_binding_conflicts_total =
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -721,6 +767,33 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.method_lookup_override_conflict_summary.override_conflicts <=
           result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic;
+  result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff =
+      result.deterministic_property_synthesis_ivar_binding_handoff &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_sites ==
+          result.parity_surface.property_synthesis_ivar_binding_property_synthesis_sites_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings ==
+          result.parity_surface.property_synthesis_ivar_binding_explicit_ivar_bindings_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
+          result.parity_surface.property_synthesis_ivar_binding_default_ivar_bindings_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
+          result.parity_surface.property_synthesis_ivar_binding_ivar_binding_sites_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_resolved ==
+          result.parity_surface.property_synthesis_ivar_binding_ivar_binding_resolved_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_missing ==
+          result.parity_surface.property_synthesis_ivar_binding_ivar_binding_missing_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
+          result.parity_surface.property_synthesis_ivar_binding_ivar_binding_conflicts_total &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings +
+              result.parity_surface.property_synthesis_ivar_binding_summary
+                  .property_synthesis_default_ivar_bindings ==
+          result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
+          result.parity_surface.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_resolved +
+              result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_missing +
+              result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
+          result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -752,6 +825,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&
-      result.parity_surface.deterministic_method_lookup_override_conflict_handoff;
+      result.parity_surface.deterministic_method_lookup_override_conflict_handoff &&
+      result.parity_surface.property_synthesis_ivar_binding_summary.deterministic &&
+      result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff;
   return result;
 }

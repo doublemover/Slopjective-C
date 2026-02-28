@@ -2531,3 +2531,36 @@ Sema/type metadata handoff contract:
 Recommended M153 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
+
+## M154 sema/type property synthesis and ivar binding semantics contract (M154-B001)
+
+M154-B adds a deterministic semantic summary that tracks implementation-property synthesis sites and ivar-binding
+resolution outcomes across integration, handoff, and pass-manager parity surfaces.
+
+Sema/type contract markers:
+
+- `Objc3PropertySynthesisIvarBindingSummary`
+- `property_synthesis_ivar_binding_summary`
+- `BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface`
+- `BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff`
+- `deterministic_property_synthesis_ivar_binding_handoff`
+- `result.parity_surface.property_synthesis_ivar_binding_summary`
+
+Deterministic synthesis/ivar invariants (fail-closed):
+
+- synthesis split remains bounded and balanced (`explicit + default == synthesis_sites`).
+- ivar binding accounting remains balanced (`resolved + missing + conflicts == ivar_binding_sites`).
+- ivar binding coverage remains aligned with synthesis coverage (`ivar_binding_sites == property_synthesis_sites`).
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.property_synthesis_ivar_binding_summary = BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.property_synthesis_ivar_binding_summary = BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff`
+
+Recommended M154 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py -q`
