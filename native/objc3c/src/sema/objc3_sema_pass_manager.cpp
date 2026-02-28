@@ -134,6 +134,22 @@ bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeRe
          lhs.method_resolution_misses == rhs.method_resolution_misses;
 }
 
+bool IsEquivalentClassProtocolCategoryLinkingSummary(const Objc3ClassProtocolCategoryLinkingSummary &lhs,
+                                                     const Objc3ClassProtocolCategoryLinkingSummary &rhs) {
+  return lhs.declared_interfaces == rhs.declared_interfaces &&
+         lhs.resolved_interfaces == rhs.resolved_interfaces &&
+         lhs.declared_implementations == rhs.declared_implementations &&
+         lhs.resolved_implementations == rhs.resolved_implementations &&
+         lhs.interface_method_symbols == rhs.interface_method_symbols &&
+         lhs.implementation_method_symbols == rhs.implementation_method_symbols &&
+         lhs.linked_implementation_symbols == rhs.linked_implementation_symbols &&
+         lhs.protocol_composition_sites == rhs.protocol_composition_sites &&
+         lhs.protocol_composition_symbols == rhs.protocol_composition_symbols &&
+         lhs.category_composition_sites == rhs.category_composition_sites &&
+         lhs.category_composition_symbols == rhs.category_composition_symbols &&
+         lhs.invalid_protocol_composition_sites == rhs.invalid_protocol_composition_sites;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -196,6 +212,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.protocol_category_composition_summary.category_composition_symbols &&
       result.integration_surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
           result.type_metadata_handoff.protocol_category_composition_summary.invalid_protocol_composition_sites;
+  result.class_protocol_category_linking_summary = result.integration_surface.class_protocol_category_linking_summary;
+  result.deterministic_class_protocol_category_linking_handoff =
+      result.type_metadata_handoff.class_protocol_category_linking_summary.deterministic &&
+      result.integration_surface.class_protocol_category_linking_summary.deterministic &&
+      IsEquivalentClassProtocolCategoryLinkingSummary(
+          result.integration_surface.class_protocol_category_linking_summary,
+          result.type_metadata_handoff.class_protocol_category_linking_summary) &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.resolved_interfaces <=
+          result.type_metadata_handoff.class_protocol_category_linking_summary.declared_interfaces &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.resolved_implementations <=
+          result.type_metadata_handoff.class_protocol_category_linking_summary.declared_implementations &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.interface_method_symbols ==
+          result.type_metadata_handoff.interface_implementation_summary.interface_method_symbols &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.implementation_method_symbols ==
+          result.type_metadata_handoff.interface_implementation_summary.implementation_method_symbols &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.linked_implementation_symbols ==
+          result.type_metadata_handoff.interface_implementation_summary.linked_implementation_symbols &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.protocol_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.protocol_composition_sites &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.protocol_composition_symbols ==
+          result.type_metadata_handoff.protocol_category_composition_summary.protocol_composition_symbols &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.category_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.category_composition_sites &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.category_composition_symbols ==
+          result.type_metadata_handoff.protocol_category_composition_summary.category_composition_symbols &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.invalid_protocol_composition_sites &&
+      result.type_metadata_handoff.class_protocol_category_linking_summary.invalid_protocol_composition_sites <=
+          result.type_metadata_handoff.class_protocol_category_linking_summary.total_composition_sites();
   result.selector_normalization_summary = result.integration_surface.selector_normalization_summary;
   result.deterministic_selector_normalization_handoff =
       result.type_metadata_handoff.selector_normalization_summary.deterministic &&
@@ -292,6 +337,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.protocol_category_composition_summary.category_composition_symbols;
   result.parity_surface.invalid_protocol_composition_sites_total =
       result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites;
+  result.parity_surface.class_protocol_category_linking_summary =
+      result.type_metadata_handoff.class_protocol_category_linking_summary;
   result.parity_surface.selector_normalization_summary = result.type_metadata_handoff.selector_normalization_summary;
   result.parity_surface.selector_normalization_methods_total =
       result.parity_surface.selector_normalization_summary.methods_total;
@@ -419,6 +466,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.invalid_protocol_composition_sites_total &&
       result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
           result.parity_surface.protocol_category_composition_summary.total_composition_sites();
+  result.parity_surface.deterministic_class_protocol_category_linking_handoff =
+      result.deterministic_class_protocol_category_linking_handoff &&
+      result.parity_surface.class_protocol_category_linking_summary.declared_interfaces ==
+          result.parity_surface.interface_implementation_summary.declared_interfaces &&
+      result.parity_surface.class_protocol_category_linking_summary.resolved_interfaces ==
+          result.parity_surface.interface_implementation_summary.resolved_interfaces &&
+      result.parity_surface.class_protocol_category_linking_summary.declared_implementations ==
+          result.parity_surface.interface_implementation_summary.declared_implementations &&
+      result.parity_surface.class_protocol_category_linking_summary.resolved_implementations ==
+          result.parity_surface.interface_implementation_summary.resolved_implementations &&
+      result.parity_surface.class_protocol_category_linking_summary.interface_method_symbols ==
+          result.parity_surface.interface_method_symbols_total &&
+      result.parity_surface.class_protocol_category_linking_summary.implementation_method_symbols ==
+          result.parity_surface.implementation_method_symbols_total &&
+      result.parity_surface.class_protocol_category_linking_summary.linked_implementation_symbols ==
+          result.parity_surface.linked_implementation_symbols_total &&
+      result.parity_surface.class_protocol_category_linking_summary.protocol_composition_sites ==
+          result.parity_surface.protocol_composition_sites_total &&
+      result.parity_surface.class_protocol_category_linking_summary.protocol_composition_symbols ==
+          result.parity_surface.protocol_composition_symbols_total &&
+      result.parity_surface.class_protocol_category_linking_summary.category_composition_sites ==
+          result.parity_surface.category_composition_sites_total &&
+      result.parity_surface.class_protocol_category_linking_summary.category_composition_symbols ==
+          result.parity_surface.category_composition_symbols_total &&
+      result.parity_surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
+          result.parity_surface.invalid_protocol_composition_sites_total &&
+      result.parity_surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites <=
+          result.parity_surface.class_protocol_category_linking_summary.total_composition_sites() &&
+      result.parity_surface.class_protocol_category_linking_summary.deterministic;
   result.parity_surface.deterministic_selector_normalization_handoff =
       result.deterministic_selector_normalization_handoff &&
       result.parity_surface.selector_normalization_summary.methods_total ==
@@ -584,6 +660,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_interface_implementation_handoff &&
       result.parity_surface.protocol_category_composition_summary.deterministic &&
       result.parity_surface.deterministic_protocol_category_composition_handoff &&
+      result.parity_surface.class_protocol_category_linking_summary.deterministic &&
+      result.parity_surface.deterministic_class_protocol_category_linking_handoff &&
       result.parity_surface.selector_normalization_summary.deterministic &&
       result.parity_surface.deterministic_selector_normalization_handoff &&
       result.parity_surface.property_attribute_summary.deterministic &&

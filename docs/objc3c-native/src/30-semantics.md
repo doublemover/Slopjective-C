@@ -2464,3 +2464,36 @@ Sema/type metadata handoff contract:
 Recommended M151 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py -q`
+
+## M152 sema/type class-protocol-category semantic linking contract (M152-B001)
+
+M152-B adds a deterministic semantic-linking summary that binds Objective-C class linkage
+(`@interface`/`@implementation`) and protocol/category composition surfaces into one replay-stable packet
+across integration, handoff, and pass-manager parity checks.
+
+Sema/type contract markers:
+
+- `Objc3ClassProtocolCategoryLinkingSummary`
+- `class_protocol_category_linking_summary`
+- `BuildClassProtocolCategoryLinkingSummary`
+- `deterministic_class_protocol_category_linking_handoff`
+- `result.parity_surface.class_protocol_category_linking_summary`
+
+Deterministic semantic-linking invariants (fail-closed):
+
+- class linkage counts remain bounded (`resolved <= declared`, `linked <= method symbols`).
+- protocol/category composition counts remain bounded and ordered (`invalid <= total`, `category <= protocol`).
+- class-link and protocol/category counters remain parity-aligned with integration totals and replayed handoff summaries.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.class_protocol_category_linking_summary = BuildClassProtocolCategoryLinkingSummary(...)`
+- handoff summary packet:
+  `handoff.class_protocol_category_linking_summary = BuildClassProtocolCategoryLinkingSummary(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_class_protocol_category_linking_handoff`
+
+Recommended M152 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`

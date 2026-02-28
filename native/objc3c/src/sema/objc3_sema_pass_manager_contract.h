@@ -152,12 +152,14 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
   bool deterministic_protocol_category_composition_handoff = false;
+  bool deterministic_class_protocol_category_linking_handoff = false;
   bool deterministic_selector_normalization_handoff = false;
   bool deterministic_property_attribute_handoff = false;
   bool deterministic_type_annotation_surface_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
@@ -200,6 +202,34 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.protocol_category_composition_summary.total_composition_sites() &&
          surface.protocol_category_composition_summary.deterministic &&
          surface.deterministic_protocol_category_composition_handoff &&
+         surface.class_protocol_category_linking_summary.declared_interfaces ==
+             surface.interface_implementation_summary.declared_interfaces &&
+         surface.class_protocol_category_linking_summary.resolved_interfaces ==
+             surface.interface_implementation_summary.resolved_interfaces &&
+         surface.class_protocol_category_linking_summary.declared_implementations ==
+             surface.interface_implementation_summary.declared_implementations &&
+         surface.class_protocol_category_linking_summary.resolved_implementations ==
+             surface.interface_implementation_summary.resolved_implementations &&
+         surface.class_protocol_category_linking_summary.interface_method_symbols ==
+             surface.interface_method_symbols_total &&
+         surface.class_protocol_category_linking_summary.implementation_method_symbols ==
+             surface.implementation_method_symbols_total &&
+         surface.class_protocol_category_linking_summary.linked_implementation_symbols ==
+             surface.linked_implementation_symbols_total &&
+         surface.class_protocol_category_linking_summary.protocol_composition_sites ==
+             surface.protocol_composition_sites_total &&
+         surface.class_protocol_category_linking_summary.protocol_composition_symbols ==
+             surface.protocol_composition_symbols_total &&
+         surface.class_protocol_category_linking_summary.category_composition_sites ==
+             surface.category_composition_sites_total &&
+         surface.class_protocol_category_linking_summary.category_composition_symbols ==
+             surface.category_composition_symbols_total &&
+         surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
+             surface.invalid_protocol_composition_sites_total &&
+         surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites <=
+             surface.class_protocol_category_linking_summary.total_composition_sites() &&
+         surface.class_protocol_category_linking_summary.deterministic &&
+         surface.deterministic_class_protocol_category_linking_handoff &&
          surface.selector_normalization_summary.methods_total == surface.selector_normalization_methods_total &&
          surface.selector_normalization_summary.normalized_methods ==
              surface.selector_normalization_normalized_methods_total &&
@@ -334,6 +364,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
   bool deterministic_protocol_category_composition_handoff = false;
+  bool deterministic_class_protocol_category_linking_handoff = false;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   bool deterministic_selector_normalization_handoff = false;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   bool deterministic_property_attribute_handoff = false;

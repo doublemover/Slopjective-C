@@ -2419,6 +2419,34 @@ static Objc3ProtocolCategoryCompositionSummary BuildProtocolCategoryCompositionS
   return summary;
 }
 
+static Objc3ClassProtocolCategoryLinkingSummary BuildClassProtocolCategoryLinkingSummary(
+    const Objc3InterfaceImplementationSummary &interface_implementation_summary,
+    const Objc3ProtocolCategoryCompositionSummary &protocol_category_composition_summary) {
+  Objc3ClassProtocolCategoryLinkingSummary summary;
+  summary.declared_interfaces = interface_implementation_summary.declared_interfaces;
+  summary.resolved_interfaces = interface_implementation_summary.resolved_interfaces;
+  summary.declared_implementations = interface_implementation_summary.declared_implementations;
+  summary.resolved_implementations = interface_implementation_summary.resolved_implementations;
+  summary.interface_method_symbols = interface_implementation_summary.interface_method_symbols;
+  summary.implementation_method_symbols = interface_implementation_summary.implementation_method_symbols;
+  summary.linked_implementation_symbols = interface_implementation_summary.linked_implementation_symbols;
+  summary.protocol_composition_sites = protocol_category_composition_summary.protocol_composition_sites;
+  summary.protocol_composition_symbols = protocol_category_composition_summary.protocol_composition_symbols;
+  summary.category_composition_sites = protocol_category_composition_summary.category_composition_sites;
+  summary.category_composition_symbols = protocol_category_composition_summary.category_composition_symbols;
+  summary.invalid_protocol_composition_sites = protocol_category_composition_summary.invalid_protocol_composition_sites;
+  summary.deterministic = interface_implementation_summary.deterministic &&
+                          protocol_category_composition_summary.deterministic &&
+                          summary.resolved_interfaces <= summary.declared_interfaces &&
+                          summary.resolved_implementations <= summary.declared_implementations &&
+                          summary.linked_implementation_symbols <= summary.implementation_method_symbols &&
+                          summary.linked_implementation_symbols <= summary.interface_method_symbols &&
+                          summary.invalid_protocol_composition_sites <= summary.total_composition_sites() &&
+                          summary.category_composition_sites <= summary.protocol_composition_sites &&
+                          summary.category_composition_symbols <= summary.protocol_composition_symbols;
+  return summary;
+}
+
 static void AccumulateSelectorNormalizationFromMethodInfo(const Objc3MethodInfo &method,
                                                           Objc3SelectorNormalizationSummary &summary) {
   ++summary.methods_total;
@@ -3277,6 +3305,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           interface_implementation_summary.interface_method_symbols;
   surface.interface_implementation_summary = interface_implementation_summary;
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
+  surface.class_protocol_category_linking_summary =
+      BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,
+                                               surface.protocol_category_composition_summary);
   surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
   surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
   surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);
@@ -3833,6 +3864,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.protocol_category_composition_summary.protocol_composition_sites &&
       handoff.protocol_category_composition_summary.category_composition_symbols <=
           handoff.protocol_category_composition_summary.protocol_composition_symbols;
+  handoff.class_protocol_category_linking_summary =
+      BuildClassProtocolCategoryLinkingSummary(handoff.interface_implementation_summary,
+                                               handoff.protocol_category_composition_summary);
 
   handoff.type_annotation_surface_summary = Objc3TypeAnnotationSurfaceSummary{};
   const auto accumulate_function_type_annotations =
@@ -4550,6 +4584,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
+  const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
+      BuildClassProtocolCategoryLinkingSummary(summary, protocol_category_summary);
   return summary.deterministic &&
          summary.resolved_interfaces == handoff.interfaces_lexicographic.size() &&
          summary.resolved_implementations == handoff.implementations_lexicographic.size() &&
@@ -4557,6 +4593,31 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          summary.implementation_method_symbols == implementation_method_symbols &&
          summary.linked_implementation_symbols <= summary.implementation_method_symbols &&
          summary.linked_implementation_symbols <= summary.interface_method_symbols &&
+         handoff.class_protocol_category_linking_summary.deterministic &&
+         handoff.class_protocol_category_linking_summary.declared_interfaces ==
+             class_protocol_category_linking_summary.declared_interfaces &&
+         handoff.class_protocol_category_linking_summary.resolved_interfaces ==
+             class_protocol_category_linking_summary.resolved_interfaces &&
+         handoff.class_protocol_category_linking_summary.declared_implementations ==
+             class_protocol_category_linking_summary.declared_implementations &&
+         handoff.class_protocol_category_linking_summary.resolved_implementations ==
+             class_protocol_category_linking_summary.resolved_implementations &&
+         handoff.class_protocol_category_linking_summary.interface_method_symbols ==
+             class_protocol_category_linking_summary.interface_method_symbols &&
+         handoff.class_protocol_category_linking_summary.implementation_method_symbols ==
+             class_protocol_category_linking_summary.implementation_method_symbols &&
+         handoff.class_protocol_category_linking_summary.linked_implementation_symbols ==
+             class_protocol_category_linking_summary.linked_implementation_symbols &&
+         handoff.class_protocol_category_linking_summary.protocol_composition_sites ==
+             class_protocol_category_linking_summary.protocol_composition_sites &&
+         handoff.class_protocol_category_linking_summary.protocol_composition_symbols ==
+             class_protocol_category_linking_summary.protocol_composition_symbols &&
+         handoff.class_protocol_category_linking_summary.category_composition_sites ==
+             class_protocol_category_linking_summary.category_composition_sites &&
+         handoff.class_protocol_category_linking_summary.category_composition_symbols ==
+             class_protocol_category_linking_summary.category_composition_symbols &&
+         handoff.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
+             class_protocol_category_linking_summary.invalid_protocol_composition_sites &&
          handoff.protocol_category_composition_summary.deterministic &&
          handoff.protocol_category_composition_summary.protocol_composition_sites ==
              protocol_category_summary.protocol_composition_sites &&

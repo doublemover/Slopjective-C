@@ -59,6 +59,24 @@ struct Objc3ProtocolCategoryCompositionSummary {
   std::size_t total_composition_sites() const { return protocol_composition_sites + category_composition_sites; }
 };
 
+struct Objc3ClassProtocolCategoryLinkingSummary {
+  std::size_t declared_interfaces = 0;
+  std::size_t resolved_interfaces = 0;
+  std::size_t declared_implementations = 0;
+  std::size_t resolved_implementations = 0;
+  std::size_t interface_method_symbols = 0;
+  std::size_t implementation_method_symbols = 0;
+  std::size_t linked_implementation_symbols = 0;
+  std::size_t protocol_composition_sites = 0;
+  std::size_t protocol_composition_symbols = 0;
+  std::size_t category_composition_sites = 0;
+  std::size_t category_composition_symbols = 0;
+  std::size_t invalid_protocol_composition_sites = 0;
+  bool deterministic = true;
+
+  std::size_t total_composition_sites() const { return protocol_composition_sites + category_composition_sites; }
+};
+
 struct Objc3SelectorNormalizationSummary {
   std::size_t methods_total = 0;
   std::size_t normalized_methods = 0;
@@ -311,6 +329,7 @@ struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
@@ -465,6 +484,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
