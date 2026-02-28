@@ -85,6 +85,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           tokens.push_back(Token{TokenKind::KwAtImplementation, "@implementation", token_line, token_column});
           continue;
         }
+        if (directive == "protocol") {
+          tokens.push_back(Token{TokenKind::KwAtProtocol, "@protocol", token_line, token_column});
+          continue;
+        }
         if (directive == "end") {
           tokens.push_back(Token{TokenKind::KwAtEnd, "@end", token_line, token_column});
           continue;

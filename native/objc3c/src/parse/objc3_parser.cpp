@@ -181,6 +181,11 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddImplementationDecl(program, std::move(*decl));
         }
+      } else if (Match(TokenKind::KwAtProtocol)) {
+        auto decl = ParseObjcProtocolDecl();
+        if (decl != nullptr) {
+          ast_builder_.AddProtocolDecl(program, std::move(*decl));
+        }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
       } else {
@@ -577,6 +582,11 @@ class Objc3Parser {
       if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus)) {
         return;
       }
+      if (At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) || At(TokenKind::KwAtProtocol) ||
+          At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
+          At(TokenKind::KwExtern)) {
+        return;
+      }
       if (Match(TokenKind::Semicolon)) {
         return;
       }
@@ -586,6 +596,101 @@ class Objc3Parser {
       }
       Advance();
     }
+  }
+
+  bool ParseObjcProtocolCompositionClause(std::vector<std::string> &protocols) {
+    if (!Match(TokenKind::Less)) {
+      return true;
+    }
+
+    while (true) {
+      const Token &protocol_token = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(MakeDiag(protocol_token.line, protocol_token.column, "O3P101",
+                                        "invalid Objective-C protocol composition identifier"));
+        return false;
+      }
+      protocols.push_back(Previous().text);
+
+      if (Match(TokenKind::Comma)) {
+        continue;
+      }
+
+      if (Match(TokenKind::Greater)) {
+        return true;
+      }
+
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P112", "missing '>' after Objective-C protocol composition list"));
+      return false;
+    }
+  }
+
+  bool ParseObjcCategoryClause(std::string &category_name, bool &has_category) {
+    if (!Match(TokenKind::LParen)) {
+      return true;
+    }
+    has_category = true;
+    if (Match(TokenKind::Identifier)) {
+      category_name = Previous().text;
+    }
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P109", "missing ')' after Objective-C category name"));
+      return false;
+    }
+    return true;
+  }
+
+  std::unique_ptr<Objc3ProtocolDecl> ParseObjcProtocolDecl() {
+    auto decl = std::make_unique<Objc3ProtocolDecl>();
+    decl->line = Previous().line;
+    decl->column = Previous().column;
+
+    const Token &name_token = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name_token.line, name_token.column, "O3P101", "invalid Objective-C protocol identifier"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    decl->name = Previous().text;
+
+    if (!ParseObjcProtocolCompositionClause(decl->inherited_protocols)) {
+      SynchronizeObjcContainer();
+    }
+
+    if (Match(TokenKind::Semicolon)) {
+      decl->is_forward_declaration = true;
+      return decl;
+    }
+
+    while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P100", "unsupported token inside @protocol declaration"));
+        SynchronizeObjcContainer();
+        continue;
+      }
+
+      Objc3MethodDecl method;
+      if (ParseObjcMethodDecl(method, false)) {
+        decl->methods.push_back(std::move(method));
+        continue;
+      }
+      SynchronizeObjcContainer();
+    }
+
+    if (!Match(TokenKind::KwAtEnd)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '@end' after @protocol"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    return decl;
   }
 
   std::unique_ptr<Objc3InterfaceDecl> ParseObjcInterfaceDecl() {
@@ -611,6 +716,14 @@ class Objc3Parser {
       } else {
         decl->super_name = Previous().text;
       }
+    }
+
+    if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
+      SynchronizeObjcContainer();
+    }
+
+    if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
+      SynchronizeObjcContainer();
     }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
@@ -652,6 +765,10 @@ class Objc3Parser {
       return nullptr;
     }
     decl->name = Previous().text;
+
+    if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
+      SynchronizeObjcContainer();
+    }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
       if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
@@ -774,6 +891,7 @@ class Objc3Parser {
       const Token &token = Peek();
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
           At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::KwAtProtocol) ||
           At(TokenKind::Eof)) {
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P104", "missing ';' after function prototype declaration"));
@@ -1185,7 +1303,8 @@ class Objc3Parser {
         return;
       }
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation)) {
+          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::KwAtProtocol)) {
         return;
       }
       Advance();

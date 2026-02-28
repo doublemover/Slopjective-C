@@ -97,6 +97,38 @@ Recommended M146 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
 
+## M147 frontend @protocol/@category grammar
+
+Frontend parser/AST support now accepts Objective-C protocol and category declaration surfaces:
+
+- `@protocol <Name> [<InheritedA, InheritedB>] ... @end`
+- `@protocol <Name>;` forward declaration
+- `@interface <Name> (<CategoryName>) [<AdoptedA, AdoptedB>] ... @end`
+- `@implementation <Name> (<CategoryName>) ... @end`
+
+M147 parser surface details:
+
+- Lexer contract emits dedicated token:
+  - `KwAtProtocol`
+- Parser top-level route:
+  - `ParseObjcProtocolDecl()`
+- Parser composition/category helpers:
+  - `ParseObjcProtocolCompositionClause(...)` supports `<A, B>` lists.
+  - `ParseObjcCategoryClause(...)` supports named and anonymous category clauses.
+
+Deterministic recovery/diagnostic anchors:
+
+- invalid protocol/category identifiers fail closed:
+  - `invalid Objective-C protocol identifier`
+  - `invalid Objective-C protocol composition identifier`
+  - `missing ')' after Objective-C category name`
+- missing container terminators fail closed:
+  - `missing '@end' after @protocol`
+
+Recommended M147 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

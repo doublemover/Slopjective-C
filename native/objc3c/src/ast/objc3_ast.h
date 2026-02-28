@@ -202,9 +202,21 @@ struct Objc3MethodDecl {
   unsigned column = 1;
 };
 
+struct Objc3ProtocolDecl {
+  std::string name;
+  std::vector<std::string> inherited_protocols;
+  std::vector<Objc3MethodDecl> methods;
+  bool is_forward_declaration = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct Objc3InterfaceDecl {
   std::string name;
   std::string super_name;
+  std::string category_name;
+  bool has_category = false;
+  std::vector<std::string> adopted_protocols;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
   unsigned column = 1;
@@ -212,6 +224,8 @@ struct Objc3InterfaceDecl {
 
 struct Objc3ImplementationDecl {
   std::string name;
+  std::string category_name;
+  bool has_category = false;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
   unsigned column = 1;
@@ -253,6 +267,7 @@ struct GlobalDecl {
 struct Objc3Program {
   std::string module_name = "objc3_module";
   std::vector<GlobalDecl> globals;
+  std::vector<Objc3ProtocolDecl> protocols;
   std::vector<Objc3InterfaceDecl> interfaces;
   std::vector<Objc3ImplementationDecl> implementations;
   std::vector<FunctionDecl> functions;

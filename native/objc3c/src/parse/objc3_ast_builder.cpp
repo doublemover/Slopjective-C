@@ -12,6 +12,10 @@ void Objc3AstBuilder::AddGlobalDecl(Objc3ParsedProgram &program, Objc3ParsedGlob
   MutableObjc3ParsedProgramAst(program).globals.push_back(std::move(decl));
 }
 
+void Objc3AstBuilder::AddProtocolDecl(Objc3ParsedProgram &program, Objc3ParsedProtocolDecl decl) const {
+  MutableObjc3ParsedProgramAst(program).protocols.push_back(std::move(decl));
+}
+
 void Objc3AstBuilder::AddInterfaceDecl(Objc3ParsedProgram &program, Objc3ParsedInterfaceDecl decl) const {
   MutableObjc3ParsedProgramAst(program).interfaces.push_back(std::move(decl));
 }
