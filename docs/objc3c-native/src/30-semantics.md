@@ -1765,3 +1765,30 @@ Recommended M210 sema/type regression-gate validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
 
+## M209 sema/type profile-guided optimization hooks
+
+For deterministic sema/type profile-guided optimization (PGO) hooks, capture replay-stable packet evidence from sema pass diagnostics emission, type metadata handoff, and semantic-surface counters before changing optimization heuristics.
+
+PGO hook packet map:
+
+- `pgo hook packet 1.1 deterministic sema diagnostics emission profile` -> `m209_sema_diagnostics_emission_pgo_hook_packet`
+- `pgo hook packet 1.2 deterministic type/symbol surface profile` -> `m209_type_symbol_surface_pgo_hook_packet`
+
+### 1.1 Deterministic sema diagnostics emission profile hook packet
+
+- Source hook anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest PGO hook anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, `diagnostics_emitted_by_validate_pure_contract`, and `diagnostics_monotonic`.
+- Deterministic sema PGO hook packet key: `m209_sema_diagnostics_emission_pgo_hook_packet`.
+
+### 1.2 Deterministic type/symbol surface profile hook packet
+
+- Source hook anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, and `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`.
+- Manifest type-metadata hook anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface hook anchors from `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic type/symbol PGO hook packet key: `m209_type_symbol_surface_pgo_hook_packet`.
+
+Recommended M209 sema/type PGO regression gate command:
+
+- `python -m pytest tests/tooling/test_objc3c_m209_sema_pgo_contract.py -q`
+
