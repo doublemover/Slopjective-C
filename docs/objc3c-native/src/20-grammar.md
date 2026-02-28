@@ -7,7 +7,8 @@ program         = { module_decl | global_let | function_decl } EOF ;
 
 module_decl     = "module" ident ";" ;
 global_let      = "let" ident "=" expr ";" ;
-function_decl   = "fn" ident "(" [ param { "," param } ] ")" [ "->" return_type ] ( block | ";" ) ;
+function_decl   = "fn" ident "(" [ param { "," param } ] ")" [ throws_clause ] [ "->" return_type ] [ throws_clause ] ( block | ";" ) ;
+throws_clause   = "throws" ;
 param           = ident ":" param_type [ param_suffix ] ;
 param_type      = "i32" | "bool" | "BOOL" | "NSInteger" | "NSUInteger" | "id" ;
 param_suffix    = "<" ident { "<" | ">" | ident } ">" [ "?" | "!" ] | "?" | "!" ;
@@ -1135,6 +1136,79 @@ Deterministic grammar intent:
 Recommended M179 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q`
+
+## M180 frontend cross-module conformance suite parser/AST surface (M180-A001)
+
+Frontend parser/AST now emits deterministic cross-module conformance suite
+profiles for parameter/property/return type annotations.
+
+M180 parser/AST surface details:
+
+- cross-module conformance suite anchors:
+  - `BuildCrossModuleConformanceProfile(...)`
+  - `IsCrossModuleConformanceProfileNormalized(...)`
+- parser assignment anchors:
+  - `cross_module_conformance_profile`
+  - `cross_module_conformance_profile_is_normalized`
+  - `return_cross_module_conformance_profile`
+  - `return_cross_module_conformance_profile_is_normalized`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `CopyPropertyTypeFromParam(...)`
+  - `target.return_cross_module_conformance_profile = source.return_cross_module_conformance_profile;`
+  - `target.cross_module_conformance_profile = source.cross_module_conformance_profile;`
+
+Deterministic grammar intent:
+
+- parser derives cross-module boundary engagement and conformance-surface
+  readiness from object-pointer spelling, generic suffix packets,
+  namespace-segment shape, and pointer declarator participation.
+- parameter/profile normalization remains deterministic across direct parameter
+  parsing and property/method type transfer surfaces.
+- profile normalization is fail-closed for malformed packets that would
+  destabilize cross-module conformance replay and handoff.
+
+Recommended M180 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py -q`
+
+## M181 frontend throws declarations and propagation parser/AST surface (M181-A001)
+
+Frontend parser/AST now emits deterministic throws-declaration profiles for
+function and Objective-C method declarations, with explicit propagation anchors
+across parser transfer surfaces.
+
+M181 parser/AST surface details:
+
+- throws declaration/profile anchors:
+  - `BuildThrowsDeclarationProfile(...)`
+  - `IsThrowsDeclarationProfileNormalized(...)`
+  - `AtThrowsClauseKeyword()`
+  - `ParseOptionalThrowsClause(FunctionDecl &fn)`
+  - `ParseOptionalThrowsClause(Objc3MethodDecl &method)`
+  - `FinalizeThrowsDeclarationProfile(FunctionDecl &fn, bool has_return_annotation)`
+  - `FinalizeThrowsDeclarationProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `throws_declared`
+  - `throws_declaration_profile`
+  - `throws_declaration_profile_is_normalized`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.throws_declared = source.throws_declared;`
+  - `target.throws_declaration_profile = source.throws_declaration_profile;`
+
+Deterministic grammar intent:
+
+- `throws` is recognized as a declaration-tail modifier for function and
+  Objective-C method declarations.
+- throws packet normalization is fail-closed for malformed declaration-shape
+  combinations that would destabilize parser-to-sema propagation.
+- throws profile emission remains deterministic across direct parse surfaces and
+  parser transfer anchors.
+
+Recommended M181 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q`
 
 ## Language-version pragma prelude contract
 

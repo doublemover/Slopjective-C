@@ -277,6 +277,8 @@ struct FuncParam {
   std::string public_private_api_partition_profile;
   bool incremental_module_cache_invalidation_profile_is_normalized = false;
   std::string incremental_module_cache_invalidation_profile;
+  bool cross_module_conformance_profile_is_normalized = false;
+  std::string cross_module_conformance_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -349,6 +351,8 @@ struct Objc3MethodDecl {
   std::string return_public_private_api_partition_profile;
   bool return_incremental_module_cache_invalidation_profile_is_normalized = false;
   std::string return_incremental_module_cache_invalidation_profile;
+  bool return_cross_module_conformance_profile_is_normalized = false;
+  std::string return_cross_module_conformance_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
@@ -375,6 +379,9 @@ struct Objc3MethodDecl {
   std::string method_lookup_symbol;
   std::string override_lookup_symbol;
   std::string conflict_lookup_symbol;
+  bool throws_declared = false;
+  bool throws_declaration_profile_is_normalized = false;
+  std::string throws_declaration_profile;
   bool is_class_method = false;
   bool has_body = false;
   unsigned line = 1;
@@ -425,6 +432,8 @@ struct Objc3PropertyDecl {
   std::string public_private_api_partition_profile;
   bool incremental_module_cache_invalidation_profile_is_normalized = false;
   std::string incremental_module_cache_invalidation_profile;
+  bool cross_module_conformance_profile_is_normalized = false;
+  std::string cross_module_conformance_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -566,6 +575,8 @@ struct FunctionDecl {
   std::string return_public_private_api_partition_profile;
   bool return_incremental_module_cache_invalidation_profile_is_normalized = false;
   std::string return_incremental_module_cache_invalidation_profile;
+  bool return_cross_module_conformance_profile_is_normalized = false;
+  std::string return_cross_module_conformance_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
@@ -587,6 +598,9 @@ struct FunctionDecl {
   bool return_ownership_arc_fixit_available = false;
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
+  bool throws_declared = false;
+  bool throws_declaration_profile_is_normalized = false;
+  std::string throws_declaration_profile;
   bool is_prototype = false;
   bool is_pure = false;
   std::vector<std::unique_ptr<Stmt>> body;

@@ -809,6 +809,126 @@ static bool IsIncrementalModuleCacheInvalidationProfileNormalized(
          import_edge_candidates > 0;
 }
 
+static std::string BuildCrossModuleConformanceProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  const bool cross_module_boundary_engaged =
+      namespace_segments > 1 || has_generic_suffix;
+  const bool conformance_surface_ready =
+      object_pointer_type_spelling &&
+      (!has_generic_suffix ||
+       (generic_suffix_terminated && import_edge_candidates > 0));
+  const bool boundary_shape_stable =
+      !cross_module_boundary_engaged || conformance_surface_ready;
+  const bool pointer_boundary_coupling =
+      has_pointer_declarator && cross_module_boundary_engaged;
+  const bool deterministic_handoff =
+      boundary_shape_stable &&
+      (!has_pointer_declarator || object_pointer_type_spelling);
+
+  std::ostringstream out;
+  out << "cross-module-conformance:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";namespace-segments=" << namespace_segments
+      << ";import-edge-candidates=" << import_edge_candidates
+      << ";cross-module-boundary-engaged="
+      << (cross_module_boundary_engaged ? "true" : "false")
+      << ";conformance-surface-ready="
+      << (conformance_surface_ready ? "true" : "false")
+      << ";boundary-shape-stable="
+      << (boundary_shape_stable ? "true" : "false")
+      << ";pointer-boundary-coupling="
+      << (pointer_boundary_coupling ? "true" : "false")
+      << ";deterministic-handoff="
+      << (deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
+static bool IsCrossModuleConformanceProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  if (has_pointer_declarator && !object_pointer_type_spelling) {
+    return false;
+  }
+  if (namespace_segments <= 1 && !has_generic_suffix) {
+    return true;
+  }
+  if (!object_pointer_type_spelling) {
+    return false;
+  }
+  if (!has_generic_suffix) {
+    return true;
+  }
+  return generic_suffix_terminated && import_edge_candidates > 0;
+}
+
+static std::string BuildThrowsDeclarationProfile(
+    bool throws_declared,
+    bool has_return_annotation,
+    bool is_prototype,
+    bool has_body,
+    bool is_method_declaration,
+    bool is_class_method,
+    std::size_t parameter_count,
+    std::size_t selector_piece_count) {
+  const bool declaration_shape_valid =
+      (is_prototype && !has_body) || (!is_prototype && has_body);
+  const bool method_selector_surface_ready =
+      !is_method_declaration || selector_piece_count > 0;
+  const bool propagation_ready = declaration_shape_valid && method_selector_surface_ready;
+
+  std::ostringstream out;
+  out << "throws-declaration:declared=" << (throws_declared ? "true" : "false")
+      << ";has-return-annotation=" << (has_return_annotation ? "true" : "false")
+      << ";prototype=" << (is_prototype ? "true" : "false")
+      << ";has-body=" << (has_body ? "true" : "false")
+      << ";is-method-declaration=" << (is_method_declaration ? "true" : "false")
+      << ";is-class-method=" << (is_class_method ? "true" : "false")
+      << ";parameter-count=" << parameter_count
+      << ";selector-piece-count=" << selector_piece_count
+      << ";declaration-shape-valid=" << (declaration_shape_valid ? "true" : "false")
+      << ";method-selector-surface-ready=" << (method_selector_surface_ready ? "true" : "false")
+      << ";propagation-ready=" << (propagation_ready ? "true" : "false");
+  return out.str();
+}
+
+static bool IsThrowsDeclarationProfileNormalized(
+    bool is_prototype,
+    bool has_body,
+    bool is_method_declaration,
+    std::size_t selector_piece_count) {
+  const bool declaration_shape_valid =
+      (is_prototype && !has_body) || (!is_prototype && has_body);
+  if (!declaration_shape_valid) {
+    return false;
+  }
+  if (!is_method_declaration) {
+    return true;
+  }
+  return selector_piece_count > 0;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1628,6 +1748,10 @@ class Objc3Parser {
         source.return_incremental_module_cache_invalidation_profile_is_normalized;
     target.return_incremental_module_cache_invalidation_profile =
         source.return_incremental_module_cache_invalidation_profile;
+    target.return_cross_module_conformance_profile_is_normalized =
+        source.return_cross_module_conformance_profile_is_normalized;
+    target.return_cross_module_conformance_profile =
+        source.return_cross_module_conformance_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1649,6 +1773,10 @@ class Objc3Parser {
     target.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
     target.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
     target.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
+    target.throws_declared = source.throws_declared;
+    target.throws_declaration_profile_is_normalized =
+        source.throws_declaration_profile_is_normalized;
+    target.throws_declaration_profile = source.throws_declaration_profile;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -1704,6 +1832,10 @@ class Objc3Parser {
         source.incremental_module_cache_invalidation_profile_is_normalized;
     target.incremental_module_cache_invalidation_profile =
         source.incremental_module_cache_invalidation_profile;
+    target.cross_module_conformance_profile_is_normalized =
+        source.cross_module_conformance_profile_is_normalized;
+    target.cross_module_conformance_profile =
+        source.cross_module_conformance_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -1725,6 +1857,72 @@ class Objc3Parser {
     target.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
     target.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
     target.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
+  }
+
+  bool AtThrowsClauseKeyword() const {
+    return At(TokenKind::Identifier) && Peek().text == "throws";
+  }
+
+  bool ParseOptionalThrowsClause(FunctionDecl &fn) {
+    if (!AtThrowsClauseKeyword()) {
+      return true;
+    }
+    const Token throws_token = Advance();
+    if (fn.throws_declared) {
+      diagnostics_.push_back(MakeDiag(throws_token.line, throws_token.column, "O3P181",
+                                      "duplicate 'throws' declaration modifier"));
+      return false;
+    }
+    fn.throws_declared = true;
+    return true;
+  }
+
+  bool ParseOptionalThrowsClause(Objc3MethodDecl &method) {
+    if (!AtThrowsClauseKeyword()) {
+      return true;
+    }
+    const Token throws_token = Advance();
+    if (method.throws_declared) {
+      diagnostics_.push_back(MakeDiag(throws_token.line, throws_token.column, "O3P181",
+                                      "duplicate 'throws' declaration modifier"));
+      return false;
+    }
+    method.throws_declared = true;
+    return true;
+  }
+
+  void FinalizeThrowsDeclarationProfile(FunctionDecl &fn, bool has_return_annotation) {
+    fn.throws_declaration_profile = BuildThrowsDeclarationProfile(
+        fn.throws_declared,
+        has_return_annotation,
+        fn.is_prototype,
+        !fn.is_prototype,
+        false,
+        false,
+        fn.params.size(),
+        0u);
+    fn.throws_declaration_profile_is_normalized = IsThrowsDeclarationProfileNormalized(
+        fn.is_prototype,
+        !fn.is_prototype,
+        false,
+        0u);
+  }
+
+  void FinalizeThrowsDeclarationProfile(Objc3MethodDecl &method) {
+    method.throws_declaration_profile = BuildThrowsDeclarationProfile(
+        method.throws_declared,
+        true,
+        !method.has_body,
+        method.has_body,
+        true,
+        method.is_class_method,
+        method.params.size(),
+        method.selector_pieces.size());
+    method.throws_declaration_profile_is_normalized = IsThrowsDeclarationProfileNormalized(
+        !method.has_body,
+        method.has_body,
+        true,
+        method.selector_pieces.size());
   }
 
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
@@ -1879,8 +2077,13 @@ class Objc3Parser {
     method.selector = BuildNormalizedObjcSelector(method.selector_pieces);
     method.selector_is_normalized = true;
 
+    if (!ParseOptionalThrowsClause(method)) {
+      return false;
+    }
+
     if (Match(TokenKind::Semicolon)) {
       method.has_body = false;
+      FinalizeThrowsDeclarationProfile(method);
       return true;
     }
 
@@ -1899,6 +2102,7 @@ class Objc3Parser {
     }
     method.has_body = true;
     ConsumeBracedBodyTail();
+    FinalizeThrowsDeclarationProfile(method);
     return true;
   }
 
@@ -2422,6 +2626,12 @@ class Objc3Parser {
       return nullptr;
     }
 
+    bool has_return_annotation = false;
+    if (!ParseOptionalThrowsClause(*fn)) {
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+
     if (Match(TokenKind::Minus)) {
       const Token arrow_start = Previous();
       if (!Match(TokenKind::Greater)) {
@@ -2434,6 +2644,12 @@ class Objc3Parser {
         SynchronizeFunctionTail();
         return nullptr;
       }
+      has_return_annotation = true;
+    }
+
+    if (!ParseOptionalThrowsClause(*fn)) {
+      SynchronizeTopLevel();
+      return nullptr;
     }
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
@@ -2448,6 +2664,7 @@ class Objc3Parser {
 
     if (Match(TokenKind::Semicolon)) {
       fn->is_prototype = true;
+      FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
       return fn;
     }
 
@@ -2472,6 +2689,7 @@ class Objc3Parser {
       SynchronizeTopLevel();
       return nullptr;
     }
+    FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
     return fn;
   }
 
@@ -2571,6 +2789,8 @@ class Objc3Parser {
     fn.return_public_private_api_partition_profile.clear();
     fn.return_incremental_module_cache_invalidation_profile_is_normalized = false;
     fn.return_incremental_module_cache_invalidation_profile.clear();
+    fn.return_cross_module_conformance_profile_is_normalized = false;
+    fn.return_cross_module_conformance_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2873,6 +3093,22 @@ class Objc3Parser {
             fn.has_return_pointer_declarator,
             fn.return_generic_suffix_text,
             fn.return_object_pointer_type_name);
+    fn.return_cross_module_conformance_profile =
+        BuildCrossModuleConformanceProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
+    fn.return_cross_module_conformance_profile_is_normalized =
+        IsCrossModuleConformanceProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
 
     return true;
   }
@@ -2911,6 +3147,8 @@ class Objc3Parser {
     param.public_private_api_partition_profile.clear();
     param.incremental_module_cache_invalidation_profile_is_normalized = false;
     param.incremental_module_cache_invalidation_profile.clear();
+    param.cross_module_conformance_profile_is_normalized = false;
+    param.cross_module_conformance_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2985,6 +3223,22 @@ class Objc3Parser {
         if (!param.generic_suffix_terminated) {
           return false;
         }
+        param.cross_module_conformance_profile =
+            BuildCrossModuleConformanceProfile(
+                param.object_pointer_type_spelling,
+                param.has_generic_suffix,
+                param.generic_suffix_terminated,
+                param.has_pointer_declarator,
+                param.generic_suffix_text,
+                param.object_pointer_type_name);
+        param.cross_module_conformance_profile_is_normalized =
+            IsCrossModuleConformanceProfileNormalized(
+                param.object_pointer_type_spelling,
+                param.has_generic_suffix,
+                param.generic_suffix_terminated,
+                param.has_pointer_declarator,
+                param.generic_suffix_text,
+                param.object_pointer_type_name);
         return true;
       }
       param.type = ValueType::I32;
@@ -3147,6 +3401,22 @@ class Objc3Parser {
             param.object_pointer_type_name);
     param.incremental_module_cache_invalidation_profile_is_normalized =
         IsIncrementalModuleCacheInvalidationProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.cross_module_conformance_profile =
+        BuildCrossModuleConformanceProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.cross_module_conformance_profile_is_normalized =
+        IsCrossModuleConformanceProfileNormalized(
             param.object_pointer_type_spelling,
             param.has_generic_suffix,
             param.generic_suffix_terminated,
