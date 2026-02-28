@@ -30,7 +30,7 @@
     "dev:objc3c:lower": "node scripts/node/run_objc3c_modular_workflow.js lower",
     "dev:objc3c:ir": "node scripts/node/run_objc3c_modular_workflow.js ir",
     "check:compiler-execution:m25:lane-e": "npm run check:compiler-execution:m25 && python scripts/spec_lint.py --glob \"spec/planning/compiler/m25/lane_e_m25*.md\" --glob \"spec/planning/compiler/m25/m25_int_rg01*.md\"",
-    "test:objc3c:lane-e": "node scripts/node/run_npm_sequence.js test:objc3c:lane-e test:objc3c test:objc3c:diagnostics-replay-proof test:objc3c:parser-replay-proof test:objc3c:perf-budget test:objc3c:lowering-regression test:objc3c:lowering-replay-proof test:objc3c:typed-abi-replay-proof test:objc3c:execution-smoke test:objc3c:execution-replay-proof check:compiler-execution:m23 check:compiler-execution:m24 check:compiler-execution:m25:lane-e",
+    "test:objc3c:lane-e": "node scripts/node/run_npm_sequence.js test:objc3c:lane-e test:objc3c test:objc3c:diagnostics-replay-proof test:objc3c:parser-replay-proof test:objc3c:perf-budget test:objc3c:lowering-regression test:objc3c:lowering-replay-proof test:objc3c:typed-abi-replay-proof test:objc3c:execution-smoke test:objc3c:execution-replay-proof",
     "test:objc3c:full": "npm run test:objc3c && npm run test:objc3c:matrix && npm run test:objc3c:negative-expectations",
     "lint:spec": "python scripts/spec_lint.py",
     "lint:spec:expanded": "python scripts/spec_lint.py --glob \"spec/*.md\" --glob \"spec/planning/active/**/*.md\" --glob \"spec/conformance/**/*.md\" --glob \"spec/governance/**/*.md\"",

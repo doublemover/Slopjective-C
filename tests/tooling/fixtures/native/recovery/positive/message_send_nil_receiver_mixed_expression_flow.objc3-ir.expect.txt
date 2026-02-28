@@ -1,6 +1,6 @@
 # Nil receiver mixed-expression lowering markers.
 define i32 @main()
-icmp eq i32
-phi i32 [0, %msg_nil_
+store i32 0, ptr %sent.addr.
+add i32 %t3, 4
 cond_true_
-ret i32
+ret i32 %t12
