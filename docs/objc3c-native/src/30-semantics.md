@@ -1989,3 +1989,29 @@ Recommended M202 sema/type derive/synthesis validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py -q`
 
+## M201 sema/type macro expansion architecture and isolation
+
+For deterministic sema/type macro-expansion architecture and isolation, capture replay-stable packet evidence from lexer literal-expansion hooks, pipeline transport handoffs, and canonical-only sema isolation gates.
+
+Macro expansion architecture/isolation packet map:
+
+- `macro expansion packet 1.1 deterministic lexer expansion architecture hooks` -> `m201_sema_type_macro_expansion_architecture_packet`
+- `macro expansion packet 1.2 deterministic sema isolation hooks` -> `m201_sema_type_macro_expansion_isolation_packet`
+
+### 1.1 Deterministic lexer expansion architecture packet
+
+- Source lexer expansion anchors: `} else if (ident == "YES") {`, `} else if (ident == "NO") {`, `} else if (ident == "NULL") {`, `kind = TokenKind::KwTrue;`, `kind = TokenKind::KwFalse;`, `kind = TokenKind::KwNil;`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline transport anchors: `const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();`, `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`, `result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;`, `result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source sema-input contract anchors: `bool migration_assist = false;` and `Objc3SemaMigrationHints migration_hints;`.
+- Deterministic lexer expansion architecture packet key: `m201_sema_type_macro_expansion_architecture_packet`.
+
+### 1.2 Deterministic sema isolation packet
+
+- Source sema isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`, `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`, `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Manifest macro-isolation anchors under `frontend`: `manifest << "    \"migration_assist\":`, `manifest << "    \"migration_hints\":{\"legacy_yes\":`, and `legacy_total()`.
+- Deterministic sema macro-expansion isolation packet key: `m201_sema_type_macro_expansion_isolation_packet`.
+
+Recommended M201 sema/type macro expansion architecture/isolation validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m201_sema_macro_expansion_contract.py -q`
+
