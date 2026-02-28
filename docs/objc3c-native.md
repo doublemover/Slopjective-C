@@ -5665,6 +5665,42 @@ Deterministic sema intent:
 Recommended M182 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q`
+
+<a id="m183-sema-type-ns-error-bridging-contract-m183-b001"></a>
+## M183 sema/type NSError bridging contract (M183-B001)
+
+M183-B defines deterministic sema summaries for Objective-C `NSError` bridging
+handoff safety over parser-authored bridging profiles.
+
+M183 sema/type surface details:
+
+- `Objc3NSErrorBridgingSummary`
+- `BuildNSErrorBridgingSummaryFromIntegrationSurface`
+- `BuildNSErrorBridgingSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `ns_error_bridging_sites_total`
+  - `ns_error_bridging_ns_error_parameter_sites_total`
+  - `ns_error_bridging_ns_error_out_parameter_sites_total`
+  - `ns_error_bridging_ns_error_bridge_path_sites_total`
+  - `ns_error_bridging_failable_call_sites_total`
+  - `ns_error_bridging_normalized_sites_total`
+  - `ns_error_bridging_bridge_boundary_sites_total`
+  - `ns_error_bridging_contract_violation_sites_total`
+  - `deterministic_ns_error_bridging_handoff`
+
+Deterministic sema intent:
+
+- NSError-bridging summaries are aggregated from parser-emitted function and
+  method profiles and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and bridge-boundary counters remain partitioned:
+  `ns_error_bridging_normalized_sites_total + ns_error_bridging_bridge_boundary_sites_total == ns_error_bridging_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M183 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -12051,6 +12087,9 @@ python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_co
 Deterministic M182 integration sequence:
 
 ```bash
+python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_lowering_result_like_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q
@@ -12069,8 +12108,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M182-A001, M182-B001, and M182-C001 surfaces are not yet landed in this workspace.
-- This runbook enforces the landed M182-D001 validation/conformance surface plus M182-E001 integration wiring.
+- M182-A001 through M182-D001 outputs are landed in this workspace.
+- This runbook fail-closes on parser/sema/lowering/validation/conformance surfaces plus M182-E001 integration wiring.
 
 ## M182 validation/conformance/perf result-like lowering runbook (M182-D001)
 
@@ -12111,6 +12150,8 @@ python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_
 Deterministic M183 integration sequence:
 
 ```bash
+python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py -q
@@ -12129,8 +12170,9 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M183-A001, M183-B001, and M183-C001 surfaces are not yet landed in this workspace.
-- This runbook enforces the landed M183-D001 validation/conformance surface plus M183-E001 integration wiring.
+- M183-A001, M183-C001, and M183-D001 surfaces are landed in this workspace.
+- M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration runbook.
+- This runbook enforces frontend/lowering/validation/conformance surfaces plus M183-E001 integration wiring.
 
 ## M183 validation/conformance/perf NSError bridging runbook (M183-D001)
 
@@ -13077,12 +13119,15 @@ int objc3c_frontend_startup_check(void) {
 - Compiler closeout workflow anchor:
   - `.github/workflows/compiler-closeout.yml`
 - Gate coverage files:
+  - `tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py`
+  - `tests/tooling/test_objc3c_m182_sema_result_like_contract.py`
+  - `tests/tooling/test_objc3c_m182_lowering_result_like_contract.py`
   - `tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py`
   - `tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py`
   - `tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py`
 - Assumptions:
-  - M182-A001, M182-B001, and M182-C001 outputs are not yet landed in this workspace.
-  - The integration gate fail-closes on the landed M182-D001 surfaces plus this M182-E001 wiring contract, while remaining forward-compatible for future M182-A001/M182-B001/M182-C001 additions.
+  - M182-A001 through M182-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M182-E001 wiring contract.
 
 ## M183 integration NSError bridging contract
 
@@ -13093,12 +13138,15 @@ int objc3c_frontend_startup_check(void) {
 - Compiler closeout workflow anchor:
   - `.github/workflows/compiler-closeout.yml`
 - Gate coverage files:
+  - `tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py`
+  - `tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py`
   - `tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py`
   - `tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py`
   - `tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py`
 - Assumptions:
-  - M183-A001, M183-B001, and M183-C001 outputs are not yet landed in this workspace.
-  - The integration gate fail-closes on the landed M183-D001 surfaces plus this M183-E001 wiring contract, while remaining forward-compatible for future M183-A001/M183-B001/M183-C001 additions.
+  - M183-A001, M183-C001, and M183-D001 outputs are landed in this workspace.
+  - M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration gate.
+  - The integration gate fail-closes on frontend/lowering/validation/conformance surfaces plus this M183-E001 wiring contract.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
