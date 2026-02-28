@@ -798,6 +798,39 @@ Recommended M167 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
 
+## M168 frontend __block storage and escape parser/AST surface (M168-A001)
+
+Frontend parser/AST now emits deterministic mutable-capture storage and escape
+profile carrier metadata for block literals.
+
+M168 parser/AST surface details:
+
+- storage/escape helper anchors:
+  - `BuildBlockStorageEscapeProfile(...)`
+  - `BuildBlockStorageByrefLayoutSymbol(...)`
+- parser assignment anchors:
+  - `block_storage_mutable_capture_count`
+  - `block_storage_byref_slot_count`
+  - `block_storage_requires_byref_cells`
+  - `block_storage_escape_analysis_enabled`
+  - `block_storage_escape_to_heap`
+  - `block_storage_escape_profile`
+  - `block_storage_byref_layout_symbol`
+  - `block_storage_escape_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable storage/escape metadata from block literal shape:
+  - mutable-capture and byref-slot counts mirror deterministic capture count.
+  - escape profile and byref-layout symbol remain stable from source coordinates
+    and block capture shape.
+  - normalized storage/escape flags remain tied to block-literal normalization
+    and deterministic capture-set derivation.
+
+Recommended M168 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

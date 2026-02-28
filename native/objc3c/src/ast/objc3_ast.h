@@ -92,6 +92,14 @@ struct Expr {
   std::string block_invoke_trampoline_symbol;
   bool block_abi_has_invoke_trampoline = false;
   bool block_abi_layout_is_normalized = false;
+  std::size_t block_storage_mutable_capture_count = 0;
+  std::size_t block_storage_byref_slot_count = 0;
+  bool block_storage_requires_byref_cells = false;
+  bool block_storage_escape_analysis_enabled = false;
+  bool block_storage_escape_to_heap = false;
+  bool block_storage_escape_profile_is_normalized = false;
+  std::string block_storage_escape_profile;
+  std::string block_storage_byref_layout_symbol;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

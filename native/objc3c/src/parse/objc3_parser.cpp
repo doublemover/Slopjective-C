@@ -379,6 +379,31 @@ static std::string BuildBlockLiteralInvokeTrampolineSymbol(unsigned line,
   return out.str();
 }
 
+static std::string BuildBlockStorageEscapeProfile(std::size_t mutable_capture_count,
+                                                  std::size_t byref_slot_count,
+                                                  bool escape_to_heap,
+                                                  std::size_t body_statement_count) {
+  std::ostringstream out;
+  out << "block-storage:mutable-captures=" << mutable_capture_count
+      << ";byref-slots=" << byref_slot_count
+      << ";escape=" << (escape_to_heap ? "heap" : "stack")
+      << ";body-statements=" << body_statement_count;
+  return out.str();
+}
+
+static std::string BuildBlockStorageByrefLayoutSymbol(unsigned line,
+                                                      unsigned column,
+                                                      std::size_t mutable_capture_count,
+                                                      std::size_t byref_slot_count,
+                                                      bool escape_to_heap) {
+  std::ostringstream out;
+  out << "__objc3_block_byref_layout_" << line << "_" << column
+      << "_m" << mutable_capture_count
+      << "_b" << byref_slot_count
+      << "_" << (escape_to_heap ? "heap" : "stack");
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3601,6 +3626,26 @@ class Objc3Parser {
         block->block_capture_count);
     block->block_abi_has_invoke_trampoline = true;
     block->block_abi_layout_is_normalized =
+        block->block_literal_is_normalized && block->block_capture_set_deterministic;
+    block->block_storage_mutable_capture_count = block->block_capture_count;
+    block->block_storage_byref_slot_count = block->block_capture_count;
+    block->block_storage_requires_byref_cells = block->block_storage_byref_slot_count > 0u;
+    block->block_storage_escape_analysis_enabled = true;
+    block->block_storage_escape_to_heap = block->block_storage_requires_byref_cells;
+    block->block_storage_escape_profile =
+        BuildBlockStorageEscapeProfile(
+            block->block_storage_mutable_capture_count,
+            block->block_storage_byref_slot_count,
+            block->block_storage_escape_to_heap,
+            block->block_body_statement_count);
+    block->block_storage_byref_layout_symbol =
+        BuildBlockStorageByrefLayoutSymbol(
+            block->line,
+            block->column,
+            block->block_storage_mutable_capture_count,
+            block->block_storage_byref_slot_count,
+            block->block_storage_escape_to_heap);
+    block->block_storage_escape_profile_is_normalized =
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
     return block;
   }
