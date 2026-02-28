@@ -535,6 +535,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain foreign type import diagnostics anchors.
 
+## M198 integration swift metadata bridge
+
+- Gate intent: enforce deterministic Swift metadata-bridge evidence across all lanes.
+### 1.1 Swift metadata-bridge integration chain
+- Deterministic Swift metadata-bridge gate:
+  - `npm run check:objc3c:m198-swift-metadata-bridge`
+- Chain order:
+  - replays `check:objc3c:m199-foreign-type-diagnostics`.
+  - enforces all M198 lane contracts:
+    `tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_lowering_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_validation_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_integration_swift_metadata_bridge_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through Swift metadata-bridge validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain Swift metadata-bridge anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

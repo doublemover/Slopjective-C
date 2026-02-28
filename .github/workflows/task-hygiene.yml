@@ -127,6 +127,8 @@ jobs:
         run: npm run check:objc3c:m200-interop-packaging
       - name: 38 Run M199 foreign type import diagnostics gate
         run: npm run check:objc3c:m199-foreign-type-diagnostics
+      - name: 39 Run M198 swift metadata bridge gate
+        run: npm run check:objc3c:m198-swift-metadata-bridge
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
