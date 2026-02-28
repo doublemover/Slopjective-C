@@ -550,3 +550,22 @@ std::string Objc3OwnershipQualifierLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3OwnershipQualifierLoweringLaneContract;
 }
+
+bool IsValidObjc3RetainReleaseOperationLoweringContract(
+    const Objc3RetainReleaseOperationLoweringContract &contract) {
+  const std::size_t qualified_or_violation = contract.ownership_qualified_sites + contract.contract_violation_sites;
+  return contract.retain_insertion_sites <= qualified_or_violation &&
+         contract.release_insertion_sites <= qualified_or_violation &&
+         contract.autorelease_insertion_sites <= qualified_or_violation;
+}
+
+std::string Objc3RetainReleaseOperationLoweringReplayKey(
+    const Objc3RetainReleaseOperationLoweringContract &contract) {
+  return std::string("ownership_qualified_sites=") + std::to_string(contract.ownership_qualified_sites) +
+         ";retain_insertion_sites=" + std::to_string(contract.retain_insertion_sites) +
+         ";release_insertion_sites=" + std::to_string(contract.release_insertion_sites) +
+         ";autorelease_insertion_sites=" + std::to_string(contract.autorelease_insertion_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3RetainReleaseOperationLoweringLaneContract;
+}

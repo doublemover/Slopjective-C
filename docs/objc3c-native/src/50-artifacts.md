@@ -2916,6 +2916,59 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m161_lowering_ownership_qualifier_contract.py -q`
 
+## Retain-release operation lowering artifact contract (M162-C001)
+
+M162-C publishes replay-stable retain/release operation lowering invariants derived from sema
+ownership-operation surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m162/lowering-retain-release-operation-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m162/lowering-retain-release-operation-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m162/lowering-retain-release-operation-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m162/lowering-retain-release-operation-contract/retain-release-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3RetainReleaseOperationLoweringLaneContract`
+- `Objc3RetainReleaseOperationLoweringContract`
+- `IsValidObjc3RetainReleaseOperationLoweringContract(...)`
+- `Objc3RetainReleaseOperationLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `ownership_qualified_sites=<N>`
+- `retain_insertion_sites=<N>`
+- `release_insertion_sites=<N>`
+- `autorelease_insertion_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m162-retain-release-operation-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_retain_release_operation_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.retain_release_operation_lowering_ownership_qualified_sites`
+- `frontend.pipeline.sema_pass_manager.retain_release_operation_lowering_retain_insertion_sites`
+- `frontend.pipeline.sema_pass_manager.retain_release_operation_lowering_release_insertion_sites`
+- `frontend.pipeline.sema_pass_manager.retain_release_operation_lowering_autorelease_insertion_sites`
+- `frontend.pipeline.sema_pass_manager.retain_release_operation_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_retain_release_operation_replay_key`
+- `frontend.pipeline.semantic_surface.objc_retain_release_operation_lowering_surface`
+- `lowering_retain_release_operation.replay_key`
+- `lowering_retain_release_operation.lane_contract`
+
+IR publication markers:
+
+- `; retain_release_operation_lowering = ownership_qualified_sites=<N>;retain_insertion_sites=<N>;release_insertion_sites=<N>;autorelease_insertion_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m162-retain-release-operation-lowering-v1`
+- `; frontend_objc_retain_release_operation_lowering_profile = ownership_qualified_sites=<N>, retain_insertion_sites=<N>, release_insertion_sites=<N>, autorelease_insertion_sites=<N>, contract_violation_sites=<N>, deterministic_retain_release_operation_lowering_handoff=<bool>`
+- `!objc3.objc_retain_release_operation_lowering = !{!15}`
+- `!15 = !{i64 <ownership_qualified_sites>, i64 <retain_insertion_sites>, i64 <release_insertion_sites>, i64 <autorelease_insertion_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m162_lowering_retain_release_operation_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

@@ -609,6 +609,25 @@ Objc3OwnershipQualifierLoweringContract BuildOwnershipQualifierLoweringContract(
   return contract;
 }
 
+Objc3RetainReleaseOperationLoweringContract BuildRetainReleaseOperationLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3RetainReleaseOperationLoweringContract contract;
+  contract.ownership_qualified_sites =
+      sema_parity_surface.retain_release_operation_ownership_qualified_sites_total;
+  contract.retain_insertion_sites =
+      sema_parity_surface.retain_release_operation_retain_insertion_sites_total;
+  contract.release_insertion_sites =
+      sema_parity_surface.retain_release_operation_release_insertion_sites_total;
+  contract.autorelease_insertion_sites =
+      sema_parity_surface.retain_release_operation_autorelease_insertion_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.retain_release_operation_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.retain_release_operation_summary.deterministic &&
+      sema_parity_surface.deterministic_retain_release_operation_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -828,6 +847,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string ownership_qualifier_lowering_replay_key =
       Objc3OwnershipQualifierLoweringReplayKey(ownership_qualifier_lowering_contract);
+  const Objc3RetainReleaseOperationLoweringContract retain_release_operation_lowering_contract =
+      BuildRetainReleaseOperationLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3RetainReleaseOperationLoweringContract(retain_release_operation_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid retain-release operation lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string retain_release_operation_lowering_replay_key =
+      Objc3RetainReleaseOperationLoweringReplayKey(retain_release_operation_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1201,6 +1233,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_ownership_qualifier_replay_key\":\""
            << ownership_qualifier_lowering_replay_key
            << "\""
+           << ",\"deterministic_retain_release_operation_lowering_handoff\":"
+           << (retain_release_operation_lowering_contract.deterministic ? "true" : "false")
+           << ",\"retain_release_operation_lowering_ownership_qualified_sites\":"
+           << retain_release_operation_lowering_contract.ownership_qualified_sites
+           << ",\"retain_release_operation_lowering_retain_insertion_sites\":"
+           << retain_release_operation_lowering_contract.retain_insertion_sites
+           << ",\"retain_release_operation_lowering_release_insertion_sites\":"
+           << retain_release_operation_lowering_contract.release_insertion_sites
+           << ",\"retain_release_operation_lowering_autorelease_insertion_sites\":"
+           << retain_release_operation_lowering_contract.autorelease_insertion_sites
+           << ",\"retain_release_operation_lowering_contract_violation_sites\":"
+           << retain_release_operation_lowering_contract.contract_violation_sites
+           << ",\"lowering_retain_release_operation_replay_key\":\""
+           << retain_release_operation_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1522,6 +1569,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_retain_release_operation_lowering_surface\":{\"ownership_qualified_sites\":"
+           << retain_release_operation_lowering_contract.ownership_qualified_sites
+           << ",\"retain_insertion_sites\":"
+           << retain_release_operation_lowering_contract.retain_insertion_sites
+           << ",\"release_insertion_sites\":"
+           << retain_release_operation_lowering_contract.release_insertion_sites
+           << ",\"autorelease_insertion_sites\":"
+           << retain_release_operation_lowering_contract.autorelease_insertion_sites
+           << ",\"contract_violation_sites\":"
+           << retain_release_operation_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << retain_release_operation_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (retain_release_operation_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1643,6 +1705,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3OwnershipQualifierLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_retain_release_operation\":{\"replay_key\":\""
+           << retain_release_operation_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3RetainReleaseOperationLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (retain_release_operation_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1887,6 +1955,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ownership_qualifier_lowering_contract.invalid_ownership_qualifier_sites;
   ir_frontend_metadata.ownership_qualifier_lowering_object_pointer_type_annotation_sites =
       ownership_qualifier_lowering_contract.object_pointer_type_annotation_sites;
+  ir_frontend_metadata.lowering_retain_release_operation_replay_key =
+      retain_release_operation_lowering_replay_key;
+  ir_frontend_metadata.retain_release_operation_lowering_ownership_qualified_sites =
+      retain_release_operation_lowering_contract.ownership_qualified_sites;
+  ir_frontend_metadata.retain_release_operation_lowering_retain_insertion_sites =
+      retain_release_operation_lowering_contract.retain_insertion_sites;
+  ir_frontend_metadata.retain_release_operation_lowering_release_insertion_sites =
+      retain_release_operation_lowering_contract.release_insertion_sites;
+  ir_frontend_metadata.retain_release_operation_lowering_autorelease_insertion_sites =
+      retain_release_operation_lowering_contract.autorelease_insertion_sites;
+  ir_frontend_metadata.retain_release_operation_lowering_contract_violation_sites =
+      retain_release_operation_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1950,6 +2030,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_shim_host_link_contract.deterministic;
   ir_frontend_metadata.deterministic_ownership_qualifier_lowering_handoff =
       ownership_qualifier_lowering_contract.deterministic;
+  ir_frontend_metadata.deterministic_retain_release_operation_lowering_handoff =
+      retain_release_operation_lowering_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

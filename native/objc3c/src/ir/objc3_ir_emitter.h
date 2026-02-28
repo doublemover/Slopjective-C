@@ -120,6 +120,13 @@ struct Objc3IRFrontendMetadata {
   std::size_t ownership_qualifier_lowering_invalid_ownership_qualifier_sites = 0;
   std::size_t ownership_qualifier_lowering_object_pointer_type_annotation_sites = 0;
   bool deterministic_ownership_qualifier_lowering_handoff = false;
+  std::string lowering_retain_release_operation_replay_key;
+  std::size_t retain_release_operation_lowering_ownership_qualified_sites = 0;
+  std::size_t retain_release_operation_lowering_retain_insertion_sites = 0;
+  std::size_t retain_release_operation_lowering_release_insertion_sites = 0;
+  std::size_t retain_release_operation_lowering_autorelease_insertion_sites = 0;
+  std::size_t retain_release_operation_lowering_contract_violation_sites = 0;
+  bool deterministic_retain_release_operation_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;
