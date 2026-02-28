@@ -2425,6 +2425,42 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
 
+## Method lookup/override/conflict lowering artifact contract (M153-C001)
+
+M153-C extends lowering contract publication with a replay-stable packet for method lookup, superclass override
+resolution, and override-conflict counters consumed from frontend sema summaries.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/method-lookup-override-conflict-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3MethodLookupOverrideConflictLaneContract`
+- `Objc3MethodLookupOverrideConflictContract`
+- `IsValidObjc3MethodLookupOverrideConflictContract(...)`
+- `Objc3MethodLookupOverrideConflictReplayKey(...)`
+
+Replay key publication markers:
+
+- `method_lookup_sites=<N>`
+- `method_lookup_hits=<N>`
+- `method_lookup_misses=<N>`
+- `override_lookup_sites=<N>`
+- `override_lookup_hits=<N>`
+- `override_lookup_misses=<N>`
+- `override_conflicts=<N>`
+- `unresolved_base_interfaces=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m153-method-lookup-override-conflict-v1`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

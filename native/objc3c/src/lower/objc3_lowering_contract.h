@@ -16,6 +16,8 @@ inline constexpr const char *kObjc3AtomicMemoryOrderSeqCst = "seq_cst";
 inline constexpr const char *kObjc3SimdVectorLaneContract = "2,4,8,16";
 inline constexpr const char *kObjc3SimdVectorBaseI32 = "i32";
 inline constexpr const char *kObjc3SimdVectorBaseBool = "bool";
+inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
+    "m153-method-lookup-override-conflict-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -36,6 +38,18 @@ struct Objc3LoweringIRBoundary {
   std::string selector_global_ordering = kObjc3SelectorGlobalOrdering;
 };
 
+struct Objc3MethodLookupOverrideConflictContract {
+  std::size_t method_lookup_sites = 0;
+  std::size_t method_lookup_hits = 0;
+  std::size_t method_lookup_misses = 0;
+  std::size_t override_lookup_sites = 0;
+  std::size_t override_lookup_hits = 0;
+  std::size_t override_lookup_misses = 0;
+  std::size_t override_conflicts = 0;
+  std::size_t unresolved_base_interfaces = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -52,3 +66,5 @@ std::string Objc3AtomicMemoryOrderMappingReplayKey();
 bool IsSupportedObjc3SimdVectorLaneCount(unsigned lane_count);
 bool TryBuildObjc3SimdVectorLLVMType(const std::string &base_spelling, unsigned lane_count, std::string &llvm_type);
 std::string Objc3SimdVectorTypeLoweringReplayKey();
+bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract);
+std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract);

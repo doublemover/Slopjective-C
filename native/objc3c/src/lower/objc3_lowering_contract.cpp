@@ -38,6 +38,8 @@ std::string VectorTypeSpelling(const std::string &base_spelling, unsigned lane_c
   return base_spelling + "x" + std::to_string(lane_count);
 }
 
+const char *BoolToken(bool value) { return value ? "true" : "false"; }
+
 }  // namespace
 
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol) {
@@ -233,4 +235,37 @@ std::string Objc3SimdVectorTypeLoweringReplayKey() {
   replay_key += ";lane_contract=";
   replay_key += kObjc3SimdVectorLaneContract;
   return replay_key;
+}
+
+bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract) {
+  if (contract.method_lookup_hits > contract.method_lookup_sites ||
+      contract.method_lookup_misses > contract.method_lookup_sites ||
+      contract.method_lookup_hits + contract.method_lookup_misses != contract.method_lookup_sites) {
+    return false;
+  }
+  if (contract.override_lookup_hits > contract.override_lookup_sites ||
+      contract.override_lookup_misses > contract.override_lookup_sites ||
+      contract.override_lookup_hits + contract.override_lookup_misses != contract.override_lookup_sites) {
+    return false;
+  }
+  if (contract.override_conflicts > contract.override_lookup_hits) {
+    return false;
+  }
+  if (contract.unresolved_base_interfaces > contract.override_lookup_misses) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract) {
+  return std::string("method_lookup_sites=") + std::to_string(contract.method_lookup_sites) +
+         ";method_lookup_hits=" + std::to_string(contract.method_lookup_hits) +
+         ";method_lookup_misses=" + std::to_string(contract.method_lookup_misses) +
+         ";override_lookup_sites=" + std::to_string(contract.override_lookup_sites) +
+         ";override_lookup_hits=" + std::to_string(contract.override_lookup_hits) +
+         ";override_lookup_misses=" + std::to_string(contract.override_lookup_misses) +
+         ";override_conflicts=" + std::to_string(contract.override_conflicts) +
+         ";unresolved_base_interfaces=" + std::to_string(contract.unresolved_base_interfaces) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3MethodLookupOverrideConflictLaneContract;
 }
