@@ -1,0 +1,28 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_ownership_qualifier_lowering_handoff": true,
+        "ownership_qualifier_lowering_type_annotation_ownership_qualifier_sites": 6,
+        "ownership_qualifier_lowering_type_annotation_invalid_ownership_qualifier_sites": 1,
+        "ownership_qualifier_lowering_type_annotation_object_pointer_type_sites": 10,
+        "lowering_ownership_qualifier_replay_key": "ownership_qualifier_sites=6;invalid_ownership_qualifier_sites=1;object_pointer_type_annotation_sites=10;deterministic=true;lane_contract=m161-ownership-qualifier-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_ownership_qualifier_lowering_surface": {
+          "ownership_qualifier_sites": 6,
+          "invalid_ownership_qualifier_sites": 1,
+          "object_pointer_type_annotation_sites": 10,
+          "replay_key": "ownership_qualifier_sites=6;invalid_ownership_qualifier_sites=1;object_pointer_type_annotation_sites=10;deterministic=true;lane_contract=m161-ownership-qualifier-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_ownership_qualifier": {
+    "replay_key": "ownership_qualifier_sites=6;invalid_ownership_qualifier_sites=1;object_pointer_type_annotation_sites=10;deterministic=true;lane_contract=m161-ownership-qualifier-lowering-v1",
+    "lane_contract": "m161-ownership-qualifier-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
