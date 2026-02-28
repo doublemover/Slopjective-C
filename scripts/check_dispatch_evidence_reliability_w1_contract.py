@@ -233,6 +233,12 @@ def discover_fail_closed_scenarios(*, fixture_root: Path) -> list[FailClosedScen
                     f"{required_input_name!r} for {scenario_name!r} under "
                     f"{display_path(scenario_root)}"
                 )
+        expected_exit_code = load_expected_exit_code(expected_exit_code_path)
+        if expected_exit_code == 0:
+            raise ValueError(
+                "fail-closed fixture scenario must declare non-zero expected exit code "
+                f"for {scenario_name!r} under {display_path(scenario_root)}"
+            )
         scenarios.append(
             FailClosedScenario(
                 check_id=f"M32C-F{index:02d}",

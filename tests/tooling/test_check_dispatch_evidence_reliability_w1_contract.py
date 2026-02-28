@@ -113,4 +113,26 @@ def test_hard_fail_returns_exit_2_for_missing_checker_script() -> None:
     )
 
 
+def test_fail_closed_fixture_exit_code_must_be_nonzero(tmp_path: Path) -> None:
+    fixture_root = tmp_path / "activation_triggers"
+    shutil.copytree(FIXTURE_ROOT, fixture_root)
+    (fixture_root / "hard_fail_invalid_issues_json" / "expected_exit_code.txt").write_text(
+        "0\n",
+        encoding="utf-8",
+    )
+
+    code, stdout, stderr = run_main(
+        [
+            "--checker-script",
+            str(CHECKER_SCRIPT_PATH),
+            "--fixture-root",
+            str(fixture_root),
+        ]
+    )
+
+    assert code == 2
+    assert stdout == ""
+    assert "fail-closed fixture scenario must declare non-zero expected exit code" in stderr
+
+
 
