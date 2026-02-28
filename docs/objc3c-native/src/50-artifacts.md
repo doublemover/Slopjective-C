@@ -515,6 +515,48 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
+## M200 lowering/runtime interop integration suite and packaging
+
+Lowering/runtime interop integration-suite and packaging evidence is captured as deterministic packet artifacts rooted under `tmp/` so runtime-dispatch contract transport stays isolated and replay-stable across CLI/C-API/frontend/lowering boundaries.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/interop-packaging-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `interop integration/packaging architecture markers` (required in source-anchor extracts):
+  - `options.lowering.runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol;`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and interop-packaging source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, or interop integration/packaging marker is missing.
+
+Interop integration-suite/packaging capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.manifest.json > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/abi-ir-anchors.txt`
+3. `rg -n "options\.lowering\.runtime_dispatch_symbol = cli_options\.runtime_dispatch_symbol;|frontend_options\.lowering\.runtime_dispatch_symbol = options\.runtime_dispatch_symbol;|compile_options\.runtime_dispatch_symbol = runtime_symbol;|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol=|lowering_ir_boundary =|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_frontend_options.cpp native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/interop-packaging-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m200_lowering_interop_packaging_contract.py -q`
+
 ## M201 lowering/runtime macro expansion architecture and isolation
 
 Lowering/runtime macro-expansion architecture and isolation evidence is captured as deterministic packet artifacts rooted under `tmp/` so migration-hint transport and pragma-contract boundaries remain replay-stable through lowering/runtime metadata emission.
