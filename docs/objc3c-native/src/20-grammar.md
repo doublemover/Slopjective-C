@@ -315,3 +315,19 @@ Frontend LSP semantic-token/navigation support requires deterministic parser/AST
   3. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
 
+## M210 frontend performance budgets and regression gates
+
+Frontend performance-budget and regression gating requires deterministic lexer/parser throughput anchors, parser boundary stability, and manifest stage-count visibility.
+
+- Required frontend regression-budget signals:
+  - lexer ingress remains `std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - parser diagnostics handoff remains `result.stage_diagnostics.parser = std::move(parse_result.diagnostics);`.
+  - manifest pipeline stage counters remain emitted for `"lexer": {"diagnostics":...}` and `"parser": {"diagnostics":...}`.
+  - pragma prelude contract remains exported via `frontend.language_version_pragma_contract`.
+- Required frontend regression-gate commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
+
