@@ -3791,3 +3791,45 @@ Deterministic sema intent:
 Recommended M183 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
+
+<a id="m192-sema-type-inline-asm-intrinsic-governance-contract-m192-b001"></a>
+## M192 sema/type inline-asm+intrinsic governance contract (M192-B001)
+
+M192-B defines deterministic sema summaries for inline-asm and intrinsic
+governance handoff safety over unsafe-pointer extension and throws-propagation
+packets.
+
+M192 sema/type surface details:
+
+- `Objc3InlineAsmIntrinsicGovernanceSummary`
+- `BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries`
+- parity counters:
+  - `inline_asm_intrinsic_governance_sites_total`
+  - `inline_asm_intrinsic_governance_inline_asm_sites_total`
+  - `inline_asm_intrinsic_governance_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_governed_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_privileged_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_normalized_sites_total`
+  - `inline_asm_intrinsic_governance_gate_blocked_sites_total`
+  - `inline_asm_intrinsic_governance_contract_violation_sites_total`
+  - `deterministic_inline_asm_intrinsic_governance_handoff`
+
+Deterministic sema intent:
+
+- inline-asm counters remain pinned to throws-propagation cache-invalidation
+  candidates:
+  `inline_asm_intrinsic_governance_inline_asm_sites_total == throws_propagation_cache_invalidation_candidate_sites_total`.
+- intrinsic counters remain pinned to unsafe-pointer unsafe-operation sites:
+  `inline_asm_intrinsic_governance_intrinsic_sites_total == unsafe_pointer_extension_unsafe_operation_sites_total`.
+- governed intrinsic counts remain bounded by throws-propagation normalization
+  and privileged intrinsic counts remain bounded by unsafe-pointer
+  normalization.
+- normalized and gate-blocked counters remain partitioned:
+  `inline_asm_intrinsic_governance_normalized_sites_total + inline_asm_intrinsic_governance_gate_blocked_sites_total == inline_asm_intrinsic_governance_sites_total`.
+- governance partition remains replay-stable:
+  `inline_asm_intrinsic_governance_normalized_sites_total - inline_asm_intrinsic_governance_inline_asm_sites_total == inline_asm_intrinsic_governance_governed_intrinsic_sites_total`.
+  `inline_asm_intrinsic_governance_gate_blocked_sites_total == inline_asm_intrinsic_governance_intrinsic_sites_total - inline_asm_intrinsic_governance_governed_intrinsic_sites_total`.
+
+Recommended M192 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m192_sema_inline_asm_intrinsic_contract.py -q`

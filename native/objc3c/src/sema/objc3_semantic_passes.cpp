@@ -3437,6 +3437,91 @@ BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
   return summary;
 }
 
+static Objc3InlineAsmIntrinsicGovernanceSummary
+BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
+    const Objc3UnsafePointerExtensionSummary &unsafe_pointer_extension_summary,
+    const Objc3ThrowsPropagationSummary &throws_propagation_summary) {
+  Objc3InlineAsmIntrinsicGovernanceSummary summary;
+
+  summary.inline_asm_sites = throws_propagation_summary.cache_invalidation_candidate_sites;
+  summary.intrinsic_sites = unsafe_pointer_extension_summary.unsafe_operation_sites;
+
+  if (summary.inline_asm_sites >
+      std::numeric_limits<std::size_t>::max() - summary.intrinsic_sites) {
+    summary.inline_asm_intrinsic_sites = std::numeric_limits<std::size_t>::max();
+    summary.contract_violation_sites += 1u;
+  } else {
+    summary.inline_asm_intrinsic_sites =
+        summary.inline_asm_sites + summary.intrinsic_sites;
+  }
+
+  summary.governed_intrinsic_sites =
+      std::min(summary.intrinsic_sites, throws_propagation_summary.normalized_sites);
+  summary.privileged_intrinsic_sites =
+      std::min(summary.governed_intrinsic_sites,
+               unsafe_pointer_extension_summary.normalized_sites);
+
+  if (summary.inline_asm_sites >
+      std::numeric_limits<std::size_t>::max() - summary.governed_intrinsic_sites) {
+    summary.normalized_sites = summary.inline_asm_intrinsic_sites;
+    summary.contract_violation_sites += 1u;
+  } else {
+    summary.normalized_sites =
+        summary.inline_asm_sites + summary.governed_intrinsic_sites;
+  }
+
+  if (summary.normalized_sites <= summary.inline_asm_intrinsic_sites) {
+    summary.gate_blocked_sites =
+        summary.inline_asm_intrinsic_sites - summary.normalized_sites;
+  } else {
+    summary.gate_blocked_sites = 0;
+    summary.contract_violation_sites += 1u;
+  }
+
+  if (summary.inline_asm_sites > summary.inline_asm_intrinsic_sites ||
+      summary.intrinsic_sites > summary.inline_asm_intrinsic_sites ||
+      summary.governed_intrinsic_sites > summary.intrinsic_sites ||
+      summary.privileged_intrinsic_sites > summary.governed_intrinsic_sites ||
+      summary.normalized_sites > summary.inline_asm_intrinsic_sites ||
+      summary.gate_blocked_sites > summary.inline_asm_intrinsic_sites ||
+      summary.normalized_sites + summary.gate_blocked_sites !=
+          summary.inline_asm_intrinsic_sites) {
+    summary.contract_violation_sites += 1u;
+  }
+
+  if (summary.contract_violation_sites > summary.inline_asm_intrinsic_sites) {
+    summary.contract_violation_sites = summary.inline_asm_intrinsic_sites;
+  }
+
+  summary.deterministic =
+      unsafe_pointer_extension_summary.deterministic &&
+      throws_propagation_summary.deterministic &&
+      summary.inline_asm_sites ==
+          throws_propagation_summary.cache_invalidation_candidate_sites &&
+      summary.intrinsic_sites ==
+          unsafe_pointer_extension_summary.unsafe_operation_sites &&
+      summary.inline_asm_sites <= summary.inline_asm_intrinsic_sites &&
+      summary.intrinsic_sites <= summary.inline_asm_intrinsic_sites &&
+      summary.governed_intrinsic_sites <= summary.intrinsic_sites &&
+      summary.governed_intrinsic_sites <=
+          throws_propagation_summary.normalized_sites &&
+      summary.privileged_intrinsic_sites <= summary.governed_intrinsic_sites &&
+      summary.privileged_intrinsic_sites <=
+          unsafe_pointer_extension_summary.normalized_sites &&
+      summary.normalized_sites <= summary.inline_asm_intrinsic_sites &&
+      summary.gate_blocked_sites <= summary.inline_asm_intrinsic_sites &&
+      summary.contract_violation_sites <= summary.inline_asm_intrinsic_sites &&
+      summary.normalized_sites >= summary.inline_asm_sites &&
+      summary.normalized_sites - summary.inline_asm_sites ==
+          summary.governed_intrinsic_sites &&
+      summary.gate_blocked_sites ==
+          summary.intrinsic_sites - summary.governed_intrinsic_sites &&
+      summary.normalized_sites + summary.gate_blocked_sites ==
+          summary.inline_asm_intrinsic_sites &&
+      summary.contract_violation_sites == 0u;
+  return summary;
+}
+
 static Objc3ResultLikeLoweringSummary BuildResultLikeLoweringSummaryFromProgramAst(
     const Objc3Program &ast) {
   Objc3ResultLikeLoweringSummary summary;
@@ -7832,6 +7917,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
           surface.type_annotation_surface_summary,
           surface.weak_unowned_semantics_summary);
+  surface.inline_asm_intrinsic_governance_summary =
+      BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
+          surface.unsafe_pointer_extension_summary,
+          surface.throws_propagation_summary);
   surface.arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromIntegrationSurface(surface);
   surface.autoreleasepool_scope_sites_lexicographic =
@@ -8911,6 +9000,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
           handoff.type_annotation_surface_summary,
           handoff.weak_unowned_semantics_summary);
+  handoff.inline_asm_intrinsic_governance_summary =
+      BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
+          handoff.unsafe_pointer_extension_summary,
+          handoff.throws_propagation_summary);
   handoff.arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   handoff.autoreleasepool_scope_sites_lexicographic =
@@ -9668,6 +9761,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
           handoff.type_annotation_surface_summary,
           handoff.weak_unowned_semantics_summary);
+  const Objc3InlineAsmIntrinsicGovernanceSummary
+      inline_asm_intrinsic_governance_summary =
+          BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
+              handoff.unsafe_pointer_extension_summary,
+              handoff.throws_propagation_summary);
   const Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
@@ -10080,6 +10178,78 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.unsafe_pointer_extension_summary.normalized_sites +
                  handoff.unsafe_pointer_extension_summary.gate_blocked_sites ==
              handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.deterministic &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites ==
+             inline_asm_intrinsic_governance_summary.inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.inline_asm_sites ==
+             inline_asm_intrinsic_governance_summary.inline_asm_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.intrinsic_sites ==
+             inline_asm_intrinsic_governance_summary.intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites ==
+             inline_asm_intrinsic_governance_summary.governed_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .privileged_intrinsic_sites ==
+             inline_asm_intrinsic_governance_summary
+                 .privileged_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.normalized_sites ==
+             inline_asm_intrinsic_governance_summary.normalized_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.gate_blocked_sites ==
+             inline_asm_intrinsic_governance_summary.gate_blocked_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .contract_violation_sites ==
+             inline_asm_intrinsic_governance_summary.contract_violation_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.inline_asm_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.intrinsic_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites <=
+             handoff.inline_asm_intrinsic_governance_summary.intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .privileged_intrinsic_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.normalized_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.gate_blocked_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .contract_violation_sites <=
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.inline_asm_sites ==
+             handoff.throws_propagation_summary
+                 .cache_invalidation_candidate_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.intrinsic_sites ==
+             handoff.unsafe_pointer_extension_summary.unsafe_operation_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites <=
+             handoff.throws_propagation_summary.normalized_sites &&
+         handoff.inline_asm_intrinsic_governance_summary
+                 .privileged_intrinsic_sites <=
+             handoff.unsafe_pointer_extension_summary.normalized_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.normalized_sites >=
+             handoff.inline_asm_intrinsic_governance_summary.inline_asm_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.normalized_sites -
+                 handoff.inline_asm_intrinsic_governance_summary
+                     .inline_asm_sites ==
+             handoff.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.gate_blocked_sites ==
+             handoff.inline_asm_intrinsic_governance_summary.intrinsic_sites -
+                 handoff.inline_asm_intrinsic_governance_summary
+                     .governed_intrinsic_sites &&
+         handoff.inline_asm_intrinsic_governance_summary.normalized_sites +
+                 handoff.inline_asm_intrinsic_governance_summary
+                     .gate_blocked_sites ==
+             handoff.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
          handoff.ns_error_bridging_summary.deterministic &&
          handoff.ns_error_bridging_summary.ns_error_bridging_sites ==
              ns_error_bridging_summary.ns_error_bridging_sites &&

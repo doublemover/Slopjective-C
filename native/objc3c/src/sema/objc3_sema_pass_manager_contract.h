@@ -222,6 +222,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t unsafe_pointer_extension_normalized_sites_total = 0;
   std::size_t unsafe_pointer_extension_gate_blocked_sites_total = 0;
   std::size_t unsafe_pointer_extension_contract_violation_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_inline_asm_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_intrinsic_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_governed_intrinsic_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_privileged_intrinsic_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_normalized_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_gate_blocked_sites_total = 0;
+  std::size_t inline_asm_intrinsic_governance_contract_violation_sites_total = 0;
   std::size_t ns_error_bridging_sites_total = 0;
   std::size_t ns_error_bridging_ns_error_parameter_sites_total = 0;
   std::size_t ns_error_bridging_ns_error_out_parameter_sites_total = 0;
@@ -430,6 +438,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
   bool deterministic_unsafe_pointer_extension_handoff = false;
+  bool deterministic_inline_asm_intrinsic_governance_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
@@ -468,6 +477,7 @@ struct Objc3SemaParityContractSurface {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
+  Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
@@ -941,6 +951,72 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
          surface.unsafe_pointer_extension_summary.deterministic &&
          surface.deterministic_unsafe_pointer_extension_handoff &&
+         surface.inline_asm_intrinsic_governance_summary.inline_asm_intrinsic_sites ==
+             surface.inline_asm_intrinsic_governance_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.inline_asm_sites ==
+             surface.inline_asm_intrinsic_governance_inline_asm_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.intrinsic_sites ==
+             surface.inline_asm_intrinsic_governance_intrinsic_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.governed_intrinsic_sites ==
+             surface
+                 .inline_asm_intrinsic_governance_governed_intrinsic_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary
+                 .privileged_intrinsic_sites ==
+             surface
+                 .inline_asm_intrinsic_governance_privileged_intrinsic_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.normalized_sites ==
+             surface.inline_asm_intrinsic_governance_normalized_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.gate_blocked_sites ==
+             surface.inline_asm_intrinsic_governance_gate_blocked_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.contract_violation_sites ==
+             surface.inline_asm_intrinsic_governance_contract_violation_sites_total &&
+         surface.inline_asm_intrinsic_governance_summary.inline_asm_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.intrinsic_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.governed_intrinsic_sites <=
+             surface.inline_asm_intrinsic_governance_summary.intrinsic_sites &&
+         surface
+                 .inline_asm_intrinsic_governance_summary.privileged_intrinsic_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.normalized_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.gate_blocked_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.contract_violation_sites <=
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.inline_asm_sites ==
+             surface.throws_propagation_summary
+                 .cache_invalidation_candidate_sites &&
+         surface.inline_asm_intrinsic_governance_summary.intrinsic_sites ==
+             surface.unsafe_pointer_extension_summary.unsafe_operation_sites &&
+         surface.inline_asm_intrinsic_governance_summary.governed_intrinsic_sites <=
+             surface.throws_propagation_summary.normalized_sites &&
+         surface
+                 .inline_asm_intrinsic_governance_summary.privileged_intrinsic_sites <=
+             surface.unsafe_pointer_extension_summary.normalized_sites &&
+         surface.inline_asm_intrinsic_governance_summary.normalized_sites >=
+             surface.inline_asm_intrinsic_governance_summary.inline_asm_sites &&
+         surface.inline_asm_intrinsic_governance_summary.normalized_sites -
+                 surface.inline_asm_intrinsic_governance_summary.inline_asm_sites ==
+             surface.inline_asm_intrinsic_governance_summary
+                 .governed_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.gate_blocked_sites ==
+             surface.inline_asm_intrinsic_governance_summary.intrinsic_sites -
+                 surface.inline_asm_intrinsic_governance_summary
+                     .governed_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.normalized_sites +
+                 surface.inline_asm_intrinsic_governance_summary.gate_blocked_sites ==
+             surface.inline_asm_intrinsic_governance_summary
+                 .inline_asm_intrinsic_sites &&
+         surface.inline_asm_intrinsic_governance_summary.deterministic &&
+         surface.deterministic_inline_asm_intrinsic_governance_handoff &&
          surface.ns_error_bridging_summary.ns_error_bridging_sites ==
              surface.ns_error_bridging_sites_total &&
          surface.ns_error_bridging_summary.ns_error_parameter_sites ==
@@ -1675,6 +1751,8 @@ struct Objc3SemaPassManagerResult {
   Objc3ThrowsPropagationSummary throws_propagation_summary;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
+  bool deterministic_inline_asm_intrinsic_governance_handoff = false;
+  Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   bool deterministic_ns_error_bridging_handoff = false;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   bool deterministic_result_like_lowering_handoff = false;
