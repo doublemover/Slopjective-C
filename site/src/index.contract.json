@@ -1,0 +1,13 @@
+{
+  "contract_id": "site-index-generator/v1",
+  "output_path": "site/index.md",
+  "spec_dir": "spec",
+  "toc_path": "spec/TABLE_OF_CONTENTS.md",
+  "front_matter": [
+    "---",
+    "title: Objective-C 3.0 Draft Specification",
+    "layout: default",
+    "---",
+    ""
+  ]
+}

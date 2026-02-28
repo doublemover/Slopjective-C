@@ -2,13 +2,11 @@
 title: Objective-C 3.0 Draft Specification
 layout: default
 ---
-
 <!-- BEGIN TABLE_OF_CONTENTS.md -->
-
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents <a id="toc"></a>
 
-_Last generated: 2025-12-28_
-_Working draft: v0.10_
+_Last generated: 2026-02-27_
+_Working draft: v0.11_
 
 This is a working draft of an **Objective‑C 3.0** specification broken into numbered, implementable parts.  
 Each part is a separate Markdown file intended to be read independently, but the parts are cross-referenced where needed.
@@ -66,11 +64,10 @@ This draft is ambitious but implementable:
 ---
 
 <!-- BEGIN INTRODUCTION.md -->
-
 # Objective‑C 3.0 Draft Specification (Working Draft) — Introduction <a id="intro"></a>
 
-_Last generated: 2025-12-28_
-_Working draft: v0.10_
+_Last generated: 2026-02-27_
+_Working draft: v0.11_
 
 ## 1. What Objective‑C 3.0 is trying to be <a id="intro-1"></a>
 
@@ -190,7 +187,6 @@ This pass makes the draft more “engineer-ready” by tightening the boundary b
 ---
 
 <!-- BEGIN DECISIONS_LOG.md -->
-
 # Objective‑C 3.0 — Design Decisions Log (v0.11) <a id="decisions"></a>
 
 _Last updated: 2026-02-23_
@@ -416,16 +412,14 @@ Conforming metadata/interface behavior shall preserve whether a declaration is e
 **Rationale:** Declaration-scoped control supports gradual adoption, avoids module-wide semantic surprises, and keeps mixed erased/reified codebases tractable.
 
 **Spec impact:** [Part 3](#part-3) [§3.5.5](#part-3-5-5) and [§3.9](#part-3-9).
-
 <!-- END DECISIONS_LOG.md -->
 
 ---
 
 <!-- BEGIN ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
-
 # Objective‑C 3.0 — Attribute and Syntax Catalog <a id="b"></a>
 
-_Working draft v0.10 — last updated 2026-02-23_
+_Working draft v0.11 — last updated 2026-02-23_
 
 ## B.0 Purpose <a id="b-0"></a>
 
@@ -742,16 +736,14 @@ Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 - `let`, `var`
 
 Additional reserved keywords may be added by other parts.
-
 <!-- END ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
 
 ---
 
 <!-- BEGIN LOWERING_AND_RUNTIME_CONTRACTS.md -->
-
 # Objective‑C 3.0 — Lowering, ABI, and Runtime Contracts <a id="c"></a>
 
-_Working draft v0.10 — last updated 2026-02-23_
+_Working draft v0.11 — last updated 2026-02-23_
 
 ## C.0 Scope and audience <a id="c-0"></a>
 
@@ -1034,10 +1026,9 @@ Implementations are encouraged to provide a conformance suite that includes:
 ---
 
 <!-- BEGIN MODULE_METADATA_AND_ABI_TABLES.md -->
-
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables <a id="d"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 ## D.0 Purpose <a id="d-0"></a>
 
@@ -1211,13 +1202,13 @@ This table names **conceptual hooks**. Implementations may use different symbol 
 
 ### D.3.4 Table D — Metadata version compatibility matrix (normative) <a id="d-3-4"></a>
 
-| Producer metadata vs importer support / payload condition             | Compatibility direction                      | Required importer behavior                                                                                    |
-| --------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `schema_major` equal; producer `schema_minor` <= importer max minor   | backward (new importer reads older payload)  | Accept; treat absent newer fields as unavailable.                                                             |
-| `schema_major` equal; producer `schema_minor` > importer max minor    | forward (older importer reads newer payload) | Accept only if all unknown elements are ignorable extension fields and all `required_capabilities` are known. |
-| `schema_major` equal; producer minor newer with unknown required data | forward                                      | Hard error: reject import; report unknown required field/capability.                                          |
-| `schema_major` equal; known-required field missing/invalid in payload | both                                         | Diagnose per [Table E](#d-3-5); ABI-significant/effect-lowering omissions remain hard errors in all profiles. |
-| `schema_major` differs                                                | both                                         | Hard error: reject import; report producer and importer major versions.                                       |
+| Producer metadata vs importer support / payload condition                     | Compatibility direction                      | Required importer behavior                                                                                    |
+| ----------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `schema_major` equal; producer `schema_minor` <= importer max minor           | backward (new importer reads older payload)  | Accept; treat absent newer fields as unavailable.                                                             |
+| `schema_major` equal; producer `schema_minor` > importer max minor            | forward (older importer reads newer payload) | Accept only if all unknown elements are ignorable extension fields and all `required_capabilities` are known. |
+| `schema_major` equal; producer minor newer with unknown required data         | forward                                      | Hard error: reject import; report unknown required field/capability.                                          |
+| `schema_major` equal; known-required field missing/invalid in payload         | both                                         | Diagnose per [Table E](#d-3-5); ABI-significant/effect-lowering omissions remain hard errors in all profiles. |
+| `schema_major` differs                                                        | both                                         | Hard error: reject import; report producer and importer major versions.                                       |
 
 For forward compatibility, ignorable extension fields are explicitly non-semantic for [Table A](#d-3-1) conformance and may be skipped.
 
@@ -1246,16 +1237,16 @@ When OCI-1 is the active interchange path, missing OCI-1 fields map into these s
 
 ### D.3.6 Table F — OCI-1 required concurrency metadata fields (normative) <a id="d-3-6"></a>
 
-| OCI-1 field              | Meaning                                                                  | Required for profile                                                      |
-| ------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `decl_id`                | Stable declaration identity key for merge/join across interface payloads | Core and above                                                            |
-| `effects.async`          | Whether declaration is async                                             | Core and above                                                            |
-| `effects.throws`         | Whether declaration is throwing                                          | Core and above                                                            |
-| `isolation.executor`     | Executor affinity (`objc_executor(...)` equivalent)                      | Core and above                                                            |
-| `isolation.actor`        | Actor isolation binding for declarations/members                         | Core and above                                                            |
-| `isolation.nonisolated`  | Explicit nonisolated marker                                              | Core and above                                                            |
-| `sendable.boundary`      | Whether Sendable-like checking applies at this boundary                  | Strict Concurrency and Strict System (diagnostic optional in Core/Strict) |
-| `sendable.unsafe_marker` | Unsafe-sendable escape marker metadata                                   | Strict Concurrency and Strict System                                      |
+| OCI-1 field | Meaning | Required for profile |
+| --- | --- | --- |
+| `decl_id` | Stable declaration identity key for merge/join across interface payloads | Core and above |
+| `effects.async` | Whether declaration is async | Core and above |
+| `effects.throws` | Whether declaration is throwing | Core and above |
+| `isolation.executor` | Executor affinity (`objc_executor(...)` equivalent) | Core and above |
+| `isolation.actor` | Actor isolation binding for declarations/members | Core and above |
+| `isolation.nonisolated` | Explicit nonisolated marker | Core and above |
+| `sendable.boundary` | Whether Sendable-like checking applies at this boundary | Strict Concurrency and Strict System (diagnostic optional in Core/Strict) |
+| `sendable.unsafe_marker` | Unsafe-sendable escape marker metadata | Strict Concurrency and Strict System |
 
 ## D.4 Conformance tests (minimum) <a id="d-4"></a>
 
@@ -1313,10 +1304,9 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 ---
 
 <!-- BEGIN CONFORMANCE_PROFILE_CHECKLIST.md -->
-
 # Objective‑C 3.0 — Conformance Profile Checklist <a id="e"></a>
 
-_Working draft v0.10 — last updated 2026-02-23_
+_Working draft v0.11 — last updated 2026-02-23_
 
 This document defines **conformance profiles** for Objective‑C 3.0 v1 and provides a **checklist** for compiler/toolchain implementers (and, where relevant, SDK authors) to make conformance claims concrete and testable.
 
@@ -1572,10 +1562,9 @@ A serious conformance claim should ship with:
 ---
 
 <!-- BEGIN STANDARD_LIBRARY_CONTRACT.md -->
-
 # Objective-C 3.0 - Standard Library Contract (Minimum) <a id="s"></a>
 
-_Working draft v0.10 - last updated 2026-02-23_
+_Working draft v0.11 - last updated 2026-02-23_
 
 ## S.0 Purpose and scope (normative) <a id="s-0"></a>
 
@@ -1597,13 +1586,13 @@ This contract is normative for toolchains claiming ObjC 3.0 Core/Strict/Strict C
 
 A conforming implementation shall provide the following modules (or aliases mapped to these canonical capability IDs):
 
-| Canonical module    | Capability ID           | Required for profile |
-| ------------------- | ----------------------- | -------------------- |
-| `objc3.core`        | `objc3.cap.core`        | Core and above       |
-| `objc3.errors`      | `objc3.cap.errors`      | Core and above       |
-| `objc3.concurrency` | `objc3.cap.concurrency` | Core and above       |
-| `objc3.keypath`     | `objc3.cap.keypath`     | Core and above       |
-| `objc3.system`      | `objc3.cap.system`      | Strict System        |
+| Canonical module | Capability ID | Required for profile |
+| --- | --- | --- |
+| `objc3.core` | `objc3.cap.core` | Core and above |
+| `objc3.errors` | `objc3.cap.errors` | Core and above |
+| `objc3.concurrency` | `objc3.cap.concurrency` | Core and above |
+| `objc3.keypath` | `objc3.cap.keypath` | Core and above |
+| `objc3.system` | `objc3.cap.system` | Strict System |
 
 If implementation-specific names are used, module metadata and conformance reports shall publish the canonical capability-ID mapping.
 
@@ -1757,10 +1746,9 @@ A conforming implementation shall include tests equivalent in coverage to:
 ---
 
 <!-- BEGIN ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md -->
-
 # Objective-C 3.0 - Abstract Machine and Semantic Core <a id="am"></a>
 
-_Working draft v0.10 - last updated 2026-02-23_
+_Working draft v0.11 - last updated 2026-02-23_
 
 ## AM.0 Purpose and scope <a id="am-0"></a>
 
@@ -1823,16 +1811,16 @@ In particular, Objective-C 3.0 does not add a universal left-to-right argument e
 
 Objective-C 3.0 adds the following ordering/single-evaluation guarantees relative to the baseline:
 
-| Construct                              | Added guarantee                                                                                                                   | Primary source                              |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `x?.p`                                 | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed.                         | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
-| `[receiver? sel:arg1 other:arg2]`      | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
-| `a ?? b`                               | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`.                                       | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
-| `e?` (postfix propagation)             | `e` shall be evaluated exactly once before deciding unwrap vs early exit.                                                         | [Part 6](#part-6) [§6.6](#part-6-6)         |
-| `if let` / `guard let` binding lists   | Binding expressions shall be evaluated left-to-right.                                                                             | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
-| `guard` condition lists                | Conditions shall be evaluated left-to-right.                                                                                      | [Part 5](#part-5) [§5.3.2](#part-5-3-2)     |
-| `match (expr)`                         | `expr` shall be evaluated exactly once; case tests are top-to-bottom.                                                             | [Part 5](#part-5) [§5.4.3](#part-5-4-3)     |
-| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left-to-right at block creation time.                                                            | [Part 8](#part-8) [§8.8.3](#part-8-8-3)     |
+| Construct | Added guarantee | Primary source |
+| --- | --- | --- |
+| `x?.p` | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed. | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
+| `[receiver? sel:arg1 other:arg2]` | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
+| `a ?? b` | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`. | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
+| `e?` (postfix propagation) | `e` shall be evaluated exactly once before deciding unwrap vs early exit. | [Part 6](#part-6) [§6.6](#part-6-6) |
+| `if let` / `guard let` binding lists | Binding expressions shall be evaluated left-to-right. | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
+| `guard` condition lists | Conditions shall be evaluated left-to-right. | [Part 5](#part-5) [§5.3.2](#part-5-3-2) |
+| `match (expr)` | `expr` shall be evaluated exactly once; case tests are top-to-bottom. | [Part 5](#part-5) [§5.4.3](#part-5-4-3) |
+| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left-to-right at block creation time. | [Part 8](#part-8) [§8.8.3](#part-8-8-3) |
 
 No other new global expression-order guarantees are introduced in v1.
 
@@ -2038,27 +2026,27 @@ A conforming implementation shall provide tests equivalent in coverage to the fo
 
 ### AM.7.1 Matrix <a id="am-7-1"></a>
 
-| ID     | Combination under test                                                     | Required outcome                                                                                                                                                    |
-| ------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| AM-T01 | `defer` + normal return                                                    | Defers execute once, in LIFO order, before scope-final ARC releases.                                                                                                |
-| AM-T02 | `defer` + cleanup/resource local + return                                  | Defer/resource actions follow per-scope LIFO registration order; all run before scope-final ARC releases.                                                           |
-| AM-T03 | `defer` + `throw`                                                          | Throw path runs scope-exit actions and ARC releases for all exited scopes (inner to outer).                                                                         |
-| AM-T04 | `defer` + `try await` where awaited call throws                            | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind.                                                                          |
-| AM-T05 | `try? await`                                                               | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5.                                                                     |
-| AM-T06 | `try! await` throwing path                                                 | Program traps on thrown error; implementation is not required to provide post-trap cleanup guarantees.                                                              |
-| AM-T07 | `(await optionalProducer())?` in optional-returning function               | Operand is evaluated once; on `nil`, function early-returns `nil` and runs scope-exit actions once.                                                                 |
-| AM-T08 | `(await optionalProducer())?` in `throws` function                         | Compile-time error: optional postfix propagation is not a valid carrier in `throws` context.                                                                        |
-| AM-T09 | `await x?.p` with `x == nil` path                                          | `x` evaluated once; result `nil`; no member access and no suspension on nil path.                                                                                   |
-| AM-T10 | `await [r? m:sideEffect()]` with `r == nil` path                           | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path.                                                                            |
-| AM-T11 | `await [r? m:sideEffect()]` with `r != nil` path                           | `sideEffect()` evaluated in ordinary-send order; send occurs; suspension permitted only on this path.                                                               |
-| AM-T12 | `defer` around await cancellation point                                    | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes.                                    |
-| AM-T13 | Nested scopes with `defer` + postfix `?` early exit                        | Early exit unwinds innermost-to-outermost scopes; each scope uses LIFO action order.                                                                                |
-| AM-T14 | `await` in scope without exit                                              | Suspend/resume alone does not run scope-exit actions or scope-final ARC releases.                                                                                   |
-| AM-T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path              | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early-exits and runs cleanup ordering per AM.5.                     |
-| AM-T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws       | Non-`nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early-exits; defer/cleanup actions run once before ARC scope-final releases. |
-| AM-T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws        | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5.                          |
-| AM-T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path               | Nil short-circuit occurs before suspension; no throw occurs on nil path; postfix propagation early-exits `nil` and executes scope cleanups once.                    |
-| AM-T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order.                     |
+| ID | Combination under test | Required outcome |
+| --- | --- | --- |
+| AM-T01 | `defer` + normal return | Defers execute once, in LIFO order, before scope-final ARC releases. |
+| AM-T02 | `defer` + cleanup/resource local + return | Defer/resource actions follow per-scope LIFO registration order; all run before scope-final ARC releases. |
+| AM-T03 | `defer` + `throw` | Throw path runs scope-exit actions and ARC releases for all exited scopes (inner to outer). |
+| AM-T04 | `defer` + `try await` where awaited call throws | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind. |
+| AM-T05 | `try? await` | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5. |
+| AM-T06 | `try! await` throwing path | Program traps on thrown error; implementation is not required to provide post-trap cleanup guarantees. |
+| AM-T07 | `(await optionalProducer())?` in optional-returning function | Operand is evaluated once; on `nil`, function early-returns `nil` and runs scope-exit actions once. |
+| AM-T08 | `(await optionalProducer())?` in `throws` function | Compile-time error: optional postfix propagation is not a valid carrier in `throws` context. |
+| AM-T09 | `await x?.p` with `x == nil` path | `x` evaluated once; result `nil`; no member access and no suspension on nil path. |
+| AM-T10 | `await [r? m:sideEffect()]` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path. |
+| AM-T11 | `await [r? m:sideEffect()]` with `r != nil` path | `sideEffect()` evaluated in ordinary-send order; send occurs; suspension permitted only on this path. |
+| AM-T12 | `defer` around await cancellation point | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes. |
+| AM-T13 | Nested scopes with `defer` + postfix `?` early exit | Early exit unwinds innermost-to-outermost scopes; each scope uses LIFO action order. |
+| AM-T14 | `await` in scope without exit | Suspend/resume alone does not run scope-exit actions or scope-final ARC releases. |
+| AM-T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early-exits and runs cleanup ordering per AM.5. |
+| AM-T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws | Non-`nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early-exits; defer/cleanup actions run once before ARC scope-final releases. |
+| AM-T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5. |
+| AM-T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path | Nil short-circuit occurs before suspension; no throw occurs on nil path; postfix propagation early-exits `nil` and executes scope cleanups once. |
+| AM-T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order. |
 
 ### AM.7.2 Static diagnostics required by matrix <a id="am-7-2"></a>
 
@@ -2072,7 +2060,6 @@ At minimum, matrix coverage shall include diagnostics for:
 ---
 
 <!-- BEGIN FORMAL_GRAMMAR_AND_PRECEDENCE.md -->
-
 # Appendix F - Formal Grammar and Precedence for ObjC 3.0 Additions <a id="f"></a>
 
 This appendix integrates the grammar additions defined across [Part 2](#part-2), [Part 3](#part-3), [Part 5](#part-5), [Part 6](#part-6), [Part 7](#part-7), and [Part 8](#part-8) into a single EBNF reference.
@@ -2322,38 +2309,38 @@ Attribute placement constraints (declaration vs type-position legality) are inhe
 
 Precedence is listed from highest (binds tightest) to lowest.
 
-| Level | Operators / forms                                                                    | Associativity           | Notes                                                                                             |
-| ----- | ------------------------------------------------------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------- |
-| 1     | Postfix selectors and calls: `x.y`, `x->y`, `x?.y`, `x(...)`, `x[...]`, `x++`, `x--` | Left-to-right           | Includes ordinary member access `.`, pointer member access `->`, and optional member access `?.`. |
-| 2     | Postfix propagation: `x?`                                                            | Postfix (single suffix) | Allowed only when next token is in `PropagationFollowSet`; see [F.5](#f-5).                       |
-| 3     | Prefix and cast forms: `(T)x`, `await x`, `try x`, `try? x`, `try! x`, unary ops     | Right-to-left           | `await`/`try` forms compose with casts and unary operators.                                       |
-| 4     | Multiplicative: `*`, `/`, `%`                                                        | Left-to-right           | Baseline C tier.                                                                                  |
-| 5     | Additive: `+`, `-`                                                                   | Left-to-right           | Baseline C tier.                                                                                  |
-| 6     | Shift: `<<`, `>>`                                                                    | Left-to-right           | Baseline C tier.                                                                                  |
-| 7     | Relational: `<`, `<=`, `>`, `>=`                                                     | Left-to-right           | Baseline C tier.                                                                                  |
-| 8     | Equality: `==`, `!=`                                                                 | Left-to-right           | Baseline C tier.                                                                                  |
-| 9     | Bitwise AND: `&`                                                                     | Left-to-right           | Baseline C tier.                                                                                  |
-| 10    | Bitwise XOR: `^`                                                                     | Left-to-right           | Baseline C tier.                                                                                  |
-| 11    | Bitwise OR: `\|`                                                                     | Left-to-right           | Baseline C tier.                                                                                  |
-| 12    | Logical AND: `&&`                                                                    | Left-to-right           | Baseline C tier.                                                                                  |
-| 13    | Logical OR: `\|\|`                                                                   | Left-to-right           | Baseline C tier.                                                                                  |
-| 14    | Nil-coalescing: `??`                                                                 | Right-to-left           | As defined in [Part 3](#part-3).                                                                  |
-| 15    | Conditional: `?:`                                                                    | Right-to-left           | Ternary conditional.                                                                              |
-| 16    | Assignment: `=`, `+=`, `-=`, ...                                                     | Right-to-left           | Baseline C tier.                                                                                  |
-| 17    | Comma: `,`                                                                           | Left-to-right           | Baseline C tier.                                                                                  |
+| Level | Operators / forms | Associativity | Notes |
+| --- | --- | --- | --- |
+| 1 | Postfix selectors and calls: `x.y`, `x->y`, `x?.y`, `x(...)`, `x[...]`, `x++`, `x--` | Left-to-right | Includes ordinary member access `.`, pointer member access `->`, and optional member access `?.`. |
+| 2 | Postfix propagation: `x?` | Postfix (single suffix) | Allowed only when next token is in `PropagationFollowSet`; see [F.5](#f-5). |
+| 3 | Prefix and cast forms: `(T)x`, `await x`, `try x`, `try? x`, `try! x`, unary ops | Right-to-left | `await`/`try` forms compose with casts and unary operators. |
+| 4 | Multiplicative: `*`, `/`, `%` | Left-to-right | Baseline C tier. |
+| 5 | Additive: `+`, `-` | Left-to-right | Baseline C tier. |
+| 6 | Shift: `<<`, `>>` | Left-to-right | Baseline C tier. |
+| 7 | Relational: `<`, `<=`, `>`, `>=` | Left-to-right | Baseline C tier. |
+| 8 | Equality: `==`, `!=` | Left-to-right | Baseline C tier. |
+| 9 | Bitwise AND: `&` | Left-to-right | Baseline C tier. |
+| 10 | Bitwise XOR: `^` | Left-to-right | Baseline C tier. |
+| 11 | Bitwise OR: `\|` | Left-to-right | Baseline C tier. |
+| 12 | Logical AND: `&&` | Left-to-right | Baseline C tier. |
+| 13 | Logical OR: `\|\|` | Left-to-right | Baseline C tier. |
+| 14 | Nil-coalescing: `??` | Right-to-left | As defined in [Part 3](#part-3). |
+| 15 | Conditional: `?:` | Right-to-left | Ternary conditional. |
+| 16 | Assignment: `=`, `+=`, `-=`, ... | Right-to-left | Baseline C tier. |
+| 17 | Comma: `,` | Left-to-right | Baseline C tier. |
 
 ### F.4.1 Required Binding Examples <a id="f-4-1"></a>
 
-| Source form      | Required grouping  | Rationale                                                                     |
-| ---------------- | ------------------ | ----------------------------------------------------------------------------- |
-| `a?.b.c`         | `(a?.b).c`         | `?.` is a postfix selector at the same precedence tier as `.`.                |
-| `a->b?.c`        | `(a->b)?.c`        | `->` and `?.` are both postfix selectors with left-to-right grouping.         |
-| `a?.b ? c : d`   | `(a?.b) ? c : d`   | Postfix selectors bind tighter than ternary `?:`.                             |
-| `a ?? b ? c : d` | `(a ?? b) ? c : d` | `??` binds tighter than `?:`.                                                 |
-| `a ? b ?? c : d` | `a ? (b ?? c) : d` | `??` in ternary arms still binds tighter than `?:`.                           |
-| `(T)a?.b`        | `(T)(a?.b)`        | Cast consumes a `cast-expression`; postfix selectors are inside that operand. |
-| `((T)a)?`        | `((T)a)?`          | Propagation on a cast result requires parenthesized expression result.        |
-| `(T)a?`          | `(T)a ? ... : ...` | Disambiguates as ternary introducer, not propagation; see [F.5.2](#f-5-2).    |
+| Source form | Required grouping | Rationale |
+| --- | --- | --- |
+| `a?.b.c` | `(a?.b).c` | `?.` is a postfix selector at the same precedence tier as `.`. |
+| `a->b?.c` | `(a->b)?.c` | `->` and `?.` are both postfix selectors with left-to-right grouping. |
+| `a?.b ? c : d` | `(a?.b) ? c : d` | Postfix selectors bind tighter than ternary `?:`. |
+| `a ?? b ? c : d` | `(a ?? b) ? c : d` | `??` binds tighter than `?:`. |
+| `a ? b ?? c : d` | `a ? (b ?? c) : d` | `??` in ternary arms still binds tighter than `?:`. |
+| `(T)a?.b` | `(T)(a?.b)` | Cast consumes a `cast-expression`; postfix selectors are inside that operand. |
+| `((T)a)?` | `((T)a)?` | Propagation on a cast result requires parenthesized expression result. |
+| `(T)a?` | `(T)a ? ... : ...` | Disambiguates as ternary introducer, not propagation; see [F.5.2](#f-5-2). |
 
 ## F.5 Disambiguation Rules (Normative) <a id="f-5"></a>
 
@@ -2419,17 +2406,17 @@ If a conditional expression is intended for the receiver, it shall be parenthesi
 
 For the ambiguous/token-overlap forms below, diagnostics and fix-its are required:
 
-| Pattern                                                                   | Required diagnostic                                                                                                                 | Required fix-it                                                                                                      |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `expr? tok` where `tok` is not in `PropagationFollowSet`                  | Explain that postfix propagation `?` is disallowed by follow-token restriction and that parse falls back to ternary interpretation. | Parenthesize propagation subexpression when that rewrite is mechanical (for example `foo()? + 1` -> `(foo()?) + 1`). |
-| `(T)x?` with missing `:`/third operand                                    | Explain cast-vs-propagation disambiguation and that `?` starts ternary in this form.                                                | `((T)x)?` when propagation intent is inferred from local context.                                                    |
-| `a??b:c`                                                                  | Explain maximal-munch tokenization to `a ?? b : c`.                                                                                 | `a ? b : c`.                                                                                                         |
-| `await try f()`                                                           | Explain non-canonical effect ordering, while parse remains valid.                                                                   | Reorder to `try await f()` when no comments/macros would be reordered unsafely.                                      |
-| `[cond ? a : b ? sel]`                                                    | Explain optional-send/conditional-receiver ambiguity and required receiver parenthesization.                                        | `[(cond ? a : b) ? sel]`.                                                                                            |
-| `match (...) { case pat => expr; ... }` in ObjC 3.0 v1 mode               | Explain that `=>` arms are reserved for future `match`-expression syntax and are not enabled in v1.                                 | Rewrite to statement form `case pat: { ... }` or rewrite as `if`/`switch`.                                           |
-| `x = match (...) { case pat: { ... } ... };` in ObjC 3.0 v1 mode          | Explain that `match` is statement-only in v1 and cannot appear in expression position.                                              | Hoist into a statement `match` that assigns to a temporary, or rewrite as `if`/`switch`.                             |
-| `case is Type ...` when `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Explain that type-test patterns are optional and disabled in the current mode.                                                      | Guard with `#if __OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__` or rewrite to `default` + explicit `if`/cast chain.      |
-| `case pattern where condition: ...` in ObjC 3.0 v1 mode                   | Explain that guarded patterns are deferred and this grammar slot is reserved for a future revision.                                 | Drop the guard and perform the condition inside the case body, or rewrite as nested `if`.                            |
+| Pattern | Required diagnostic | Required fix-it |
+| --- | --- | --- |
+| `expr? tok` where `tok` is not in `PropagationFollowSet` | Explain that postfix propagation `?` is disallowed by follow-token restriction and that parse falls back to ternary interpretation. | Parenthesize propagation subexpression when that rewrite is mechanical (for example `foo()? + 1` -> `(foo()?) + 1`). |
+| `(T)x?` with missing `:`/third operand | Explain cast-vs-propagation disambiguation and that `?` starts ternary in this form. | `((T)x)?` when propagation intent is inferred from local context. |
+| `a??b:c` | Explain maximal-munch tokenization to `a ?? b : c`. | `a ? b : c`. |
+| `await try f()` | Explain non-canonical effect ordering, while parse remains valid. | Reorder to `try await f()` when no comments/macros would be reordered unsafely. |
+| `[cond ? a : b ? sel]` | Explain optional-send/conditional-receiver ambiguity and required receiver parenthesization. | `[(cond ? a : b) ? sel]`. |
+| `match (...) { case pat => expr; ... }` in ObjC 3.0 v1 mode | Explain that `=>` arms are reserved for future `match`-expression syntax and are not enabled in v1. | Rewrite to statement form `case pat: { ... }` or rewrite as `if`/`switch`. |
+| `x = match (...) { case pat: { ... } ... };` in ObjC 3.0 v1 mode | Explain that `match` is statement-only in v1 and cannot appear in expression position. | Hoist into a statement `match` that assigns to a temporary, or rewrite as `if`/`switch`. |
+| `case is Type ...` when `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Explain that type-test patterns are optional and disabled in the current mode. | Guard with `#if __OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__` or rewrite to `default` + explicit `if`/cast chain. |
+| `case pattern where condition: ...` in ObjC 3.0 v1 mode | Explain that guarded patterns are deferred and this grammar slot is reserved for a future revision. | Drop the guard and perform the condition inside the case body, or rewrite as nested `if`. |
 
 ### F.5.8 `match` Statement vs Reserved Expression Form <a id="f-5-8"></a>
 
@@ -2465,47 +2452,47 @@ Parsers shall emit a targeted deferred-feature diagnostic for `case pattern wher
 
 Each row is required for parser conformance. Diagnostics and fix-its are required when a transformation is mechanical, consistent with [Part 12](#part-12).
 
-| ID   | Snippet                                                                                                                             | Expected parse/result                                                                                              | Required diagnostic / fix-it                                                                                                                           |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P-01 | `a?.b`                                                                                                                              | Parse as optional member access.                                                                                   | If `b` is scalar/struct return in v1: error (Part 3 restriction), suggest binding + ordinary access.                                                   |
-| P-02 | `a?b:c`                                                                                                                             | Parse as ternary conditional.                                                                                      | No parse diagnostic.                                                                                                                                   |
-| P-03 | `a ?? b ?? c`                                                                                                                       | Parse as `a ?? (b ?? c)` (right-associative).                                                                      | No parse diagnostic.                                                                                                                                   |
-| P-04 | `a ?? b ? c : d`                                                                                                                    | Parse as `(a ?? b) ? c : d`.                                                                                       | No parse diagnostic.                                                                                                                                   |
-| P-05 | `a ? b ?? c : d`                                                                                                                    | Parse as `a ? (b ?? c) : d`.                                                                                       | No parse diagnostic.                                                                                                                                   |
-| P-06 | `foo()?;`                                                                                                                           | Parse as postfix propagation.                                                                                      | If carrier/type rules fail: error per Part 6 with carrier-preserving explanation.                                                                      |
-| P-07 | `foo()? + 1;`                                                                                                                       | Not propagation (fails follow-token rule).                                                                         | Error: postfix `?` follow-token restriction; fix-it: `(foo()?) + 1`.                                                                                   |
-| P-08 | `((T)x)?;`                                                                                                                          | Parse as propagation of parenthesized cast result.                                                                 | No parse diagnostic.                                                                                                                                   |
-| P-09 | `(T)x?;`                                                                                                                            | Parse `?` as ternary start, then incomplete conditional.                                                           | Targeted diagnostic for cast/propagation ambiguity; fix-it: `((T)x)?` when propagation intent is inferred.                                             |
-| P-10 | `try await f();`                                                                                                                    | Parse and type-check as canonical combined effects.                                                                | No ordering diagnostic.                                                                                                                                |
-| P-11 | `await try f();`                                                                                                                    | Parse successfully.                                                                                                | Warning: non-canonical `await try` order; fix-it: `try await f();`.                                                                                    |
-| P-12 | `try? await f();`                                                                                                                   | Parse as optionalizing `try` over awaited call.                                                                    | No parse diagnostic; apply Part 6 semantics.                                                                                                           |
-| P-13 | `fThrows();`                                                                                                                        | Parse call expression.                                                                                             | Error: calling `throws` declaration without `try`; fix-it: insert `try`.                                                                               |
-| P-14 | `await fAsync();` in non-`async` function                                                                                           | Parse prefix expression.                                                                                           | Error: `await` outside async context; suggest adding `async` to enclosing declaration or restructuring call site.                                      |
-| P-15 | `opt?;` in non-optional-returning function                                                                                          | Parse propagation form.                                                                                            | Error: optional propagation requires optional-returning function; fix-it: `guard let` or explicit conditional return path.                             |
-| P-16 | `opt?;` in `throws` or `Result` context expecting nil->error mapping                                                                | Parse propagation form.                                                                                            | Error: carrier-preserving rule forbids implicit nil->error conversion; fix-it: explicit `guard let ... else { throw ... }` or explicit adapter helper. |
-| P-17 | `[obj? scalarValue]` where method returns scalar/struct                                                                             | Parse optional send.                                                                                               | Error (v1 restriction); fix-it: bind/unwrap receiver and use ordinary send in proven-nonnull path.                                                     |
-| P-18 | `obj?.count` where member type is scalar/struct                                                                                     | Parse optional member access.                                                                                      | Error (v1 restriction); fix-it: bind/unwrap then access `count`.                                                                                       |
-| P-19 | `a??b:c`                                                                                                                            | Tokenize as `a ?? b : c`; parse fails at `:` in this context.                                                      | Diagnostic should explain `??` tokenization; fix-it for likely ternary intent: `a ? b : c`.                                                            |
-| P-20 | `f(x?, y)`                                                                                                                          | Parse `x?` as propagation (`,` is follow token).                                                                   | If carrier mismatch: error per Part 6; otherwise no parse diagnostic.                                                                                  |
-| P-21 | `a?.b.c`                                                                                                                            | Parse as `(a?.b).c`.                                                                                               | No parse diagnostic.                                                                                                                                   |
-| P-22 | `a->b?.c`                                                                                                                           | Parse as `(a->b)?.c`.                                                                                              | If typing later fails for selected members, issue semantic diagnostic only.                                                                            |
-| P-23 | `a?.b?;`                                                                                                                            | Parse as propagation applied to `a?.b` (`;` is follow token).                                                      | If carrier mismatch: error per Part 6; otherwise no parse diagnostic.                                                                                  |
-| P-24 | `a?.b? + c;`                                                                                                                        | Not propagation (fails follow-token rule at `+`); ternary path then fails if incomplete.                           | Error: follow-token restriction; fix-it: `(a?.b?) + c`.                                                                                                |
-| P-25 | `(T)a?.b`                                                                                                                           | Parse as cast over optional member expression: `(T)(a?.b)`.                                                        | No parse diagnostic.                                                                                                                                   |
-| P-26 | `a?.b ?? c ? d : e`                                                                                                                 | Parse as `((a?.b) ?? c) ? d : e`.                                                                                  | No parse diagnostic.                                                                                                                                   |
-| P-27 | `try! await f() ?? g`                                                                                                               | Parse as `(try! (await f())) ?? g`.                                                                                | No parse diagnostic.                                                                                                                                   |
-| P-28 | `a ? .b : c`                                                                                                                        | Tokenization is `?` then `.` (not `?.`); parse fails near `.`.                                                     | Diagnostic: optional-member punctuator requires contiguous `?.`; fix-it: `a?.b` when context supports optional member access intent.                   |
-| P-29 | `a ? ? b : c`                                                                                                                       | Tokenization is two `?` tokens (not `??`); parse fails.                                                            | Diagnostic: `??` must be contiguous; fix-it: remove intervening whitespace.                                                                            |
-| P-30 | `[cond ? a : b ? sel]`                                                                                                              | Parse as optional send with conditional receiver candidate; receiver parenthesization required by [F.5.6](#f-5-6). | Fix-it: `[(cond ? a : b) ? sel]`.                                                                                                                      |
-| P-31 | `match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } }`                                                             | Parse as `match-statement` (statement position).                                                                   | No parse diagnostic.                                                                                                                                   |
-| P-32 | `x = match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } };`                                                        | Reject in ObjC 3.0 v1: `match` in expression position.                                                             | Error: `match` is statement-only in v1; suggest statement rewrite with temporary assignment.                                                           |
-| P-33 | `x = match (r) { case .Ok(let v) => v; default => 0; };`                                                                            | Recognize reserved expression-form candidate and reject in ObjC 3.0 v1.                                            | Error: `=>` arm syntax reserved for future `match` expression form; suggest statement-form rewrite.                                                    |
-| P-34 | `match (obj) { case is MyType let t: { use(t); } default: { fallback(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 1` | Parse with `type-test-pattern` + binding.                                                                          | No parse diagnostic.                                                                                                                                   |
-| P-35 | `match (obj) { case is MyType let t: { use(t); } default: { fallback(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Reject in parser/semantic gate check.                                                                              | Error: type-test patterns disabled; suggest feature guard or explicit `if`/cast chain.                                                                 |
-| P-36 | `int is = 1;`                                                                                                                       | Parse `is` as ordinary identifier outside pattern position.                                                        | No parse diagnostic.                                                                                                                                   |
-| P-37 | `match (x) { case let v where v > 0: { use(v); } default: { fallback(); } }`                                                        | Reject in ObjC 3.0 v1 (reserved guarded pattern).                                                                  | Error: guarded patterns are deferred in v1; suggest moving condition into case body.                                                                   |
-| P-38 | `match (x) { case .Ok(let v) where v > 0: { use(v); } default: { fallback(); } }`                                                   | Reject in ObjC 3.0 v1 (reserved guarded pattern), including after composite pattern.                               | Error: reserved `where` guard slot not enabled in v1; suggest nested `if` rewrite.                                                                     |
-| P-39 | `match (x) { case let where: { use(where); } default: { fallback(); } }`                                                            | Parse as binding pattern where identifier is `where`.                                                              | No parse diagnostic (contextual keyword does not reserve identifier slot).                                                                             |
+| ID | Snippet | Expected parse/result | Required diagnostic / fix-it |
+| --- | --- | --- | --- |
+| P-01 | `a?.b` | Parse as optional member access. | If `b` is scalar/struct return in v1: error (Part 3 restriction), suggest binding + ordinary access. |
+| P-02 | `a?b:c` | Parse as ternary conditional. | No parse diagnostic. |
+| P-03 | `a ?? b ?? c` | Parse as `a ?? (b ?? c)` (right-associative). | No parse diagnostic. |
+| P-04 | `a ?? b ? c : d` | Parse as `(a ?? b) ? c : d`. | No parse diagnostic. |
+| P-05 | `a ? b ?? c : d` | Parse as `a ? (b ?? c) : d`. | No parse diagnostic. |
+| P-06 | `foo()?;` | Parse as postfix propagation. | If carrier/type rules fail: error per Part 6 with carrier-preserving explanation. |
+| P-07 | `foo()? + 1;` | Not propagation (fails follow-token rule). | Error: postfix `?` follow-token restriction; fix-it: `(foo()?) + 1`. |
+| P-08 | `((T)x)?;` | Parse as propagation of parenthesized cast result. | No parse diagnostic. |
+| P-09 | `(T)x?;` | Parse `?` as ternary start, then incomplete conditional. | Targeted diagnostic for cast/propagation ambiguity; fix-it: `((T)x)?` when propagation intent is inferred. |
+| P-10 | `try await f();` | Parse and type-check as canonical combined effects. | No ordering diagnostic. |
+| P-11 | `await try f();` | Parse successfully. | Warning: non-canonical `await try` order; fix-it: `try await f();`. |
+| P-12 | `try? await f();` | Parse as optionalizing `try` over awaited call. | No parse diagnostic; apply Part 6 semantics. |
+| P-13 | `fThrows();` | Parse call expression. | Error: calling `throws` declaration without `try`; fix-it: insert `try`. |
+| P-14 | `await fAsync();` in non-`async` function | Parse prefix expression. | Error: `await` outside async context; suggest adding `async` to enclosing declaration or restructuring call site. |
+| P-15 | `opt?;` in non-optional-returning function | Parse propagation form. | Error: optional propagation requires optional-returning function; fix-it: `guard let` or explicit conditional return path. |
+| P-16 | `opt?;` in `throws` or `Result` context expecting nil->error mapping | Parse propagation form. | Error: carrier-preserving rule forbids implicit nil->error conversion; fix-it: explicit `guard let ... else { throw ... }` or explicit adapter helper. |
+| P-17 | `[obj? scalarValue]` where method returns scalar/struct | Parse optional send. | Error (v1 restriction); fix-it: bind/unwrap receiver and use ordinary send in proven-nonnull path. |
+| P-18 | `obj?.count` where member type is scalar/struct | Parse optional member access. | Error (v1 restriction); fix-it: bind/unwrap then access `count`. |
+| P-19 | `a??b:c` | Tokenize as `a ?? b : c`; parse fails at `:` in this context. | Diagnostic should explain `??` tokenization; fix-it for likely ternary intent: `a ? b : c`. |
+| P-20 | `f(x?, y)` | Parse `x?` as propagation (`,` is follow token). | If carrier mismatch: error per Part 6; otherwise no parse diagnostic. |
+| P-21 | `a?.b.c` | Parse as `(a?.b).c`. | No parse diagnostic. |
+| P-22 | `a->b?.c` | Parse as `(a->b)?.c`. | If typing later fails for selected members, issue semantic diagnostic only. |
+| P-23 | `a?.b?;` | Parse as propagation applied to `a?.b` (`;` is follow token). | If carrier mismatch: error per Part 6; otherwise no parse diagnostic. |
+| P-24 | `a?.b? + c;` | Not propagation (fails follow-token rule at `+`); ternary path then fails if incomplete. | Error: follow-token restriction; fix-it: `(a?.b?) + c`. |
+| P-25 | `(T)a?.b` | Parse as cast over optional member expression: `(T)(a?.b)`. | No parse diagnostic. |
+| P-26 | `a?.b ?? c ? d : e` | Parse as `((a?.b) ?? c) ? d : e`. | No parse diagnostic. |
+| P-27 | `try! await f() ?? g` | Parse as `(try! (await f())) ?? g`. | No parse diagnostic. |
+| P-28 | `a ? .b : c` | Tokenization is `?` then `.` (not `?.`); parse fails near `.`. | Diagnostic: optional-member punctuator requires contiguous `?.`; fix-it: `a?.b` when context supports optional member access intent. |
+| P-29 | `a ? ? b : c` | Tokenization is two `?` tokens (not `??`); parse fails. | Diagnostic: `??` must be contiguous; fix-it: remove intervening whitespace. |
+| P-30 | `[cond ? a : b ? sel]` | Parse as optional send with conditional receiver candidate; receiver parenthesization required by [F.5.6](#f-5-6). | Fix-it: `[(cond ? a : b) ? sel]`. |
+| P-31 | `match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } }` | Parse as `match-statement` (statement position). | No parse diagnostic. |
+| P-32 | `x = match (r) { case .Ok(let v): { use(v); } default: { useDefault(); } };` | Reject in ObjC 3.0 v1: `match` in expression position. | Error: `match` is statement-only in v1; suggest statement rewrite with temporary assignment. |
+| P-33 | `x = match (r) { case .Ok(let v) => v; default => 0; };` | Recognize reserved expression-form candidate and reject in ObjC 3.0 v1. | Error: `=>` arm syntax reserved for future `match` expression form; suggest statement-form rewrite. |
+| P-34 | `match (obj) { case is MyType let t: { use(t); } default: { fallback(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 1` | Parse with `type-test-pattern` + binding. | No parse diagnostic. |
+| P-35 | `match (obj) { case is MyType let t: { use(t); } default: { fallback(); } }` with `__OBJC3_FEATURE_MATCH_TYPE_TEST_PATTERNS__ == 0` | Reject in parser/semantic gate check. | Error: type-test patterns disabled; suggest feature guard or explicit `if`/cast chain. |
+| P-36 | `int is = 1;` | Parse `is` as ordinary identifier outside pattern position. | No parse diagnostic. |
+| P-37 | `match (x) { case let v where v > 0: { use(v); } default: { fallback(); } }` | Reject in ObjC 3.0 v1 (reserved guarded pattern). | Error: guarded patterns are deferred in v1; suggest moving condition into case body. |
+| P-38 | `match (x) { case .Ok(let v) where v > 0: { use(v); } default: { fallback(); } }` | Reject in ObjC 3.0 v1 (reserved guarded pattern), including after composite pattern. | Error: reserved `where` guard slot not enabled in v1; suggest nested `if` rewrite. |
+| P-39 | `match (x) { case let where: { use(where); } default: { fallback(); } }` | Parse as binding pattern where identifier is `where`. | No parse diagnostic (contextual keyword does not reserve identifier slot). |
 
 ### F.6.1 Minimum diagnostic quality for matrix failures <a id="f-6-1"></a>
 
@@ -2519,10 +2506,9 @@ For rows requiring rejection, a conforming implementation shall:
 ---
 
 <!-- BEGIN PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md -->
-
 # Part 0 — Baseline and Normative References <a id="part-0"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 ## 0.1 Purpose <a id="part-0-1"></a>
 
@@ -2544,14 +2530,14 @@ The table below is the complete normative reference index for this draft.
 No external source is normative unless it appears here with an `NR-*` identifier.
 For each identifier, a conforming toolchain release shall pin an immutable tuple: `(version or edition, date or release stamp, commit or artifact hash)`.
 
-| ID                  | Canonical reference                                                         | Version / edition      | Date / release stamp               | Commit / artifact hash                                       | Exact normative scope in this draft                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------- | ---------------------- | ---------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **NR-C18**          | ISO/IEC 9899:2018 (C18)                                                     | ISO/IEC 9899:2018      | 2018 edition                       | N/A (published standard text)                                | Core C lexical grammar, preprocessing model, declarators, expression semantics, and inherited C UB categories unless explicitly overridden.     |
-| **NR-CPP20**        | ISO/IEC 14882:2020 (C++20)                                                  | ISO/IEC 14882:2020     | 2020 edition                       | N/A (published standard text)                                | C++ core-language rules that apply in mixed Objective-C++ translation units where this draft allows C++ interop.                                |
-| **NR-LLVM-OBJC**    | LLVM/Clang Objective-C language + ARC behavior                              | `llvmorg-18.1.8`       | Release stamp for `llvmorg-18.1.8` | Git commit resolved by tag `llvmorg-18.1.8`                  | Objective-C front-end baseline for ARC qualifier semantics, retain/release insertion, method-family inference, and legacy ObjC diagnostics.     |
-| **NR-BLOCKS-ABI**   | Clang Blocks specification and block ABI model                              | `llvmorg-18.1.8`       | Release stamp for `llvmorg-18.1.8` | Git commit resolved by tag `llvmorg-18.1.8`                  | Block object representation, capture semantics, calling convention, and copy/dispose helper contracts used by Parts 4/7/8.                      |
-| **NR-OBJC-RUNTIME** | Objective-C runtime profile bundle for selected platform family             | `objc3-runtime-2025Q4` | Profile stamp `2025Q4`             | Artifact digest(s) listed in `objc3-runtime-2025Q4` manifest | Runtime class/metaclass model, selector identity, dispatch and category attachment semantics, and runtime constraints referenced by Parts 9/11. |
-| **NR-ABI-PLATFORM** | Platform C/ObjC ABI profile bundle selected by the toolchain conformance ID | `objc3-abi-2025Q4`     | Profile stamp `2025Q4`             | Artifact digest(s) listed in `objc3-abi-2025Q4` manifest     | Calling conventions, data layout assumptions, symbol/linkage contracts, and ABI boundaries where this draft does not define a replacement ABI.  |
+| ID                  | Canonical reference                                                         | Version / edition                      | Date / release stamp                        | Commit / artifact hash                                        | Exact normative scope in this draft                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NR-C18**          | ISO/IEC 9899:2018 (C18)                                                     | ISO/IEC 9899:2018                      | 2018 edition                                | N/A (published standard text)                                 | Core C lexical grammar, preprocessing model, declarators, expression semantics, and inherited C UB categories unless explicitly overridden.     |
+| **NR-CPP20**        | ISO/IEC 14882:2020 (C++20)                                                  | ISO/IEC 14882:2020                     | 2020 edition                                | N/A (published standard text)                                 | C++ core-language rules that apply in mixed Objective-C++ translation units where this draft allows C++ interop.                                |
+| **NR-LLVM-OBJC**    | LLVM/Clang Objective-C language + ARC behavior                              | `llvmorg-18.1.8`                       | Release stamp for `llvmorg-18.1.8`          | Git commit resolved by tag `llvmorg-18.1.8`                   | Objective-C front-end baseline for ARC qualifier semantics, retain/release insertion, method-family inference, and legacy ObjC diagnostics.     |
+| **NR-BLOCKS-ABI**   | Clang Blocks specification and block ABI model                              | `llvmorg-18.1.8`                       | Release stamp for `llvmorg-18.1.8`          | Git commit resolved by tag `llvmorg-18.1.8`                   | Block object representation, capture semantics, calling convention, and copy/dispose helper contracts used by Parts 4/7/8.                      |
+| **NR-OBJC-RUNTIME** | Objective-C runtime profile bundle for selected platform family             | `objc3-runtime-2025Q4`                 | Profile stamp `2025Q4`                      | Artifact digest(s) listed in `objc3-runtime-2025Q4` manifest  | Runtime class/metaclass model, selector identity, dispatch and category attachment semantics, and runtime constraints referenced by Parts 9/11. |
+| **NR-ABI-PLATFORM** | Platform C/ObjC ABI profile bundle selected by the toolchain conformance ID | `objc3-abi-2025Q4`                     | Profile stamp `2025Q4`                      | Artifact digest(s) listed in `objc3-abi-2025Q4` manifest      | Calling conventions, data layout assumptions, symbol/linkage contracts, and ABI boundaries where this draft does not define a replacement ABI.  |
 
 Conforming implementations shall publish concrete URLs and resolved hashes for `NR-LLVM-OBJC`, `NR-BLOCKS-ABI`, `NR-OBJC-RUNTIME`, and `NR-ABI-PLATFORM` in release notes or conformance reports.
 For published language standards (`NR-C18`, `NR-CPP20`), the cited edition text is the immutable artifact.
@@ -2734,16 +2720,14 @@ manifest publication
 (`spec/conformance/objc3_abi_manifest_validation_v0.11_A02.md`), and
 abstract-machine synchronization protocol
 (`spec/process/ABSTRACT_MACHINE_SYNC_PROTOCOL.md`).
-
 <!-- END PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md -->
 
 ---
 
 <!-- BEGIN PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
-
 # Part 1 — Versioning, Compatibility, and Conformance <a id="part-1"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 ## 1.1 Purpose <a id="part-1-1"></a>
 
@@ -2997,16 +2981,14 @@ Profiles may:
 This part defines the _hook point_ and selection mechanism; profile contents are specified in **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)**.
 
 When emitting a machine-readable conformance report, implementations shall report the selected profile set using the schema in [§12.4.5](#part-12-4-5).
-
 <!-- END PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
 
 ---
 
 <!-- BEGIN PART_2_MODULES_NAMESPACING_API_SURFACES.md -->
-
 # Part 2 — Modules, Namespacing, and API Surfaces <a id="part-2"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -3217,10 +3199,9 @@ Toolchains may provide additional proprietary metadata formats, but they do not 
 ---
 
 <!-- BEGIN PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md -->
-
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths <a id="part-3"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -3974,12 +3955,12 @@ Required optional-spelling fix-it behavior (`optional<T>` -> `Optional<T>`):
 
 Profile severity behavior for optional-spelling diagnostics:
 
-| Validation condition                                                      | Core                                                                                 | Strict                          | Strict Concurrency              | Strict System                   |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------- | ------------------------------- |
-| `OPT-SPELL-NONCANON` (future mode, compatibility alias accepted)          | Warning with required fix-it in migration mode; error with required fix-it otherwise | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
-| `OPT-SPELL-NONCANON-UNSUPPORTED` (future mode, canonical-only acceptance) | Error with required fix-it                                                           | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
-| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail)                        | Error                                                                                | Error                           | Error                           | Error                           |
-| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable           | Note (paired with owning warning/error)                                              | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
+| Validation condition | Core | Strict | Strict Concurrency | Strict System |
+| --- | --- | --- | --- | --- |
+| `OPT-SPELL-NONCANON` (future mode, compatibility alias accepted) | Warning with required fix-it in migration mode; error with required fix-it otherwise | Error with required fix-it | Error with required fix-it | Error with required fix-it |
+| `OPT-SPELL-NONCANON-UNSUPPORTED` (future mode, canonical-only acceptance) | Error with required fix-it | Error with required fix-it | Error with required fix-it | Error with required fix-it |
+| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail) | Error | Error | Error | Error |
+| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable | Note (paired with owning warning/error) | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
 
 Conforming interface emission for future value-optionals shall print canonical `Optional<...>` spellings only.
 
@@ -4106,16 +4087,14 @@ No open issues are tracked in this part for v0.11.
 Resolved by decisions [D-013](DECISIONS_LOG.md#decisions-d-013),
 [D-014](DECISIONS_LOG.md#decisions-d-014), and
 [D-015](DECISIONS_LOG.md#decisions-d-015).
-
 <!-- END PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md -->
 
 ---
 
 <!-- BEGIN PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md -->
-
 # Part 4 — Memory Management and Ownership <a id="part-4"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -4302,16 +4281,14 @@ Concrete names/spellings may differ, but module metadata and documentation shall
 ## 4.10 Open issues <a id="part-4-10"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md -->
 
 ---
 
 <!-- BEGIN PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md -->
-
 # Part 5 — Control Flow and Safety Constructs <a id="part-5"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -4622,16 +4599,14 @@ Minimum diagnostics include:
 ## 5.7 Open issues <a id="part-5-7"></a>
 
 None currently tracked in this part.
-
 <!-- END PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md -->
 
 ---
 
 <!-- BEGIN PART_6_ERRORS_RESULTS_THROWS.md -->
-
 # Part 6 — Errors: Result, throws, try, and Propagation <a id="part-6"></a>
 
-_Working draft v0.10 — last updated 2026-02-23_
+_Working draft v0.11 — last updated 2026-02-23_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -5100,16 +5075,14 @@ Minimum diagnostics:
 
 A future revision may introduce typed throws syntax to restrict throwable error sets.
 ObjC 3.0 v1 intentionally ships only untyped `throws` and uses the reservation rules in [§6.3.7](#part-6-3-7) to preserve forward compatibility with that future work.
-
 <!-- END PART_6_ERRORS_RESULTS_THROWS.md -->
 
 ---
 
 <!-- BEGIN PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md -->
-
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors <a id="part-7"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -5733,18 +5706,18 @@ Rules:
 
 A conforming implementation's test suite shall include, at minimum, the matrix below.
 
-| Case      | Scenario                                                                                                                   | Expected result in strict concurrency mode              | Notes                                                          |
-| --------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
-| SND-01    | Spawned task captures only scalar/enum/aggregate values that are transitively Sendable-like                                | Accept                                                  | Validates default value-like sendability                       |
-| SND-02    | Spawned task captures actor reference and performs actor-isolated access with `await`                                      | Accept                                                  | Actor references are Sendable-like; isolation still enforced   |
-| SND-03    | Spawned/detached task captures ordinary mutable class instance with no `Sendable` conformance                              | Error                                                   | Non-actor class instances are non-Sendable by default          |
-| SND-04    | Cross-actor call passes non-Sendable class argument or returns non-Sendable class value                                    | Error                                                   | Boundary enforcement for arguments/returns                     |
-| SND-05    | `objc_nonisolated` member signature includes non-Sendable parameter/result type                                            | Error                                                   | Enforced even if body is otherwise valid                       |
-| SND-06    | Concurrent closure uses `weak`/`unowned` capture of non-Sendable reference type                                            | Error                                                   | `weak`/`unowned` does not bypass checking                      |
-| SND-07    | Borrowed pointer or cleanup-managed resource handle crosses task/actor boundary without safe wrapper                       | Error                                                   | Part 8 interaction rules remain in force                       |
-| SND-08    | Same as SND-03/SND-04 but type is marked `objc_unsafe_sendable`                                                            | Accept with required unchecked-transfer warning/note    | Escape hatch is explicit and auditable                         |
-| SND-XM-01 | Module `A` exports `Sendable`/`objc_unsafe_sendable` metadata; module `B` imports and uses it at sendability boundaries    | Import and checking behavior matches in-module behavior | Cross-module semantic preservation required by [D.3.1](#d-3-1) |
-| SND-XM-02 | Module metadata/interface omits or mismatches Sendable/task-spawn metadata, then imported under strict concurrency profile | Hard error on import or use-site validation             | Required by [D.3.5](#d-3-5)                                    |
+| Case | Scenario | Expected result in strict concurrency mode | Notes |
+| ---- | -------- | ------------------------------------------ | ----- |
+| SND-01 | Spawned task captures only scalar/enum/aggregate values that are transitively Sendable-like | Accept | Validates default value-like sendability |
+| SND-02 | Spawned task captures actor reference and performs actor-isolated access with `await` | Accept | Actor references are Sendable-like; isolation still enforced |
+| SND-03 | Spawned/detached task captures ordinary mutable class instance with no `Sendable` conformance | Error | Non-actor class instances are non-Sendable by default |
+| SND-04 | Cross-actor call passes non-Sendable class argument or returns non-Sendable class value | Error | Boundary enforcement for arguments/returns |
+| SND-05 | `objc_nonisolated` member signature includes non-Sendable parameter/result type | Error | Enforced even if body is otherwise valid |
+| SND-06 | Concurrent closure uses `weak`/`unowned` capture of non-Sendable reference type | Error | `weak`/`unowned` does not bypass checking |
+| SND-07 | Borrowed pointer or cleanup-managed resource handle crosses task/actor boundary without safe wrapper | Error | Part 8 interaction rules remain in force |
+| SND-08 | Same as SND-03/SND-04 but type is marked `objc_unsafe_sendable` | Accept with required unchecked-transfer warning/note | Escape hatch is explicit and auditable |
+| SND-XM-01 | Module `A` exports `Sendable`/`objc_unsafe_sendable` metadata; module `B` imports and uses it at sendability boundaries | Import and checking behavior matches in-module behavior | Cross-module semantic preservation required by [D.3.1](#d-3-1) |
+| SND-XM-02 | Module metadata/interface omits or mismatches Sendable/task-spawn metadata, then imported under strict concurrency profile | Hard error on import or use-site validation | Required by [D.3.5](#d-3-5) |
 
 ---
 
@@ -5843,16 +5816,14 @@ The concrete queue representation is implementation-defined, but the association
 ### 7.12.5 Autorelease pools at suspension points <a id="part-7-12-5"></a>
 
 Autorelease pool boundaries at suspension points are required by [Decision D-006](#decisions-d-006) and defined normatively in [C.7](#c-7) and [§7.9.4](#part-7-9-4).
-
 <!-- END PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md -->
 
 ---
 
 <!-- BEGIN PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md -->
-
 # Part 8 — System Programming Extensions <a id="part-8"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -6318,16 +6289,14 @@ In strict-system mode, toolchains should:
 ## 8.10 Open issues <a id="part-8-10"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md -->
 
 ---
 
 <!-- BEGIN PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md -->
-
 # Part 9 — Performance and Dynamism Controls <a id="part-9"></a>
 
-_Working draft v0.10 — last updated 2026-02-23_
+_Working draft v0.11 — last updated 2026-02-23_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -6565,10 +6534,9 @@ A conforming implementation’s suite shall include at least:
 ---
 
 <!-- BEGIN PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md -->
-
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors <a id="part-10"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -6791,16 +6759,14 @@ No open issues are tracked in this part for v0.11.
 
 Resolved reference: macro/derive extension governance process
 (`spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`).
-
 <!-- END PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md -->
 
 ---
 
 <!-- BEGIN PART_11_INTEROPERABILITY_C_CPP_SWIFT.md -->
-
 # Part 11 — Interoperability: C, C++, and Swift <a id="part-11"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -6972,16 +6938,14 @@ The mapping is implementation-defined but should preserve the core constraints.
 ## 11.6 Open issues <a id="part-11-6"></a>
 
 None currently for the v1 portability baseline in this part.
-
 <!-- END PART_11_INTEROPERABILITY_C_CPP_SWIFT.md -->
 
 ---
 
 <!-- BEGIN PART_12_DIAGNOSTICS_TOOLING_TESTS.md -->
-
 # Part 12 — Diagnostics, Tooling, and Test Suites <a id="part-12"></a>
 
-_Working draft v0.10 — last updated 2025-12-28_
+_Working draft v0.11 — last updated 2026-02-27_
 
 _Normative baseline references used in this part: [NR-C18](#part-0-2-1), [NR-LLVM-OBJC](#part-0-2-1), [NR-BLOCKS-ABI](#part-0-2-1), and where applicable [NR-OBJC-RUNTIME](#part-0-2-1)/[NR-ABI-PLATFORM](#part-0-2-1)._
 
@@ -7346,5 +7310,4 @@ For features like macros and async:
 ## 12.7 Open issues <a id="part-12-7"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_12_DIAGNOSTICS_TOOLING_TESTS.md -->
