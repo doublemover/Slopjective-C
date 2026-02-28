@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed task-hygiene wiring checks for M155/M156/M157 lane-E closeout."""
+"""Fail-closed task-hygiene wiring checks for M155/M156/M157/M158 lane-E closeout."""
 
 from __future__ import annotations
 
@@ -35,6 +35,10 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
     if "check:compiler-closeout:m157" not in task_hygiene:
         errors.append(
             "package.json scripts.check:task-hygiene must include check:compiler-closeout:m157",
+        )
+    if "check:compiler-closeout:m158" not in task_hygiene:
+        errors.append(
+            "package.json scripts.check:task-hygiene must include check:compiler-closeout:m158",
         )
 
     m155_closeout = scripts.get("check:compiler-closeout:m155", "")
@@ -112,6 +116,31 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
                 f"must include {required_test}",
             )
 
+    m158_closeout = scripts.get("check:compiler-closeout:m158", "")
+    if "npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts" not in m158_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m158 must run check:objc3c:m158-nil-receiver-semantics-foldability-contracts",
+        )
+    if "python scripts/ci/check_task_hygiene.py" not in m158_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m158 must run python scripts/ci/check_task_hygiene.py",
+        )
+
+    m158_gate = scripts.get("check:objc3c:m158-nil-receiver-semantics-foldability-contracts", "")
+    required_m158_gate_tests = (
+        "test_objc3c_m158_frontend_nil_receiver_semantics_foldability_contract.py",
+        "test_objc3c_m158_sema_nil_receiver_semantics_foldability_contract.py",
+        "test_objc3c_m158_lowering_nil_receiver_semantics_foldability_contract.py",
+        "test_objc3c_m158_validation_nil_receiver_semantics_foldability_contract.py",
+        "test_objc3c_m158_integration_nil_receiver_semantics_foldability_contract.py",
+    )
+    for required_test in required_m158_gate_tests:
+        if required_test not in m158_gate:
+            errors.append(
+                "package.json scripts.check:objc3c:m158-nil-receiver-semantics-foldability-contracts "
+                f"must include {required_test}",
+            )
+
     return errors
 
 
@@ -124,6 +153,8 @@ def _check_workflow_contracts(workflow_text: str) -> list[str]:
         "run: npm run check:objc3c:m156-message-send-selector-lowering-contracts",
         "run: npm run check:compiler-closeout:m157",
         "run: npm run check:objc3c:m157-dispatch-abi-marshalling-contracts",
+        "run: npm run check:compiler-closeout:m158",
+        "run: npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts",
     )
     for required in required_runs:
         if required not in workflow_text:
@@ -141,12 +172,12 @@ def main() -> int:
     errors.extend(_check_workflow_contracts(workflow_text))
 
     if errors:
-        print("M155/M156/M157 task-hygiene contract check failed:")
+        print("M155/M156/M157/M158 task-hygiene contract check failed:")
         for error in errors:
             print(f"- {error}")
         return 1
 
-    print("M155/M156/M157 task-hygiene contract check passed.")
+    print("M155/M156/M157/M158 task-hygiene contract check passed.")
     return 0
 
 
