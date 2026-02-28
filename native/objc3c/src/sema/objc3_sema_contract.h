@@ -480,6 +480,31 @@ struct Objc3BlockCopyDisposeSemanticsSummary {
   bool deterministic = true;
 };
 
+struct Objc3BlockDeterminismPerfBaselineSiteMetadata {
+  std::size_t parameter_count = 0;
+  std::size_t capture_count = 0;
+  std::size_t body_statement_count = 0;
+  std::size_t baseline_weight = 0;
+  bool capture_set_deterministic = false;
+  bool baseline_profile_is_normalized = false;
+  std::string baseline_profile;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3BlockDeterminismPerfBaselineSummary {
+  std::size_t block_literal_sites = 0;
+  std::size_t baseline_weight_total = 0;
+  std::size_t parameter_entries_total = 0;
+  std::size_t capture_entries_total = 0;
+  std::size_t body_statement_entries_total = 0;
+  std::size_t deterministic_capture_sites = 0;
+  std::size_t heavy_tier_sites = 0;
+  std::size_t normalized_profile_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
@@ -720,6 +745,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
   std::vector<Objc3BlockCopyDisposeSiteMetadata> block_copy_dispose_sites_lexicographic;
   Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
+  std::vector<Objc3BlockDeterminismPerfBaselineSiteMetadata> block_determinism_perf_baseline_sites_lexicographic;
+  Objc3BlockDeterminismPerfBaselineSummary block_determinism_perf_baseline_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
@@ -959,6 +986,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
   std::vector<Objc3BlockCopyDisposeSiteMetadata> block_copy_dispose_sites_lexicographic;
   Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
+  std::vector<Objc3BlockDeterminismPerfBaselineSiteMetadata> block_determinism_perf_baseline_sites_lexicographic;
+  Objc3BlockDeterminismPerfBaselineSummary block_determinism_perf_baseline_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;

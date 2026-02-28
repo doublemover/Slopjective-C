@@ -260,6 +260,20 @@ bool IsEquivalentBlockCopyDisposeSemanticsSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentBlockDeterminismPerfBaselineSummary(
+    const Objc3BlockDeterminismPerfBaselineSummary &lhs,
+    const Objc3BlockDeterminismPerfBaselineSummary &rhs) {
+  return lhs.block_literal_sites == rhs.block_literal_sites &&
+         lhs.baseline_weight_total == rhs.baseline_weight_total &&
+         lhs.parameter_entries_total == rhs.parameter_entries_total &&
+         lhs.capture_entries_total == rhs.capture_entries_total &&
+         lhs.body_statement_entries_total == rhs.body_statement_entries_total &&
+         lhs.deterministic_capture_sites == rhs.deterministic_capture_sites &&
+         lhs.heavy_tier_sites == rhs.heavy_tier_sites &&
+         lhs.normalized_profile_sites == rhs.normalized_profile_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentMessageSendSelectorLoweringSummary(const Objc3MessageSendSelectorLoweringSummary &lhs,
                                                     const Objc3MessageSendSelectorLoweringSummary &rhs) {
   return lhs.message_send_sites == rhs.message_send_sites &&
@@ -697,6 +711,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites;
+  result.block_determinism_perf_baseline_summary =
+      result.integration_surface.block_determinism_perf_baseline_summary;
+  result.deterministic_block_determinism_perf_baseline_handoff =
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary.deterministic &&
+      result.integration_surface.block_determinism_perf_baseline_summary.deterministic &&
+      IsEquivalentBlockDeterminismPerfBaselineSummary(
+          result.integration_surface.block_determinism_perf_baseline_summary,
+          result.type_metadata_handoff.block_determinism_perf_baseline_summary) &&
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary.deterministic_capture_sites <=
+          result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary.heavy_tier_sites <=
+          result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary.normalized_profile_sites <=
+          result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary.contract_violation_sites <=
+          result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites;
   result.message_send_selector_lowering_summary =
       result.integration_surface.message_send_selector_lowering_summary;
   result.deterministic_message_send_selector_lowering_handoff =
@@ -1187,6 +1217,26 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites;
   result.parity_surface.block_copy_dispose_contract_violation_sites_total =
       result.parity_surface.block_copy_dispose_semantics_summary.contract_violation_sites;
+  result.parity_surface.block_determinism_perf_baseline_summary =
+      result.type_metadata_handoff.block_determinism_perf_baseline_summary;
+  result.parity_surface.block_determinism_perf_baseline_sites_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites;
+  result.parity_surface.block_determinism_perf_baseline_weight_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.baseline_weight_total;
+  result.parity_surface.block_determinism_perf_baseline_parameter_entries_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.parameter_entries_total;
+  result.parity_surface.block_determinism_perf_baseline_capture_entries_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.capture_entries_total;
+  result.parity_surface.block_determinism_perf_baseline_body_statement_entries_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.body_statement_entries_total;
+  result.parity_surface.block_determinism_perf_baseline_deterministic_capture_sites_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.deterministic_capture_sites;
+  result.parity_surface.block_determinism_perf_baseline_heavy_tier_sites_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.heavy_tier_sites;
+  result.parity_surface.block_determinism_perf_baseline_normalized_profile_sites_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.normalized_profile_sites;
+  result.parity_surface.block_determinism_perf_baseline_contract_violation_sites_total =
+      result.parity_surface.block_determinism_perf_baseline_summary.contract_violation_sites;
   result.parity_surface.message_send_selector_lowering_summary =
       result.type_metadata_handoff.message_send_selector_lowering_summary;
   result.parity_surface.message_send_selector_lowering_sites_total =
@@ -1831,6 +1881,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
           result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
       result.parity_surface.block_copy_dispose_semantics_summary.deterministic;
+  result.parity_surface.deterministic_block_determinism_perf_baseline_handoff =
+      result.deterministic_block_determinism_perf_baseline_handoff &&
+      result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites ==
+          result.parity_surface.block_determinism_perf_baseline_sites_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.baseline_weight_total ==
+          result.parity_surface.block_determinism_perf_baseline_weight_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.parameter_entries_total ==
+          result.parity_surface.block_determinism_perf_baseline_parameter_entries_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.capture_entries_total ==
+          result.parity_surface.block_determinism_perf_baseline_capture_entries_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.body_statement_entries_total ==
+          result.parity_surface.block_determinism_perf_baseline_body_statement_entries_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.deterministic_capture_sites ==
+          result.parity_surface.block_determinism_perf_baseline_deterministic_capture_sites_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.heavy_tier_sites ==
+          result.parity_surface.block_determinism_perf_baseline_heavy_tier_sites_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.normalized_profile_sites ==
+          result.parity_surface.block_determinism_perf_baseline_normalized_profile_sites_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.contract_violation_sites ==
+          result.parity_surface.block_determinism_perf_baseline_contract_violation_sites_total &&
+      result.parity_surface.block_determinism_perf_baseline_summary.deterministic_capture_sites <=
+          result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.parity_surface.block_determinism_perf_baseline_summary.heavy_tier_sites <=
+          result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.parity_surface.block_determinism_perf_baseline_summary.normalized_profile_sites <=
+          result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.parity_surface.block_determinism_perf_baseline_summary.contract_violation_sites <=
+          result.parity_surface.block_determinism_perf_baseline_summary.block_literal_sites &&
+      result.parity_surface.block_determinism_perf_baseline_summary.deterministic;
   result.parity_surface.deterministic_message_send_selector_lowering_handoff =
       result.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.message_send_sites ==
@@ -2154,6 +2233,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_block_storage_escape_handoff &&
       result.parity_surface.block_copy_dispose_semantics_summary.deterministic &&
       result.parity_surface.deterministic_block_copy_dispose_handoff &&
+      result.parity_surface.block_determinism_perf_baseline_summary.deterministic &&
+      result.parity_surface.deterministic_block_determinism_perf_baseline_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.deterministic &&
       result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic &&

@@ -3320,3 +3320,33 @@ Sema/type metadata handoff contract:
 Recommended M169 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q`
+
+## M170 sema/type block determinism perf baseline contract (M170-B001)
+
+M170-B lifts parser-authored block determinism/perf baseline metadata into sema
+integration and type metadata handoff surfaces so replay and perf-validation
+lanes consume one deterministic packet.
+
+M170 sema/type surface details:
+
+- `Objc3BlockDeterminismPerfBaselineSiteMetadata`
+- `Objc3BlockDeterminismPerfBaselineSummary`
+- `BuildBlockDeterminismPerfBaselineSummaryFromIntegrationSurface`
+- `BuildBlockDeterminismPerfBaselineSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `block_determinism_perf_baseline_sites_total`
+  - `block_determinism_perf_baseline_weight_total`
+  - `block_determinism_perf_baseline_contract_violation_sites_total`
+  - `deterministic_block_determinism_perf_baseline_handoff`
+
+Deterministic sema intent:
+
+- sema derives block baseline summary from lexicographically ordered site
+  metadata.
+- handoff determinism requires equivalence across integration and type metadata
+  summaries.
+- contract violations are fail-closed and surfaced in parity counters.
+
+Recommended M170 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q`
