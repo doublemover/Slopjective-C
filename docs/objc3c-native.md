@@ -501,6 +501,23 @@ Frontend macro diagnostics/provenance requires deterministic directive source-lo
   3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
 
+
+## M202 frontend derive/synthesis pipeline
+
+Frontend derive/synthesis pipeline contract relies on deterministic semantic-surface synthesis from parser AST into sorted metadata handoff packets.
+
+- Required frontend derive/synthesis signals:
+  - synthesis ingress remains `BuildSemanticIntegrationSurface(...)`.
+  - metadata handoff synthesis remains `BuildSemanticTypeMetadataHandoff(...)`.
+  - deterministic ordering guard remains `IsDeterministicSemanticTypeMetadataHandoff(...)`.
+  - synthesized global ordering packet remains `global_names_lexicographic`.
+  - synthesized function packet remains `functions_lexicographic` with arity/param consistency checks.
+- Required frontend derive/synthesis commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2477,6 +2494,35 @@ Recommended M203 sema/type compile-time evaluation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py -q`
 
+## M202 sema/type derive/synthesis pipeline
+
+For deterministic sema/type derive/synthesis pipeline behavior, capture replay-stable packet evidence from sema pass-manager derive hooks, type-metadata synthesis ordering, and manifest parity/readiness surfaces.
+
+Derive/synthesis packet map:
+
+- `derive packet 1.1 deterministic sema integration-surface derive hooks` -> `m202_sema_integration_surface_derive_packet`
+- `synthesis packet 1.2 deterministic type-metadata synthesis hooks` -> `m202_type_metadata_synthesis_packet`
+
+### 1.1 Deterministic sema integration-surface derive packet
+
+- Source pass-manager derive anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`.
+- Source integration-surface derive anchors: `Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,`, and `surface.built = true;`.
+- Pipeline derive transport anchors: `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, `result.integration_surface = std::move(sema_result.integration_surface);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Deterministic integration-surface derive packet key: `m202_sema_integration_surface_derive_packet`.
+
+### 1.2 Deterministic type-metadata synthesis packet
+
+- Source type-synthesis anchors: `Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface) {`, `handoff.global_names_lexicographic.reserve(surface.globals.size());`, `std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());`, `std::sort(function_names.begin(), function_names.end());`, and `handoff.functions_lexicographic.reserve(function_names.size());`.
+- Source synthesis determinism anchors: `bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {`, `return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),`, `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Source parity/readiness synthesis anchors: `IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface)`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`, and `result.parity_surface.ready =`.
+- Manifest synthesis anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface synthesis anchors under `frontend.pipeline.semantic_surface`: `resolved_global_symbols` and `resolved_function_symbols`.
+- Deterministic type-metadata synthesis packet key: `m202_type_metadata_synthesis_packet`.
+
+Recommended M202 sema/type derive/synthesis validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3038,6 +3084,78 @@ Compile-time evaluation engine capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
 3. `rg -n "TryGetCompileTimeI32ExprInContext|IsCompileTimeNilReceiverExprInContext|IsCompileTimeKnownNonNilExprInContext|has_assigned_const_value|has_assigned_nil_value|has_clause_const_value|has_let_const_value|const_value_ptrs|nil_bound_ptrs|nonzero_bound_ptrs|global_proofs_invalidated|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py -q`
+
+## M202 lowering/runtime derive/synthesis pipeline
+
+Lowering/runtime derive/synthesis pipeline evidence is captured as deterministic packet artifacts rooted under `tmp/` so semantic integration/type-metadata derivation and runtime-facing manifest synthesis remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `derive/synthesis markers` (required in source-anchor extracts):
+  - `BuildSemanticIntegrationSurface(...)`
+  - `BuildSemanticTypeMetadataHandoff(...)`
+  - `IsDeterministicSemanticTypeMetadataHandoff(...)`
+  - `global_names_lexicographic`
+  - `functions_lexicographic`
+  - `deterministic_type_metadata_handoff`
+  - `type_metadata_global_entries`
+  - `type_metadata_function_entries`
+  - `semantic_surface`
+  - `resolved_global_symbols`
+  - `resolved_function_symbols`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,`
+  - `Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface) {`
+  - `bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {`
+  - `result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`
+  - `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`
+  - `result.deterministic_type_metadata_handoff =`
+  - `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`
+  - `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`
+  - `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`
+  - `result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;`
+  - `<< ",\"deterministic_type_metadata_handoff\":"`
+  - `<< (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")`
+  - `<< ",\"type_metadata_global_entries\":"`
+  - `<< pipeline_result.sema_parity_surface.type_metadata_global_entries`
+  - `<< ",\"type_metadata_function_entries\":"`
+  - `<< pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `<< ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()`
+  - `<< ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and derive/synthesis source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, derive/synthesis marker, or source anchor is missing.
+
+Derive/synthesis pipeline capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
+3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
 ## M205 lowering/runtime macro security policy enforcement
 
@@ -5380,6 +5498,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m203_validation_compile_time_eval_contract.py -q
 ```
 
+## M202 validation/perf derive/synthesis runbook
+
+Derive/synthesis validation runbook verifies deterministic synthesis-evidence surfaces across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Derive/synthesis evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m202_validation_derive_synthesis_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -5857,6 +6020,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain compile-time-eval anchors.
+
+## M202 integration derive/synthesis pipeline
+
+- Gate intent: enforce deterministic derive/synthesis evidence across all lanes.
+### 1.1 Derive/synthesis integration chain
+- Deterministic derive/synthesis gate:
+  - `npm run check:objc3c:m202-derive-synthesis`
+- Chain order:
+  - replays `check:objc3c:m203-compile-time-eval`.
+  - enforces all M202 lane contracts:
+    `tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_validation_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_integration_derive_synthesis_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through derive/synthesis validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain derive/synthesis anchors.
 
 ## Current call contract
 
