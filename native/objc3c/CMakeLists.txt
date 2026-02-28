@@ -54,6 +54,7 @@ target_include_directories(objc3c_ir PUBLIC
 )
 add_library(objc3c_pipeline INTERFACE)
 add_library(objc3c_io STATIC
+  src/io/objc3_diagnostics_artifacts.cpp
   src/io/objc3_file_io.cpp
   src/io/objc3_process.cpp
 )
