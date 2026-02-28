@@ -87,6 +87,47 @@ struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
   bool deterministic_object_pointer_nullability_generics_handoff = true;
 };
 
+struct Objc3FrontendSymbolGraphScopeResolutionSummary {
+  std::size_t global_symbol_nodes = 0;
+  std::size_t function_symbol_nodes = 0;
+  std::size_t interface_symbol_nodes = 0;
+  std::size_t implementation_symbol_nodes = 0;
+  std::size_t interface_property_symbol_nodes = 0;
+  std::size_t implementation_property_symbol_nodes = 0;
+  std::size_t interface_method_symbol_nodes = 0;
+  std::size_t implementation_method_symbol_nodes = 0;
+  std::size_t top_level_scope_symbols = 0;
+  std::size_t nested_scope_symbols = 0;
+  std::size_t scope_frames_total = 0;
+  std::size_t implementation_interface_resolution_sites = 0;
+  std::size_t implementation_interface_resolution_hits = 0;
+  std::size_t implementation_interface_resolution_misses = 0;
+  std::size_t method_resolution_sites = 0;
+  std::size_t method_resolution_hits = 0;
+  std::size_t method_resolution_misses = 0;
+  bool deterministic_symbol_graph_handoff = true;
+  bool deterministic_scope_resolution_handoff = true;
+  std::string deterministic_handoff_key;
+
+  std::size_t symbol_nodes_total() const {
+    return global_symbol_nodes + function_symbol_nodes + interface_symbol_nodes + implementation_symbol_nodes +
+           interface_property_symbol_nodes + implementation_property_symbol_nodes + interface_method_symbol_nodes +
+           implementation_method_symbol_nodes;
+  }
+
+  std::size_t resolution_sites_total() const {
+    return implementation_interface_resolution_sites + method_resolution_sites;
+  }
+
+  std::size_t resolution_hits_total() const {
+    return implementation_interface_resolution_hits + method_resolution_hits;
+  }
+
+  std::size_t resolution_misses_total() const {
+    return implementation_interface_resolution_misses + method_resolution_misses;
+  }
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
@@ -98,6 +139,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
+  Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };

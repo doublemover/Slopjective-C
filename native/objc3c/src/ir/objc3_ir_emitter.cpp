@@ -146,6 +146,33 @@ class Objc3IREmitter {
         << ", unterminated_generic_suffix_entries=" << frontend_metadata_.unterminated_generic_suffix_entries
         << ", deterministic_object_pointer_nullability_generics_handoff="
         << (frontend_metadata_.deterministic_object_pointer_nullability_generics_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_symbol_graph_scope_resolution_profile = global_symbol_nodes="
+        << frontend_metadata_.global_symbol_nodes
+        << ", function_symbol_nodes=" << frontend_metadata_.function_symbol_nodes
+        << ", interface_symbol_nodes=" << frontend_metadata_.interface_symbol_nodes
+        << ", implementation_symbol_nodes=" << frontend_metadata_.implementation_symbol_nodes
+        << ", interface_property_symbol_nodes=" << frontend_metadata_.interface_property_symbol_nodes
+        << ", implementation_property_symbol_nodes=" << frontend_metadata_.implementation_property_symbol_nodes
+        << ", interface_method_symbol_nodes=" << frontend_metadata_.interface_method_symbol_nodes
+        << ", implementation_method_symbol_nodes=" << frontend_metadata_.implementation_method_symbol_nodes
+        << ", top_level_scope_symbols=" << frontend_metadata_.top_level_scope_symbols
+        << ", nested_scope_symbols=" << frontend_metadata_.nested_scope_symbols
+        << ", scope_frames_total=" << frontend_metadata_.scope_frames_total
+        << ", implementation_interface_resolution_sites="
+        << frontend_metadata_.implementation_interface_resolution_sites
+        << ", implementation_interface_resolution_hits="
+        << frontend_metadata_.implementation_interface_resolution_hits
+        << ", implementation_interface_resolution_misses="
+        << frontend_metadata_.implementation_interface_resolution_misses
+        << ", method_resolution_sites=" << frontend_metadata_.method_resolution_sites
+        << ", method_resolution_hits=" << frontend_metadata_.method_resolution_hits
+        << ", method_resolution_misses=" << frontend_metadata_.method_resolution_misses
+        << ", deterministic_symbol_graph_handoff="
+        << (frontend_metadata_.deterministic_symbol_graph_handoff ? "true" : "false")
+        << ", deterministic_scope_resolution_handoff="
+        << (frontend_metadata_.deterministic_scope_resolution_handoff ? "true" : "false")
+        << ", deterministic_symbol_graph_scope_resolution_handoff_key="
+        << frontend_metadata_.deterministic_symbol_graph_scope_resolution_handoff_key << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
@@ -272,6 +299,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_selector_normalization = !{!3}\n";
     out << "!objc3.objc_property_attribute = !{!4}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
+    out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -315,7 +343,28 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.generic_suffix_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.terminated_generic_suffix_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.unterminated_generic_suffix_entries) << ", i1 "
-        << (frontend_metadata_.deterministic_object_pointer_nullability_generics_handoff ? 1 : 0) << "}\n\n";
+        << (frontend_metadata_.deterministic_object_pointer_nullability_generics_handoff ? 1 : 0) << "}\n";
+    out << "!6 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.global_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.function_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.interface_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.interface_property_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_property_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.interface_method_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_method_symbol_nodes) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.top_level_scope_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.nested_scope_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.scope_frames_total) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_interface_resolution_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_interface_resolution_hits) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_interface_resolution_misses) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.method_resolution_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.method_resolution_hits) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.method_resolution_misses) << ", i1 "
+        << (frontend_metadata_.deterministic_symbol_graph_handoff ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.deterministic_scope_resolution_handoff ? 1 : 0) << ", !\""
+        << EscapeCStringLiteral(frontend_metadata_.deterministic_symbol_graph_scope_resolution_handoff_key)
+        << "\"}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

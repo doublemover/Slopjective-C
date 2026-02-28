@@ -2365,6 +2365,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py -q`
 
+## Symbol-graph/scope-resolution lowering artifact contract (M151-C001)
+
+M151-C extends lowering/runtime ABI artifact publication with symbol-graph and scope-resolution handoff envelopes sourced from sema integration + type-metadata replay packets.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/symbol-graph-scope-resolution-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.symbol_graph_global_symbol_nodes`
+- `frontend.pipeline.sema_pass_manager.scope_resolution_scope_frames_total`
+- `frontend.pipeline.sema_pass_manager.deterministic_symbol_graph_handoff`
+- `frontend.pipeline.sema_pass_manager.deterministic_scope_resolution_handoff`
+- `frontend.pipeline.sema_pass_manager.symbol_graph_scope_resolution_handoff_key`
+- `frontend.pipeline.semantic_surface.objc_symbol_graph_scope_resolution_surface`
+
+IR publication markers:
+
+- `; frontend_objc_symbol_graph_scope_resolution_profile = global_symbol_nodes=<N>, function_symbol_nodes=<N>, interface_symbol_nodes=<N>, implementation_symbol_nodes=<N>, interface_property_symbol_nodes=<N>, implementation_property_symbol_nodes=<N>, interface_method_symbol_nodes=<N>, implementation_method_symbol_nodes=<N>, top_level_scope_symbols=<N>, nested_scope_symbols=<N>, scope_frames_total=<N>, implementation_interface_resolution_sites=<N>, implementation_interface_resolution_hits=<N>, implementation_interface_resolution_misses=<N>, method_resolution_sites=<N>, method_resolution_hits=<N>, method_resolution_misses=<N>, deterministic_symbol_graph_handoff=<bool>, deterministic_scope_resolution_handoff=<bool>, deterministic_symbol_graph_scope_resolution_handoff_key=<key>`
+- `!objc3.objc_symbol_graph_scope_resolution = !{!6}`
+- `!6 = !{i64 <global_symbol_nodes>, i64 <function_symbol_nodes>, i64 <interface_symbol_nodes>, i64 <implementation_symbol_nodes>, i64 <interface_property_symbol_nodes>, i64 <implementation_property_symbol_nodes>, i64 <interface_method_symbol_nodes>, i64 <implementation_method_symbol_nodes>, i64 <top_level_scope_symbols>, i64 <nested_scope_symbols>, i64 <scope_frames_total>, i64 <implementation_interface_resolution_sites>, i64 <implementation_interface_resolution_hits>, i64 <implementation_interface_resolution_misses>, i64 <method_resolution_sites>, i64 <method_resolution_hits>, i64 <method_resolution_misses>, i1 <deterministic_symbol_graph_handoff>, i1 <deterministic_scope_resolution_handoff>, !"<handoff_key>"}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

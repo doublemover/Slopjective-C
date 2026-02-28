@@ -157,6 +157,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.property_attribute_summary;
   const Objc3FrontendObjectPointerNullabilityGenericsSummary &object_pointer_nullability_generics_summary =
       pipeline_result.object_pointer_nullability_generics_summary;
+  const Objc3FrontendSymbolGraphScopeResolutionSummary &symbol_graph_scope_resolution_summary =
+      pipeline_result.symbol_graph_scope_resolution_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -367,7 +369,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << object_pointer_nullability_generics_summary.terminated_generic_suffix_entries
            << ",\"unterminated_generic_suffix_entries\":"
            << object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries
-           << "},\n";
+           << ",\"symbol_graph_global_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.global_symbol_nodes
+           << ",\"symbol_graph_function_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.function_symbol_nodes
+           << ",\"symbol_graph_interface_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_symbol_nodes
+           << ",\"symbol_graph_implementation_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_symbol_nodes
+           << ",\"symbol_graph_interface_property_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_property_symbol_nodes
+           << ",\"symbol_graph_implementation_property_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes
+           << ",\"symbol_graph_interface_method_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_method_symbol_nodes
+           << ",\"symbol_graph_implementation_method_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes
+           << ",\"scope_resolution_top_level_scope_symbols\":"
+           << symbol_graph_scope_resolution_summary.top_level_scope_symbols
+           << ",\"scope_resolution_nested_scope_symbols\":"
+           << symbol_graph_scope_resolution_summary.nested_scope_symbols
+           << ",\"scope_resolution_scope_frames_total\":"
+           << symbol_graph_scope_resolution_summary.scope_frames_total
+           << ",\"scope_resolution_implementation_interface_resolution_sites\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites
+           << ",\"scope_resolution_implementation_interface_resolution_hits\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits
+           << ",\"scope_resolution_implementation_interface_resolution_misses\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses
+           << ",\"scope_resolution_method_resolution_sites\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_sites
+           << ",\"scope_resolution_method_resolution_hits\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_hits
+           << ",\"scope_resolution_method_resolution_misses\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_misses
+           << ",\"deterministic_symbol_graph_handoff\":"
+           << (symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff ? "true" : "false")
+           << ",\"deterministic_scope_resolution_handoff\":"
+           << (symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff ? "true" : "false")
+           << ",\"symbol_graph_scope_resolution_handoff_key\":\""
+           << symbol_graph_scope_resolution_summary.deterministic_handoff_key
+           << "\"},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
            << ",\"vector_param_signatures\":" << vector_param_signatures
@@ -466,6 +508,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
+           << ",\"objc_symbol_graph_scope_resolution_surface\":{\"global_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.global_symbol_nodes
+           << ",\"function_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.function_symbol_nodes
+           << ",\"interface_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_symbol_nodes
+           << ",\"implementation_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_symbol_nodes
+           << ",\"interface_property_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_property_symbol_nodes
+           << ",\"implementation_property_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes
+           << ",\"interface_method_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.interface_method_symbol_nodes
+           << ",\"implementation_method_symbol_nodes\":"
+           << symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes
+           << ",\"top_level_scope_symbols\":"
+           << symbol_graph_scope_resolution_summary.top_level_scope_symbols
+           << ",\"nested_scope_symbols\":"
+           << symbol_graph_scope_resolution_summary.nested_scope_symbols
+           << ",\"scope_frames_total\":"
+           << symbol_graph_scope_resolution_summary.scope_frames_total
+           << ",\"implementation_interface_resolution_sites\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites
+           << ",\"implementation_interface_resolution_hits\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits
+           << ",\"implementation_interface_resolution_misses\":"
+           << symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses
+           << ",\"method_resolution_sites\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_sites
+           << ",\"method_resolution_hits\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_hits
+           << ",\"method_resolution_misses\":"
+           << symbol_graph_scope_resolution_summary.method_resolution_misses
+           << ",\"deterministic_symbol_graph_handoff\":"
+           << (symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff ? "true" : "false")
+           << ",\"deterministic_scope_resolution_handoff\":"
+           << (symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff ? "true" : "false")
+           << ",\"deterministic_handoff_key\":\""
+           << symbol_graph_scope_resolution_summary.deterministic_handoff_key
+           << "\"}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
            << ",\"scalar_return_void\":" << scalar_return_void << ",\"scalar_param_i32\":" << scalar_param_i32
@@ -603,6 +686,29 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       object_pointer_nullability_generics_summary.terminated_generic_suffix_entries;
   ir_frontend_metadata.unterminated_generic_suffix_entries =
       object_pointer_nullability_generics_summary.unterminated_generic_suffix_entries;
+  ir_frontend_metadata.global_symbol_nodes = symbol_graph_scope_resolution_summary.global_symbol_nodes;
+  ir_frontend_metadata.function_symbol_nodes = symbol_graph_scope_resolution_summary.function_symbol_nodes;
+  ir_frontend_metadata.interface_symbol_nodes = symbol_graph_scope_resolution_summary.interface_symbol_nodes;
+  ir_frontend_metadata.implementation_symbol_nodes = symbol_graph_scope_resolution_summary.implementation_symbol_nodes;
+  ir_frontend_metadata.interface_property_symbol_nodes =
+      symbol_graph_scope_resolution_summary.interface_property_symbol_nodes;
+  ir_frontend_metadata.implementation_property_symbol_nodes =
+      symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes;
+  ir_frontend_metadata.interface_method_symbol_nodes = symbol_graph_scope_resolution_summary.interface_method_symbol_nodes;
+  ir_frontend_metadata.implementation_method_symbol_nodes =
+      symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes;
+  ir_frontend_metadata.top_level_scope_symbols = symbol_graph_scope_resolution_summary.top_level_scope_symbols;
+  ir_frontend_metadata.nested_scope_symbols = symbol_graph_scope_resolution_summary.nested_scope_symbols;
+  ir_frontend_metadata.scope_frames_total = symbol_graph_scope_resolution_summary.scope_frames_total;
+  ir_frontend_metadata.implementation_interface_resolution_sites =
+      symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites;
+  ir_frontend_metadata.implementation_interface_resolution_hits =
+      symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits;
+  ir_frontend_metadata.implementation_interface_resolution_misses =
+      symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses;
+  ir_frontend_metadata.method_resolution_sites = symbol_graph_scope_resolution_summary.method_resolution_sites;
+  ir_frontend_metadata.method_resolution_hits = symbol_graph_scope_resolution_summary.method_resolution_hits;
+  ir_frontend_metadata.method_resolution_misses = symbol_graph_scope_resolution_summary.method_resolution_misses;
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
       interface_implementation_summary.deterministic;
@@ -614,6 +720,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       property_attribute_summary.deterministic_property_attribute_handoff;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
+  ir_frontend_metadata.deterministic_symbol_graph_handoff =
+      symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff;
+  ir_frontend_metadata.deterministic_scope_resolution_handoff =
+      symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
+  ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
+      symbol_graph_scope_resolution_summary.deterministic_handoff_key;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {

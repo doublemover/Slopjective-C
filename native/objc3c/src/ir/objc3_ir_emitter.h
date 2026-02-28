@@ -51,6 +51,26 @@ struct Objc3IRFrontendMetadata {
   std::size_t terminated_generic_suffix_entries = 0;
   std::size_t unterminated_generic_suffix_entries = 0;
   bool deterministic_object_pointer_nullability_generics_handoff = false;
+  std::size_t global_symbol_nodes = 0;
+  std::size_t function_symbol_nodes = 0;
+  std::size_t interface_symbol_nodes = 0;
+  std::size_t implementation_symbol_nodes = 0;
+  std::size_t interface_property_symbol_nodes = 0;
+  std::size_t implementation_property_symbol_nodes = 0;
+  std::size_t interface_method_symbol_nodes = 0;
+  std::size_t implementation_method_symbol_nodes = 0;
+  std::size_t top_level_scope_symbols = 0;
+  std::size_t nested_scope_symbols = 0;
+  std::size_t scope_frames_total = 0;
+  std::size_t implementation_interface_resolution_sites = 0;
+  std::size_t implementation_interface_resolution_hits = 0;
+  std::size_t implementation_interface_resolution_misses = 0;
+  std::size_t method_resolution_sites = 0;
+  std::size_t method_resolution_hits = 0;
+  std::size_t method_resolution_misses = 0;
+  bool deterministic_symbol_graph_handoff = false;
+  bool deterministic_scope_resolution_handoff = false;
+  std::string deterministic_symbol_graph_scope_resolution_handoff_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };
