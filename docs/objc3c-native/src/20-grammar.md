@@ -507,6 +507,22 @@ Frontend Swift metadata-bridge contract relies on deterministic parser token-met
   3. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
 
+## M197 frontend C++ interop shim strategy
+
+Frontend C++ interop-shim contract relies on deterministic message-send parse boundaries, stable selector/argument AST packetization, and explicit parser-to-sema transport surfaces.
+
+- Required frontend C++ interop-shim signals:
+  - interop parse ingress remains `ParseMessageSendExpression()`.
+  - call-form AST surfaces remain `Expr::Kind::MessageSend` with `selector` and `args`.
+  - parser/AST bridge remains `BuildObjc3AstFromTokens(tokens)` and `result.program = std::move(parse_result.program);`.
+  - sema ingress remains `sema_input.program = &result.program;`.
+  - lowering-facing shim budget remains `max_message_send_args = options.lowering.max_message_send_args`.
+- Required frontend C++ interop-shim commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
