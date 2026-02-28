@@ -360,6 +360,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py`
   - `tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py`
   - `tests/tooling/test_objc3c_m147_integration_protocol_category_contract.py`
+
+## M148 integration selector-normalized method declaration grammar
+
+- Integration gate:
+  - `npm run check:objc3c:m148-selector-normalization`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_integration_selector_normalization_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
