@@ -591,6 +591,41 @@ Recommended M159 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m159_frontend_super_dispatch_method_family_contract.py -q`
 
+## M160 frontend runtime-shim host-link parser/AST surface
+
+Frontend parser/AST now emits deterministic runtime-shim host-link packets for
+message-send expressions.
+
+M160 parser/AST surface details:
+
+- runtime-shim helper anchors:
+  - `kRuntimeShimHostLinkDispatchSymbol`
+  - `BuildRuntimeShimHostLinkSymbol(...)`
+- parser assignment anchors:
+  - `message->runtime_shim_host_link_required = message->nil_receiver_requires_runtime_dispatch;`
+  - `message->runtime_shim_host_link_elided = !message->runtime_shim_host_link_required;`
+  - `message->runtime_shim_host_link_declaration_parameter_count = message->dispatch_abi_runtime_arg_slots + 2u;`
+  - `message->runtime_dispatch_bridge_symbol = kRuntimeShimHostLinkDispatchSymbol;`
+  - `message->runtime_shim_host_link_symbol = BuildRuntimeShimHostLinkSymbol(...)`
+  - `message->runtime_shim_host_link_is_normalized = true;`
+- AST runtime-shim carriers:
+  - `runtime_shim_host_link_required`
+  - `runtime_shim_host_link_elided`
+  - `runtime_shim_host_link_declaration_parameter_count`
+  - `runtime_dispatch_bridge_symbol`
+  - `runtime_shim_host_link_symbol`
+  - `runtime_shim_host_link_is_normalized`
+
+Deterministic grammar intent:
+
+- runtime-shim requirement/elision derives from parser-owned nil-receiver foldability classification.
+- runtime dispatch bridge symbol is pinned to parser-owned canonical spelling (`objc3_msgsend_i32`).
+- declaration parameter count is normalized as `runtime_dispatch_arg_slots + 2`.
+
+Recommended M160 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m160_frontend_runtime_shim_host_link_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

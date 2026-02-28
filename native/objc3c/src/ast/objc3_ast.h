@@ -59,6 +59,12 @@ struct Expr {
   bool method_family_returns_related_result = false;
   std::string method_family_semantics_symbol;
   bool method_family_semantics_is_normalized = false;
+  bool runtime_shim_host_link_required = true;
+  bool runtime_shim_host_link_elided = false;
+  unsigned runtime_shim_host_link_declaration_parameter_count = 0;
+  std::string runtime_dispatch_bridge_symbol;
+  std::string runtime_shim_host_link_symbol;
+  bool runtime_shim_host_link_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

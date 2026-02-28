@@ -194,6 +194,7 @@ static std::string BuildMessageSendSelectorLoweringSymbol(
 }
 
 constexpr unsigned kDispatchAbiMarshallingRuntimeArgSlots = 4u;
+constexpr const char *kRuntimeShimHostLinkDispatchSymbol = "objc3_msgsend_i32";
 
 static unsigned ComputeDispatchAbiArgumentPaddingSlots(std::size_t argument_count,
                                                        unsigned runtime_arg_slots) {
@@ -293,6 +294,34 @@ static std::string BuildMethodFamilySemanticsSymbol(const std::string &method_fa
   out << "method-family:name=" << method_family_name
       << ";returns-retained=" << (returns_retained_result ? "true" : "false")
       << ";returns-related=" << (returns_related_result ? "true" : "false");
+  return out.str();
+}
+
+static std::string BuildRuntimeShimHostLinkSymbol(bool runtime_shim_required,
+                                                  bool runtime_shim_elided,
+                                                  unsigned runtime_dispatch_arg_slots,
+                                                  unsigned runtime_dispatch_declaration_parameter_count,
+                                                  const std::string &runtime_dispatch_symbol,
+                                                  Expr::MessageSendForm form) {
+  std::ostringstream out;
+  out << "runtime-shim-host-link:required=" << (runtime_shim_required ? "true" : "false")
+      << ";elided=" << (runtime_shim_elided ? "true" : "false")
+      << ";runtime-slots=" << runtime_dispatch_arg_slots
+      << ";decl-params=" << runtime_dispatch_declaration_parameter_count
+      << ";symbol=" << runtime_dispatch_symbol
+      << ";form=";
+  switch (form) {
+  case Expr::MessageSendForm::Unary:
+    out << "unary";
+    break;
+  case Expr::MessageSendForm::Keyword:
+    out << "keyword";
+    break;
+  case Expr::MessageSendForm::None:
+  default:
+    out << "none";
+    break;
+  }
   return out.str();
 }
 
@@ -3121,6 +3150,15 @@ class Objc3Parser {
         message->method_family_name, message->method_family_returns_retained_result,
         message->method_family_returns_related_result);
     message->method_family_semantics_is_normalized = true;
+    message->runtime_shim_host_link_required = message->nil_receiver_requires_runtime_dispatch;
+    message->runtime_shim_host_link_elided = !message->runtime_shim_host_link_required;
+    message->runtime_shim_host_link_declaration_parameter_count = message->dispatch_abi_runtime_arg_slots + 2u;
+    message->runtime_dispatch_bridge_symbol = kRuntimeShimHostLinkDispatchSymbol;
+    message->runtime_shim_host_link_symbol = BuildRuntimeShimHostLinkSymbol(
+        message->runtime_shim_host_link_required, message->runtime_shim_host_link_elided,
+        message->dispatch_abi_runtime_arg_slots, message->runtime_shim_host_link_declaration_parameter_count,
+        message->runtime_dispatch_bridge_symbol, message->message_send_form);
+    message->runtime_shim_host_link_is_normalized = true;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();
