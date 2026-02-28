@@ -538,6 +538,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_nil_receiver_semantics_foldability_profile`
 - `!objc3.objc_nil_receiver_semantics_foldability = !{!11}`
 
+## M159 validation/conformance/perf super-dispatch and method-family runbook
+
+From repo root, execute deterministic M159 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_frontend_super_dispatch_method_family_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m159_sema_super_dispatch_method_family_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m159_lowering_super_dispatch_method_family_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m159_validation_super_dispatch_method_family_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_super_dispatch_method_family.replay_key`
+- `deterministic_super_dispatch_method_family_handoff`
+- `super_dispatch_method_family_lowering`
+- `frontend_objc_super_dispatch_method_family_profile`
+- `!objc3.objc_super_dispatch_method_family = !{!12}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
