@@ -3648,3 +3648,37 @@ Deterministic sema intent:
 Recommended M180 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q`
+
+<a id="m181-sema-type-throws-propagation-contract-m181-b001"></a>
+## M181 sema/type throws propagation contract (M181-B001)
+
+M181-B defines deterministic sema summaries for throws propagation handoff
+safety over cross-module conformance packets.
+
+M181 sema/type surface details:
+
+- `Objc3ThrowsPropagationSummary`
+- `BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary`
+- parity counters:
+  - `throws_propagation_sites_total`
+  - `throws_propagation_namespace_segment_sites_total`
+  - `throws_propagation_import_edge_candidate_sites_total`
+  - `throws_propagation_object_pointer_type_sites_total`
+  - `throws_propagation_pointer_declarator_sites_total`
+  - `throws_propagation_normalized_sites_total`
+  - `throws_propagation_cache_invalidation_candidate_sites_total`
+  - `throws_propagation_contract_violation_sites_total`
+  - `deterministic_throws_propagation_handoff`
+
+Deterministic sema intent:
+
+- throws propagation summaries are derived from deterministic cross-module
+  conformance packets and preserve handoff parity constraints.
+- normalized and cache-invalidation-candidate counters remain partitioned:
+  `throws_propagation_normalized_sites_total + throws_propagation_cache_invalidation_candidate_sites_total == throws_propagation_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M181 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q`

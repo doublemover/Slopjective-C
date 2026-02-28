@@ -3349,6 +3349,38 @@ BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
   return summary;
 }
 
+static Objc3ThrowsPropagationSummary
+BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
+    const Objc3CrossModuleConformanceSummary
+        &cross_module_conformance_summary) {
+  Objc3ThrowsPropagationSummary summary;
+  summary.throws_propagation_sites =
+      cross_module_conformance_summary.cross_module_conformance_sites;
+  summary.namespace_segment_sites =
+      cross_module_conformance_summary.namespace_segment_sites;
+  summary.import_edge_candidate_sites =
+      cross_module_conformance_summary.import_edge_candidate_sites;
+  summary.object_pointer_type_sites =
+      cross_module_conformance_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      cross_module_conformance_summary.pointer_declarator_sites;
+  summary.normalized_sites = cross_module_conformance_summary.normalized_sites;
+  summary.cache_invalidation_candidate_sites =
+      cross_module_conformance_summary.cache_invalidation_candidate_sites;
+  summary.contract_violation_sites =
+      cross_module_conformance_summary.contract_violation_sites;
+  summary.deterministic =
+      cross_module_conformance_summary.deterministic &&
+      summary.namespace_segment_sites <= summary.throws_propagation_sites &&
+      summary.import_edge_candidate_sites <= summary.throws_propagation_sites &&
+      summary.normalized_sites <= summary.throws_propagation_sites &&
+      summary.cache_invalidation_candidate_sites <= summary.throws_propagation_sites &&
+      summary.normalized_sites + summary.cache_invalidation_candidate_sites ==
+          summary.throws_propagation_sites &&
+      summary.contract_violation_sites <= summary.throws_propagation_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7493,6 +7525,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.cross_module_conformance_summary =
       BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
           surface.incremental_module_cache_invalidation_summary);
+  surface.throws_propagation_summary =
+      BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
+          surface.cross_module_conformance_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8511,6 +8546,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.cross_module_conformance_summary =
       BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
           handoff.incremental_module_cache_invalidation_summary);
+  handoff.throws_propagation_summary =
+      BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
+          handoff.cross_module_conformance_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9271,6 +9309,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3CrossModuleConformanceSummary cross_module_conformance_summary =
       BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
           handoff.incremental_module_cache_invalidation_summary);
+  const Objc3ThrowsPropagationSummary throws_propagation_summary =
+      BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
+          handoff.cross_module_conformance_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9649,6 +9690,36 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
          handoff.cross_module_conformance_summary.contract_violation_sites <=
              handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.throws_propagation_summary.deterministic &&
+         handoff.throws_propagation_summary.throws_propagation_sites ==
+             throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.namespace_segment_sites ==
+             throws_propagation_summary.namespace_segment_sites &&
+         handoff.throws_propagation_summary.import_edge_candidate_sites ==
+             throws_propagation_summary.import_edge_candidate_sites &&
+         handoff.throws_propagation_summary.object_pointer_type_sites ==
+             throws_propagation_summary.object_pointer_type_sites &&
+         handoff.throws_propagation_summary.pointer_declarator_sites ==
+             throws_propagation_summary.pointer_declarator_sites &&
+         handoff.throws_propagation_summary.normalized_sites ==
+             throws_propagation_summary.normalized_sites &&
+         handoff.throws_propagation_summary.cache_invalidation_candidate_sites ==
+             throws_propagation_summary.cache_invalidation_candidate_sites &&
+         handoff.throws_propagation_summary.contract_violation_sites ==
+             throws_propagation_summary.contract_violation_sites &&
+         handoff.throws_propagation_summary.namespace_segment_sites <=
+             handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.import_edge_candidate_sites <=
+             handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.normalized_sites <=
+             handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.cache_invalidation_candidate_sites <=
+             handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.normalized_sites +
+                 handoff.throws_propagation_summary.cache_invalidation_candidate_sites ==
+             handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.throws_propagation_summary.contract_violation_sites <=
+             handoff.throws_propagation_summary.throws_propagation_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

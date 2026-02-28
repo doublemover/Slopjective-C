@@ -206,6 +206,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t cross_module_conformance_normalized_sites_total = 0;
   std::size_t cross_module_conformance_cache_invalidation_candidate_sites_total = 0;
   std::size_t cross_module_conformance_contract_violation_sites_total = 0;
+  std::size_t throws_propagation_sites_total = 0;
+  std::size_t throws_propagation_namespace_segment_sites_total = 0;
+  std::size_t throws_propagation_import_edge_candidate_sites_total = 0;
+  std::size_t throws_propagation_object_pointer_type_sites_total = 0;
+  std::size_t throws_propagation_pointer_declarator_sites_total = 0;
+  std::size_t throws_propagation_normalized_sites_total = 0;
+  std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
+  std::size_t throws_propagation_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -396,6 +404,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_public_private_api_partition_handoff = false;
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
+  bool deterministic_throws_propagation_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -430,6 +439,7 @@ struct Objc3SemaParityContractSurface {
   Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary;
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
+  Objc3ThrowsPropagationSummary throws_propagation_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -835,6 +845,37 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.cross_module_conformance_summary.cross_module_conformance_sites &&
          surface.cross_module_conformance_summary.deterministic &&
          surface.deterministic_cross_module_conformance_handoff &&
+         surface.throws_propagation_summary.throws_propagation_sites ==
+             surface.throws_propagation_sites_total &&
+         surface.throws_propagation_summary.namespace_segment_sites ==
+             surface.throws_propagation_namespace_segment_sites_total &&
+         surface.throws_propagation_summary.import_edge_candidate_sites ==
+             surface.throws_propagation_import_edge_candidate_sites_total &&
+         surface.throws_propagation_summary.object_pointer_type_sites ==
+             surface.throws_propagation_object_pointer_type_sites_total &&
+         surface.throws_propagation_summary.pointer_declarator_sites ==
+             surface.throws_propagation_pointer_declarator_sites_total &&
+         surface.throws_propagation_summary.normalized_sites ==
+             surface.throws_propagation_normalized_sites_total &&
+         surface.throws_propagation_summary.cache_invalidation_candidate_sites ==
+             surface.throws_propagation_cache_invalidation_candidate_sites_total &&
+         surface.throws_propagation_summary.contract_violation_sites ==
+             surface.throws_propagation_contract_violation_sites_total &&
+         surface.throws_propagation_summary.namespace_segment_sites <=
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.import_edge_candidate_sites <=
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.normalized_sites <=
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.cache_invalidation_candidate_sites <=
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.normalized_sites +
+                 surface.throws_propagation_summary.cache_invalidation_candidate_sites ==
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.contract_violation_sites <=
+             surface.throws_propagation_summary.throws_propagation_sites &&
+         surface.throws_propagation_summary.deterministic &&
+         surface.deterministic_throws_propagation_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1492,6 +1533,8 @@ struct Objc3SemaPassManagerResult {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   bool deterministic_cross_module_conformance_handoff = false;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
+  bool deterministic_throws_propagation_handoff = false;
+  Objc3ThrowsPropagationSummary throws_propagation_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;
