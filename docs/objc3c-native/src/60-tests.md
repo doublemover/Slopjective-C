@@ -519,6 +519,25 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_dispatch_abi_marshalling_profile`
 - `!objc3.objc_dispatch_abi_marshalling = !{!10}`
 
+## M158 validation/conformance/perf nil-receiver semantics/foldability runbook
+
+From repo root, execute deterministic M158 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m158_frontend_nil_receiver_semantics_foldability_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m158_sema_nil_receiver_semantics_foldability_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m158_lowering_nil_receiver_semantics_foldability_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m158_validation_nil_receiver_semantics_foldability_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m158_integration_nil_receiver_semantics_foldability_contract.py -q`
+- `npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_nil_receiver_semantics_foldability.replay_key`
+- `deterministic_nil_receiver_semantics_foldability_handoff`
+- `nil_receiver_semantics_foldability_lowering`
+- `frontend_objc_nil_receiver_semantics_foldability_profile`
+- `!objc3.objc_nil_receiver_semantics_foldability = !{!11}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:

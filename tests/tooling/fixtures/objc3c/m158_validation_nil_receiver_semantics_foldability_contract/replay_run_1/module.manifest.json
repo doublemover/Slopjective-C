@@ -1,0 +1,36 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_nil_receiver_semantics_foldability_handoff": true,
+        "nil_receiver_semantics_foldability_message_send_sites": 5,
+        "nil_receiver_semantics_foldability_receiver_nil_literal_sites": 2,
+        "nil_receiver_semantics_foldability_enabled_sites": 2,
+        "nil_receiver_semantics_foldability_foldable_sites": 2,
+        "nil_receiver_semantics_foldability_runtime_dispatch_required_sites": 3,
+        "nil_receiver_semantics_foldability_non_nil_receiver_sites": 3,
+        "nil_receiver_semantics_foldability_contract_violation_sites": 0,
+        "lowering_nil_receiver_semantics_foldability_replay_key": "message_send_sites=5;receiver_nil_literal_sites=2;nil_receiver_semantics_enabled_sites=2;nil_receiver_foldable_sites=2;nil_receiver_runtime_dispatch_required_sites=3;non_nil_receiver_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m158-nil-receiver-semantics-foldability-v1"
+      },
+      "semantic_surface": {
+        "objc_nil_receiver_semantics_foldability_surface": {
+          "message_send_sites": 5,
+          "receiver_nil_literal_sites": 2,
+          "nil_receiver_semantics_enabled_sites": 2,
+          "nil_receiver_foldable_sites": 2,
+          "nil_receiver_runtime_dispatch_required_sites": 3,
+          "non_nil_receiver_sites": 3,
+          "contract_violation_sites": 0,
+          "replay_key": "message_send_sites=5;receiver_nil_literal_sites=2;nil_receiver_semantics_enabled_sites=2;nil_receiver_foldable_sites=2;nil_receiver_runtime_dispatch_required_sites=3;non_nil_receiver_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m158-nil-receiver-semantics-foldability-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_nil_receiver_semantics_foldability": {
+    "replay_key": "message_send_sites=5;receiver_nil_literal_sites=2;nil_receiver_semantics_enabled_sites=2;nil_receiver_foldable_sites=2;nil_receiver_runtime_dispatch_required_sites=3;non_nil_receiver_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m158-nil-receiver-semantics-foldability-v1",
+    "lane_contract": "m158-nil-receiver-semantics-foldability-v1",
+    "deterministic_handoff": true
+  }
+}
