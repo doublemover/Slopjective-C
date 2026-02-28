@@ -123,6 +123,25 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
+
+## M142 validation/perf CLI and C API parity harness runbook
+
+For deterministic M142 validation and replay evidence, execute the parity harness validation commands against source-mode CLI and C API runs, then enforce closeout contract drift checks.
+
+- `npm run test:objc3c:m142-lowering-parity`
+- `npm run check:objc3c:library-cli-parity:source`
+- `npm run check:compiler-closeout:m142`
+
+Replay artifact anchors:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
+- `artifacts/bin/objc3c-native.exe`
+- `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+
+Recommended M142 validation contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_validation_cli_c_api_parity_contract.py -q`
 - `npm run test:objc3c:m143-artifact-governance`
   - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
   - Verifies tmp-governed default output paths, parser/AST lane-A coverage wiring, sema/type-system lane-B governance, lowering/LLVM IR/runtime-ABI lane-C governance, source-mode work-root governance, and M143 docs/package wiring.
