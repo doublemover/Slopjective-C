@@ -1392,3 +1392,18 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Tooling/CI contract:
   - `npm run test:objc3c:lane-e` is the aggregate gate for recovery, parser/diagnostics replay proof, perf/cache proof, lowering replay, execution smoke/replay proof, and M23/M24/M25 readiness checks.
 
+## M224 sema/type-system release readiness
+
+Sema/type-system GA readiness expectations (current enforced behavior):
+
+- pass-manager execution order remains deterministic through `kObjc3SemaPassOrder` (`BuildIntegrationSurface`, `ValidateBodies`, `ValidatePureContract`).
+- per-pass diagnostics remain deterministic and replay-stable: `CanonicalizePassDiagnostics(...)` is applied and parity asserts monotonic counters via `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- parity readiness remains fail-closed through `IsReadyObjc3SemaParityContractSurface(...)`, including deterministic diagnostics/type-metadata flags and symbol-count parity checks.
+- pipeline-to-artifact evidence remains deterministic: semantic diagnostics are wired through `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;` and emitted in manifest `frontend.pipeline.sema_pass_manager` with `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+
+Operator evidence sequence for sema/type-system readiness:
+
+1. run sema extraction contract checks (`python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`).
+2. run parser/sema integration contract checks (`python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`).
+3. run M224 sema release contract test (`python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`).
+
