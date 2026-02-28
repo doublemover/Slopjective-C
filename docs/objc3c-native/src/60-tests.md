@@ -2525,6 +2525,9 @@ python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_co
 Deterministic M182 integration sequence:
 
 ```bash
+python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_lowering_result_like_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q
@@ -2543,8 +2546,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M182-A001, M182-B001, and M182-C001 surfaces are not yet landed in this workspace.
-- This runbook enforces the landed M182-D001 validation/conformance surface plus M182-E001 integration wiring.
+- M182-A001 through M182-D001 outputs are landed in this workspace.
+- This runbook fail-closes on parser/sema/lowering/validation/conformance surfaces plus M182-E001 integration wiring.
 
 ## M182 validation/conformance/perf result-like lowering runbook (M182-D001)
 
@@ -2585,6 +2588,8 @@ python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_
 Deterministic M183 integration sequence:
 
 ```bash
+python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py -q
@@ -2603,8 +2608,9 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M183-A001, M183-B001, and M183-C001 surfaces are not yet landed in this workspace.
-- This runbook enforces the landed M183-D001 validation/conformance surface plus M183-E001 integration wiring.
+- M183-A001, M183-C001, and M183-D001 surfaces are landed in this workspace.
+- M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration runbook.
+- This runbook enforces frontend/lowering/validation/conformance surfaces plus M183-E001 integration wiring.
 
 ## M183 validation/conformance/perf NSError bridging runbook (M183-D001)
 
