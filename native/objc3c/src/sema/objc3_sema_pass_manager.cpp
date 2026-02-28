@@ -163,6 +163,19 @@ bool IsEquivalentVarianceBridgeCastSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentGenericMetadataAbiSummary(
+    const Objc3GenericMetadataAbiSummary &lhs,
+    const Objc3GenericMetadataAbiSummary &rhs) {
+  return lhs.generic_metadata_abi_sites == rhs.generic_metadata_abi_sites &&
+         lhs.generic_suffix_sites == rhs.generic_suffix_sites &&
+         lhs.protocol_composition_sites == rhs.protocol_composition_sites &&
+         lhs.ownership_qualifier_sites == rhs.ownership_qualifier_sites &&
+         lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
+         lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
                                                    const Objc3SymbolGraphScopeResolutionSummary &rhs) {
   return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
@@ -613,6 +626,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
       result.type_metadata_handoff.variance_bridge_cast_summary.contract_violation_sites <=
           result.type_metadata_handoff.variance_bridge_cast_summary.variance_bridge_cast_sites;
+  result.generic_metadata_abi_summary = result.integration_surface.generic_metadata_abi_summary;
+  result.deterministic_generic_metadata_abi_handoff =
+      result.type_metadata_handoff.generic_metadata_abi_summary.deterministic &&
+      result.integration_surface.generic_metadata_abi_summary.deterministic &&
+      IsEquivalentGenericMetadataAbiSummary(result.integration_surface.generic_metadata_abi_summary,
+                                            result.type_metadata_handoff.generic_metadata_abi_summary) &&
+      result.type_metadata_handoff.generic_metadata_abi_summary.generic_suffix_sites <=
+          result.type_metadata_handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.type_metadata_handoff.generic_metadata_abi_summary.protocol_composition_sites <=
+          result.type_metadata_handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.type_metadata_handoff.generic_metadata_abi_summary.normalized_sites <=
+          result.type_metadata_handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.type_metadata_handoff.generic_metadata_abi_summary.contract_violation_sites <=
+          result.type_metadata_handoff.generic_metadata_abi_summary.generic_metadata_abi_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1181,6 +1208,23 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.variance_bridge_cast_summary.normalized_sites;
   result.parity_surface.variance_bridge_cast_contract_violation_sites_total =
       result.parity_surface.variance_bridge_cast_summary.contract_violation_sites;
+  result.parity_surface.generic_metadata_abi_summary = result.type_metadata_handoff.generic_metadata_abi_summary;
+  result.parity_surface.generic_metadata_abi_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites;
+  result.parity_surface.generic_metadata_abi_generic_suffix_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.generic_suffix_sites;
+  result.parity_surface.generic_metadata_abi_protocol_composition_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.protocol_composition_sites;
+  result.parity_surface.generic_metadata_abi_ownership_qualifier_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.ownership_qualifier_sites;
+  result.parity_surface.generic_metadata_abi_object_pointer_type_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.object_pointer_type_sites;
+  result.parity_surface.generic_metadata_abi_pointer_declarator_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.pointer_declarator_sites;
+  result.parity_surface.generic_metadata_abi_normalized_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.normalized_sites;
+  result.parity_surface.generic_metadata_abi_contract_violation_sites_total =
+      result.parity_surface.generic_metadata_abi_summary.contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -1801,6 +1845,33 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.variance_bridge_cast_summary.contract_violation_sites <=
           result.parity_surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
       result.parity_surface.variance_bridge_cast_summary.deterministic;
+  result.parity_surface.deterministic_generic_metadata_abi_handoff =
+      result.deterministic_generic_metadata_abi_handoff &&
+      result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites ==
+          result.parity_surface.generic_metadata_abi_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.generic_suffix_sites ==
+          result.parity_surface.generic_metadata_abi_generic_suffix_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.protocol_composition_sites ==
+          result.parity_surface.generic_metadata_abi_protocol_composition_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.ownership_qualifier_sites ==
+          result.parity_surface.generic_metadata_abi_ownership_qualifier_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.object_pointer_type_sites ==
+          result.parity_surface.generic_metadata_abi_object_pointer_type_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.pointer_declarator_sites ==
+          result.parity_surface.generic_metadata_abi_pointer_declarator_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.normalized_sites ==
+          result.parity_surface.generic_metadata_abi_normalized_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.contract_violation_sites ==
+          result.parity_surface.generic_metadata_abi_contract_violation_sites_total &&
+      result.parity_surface.generic_metadata_abi_summary.generic_suffix_sites <=
+          result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.parity_surface.generic_metadata_abi_summary.protocol_composition_sites <=
+          result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.parity_surface.generic_metadata_abi_summary.normalized_sites <=
+          result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.parity_surface.generic_metadata_abi_summary.contract_violation_sites <=
+          result.parity_surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      result.parity_surface.generic_metadata_abi_summary.deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -2484,6 +2555,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_protocol_qualified_object_type_handoff &&
       result.parity_surface.variance_bridge_cast_summary.deterministic &&
       result.parity_surface.deterministic_variance_bridge_cast_handoff &&
+      result.parity_surface.generic_metadata_abi_summary.deterministic &&
+      result.parity_surface.deterministic_generic_metadata_abi_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&

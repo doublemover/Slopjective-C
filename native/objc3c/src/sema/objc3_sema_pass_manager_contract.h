@@ -161,6 +161,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t variance_bridge_cast_pointer_declarator_sites_total = 0;
   std::size_t variance_bridge_cast_normalized_sites_total = 0;
   std::size_t variance_bridge_cast_contract_violation_sites_total = 0;
+  std::size_t generic_metadata_abi_sites_total = 0;
+  std::size_t generic_metadata_abi_generic_suffix_sites_total = 0;
+  std::size_t generic_metadata_abi_protocol_composition_sites_total = 0;
+  std::size_t generic_metadata_abi_ownership_qualifier_sites_total = 0;
+  std::size_t generic_metadata_abi_object_pointer_type_sites_total = 0;
+  std::size_t generic_metadata_abi_pointer_declarator_sites_total = 0;
+  std::size_t generic_metadata_abi_normalized_sites_total = 0;
+  std::size_t generic_metadata_abi_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -345,6 +353,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_nullability_flow_warning_precision_handoff = false;
   bool deterministic_protocol_qualified_object_type_handoff = false;
   bool deterministic_variance_bridge_cast_handoff = false;
+  bool deterministic_generic_metadata_abi_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -373,6 +382,7 @@ struct Objc3SemaParityContractSurface {
   Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
   Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
+  Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -621,6 +631,32 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
          surface.variance_bridge_cast_summary.deterministic &&
          surface.deterministic_variance_bridge_cast_handoff &&
+         surface.generic_metadata_abi_summary.generic_metadata_abi_sites ==
+             surface.generic_metadata_abi_sites_total &&
+         surface.generic_metadata_abi_summary.generic_suffix_sites ==
+             surface.generic_metadata_abi_generic_suffix_sites_total &&
+         surface.generic_metadata_abi_summary.protocol_composition_sites ==
+             surface.generic_metadata_abi_protocol_composition_sites_total &&
+         surface.generic_metadata_abi_summary.ownership_qualifier_sites ==
+             surface.generic_metadata_abi_ownership_qualifier_sites_total &&
+         surface.generic_metadata_abi_summary.object_pointer_type_sites ==
+             surface.generic_metadata_abi_object_pointer_type_sites_total &&
+         surface.generic_metadata_abi_summary.pointer_declarator_sites ==
+             surface.generic_metadata_abi_pointer_declarator_sites_total &&
+         surface.generic_metadata_abi_summary.normalized_sites ==
+             surface.generic_metadata_abi_normalized_sites_total &&
+         surface.generic_metadata_abi_summary.contract_violation_sites ==
+             surface.generic_metadata_abi_contract_violation_sites_total &&
+         surface.generic_metadata_abi_summary.generic_suffix_sites <=
+             surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         surface.generic_metadata_abi_summary.protocol_composition_sites <=
+             surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         surface.generic_metadata_abi_summary.normalized_sites <=
+             surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         surface.generic_metadata_abi_summary.contract_violation_sites <=
+             surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         surface.generic_metadata_abi_summary.deterministic &&
+         surface.deterministic_generic_metadata_abi_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1266,6 +1302,8 @@ struct Objc3SemaPassManagerResult {
   Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
   bool deterministic_variance_bridge_cast_handoff = false;
   Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
+  bool deterministic_generic_metadata_abi_handoff = false;
+  Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

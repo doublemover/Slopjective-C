@@ -3462,3 +3462,34 @@ Deterministic sema intent:
 Recommended M174 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m174_sema_variance_bridge_cast_contract.py -q`
+
+## M175 sema/type generic metadata emission and ABI checks contract (M175-B001)
+
+M175-B defines deterministic sema summaries for generic-metadata emission and
+ABI handoff safety over object-pointer type annotations.
+
+M175 sema/type surface details:
+
+- `Objc3GenericMetadataAbiSummary`
+- `BuildGenericMetadataAbiSummaryFromTypeAnnotationAndConstraintSummaries`
+- parity counters:
+  - `generic_metadata_abi_sites_total`
+  - `generic_metadata_abi_generic_suffix_sites_total`
+  - `generic_metadata_abi_protocol_composition_sites_total`
+  - `generic_metadata_abi_ownership_qualifier_sites_total`
+  - `generic_metadata_abi_object_pointer_type_sites_total`
+  - `generic_metadata_abi_pointer_declarator_sites_total`
+  - `generic_metadata_abi_normalized_sites_total`
+  - `generic_metadata_abi_contract_violation_sites_total`
+  - `deterministic_generic_metadata_abi_handoff`
+
+Deterministic sema intent:
+
+- generic metadata/ABI summaries are derived from deterministic type-annotation,
+  lightweight-generic, and variance/bridged-cast packets.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M175 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m175_sema_generic_metadata_abi_contract.py -q`

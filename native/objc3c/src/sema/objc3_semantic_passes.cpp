@@ -3163,6 +3163,35 @@ static Objc3VarianceBridgeCastSummary BuildVarianceBridgeCastSummaryFromTypeAnno
   return summary;
 }
 
+static Objc3GenericMetadataAbiSummary BuildGenericMetadataAbiSummaryFromTypeAnnotationAndConstraintSummaries(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary,
+    const Objc3LightweightGenericConstraintSummary &lightweight_summary,
+    const Objc3VarianceBridgeCastSummary &variance_summary) {
+  Objc3GenericMetadataAbiSummary summary;
+  summary.generic_metadata_abi_sites = lightweight_summary.generic_constraint_sites;
+  summary.generic_suffix_sites = lightweight_summary.generic_suffix_sites;
+  summary.protocol_composition_sites = variance_summary.protocol_composition_sites;
+  summary.ownership_qualifier_sites = variance_summary.ownership_qualifier_sites;
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.normalized_sites =
+      std::min(std::min(lightweight_summary.normalized_constraint_sites,
+                        variance_summary.normalized_sites),
+               summary.object_pointer_type_sites);
+  summary.contract_violation_sites =
+      lightweight_summary.contract_violation_sites +
+      variance_summary.contract_violation_sites +
+      type_annotation_summary.invalid_generic_suffix_sites;
+  summary.deterministic =
+      type_annotation_summary.deterministic && lightweight_summary.deterministic &&
+      variance_summary.deterministic && summary.contract_violation_sites == 0u &&
+      summary.generic_suffix_sites <= summary.generic_metadata_abi_sites &&
+      summary.protocol_composition_sites <= summary.generic_metadata_abi_sites &&
+      summary.normalized_sites <= summary.generic_metadata_abi_sites &&
+      summary.contract_violation_sites <= summary.generic_metadata_abi_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7286,6 +7315,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           surface.type_annotation_surface_summary,
           surface.protocol_qualified_object_type_summary);
+  surface.generic_metadata_abi_summary =
+      BuildGenericMetadataAbiSummaryFromTypeAnnotationAndConstraintSummaries(
+          surface.type_annotation_surface_summary,
+          surface.lightweight_generic_constraint_summary,
+          surface.variance_bridge_cast_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8283,6 +8317,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           handoff.type_annotation_surface_summary,
           handoff.protocol_qualified_object_type_summary);
+  handoff.generic_metadata_abi_summary =
+      BuildGenericMetadataAbiSummaryFromTypeAnnotationAndConstraintSummaries(
+          handoff.type_annotation_surface_summary,
+          handoff.lightweight_generic_constraint_summary,
+          handoff.variance_bridge_cast_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9020,6 +9059,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
           handoff.type_annotation_surface_summary,
           handoff.protocol_qualified_object_type_summary);
+  const Objc3GenericMetadataAbiSummary generic_metadata_abi_summary =
+      BuildGenericMetadataAbiSummaryFromTypeAnnotationAndConstraintSummaries(
+          handoff.type_annotation_surface_summary,
+          handoff.lightweight_generic_constraint_summary,
+          handoff.variance_bridge_cast_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9222,6 +9266,31 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
          handoff.variance_bridge_cast_summary.contract_violation_sites <=
              handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         handoff.generic_metadata_abi_summary.deterministic &&
+         handoff.generic_metadata_abi_summary.generic_metadata_abi_sites ==
+             generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         handoff.generic_metadata_abi_summary.generic_suffix_sites ==
+             generic_metadata_abi_summary.generic_suffix_sites &&
+         handoff.generic_metadata_abi_summary.protocol_composition_sites ==
+             generic_metadata_abi_summary.protocol_composition_sites &&
+         handoff.generic_metadata_abi_summary.ownership_qualifier_sites ==
+             generic_metadata_abi_summary.ownership_qualifier_sites &&
+         handoff.generic_metadata_abi_summary.object_pointer_type_sites ==
+             generic_metadata_abi_summary.object_pointer_type_sites &&
+         handoff.generic_metadata_abi_summary.pointer_declarator_sites ==
+             generic_metadata_abi_summary.pointer_declarator_sites &&
+         handoff.generic_metadata_abi_summary.normalized_sites ==
+             generic_metadata_abi_summary.normalized_sites &&
+         handoff.generic_metadata_abi_summary.contract_violation_sites ==
+             generic_metadata_abi_summary.contract_violation_sites &&
+         handoff.generic_metadata_abi_summary.generic_suffix_sites <=
+             handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         handoff.generic_metadata_abi_summary.protocol_composition_sites <=
+             handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         handoff.generic_metadata_abi_summary.normalized_sites <=
+             handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+         handoff.generic_metadata_abi_summary.contract_violation_sites <=
+             handoff.generic_metadata_abi_summary.generic_metadata_abi_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
