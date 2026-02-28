@@ -408,6 +408,17 @@ From repo root, execute deterministic M152 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py -q`
 - `npm run check:objc3c:m152-class-protocol-category-linking`
 
+## M153 validation method lookup, override, and conflict semantics runbook
+
+From repo root, execute deterministic M153 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_validation_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_integration_method_lookup_override_conflict_contract.py -q`
+- `npm run check:objc3c:m153-method-lookup-override-conflicts`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
