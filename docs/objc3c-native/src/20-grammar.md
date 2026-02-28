@@ -210,3 +210,18 @@ Release-candidate automation for frontend/parser requires deterministic boundary
   3. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
 
+## M217 frontend differential parity packet
+
+Frontend differential testing against baseline toolchains requires deterministic parser/AST evidence and replay-stable diagnostics.
+
+- Required differential signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required differential commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
+
