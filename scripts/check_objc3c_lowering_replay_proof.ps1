@@ -10,7 +10,34 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $loweringScript = Join-Path $repoRoot "scripts/run_objc3c_lowering_regression_suite.ps1"
 $loweringRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-regression"
 $proofRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-replay-proof"
-$proofRunId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
+$configuredProofRunId = $env:OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID
+$defaultProofRunId = "m143-lane-c-lowering-replay-proof-default"
+
+function Resolve-ValidatedRunId {
+  param(
+    [Parameter()][string]$ConfiguredRunId,
+    [Parameter(Mandatory = $true)][string]$DefaultRunId,
+    [Parameter(Mandatory = $true)][string]$FailurePrefix
+  )
+
+  if ([string]::IsNullOrWhiteSpace($ConfiguredRunId)) {
+    return $DefaultRunId
+  }
+
+  $candidate = $ConfiguredRunId.Trim()
+  if ($candidate.Length -gt 80) {
+    throw "$FailurePrefix FAIL: configured run id exceeds 80 characters"
+  }
+  if ($candidate -notmatch '^[A-Za-z0-9_-]+$') {
+    throw "$FailurePrefix FAIL: configured run id must match ^[A-Za-z0-9_-]+$"
+  }
+  return $candidate
+}
+
+$proofRunId = Resolve-ValidatedRunId `
+  -ConfiguredRunId $configuredProofRunId `
+  -DefaultRunId $defaultProofRunId `
+  -FailurePrefix "lowering replay proof"
 $proofDir = Join-Path $proofRoot $proofRunId
 $proofSummaryPath = Join-Path $proofDir "summary.json"
 

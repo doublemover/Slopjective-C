@@ -13,7 +13,29 @@ $optionalDispatchFixtureDirs = @(
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery/negative"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-regression"
 $configuredRunId = $env:OBJC3C_NATIVE_LOWERING_RUN_ID
-$runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
+$defaultRunId = "m143-lane-c-lowering-regression-default"
+
+function Resolve-ValidatedRunId {
+  param(
+    [Parameter()][string]$ConfiguredRunId,
+    [Parameter(Mandatory = $true)][string]$DefaultRunId
+  )
+
+  if ([string]::IsNullOrWhiteSpace($ConfiguredRunId)) {
+    return $DefaultRunId
+  }
+
+  $candidate = $ConfiguredRunId.Trim()
+  if ($candidate.Length -gt 80) {
+    throw "lowering regression FAIL: configured run id exceeds 80 characters"
+  }
+  if ($candidate -notmatch '^[A-Za-z0-9_-]+$') {
+    throw "lowering regression FAIL: configured run id must match ^[A-Za-z0-9_-]+$"
+  }
+  return $candidate
+}
+
+$runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId -DefaultRunId $defaultRunId
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
 $deterministicSummaryPath = Join-Path $suiteRoot "latest-summary.json"

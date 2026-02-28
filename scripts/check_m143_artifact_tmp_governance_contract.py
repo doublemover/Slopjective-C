@@ -19,9 +19,16 @@ ARTIFACTS: dict[str, Path] = {
     "c_api_runner": ROOT / "native" / "objc3c" / "src" / "tools" / "objc3c_frontend_c_api_runner.cpp",
     "parity_script": ROOT / "scripts" / "check_objc3c_library_cli_parity.py",
     "sema_tmp_governance_script": ROOT / "scripts" / "check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1",
+    "lowering_tmp_governance_script": ROOT / "scripts" / "run_objc3c_lowering_regression_suite.ps1",
+    "typed_abi_tmp_governance_script": ROOT / "scripts" / "check_objc3c_typed_abi_replay_proof.ps1",
+    "lowering_replay_tmp_governance_script": ROOT / "scripts" / "check_objc3c_lowering_replay_proof.ps1",
     "parity_test": ROOT / "tests" / "tooling" / "test_objc3c_library_cli_parity.py",
     "c_api_runner_test": ROOT / "tests" / "tooling" / "test_objc3c_c_api_runner_extraction.py",
     "driver_cli_test": ROOT / "tests" / "tooling" / "test_objc3c_driver_cli_extraction.py",
+    "lane_c_tmp_governance_test": ROOT
+    / "tests"
+    / "tooling"
+    / "test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py",
     "cli_fragment": ROOT / "docs" / "objc3c-native" / "src" / "10-cli.md",
     "semantics_fragment": ROOT / "docs" / "objc3c-native" / "src" / "30-semantics.md",
     "artifacts_fragment": ROOT / "docs" / "objc3c-native" / "src" / "50-artifacts.md",
@@ -54,6 +61,24 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-TMP-06C", "return $DefaultRunId"),
         ("M143-TMP-06D", '$runDirRel = "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/$runId"'),
     ),
+    "lowering_tmp_governance_script": (
+        ("M143-TMP-07A", '$suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-regression"'),
+        ("M143-TMP-07B", '$defaultRunId = "m143-lane-c-lowering-regression-default"'),
+        ("M143-TMP-07C", "$configuredRunId = $env:OBJC3C_NATIVE_LOWERING_RUN_ID"),
+        ("M143-TMP-07D", "$runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId -DefaultRunId $defaultRunId"),
+    ),
+    "typed_abi_tmp_governance_script": (
+        ("M143-TMP-08A", '$suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/typed-abi-replay-proof"'),
+        ("M143-TMP-08B", '$defaultRunId = "m143-lane-c-typed-abi-default"'),
+        ("M143-TMP-08C", "$configuredRunId = $env:OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID"),
+        ("M143-TMP-08D", "$runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId -DefaultRunId $defaultRunId"),
+    ),
+    "lowering_replay_tmp_governance_script": (
+        ("M143-TMP-09A", '$proofRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-replay-proof"'),
+        ("M143-TMP-09B", '$defaultProofRunId = "m143-lane-c-lowering-replay-proof-default"'),
+        ("M143-TMP-09C", "$configuredProofRunId = $env:OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID"),
+        ("M143-TMP-09D", "-FailurePrefix \"lowering replay proof\""),
+    ),
     "parity_test": (
         ("M143-TST-01", "test_parity_source_mode_default_work_key_is_deterministic_for_same_inputs"),
         ("M143-TST-02", "test_parity_source_mode_rejects_invalid_emit_prefix"),
@@ -65,6 +90,11 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     "driver_cli_test": (
         ("M143-TST-05", "test_cli_default_out_dir_is_tmp_governed"),
     ),
+    "lane_c_tmp_governance_test": (
+        ("M143-TST-06", "test_lane_c_scripts_default_run_ids_are_deterministic_and_tmp_governed"),
+        ("M143-TST-07", "test_lane_c_docs_and_contract_publish_deterministic_tmp_path_rules"),
+        ("M143-TST-08", "test_m143_governance_test_script_includes_lane_c_contract_tests"),
+    ),
     "cli_fragment": (
         ("M143-DOC-CLI-01", "Default `--out-dir`: `tmp/artifacts/compilation/objc3c-native`"),
         ("M143-DOC-CLI-02", "## Artifact tmp-path governance (M143-D001)"),
@@ -74,11 +104,18 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-DOC-SEM-02", "deterministic `--work-key`"),
         ("M143-DOC-SEM-03", "Parser/AST-facing lane-A closeout coverage"),
         ("M143-DOC-SEM-04", "m143-sema-type-system-default"),
+        ("M143-DOC-SEM-05", "Lowering/LLVM IR/runtime-ABI lane-C closeout coverage"),
+        ("M143-DOC-SEM-06", "m143-lane-c-lowering-regression-default"),
+        ("M143-DOC-SEM-07", "m143-lane-c-typed-abi-default"),
+        ("M143-DOC-SEM-08", "m143-lane-c-lowering-replay-proof-default"),
     ),
     "artifacts_fragment": (
         ("M143-DOC-ART-01", "## Artifact tmp-path governance artifacts (M143-D001)"),
         ("M143-DOC-ART-02", "npm run check:objc3c:library-cli-parity:source:m143"),
         ("M143-DOC-ART-03", "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json"),
+        ("M143-DOC-ART-04", "tmp/artifacts/objc3c-native/lowering-regression/<run_id>/summary.json"),
+        ("M143-DOC-ART-05", "tmp/artifacts/objc3c-native/typed-abi-replay-proof/<run_id>/summary.json"),
+        ("M143-DOC-ART-06", "tmp/artifacts/objc3c-native/lowering-replay-proof/<proof_run_id>/summary.json"),
     ),
     "tests_fragment": (
         ("M143-DOC-TST-01", "npm run test:objc3c:m143-artifact-governance"),
@@ -86,6 +123,10 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-DOC-TST-03", "tests/tooling/test_objc3c_parser_extraction.py"),
         ("M143-DOC-TST-04", "tests/tooling/test_objc3c_parser_ast_builder_extraction.py"),
         ("M143-DOC-TST-05", "m143-sema-type-system-default"),
+        ("M143-DOC-TST-06", "tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py"),
+        ("M143-DOC-TST-07", "OBJC3C_NATIVE_LOWERING_RUN_ID"),
+        ("M143-DOC-TST-08", "OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID"),
+        ("M143-DOC-TST-09", "OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID"),
     ),
     "contract_doc": (
         ("M143-DOC-CON-01", "Contract ID: `objc3c-artifact-tmp-governance-contract/m143-v1`"),
@@ -94,6 +135,10 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-DOC-CON-04", "test_objc3c_parser_ast_builder_extraction.py"),
         ("M143-DOC-CON-05", "| `M143-B001` |"),
         ("M143-DOC-CON-06", "m143-sema-type-system-default"),
+        ("M143-DOC-CON-07", "| `M143-C001` |"),
+        ("M143-DOC-CON-08", "m143-lane-c-lowering-regression-default"),
+        ("M143-DOC-CON-09", "m143-lane-c-typed-abi-default"),
+        ("M143-DOC-CON-10", "m143-lane-c-lowering-replay-proof-default"),
     ),
 }
 
@@ -115,8 +160,11 @@ REQUIRED_PACKAGE_SCRIPTS: dict[str, tuple[str, ...]] = {
         "tests/tooling/test_objc3c_sema_extraction.py",
         "tests/tooling/test_objc3c_sema_pass_manager_extraction.py",
         "tests/tooling/test_objc3c_frontend_types_extraction.py",
+        "tests/tooling/test_objc3c_lowering_contract.py",
+        "tests/tooling/test_objc3c_ir_emitter_extraction.py",
         "tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py",
         "tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py",
+        "tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py",
         "tests/tooling/test_check_m143_artifact_tmp_governance_contract.py",
     ),
     "check:compiler-closeout:m143": (

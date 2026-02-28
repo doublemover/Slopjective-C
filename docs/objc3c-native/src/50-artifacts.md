@@ -394,11 +394,44 @@ Governance contract notes:
 - Source mode fail-closes when stale `<emit-prefix>` outputs are detected in target work roots.
 - Source mode fail-closes when expected generated parity artifacts are missing after command execution.
 - Tmp-path policy is default-enforced; non-tmp work roots require explicit opt-in.
+- Lane-C lowering/runtime artifact roots remain under `tmp/artifacts/objc3c-native/`:
+  - `tmp/artifacts/objc3c-native/lowering-regression/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/typed-abi-replay-proof/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/lowering-replay-proof/<proof_run_id>/summary.json`
+- Lane-C deterministic default run ids:
+  - `m143-lane-c-lowering-regression-default` (`OBJC3C_NATIVE_LOWERING_RUN_ID`)
+  - `m143-lane-c-typed-abi-default` (`OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID`)
+  - `m143-lane-c-lowering-replay-proof-default` (`OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID`)
 
 `npm run check:compiler-closeout:m143` fail-closes on tmp-governance source/docs/package drift via:
 
 - `python scripts/check_m143_artifact_tmp_governance_contract.py`
-- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
+
+## LLVM capability discovery artifacts (M144-E001)
+
+Capability discovery and routing validation commands:
+
+```powershell
+npm run check:objc3c:llvm-capabilities
+npm run check:objc3c:library-cli-parity:source:m144
+npm run check:compiler-closeout:m144
+```
+
+Capability probe summary output:
+
+- `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`
+
+Capability-routed source-mode parity output:
+
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work/<work-key>/library/`
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work/<work-key>/cli/`
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/summary.json`
+
+`npm run check:compiler-closeout:m144` fail-closes on capability discovery source/docs/package drift via:
+
+- `python scripts/check_m144_llvm_capability_discovery_contract.py`
+- `python -m pytest tests/tooling/test_probe_objc3c_llvm_capabilities.py tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_m144_llvm_capability_discovery_contract.py tests/tooling/test_check_m144_llvm_capability_discovery_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 

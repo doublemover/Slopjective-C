@@ -87,7 +87,16 @@ def test_package_wires_m143_closeout_scripts() -> None:
     assert "tests/tooling/test_objc3c_frontend_types_extraction.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
+    assert "tests/tooling/test_objc3c_lowering_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_ir_emitter_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
     assert "tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
 
@@ -152,5 +161,37 @@ def test_contract_fails_closed_when_sema_lane_b_default_run_id_drifts(
     assert summary["ok"] is False
     assert any(
         failure["check_id"] == "M143-TMP-06B"
+        for failure in summary["failures"]
+    )
+
+
+def test_contract_fails_closed_when_lane_c_typed_abi_default_run_id_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    typed_abi_script_drift = tmp_path / "check_objc3c_typed_abi_replay_proof.ps1"
+    typed_abi_script_drift.write_text(
+        (
+            ROOT / "scripts" / "check_objc3c_typed_abi_replay_proof.ps1"
+        ).read_text(encoding="utf-8").replace(
+            '$defaultRunId = "m143-lane-c-typed-abi-default"',
+            '$defaultRunId = "lane-c-nondeterministic"',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["typed_abi_tmp_governance_script"] = typed_abi_script_drift
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    summary = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert summary["ok"] is False
+    assert any(
+        failure["check_id"] == "M143-TMP-08B"
         for failure in summary["failures"]
     )

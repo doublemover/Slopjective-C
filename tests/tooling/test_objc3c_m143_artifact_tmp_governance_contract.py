@@ -51,7 +51,16 @@ def test_m143_package_and_docs_wiring_contract() -> None:
     assert "tests/tooling/test_objc3c_frontend_types_extraction.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
+    assert "tests/tooling/test_objc3c_lowering_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_ir_emitter_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
     assert "tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
 
@@ -80,3 +89,4 @@ def test_m143_package_and_docs_wiring_contract() -> None:
     assert "Contract ID: `objc3c-artifact-tmp-governance-contract/m143-v1`" in _read(CONTRACT_DOC)
     assert "| `M143-A001` |" in _read(CONTRACT_DOC)
     assert "| `M143-B001` |" in _read(CONTRACT_DOC)
+    assert "| `M143-C001` |" in _read(CONTRACT_DOC)

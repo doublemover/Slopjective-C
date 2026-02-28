@@ -40,6 +40,12 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `--work-key` is deterministic by default (derived from source + emit controls) and can be pinned explicitly for reproducible path contracts.
 - Non-tmp source-mode work directories are rejected unless `--allow-non-tmp-work-dir` is set.
 
+## LLVM capability discovery and backend routing (M144-E001)
+
+- `--llvm-capabilities-summary <path>` points CLI routing to a deterministic capability summary packet.
+- `--objc3-route-backend-from-capabilities` derives `--objc3-ir-object-backend` from summary capabilities (uses `llvm-direct` only when `llc --filetype=obj` is available).
+- Capability probes are captured with `npm run check:objc3c:llvm-capabilities` into `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`.
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

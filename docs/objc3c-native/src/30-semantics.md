@@ -1313,6 +1313,23 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - Default run id is deterministic (`m143-sema-type-system-default`); explicit override remains available via `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID`.
 - Parser/AST-facing lane-A closeout coverage:
   - `test:objc3c:m143-artifact-governance` includes `tests/tooling/test_objc3c_parser_extraction.py` and `tests/tooling/test_objc3c_parser_ast_builder_extraction.py`.
+- Lowering/LLVM IR/runtime-ABI lane-C closeout coverage:
+  - `scripts/run_objc3c_lowering_regression_suite.ps1` uses deterministic default run id `m143-lane-c-lowering-regression-default` (override: `OBJC3C_NATIVE_LOWERING_RUN_ID`).
+  - `scripts/check_objc3c_typed_abi_replay_proof.ps1` uses deterministic default run id `m143-lane-c-typed-abi-default` (override: `OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID`).
+  - `scripts/check_objc3c_lowering_replay_proof.ps1` uses deterministic default proof run id `m143-lane-c-lowering-replay-proof-default` (override: `OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID`).
+
+## LLVM capability discovery contract (M144-E001)
+
+- Capability probe packet mode is pinned to `objc3c-llvm-capabilities-v2`:
+  - `scripts/probe_objc3c_llvm_capabilities.py` publishes deterministic `clang`, `llc`, `llc_features`, and `sema_type_system_parity` capability fields.
+- Driver capability summary routing is fail-closed:
+  - `native/objc3c/src/driver/objc3_llvm_capability_routing.cpp` rejects missing/invalid summaries and blocks backend routing when parity readiness is unavailable.
+  - `native/objc3c/src/driver/objc3_cli_options.cpp` exposes `--llvm-capabilities-summary` and `--objc3-route-backend-from-capabilities`.
+- Source-mode CLI/C API parity can route backend from probe output:
+  - `scripts/check_objc3c_library_cli_parity.py` consumes `--llvm-capabilities-summary` and enforces fail-closed routing prerequisites before executing CLI/C API runs.
+- Contract validation commands:
+  - `python scripts/check_m144_llvm_capability_discovery_contract.py`
+  - `npm run check:compiler-closeout:m144`
 
 ## M25 Message-Send Contract Matrix
 
