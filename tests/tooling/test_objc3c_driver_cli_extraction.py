@@ -52,6 +52,8 @@ def test_cmake_target_linkage_topology_is_split_by_stage() -> None:
     assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
     assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
     assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
+    assert "target_link_libraries(objc3c_io PUBLIC" in cmake
+    assert "objc3c_runtime_abi" in cmake
     assert "target_link_libraries(objc3c_pipeline PUBLIC" in cmake
 
 

@@ -57,6 +57,13 @@ def test_cmake_registers_io_target() -> None:
     assert "src/io/objc3_diagnostics_artifacts.cpp" in cmake
     assert "src/io/objc3_file_io.cpp" in cmake
     assert "src/io/objc3_manifest_artifacts.cpp" in cmake
+    assert "target_link_libraries(objc3c_io PUBLIC" in cmake
+    assert "objc3c_runtime_abi" in cmake
+
+
+def test_cmake_registers_runtime_abi_target() -> None:
+    cmake = _read(CMAKE_FILE)
+    assert "add_library(objc3c_runtime_abi STATIC" in cmake
     assert "src/io/objc3_process.cpp" in cmake
     assert "target_link_libraries(objc3c-native PRIVATE" in cmake
     assert "objc3c_io" in cmake

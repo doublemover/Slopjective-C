@@ -95,5 +95,5 @@ def test_cmake_registers_ir_target() -> None:
     cmake = _read(CMAKE_FILE)
     assert "add_library(objc3c_ir STATIC" in cmake
     assert "src/ir/objc3_ir_emitter.cpp" in cmake
-    assert "target_link_libraries(objc3c-native PRIVATE" in cmake
-    assert "objc3c_ir" in cmake
+    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
+    assert "objc3c_lower" in cmake
