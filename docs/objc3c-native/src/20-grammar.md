@@ -539,6 +539,22 @@ Frontend C-interop header/ABI-alignment contract relies on deterministic C ABI w
   3. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
 
+## M195 frontend system-extension conformance and policy
+
+Frontend system-extension conformance/policy contract relies on deterministic compile-option validation, explicit fail-closed policy boundaries, and stable runtime-dispatch normalization guards.
+
+- Required frontend system-extension conformance/policy signals:
+  - language-policy guard remains `ValidateSupportedLanguageVersion(...)`.
+  - compatibility-policy guard remains `ValidateSupportedCompatibilityMode(...)`.
+  - fail-closed lowering-policy normalization remains `TryNormalizeObjc3LoweringContract(...)`.
+  - policy defaults remain `kRuntimeDispatchDefaultArgs = 4`, `kRuntimeDispatchMaxArgs = 16`, and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+  - compile-option transport remains `frontend_options.lowering.max_message_send_args = options.max_message_send_args;` and `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+- Required frontend system-extension conformance/policy commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
