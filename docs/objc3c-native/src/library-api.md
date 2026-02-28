@@ -727,6 +727,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m173_validation_protocol_qualified_object_type_contract.py`
   - `tests/tooling/test_objc3c_m173_integration_protocol_qualified_object_type_contract.py`
 
+## M174 integration variance and bridged-cast contract
+
+- Integration gate:
+  - `npm run check:objc3c:m174-variance-bridged-cast-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m174`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m174_frontend_variance_bridge_cast_parser_contract.py`
+  - `tests/tooling/test_objc3c_m174_sema_variance_bridge_cast_contract.py`
+  - `tests/tooling/test_objc3c_m174_lowering_variance_bridge_cast_contract.py`
+  - `tests/tooling/test_objc3c_m174_validation_variance_bridge_cast_contract.py`
+  - `tests/tooling/test_objc3c_m174_integration_variance_bridge_cast_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
