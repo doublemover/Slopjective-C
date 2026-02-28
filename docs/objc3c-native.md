@@ -7890,6 +7890,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_ownership_qualifier_lowering_profile`
 - `!objc3.objc_ownership_qualifier_lowering = !{!14}`
 
+## M162 validation/conformance/perf retain-release operation runbook
+
+From repo root, execute deterministic M162 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m162_frontend_retain_release_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m162_sema_retain_release_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m162_lowering_retain_release_operation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m162_validation_retain_release_operation_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_retain_release_operation.replay_key`
+- `deterministic_retain_release_operation_lowering_handoff`
+- `retain_release_operation_lowering`
+- `frontend_objc_retain_release_operation_lowering_profile`
+- `!objc3.objc_retain_release_operation_lowering = !{!15}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:

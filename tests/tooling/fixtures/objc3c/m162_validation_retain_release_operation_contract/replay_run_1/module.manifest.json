@@ -1,0 +1,31 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_retain_release_operation_lowering_handoff": true,
+        "retain_release_operation_lowering_ownership_qualified_sites": 0,
+        "retain_release_operation_lowering_retain_insertion_sites": 0,
+        "retain_release_operation_lowering_release_insertion_sites": 0,
+        "retain_release_operation_lowering_autorelease_insertion_sites": 0,
+        "retain_release_operation_lowering_contract_violation_sites": 0,
+        "lowering_retain_release_operation_replay_key": "ownership_qualified_sites=0;retain_insertion_sites=0;release_insertion_sites=0;autorelease_insertion_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m162-retain-release-operation-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_retain_release_operation_lowering_surface": {
+          "ownership_qualified_sites": 0,
+          "retain_insertion_sites": 0,
+          "release_insertion_sites": 0,
+          "autorelease_insertion_sites": 0,
+          "contract_violation_sites": 0,
+          "replay_key": "ownership_qualified_sites=0;retain_insertion_sites=0;release_insertion_sites=0;autorelease_insertion_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m162-retain-release-operation-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_retain_release_operation": {
+    "replay_key": "ownership_qualified_sites=0;retain_insertion_sites=0;release_insertion_sites=0;autorelease_insertion_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m162-retain-release-operation-lowering-v1",
+    "lane_contract": "m162-retain-release-operation-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
