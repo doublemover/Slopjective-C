@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HEADER = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.h"
 SOURCE = ROOT / "native" / "objc3c" / "src" / "lower" / "objc3_lowering_contract.cpp"
-MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
+PIPELINE_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
 CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
 
@@ -14,7 +14,7 @@ def _read(path: Path) -> str:
 def test_lowering_contract_module_is_wired() -> None:
     assert HEADER.exists()
     assert SOURCE.exists()
-    assert '#include "lower/objc3_lowering_contract.h"' in _read(MAIN_CPP)
+    assert '#include "lower/objc3_lowering_contract.h"' in _read(PIPELINE_TYPES)
     header = _read(HEADER)
     assert "TryGetCompoundAssignmentBinaryOpcode" in header
 

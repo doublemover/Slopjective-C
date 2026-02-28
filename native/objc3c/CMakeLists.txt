@@ -66,6 +66,7 @@ target_include_directories(objc3c_ir PUBLIC
 )
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
+  src/pipeline/objc3_frontend_artifacts.cpp
 )
 target_include_directories(objc3c_pipeline PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -74,10 +75,12 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_lex
   objc3c_parse
   objc3c_sema
+  objc3c_ir
 )
 add_library(objc3c_io STATIC
   src/io/objc3_diagnostics_artifacts.cpp
   src/io/objc3_file_io.cpp
+  src/io/objc3_manifest_artifacts.cpp
   src/io/objc3_process.cpp
 )
 target_include_directories(objc3c_io PUBLIC
@@ -85,6 +88,7 @@ target_include_directories(objc3c_io PUBLIC
 )
 add_library(objc3c_frontend STATIC
   src/libobjc3c_frontend/frontend_anchor.cpp
+  src/libobjc3c_frontend/objc3_cli_frontend.cpp
 )
 target_include_directories(objc3c_frontend PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -94,9 +98,15 @@ target_link_libraries(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver STATIC
   src/driver/objc3_cli_options.cpp
+  src/driver/objc3_compilation_driver.cpp
 )
 target_include_directories(objc3c_driver PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_link_libraries(objc3c_driver PUBLIC
+  objc3c_diag
+  objc3c_frontend
+  objc3c_io
 )
 
 target_link_libraries(objc3c-native PRIVATE
