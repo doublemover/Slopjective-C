@@ -21,6 +21,7 @@ def test_stage_libraries_define_forward_only_linkage_topology() -> None:
     assert "target_link_libraries(objc3c_pipeline PUBLIC" in cmake
     assert "target_link_libraries(objc3c_frontend PUBLIC" in cmake
     assert "target_link_libraries(objc3c_driver PUBLIC" in cmake
+    assert "src/libobjc3c_frontend/c_api.cpp" in cmake
 
 
 def test_native_executable_links_through_driver_aggregate_target() -> None:
@@ -29,6 +30,10 @@ def test_native_executable_links_through_driver_aggregate_target() -> None:
     assert "add_executable(objc3c-native" in cmake
     assert "target_link_libraries(objc3c-native PRIVATE" in cmake
     assert "  objc3c_driver" in cmake
+    assert "add_executable(objc3c-frontend-c-api-runner" in cmake
+    assert "src/tools/objc3c_frontend_c_api_runner.cpp" in cmake
+    assert "target_link_libraries(objc3c-frontend-c-api-runner PRIVATE" in cmake
+    assert "  objc3c_frontend" in cmake
 
 
 def test_build_script_includes_split_driver_entrypoint_source() -> None:
@@ -36,3 +41,6 @@ def test_build_script_includes_split_driver_entrypoint_source() -> None:
 
     assert '"native/objc3c/src/main.cpp"' in build
     assert '"native/objc3c/src/driver/objc3_driver_main.cpp"' in build
+    assert '"native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp"' in build
+    assert '"native/objc3c/src/libobjc3c_frontend/c_api.cpp"' in build
+    assert '"native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp"' in build

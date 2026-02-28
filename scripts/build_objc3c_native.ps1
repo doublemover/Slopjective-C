@@ -12,9 +12,9 @@ if (!(Test-Path $includeDir)) { throw "LLVM include dir not found at $includeDir
 $outDir = "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $outExe = Join-Path $outDir "objc3c-native.exe"
+$outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
 
-$sourceFiles = @(
-  "native/objc3c/src/main.cpp"
+$sharedSources = @(
   "native/objc3c/src/driver/objc3_cli_options.cpp"
   "native/objc3c/src/driver/objc3_driver_main.cpp"
   "native/objc3c/src/driver/objc3_driver_shell.cpp"
@@ -29,6 +29,8 @@ $sourceFiles = @(
   "native/objc3c/src/io/objc3_process.cpp"
   "native/objc3c/src/ir/objc3_ir_emitter.cpp"
   "native/objc3c/src/lex/objc3_lexer.cpp"
+  "native/objc3c/src/libobjc3c_frontend/c_api.cpp"
+  "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp"
   "native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp"
   "native/objc3c/src/lower/objc3_lowering_contract.cpp"
   "native/objc3c/src/parse/objc3_ast_builder.cpp"
@@ -43,6 +45,14 @@ $sourceFiles = @(
   "native/objc3c/src/sema/objc3_pure_contract.cpp"
 )
 
+$nativeSources = @(
+  "native/objc3c/src/main.cpp"
+) + $sharedSources
+
+$capiRunnerSources = @(
+  "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp"
+) + $sharedSources
+
 & $clangxx `
   -std=c++20 `
   -Wall `
@@ -51,9 +61,24 @@ $sourceFiles = @(
   -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
   "-I$includeDir" `
   "-Inative/objc3c/src" `
-  @sourceFiles `
+  @nativeSources `
   $libclang `
   -o $outExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+& $clangxx `
+  -std=c++20 `
+  -Wall `
+  -Wextra `
+  -pedantic `
+  -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
+  "-I$includeDir" `
+  "-Inative/objc3c/src" `
+  @capiRunnerSources `
+  $libclang `
+  -o $outCapiExe
+
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Output "built=$outExe"
+Write-Output "built=$outCapiExe"

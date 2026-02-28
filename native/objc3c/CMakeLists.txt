@@ -127,6 +127,7 @@ target_link_libraries(objc3c_io PUBLIC
   objc3c_runtime_abi
 )
 add_library(objc3c_frontend STATIC
+  src/libobjc3c_frontend/c_api.cpp
   src/libobjc3c_frontend/frontend_anchor.cpp
   src/libobjc3c_frontend/objc3_cli_frontend.cpp
 )
@@ -156,4 +157,11 @@ target_link_libraries(objc3c_driver PUBLIC
 
 target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
+)
+
+add_executable(objc3c-frontend-c-api-runner
+  src/tools/objc3c_frontend_c_api_runner.cpp
+)
+target_link_libraries(objc3c-frontend-c-api-runner PRIVATE
+  objc3c_frontend
 )

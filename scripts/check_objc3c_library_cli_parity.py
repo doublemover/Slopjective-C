@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +38,15 @@ class ArtifactDigest:
     sha256: str
 
 
+@dataclass(frozen=True)
+class CommandResult:
+    role: str
+    command: list[str]
+    exit_code: int
+    stdout: str
+    stderr: str
+
+
 def display_path(path: Path) -> str:
     absolute = path.resolve()
     try:
@@ -58,12 +68,65 @@ def sha256_hex(path: Path) -> str:
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--library-dir", type=Path, required=True)
-    parser.add_argument("--cli-dir", type=Path, required=True)
+    parser.add_argument("--library-dir", type=Path)
+    parser.add_argument("--cli-dir", type=Path)
+    parser.add_argument("--source", type=Path)
+    parser.add_argument(
+        "--cli-bin",
+        type=Path,
+        default=None,
+        help="path to objc3c-native executable when using --source mode",
+    )
+    parser.add_argument(
+        "--c-api-bin",
+        type=Path,
+        default=None,
+        help="path to objc3c-frontend-c-api-runner executable when using --source mode",
+    )
+    parser.add_argument(
+        "--work-dir",
+        type=Path,
+        default=Path("tmp/objc3c_library_cli_parity_work"),
+        help="workspace for generated artifacts in --source mode",
+    )
+    parser.add_argument(
+        "--emit-prefix",
+        default="module",
+        help="artifact filename prefix for --source mode generation",
+    )
+    parser.add_argument(
+        "--clang-path",
+        type=Path,
+        default=None,
+        help="clang path forwarded to CLI and C API runner in --source mode",
+    )
+    parser.add_argument(
+        "--llc-path",
+        type=Path,
+        default=None,
+        help="llc path forwarded to CLI in --source mode",
+    )
+    parser.add_argument(
+        "--cli-ir-object-backend",
+        choices=("clang", "llvm-direct"),
+        default="clang",
+        help="IR object backend for CLI command in --source mode",
+    )
+    parser.add_argument(
+        "--objc3-max-message-args",
+        type=int,
+        default=None,
+        help="override max message-send args forwarded to CLI/C API in --source mode",
+    )
+    parser.add_argument(
+        "--objc3-runtime-dispatch-symbol",
+        default=None,
+        help="override runtime dispatch symbol forwarded to CLI/C API in --source mode",
+    )
     parser.add_argument(
         "--artifacts",
         nargs="+",
-        default=list(DEFAULT_ARTIFACTS),
+        default=None,
         help="artifact filenames to compare relative to library/cli directories",
     )
     parser.add_argument(
@@ -108,6 +171,13 @@ def ensure_directory(path: Path, *, label: str) -> None:
         raise ValueError(f"{label} must be a directory: {display_path(path)}")
 
 
+def ensure_file(path: Path, *, label: str) -> None:
+    if not path.exists():
+        raise ValueError(f"{label} does not exist: {display_path(path)}")
+    if not path.is_file():
+        raise ValueError(f"{label} must be a file: {display_path(path)}")
+
+
 def canonical_json(payload: object) -> str:
     return json.dumps(payload, indent=2) + "\n"
 
@@ -116,8 +186,21 @@ def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def parse_dimension_map(values: Sequence[str]) -> dict[str, str]:
-    mapping = dict(DEFAULT_DIMENSION_MAP)
+def default_dimension_map_for_emit_prefix(*, emit_prefix: str, object_artifact: str) -> dict[str, str]:
+    return {
+        "diagnostics": f"{emit_prefix}.diagnostics.json",
+        "manifest": f"{emit_prefix}.manifest.json",
+        "ir": f"{emit_prefix}.ll",
+        "object": object_artifact,
+    }
+
+
+def parse_dimension_map(
+    values: Sequence[str],
+    *,
+    default_mapping: dict[str, str],
+) -> dict[str, str]:
+    mapping = dict(default_mapping)
     for raw in values:
         if "=" not in raw:
             raise ValueError(
@@ -218,19 +301,132 @@ def write_json(path: Path, payload: object) -> None:
     path.write_text(canonical_json(payload), encoding="utf-8")
 
 
+def format_command(command: Sequence[str]) -> str:
+    return subprocess.list2cmdline([str(part) for part in command])
+
+
+def run_command(role: str, command: Sequence[str]) -> CommandResult:
+    completed = subprocess.run(
+        [str(part) for part in command],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return CommandResult(
+        role=role,
+        command=[str(part) for part in command],
+        exit_code=completed.returncode,
+        stdout=completed.stdout,
+        stderr=completed.stderr,
+    )
+
+
+def build_source_mode_artifacts(*, emit_prefix: str) -> list[str]:
+    return [
+        f"{emit_prefix}.diagnostics.json",
+        f"{emit_prefix}.manifest.json",
+        f"{emit_prefix}.ll",
+        f"{emit_prefix}.obj",
+    ]
+
+
+def prepare_source_mode(args: argparse.Namespace) -> tuple[Path, Path, list[CommandResult], list[str]]:
+    if args.cli_bin is None:
+        raise ValueError("--cli-bin is required when using --source")
+    if args.c_api_bin is None:
+        raise ValueError("--c-api-bin is required when using --source")
+    ensure_file(args.source, label="source")
+    ensure_file(args.cli_bin, label="cli-bin")
+    ensure_file(args.c_api_bin, label="c-api-bin")
+
+    work_dir = args.work_dir
+    work_dir.mkdir(parents=True, exist_ok=True)
+    library_dir = args.library_dir if args.library_dir is not None else work_dir / "library"
+    cli_dir = args.cli_dir if args.cli_dir is not None else work_dir / "cli"
+    library_dir.mkdir(parents=True, exist_ok=True)
+    cli_dir.mkdir(parents=True, exist_ok=True)
+
+    cli_command: list[str] = [
+        str(args.cli_bin),
+        str(args.source),
+        "--out-dir",
+        str(cli_dir),
+        "--emit-prefix",
+        args.emit_prefix,
+        "--objc3-ir-object-backend",
+        args.cli_ir_object_backend,
+    ]
+    if args.clang_path is not None:
+        cli_command.extend(["--clang", str(args.clang_path)])
+    if args.llc_path is not None:
+        cli_command.extend(["--llc", str(args.llc_path)])
+    if args.objc3_max_message_args is not None:
+        cli_command.extend(["--objc3-max-message-args", str(args.objc3_max_message_args)])
+    if args.objc3_runtime_dispatch_symbol:
+        cli_command.extend(["--objc3-runtime-dispatch-symbol", args.objc3_runtime_dispatch_symbol])
+
+    c_api_command: list[str] = [
+        str(args.c_api_bin),
+        str(args.source),
+        "--out-dir",
+        str(library_dir),
+        "--emit-prefix",
+        args.emit_prefix,
+    ]
+    if args.clang_path is not None:
+        c_api_command.extend(["--clang", str(args.clang_path)])
+    if args.objc3_max_message_args is not None:
+        c_api_command.extend(["--objc3-max-message-args", str(args.objc3_max_message_args)])
+    if args.objc3_runtime_dispatch_symbol:
+        c_api_command.extend(["--objc3-runtime-dispatch-symbol", args.objc3_runtime_dispatch_symbol])
+
+    results = [
+        run_command("cli", cli_command),
+        run_command("c-api", c_api_command),
+    ]
+    failures = [
+        f"{result.role} command failed with exit {result.exit_code}: {format_command(result.command)}"
+        for result in results
+        if result.exit_code != 0
+    ]
+    return library_dir, cli_dir, results, failures
+
+
 def run(argv: Sequence[str]) -> int:
     args = parse_args(argv)
-    ensure_directory(args.library_dir, label="library-dir")
-    ensure_directory(args.cli_dir, label="cli-dir")
     if args.check_golden and args.write_golden:
         raise ValueError("--check-golden and --write-golden cannot be used together")
     if (args.check_golden or args.write_golden) and args.golden_summary is None:
         raise ValueError("--golden-summary is required when using --check-golden/--write-golden")
 
-    artifacts = normalize_artifacts(args.artifacts)
-    dimension_map = parse_dimension_map(args.dimension_map)
+    execution_results: list[CommandResult] = []
+    execution_failures: list[str] = []
+    if args.source is not None:
+        library_dir, cli_dir, execution_results, execution_failures = prepare_source_mode(args)
+        default_dimension_map = default_dimension_map_for_emit_prefix(
+            emit_prefix=args.emit_prefix,
+            object_artifact=f"{args.emit_prefix}.obj",
+        )
+        default_artifacts = build_source_mode_artifacts(emit_prefix=args.emit_prefix)
+    else:
+        if args.library_dir is None:
+            raise ValueError("--library-dir is required when --source is not provided")
+        if args.cli_dir is None:
+            raise ValueError("--cli-dir is required when --source is not provided")
+        library_dir = args.library_dir
+        cli_dir = args.cli_dir
+        ensure_directory(library_dir, label="library-dir")
+        ensure_directory(cli_dir, label="cli-dir")
+        default_dimension_map = dict(DEFAULT_DIMENSION_MAP)
+        default_artifacts = list(DEFAULT_ARTIFACTS)
 
-    failures: list[str] = []
+    artifacts = normalize_artifacts(args.artifacts or default_artifacts)
+    dimension_map = parse_dimension_map(
+        args.dimension_map,
+        default_mapping=default_dimension_map,
+    )
+
+    failures: list[str] = list(execution_failures)
     comparisons: list[dict[str, Any]] = []
     artifact_to_dimension = {
         artifact: dimension
@@ -239,7 +435,7 @@ def run(argv: Sequence[str]) -> int:
     for artifact_name in artifacts:
         try:
             library_digest = resolve_artifact_digest(
-                base_dir=args.library_dir,
+                base_dir=library_dir,
                 artifact_name=artifact_name,
             )
         except ValueError as exc:
@@ -247,7 +443,7 @@ def run(argv: Sequence[str]) -> int:
             continue
         try:
             cli_digest = resolve_artifact_digest(
-                base_dir=args.cli_dir,
+                base_dir=cli_dir,
                 artifact_name=artifact_name,
             )
         except ValueError as exc:
@@ -289,16 +485,32 @@ def run(argv: Sequence[str]) -> int:
         dimension_map=dimension_map,
     )
 
-    summary = {
+    summary: dict[str, Any] = {
         "mode": MODE,
-        "library_dir": display_path(args.library_dir),
-        "cli_dir": display_path(args.cli_dir),
+        "library_dir": display_path(library_dir),
+        "cli_dir": display_path(cli_dir),
         "artifacts": artifacts,
         "dimensions": dimension_results,
         "comparisons": comparisons,
         "failures": failures,
         "ok": not failures,
     }
+
+    if args.source is not None:
+        summary["execution"] = {
+            "source": display_path(args.source),
+            "emit_prefix": args.emit_prefix,
+            "commands": [
+                {
+                    "role": result.role,
+                    "command": result.command,
+                    "exit_code": result.exit_code,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                }
+                for result in execution_results
+            ],
+        }
 
     if args.golden_summary is not None:
         golden_path = args.golden_summary
