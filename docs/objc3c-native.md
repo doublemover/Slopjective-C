@@ -534,6 +534,21 @@ Frontend macro-expansion architecture/isolation contract relies on deterministic
   3. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
 
+## M200 frontend interop integration suite and packaging
+
+Frontend interop integration suite/packaging contract relies on deterministic message-send parse boundaries, stable selector/argument AST surfaces, and parser-to-pipeline handoff continuity.
+
+- Required frontend interop integration/packaging signals:
+  - message-send parse ingress remains `ParseMessageSendExpression()`.
+  - interop call-form AST surface remains `Expr::Kind::MessageSend` with `selector` and `args`.
+  - parser-to-frontend handoff remains `BuildObjc3AstFromTokens(tokens)` and `result.program = std::move(parse_result.program);`.
+  - lowering-facing boundary guard remains `max_message_send_args = options.lowering.max_message_send_args`.
+- Required frontend interop integration/packaging commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2565,6 +2580,32 @@ Recommended M201 sema/type macro expansion architecture/isolation validation com
 
 - `python -m pytest tests/tooling/test_objc3c_m201_sema_macro_expansion_contract.py -q`
 
+## M200 sema/type interop integration suite and packaging
+
+For deterministic sema/type interop integration suite and packaging, capture replay-stable packet evidence from pass-manager architecture ordering, pass-level isolation boundaries, and manifest packaging surfaces.
+
+Interop integration suite + packaging packet map:
+
+- `interop packet 1.1 deterministic sema/type interop architecture anchors` -> `m200_sema_type_interop_architecture_packet`
+- `interop packet 1.2 deterministic sema/type interop isolation + packaging anchors` -> `m200_sema_type_interop_isolation_packaging_packet`
+
+### 1.1 Deterministic sema/type interop architecture packet
+
+- Source pass-architecture anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `if (pass == Objc3SemaPassId::BuildIntegrationSurface) {`, `result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`.
+- Source deterministic-type anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Deterministic interop architecture packet key: `m200_sema_type_interop_architecture_packet`.
+
+### 1.2 Deterministic sema/type interop isolation + packaging packet
+
+- Source pass-isolation anchors: `CanonicalizePassDiagnostics(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.ready =`.
+- Pipeline interop transport anchors: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, `result.integration_surface = std::move(sema_result.integration_surface);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Manifest packaging anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, `diagnostics_emitted_by_validate_pure_contract`, `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Manifest packaging anchors under `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface`.
+- Deterministic interop isolation + packaging packet key: `m200_sema_type_interop_isolation_packaging_packet`.
+
+Recommended M200 sema/type interop integration suite and packaging command:
+
+- `python -m pytest tests/tooling/test_objc3c_m200_sema_interop_packaging_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3198,6 +3239,48 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M200 lowering/runtime interop integration suite and packaging
+
+Lowering/runtime interop integration-suite and packaging evidence is captured as deterministic packet artifacts rooted under `tmp/` so runtime-dispatch contract transport stays isolated and replay-stable across CLI/C-API/frontend/lowering boundaries.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/interop-packaging-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `interop integration/packaging architecture markers` (required in source-anchor extracts):
+  - `options.lowering.runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol;`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and interop-packaging source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, or interop integration/packaging marker is missing.
+
+Interop integration-suite/packaging capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.manifest.json > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/abi-ir-anchors.txt`
+3. `rg -n "options\.lowering\.runtime_dispatch_symbol = cli_options\.runtime_dispatch_symbol;|frontend_options\.lowering\.runtime_dispatch_symbol = options\.runtime_dispatch_symbol;|compile_options\.runtime_dispatch_symbol = runtime_symbol;|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol=|lowering_ir_boundary =|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_frontend_options.cpp native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/interop-packaging-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m200_lowering_interop_packaging_contract.py -q`
 
 ## M201 lowering/runtime macro expansion architecture and isolation
 
@@ -5705,6 +5788,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m201_validation_macro_expansion_contract.py -q
 ```
 
+## M200 validation/perf interop integration suite and packaging
+
+Interop integration suite/packaging validation runbook verifies deterministic fixture-packaging evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Interop integration suite packaging evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m200_validation_interop_packaging_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6222,6 +6350,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-expansion architecture anchors.
+
+## M200 integration interop integration suite and packaging
+
+- Gate intent: enforce deterministic interop integration suite/packaging evidence across all lanes.
+### 1.1 Interop integration suite packaging chain
+- Deterministic interop integration suite packaging gate:
+  - `npm run check:objc3c:m200-interop-packaging`
+- Chain order:
+  - replays `check:objc3c:m201-macro-expansion-arch`.
+  - enforces all M200 lane contracts:
+    `tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_sema_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_lowering_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_validation_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_integration_interop_packaging_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through interop integration suite packaging validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain interop integration suite packaging anchors.
 
 ## Current call contract
 
