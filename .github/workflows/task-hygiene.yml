@@ -83,6 +83,8 @@ jobs:
         run: npm run check:objc3c:m225-roadmap-seeding
       - name: 16 Run M221 GA blocker burn-down integration gate
         run: npm run check:objc3c:m221-ga-blocker-burndown
+      - name: 17 Run M220 public-beta triage integration gate
+        run: npm run check:objc3c:m220-public-beta-triage
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

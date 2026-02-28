@@ -95,6 +95,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain release anchors.
 
+## M220 integration public-beta triage loop
+
+- Gate intent: formalize public-beta intake/triage/patch loop with deterministic lane-contract replay.
+### 1.1 Public-beta integration chain
+- Deterministic triage gate:
+  - `npm run check:objc3c:m220-public-beta-triage`
+- Chain order:
+  - replays `check:objc3c:m221-ga-blocker-burndown`.
+  - enforces all M220 lane contracts:
+    `tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_sema_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_lowering_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_validation_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_integration_public_beta_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve release guard invariants through beta loop execution:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain integration anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
