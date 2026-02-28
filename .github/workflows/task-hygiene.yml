@@ -40,6 +40,8 @@ jobs:
         run: npm run check:compiler-closeout:m138
       - name: 00e Enforce M139 sema pass-manager and diagnostics bus packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m139
+      - name: 00f Enforce M140 frontend-library boundary packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m140
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip

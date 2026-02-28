@@ -24,6 +24,8 @@ npm run test:objc3c:lane-e
 npm run check:compiler-closeout:m137
 npm run check:compiler-closeout:m138
 npm run check:compiler-closeout:m139
+npm run test:objc3c:m140-boundary-contract
+npm run check:compiler-closeout:m140
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -82,6 +84,13 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m139_sema_pass_manager_contract.py`.
   - Runs `npm run test:objc3c:sema-pass-manager-diagnostics-bus`.
   - Enforces fail-closed M139 sema pass-manager + diagnostics-bus contract wiring across build/docs/CI/release surfaces.
+- `npm run test:objc3c:m140-boundary-contract`
+  - Runs `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`.
+  - Verifies extracted frontend library entrypoint wiring, sema type-metadata handoff determinism, and lowering-to-IR boundary replay markers.
+- `npm run check:compiler-closeout:m140`
+  - Runs `python scripts/check_m140_frontend_library_boundary_contract.py`.
+  - Runs `npm run test:objc3c:m140-boundary-contract`.
+  - Enforces fail-closed M140 frontend-library boundary contract wiring across source/docs/package surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.

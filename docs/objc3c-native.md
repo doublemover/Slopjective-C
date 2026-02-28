@@ -1355,6 +1355,45 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Lowering options/metadata map `lowering.{runtime_dispatch_symbol,runtime_dispatch_arg_slots,selector_global_ordering}`.
 - Emit stage result captures diagnostics/manifest/object artifact write status and object compile exit status.
 
+## Sema pass manager + diagnostics bus contract (M139-E001)
+
+- Canonical sema contract types are defined in:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+- Sema pass manager orchestration boundary:
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `RunObjc3SemaPassManager(...)` executes deterministic pass order (`BuildIntegrationSurface`, `ValidateBodies`, `ValidatePureContract`) and publishes pass diagnostics into the sema diagnostics bus.
+- Semantic pass implementations remain extracted in:
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_pure_contract.cpp`
+  - `ValidatePureContractSemanticDiagnostics(...)` remains owned by `objc3_pure_contract.cpp` (fail-closed against regressions back into `objc3_semantic_passes.cpp`).
+- Frontend diagnostics bus boundary:
+  - `native/objc3c/src/parse/objc3_diagnostics_bus.h` owns `Objc3FrontendDiagnosticsBus` (`lexer`, `parser`, `semantic`) and deterministic transport into parsed-program diagnostics.
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp` wires sema pass manager diagnostics via `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic` and finalizes with `TransportObjc3DiagnosticsToParsedProgram(...)`.
+- Stage-contract packet remains anchored by `native/objc3c/src/pipeline/frontend_pipeline_contract.h` (`DiagnosticsEnvelope`, `SemaStageOutput`, and `kStageOrder` containing `StageId::Sema`).
+
+## Frontend library boundary contract (M140-E001)
+
+- Library compile entrypoints are pipeline-backed in:
+  - `native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp`
+  - `native/objc3c/src/libobjc3c_frontend/api.h`
+- Reusable extracted compile-product boundary is defined in:
+  - `native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.h`
+  - `native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp`
+  - `Objc3FrontendCompileProduct` carries `pipeline_result` + `artifact_bundle`.
+- Deterministic sema type-metadata handoff surface:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+- Lowering-to-IR replay boundary surface:
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
+  - `native/objc3c/src/lower/objc3_lowering_contract.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- Contract validation commands:
+  - `python scripts/check_m140_frontend_library_boundary_contract.py`
+  - `npm run check:compiler-closeout:m140`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:
@@ -1470,6 +1509,18 @@ Parser/lexer diagnostics currently emitted include:
   - Also accepts `Protocol`.
   - Also accepts `instancetype`.
   - Also used for unterminated generic function return type suffix.
+
+## Sema diagnostics bus contract (M139-E001)
+
+- The frontend diagnostics bus is defined at:
+  - `native/objc3c/src/parse/objc3_diagnostics_bus.h`
+  - `Objc3FrontendDiagnosticsBus.{lexer,parser,semantic}` is the canonical deterministic diagnostics transport packet.
+- Pipeline sema pass manager flow remains deterministic and fail-closed:
+  - `RunObjc3SemaPassManager(...)` publishes each pass batch into `result.stage_diagnostics.semantic`.
+  - `BuildIntegrationSurface`, `ValidateBodies`, and `ValidatePureContract` pass IDs run in deterministic order.
+- Stage-local diagnostics are folded into final parsed-program diagnostics through:
+  - `TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program)`
+  - deterministic insert order: `lexer`, then `parser`, then `semantic`.
 
 ## Artifacts and exit codes
 
@@ -1754,6 +1805,39 @@ npm run check:compiler-closeout:m138
 - `python scripts/check_m138_parser_ast_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py -q`
 
+## Sema pass-manager + diagnostics bus validation artifacts (M139-E001)
+
+Sema extraction and diagnostics-bus validation commands:
+
+```powershell
+npm run test:objc3c:sema-pass-manager-diagnostics-bus
+npm run check:compiler-closeout:m139
+```
+
+`npm run test:objc3c:sema-pass-manager-diagnostics-bus` writes deterministic pass-manager diagnostics-bus proof artifacts under:
+
+- `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+`npm run check:compiler-closeout:m139` fail-closes on sema pass-manager and diagnostics-bus wiring drift via:
+
+- `python scripts/check_m139_sema_pass_manager_contract.py`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
+- `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`
+
+## Frontend library boundary validation artifacts (M140-E001)
+
+M140 extraction and boundary closeout commands:
+
+```powershell
+npm run test:objc3c:m140-boundary-contract
+npm run check:compiler-closeout:m140
+```
+
+`npm run check:compiler-closeout:m140` fail-closes on frontend library boundary drift via:
+
+- `python scripts/check_m140_frontend_library_boundary_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -1782,6 +1866,7 @@ npm run test:objc3c:diagnostics-replay-proof
 npm run test:objc3c:parser-replay-proof
 npm run test:objc3c:parser-extraction-ast-builder-contract
 npm run test:objc3c:parser-ast-extraction
+npm run test:objc3c:sema-pass-manager-diagnostics-bus
 npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
@@ -1792,6 +1877,9 @@ npm run proof:objc3c
 npm run test:objc3c:lane-e
 npm run check:compiler-closeout:m137
 npm run check:compiler-closeout:m138
+npm run check:compiler-closeout:m139
+npm run test:objc3c:m140-boundary-contract
+npm run check:compiler-closeout:m140
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -1846,6 +1934,17 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m138_parser_ast_contract.py`.
   - Runs `npm run test:objc3c:parser-extraction-ast-builder-contract` and `npm run test:objc3c:parser-ast-extraction`.
   - Enforces fail-closed M138 parser extraction + AST builder contract wiring across build/docs/CI/release surfaces.
+- `npm run check:compiler-closeout:m139`
+  - Runs `python scripts/check_m139_sema_pass_manager_contract.py`.
+  - Runs `npm run test:objc3c:sema-pass-manager-diagnostics-bus`.
+  - Enforces fail-closed M139 sema pass-manager + diagnostics-bus contract wiring across build/docs/CI/release surfaces.
+- `npm run test:objc3c:m140-boundary-contract`
+  - Runs `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`.
+  - Verifies extracted frontend library entrypoint wiring, sema type-metadata handoff determinism, and lowering-to-IR boundary replay markers.
+- `npm run check:compiler-closeout:m140`
+  - Runs `python scripts/check_m140_frontend_library_boundary_contract.py`.
+  - Runs `npm run test:objc3c:m140-boundary-contract`.
+  - Enforces fail-closed M140 frontend-library boundary contract wiring across source/docs/package surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -1854,6 +1953,7 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
     - `npm run test:objc3c`
     - `npm run test:objc3c:diagnostics-replay-proof`
     - `npm run test:objc3c:parser-replay-proof`
+    - `npm run test:objc3c:sema-pass-manager-diagnostics-bus`
     - `npm run test:objc3c:driver-shell-split`
     - `npm run test:objc3c:lexer-extraction-token-contract`
     - `npm run test:objc3c:lexer-parity`
@@ -1881,6 +1981,12 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Verifies parser extraction boundaries and AST builder scaffold markers in `parse/*`, `ast/*`, pipeline wiring, and CMake parser target registration.
   - Replays one positive parser scaffold fixture and selected negative parser fixtures with deterministic diagnostics/artifact assertions.
   - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/parser-extraction-ast-builder-contract/<run_id>/summary.json`.
+- `npm run test:objc3c:sema-pass-manager-diagnostics-bus`
+  - Runs `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`.
+  - Runs `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`.
+  - Verifies sema module extraction boundaries, parser-contract integration, pure-contract extraction boundary, and pipeline diagnostics-bus type surfaces.
+  - Replays positive/negative sema fixtures and enforces deterministic diagnostics/artifact contracts for pass-manager + diagnostics-bus extraction.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
   - Replays all recovery fixtures (positive and negative) twice per fixture.
   - Includes optional Objective-C dispatch fixture roots when present (`recovery/positive/lowering_dispatch`, then `dispatch/positive`).
@@ -1916,7 +2022,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_driver_shell_split_contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1
 python scripts/check_m137_lexer_contract.py
+python scripts/check_m139_sema_pass_manager_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

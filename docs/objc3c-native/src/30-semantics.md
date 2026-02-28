@@ -1239,6 +1239,27 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp` wires sema pass manager diagnostics via `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic` and finalizes with `TransportObjc3DiagnosticsToParsedProgram(...)`.
 - Stage-contract packet remains anchored by `native/objc3c/src/pipeline/frontend_pipeline_contract.h` (`DiagnosticsEnvelope`, `SemaStageOutput`, and `kStageOrder` containing `StageId::Sema`).
 
+## Frontend library boundary contract (M140-E001)
+
+- Library compile entrypoints are pipeline-backed in:
+  - `native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp`
+  - `native/objc3c/src/libobjc3c_frontend/api.h`
+- Reusable extracted compile-product boundary is defined in:
+  - `native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.h`
+  - `native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp`
+  - `Objc3FrontendCompileProduct` carries `pipeline_result` + `artifact_bundle`.
+- Deterministic sema type-metadata handoff surface:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+- Lowering-to-IR replay boundary surface:
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
+  - `native/objc3c/src/lower/objc3_lowering_contract.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- Contract validation commands:
+  - `python scripts/check_m140_frontend_library_boundary_contract.py`
+  - `npm run check:compiler-closeout:m140`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:

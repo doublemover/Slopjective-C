@@ -302,6 +302,20 @@ npm run check:compiler-closeout:m139
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
 - `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`
 
+## Frontend library boundary validation artifacts (M140-E001)
+
+M140 extraction and boundary closeout commands:
+
+```powershell
+npm run test:objc3c:m140-boundary-contract
+npm run check:compiler-closeout:m140
+```
+
+`npm run check:compiler-closeout:m140` fail-closes on frontend library boundary drift via:
+
+- `python scripts/check_m140_frontend_library_boundary_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
