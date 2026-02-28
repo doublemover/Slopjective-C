@@ -851,14 +851,14 @@ int objc3c_frontend_startup_check(void) {
   - `.github/workflows/compiler-closeout.yml`
 - Gate coverage files:
   - `tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py`
+  - `tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py`
   - `tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py`
   - `tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py`
   - `tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py`
   - `tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py`
 - Assumptions:
-  - M181-A001, M181-C001, and M181-D001 outputs are landed in this workspace.
-  - A standalone M181-B001 sema contract test is not present in this workspace.
-  - The integration gate fail-closes on the landed parser/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.
+  - M181-A001 through M181-D001 outputs are landed in this workspace.
+  - The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.
 
 ## M182 integration result-like lowering contract
 

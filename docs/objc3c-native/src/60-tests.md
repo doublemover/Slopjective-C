@@ -2462,6 +2462,7 @@ Deterministic M181 integration sequence:
 
 ```bash
 python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
@@ -2481,9 +2482,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M181-A001, M181-C001, and M181-D001 surfaces are landed in this workspace.
-- A standalone M181-B001 sema contract test is not present in this workspace.
-- This runbook enforces landed parser/lowering/validation/conformance surfaces plus M181-E001 integration wiring.
+- M181-A001 through M181-D001 surfaces are landed in this workspace.
+- This runbook enforces landed parser/sema/lowering/validation/conformance surfaces plus M181-E001 integration wiring.
 
 ## M181 validation/conformance/perf throws propagation runbook (M181-D001)
 

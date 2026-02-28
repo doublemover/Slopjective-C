@@ -22,12 +22,13 @@ def test_m181_integration_throws_propagation_is_documented() -> None:
         "check:compiler-closeout:m181",
         ".github/workflows/compiler-closeout.yml",
         "tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py",
+        "tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py",
         "tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py",
         "tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py",
         "tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py",
         "tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py",
-        "M181-A001, M181-C001, and M181-D001 outputs are landed in this workspace.",
-        "A standalone M181-B001 sema contract test is not present in this workspace.",
+        "M181-A001 through M181-D001 outputs are landed in this workspace.",
+        "The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.",
     ):
         assert text in library_api_doc
 
@@ -38,6 +39,7 @@ def test_m181_e001_integration_runbook_section_is_documented() -> None:
     for text in (
         "## M181 integration throws propagation contract runbook (M181-E001)",
         "python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q",
+        "python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q",
@@ -58,6 +60,7 @@ def test_m181_integration_throws_propagation_gate_is_wired() -> None:
     assert "check:objc3c:m181-throws-propagation-contracts" in scripts
     assert scripts["check:objc3c:m181-throws-propagation-contracts"] == (
         "python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py "
+        "tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py "
         "tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py "
         "tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py "
         "tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py "
