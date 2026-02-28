@@ -415,6 +415,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-security anchors.
 
+## M204 integration macro diagnostics and provenance
+
+- Gate intent: enforce deterministic macro-diagnostics/provenance evidence across all lanes.
+### 1.1 Macro-diagnostics integration chain
+- Deterministic macro-diagnostics gate:
+  - `npm run check:objc3c:m204-macro-diagnostics`
+- Chain order:
+  - replays `check:objc3c:m205-macro-security`.
+  - enforces all M204 lane contracts:
+    `tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_validation_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_integration_macro_diagnostics_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-diagnostics validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-diagnostics anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

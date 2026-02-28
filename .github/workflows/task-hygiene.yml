@@ -115,6 +115,8 @@ jobs:
         run: npm run check:objc3c:m206-canonical-optimization-stage1
       - name: 32 Run M205 macro-security integration gate
         run: npm run check:objc3c:m205-macro-security
+      - name: 33 Run M204 macro-diagnostics integration gate
+        run: npm run check:objc3c:m204-macro-diagnostics
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
