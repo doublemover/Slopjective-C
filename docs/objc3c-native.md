@@ -314,6 +314,21 @@ Frontend conformance suite v1 maps parser/AST behavior to deterministic spec-sec
   3. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
 
+## M215 frontend SDK packaging packet
+
+Frontend SDK/toolchain packaging for IDE workflows depends on deterministic parser/AST boundary evidence.
+
+- Required SDK packaging signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required SDK packaging commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1903,6 +1918,35 @@ Recommended conformance suite command sequence (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m216_sema_conformance_contract.py -q`
 
+## M215 sema/type SDK packaging profile
+
+For deterministic SDK/toolchain IDE consumption on the sema/type lane, capture two replay-stable evidence packets and ship them as the canonical packaging profile.
+
+SDK packaging packet map:
+
+- `sdk packet 1.1 deterministic sema diagnostics` -> `m215_sdk_sema_diagnostics_packet`
+- `sdk packet 1.2 deterministic type-metadata handoff` -> `m215_sdk_type_metadata_handoff_packet`
+
+### 1.1 Deterministic sema diagnostics SDK packaging packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic SDK diagnostics packet key: `m215_sdk_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata handoff SDK packaging packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic SDK type-metadata packet key: `m215_sdk_type_metadata_handoff_packet`.
+
+Recommended SDK packaging contract commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2072,6 +2116,63 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M215 lowering/runtime SDK packaging profile
+
+Lowering/runtime SDK packaging evidence is captured as a deterministic packet for IDE-facing toolchains under `tmp/`.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.diagnostics.json`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.obj`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.object-backend.txt`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/ide-consumable-artifact-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each SDK packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `IDE-consumable artifact markers` (required in SDK packet marker extracts):
+  - `"schema_version": "1.0.0"`
+  - `"diagnostics": [`
+  - `"severity":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+  - `"module":`
+  - `"frontend":`
+  - `"lowering":`
+  - `"globals":`
+  - `"functions":`
+  - `"runtime_dispatch_symbol":`
+  - `"runtime_dispatch_arg_slots":`
+  - `clang`
+  - `llvm-direct`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `WriteText(out_dir / (emit_prefix + ".diagnostics.json"), out.str());`
+  - `WriteText(out_dir / (emit_prefix + ".manifest.json"), manifest_json);`
+  - `const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, `module.diagnostics.json`, and `module.object-backend.txt`.
+  - ABI/IR anchor extracts and IDE-consumable marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, source anchor, or IDE-consumable marker is missing.
+
+SDK packaging capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/abi-ir-anchors.txt`
+3. `rg -n "\"schema_version\":|\"diagnostics\":|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|\"module\":|\"frontend\":|\"lowering\":|\"globals\":|\"functions\":|\"runtime_dispatch_symbol\":|\"runtime_dispatch_arg_slots\":|clang|llvm-direct" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.diagnostics.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.object-backend.txt > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/ide-consumable-artifact-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m215_lowering_sdk_packaging_contract.py -q`
 
 ## M216 lowering/runtime conformance suite profile
 
@@ -3435,6 +3536,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m216_validation_conformance_contract.py -q
 ```
 
+## M215 validation/perf SDK packaging runbook
+
+SDK packaging validation runbook ensures deterministic evidence for IDE-consumable toolchain artifacts.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+SDK packaging evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `sdk_bundle_id`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `sdk_bundle_id`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `sdk_bundle_id`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `sdk_bundle_id`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m215_validation_sdk_packaging_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3652,6 +3798,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain conformance anchors.
+
+## M215 integration SDK/toolchain packaging
+
+- Gate intent: enforce deterministic SDK/toolchain packaging evidence for IDE consumption.
+### 1.1 SDK packaging integration chain
+- Deterministic SDK gate:
+  - `npm run check:objc3c:m215-sdk-packaging`
+- Chain order:
+  - replays `check:objc3c:m216-conformance-suite-v1`.
+  - enforces all M215 lane contracts:
+    `tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_lowering_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_validation_sdk_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m215_integration_sdk_packaging_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through SDK packaging validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain packaging anchors.
 
 ## Current call contract
 
