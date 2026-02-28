@@ -2684,6 +2684,44 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py -q
 ```
 
+## M192 validation/conformance/perf inline-asm intrinsic governance runbook (M192-D001)
+
+Deterministic M192 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m192_validation_inline_asm_intrinsic_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m192_conformance_inline_asm_intrinsic_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m192_validation_inline_asm_intrinsic_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_inline_asm_intrinsic_governance_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_inline_asm_intrinsic_governance_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_inline_asm_intrinsic_governance_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_inline_asm_intrinsic_governance_lowering_surface.deterministic_handoff`
+  - `lowering_inline_asm_intrinsic_governance.replay_key`
+- `replay_run_1/module.ll`
+  - `inline_asm_intrinsic_governance_lowering`
+  - `frontend_objc_inline_asm_intrinsic_governance_lowering_profile`
+  - `!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}`
+- `M192-D001.json`
+  - `tracking.issue = 4552`
+  - `tracking.task = M192-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == inline_asm_intrinsic_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m192_validation_inline_asm_intrinsic_contract.py tests/tooling/test_objc3c_m192_conformance_inline_asm_intrinsic_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

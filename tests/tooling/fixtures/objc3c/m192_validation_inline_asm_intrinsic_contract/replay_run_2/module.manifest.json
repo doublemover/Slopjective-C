@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_inline_asm_intrinsic_governance_lowering_handoff": true,
+        "inline_asm_intrinsic_governance_lowering_sites": 7,
+        "inline_asm_intrinsic_governance_lowering_inline_asm_sites": 3,
+        "inline_asm_intrinsic_governance_lowering_intrinsic_sites": 4,
+        "inline_asm_intrinsic_governance_lowering_governed_intrinsic_sites": 3,
+        "inline_asm_intrinsic_governance_lowering_privileged_intrinsic_sites": 1,
+        "inline_asm_intrinsic_governance_lowering_normalized_sites": 5,
+        "inline_asm_intrinsic_governance_lowering_gate_blocked_sites": 2,
+        "inline_asm_intrinsic_governance_lowering_contract_violation_sites": 0,
+        "lowering_inline_asm_intrinsic_governance_replay_key": "inline_asm_intrinsic_sites=7;inline_asm_sites=3;intrinsic_sites=4;governed_intrinsic_sites=3;privileged_intrinsic_sites=1;normalized_sites=5;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m192-inline-asm-intrinsic-governance-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_inline_asm_intrinsic_governance_lowering_surface": {
+          "inline_asm_intrinsic_sites": 7,
+          "inline_asm_sites": 3,
+          "intrinsic_sites": 4,
+          "governed_intrinsic_sites": 3,
+          "privileged_intrinsic_sites": 1,
+          "normalized_sites": 5,
+          "gate_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "inline_asm_intrinsic_sites=7;inline_asm_sites=3;intrinsic_sites=4;governed_intrinsic_sites=3;privileged_intrinsic_sites=1;normalized_sites=5;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m192-inline-asm-intrinsic-governance-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_inline_asm_intrinsic_governance": {
+    "replay_key": "inline_asm_intrinsic_sites=7;inline_asm_sites=3;intrinsic_sites=4;governed_intrinsic_sites=3;privileged_intrinsic_sites=1;normalized_sites=5;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m192-inline-asm-intrinsic-governance-lowering-v1",
+    "lane_contract": "m192-inline-asm-intrinsic-governance-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

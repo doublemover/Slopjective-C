@@ -1,0 +1,25 @@
+{
+  "id": "M192-D001",
+  "title": "Inline-asm intrinsic governance lowering replay contract fixture (issue #4552 / task M192-D001)",
+  "feature": "m192 lane-d inline-asm intrinsic governance lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M192",
+    "milestone_number": 277,
+    "lane": "D",
+    "issue": 4552,
+    "task": "M192-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m192_validation_inline_asm_intrinsic_contract.py",
+    "tests/tooling/test_objc3c_m192_conformance_inline_asm_intrinsic_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: inline_asm_intrinsic_governance_lowering\n// EXPECT: deterministic_inline_asm_intrinsic_governance_lowering_handoff=true\n\nmodule m192_lane_d_inline_asm_intrinsic_governance;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
