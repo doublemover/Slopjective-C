@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <new>
+#include <limits>
 #include <process.h>
 #include <sstream>
 #include <string>
@@ -112,6 +113,74 @@ static std::string EscapeJsonString(const std::string &value) {
   return out.str();
 }
 
+struct ParsedFrontendDiagnostic {
+  std::string severity = "unknown";
+  unsigned line = std::numeric_limits<unsigned>::max();
+  unsigned column = std::numeric_limits<unsigned>::max();
+  std::string code;
+  std::string message;
+  std::string raw;
+};
+
+static bool IsNativeDiagCode(const std::string &candidate) {
+  if (candidate.size() != 6) {
+    return false;
+  }
+  if (candidate[0] != 'O' || candidate[1] != '3') {
+    return false;
+  }
+  if (std::isupper(static_cast<unsigned char>(candidate[2])) == 0) {
+    return false;
+  }
+  return std::isdigit(static_cast<unsigned char>(candidate[3])) != 0 &&
+         std::isdigit(static_cast<unsigned char>(candidate[4])) != 0 &&
+         std::isdigit(static_cast<unsigned char>(candidate[5])) != 0;
+}
+
+static ParsedFrontendDiagnostic ParseFrontendDiagnostic(const std::string &diag) {
+  ParsedFrontendDiagnostic parsed;
+  parsed.raw = diag;
+  parsed.message = diag;
+
+  const std::size_t severity_end = diag.find(':');
+  if (severity_end == std::string::npos) {
+    return parsed;
+  }
+  parsed.severity = ToLowerCopy(diag.substr(0, severity_end));
+
+  const std::size_t line_end = diag.find(':', severity_end + 1);
+  const std::size_t column_end = line_end == std::string::npos ? std::string::npos : diag.find(':', line_end + 1);
+  if (line_end == std::string::npos || column_end == std::string::npos) {
+    return parsed;
+  }
+
+  try {
+    parsed.line = static_cast<unsigned>(std::stoul(diag.substr(severity_end + 1, line_end - (severity_end + 1))));
+    parsed.column = static_cast<unsigned>(std::stoul(diag.substr(line_end + 1, column_end - (line_end + 1))));
+  } catch (...) {
+    parsed.line = std::numeric_limits<unsigned>::max();
+    parsed.column = std::numeric_limits<unsigned>::max();
+  }
+
+  std::size_t message_begin = column_end + 1;
+  while (message_begin < diag.size() && std::isspace(static_cast<unsigned char>(diag[message_begin])) != 0) {
+    ++message_begin;
+  }
+
+  const std::size_t code_begin = diag.rfind(" [");
+  if (code_begin != std::string::npos && code_begin > message_begin && !diag.empty() && diag.back() == ']') {
+    const std::string candidate_code = diag.substr(code_begin + 2, diag.size() - (code_begin + 3));
+    if (IsNativeDiagCode(candidate_code)) {
+      parsed.message = diag.substr(message_begin, code_begin - message_begin);
+      parsed.code = candidate_code;
+      return parsed;
+    }
+  }
+
+  parsed.message = diag.substr(message_begin);
+  return parsed;
+}
+
 static bool WriteTextFile(const std::filesystem::path &path, const std::string &contents, std::string &error) {
   std::error_code mkdir_error;
   std::filesystem::create_directories(path.parent_path(), mkdir_error);
@@ -155,7 +224,12 @@ static std::string BuildDiagnosticsJson(const std::vector<std::string> &diagnost
   out << "  \"schema_version\": \"1.0.0\",\n";
   out << "  \"diagnostics\": [\n";
   for (std::size_t i = 0; i < diagnostics.size(); ++i) {
-    out << "    {\"raw\":\"" << EscapeJsonString(diagnostics[i]) << "\"}";
+    const ParsedFrontendDiagnostic parsed = ParseFrontendDiagnostic(diagnostics[i]);
+    const unsigned line = parsed.line == std::numeric_limits<unsigned>::max() ? 0U : parsed.line;
+    const unsigned column = parsed.column == std::numeric_limits<unsigned>::max() ? 0U : parsed.column;
+    out << "    {\"severity\":\"" << EscapeJsonString(parsed.severity) << "\",\"line\":" << line
+        << ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(parsed.code) << "\",\"message\":\""
+        << EscapeJsonString(parsed.message) << "\",\"raw\":\"" << EscapeJsonString(parsed.raw) << "\"}";
     if (i + 1 != diagnostics.size()) {
       out << ",";
     }
@@ -277,7 +351,18 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   *result = {};
   ClearCompileResultPaths(context);
 
-  const Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);
+  Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);
+  Objc3LoweringContract normalized_lowering;
+  std::string lowering_error;
+  if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {
+    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+    result->process_exit_code = 2;
+    result->success = 0;
+    objc3c_frontend_set_error(context, lowering_error.c_str());
+    return result->status;
+  }
+  frontend_options.lowering = normalized_lowering;
+
   Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);
 
   const bool sema_attempted =

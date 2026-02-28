@@ -38,6 +38,9 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
     assert "bool deterministic_type_metadata_handoff = false;" in contract
+    assert "struct Objc3SemaParityContractSurface {" in contract
+    assert "bool IsReadyObjc3SemaParityContractSurface(" in contract
+    assert "Objc3SemaParityContractSurface parity_surface;" in contract
 
     _assert_in_order(
         contract,
@@ -54,7 +57,7 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
             "std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};",
             "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};",
             "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;",
-            "bool deterministic_type_metadata_handoff = false;",
+            "Objc3SemaParityContractSurface parity_surface;",
         ],
     )
 
@@ -73,6 +76,11 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();" in source
     assert "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);" in source
     assert "result.deterministic_type_metadata_handoff =" in source
+    assert "result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;" in source
+    assert "result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;" in source
+    assert "result.parity_surface.diagnostics_after_pass_monotonic =" in source
+    assert "result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;" in source
+    assert "result.parity_surface.ready =" in source
 
     _assert_in_order(
         source,
@@ -84,6 +92,9 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
             "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();",
             "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);",
             "result.deterministic_type_metadata_handoff =",
+            "result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;",
+            "result.parity_surface.diagnostics_after_pass_monotonic =",
+            "result.parity_surface.ready =",
         ],
     )
 

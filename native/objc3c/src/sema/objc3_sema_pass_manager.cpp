@@ -29,5 +29,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);
   result.deterministic_type_metadata_handoff =
       IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);
+  result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
+  result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
+  result.parity_surface.diagnostics_total = result.diagnostics.size();
+  result.parity_surface.globals_total = result.integration_surface.globals.size();
+  result.parity_surface.functions_total = result.integration_surface.functions.size();
+  result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();
+  result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();
+  result.parity_surface.diagnostics_after_pass_monotonic =
+      IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
+  result.parity_surface.ready =
+      result.executed && result.parity_surface.diagnostics_after_pass_monotonic &&
+      result.parity_surface.deterministic_type_metadata_handoff &&
+      result.parity_surface.globals_total == result.parity_surface.type_metadata_global_entries &&
+      result.parity_surface.functions_total == result.parity_surface.type_metadata_function_entries;
   return result;
 }

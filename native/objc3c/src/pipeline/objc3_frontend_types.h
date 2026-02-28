@@ -10,6 +10,7 @@
 #include "parse/objc3_diagnostics_bus.h"
 #include "parse/objc3_parser_contract.h"
 #include "sema/objc3_sema_contract.h"
+#include "sema/objc3_sema_pass_manager_contract.h"
 
 struct Objc3FrontendOptions {
   Objc3LoweringContract lowering;
@@ -20,4 +21,5 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendDiagnosticsBus stage_diagnostics;
   Objc3SemanticIntegrationSurface integration_surface;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
+  Objc3SemaParityContractSurface sema_parity_surface;
 };

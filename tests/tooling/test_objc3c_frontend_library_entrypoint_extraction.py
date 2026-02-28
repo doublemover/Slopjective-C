@@ -30,7 +30,7 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     assert "libobjc3c_frontend compile entrypoints are scaffolded only" not in source
     assert "OBJC3C_FRONTEND_STATUS_DIAGNOSTICS" in source
     assert "OBJC3C_FRONTEND_STATUS_EMIT_ERROR" in source
-    assert "const Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
+    assert "Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
     assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);" in source
     assert "std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;" in source
     assert "product.pipeline_result.stage_diagnostics" in source

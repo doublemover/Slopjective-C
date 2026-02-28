@@ -63,6 +63,25 @@ struct Objc3SemaPassManagerInput {
   Objc3SemaDiagnosticsBus diagnostics_bus;
 };
 
+struct Objc3SemaParityContractSurface {
+  std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
+  std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  std::size_t diagnostics_total = 0;
+  std::size_t globals_total = 0;
+  std::size_t functions_total = 0;
+  std::size_t type_metadata_global_entries = 0;
+  std::size_t type_metadata_function_entries = 0;
+  bool diagnostics_after_pass_monotonic = false;
+  bool deterministic_type_metadata_handoff = false;
+  bool ready = false;
+};
+
+inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
+  return surface.ready && surface.diagnostics_after_pass_monotonic && surface.deterministic_type_metadata_handoff &&
+         surface.globals_total == surface.type_metadata_global_entries &&
+         surface.functions_total == surface.type_metadata_function_entries;
+}
+
 struct Objc3SemaPassManagerResult {
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
@@ -70,5 +89,6 @@ struct Objc3SemaPassManagerResult {
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
   bool deterministic_type_metadata_handoff = false;
+  Objc3SemaParityContractSurface parity_surface;
   bool executed = false;
 };

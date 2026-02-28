@@ -31,6 +31,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);
     result.integration_surface = std::move(sema_result.integration_surface);
     result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;
+    result.sema_parity_surface = sema_result.parity_surface;
     if (result.stage_diagnostics.semantic.empty() && !sema_result.diagnostics.empty()) {
       result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);
     }

@@ -34,6 +34,7 @@ def test_sema_module_exists_and_pipeline_uses_api() -> None:
     pipeline_cpp = _read(PIPELINE_CPP)
     assert '#include "sema/objc3_sema_pass_manager.h"' in pipeline_cpp
     assert "RunObjc3SemaPassManager(sema_input)" in pipeline_cpp
+    assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_cpp
 
 
 def test_pipeline_uses_sema_contract_types() -> None:

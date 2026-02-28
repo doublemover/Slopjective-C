@@ -111,7 +111,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "      \"sema_pass_manager\": {\"diagnostics_after_build\":"
            << pipeline_result.sema_diagnostics_after_pass[0] << ",\"diagnostics_after_validate_bodies\":"
            << pipeline_result.sema_diagnostics_after_pass[1] << ",\"diagnostics_after_validate_pure_contract\":"
-           << pipeline_result.sema_diagnostics_after_pass[2] << "},\n";
+           << pipeline_result.sema_diagnostics_after_pass[2] << ",\"diagnostics_emitted_by_build\":"
+           << pipeline_result.sema_parity_surface.diagnostics_emitted_by_pass[0]
+           << ",\"diagnostics_emitted_by_validate_bodies\":"
+           << pipeline_result.sema_parity_surface.diagnostics_emitted_by_pass[1]
+           << ",\"diagnostics_emitted_by_validate_pure_contract\":"
+           << pipeline_result.sema_parity_surface.diagnostics_emitted_by_pass[2] << ",\"diagnostics_monotonic\":"
+           << (pipeline_result.sema_parity_surface.diagnostics_after_pass_monotonic ? "true" : "false")
+           << ",\"deterministic_type_metadata_handoff\":"
+           << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
+           << ",\"parity_ready\":"
+           << (IsReadyObjc3SemaParityContractSurface(pipeline_result.sema_parity_surface) ? "true" : "false")
+           << ",\"type_metadata_global_entries\":"
+           << pipeline_result.sema_parity_surface.type_metadata_global_entries
+           << ",\"type_metadata_function_entries\":"
+           << pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";
   manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()
            << ",\"declared_functions\":" << manifest_functions.size()
            << ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()
