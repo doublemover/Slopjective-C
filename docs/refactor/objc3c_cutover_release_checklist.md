@@ -14,7 +14,7 @@ This checklist is the production-readiness gate for final ObjC3C modular cutover
 | Determinism/perf evidence | Lane D owner | Release owner | Release owner |
 | Workflow/governance evidence | Lane E owner | Release owner | Release owner |
 
-## 3. cutover readiness checklist (`CR-M134-01`..`CR-M134-12`)
+## 3. cutover readiness checklist (`CR-M134-01`..`CR-M134-13`)
 
 - [ ] `CR-M134-01` Ownership roster published with on-call contact and UTC window.
 - [ ] `CR-M134-02` Latest boundary gate passes: `python scripts/check_objc3c_dependency_boundaries.py --strict`.
@@ -28,6 +28,7 @@ This checklist is the production-readiness gate for final ObjC3C modular cutover
 - [ ] `CR-M134-10` Stakeholder notification posted after cutover.
 - [ ] `CR-M134-11` Post-cutover monitoring window completed without trigger breach.
 - [ ] `CR-M134-12` Final release sign-off includes all pending evidence dispositions.
+- [ ] `CR-M134-13` Post-cutover tooling baseline disposition is recorded (`python -m pytest tests/tooling -q`) with closure evidence linked to [#4263](https://github.com/doublemover/Slopjective-C/issues/4263).
 
 ## 4. rollback and fallback confidence gates
 
@@ -43,18 +44,20 @@ Fallback confidence requirements:
 2. At least one successful fallback mode run restoring prior stable behavior.
 3. Evidence artifacts retained under `tmp/artifacts/objc3c-native/*` with referenced summary paths.
 
-## 5. pending evidence placeholders (D-lane dependencies)
+## 5. evidence carryovers (D-lane + post-milestone tooling)
 
-These placeholders remain explicit until `M134-D001` and `M134-D002` evidence is delivered.
+Lane-D placeholders are retained for audit and marked resolved once their issue-linked evidence landed.
+Post-milestone tooling baseline tracking remains explicit via closed evidence issue [#4263](https://github.com/doublemover/Slopjective-C/issues/4263).
 
 | Placeholder ID | Dependency | Owner | Required evidence | Current state | Unblock criteria |
 | --- | --- | --- | --- | --- | --- |
-| `PEND-D001` | `M134-D001` | Lane D owner | Determinism replay summary for cutover candidate across subsystem suites | `PENDING` | Attach replay summary + exit code `0` and integrator ack |
-| `PEND-D002` | `M134-D002` | Lane D owner | Performance and regression budget confirmation for modularized path | `PENDING` | Publish perf guard report with no hard-threshold breaches and release-owner sign-off |
+| `PEND-D001` | `M134-D001` | Lane D owner | Determinism replay summary for cutover candidate across subsystem suites | `PASS` | Closed via [#4258](https://github.com/doublemover/Slopjective-C/issues/4258) evidence landing. |
+| `PEND-D002` | `M134-D002` | Lane D owner | Performance and regression budget confirmation for modularized path | `PASS` | Closed via [#4259](https://github.com/doublemover/Slopjective-C/issues/4259) evidence landing. |
+| `PEND-TOOL-4263` | [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) | INT/tooling owners | Deterministic full-suite tooling baseline (`python -m pytest tests/tooling -q`) | `PASS` | Closed with `python -m pytest tests/tooling -q` -> `527 passed, 2 skipped` and issue [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) set `state=closed`. |
 
-Cutover may proceed only with either:
+Closeout may be represented as complete only with either:
 
-- both rows marked `PASS`, or
+- `PEND-TOOL-4263` marked `PASS`, or
 - explicit release-owner waiver comment with risk rationale and follow-up issue owner/date.
 
 ## 6. evidence capture expectations
@@ -83,7 +86,7 @@ Artifact: tmp/artifacts/objc3c-native/<run-id>/summary.json
 1. Escalate immediately to release owner for any rollback trigger.
 2. Escalate to integrator when ownership boundaries conflict.
 3. Escalate to lane E owner when evidence is missing or ambiguous.
-4. Do not close cutover checklist while `PEND-D001` or `PEND-D002` is unresolved without explicit waiver.
+4. Do not close cutover checklist while `PEND-TOOL-4263` is unresolved without explicit waiver and linked follow-up ownership/date.
 
 ## 8. validation command
 

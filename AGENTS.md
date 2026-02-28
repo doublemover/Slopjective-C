@@ -5,4 +5,5 @@
 - Never ask for approval to delete files.
 - Never ask the user whether temporary files should be deleted.
 - Keep all transient, scratch, and report artifacts in `tmp/`.
+- Store validation transcripts and closeout evidence captures under `tmp/` (for example, `tmp/reports/`).
 - If cleanup is needed, move artifacts into `tmp/` and leave them there.
