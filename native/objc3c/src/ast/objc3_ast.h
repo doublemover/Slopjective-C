@@ -210,6 +210,8 @@ struct Objc3MethodDecl {
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
   std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
+  std::string scope_owner_symbol;
+  std::string scope_path_symbol;
   bool is_class_method = false;
   bool has_body = false;
   unsigned line = 1;
@@ -257,12 +259,16 @@ struct Objc3PropertyDecl {
   bool has_setter = false;
   std::string getter_selector;
   std::string setter_selector;
+  std::string scope_owner_symbol;
+  std::string scope_path_symbol;
   unsigned line = 1;
   unsigned column = 1;
 };
 
 struct Objc3ProtocolDecl {
   std::string name;
+  std::string scope_owner_symbol;
+  std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> inherited_protocols;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
@@ -276,6 +282,8 @@ struct Objc3InterfaceDecl {
   std::string super_name;
   std::string category_name;
   bool has_category = false;
+  std::string scope_owner_symbol;
+  std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> adopted_protocols;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
@@ -287,6 +295,8 @@ struct Objc3ImplementationDecl {
   std::string name;
   std::string category_name;
   bool has_category = false;
+  std::string scope_owner_symbol;
+  std::vector<std::string> scope_path_lexicographic;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
@@ -295,6 +305,8 @@ struct Objc3ImplementationDecl {
 
 struct FunctionDecl {
   std::string name;
+  std::string scope_owner_symbol;
+  std::vector<std::string> scope_path_lexicographic;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;

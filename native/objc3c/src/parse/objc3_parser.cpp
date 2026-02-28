@@ -1,6 +1,7 @@
 #include "parse/objc3_parser.h"
 #include "parse/objc3_ast_builder.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cctype>
 #include <cstdlib>
@@ -166,6 +167,39 @@ static std::string BuildNormalizedObjcSelector(const std::vector<Objc3MethodDecl
     }
   }
   return normalized;
+}
+
+static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
+                                                             std::string entry_symbol) {
+  std::vector<std::string> path;
+  if (!owner_symbol.empty()) {
+    path.push_back(std::move(owner_symbol));
+  }
+  if (!entry_symbol.empty()) {
+    path.push_back(std::move(entry_symbol));
+  }
+  std::sort(path.begin(), path.end());
+  path.erase(std::unique(path.begin(), path.end()), path.end());
+  return path;
+}
+
+static std::string BuildObjcContainerScopeOwner(const std::string &container_kind,
+                                                const std::string &name,
+                                                bool has_category,
+                                                const std::string &category_name) {
+  std::string owner = container_kind + ":" + name;
+  if (has_category) {
+    owner += "(" + category_name + ")";
+  }
+  return owner;
+}
+
+static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method) {
+  return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
+}
+
+static std::string BuildObjcPropertyScopePathSymbol(const Objc3PropertyDecl &property) {
+  return "property:" + property.name;
 }
 
 class Objc3Parser {
@@ -415,6 +449,8 @@ class Objc3Parser {
       return nullptr;
     }
     decl->name = Previous().text;
+    decl->scope_owner_symbol = BuildObjcContainerScopeOwner("protocol", decl->name, false, "");
+    decl->scope_path_lexicographic = BuildScopePathLexicographic(decl->scope_owner_symbol, "protocol:" + decl->name);
     decl->line = Previous().line;
     decl->column = Previous().column;
 
@@ -836,6 +872,8 @@ class Objc3Parser {
       if (At(TokenKind::KwAtProperty)) {
         Objc3PropertyDecl property;
         if (ParseObjcPropertyDecl(property)) {
+          property.scope_owner_symbol = decl->scope_owner_symbol;
+          property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -852,6 +890,8 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, false)) {
+        method.scope_owner_symbol = decl->scope_owner_symbol;
+        method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
         decl->methods.push_back(std::move(method));
         continue;
       }
@@ -899,11 +939,24 @@ class Objc3Parser {
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
     }
+    decl->scope_owner_symbol =
+        BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);
+    decl->scope_path_lexicographic =
+        BuildScopePathLexicographic(decl->scope_owner_symbol, "interface:" + decl->name);
+    if (!decl->super_name.empty()) {
+      decl->scope_path_lexicographic.push_back("super:" + decl->super_name);
+      std::sort(decl->scope_path_lexicographic.begin(), decl->scope_path_lexicographic.end());
+      decl->scope_path_lexicographic.erase(
+          std::unique(decl->scope_path_lexicographic.begin(), decl->scope_path_lexicographic.end()),
+          decl->scope_path_lexicographic.end());
+    }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
       if (At(TokenKind::KwAtProperty)) {
         Objc3PropertyDecl property;
         if (ParseObjcPropertyDecl(property)) {
+          property.scope_owner_symbol = decl->scope_owner_symbol;
+          property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -920,6 +973,8 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, false)) {
+        method.scope_owner_symbol = decl->scope_owner_symbol;
+        method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
         decl->methods.push_back(std::move(method));
         continue;
       }
@@ -952,11 +1007,17 @@ class Objc3Parser {
     if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
       SynchronizeObjcContainer();
     }
+    decl->scope_owner_symbol =
+        BuildObjcContainerScopeOwner("implementation", decl->name, decl->has_category, decl->category_name);
+    decl->scope_path_lexicographic =
+        BuildScopePathLexicographic(decl->scope_owner_symbol, "implementation:" + decl->name);
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
       if (At(TokenKind::KwAtProperty)) {
         Objc3PropertyDecl property;
         if (ParseObjcPropertyDecl(property)) {
+          property.scope_owner_symbol = decl->scope_owner_symbol;
+          property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -973,6 +1034,8 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, true)) {
+        method.scope_owner_symbol = decl->scope_owner_symbol;
+        method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
         decl->methods.push_back(std::move(method));
         continue;
       }
@@ -1010,6 +1073,9 @@ class Objc3Parser {
     fn->name = Previous().text;
     fn->line = Previous().line;
     fn->column = Previous().column;
+    fn->scope_owner_symbol = "global";
+    fn->scope_path_lexicographic =
+        BuildScopePathLexicographic(fn->scope_owner_symbol, "function:" + fn->name);
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();

@@ -209,6 +209,39 @@ Recommended M150 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
 
+## M151 frontend symbol graph and scope-resolution parser surface
+
+Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member
+declarations and top-level functions.
+
+M151 parser/AST surface details:
+
+- scope helper anchors:
+  - `BuildScopePathLexicographic(...)`
+  - `BuildObjcContainerScopeOwner(...)`
+  - `BuildObjcMethodScopePathSymbol(...)`
+  - `BuildObjcPropertyScopePathSymbol(...)`
+- function scope markers:
+  - `fn->scope_owner_symbol = "global";`
+  - `fn->scope_path_lexicographic = BuildScopePathLexicographic(...)`
+- Objective-C container scope markers:
+  - `decl->scope_owner_symbol = BuildObjcContainerScopeOwner(...)`
+  - `decl->scope_path_lexicographic = BuildScopePathLexicographic(...)`
+- Objective-C member scope markers:
+  - `method.scope_owner_symbol = decl->scope_owner_symbol;`
+  - `method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);`
+  - `property.scope_owner_symbol = decl->scope_owner_symbol;`
+  - `property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);`
+
+Deterministic grammar intent:
+
+- symbol/scope metadata is attached at parse time and remains replay-stable for sema/lowering handoff.
+- scope path packets are lexicographically normalized via `BuildScopePathLexicographic(...)`.
+
+Recommended M151 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
