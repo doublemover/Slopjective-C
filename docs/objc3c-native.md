@@ -518,6 +518,22 @@ Frontend derive/synthesis pipeline contract relies on deterministic semantic-sur
   3. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
 
+## M201 frontend macro expansion architecture and isolation
+
+Frontend macro-expansion architecture/isolation contract relies on deterministic literal-hint capture, strict prelude pragma boundaries, and isolated transport into sema passes.
+
+- Required frontend macro-expansion/isolation signals:
+  - lexer literal-hint capture remains `migration_hints_.legacy_yes_count`, `legacy_no_count`, and `legacy_null_count`.
+  - prelude isolation contract remains `language_version_pragma_contract_` with prelude-only enforcement.
+  - pipeline transport isolation remains `result.migration_hints.*` and `result.language_version_pragma_contract.*`.
+  - sema ingestion remains isolated through `sema_input.migration_hints.*`.
+  - literal-classification bridge remains `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true")` and peers.
+- Required frontend macro-expansion/isolation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2523,6 +2539,32 @@ Recommended M202 sema/type derive/synthesis validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py -q`
 
+## M201 sema/type macro expansion architecture and isolation
+
+For deterministic sema/type macro-expansion architecture and isolation, capture replay-stable packet evidence from lexer literal-expansion hooks, pipeline transport handoffs, and canonical-only sema isolation gates.
+
+Macro expansion architecture/isolation packet map:
+
+- `macro expansion packet 1.1 deterministic lexer expansion architecture hooks` -> `m201_sema_type_macro_expansion_architecture_packet`
+- `macro expansion packet 1.2 deterministic sema isolation hooks` -> `m201_sema_type_macro_expansion_isolation_packet`
+
+### 1.1 Deterministic lexer expansion architecture packet
+
+- Source lexer expansion anchors: `} else if (ident == "YES") {`, `} else if (ident == "NO") {`, `} else if (ident == "NULL") {`, `kind = TokenKind::KwTrue;`, `kind = TokenKind::KwFalse;`, `kind = TokenKind::KwNil;`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline transport anchors: `const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();`, `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`, `result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;`, `result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source sema-input contract anchors: `bool migration_assist = false;` and `Objc3SemaMigrationHints migration_hints;`.
+- Deterministic lexer expansion architecture packet key: `m201_sema_type_macro_expansion_architecture_packet`.
+
+### 1.2 Deterministic sema isolation packet
+
+- Source sema isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`, `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`, `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Manifest macro-isolation anchors under `frontend`: `manifest << "    \"migration_assist\":`, `manifest << "    \"migration_hints\":{\"legacy_yes\":`, and `legacy_total()`.
+- Deterministic sema macro-expansion isolation packet key: `m201_sema_type_macro_expansion_isolation_packet`.
+
+Recommended M201 sema/type macro expansion architecture/isolation validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m201_sema_macro_expansion_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3156,6 +3198,81 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M201 lowering/runtime macro expansion architecture and isolation
+
+Lowering/runtime macro-expansion architecture and isolation evidence is captured as deterministic packet artifacts rooted under `tmp/` so migration-hint transport and pragma-contract boundaries remain replay-stable through lowering/runtime metadata emission.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/`
+  - `tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/macro-expansion-isolation-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `macro-expansion isolation markers` (required in source-anchor extracts):
+  - `migration_hints_.legacy_yes_count`
+  - `migration_hints_.legacy_no_count`
+  - `migration_hints_.legacy_null_count`
+  - `language_version_pragma_contract_.directive_count`
+  - `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`
+  - `result.language_version_pragma_contract.seen = pragma_contract.seen;`
+  - `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`
+  - `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");`
+  - `append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");`
+  - `append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");`
+  - `"migration_hints":{"legacy_yes":`
+  - `"language_version_pragma_contract":{"seen":`
+  - `ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;`
+  - `ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;`
+  - `ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `++migration_hints_.legacy_yes_count;`
+  - `++migration_hints_.legacy_no_count;`
+  - `++migration_hints_.legacy_null_count;`
+  - `++language_version_pragma_contract_.directive_count;`
+  - `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`
+  - `result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;`
+  - `result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;`
+  - `result.language_version_pragma_contract.seen = pragma_contract.seen;`
+  - `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`
+  - `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`
+  - `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`
+  - `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");`
+  - `append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");`
+  - `append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");`
+  - `manifest << "    \"migration_hints\":{\"legacy_yes\":" << pipeline_result.migration_hints.legacy_yes_count`
+  - `manifest << "    \"language_version_pragma_contract\":{\"seen\":"`
+  - `ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;`
+  - `ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;`
+  - `ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;`
+  - `out << "; frontend_profile = language_version="`
+  - `out << "!objc3.frontend = !{!0}\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and macro-expansion isolation source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, macro-expansion marker, or source anchor is missing.
+
+Macro-expansion architecture/isolation capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.ll tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.manifest.json > tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/abi-ir-anchors.txt`
+3. `rg -n "migration_hints_.legacy_yes_count|migration_hints_.legacy_no_count|migration_hints_.legacy_null_count|language_version_pragma_contract_.directive_count|result.migration_hints.legacy_yes_count|result.migration_hints.legacy_no_count|result.migration_hints.legacy_null_count|result.language_version_pragma_contract.seen|sema_input.migration_hints.legacy_yes_count|sema_input.migration_hints.legacy_no_count|sema_input.migration_hints.legacy_null_count|append_for_literal\\(input.migration_hints.legacy_yes_count|append_for_literal\\(input.migration_hints.legacy_no_count|append_for_literal\\(input.migration_hints.legacy_null_count|migration_hints|language_version_pragma_contract|ir_frontend_metadata\\.migration_legacy_yes|ir_frontend_metadata\\.migration_legacy_no|ir_frontend_metadata\\.migration_legacy_null|frontend_profile|!objc3\\.frontend|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/macro-expansion-isolation-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m201_lowering_macro_expansion_contract.py -q`
 
 ## M205 lowering/runtime macro security policy enforcement
 
@@ -5543,6 +5660,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m202_validation_derive_synthesis_contract.py -q
 ```
 
+## M201 validation/perf macro expansion architecture runbook
+
+Macro-expansion architecture/isolation validation runbook verifies deterministic migration/provenance evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Macro-expansion architecture evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m201_validation_macro_expansion_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6040,6 +6202,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain derive/synthesis anchors.
+
+## M201 integration macro expansion architecture and isolation
+
+- Gate intent: enforce deterministic macro-expansion architecture/isolation evidence across all lanes.
+### 1.1 Macro-expansion architecture integration chain
+- Deterministic macro-expansion architecture gate:
+  - `npm run check:objc3c:m201-macro-expansion-arch`
+- Chain order:
+  - replays `check:objc3c:m202-derive-synthesis`.
+  - enforces all M201 lane contracts:
+    `tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_sema_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_lowering_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_validation_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_integration_macro_expansion_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-expansion architecture validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-expansion architecture anchors.
 
 ## Current call contract
 
