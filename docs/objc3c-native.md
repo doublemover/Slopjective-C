@@ -10312,6 +10312,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m164_validation_weak_unowned_semantics_contract.py`
   - `tests/tooling/test_objc3c_m164_integration_weak_unowned_semantics_contract.py`
 
+## M165 integration ARC diagnostics/fix-it contract
+
+- Integration gate:
+  - `npm run check:objc3c:m165-arc-diagnostics-fixit-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m165`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m165_frontend_arc_diagnostics_fixit_parser_contract.py`
+  - `tests/tooling/test_objc3c_m165_sema_arc_diagnostics_fixit_contract.py`
+  - `tests/tooling/test_objc3c_m165_lowering_arc_diagnostics_fixit_contract.py`
+  - `tests/tooling/test_objc3c_m165_validation_arc_diagnostics_fixit_contract.py`
+  - `tests/tooling/test_objc3c_m165_integration_arc_diagnostics_fixit_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
