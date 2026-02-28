@@ -28,3 +28,7 @@ jobs:
         run: npm run check:compiler-closeout:m180
       - name: Run M180 cross-module conformance integration gate
         run: npm run check:objc3c:m180-cross-module-conformance-contracts
+      - name: Enforce M181 throws propagation packet/docs contract
+        run: npm run check:compiler-closeout:m181
+      - name: Run M181 throws propagation integration gate
+        run: npm run check:objc3c:m181-throws-propagation-contracts

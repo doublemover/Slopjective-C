@@ -2454,6 +2454,35 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
 ```
 
+## M181 integration throws propagation contract runbook (M181-E001)
+
+Deterministic M181 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m181-throws-propagation-contracts`
+- `npm run check:compiler-closeout:m181`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M181 throws propagation packet/docs contract`
+  - `Run M181 throws propagation integration gate`
+
+Scope assumptions:
+
+- M181-A001, M181-C001, and M181-D001 surfaces are landed in this workspace.
+- A standalone M181-B001 sema contract test is not present in this workspace.
+- This runbook enforces landed parser/lowering/validation/conformance surfaces plus M181-E001 integration wiring.
+
 ## M181 validation/conformance/perf throws propagation runbook (M181-D001)
 
 Deterministic M181 validation sequence:
@@ -2487,6 +2516,40 @@ Recommended verification command:
 
 ```bash
 python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+```
+
+## M182 validation/conformance/perf result-like lowering runbook (M182-D001)
+
+Deterministic M182 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m182_validation_result_like_lowering_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_result_like_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_result_like_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_result_like_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_result_like_lowering_surface.deterministic_handoff`
+  - `lowering_result_like.replay_key`
+- `replay_run_1/module.ll`
+  - `result_like_lowering`
+  - `frontend_objc_result_like_lowering_profile`
+  - `!objc3.objc_result_like_lowering = !{!35}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + branch_merge_sites == result_like_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
 ```
 
 Block copy-dispose evidence packet fields:

@@ -839,6 +839,25 @@ int objc3c_frontend_startup_check(void) {
   - M180-A001 and M180-C001 outputs are not yet landed in this workspace.
   - The integration gate fail-closes on the landed M180-B001/M180-D001 surfaces plus this M180-E001 wiring contract, while remaining forward-compatible for future M180-A001/M180-C001 additions.
 
+## M181 integration throws propagation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m181-throws-propagation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m181`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py`
+  - `tests/tooling/test_objc3c_m181_lowering_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py`
+  - `tests/tooling/test_objc3c_m181_integration_throws_propagation_contract.py`
+- Assumptions:
+  - M181-A001, M181-C001, and M181-D001 outputs are landed in this workspace.
+  - A standalone M181-B001 sema contract test is not present in this workspace.
+  - The integration gate fail-closes on the landed parser/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
