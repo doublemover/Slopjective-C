@@ -472,6 +472,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m156_validation_message_send_selector_lowering_contract.py`
   - `tests/tooling/test_objc3c_m156_integration_message_send_selector_lowering_contract.py`
 
+## M157 integration dispatch ABI marshalling contract
+
+- Integration gate:
+  - `npm run check:objc3c:m157-dispatch-abi-marshalling-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m157`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_validation_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_integration_dispatch_abi_marshalling_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

@@ -52,6 +52,8 @@ jobs:
         run: npm run check:compiler-closeout:m155
       - name: 00k Enforce M156 message-send selector-lowering packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m156
+      - name: 00m Enforce M157 dispatch ABI marshalling packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m157
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -169,6 +171,8 @@ jobs:
         run: npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts
       - name: 44k Run M156 message-send selector-lowering integration gate
         run: npm run check:objc3c:m156-message-send-selector-lowering-contracts
+      - name: 44m Run M157 dispatch ABI marshalling integration gate
+        run: npm run check:objc3c:m157-dispatch-abi-marshalling-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
