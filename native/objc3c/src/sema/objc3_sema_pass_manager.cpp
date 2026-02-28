@@ -258,6 +258,19 @@ bool IsEquivalentThrowsPropagationSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentUnsafePointerExtensionSummary(
+    const Objc3UnsafePointerExtensionSummary &lhs,
+    const Objc3UnsafePointerExtensionSummary &rhs) {
+  return lhs.unsafe_pointer_extension_sites == rhs.unsafe_pointer_extension_sites &&
+         lhs.unsafe_keyword_sites == rhs.unsafe_keyword_sites &&
+         lhs.pointer_arithmetic_sites == rhs.pointer_arithmetic_sites &&
+         lhs.raw_pointer_type_sites == rhs.raw_pointer_type_sites &&
+         lhs.unsafe_operation_sites == rhs.unsafe_operation_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentNSErrorBridgingSummary(
     const Objc3NSErrorBridgingSummary &lhs,
     const Objc3NSErrorBridgingSummary &rhs) {
@@ -906,6 +919,50 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.throws_propagation_summary.contract_violation_sites <=
           result.type_metadata_handoff.throws_propagation_summary
               .throws_propagation_sites;
+  result.unsafe_pointer_extension_summary =
+      result.integration_surface.unsafe_pointer_extension_summary;
+  result.deterministic_unsafe_pointer_extension_handoff =
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .deterministic &&
+      result.integration_surface.unsafe_pointer_extension_summary
+          .deterministic &&
+      IsEquivalentUnsafePointerExtensionSummary(
+          result.integration_surface.unsafe_pointer_extension_summary,
+          result.type_metadata_handoff.unsafe_pointer_extension_summary) &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_keyword_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .pointer_arithmetic_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .raw_pointer_type_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_operation_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .normalized_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .normalized_sites +
+              result.type_metadata_handoff.unsafe_pointer_extension_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites;
   result.ns_error_bridging_summary =
       result.integration_surface.ns_error_bridging_summary;
   result.deterministic_ns_error_bridging_handoff =
@@ -1709,6 +1766,31 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .cache_invalidation_candidate_sites;
   result.parity_surface.throws_propagation_contract_violation_sites_total =
       result.parity_surface.throws_propagation_summary.contract_violation_sites;
+  result.parity_surface.unsafe_pointer_extension_summary =
+      result.type_metadata_handoff.unsafe_pointer_extension_summary;
+  result.parity_surface.unsafe_pointer_extension_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .unsafe_pointer_extension_sites;
+  result.parity_surface.unsafe_pointer_extension_unsafe_keyword_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .unsafe_keyword_sites;
+  result.parity_surface.unsafe_pointer_extension_pointer_arithmetic_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .pointer_arithmetic_sites;
+  result.parity_surface.unsafe_pointer_extension_raw_pointer_type_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .raw_pointer_type_sites;
+  result.parity_surface.unsafe_pointer_extension_unsafe_operation_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .unsafe_operation_sites;
+  result.parity_surface.unsafe_pointer_extension_normalized_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary.normalized_sites;
+  result.parity_surface.unsafe_pointer_extension_gate_blocked_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .gate_blocked_sites;
+  result.parity_surface.unsafe_pointer_extension_contract_violation_sites_total =
+      result.parity_surface.unsafe_pointer_extension_summary
+          .contract_violation_sites;
   result.parity_surface.ns_error_bridging_summary =
       result.type_metadata_handoff.ns_error_bridging_summary;
   result.parity_surface.ns_error_bridging_sites_total =
@@ -2625,6 +2707,65 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.throws_propagation_summary.contract_violation_sites <=
           result.parity_surface.throws_propagation_summary.throws_propagation_sites &&
       result.parity_surface.throws_propagation_summary.deterministic;
+  result.parity_surface.deterministic_unsafe_pointer_extension_handoff =
+      result.deterministic_unsafe_pointer_extension_handoff &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites ==
+          result.parity_surface.unsafe_pointer_extension_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary.unsafe_keyword_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_unsafe_keyword_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .pointer_arithmetic_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_pointer_arithmetic_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary.raw_pointer_type_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_raw_pointer_type_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_operation_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_unsafe_operation_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary.normalized_sites ==
+          result.parity_surface.unsafe_pointer_extension_normalized_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary.gate_blocked_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_gate_blocked_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .unsafe_pointer_extension_contract_violation_sites_total &&
+      result.parity_surface.unsafe_pointer_extension_summary.unsafe_keyword_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .pointer_arithmetic_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .raw_pointer_type_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_operation_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary.normalized_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary.gate_blocked_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary
+              .contract_violation_sites <=
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary.normalized_sites +
+              result.parity_surface.unsafe_pointer_extension_summary
+                  .gate_blocked_sites ==
+          result.parity_surface.unsafe_pointer_extension_summary
+              .unsafe_pointer_extension_sites &&
+      result.parity_surface.unsafe_pointer_extension_summary.deterministic;
   result.parity_surface.deterministic_ns_error_bridging_handoff =
       result.deterministic_ns_error_bridging_handoff &&
       result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites ==
@@ -3411,6 +3552,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.unsafe_pointer_extension_summary.deterministic &&
+      result.parity_surface.deterministic_unsafe_pointer_extension_handoff &&
       result.parity_surface.ns_error_bridging_summary.deterministic &&
       result.parity_surface.deterministic_ns_error_bridging_handoff &&
       result.parity_surface.result_like_lowering_summary.deterministic &&

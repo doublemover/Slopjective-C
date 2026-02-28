@@ -266,6 +266,18 @@ struct Objc3ThrowsPropagationSummary {
   bool deterministic = true;
 };
 
+struct Objc3UnsafePointerExtensionSummary {
+  std::size_t unsafe_pointer_extension_sites = 0;
+  std::size_t unsafe_keyword_sites = 0;
+  std::size_t pointer_arithmetic_sites = 0;
+  std::size_t raw_pointer_type_sites = 0;
+  std::size_t unsafe_operation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3NSErrorBridgingSummary {
   std::size_t ns_error_bridging_sites = 0;
   std::size_t ns_error_parameter_sites = 0;
@@ -913,6 +925,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
@@ -1187,6 +1200,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;

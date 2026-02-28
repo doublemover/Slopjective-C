@@ -3395,6 +3395,48 @@ BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
   return summary;
 }
 
+static Objc3UnsafePointerExtensionSummary
+BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary,
+    const Objc3WeakUnownedSemanticsSummary &weak_unowned_summary) {
+  Objc3UnsafePointerExtensionSummary summary;
+  summary.raw_pointer_type_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.pointer_arithmetic_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.unsafe_pointer_extension_sites = summary.pointer_arithmetic_sites;
+
+  std::size_t unsafe_keyword_candidates = 0;
+  if (weak_unowned_summary.unowned_reference_sites >= weak_unowned_summary.unowned_safe_reference_sites) {
+    unsafe_keyword_candidates =
+        weak_unowned_summary.unowned_reference_sites -
+        weak_unowned_summary.unowned_safe_reference_sites;
+  } else {
+    summary.deterministic = false;
+  }
+
+  summary.unsafe_keyword_sites =
+      std::min(unsafe_keyword_candidates, summary.unsafe_pointer_extension_sites);
+  summary.unsafe_operation_sites =
+      std::min(summary.pointer_arithmetic_sites, summary.unsafe_keyword_sites);
+  summary.normalized_sites = summary.unsafe_operation_sites;
+  summary.gate_blocked_sites =
+      summary.unsafe_pointer_extension_sites - summary.normalized_sites;
+  summary.contract_violation_sites = summary.gate_blocked_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      type_annotation_summary.deterministic &&
+      weak_unowned_summary.deterministic &&
+      summary.unsafe_keyword_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.pointer_arithmetic_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.raw_pointer_type_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.unsafe_operation_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.normalized_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.gate_blocked_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.contract_violation_sites <= summary.unsafe_pointer_extension_sites &&
+      summary.normalized_sites + summary.gate_blocked_sites ==
+          summary.unsafe_pointer_extension_sites;
+  return summary;
+}
+
 static Objc3ResultLikeLoweringSummary BuildResultLikeLoweringSummaryFromProgramAst(
     const Objc3Program &ast) {
   Objc3ResultLikeLoweringSummary summary;
@@ -7786,6 +7828,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);
   surface.weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromIntegrationSurface(surface);
+  surface.unsafe_pointer_extension_summary =
+      BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
+          surface.type_annotation_surface_summary,
+          surface.weak_unowned_semantics_summary);
   surface.arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromIntegrationSurface(surface);
   surface.autoreleasepool_scope_sites_lexicographic =
@@ -8861,6 +8907,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
   handoff.weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
+  handoff.unsafe_pointer_extension_summary =
+      BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
+          handoff.type_annotation_surface_summary,
+          handoff.weak_unowned_semantics_summary);
   handoff.arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   handoff.autoreleasepool_scope_sites_lexicographic =
@@ -9614,6 +9664,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
   const Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary =
+      BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
+          handoff.type_annotation_surface_summary,
+          handoff.weak_unowned_semantics_summary);
   const Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
@@ -9992,6 +10046,40 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.throws_propagation_summary.throws_propagation_sites &&
          handoff.throws_propagation_summary.contract_violation_sites <=
              handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.unsafe_pointer_extension_summary.deterministic &&
+         handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites ==
+             unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.unsafe_keyword_sites ==
+             unsafe_pointer_extension_summary.unsafe_keyword_sites &&
+         handoff.unsafe_pointer_extension_summary.pointer_arithmetic_sites ==
+             unsafe_pointer_extension_summary.pointer_arithmetic_sites &&
+         handoff.unsafe_pointer_extension_summary.raw_pointer_type_sites ==
+             unsafe_pointer_extension_summary.raw_pointer_type_sites &&
+         handoff.unsafe_pointer_extension_summary.unsafe_operation_sites ==
+             unsafe_pointer_extension_summary.unsafe_operation_sites &&
+         handoff.unsafe_pointer_extension_summary.normalized_sites ==
+             unsafe_pointer_extension_summary.normalized_sites &&
+         handoff.unsafe_pointer_extension_summary.gate_blocked_sites ==
+             unsafe_pointer_extension_summary.gate_blocked_sites &&
+         handoff.unsafe_pointer_extension_summary.contract_violation_sites ==
+             unsafe_pointer_extension_summary.contract_violation_sites &&
+         handoff.unsafe_pointer_extension_summary.unsafe_keyword_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.pointer_arithmetic_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.raw_pointer_type_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.unsafe_operation_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.normalized_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.gate_blocked_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.contract_violation_sites <=
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         handoff.unsafe_pointer_extension_summary.normalized_sites +
+                 handoff.unsafe_pointer_extension_summary.gate_blocked_sites ==
+             handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
          handoff.ns_error_bridging_summary.deterministic &&
          handoff.ns_error_bridging_summary.ns_error_bridging_sites ==
              ns_error_bridging_summary.ns_error_bridging_sites &&

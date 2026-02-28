@@ -2247,6 +2247,45 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
+<a id="m191-sema-type-unsafe-pointer-extension-gating-contract-m191-b001"></a>
+## M191 sema/type unsafe-pointer extension gating contract (M191-B001)
+
+M191-B extends sema/type metadata and pass-manager parity surfaces for deterministic unsafe pointer-extension gating summaries replayed from integration surface into type-metadata handoff.
+
+Sema/type contract markers:
+
+- `Objc3UnsafePointerExtensionSummary`
+- `unsafe_pointer_extension_summary`
+- `BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries`
+- `unsafe_pointer_extension_sites_total`
+- `unsafe_pointer_extension_unsafe_keyword_sites_total`
+- `unsafe_pointer_extension_pointer_arithmetic_sites_total`
+- `unsafe_pointer_extension_raw_pointer_type_sites_total`
+- `unsafe_pointer_extension_unsafe_operation_sites_total`
+- `unsafe_pointer_extension_normalized_sites_total`
+- `unsafe_pointer_extension_gate_blocked_sites_total`
+- `unsafe_pointer_extension_contract_violation_sites_total`
+- `deterministic_unsafe_pointer_extension_handoff`
+
+Deterministic unsafe-pointer invariants (fail-closed):
+
+- `unsafe_keyword_sites`, `pointer_arithmetic_sites`, `raw_pointer_type_sites`, `unsafe_operation_sites`, `normalized_sites`, and `gate_blocked_sites` remain bounded by `unsafe_pointer_extension_sites`.
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`.
+- `contract_violation_sites <= unsafe_pointer_extension_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.unsafe_pointer_extension_summary = BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(...)`
+- handoff summary packet:
+  `handoff.unsafe_pointer_extension_summary = BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_unsafe_pointer_extension_handoff`
+
+Recommended M191 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m191_sema_unsafe_pointer_arithmetic_contract.py -q`
+
 ## M146 sema/type @interface/@implementation parity contract (M146-B001)
 
 M146-B extends sema/type metadata to track Objective-C interface/implementation declarations and selector-level coherence.

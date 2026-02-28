@@ -214,6 +214,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t throws_propagation_normalized_sites_total = 0;
   std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
   std::size_t throws_propagation_contract_violation_sites_total = 0;
+  std::size_t unsafe_pointer_extension_sites_total = 0;
+  std::size_t unsafe_pointer_extension_unsafe_keyword_sites_total = 0;
+  std::size_t unsafe_pointer_extension_pointer_arithmetic_sites_total = 0;
+  std::size_t unsafe_pointer_extension_raw_pointer_type_sites_total = 0;
+  std::size_t unsafe_pointer_extension_unsafe_operation_sites_total = 0;
+  std::size_t unsafe_pointer_extension_normalized_sites_total = 0;
+  std::size_t unsafe_pointer_extension_gate_blocked_sites_total = 0;
+  std::size_t unsafe_pointer_extension_contract_violation_sites_total = 0;
   std::size_t ns_error_bridging_sites_total = 0;
   std::size_t ns_error_bridging_ns_error_parameter_sites_total = 0;
   std::size_t ns_error_bridging_ns_error_out_parameter_sites_total = 0;
@@ -421,6 +429,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
+  bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
@@ -458,6 +467,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
@@ -896,6 +906,41 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.throws_propagation_summary.throws_propagation_sites &&
          surface.throws_propagation_summary.deterministic &&
          surface.deterministic_throws_propagation_handoff &&
+         surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites ==
+             surface.unsafe_pointer_extension_sites_total &&
+         surface.unsafe_pointer_extension_summary.unsafe_keyword_sites ==
+             surface.unsafe_pointer_extension_unsafe_keyword_sites_total &&
+         surface.unsafe_pointer_extension_summary.pointer_arithmetic_sites ==
+             surface.unsafe_pointer_extension_pointer_arithmetic_sites_total &&
+         surface.unsafe_pointer_extension_summary.raw_pointer_type_sites ==
+             surface.unsafe_pointer_extension_raw_pointer_type_sites_total &&
+         surface.unsafe_pointer_extension_summary.unsafe_operation_sites ==
+             surface.unsafe_pointer_extension_unsafe_operation_sites_total &&
+         surface.unsafe_pointer_extension_summary.normalized_sites ==
+             surface.unsafe_pointer_extension_normalized_sites_total &&
+         surface.unsafe_pointer_extension_summary.gate_blocked_sites ==
+             surface.unsafe_pointer_extension_gate_blocked_sites_total &&
+         surface.unsafe_pointer_extension_summary.contract_violation_sites ==
+             surface.unsafe_pointer_extension_contract_violation_sites_total &&
+         surface.unsafe_pointer_extension_summary.unsafe_keyword_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.pointer_arithmetic_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.raw_pointer_type_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.unsafe_operation_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.normalized_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.gate_blocked_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.contract_violation_sites <=
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.normalized_sites +
+                 surface.unsafe_pointer_extension_summary.gate_blocked_sites ==
+             surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&
+         surface.unsafe_pointer_extension_summary.deterministic &&
+         surface.deterministic_unsafe_pointer_extension_handoff &&
          surface.ns_error_bridging_summary.ns_error_bridging_sites ==
              surface.ns_error_bridging_sites_total &&
          surface.ns_error_bridging_summary.ns_error_parameter_sites ==
@@ -1628,6 +1673,8 @@ struct Objc3SemaPassManagerResult {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_throws_propagation_handoff = false;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_unsafe_pointer_extension_handoff = false;
+  Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   bool deterministic_ns_error_bridging_handoff = false;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   bool deterministic_result_like_lowering_handoff = false;
