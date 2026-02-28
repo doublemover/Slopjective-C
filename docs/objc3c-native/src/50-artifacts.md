@@ -51,6 +51,63 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M215 lowering/runtime SDK packaging profile
+
+Lowering/runtime SDK packaging evidence is captured as a deterministic packet for IDE-facing toolchains under `tmp/`.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.diagnostics.json`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.obj`
+  - `tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.object-backend.txt`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/ide-consumable-artifact-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each SDK packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `IDE-consumable artifact markers` (required in SDK packet marker extracts):
+  - `"schema_version": "1.0.0"`
+  - `"diagnostics": [`
+  - `"severity":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+  - `"module":`
+  - `"frontend":`
+  - `"lowering":`
+  - `"globals":`
+  - `"functions":`
+  - `"runtime_dispatch_symbol":`
+  - `"runtime_dispatch_arg_slots":`
+  - `clang`
+  - `llvm-direct`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `WriteText(out_dir / (emit_prefix + ".diagnostics.json"), out.str());`
+  - `WriteText(out_dir / (emit_prefix + ".manifest.json"), manifest_json);`
+  - `const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, `module.diagnostics.json`, and `module.object-backend.txt`.
+  - ABI/IR anchor extracts and IDE-consumable marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, source anchor, or IDE-consumable marker is missing.
+
+SDK packaging capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/abi-ir-anchors.txt`
+3. `rg -n "\"schema_version\":|\"diagnostics\":|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|\"module\":|\"frontend\":|\"lowering\":|\"globals\":|\"functions\":|\"runtime_dispatch_symbol\":|\"runtime_dispatch_arg_slots\":|clang|llvm-direct" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.diagnostics.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.object-backend.txt > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/ide-consumable-artifact-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m215_lowering_sdk_packaging_contract.py -q`
+
 ## M216 lowering/runtime conformance suite profile
 
 Lowering/runtime conformance suite evidence is captured as deterministic packet artifacts under `tmp/`.
