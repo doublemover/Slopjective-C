@@ -1,0 +1,33 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_arc_diagnostics_fixit_lowering_handoff": true,
+        "arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites": 10,
+        "arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites": 6,
+        "arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites": 8,
+        "arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites": 2,
+        "arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites": 1,
+        "arc_diagnostics_fixit_lowering_contract_violation_sites": 0,
+        "lowering_arc_diagnostics_fixit_replay_key": "ownership_arc_diagnostic_candidate_sites=10;ownership_arc_fixit_available_sites=6;ownership_arc_profiled_sites=8;ownership_arc_weak_unowned_conflict_diagnostic_sites=2;ownership_arc_empty_fixit_hint_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m165-arc-diagnostics-fixit-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_arc_diagnostics_fixit_lowering_surface": {
+          "ownership_arc_diagnostic_candidate_sites": 10,
+          "ownership_arc_fixit_available_sites": 6,
+          "ownership_arc_profiled_sites": 8,
+          "ownership_arc_weak_unowned_conflict_diagnostic_sites": 2,
+          "ownership_arc_empty_fixit_hint_sites": 1,
+          "contract_violation_sites": 0,
+          "replay_key": "ownership_arc_diagnostic_candidate_sites=10;ownership_arc_fixit_available_sites=6;ownership_arc_profiled_sites=8;ownership_arc_weak_unowned_conflict_diagnostic_sites=2;ownership_arc_empty_fixit_hint_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m165-arc-diagnostics-fixit-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_arc_diagnostics_fixit": {
+    "replay_key": "ownership_arc_diagnostic_candidate_sites=10;ownership_arc_fixit_available_sites=6;ownership_arc_profiled_sites=8;ownership_arc_weak_unowned_conflict_diagnostic_sites=2;ownership_arc_empty_fixit_hint_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m165-arc-diagnostics-fixit-lowering-v1",
+    "lane_contract": "m165-arc-diagnostics-fixit-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

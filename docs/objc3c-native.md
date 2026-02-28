@@ -8372,6 +8372,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_weak_unowned_semantics_lowering_profile`
 - `!objc3.objc_weak_unowned_semantics_lowering = !{!17}`
 
+## M165 validation/conformance/perf ARC diagnostics/fix-it runbook
+
+From repo root, execute deterministic M165 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m165_frontend_arc_diagnostics_fixit_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m165_sema_arc_diagnostics_fixit_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m165_lowering_arc_diagnostics_fixit_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m165_validation_arc_diagnostics_fixit_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_arc_diagnostics_fixit.replay_key`
+- `deterministic_arc_diagnostics_fixit_lowering_handoff`
+- `arc_diagnostics_fixit_lowering`
+- `frontend_objc_arc_diagnostics_fixit_lowering_profile`
+- `!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
