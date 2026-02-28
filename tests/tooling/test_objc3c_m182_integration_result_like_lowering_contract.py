@@ -21,11 +21,14 @@ def test_m182_integration_result_like_is_documented() -> None:
         "check:objc3c:m182-result-like-contracts",
         "check:compiler-closeout:m182",
         ".github/workflows/compiler-closeout.yml",
+        "tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py",
+        "tests/tooling/test_objc3c_m182_sema_result_like_contract.py",
+        "tests/tooling/test_objc3c_m182_lowering_result_like_contract.py",
         "tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py",
         "tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py",
         "tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py",
-        "M182-A001, M182-B001, and M182-C001 outputs are not yet landed in this workspace.",
-        "while remaining forward-compatible for future M182-A001/M182-B001/M182-C001 additions.",
+        "M182-A001 through M182-D001 outputs are landed in this workspace.",
+        "The integration gate fail-closes on parser/sema/lowering/validation/conformance surfaces plus this M182-E001 wiring contract.",
     ):
         assert text in library_api_doc
 
@@ -35,6 +38,9 @@ def test_m182_e001_integration_runbook_section_is_documented() -> None:
 
     for text in (
         "## M182 integration result-like lowering contract runbook (M182-E001)",
+        "python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q",
+        "python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q",
+        "python -m pytest tests/tooling/test_objc3c_m182_lowering_result_like_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q",
@@ -53,7 +59,10 @@ def test_m182_integration_result_like_gate_is_wired() -> None:
 
     assert "check:objc3c:m182-result-like-contracts" in scripts
     assert scripts["check:objc3c:m182-result-like-contracts"] == (
-        "python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py "
+        "python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py "
+        "tests/tooling/test_objc3c_m182_sema_result_like_contract.py "
+        "tests/tooling/test_objc3c_m182_lowering_result_like_contract.py "
+        "tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py "
         "tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py "
         "tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q"
     )
@@ -69,3 +78,10 @@ def test_m182_integration_result_like_gate_is_wired() -> None:
     assert "npm run check:compiler-closeout:m182" in workflow
     assert "Run M182 result-like lowering integration gate" in workflow
     assert "npm run check:objc3c:m182-result-like-contracts" in workflow
+
+    assert workflow.index("Enforce M182 result-like lowering packet/docs contract") < workflow.index(
+        "Run M182 result-like lowering integration gate"
+    )
+    assert workflow.index("npm run check:compiler-closeout:m182") < workflow.index(
+        "npm run check:objc3c:m182-result-like-contracts"
+    )
