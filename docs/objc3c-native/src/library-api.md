@@ -429,6 +429,19 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m153_validation_method_lookup_override_conflict_contract.py`
   - `tests/tooling/test_objc3c_m153_integration_method_lookup_override_conflict_contract.py`
 
+## M154 integration property synthesis ivar binding contract
+
+- Integration gate:
+  - `npm run check:objc3c:m154-property-synthesis-ivar-bindings`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m154`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py`
+  - `tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py`
+  - `tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py`
+  - `tests/tooling/test_objc3c_m154_validation_property_synthesis_ivar_binding_contract.py`
+  - `tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

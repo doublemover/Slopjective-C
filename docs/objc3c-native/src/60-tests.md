@@ -454,6 +454,17 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py -q
 ```
 
+## M154 validation property synthesis and ivar binding semantics runbook
+
+From repo root, execute deterministic M154 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m154_validation_property_synthesis_ivar_binding_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py -q`
+- `npm run check:objc3c:m154-property-synthesis-ivar-bindings`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
