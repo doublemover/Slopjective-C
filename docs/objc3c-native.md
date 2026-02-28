@@ -359,6 +359,21 @@ Frontend debug-info fidelity requires deterministic parser/AST boundary evidence
   3. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
 
+## M212 frontend code-action packet
+
+Frontend code-action/refactor support requires deterministic parser/AST boundary evidence for safe rewrites.
+
+- Required code-action signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required code-action commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2038,6 +2053,36 @@ Recommended debug-info fidelity commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
 
+## M212 sema/type code-action profile
+
+For compiler-driven code actions and refactoring safety, capture deterministic sema/type evidence packets from replay-stable sema execution before applying automated edits.
+
+Code-action safety packet map:
+
+- `code action packet 1.1 deterministic sema diagnostics` -> `m212_code_action_sema_diagnostics_packet`
+- `code action packet 1.2 deterministic type-metadata handoff` -> `m212_code_action_type_metadata_handoff_packet`
+
+### 1.1 Deterministic sema diagnostics code-action packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic code-action sema packet key: `m212_code_action_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata handoff code-action packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic code-action type packet key: `m212_code_action_type_metadata_handoff_packet`.
+
+Recommended code-action safety commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m212_sema_code_action_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2255,6 +2300,57 @@ Debug-info fidelity capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/abi-ir-anchors.txt`
 3. `rg -n "source_filename =|\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.diagnostics.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/debug-metadata-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py -q`
+
+## M212 lowering/runtime code-action profile
+
+Lowering/runtime evidence for the refactor/code-action engine is captured as a deterministic packet rooted under `tmp/` so rewrite application is replay-stable and auditable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `rewrite markers` (required in rewrite marker extracts):
+  - `@@ rewrite_scope:module`
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `"source":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"source\": \"" << input_path.generic_string() << "\",\n";`
+  - `manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]`
+  - `<< ",\"line\":" << program.globals[i].line << ",\"column\":" << program.globals[i].column << "}";`
+  - `<< ",\"line\":" << fn.line << ",\"column\":" << fn.column << "}";`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and rewrite marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, rewrite marker, or source anchor is missing.
+
+Code-action capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json > tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
+3. `@("@@ rewrite_scope:module") | Set-Content tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m212_lowering_code_action_contract.py -q`
 
 ## M214 lowering/runtime daemonized compiler profile
 
@@ -3858,6 +3954,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m213_validation_debug_fidelity_contract.py -q
 ```
 
+## M212 validation/perf code-action runbook
+
+Code-action/refactor validation runbook verifies deterministic rewrite-safety evidence.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Code-action evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `rewrite_safety_map`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `rewrite_safety_map`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `rewrite_safety_map`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `rewrite_safety_map`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m212_validation_code_action_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4135,6 +4276,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain debug-fidelity anchors.
+
+## M212 integration refactor/code-action engine
+
+- Gate intent: enforce deterministic code-action/refactor evidence across all lanes.
+### 1.1 Code-action integration chain
+- Deterministic code-action gate:
+  - `npm run check:objc3c:m212-code-action`
+- Chain order:
+  - replays `check:objc3c:m213-debug-fidelity`.
+  - enforces all M212 lane contracts:
+    `tests/tooling/test_objc3c_m212_frontend_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_sema_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_lowering_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_validation_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_integration_code_action_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through code-action validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain code-action anchors.
 
 ## Current call contract
 
