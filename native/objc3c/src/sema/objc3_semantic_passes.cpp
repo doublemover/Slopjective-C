@@ -524,6 +524,11 @@ static bool SupportsNullabilityParamTypeSuffix(const FuncParam &param) {
   return param.id_spelling || param.class_spelling || param.instancetype_spelling;
 }
 
+static bool SupportsOwnershipQualifierParamTypeSuffix(const FuncParam &param) {
+  return param.id_spelling || param.class_spelling || param.instancetype_spelling ||
+         param.object_pointer_type_spelling;
+}
+
 static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
   return param.id_spelling || param.class_spelling || param.instancetype_spelling;
 }
@@ -544,6 +549,16 @@ static bool SupportsNullabilityReturnTypeSuffix(const Objc3MethodDecl &method) {
   return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
 }
 
+static bool SupportsOwnershipQualifierReturnTypeSuffix(const FunctionDecl &fn) {
+  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling ||
+         fn.return_object_pointer_type_spelling;
+}
+
+static bool SupportsOwnershipQualifierReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling ||
+         method.return_object_pointer_type_spelling;
+}
+
 static bool SupportsPointerReturnTypeDeclarator(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
 }
@@ -560,6 +575,11 @@ static bool SupportsNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &prope
   return property.id_spelling || property.class_spelling || property.instancetype_spelling;
 }
 
+static bool SupportsOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return property.id_spelling || property.class_spelling || property.instancetype_spelling ||
+         property.object_pointer_type_spelling;
+}
+
 static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
   return property.id_spelling || property.class_spelling || property.instancetype_spelling;
 }
@@ -574,6 +594,10 @@ static bool HasInvalidPointerParamTypeDeclarator(const FuncParam &param) {
 
 static bool HasInvalidNullabilityParamTypeSuffix(const FuncParam &param) {
   return !param.nullability_suffix_tokens.empty() && !SupportsNullabilityParamTypeSuffix(param);
+}
+
+static bool HasInvalidOwnershipQualifierParamTypeSuffix(const FuncParam &param) {
+  return param.has_ownership_qualifier && !SupportsOwnershipQualifierParamTypeSuffix(param);
 }
 
 static bool HasInvalidGenericReturnTypeSuffix(const FunctionDecl &fn) {
@@ -600,6 +624,14 @@ static bool HasInvalidNullabilityReturnTypeSuffix(const Objc3MethodDecl &method)
   return !method.return_nullability_suffix_tokens.empty() && !SupportsNullabilityReturnTypeSuffix(method);
 }
 
+static bool HasInvalidOwnershipQualifierReturnTypeSuffix(const FunctionDecl &fn) {
+  return fn.has_return_ownership_qualifier && !SupportsOwnershipQualifierReturnTypeSuffix(fn);
+}
+
+static bool HasInvalidOwnershipQualifierReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return method.has_return_ownership_qualifier && !SupportsOwnershipQualifierReturnTypeSuffix(method);
+}
+
 static bool HasInvalidGenericPropertyTypeSuffix(const Objc3PropertyDecl &property) {
   return property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property);
 }
@@ -612,10 +644,15 @@ static bool HasInvalidNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &pro
   return !property.nullability_suffix_tokens.empty() && !SupportsNullabilityPropertyTypeSuffix(property);
 }
 
+static bool HasInvalidOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return property.has_ownership_qualifier && !SupportsOwnershipQualifierPropertyTypeSuffix(property);
+}
+
 static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
   return HasInvalidGenericPropertyTypeSuffix(property) ||
          HasInvalidPointerPropertyTypeDeclarator(property) ||
-         HasInvalidNullabilityPropertyTypeSuffix(property);
+         HasInvalidNullabilityPropertyTypeSuffix(property) ||
+         HasInvalidOwnershipQualifierPropertyTypeSuffix(property);
 }
 
 static bool IsKnownPropertyAttributeName(const std::string &name) {
@@ -637,7 +674,8 @@ static bool IsValidPropertySetterSelector(const std::string &selector) {
 static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
   return HasInvalidGenericParamTypeSuffix(param) ||
          HasInvalidPointerParamTypeDeclarator(param) ||
-         HasInvalidNullabilityParamTypeSuffix(param);
+         HasInvalidNullabilityParamTypeSuffix(param) ||
+         HasInvalidOwnershipQualifierParamTypeSuffix(param);
 }
 
 static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(const FuncParam &param) {
@@ -745,6 +783,14 @@ static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<st
                                            param.name + "'"));
       }
     }
+    if (!SupportsOwnershipQualifierParamTypeSuffix(param)) {
+      for (const auto &token : param.ownership_qualifier_tokens) {
+        diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                       "type mismatch: ownership parameter type qualifier '" + token.text +
+                                           "' is unsupported for non-object parameter annotation '" + param.name +
+                                           "'"));
+      }
+    }
   }
 }
 
@@ -779,6 +825,13 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
                                      "type mismatch: unsupported function return type suffix '" + token.text +
                                          "' for non-id/Class/instancetype return annotation in function '" + fn.name +
                                          "'"));
+    }
+  }
+  if (!SupportsOwnershipQualifierReturnTypeSuffix(fn)) {
+    for (const auto &token : fn.return_ownership_qualifier_tokens) {
+      diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                     "type mismatch: unsupported function return ownership qualifier '" + token.text +
+                                         "' for non-object return annotation in function '" + fn.name + "'"));
     }
   }
 }
@@ -991,6 +1044,14 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                            param.name + "' in " + owner_kind + " '" + owner_name + "'"));
       }
     }
+    if (!SupportsOwnershipQualifierParamTypeSuffix(param)) {
+      for (const auto &token : param.ownership_qualifier_tokens) {
+        diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                       "type mismatch: ownership parameter type qualifier '" + token.text +
+                                           "' is unsupported for selector '" + selector + "' parameter '" +
+                                           param.name + "' in " + owner_kind + " '" + owner_name + "'"));
+      }
+    }
   }
 }
 
@@ -1028,6 +1089,14 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
     for (const auto &token : method.return_nullability_suffix_tokens) {
       diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
                                      "type mismatch: unsupported method return type suffix '" + token.text +
+                                         "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
+                                         "'"));
+    }
+  }
+  if (!SupportsOwnershipQualifierReturnTypeSuffix(method)) {
+    for (const auto &token : method.return_ownership_qualifier_tokens) {
+      diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                     "type mismatch: unsupported method return ownership qualifier '" + token.text +
                                          "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                          "'"));
     }
@@ -1077,6 +1146,16 @@ static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
                                          owner_name + "'"));
     }
   }
+  if (!SupportsOwnershipQualifierPropertyTypeSuffix(property)) {
+    for (const auto &token : property.ownership_qualifier_tokens) {
+      diagnostics.push_back(MakeDiag(token.line,
+                                     token.column,
+                                     "O3S206",
+                                     "type mismatch: unsupported property ownership qualifier '" + token.text +
+                                         "' for property '" + property.name + "' in " + owner_kind + " '" +
+                                         owner_name + "'"));
+    }
+  }
 }
 
 static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
@@ -1095,9 +1174,11 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.has_generic_suffix = property.has_generic_suffix;
   info.has_pointer_declarator = property.has_pointer_declarator;
   info.has_nullability_suffix = !property.nullability_suffix_tokens.empty();
+  info.has_ownership_qualifier = property.has_ownership_qualifier;
   info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
   info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
   info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
+  info.has_invalid_ownership_qualifier = HasInvalidOwnershipQualifierPropertyTypeSuffix(property);
   info.has_invalid_type_suffix = HasInvalidPropertyTypeSuffix(property);
   info.attribute_entries = property.attributes.size();
   info.is_readonly = property.is_readonly;
@@ -1263,10 +1344,12 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_has_generic_suffix.reserve(method.params.size());
   info.param_has_pointer_declarator.reserve(method.params.size());
   info.param_has_nullability_suffix.reserve(method.params.size());
+  info.param_has_ownership_qualifier.reserve(method.params.size());
   info.param_object_pointer_type_spelling.reserve(method.params.size());
   info.param_has_invalid_generic_suffix.reserve(method.params.size());
   info.param_has_invalid_pointer_declarator.reserve(method.params.size());
   info.param_has_invalid_nullability_suffix.reserve(method.params.size());
+  info.param_has_invalid_ownership_qualifier.reserve(method.params.size());
   info.param_has_invalid_type_suffix.reserve(method.params.size());
   info.param_has_protocol_composition.reserve(method.params.size());
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
@@ -1280,10 +1363,12 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_has_generic_suffix.push_back(param.has_generic_suffix);
     info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
     info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
+    info.param_has_ownership_qualifier.push_back(param.has_ownership_qualifier);
     info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
     info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
     info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
     info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
+    info.param_has_invalid_ownership_qualifier.push_back(HasInvalidOwnershipQualifierParamTypeSuffix(param));
     info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
@@ -1293,13 +1378,16 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_generic_suffix = method.has_return_generic_suffix;
   info.return_has_pointer_declarator = method.has_return_pointer_declarator;
   info.return_has_nullability_suffix = !method.return_nullability_suffix_tokens.empty();
+  info.return_has_ownership_qualifier = method.has_return_ownership_qualifier;
   info.return_object_pointer_type_spelling = method.return_object_pointer_type_spelling;
   info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(method);
   info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(method);
   info.return_has_invalid_nullability_suffix = HasInvalidNullabilityReturnTypeSuffix(method);
+  info.return_has_invalid_ownership_qualifier = HasInvalidOwnershipQualifierReturnTypeSuffix(method);
   info.return_has_invalid_type_suffix = info.return_has_invalid_generic_suffix ||
                                         info.return_has_invalid_pointer_declarator ||
-                                        info.return_has_invalid_nullability_suffix;
+                                        info.return_has_invalid_nullability_suffix ||
+                                        info.return_has_invalid_ownership_qualifier;
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
@@ -1314,12 +1402,17 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
 
 static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3MethodInfo &rhs) {
   if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type || lhs.return_is_vector != rhs.return_is_vector ||
-      lhs.is_class_method != rhs.is_class_method) {
+      lhs.is_class_method != rhs.is_class_method ||
+      lhs.return_has_ownership_qualifier != rhs.return_has_ownership_qualifier) {
     return false;
   }
   if (lhs.return_is_vector &&
       (lhs.return_vector_base_spelling != rhs.return_vector_base_spelling ||
        lhs.return_vector_lane_count != rhs.return_vector_lane_count)) {
+    return false;
+  }
+  if (lhs.param_has_ownership_qualifier.size() != lhs.arity ||
+      rhs.param_has_ownership_qualifier.size() != rhs.arity) {
     return false;
   }
   if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
@@ -1337,7 +1430,13 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
         i >= rhs.param_protocol_composition_lexicographic.size()) {
       return false;
     }
+    if (i >= lhs.param_has_ownership_qualifier.size() || i >= rhs.param_has_ownership_qualifier.size()) {
+      return false;
+    }
     if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
+      return false;
+    }
+    if (lhs.param_has_ownership_qualifier[i] != rhs.param_has_ownership_qualifier[i]) {
       return false;
     }
     if (lhs.param_is_vector[i] &&
@@ -2595,10 +2694,12 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
   if (function_info.param_has_generic_suffix.size() != arity ||
       function_info.param_has_pointer_declarator.size() != arity ||
       function_info.param_has_nullability_suffix.size() != arity ||
+      function_info.param_has_ownership_qualifier.size() != arity ||
       function_info.param_object_pointer_type_spelling.size() != arity ||
       function_info.param_has_invalid_generic_suffix.size() != arity ||
       function_info.param_has_invalid_pointer_declarator.size() != arity ||
       function_info.param_has_invalid_nullability_suffix.size() != arity ||
+      function_info.param_has_invalid_ownership_qualifier.size() != arity ||
       function_info.param_has_invalid_type_suffix.size() != arity) {
     summary.deterministic = false;
     return;
@@ -2614,6 +2715,9 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
     if (function_info.param_has_nullability_suffix[i]) {
       ++summary.nullability_suffix_sites;
     }
+    if (function_info.param_has_ownership_qualifier[i]) {
+      ++summary.ownership_qualifier_sites;
+    }
     if (function_info.param_object_pointer_type_spelling[i]) {
       ++summary.object_pointer_type_sites;
     }
@@ -2626,10 +2730,14 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
     if (function_info.param_has_invalid_nullability_suffix[i]) {
       ++summary.invalid_nullability_suffix_sites;
     }
+    if (function_info.param_has_invalid_ownership_qualifier[i]) {
+      ++summary.invalid_ownership_qualifier_sites;
+    }
     const bool expected_invalid =
         function_info.param_has_invalid_generic_suffix[i] ||
         function_info.param_has_invalid_pointer_declarator[i] ||
-        function_info.param_has_invalid_nullability_suffix[i];
+        function_info.param_has_invalid_nullability_suffix[i] ||
+        function_info.param_has_invalid_ownership_qualifier[i];
     if (function_info.param_has_invalid_type_suffix[i] != expected_invalid) {
       summary.deterministic = false;
     }
@@ -2644,6 +2752,9 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
   if (function_info.return_has_nullability_suffix) {
     ++summary.nullability_suffix_sites;
   }
+  if (function_info.return_has_ownership_qualifier) {
+    ++summary.ownership_qualifier_sites;
+  }
   if (function_info.return_object_pointer_type_spelling) {
     ++summary.object_pointer_type_sites;
   }
@@ -2656,10 +2767,14 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
   if (function_info.return_has_invalid_nullability_suffix) {
     ++summary.invalid_nullability_suffix_sites;
   }
+  if (function_info.return_has_invalid_ownership_qualifier) {
+    ++summary.invalid_ownership_qualifier_sites;
+  }
 
   const bool expected_return_invalid = function_info.return_has_invalid_generic_suffix ||
                                        function_info.return_has_invalid_pointer_declarator ||
-                                       function_info.return_has_invalid_nullability_suffix;
+                                       function_info.return_has_invalid_nullability_suffix ||
+                                       function_info.return_has_invalid_ownership_qualifier;
   if (function_info.return_has_invalid_type_suffix != expected_return_invalid) {
     summary.deterministic = false;
   }
@@ -2671,10 +2786,12 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
   if (method_info.param_has_generic_suffix.size() != arity ||
       method_info.param_has_pointer_declarator.size() != arity ||
       method_info.param_has_nullability_suffix.size() != arity ||
+      method_info.param_has_ownership_qualifier.size() != arity ||
       method_info.param_object_pointer_type_spelling.size() != arity ||
       method_info.param_has_invalid_generic_suffix.size() != arity ||
       method_info.param_has_invalid_pointer_declarator.size() != arity ||
       method_info.param_has_invalid_nullability_suffix.size() != arity ||
+      method_info.param_has_invalid_ownership_qualifier.size() != arity ||
       method_info.param_has_invalid_type_suffix.size() != arity) {
     summary.deterministic = false;
     return;
@@ -2690,6 +2807,9 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
     if (method_info.param_has_nullability_suffix[i]) {
       ++summary.nullability_suffix_sites;
     }
+    if (method_info.param_has_ownership_qualifier[i]) {
+      ++summary.ownership_qualifier_sites;
+    }
     if (method_info.param_object_pointer_type_spelling[i]) {
       ++summary.object_pointer_type_sites;
     }
@@ -2702,9 +2822,13 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
     if (method_info.param_has_invalid_nullability_suffix[i]) {
       ++summary.invalid_nullability_suffix_sites;
     }
+    if (method_info.param_has_invalid_ownership_qualifier[i]) {
+      ++summary.invalid_ownership_qualifier_sites;
+    }
     const bool expected_invalid = method_info.param_has_invalid_generic_suffix[i] ||
                                   method_info.param_has_invalid_pointer_declarator[i] ||
-                                  method_info.param_has_invalid_nullability_suffix[i];
+                                  method_info.param_has_invalid_nullability_suffix[i] ||
+                                  method_info.param_has_invalid_ownership_qualifier[i];
     if (method_info.param_has_invalid_type_suffix[i] != expected_invalid) {
       summary.deterministic = false;
     }
@@ -2719,6 +2843,9 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
   if (method_info.return_has_nullability_suffix) {
     ++summary.nullability_suffix_sites;
   }
+  if (method_info.return_has_ownership_qualifier) {
+    ++summary.ownership_qualifier_sites;
+  }
   if (method_info.return_object_pointer_type_spelling) {
     ++summary.object_pointer_type_sites;
   }
@@ -2731,9 +2858,13 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
   if (method_info.return_has_invalid_nullability_suffix) {
     ++summary.invalid_nullability_suffix_sites;
   }
+  if (method_info.return_has_invalid_ownership_qualifier) {
+    ++summary.invalid_ownership_qualifier_sites;
+  }
   const bool expected_return_invalid = method_info.return_has_invalid_generic_suffix ||
                                        method_info.return_has_invalid_pointer_declarator ||
-                                       method_info.return_has_invalid_nullability_suffix;
+                                       method_info.return_has_invalid_nullability_suffix ||
+                                       method_info.return_has_invalid_ownership_qualifier;
   if (method_info.return_has_invalid_type_suffix != expected_return_invalid) {
     summary.deterministic = false;
   }
@@ -2750,6 +2881,9 @@ static void AccumulateTypeAnnotationSummaryFromPropertyInfo(const Objc3PropertyI
   if (property_info.has_nullability_suffix) {
     ++summary.nullability_suffix_sites;
   }
+  if (property_info.has_ownership_qualifier) {
+    ++summary.ownership_qualifier_sites;
+  }
   if (property_info.object_pointer_type_spelling) {
     ++summary.object_pointer_type_sites;
   }
@@ -2762,9 +2896,13 @@ static void AccumulateTypeAnnotationSummaryFromPropertyInfo(const Objc3PropertyI
   if (property_info.has_invalid_nullability_suffix) {
     ++summary.invalid_nullability_suffix_sites;
   }
+  if (property_info.has_invalid_ownership_qualifier) {
+    ++summary.invalid_ownership_qualifier_sites;
+  }
   const bool expected_invalid = property_info.has_invalid_generic_suffix ||
                                 property_info.has_invalid_pointer_declarator ||
-                                property_info.has_invalid_nullability_suffix;
+                                property_info.has_invalid_nullability_suffix ||
+                                property_info.has_invalid_ownership_qualifier;
   if (property_info.has_invalid_type_suffix != expected_invalid) {
     summary.deterministic = false;
   }
@@ -2797,6 +2935,7 @@ static Objc3TypeAnnotationSurfaceSummary BuildTypeAnnotationSurfaceSummaryFromIn
                           summary.invalid_generic_suffix_sites <= summary.generic_suffix_sites &&
                           summary.invalid_pointer_declarator_sites <= summary.pointer_declarator_sites &&
                           summary.invalid_nullability_suffix_sites <= summary.nullability_suffix_sites &&
+                          summary.invalid_ownership_qualifier_sites <= summary.ownership_qualifier_sites &&
                           summary.invalid_type_annotation_sites() <= summary.total_type_annotation_sites();
   return summary;
 }
@@ -4400,10 +4539,12 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_has_generic_suffix.reserve(fn.params.size());
       info.param_has_pointer_declarator.reserve(fn.params.size());
       info.param_has_nullability_suffix.reserve(fn.params.size());
+      info.param_has_ownership_qualifier.reserve(fn.params.size());
       info.param_object_pointer_type_spelling.reserve(fn.params.size());
       info.param_has_invalid_generic_suffix.reserve(fn.params.size());
       info.param_has_invalid_pointer_declarator.reserve(fn.params.size());
       info.param_has_invalid_nullability_suffix.reserve(fn.params.size());
+      info.param_has_invalid_ownership_qualifier.reserve(fn.params.size());
       info.param_has_invalid_type_suffix.reserve(fn.params.size());
       info.param_has_protocol_composition.reserve(fn.params.size());
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
@@ -4417,10 +4558,12 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_has_generic_suffix.push_back(param.has_generic_suffix);
         info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
         info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
+        info.param_has_ownership_qualifier.push_back(param.has_ownership_qualifier);
         info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
         info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
         info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
         info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
+        info.param_has_invalid_ownership_qualifier.push_back(HasInvalidOwnershipQualifierParamTypeSuffix(param));
         info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
@@ -4430,13 +4573,16 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_has_generic_suffix = fn.has_return_generic_suffix;
       info.return_has_pointer_declarator = fn.has_return_pointer_declarator;
       info.return_has_nullability_suffix = !fn.return_nullability_suffix_tokens.empty();
+      info.return_has_ownership_qualifier = fn.has_return_ownership_qualifier;
       info.return_object_pointer_type_spelling = fn.return_object_pointer_type_spelling;
       info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(fn);
       info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(fn);
       info.return_has_invalid_nullability_suffix = HasInvalidNullabilityReturnTypeSuffix(fn);
+      info.return_has_invalid_ownership_qualifier = HasInvalidOwnershipQualifierReturnTypeSuffix(fn);
       info.return_has_invalid_type_suffix = info.return_has_invalid_generic_suffix ||
                                             info.return_has_invalid_pointer_declarator ||
-                                            info.return_has_invalid_nullability_suffix;
+                                            info.return_has_invalid_nullability_suffix ||
+                                            info.return_has_invalid_ownership_qualifier;
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
@@ -4452,7 +4598,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
 
     FunctionInfo &existing = it->second;
     bool compatible = existing.arity == fn.params.size() && existing.return_type == fn.return_type &&
-                      existing.return_is_vector == fn.return_vector_spelling;
+                      existing.return_is_vector == fn.return_vector_spelling &&
+                      existing.return_has_ownership_qualifier == fn.has_return_ownership_qualifier;
     if (compatible && existing.return_is_vector) {
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
@@ -4469,10 +4616,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         const ProtocolCompositionInfo param_protocol_composition = BuildProtocolCompositionInfoFromParam(fn.params[i]);
         if (i >= existing.param_types.size() || i >= existing.param_is_vector.size() ||
             i >= existing.param_vector_base_spelling.size() || i >= existing.param_vector_lane_count.size() ||
+            i >= existing.param_has_ownership_qualifier.size() ||
             i >= existing.param_has_protocol_composition.size() ||
             i >= existing.param_protocol_composition_lexicographic.size() ||
             existing.param_types[i] != fn.params[i].type ||
             existing.param_is_vector[i] != fn.params[i].vector_spelling) {
+          compatible = false;
+          break;
+        }
+        if (existing.param_has_ownership_qualifier[i] != fn.params[i].has_ownership_qualifier) {
           compatible = false;
           break;
         }
@@ -4509,6 +4661,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       existing.param_has_nullability_suffix[i] =
           existing.param_has_nullability_suffix[i] || !fn.params[i].nullability_suffix_tokens.empty();
     }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_ownership_qualifier.size(); ++i) {
+      existing.param_has_ownership_qualifier[i] =
+          existing.param_has_ownership_qualifier[i] || fn.params[i].has_ownership_qualifier;
+    }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_object_pointer_type_spelling.size(); ++i) {
       existing.param_object_pointer_type_spelling[i] =
           existing.param_object_pointer_type_spelling[i] || fn.params[i].object_pointer_type_spelling;
@@ -4525,6 +4681,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       existing.param_has_invalid_nullability_suffix[i] =
           existing.param_has_invalid_nullability_suffix[i] || HasInvalidNullabilityParamTypeSuffix(fn.params[i]);
     }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_ownership_qualifier.size(); ++i) {
+      existing.param_has_invalid_ownership_qualifier[i] =
+          existing.param_has_invalid_ownership_qualifier[i] ||
+          HasInvalidOwnershipQualifierParamTypeSuffix(fn.params[i]);
+    }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_type_suffix.size(); ++i) {
       existing.param_has_invalid_type_suffix[i] =
           existing.param_has_invalid_type_suffix[i] || HasInvalidParamTypeSuffix(fn.params[i]);
@@ -4538,6 +4699,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     existing.return_has_pointer_declarator = existing.return_has_pointer_declarator || fn.has_return_pointer_declarator;
     existing.return_has_nullability_suffix =
         existing.return_has_nullability_suffix || !fn.return_nullability_suffix_tokens.empty();
+    existing.return_has_ownership_qualifier =
+        existing.return_has_ownership_qualifier || fn.has_return_ownership_qualifier;
     existing.return_object_pointer_type_spelling =
         existing.return_object_pointer_type_spelling || fn.return_object_pointer_type_spelling;
     existing.return_has_invalid_generic_suffix =
@@ -4546,10 +4709,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         existing.return_has_invalid_pointer_declarator || HasInvalidPointerReturnTypeDeclarator(fn);
     existing.return_has_invalid_nullability_suffix =
         existing.return_has_invalid_nullability_suffix || HasInvalidNullabilityReturnTypeSuffix(fn);
+    existing.return_has_invalid_ownership_qualifier =
+        existing.return_has_invalid_ownership_qualifier || HasInvalidOwnershipQualifierReturnTypeSuffix(fn);
     existing.return_has_invalid_type_suffix = existing.return_has_invalid_type_suffix ||
                                              existing.return_has_invalid_generic_suffix ||
                                              existing.return_has_invalid_pointer_declarator ||
-                                             existing.return_has_invalid_nullability_suffix;
+                                             existing.return_has_invalid_nullability_suffix ||
+                                             existing.return_has_invalid_ownership_qualifier;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
     existing.is_pure_annotation = existing.is_pure_annotation || fn.is_pure;
@@ -4792,10 +4958,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_has_generic_suffix = source.param_has_generic_suffix;
     metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
     metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+    metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
     metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
     metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
     metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
     metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
+    metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
     metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
     metadata.param_has_protocol_composition = source.param_has_protocol_composition;
     metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
@@ -4803,10 +4971,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_generic_suffix = source.return_has_generic_suffix;
     metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
     metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+    metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
     metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
     metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
     metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
     metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+    metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
     metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
@@ -4865,9 +5035,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_generic_suffix = source.has_generic_suffix;
       property_metadata.has_pointer_declarator = source.has_pointer_declarator;
       property_metadata.has_nullability_suffix = source.has_nullability_suffix;
+      property_metadata.has_ownership_qualifier = source.has_ownership_qualifier;
       property_metadata.has_invalid_generic_suffix = source.has_invalid_generic_suffix;
       property_metadata.has_invalid_pointer_declarator = source.has_invalid_pointer_declarator;
       property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
+      property_metadata.has_invalid_ownership_qualifier = source.has_invalid_ownership_qualifier;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
@@ -4929,10 +5101,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_generic_suffix = source.param_has_generic_suffix;
       method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
       method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+      method_metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
       method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
       method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
       method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
       method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
+      method_metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
@@ -4940,10 +5114,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_generic_suffix = source.return_has_generic_suffix;
       method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
       method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+      method_metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
       method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
       method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
       method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
       method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+      method_metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
       method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
@@ -5005,9 +5181,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_generic_suffix = source.has_generic_suffix;
       property_metadata.has_pointer_declarator = source.has_pointer_declarator;
       property_metadata.has_nullability_suffix = source.has_nullability_suffix;
+      property_metadata.has_ownership_qualifier = source.has_ownership_qualifier;
       property_metadata.has_invalid_generic_suffix = source.has_invalid_generic_suffix;
       property_metadata.has_invalid_pointer_declarator = source.has_invalid_pointer_declarator;
       property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
+      property_metadata.has_invalid_ownership_qualifier = source.has_invalid_ownership_qualifier;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
@@ -5069,10 +5247,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_generic_suffix = source.param_has_generic_suffix;
       method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
       method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+      method_metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
       method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
       method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
       method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
       method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
+      method_metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
@@ -5080,10 +5260,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_generic_suffix = source.return_has_generic_suffix;
       method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
       method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+      method_metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
       method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
       method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
       method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
       method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+      method_metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
       method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
@@ -5318,10 +5500,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.param_has_generic_suffix.size() != metadata.arity ||
             metadata.param_has_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_ownership_qualifier.size() != metadata.arity ||
             metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
             metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
             metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
             metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
           handoff.type_annotation_surface_summary.deterministic = false;
           return;
@@ -5336,6 +5520,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_nullability_suffix[i]) {
             ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
           }
+          if (metadata.param_has_ownership_qualifier[i]) {
+            ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
+          }
           if (metadata.param_object_pointer_type_spelling[i]) {
             ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
           }
@@ -5348,9 +5535,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_invalid_nullability_suffix[i]) {
             ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
           }
+          if (metadata.param_has_invalid_ownership_qualifier[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+          }
           const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                         metadata.param_has_invalid_pointer_declarator[i] ||
-                                        metadata.param_has_invalid_nullability_suffix[i];
+                                        metadata.param_has_invalid_nullability_suffix[i] ||
+                                        metadata.param_has_invalid_ownership_qualifier[i];
           if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
             handoff.type_annotation_surface_summary.deterministic = false;
           }
@@ -5364,6 +5555,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
         }
+        if (metadata.return_has_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
+        }
         if (metadata.return_object_pointer_type_spelling) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
@@ -5376,9 +5570,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_invalid_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
         }
+        if (metadata.return_has_invalid_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+        }
         const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
                                              metadata.return_has_invalid_pointer_declarator ||
-                                             metadata.return_has_invalid_nullability_suffix;
+                                             metadata.return_has_invalid_nullability_suffix ||
+                                             metadata.return_has_invalid_ownership_qualifier;
         if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
           handoff.type_annotation_surface_summary.deterministic = false;
         }
@@ -5388,10 +5586,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.param_has_generic_suffix.size() != metadata.arity ||
             metadata.param_has_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_ownership_qualifier.size() != metadata.arity ||
             metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
             metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
             metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
             metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
           handoff.type_annotation_surface_summary.deterministic = false;
           return;
@@ -5406,6 +5606,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_nullability_suffix[i]) {
             ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
           }
+          if (metadata.param_has_ownership_qualifier[i]) {
+            ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
+          }
           if (metadata.param_object_pointer_type_spelling[i]) {
             ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
           }
@@ -5418,9 +5621,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_invalid_nullability_suffix[i]) {
             ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
           }
+          if (metadata.param_has_invalid_ownership_qualifier[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+          }
           const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                         metadata.param_has_invalid_pointer_declarator[i] ||
-                                        metadata.param_has_invalid_nullability_suffix[i];
+                                        metadata.param_has_invalid_nullability_suffix[i] ||
+                                        metadata.param_has_invalid_ownership_qualifier[i];
           if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
             handoff.type_annotation_surface_summary.deterministic = false;
           }
@@ -5434,6 +5641,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
         }
+        if (metadata.return_has_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
+        }
         if (metadata.return_object_pointer_type_spelling) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
@@ -5446,9 +5656,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_invalid_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
         }
+        if (metadata.return_has_invalid_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+        }
         const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
                                              metadata.return_has_invalid_pointer_declarator ||
-                                             metadata.return_has_invalid_nullability_suffix;
+                                             metadata.return_has_invalid_nullability_suffix ||
+                                             metadata.return_has_invalid_ownership_qualifier;
         if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
           handoff.type_annotation_surface_summary.deterministic = false;
         }
@@ -5464,6 +5678,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.has_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
         }
+        if (metadata.has_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
+        }
         if (metadata.object_pointer_type_spelling) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
@@ -5476,9 +5693,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.has_invalid_nullability_suffix) {
           ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
         }
+        if (metadata.has_invalid_ownership_qualifier) {
+          ++handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+        }
         const bool expected_invalid = metadata.has_invalid_generic_suffix ||
                                       metadata.has_invalid_pointer_declarator ||
-                                      metadata.has_invalid_nullability_suffix;
+                                      metadata.has_invalid_nullability_suffix ||
+                                      metadata.has_invalid_ownership_qualifier;
         if (metadata.has_invalid_type_suffix != expected_invalid) {
           handoff.type_annotation_surface_summary.deterministic = false;
         }
@@ -5510,6 +5731,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.type_annotation_surface_summary.pointer_declarator_sites &&
       handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
           handoff.type_annotation_surface_summary.nullability_suffix_sites &&
+      handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites <=
+          handoff.type_annotation_surface_summary.ownership_qualifier_sites &&
       handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           handoff.type_annotation_surface_summary.total_type_annotation_sites();
   handoff.symbol_graph_scope_resolution_summary =
@@ -5593,10 +5816,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_has_generic_suffix.size() != metadata.arity ||
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_ownership_qualifier.size() != metadata.arity ||
         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
         metadata.param_has_protocol_composition.size() != metadata.arity ||
         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
@@ -5606,9 +5831,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
         (metadata.return_has_invalid_pointer_declarator && !metadata.return_has_pointer_declarator) ||
         (metadata.return_has_invalid_nullability_suffix && !metadata.return_has_nullability_suffix) ||
+        (metadata.return_has_invalid_ownership_qualifier && !metadata.return_has_ownership_qualifier) ||
         (metadata.return_has_invalid_type_suffix !=
          (metadata.return_has_invalid_generic_suffix || metadata.return_has_invalid_pointer_declarator ||
-          metadata.return_has_invalid_nullability_suffix))) {
+          metadata.return_has_invalid_nullability_suffix || metadata.return_has_invalid_ownership_qualifier))) {
       return false;
     }
     if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
@@ -5621,10 +5847,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     for (std::size_t i = 0; i < metadata.arity; ++i) {
       const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                     metadata.param_has_invalid_pointer_declarator[i] ||
-                                    metadata.param_has_invalid_nullability_suffix[i];
+                                    metadata.param_has_invalid_nullability_suffix[i] ||
+                                    metadata.param_has_invalid_ownership_qualifier[i];
       if ((metadata.param_has_invalid_generic_suffix[i] && !metadata.param_has_generic_suffix[i]) ||
           (metadata.param_has_invalid_pointer_declarator[i] && !metadata.param_has_pointer_declarator[i]) ||
           (metadata.param_has_invalid_nullability_suffix[i] && !metadata.param_has_nullability_suffix[i]) ||
+          (metadata.param_has_invalid_ownership_qualifier[i] && !metadata.param_has_ownership_qualifier[i]) ||
           metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
         return false;
       }
@@ -5649,10 +5877,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                         metadata.param_has_generic_suffix.size() != metadata.arity ||
                         metadata.param_has_pointer_declarator.size() != metadata.arity ||
                         metadata.param_has_nullability_suffix.size() != metadata.arity ||
+                        metadata.param_has_ownership_qualifier.size() != metadata.arity ||
                         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
                         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
                         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
                         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+                        metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
                         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
                         metadata.param_has_protocol_composition.size() != metadata.arity ||
                         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
@@ -5662,9 +5892,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                     if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
                         (metadata.return_has_invalid_pointer_declarator && !metadata.return_has_pointer_declarator) ||
                         (metadata.return_has_invalid_nullability_suffix && !metadata.return_has_nullability_suffix) ||
+                        (metadata.return_has_invalid_ownership_qualifier && !metadata.return_has_ownership_qualifier) ||
                         (metadata.return_has_invalid_type_suffix !=
                          (metadata.return_has_invalid_generic_suffix || metadata.return_has_invalid_pointer_declarator ||
-                          metadata.return_has_invalid_nullability_suffix))) {
+                          metadata.return_has_invalid_nullability_suffix ||
+                          metadata.return_has_invalid_ownership_qualifier))) {
                       return false;
                     }
                     if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
@@ -5677,10 +5909,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                     for (std::size_t i = 0; i < metadata.arity; ++i) {
                       const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                                     metadata.param_has_invalid_pointer_declarator[i] ||
-                                                    metadata.param_has_invalid_nullability_suffix[i];
+                                                    metadata.param_has_invalid_nullability_suffix[i] ||
+                                                    metadata.param_has_invalid_ownership_qualifier[i];
                       if ((metadata.param_has_invalid_generic_suffix[i] && !metadata.param_has_generic_suffix[i]) ||
                           (metadata.param_has_invalid_pointer_declarator[i] && !metadata.param_has_pointer_declarator[i]) ||
                           (metadata.param_has_invalid_nullability_suffix[i] && !metadata.param_has_nullability_suffix[i]) ||
+                          (metadata.param_has_invalid_ownership_qualifier[i] &&
+                           !metadata.param_has_ownership_qualifier[i]) ||
                           metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
                         return false;
                       }
@@ -5848,10 +6083,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.param_has_generic_suffix.size() != metadata.arity ||
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_ownership_qualifier.size() != metadata.arity ||
         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
       type_annotation_summary.deterministic = false;
       return;
@@ -5866,6 +6103,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_nullability_suffix[i]) {
         ++type_annotation_summary.nullability_suffix_sites;
       }
+      if (metadata.param_has_ownership_qualifier[i]) {
+        ++type_annotation_summary.ownership_qualifier_sites;
+      }
       if (metadata.param_object_pointer_type_spelling[i]) {
         ++type_annotation_summary.object_pointer_type_sites;
       }
@@ -5878,9 +6118,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_invalid_nullability_suffix[i]) {
         ++type_annotation_summary.invalid_nullability_suffix_sites;
       }
+      if (metadata.param_has_invalid_ownership_qualifier[i]) {
+        ++type_annotation_summary.invalid_ownership_qualifier_sites;
+      }
       const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                     metadata.param_has_invalid_pointer_declarator[i] ||
-                                    metadata.param_has_invalid_nullability_suffix[i];
+                                    metadata.param_has_invalid_nullability_suffix[i] ||
+                                    metadata.param_has_invalid_ownership_qualifier[i];
       if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
         type_annotation_summary.deterministic = false;
       }
@@ -5894,6 +6138,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_nullability_suffix) {
       ++type_annotation_summary.nullability_suffix_sites;
     }
+    if (metadata.return_has_ownership_qualifier) {
+      ++type_annotation_summary.ownership_qualifier_sites;
+    }
     if (metadata.return_object_pointer_type_spelling) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
@@ -5906,9 +6153,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_invalid_nullability_suffix) {
       ++type_annotation_summary.invalid_nullability_suffix_sites;
     }
+    if (metadata.return_has_invalid_ownership_qualifier) {
+      ++type_annotation_summary.invalid_ownership_qualifier_sites;
+    }
     const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
                                          metadata.return_has_invalid_pointer_declarator ||
-                                         metadata.return_has_invalid_nullability_suffix;
+                                         metadata.return_has_invalid_nullability_suffix ||
+                                         metadata.return_has_invalid_ownership_qualifier;
     if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
       type_annotation_summary.deterministic = false;
     }
@@ -5918,10 +6169,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.param_has_generic_suffix.size() != metadata.arity ||
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_ownership_qualifier.size() != metadata.arity ||
         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
       type_annotation_summary.deterministic = false;
       return;
@@ -5936,6 +6189,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_nullability_suffix[i]) {
         ++type_annotation_summary.nullability_suffix_sites;
       }
+      if (metadata.param_has_ownership_qualifier[i]) {
+        ++type_annotation_summary.ownership_qualifier_sites;
+      }
       if (metadata.param_object_pointer_type_spelling[i]) {
         ++type_annotation_summary.object_pointer_type_sites;
       }
@@ -5948,9 +6204,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_invalid_nullability_suffix[i]) {
         ++type_annotation_summary.invalid_nullability_suffix_sites;
       }
+      if (metadata.param_has_invalid_ownership_qualifier[i]) {
+        ++type_annotation_summary.invalid_ownership_qualifier_sites;
+      }
       const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
                                     metadata.param_has_invalid_pointer_declarator[i] ||
-                                    metadata.param_has_invalid_nullability_suffix[i];
+                                    metadata.param_has_invalid_nullability_suffix[i] ||
+                                    metadata.param_has_invalid_ownership_qualifier[i];
       if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
         type_annotation_summary.deterministic = false;
       }
@@ -5964,6 +6224,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_nullability_suffix) {
       ++type_annotation_summary.nullability_suffix_sites;
     }
+    if (metadata.return_has_ownership_qualifier) {
+      ++type_annotation_summary.ownership_qualifier_sites;
+    }
     if (metadata.return_object_pointer_type_spelling) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
@@ -5976,9 +6239,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_invalid_nullability_suffix) {
       ++type_annotation_summary.invalid_nullability_suffix_sites;
     }
+    if (metadata.return_has_invalid_ownership_qualifier) {
+      ++type_annotation_summary.invalid_ownership_qualifier_sites;
+    }
     const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
                                          metadata.return_has_invalid_pointer_declarator ||
-                                         metadata.return_has_invalid_nullability_suffix;
+                                         metadata.return_has_invalid_nullability_suffix ||
+                                         metadata.return_has_invalid_ownership_qualifier;
     if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
       type_annotation_summary.deterministic = false;
     }
@@ -5994,6 +6261,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.has_nullability_suffix) {
       ++type_annotation_summary.nullability_suffix_sites;
     }
+    if (metadata.has_ownership_qualifier) {
+      ++type_annotation_summary.ownership_qualifier_sites;
+    }
     if (metadata.object_pointer_type_spelling) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
@@ -6006,9 +6276,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.has_invalid_nullability_suffix) {
       ++type_annotation_summary.invalid_nullability_suffix_sites;
     }
+    if (metadata.has_invalid_ownership_qualifier) {
+      ++type_annotation_summary.invalid_ownership_qualifier_sites;
+    }
     const bool expected_invalid = metadata.has_invalid_generic_suffix ||
                                   metadata.has_invalid_pointer_declarator ||
-                                  metadata.has_invalid_nullability_suffix;
+                                  metadata.has_invalid_nullability_suffix ||
+                                  metadata.has_invalid_ownership_qualifier;
     if (metadata.has_invalid_type_suffix != expected_invalid) {
       type_annotation_summary.deterministic = false;
     }
@@ -6037,6 +6311,7 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       type_annotation_summary.invalid_generic_suffix_sites <= type_annotation_summary.generic_suffix_sites &&
       type_annotation_summary.invalid_pointer_declarator_sites <= type_annotation_summary.pointer_declarator_sites &&
       type_annotation_summary.invalid_nullability_suffix_sites <= type_annotation_summary.nullability_suffix_sites &&
+      type_annotation_summary.invalid_ownership_qualifier_sites <= type_annotation_summary.ownership_qualifier_sites &&
       type_annotation_summary.invalid_type_annotation_sites() <= type_annotation_summary.total_type_annotation_sites();
 
   std::size_t interface_method_symbols = 0;
@@ -6136,6 +6411,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              type_annotation_summary.pointer_declarator_sites &&
          handoff.type_annotation_surface_summary.nullability_suffix_sites ==
              type_annotation_summary.nullability_suffix_sites &&
+         handoff.type_annotation_surface_summary.ownership_qualifier_sites ==
+             type_annotation_summary.ownership_qualifier_sites &&
          handoff.type_annotation_surface_summary.object_pointer_type_sites ==
              type_annotation_summary.object_pointer_type_sites &&
          handoff.type_annotation_surface_summary.invalid_generic_suffix_sites ==
@@ -6144,6 +6421,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              type_annotation_summary.invalid_pointer_declarator_sites &&
          handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
              type_annotation_summary.invalid_nullability_suffix_sites &&
+         handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites ==
+             type_annotation_summary.invalid_ownership_qualifier_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

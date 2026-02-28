@@ -123,18 +123,21 @@ struct Objc3TypeAnnotationSurfaceSummary {
   std::size_t generic_suffix_sites = 0;
   std::size_t pointer_declarator_sites = 0;
   std::size_t nullability_suffix_sites = 0;
+  std::size_t ownership_qualifier_sites = 0;
   std::size_t object_pointer_type_sites = 0;
   std::size_t invalid_generic_suffix_sites = 0;
   std::size_t invalid_pointer_declarator_sites = 0;
   std::size_t invalid_nullability_suffix_sites = 0;
+  std::size_t invalid_ownership_qualifier_sites = 0;
   bool deterministic = true;
 
   std::size_t total_type_annotation_sites() const {
-    return generic_suffix_sites + pointer_declarator_sites + nullability_suffix_sites;
+    return generic_suffix_sites + pointer_declarator_sites + nullability_suffix_sites + ownership_qualifier_sites;
   }
 
   std::size_t invalid_type_annotation_sites() const {
-    return invalid_generic_suffix_sites + invalid_pointer_declarator_sites + invalid_nullability_suffix_sites;
+    return invalid_generic_suffix_sites + invalid_pointer_declarator_sites + invalid_nullability_suffix_sites +
+           invalid_ownership_qualifier_sites;
   }
 };
 
@@ -336,10 +339,12 @@ struct FunctionInfo {
   std::vector<bool> param_has_generic_suffix;
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_has_ownership_qualifier;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
   std::vector<bool> param_has_invalid_nullability_suffix;
+  std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
@@ -347,10 +352,12 @@ struct FunctionInfo {
   bool return_has_generic_suffix = false;
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
+  bool return_has_ownership_qualifier = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
   bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
@@ -382,10 +389,12 @@ struct Objc3MethodInfo {
   std::vector<bool> param_has_generic_suffix;
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_has_ownership_qualifier;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
   std::vector<bool> param_has_invalid_nullability_suffix;
+  std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
@@ -393,10 +402,12 @@ struct Objc3MethodInfo {
   bool return_has_generic_suffix = false;
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
+  bool return_has_ownership_qualifier = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
   bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
@@ -421,9 +432,11 @@ struct Objc3PropertyInfo {
   bool has_generic_suffix = false;
   bool has_pointer_declarator = false;
   bool has_nullability_suffix = false;
+  bool has_ownership_qualifier = false;
   bool has_invalid_generic_suffix = false;
   bool has_invalid_pointer_declarator = false;
   bool has_invalid_nullability_suffix = false;
+  bool has_invalid_ownership_qualifier = false;
   bool has_invalid_type_suffix = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
@@ -507,10 +520,12 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_has_generic_suffix;
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_has_ownership_qualifier;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
   std::vector<bool> param_has_invalid_nullability_suffix;
+  std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
@@ -518,10 +533,12 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_has_generic_suffix = false;
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
+  bool return_has_ownership_qualifier = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
   bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
@@ -554,10 +571,12 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_has_generic_suffix;
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_has_ownership_qualifier;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
   std::vector<bool> param_has_invalid_nullability_suffix;
+  std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
@@ -565,10 +584,12 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_has_generic_suffix = false;
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
+  bool return_has_ownership_qualifier = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
   bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
@@ -594,9 +615,11 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool has_generic_suffix = false;
   bool has_pointer_declarator = false;
   bool has_nullability_suffix = false;
+  bool has_ownership_qualifier = false;
   bool has_invalid_generic_suffix = false;
   bool has_invalid_pointer_declarator = false;
   bool has_invalid_nullability_suffix = false;
+  bool has_invalid_ownership_qualifier = false;
   bool has_invalid_type_suffix = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;

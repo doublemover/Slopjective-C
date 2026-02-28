@@ -127,10 +127,12 @@ struct Objc3SemaParityContractSurface {
   std::size_t type_annotation_generic_suffix_sites_total = 0;
   std::size_t type_annotation_pointer_declarator_sites_total = 0;
   std::size_t type_annotation_nullability_suffix_sites_total = 0;
+  std::size_t type_annotation_ownership_qualifier_sites_total = 0;
   std::size_t type_annotation_object_pointer_type_sites_total = 0;
   std::size_t type_annotation_invalid_generic_suffix_sites_total = 0;
   std::size_t type_annotation_invalid_pointer_declarator_sites_total = 0;
   std::size_t type_annotation_invalid_nullability_suffix_sites_total = 0;
+  std::size_t type_annotation_invalid_ownership_qualifier_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -379,6 +381,8 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.type_annotation_pointer_declarator_sites_total &&
          surface.type_annotation_surface_summary.nullability_suffix_sites ==
              surface.type_annotation_nullability_suffix_sites_total &&
+         surface.type_annotation_surface_summary.ownership_qualifier_sites ==
+             surface.type_annotation_ownership_qualifier_sites_total &&
          surface.type_annotation_surface_summary.object_pointer_type_sites ==
              surface.type_annotation_object_pointer_type_sites_total &&
          surface.type_annotation_surface_summary.invalid_generic_suffix_sites ==
@@ -387,12 +391,16 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.type_annotation_invalid_pointer_declarator_sites_total &&
          surface.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
              surface.type_annotation_invalid_nullability_suffix_sites_total &&
+         surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites ==
+             surface.type_annotation_invalid_ownership_qualifier_sites_total &&
          surface.type_annotation_surface_summary.invalid_generic_suffix_sites <=
              surface.type_annotation_surface_summary.generic_suffix_sites &&
          surface.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
              surface.type_annotation_surface_summary.pointer_declarator_sites &&
          surface.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
              surface.type_annotation_surface_summary.nullability_suffix_sites &&
+         surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites <=
+             surface.type_annotation_surface_summary.ownership_qualifier_sites &&
          surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
              surface.type_annotation_surface_summary.total_type_annotation_sites() &&
          surface.type_annotation_surface_summary.deterministic &&

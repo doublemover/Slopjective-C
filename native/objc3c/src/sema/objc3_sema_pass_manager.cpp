@@ -107,10 +107,12 @@ bool IsEquivalentTypeAnnotationSurfaceSummary(const Objc3TypeAnnotationSurfaceSu
   return lhs.generic_suffix_sites == rhs.generic_suffix_sites &&
          lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
          lhs.nullability_suffix_sites == rhs.nullability_suffix_sites &&
+         lhs.ownership_qualifier_sites == rhs.ownership_qualifier_sites &&
          lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
          lhs.invalid_generic_suffix_sites == rhs.invalid_generic_suffix_sites &&
          lhs.invalid_pointer_declarator_sites == rhs.invalid_pointer_declarator_sites &&
-         lhs.invalid_nullability_suffix_sites == rhs.invalid_nullability_suffix_sites;
+         lhs.invalid_nullability_suffix_sites == rhs.invalid_nullability_suffix_sites &&
+         lhs.invalid_ownership_qualifier_sites == rhs.invalid_ownership_qualifier_sites;
 }
 
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
@@ -390,6 +392,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.type_annotation_surface_summary.pointer_declarator_sites &&
       result.type_metadata_handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
           result.type_metadata_handoff.type_annotation_surface_summary.nullability_suffix_sites &&
+      result.type_metadata_handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites <=
+          result.type_metadata_handoff.type_annotation_surface_summary.ownership_qualifier_sites &&
       result.type_metadata_handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.type_metadata_handoff.type_annotation_surface_summary.total_type_annotation_sites();
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
@@ -700,6 +704,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites;
   result.parity_surface.type_annotation_nullability_suffix_sites_total =
       result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites;
+  result.parity_surface.type_annotation_ownership_qualifier_sites_total =
+      result.parity_surface.type_annotation_surface_summary.ownership_qualifier_sites;
   result.parity_surface.type_annotation_object_pointer_type_sites_total =
       result.parity_surface.type_annotation_surface_summary.object_pointer_type_sites;
   result.parity_surface.type_annotation_invalid_generic_suffix_sites_total =
@@ -708,6 +714,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites;
   result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total =
       result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+  result.parity_surface.type_annotation_invalid_ownership_qualifier_sites_total =
+      result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -1049,6 +1057,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.type_annotation_pointer_declarator_sites_total &&
       result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites ==
           result.parity_surface.type_annotation_nullability_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.ownership_qualifier_sites ==
+          result.parity_surface.type_annotation_ownership_qualifier_sites_total &&
       result.parity_surface.type_annotation_surface_summary.object_pointer_type_sites ==
           result.parity_surface.type_annotation_object_pointer_type_sites_total &&
       result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites ==
@@ -1057,12 +1067,16 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.type_annotation_invalid_pointer_declarator_sites_total &&
       result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
           result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites ==
+          result.parity_surface.type_annotation_invalid_ownership_qualifier_sites_total &&
       result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites <=
           result.parity_surface.type_annotation_surface_summary.generic_suffix_sites &&
       result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
           result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites &&
       result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
           result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites &&
+      result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites <=
+          result.parity_surface.type_annotation_surface_summary.ownership_qualifier_sites &&
       result.parity_surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.parity_surface.type_annotation_surface_summary.total_type_annotation_sites() &&
       result.parity_surface.type_annotation_surface_summary.deterministic;

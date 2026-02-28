@@ -2833,3 +2833,47 @@ Sema/type metadata handoff contract:
 Recommended M160 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m160_sema_runtime_shim_host_link_contract.py -q`
+
+## M161 sema/type ownership qualifier contract (M161-B001)
+
+M161-B extends semantic type-annotation validation with deterministic ownership-qualifier
+support and fail-closed incompatibility diagnostics across function, method, and property
+declarations.
+
+Sema/type contract markers:
+
+- `SupportsOwnershipQualifierParamTypeSuffix`
+- `SupportsOwnershipQualifierReturnTypeSuffix`
+- `SupportsOwnershipQualifierPropertyTypeSuffix`
+- `HasInvalidOwnershipQualifierParamTypeSuffix`
+- `HasInvalidOwnershipQualifierReturnTypeSuffix`
+- `HasInvalidOwnershipQualifierPropertyTypeSuffix`
+- `ownership_qualifier_sites`
+- `invalid_ownership_qualifier_sites`
+- `type_annotation_ownership_qualifier_sites_total`
+- `type_annotation_invalid_ownership_qualifier_sites_total`
+
+Deterministic ownership-qualifier invariants (fail-closed):
+
+- ownership qualifier support is constrained to object-typed annotations (`id`, `Class`,
+  `instancetype`, and object-pointer spellings).
+- invalid ownership-qualifier counters remain bounded by ownership-qualifier sites.
+- `invalid_type_annotation_sites()` and `total_type_annotation_sites()` remain consistent
+  after ownership qualifiers are included in the type-annotation summary totals.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.type_annotation_surface_summary = Objc3TypeAnnotationSurfaceSummary{};`
+  with ownership-qualifier accumulation in function/method/property metadata lambdas.
+- parity packet totals:
+  - `type_annotation_ownership_qualifier_sites_total`
+  - `type_annotation_invalid_ownership_qualifier_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_type_annotation_surface_handoff`
+
+Recommended M161 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m161_sema_ownership_qualifier_contract.py -q`
