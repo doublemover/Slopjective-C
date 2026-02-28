@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
+    "m191-unsafe-pointer-extension-gating-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -460,6 +462,18 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3UnsafePointerExtensionLoweringContract {
+  std::size_t unsafe_pointer_extension_sites = 0;
+  std::size_t unsafe_keyword_sites = 0;
+  std::size_t pointer_arithmetic_sites = 0;
+  std::size_t raw_pointer_type_sites = 0;
+  std::size_t unsafe_operation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -601,3 +615,7 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3UnsafePointerExtensionLoweringContract(
+    const Objc3UnsafePointerExtensionLoweringContract &contract);
+std::string Objc3UnsafePointerExtensionLoweringReplayKey(
+    const Objc3UnsafePointerExtensionLoweringContract &contract);

@@ -222,6 +222,12 @@ class Objc3IREmitter {
       out << "; ns_error_bridging_lowering = "
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_unsafe_pointer_extension_replay_key
+             .empty()) {
+      out << "; unsafe_pointer_extension_lowering = "
+          << frontend_metadata_.lowering_unsafe_pointer_extension_replay_key
+          << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -821,6 +827,34 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_unsafe_pointer_extension_lowering_profile = unsafe_pointer_extension_sites="
+        << frontend_metadata_.unsafe_pointer_extension_lowering_sites
+        << ", unsafe_keyword_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_unsafe_keyword_sites
+        << ", pointer_arithmetic_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_pointer_arithmetic_sites
+        << ", raw_pointer_type_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_raw_pointer_type_sites
+        << ", unsafe_operation_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_unsafe_operation_sites
+        << ", normalized_sites="
+        << frontend_metadata_.unsafe_pointer_extension_lowering_normalized_sites
+        << ", gate_blocked_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_gate_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .unsafe_pointer_extension_lowering_contract_violation_sites
+        << ", deterministic_unsafe_pointer_extension_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_unsafe_pointer_extension_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -1019,6 +1053,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
+    out << "!objc3.objc_unsafe_pointer_extension_lowering = !{!37}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1804,6 +1839,43 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_ns_error_bridging_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!37 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unsafe_pointer_extension_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_unsafe_keyword_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_pointer_arithmetic_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_raw_pointer_type_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_unsafe_operation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_gate_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .unsafe_pointer_extension_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_unsafe_pointer_extension_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

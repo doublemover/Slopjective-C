@@ -3726,6 +3726,34 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Unsafe and pointer-arithmetic extension gating lowering artifact contract (M191-C001)
+
+M191-C publishes deterministic lowering replay metadata for unsafe low-level
+extension gating and pointer-arithmetic boundaries.
+
+M191-C lowering contract anchors:
+
+- `kObjc3UnsafePointerExtensionLoweringLaneContract`
+- `Objc3UnsafePointerExtensionLoweringContract`
+- `IsValidObjc3UnsafePointerExtensionLoweringContract(...)`
+- `Objc3UnsafePointerExtensionLoweringReplayKey(...)`
+- `unsafe_pointer_extension_lowering = unsafe_pointer_extension_sites=<N>`
+- `frontend_objc_unsafe_pointer_extension_lowering_profile`
+- `!objc3.objc_unsafe_pointer_extension_lowering = !{!37}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`
+- each of `unsafe_keyword_sites`, `pointer_arithmetic_sites`,
+  `raw_pointer_type_sites`, `unsafe_operation_sites`, and
+  `contract_violation_sites` is bounded by `unsafe_pointer_extension_sites`
+- `deterministic_unsafe_pointer_extension_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m191_lowering_unsafe_pointer_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
