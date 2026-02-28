@@ -1529,3 +1529,34 @@ Recommended RC provenance commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
 
+## M217 sema/type differential parity profile
+
+To validate sema/type differential parity against baseline toolchains, capture deterministic evidence packets in stable tuple order: `native`, `baseline-clang`, `baseline-llvm-direct`.
+
+### 1.1 Deterministic semantic diagnostics differential packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Differential packet keys (deterministic tuple order):
+  - `native_sema_diagnostics_packet`
+  - `baseline_clang_sema_diagnostics_packet`
+  - `baseline_llvm_direct_sema_diagnostics_packet`
+
+### 1.2 Deterministic type-metadata handoff differential packet
+
+- Sema handoff and parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface differential anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Differential packet keys (deterministic tuple order):
+  - `native_type_metadata_handoff_packet`
+  - `baseline_clang_type_metadata_handoff_packet`
+  - `baseline_llvm_direct_type_metadata_handoff_packet`
+
+Recommended differential parity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m217_sema_differential_contract.py -q`
+
