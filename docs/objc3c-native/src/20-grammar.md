@@ -1257,6 +1257,56 @@ Recommended M182 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q`
 
+## M183 frontend NSError-bridging parser/AST surface (M183-A001)
+
+Frontend parser/AST now emits deterministic `NSError`-bridging convention
+profiles on function and Objective-C method declaration surfaces so lowering can
+consume a stable lane-A handoff packet for bridge-path analysis.
+
+M183 parser/AST surface details:
+
+- NSError-bridging profile anchors:
+  - `BuildNSErrorBridgingProfile(...)`
+  - `IsNSErrorBridgingProfileNormalized(...)`
+  - `IsNSErrorTypeSpelling(...)`
+  - `IsNSErrorOutParameterSite(...)`
+  - `IsFailableCallSymbol(...)`
+  - `CountFailableCallSitesInExpr(...)`
+  - `BuildNSErrorBridgingProfileFromParameters(...)`
+  - `BuildNSErrorBridgingProfileFromFunction(...)`
+  - `BuildNSErrorBridgingProfileFromOpaqueBody(...)`
+  - `FinalizeNSErrorBridgingProfile(FunctionDecl &fn)`
+  - `FinalizeNSErrorBridgingProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `ns_error_bridging_profile`
+  - `ns_error_bridging_profile_is_normalized`
+  - `deterministic_ns_error_bridging_lowering_handoff`
+  - `ns_error_bridging_sites`
+  - `ns_error_parameter_sites`
+  - `ns_error_out_parameter_sites`
+  - `ns_error_bridge_path_sites`
+  - `failable_call_sites`
+  - `ns_error_bridging_normalized_sites`
+  - `ns_error_bridge_boundary_sites`
+  - `ns_error_bridging_contract_violation_sites`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.ns_error_bridging_profile = source.ns_error_bridging_profile;`
+  - `target.deterministic_ns_error_bridging_lowering_handoff = source.deterministic_ns_error_bridging_lowering_handoff;`
+
+Deterministic grammar intent:
+
+- parser detects `NSError` parameter and out-parameter conventions directly from
+  parameter type spelling and pointer declarator evidence.
+- failable call spelling evidence is reduced into deterministic packet counters
+  for bridge-path preparation.
+- profile normalization is fail-closed and invariant-checked for
+  `normalized_sites + bridge_boundary_sites == ns_error_bridging_sites`.
+
+Recommended M183 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
