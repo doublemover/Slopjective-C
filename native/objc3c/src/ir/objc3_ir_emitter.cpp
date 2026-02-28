@@ -98,6 +98,10 @@ class Objc3IREmitter {
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
+      out << "; id_class_sel_object_pointer_typecheck_lowering = "
+          << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -153,6 +157,15 @@ class Objc3IREmitter {
         << ", property_setter_selector_entries=" << frontend_metadata_.property_setter_selector_entries
         << ", deterministic_property_attribute_handoff="
         << (frontend_metadata_.deterministic_property_attribute_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_id_class_sel_object_pointer_typecheck_profile = id_typecheck_sites="
+        << frontend_metadata_.id_typecheck_sites
+        << ", class_typecheck_sites=" << frontend_metadata_.class_typecheck_sites
+        << ", sel_typecheck_sites=" << frontend_metadata_.sel_typecheck_sites
+        << ", object_pointer_typecheck_sites=" << frontend_metadata_.object_pointer_typecheck_sites
+        << ", total_typecheck_sites=" << frontend_metadata_.id_class_sel_object_pointer_typecheck_sites_total
+        << ", deterministic_id_class_sel_object_pointer_typecheck_handoff="
+        << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -319,6 +332,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_property_attribute = !{!4}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
+    out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -395,7 +409,14 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.category_composition_sites) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.category_composition_symbols) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.invalid_protocol_composition_sites) << ", i1 "
-        << (frontend_metadata_.deterministic_class_protocol_category_linking_handoff ? 1 : 0) << "}\n\n";
+        << (frontend_metadata_.deterministic_class_protocol_category_linking_handoff ? 1 : 0) << "}\n";
+    out << "!8 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.id_typecheck_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.class_typecheck_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.sel_typecheck_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.object_pointer_typecheck_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.id_class_sel_object_pointer_typecheck_sites_total)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

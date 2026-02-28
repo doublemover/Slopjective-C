@@ -55,6 +55,13 @@ struct Objc3IRFrontendMetadata {
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
   std::string lowering_property_synthesis_ivar_binding_replay_key;
+  std::string lowering_id_class_sel_object_pointer_typecheck_replay_key;
+  std::size_t id_typecheck_sites = 0;
+  std::size_t class_typecheck_sites = 0;
+  std::size_t sel_typecheck_sites = 0;
+  std::size_t object_pointer_typecheck_sites = 0;
+  std::size_t id_class_sel_object_pointer_typecheck_sites_total = 0;
+  bool deterministic_id_class_sel_object_pointer_typecheck_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

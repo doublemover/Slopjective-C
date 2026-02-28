@@ -20,6 +20,8 @@ inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
     "m153-method-lookup-override-conflict-v1";
 inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
     "m154-property-synthesis-ivar-binding-v1";
+inline constexpr const char *kObjc3IdClassSelObjectPointerTypecheckLaneContract =
+    "m155-id-class-sel-object-pointer-typecheck-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -63,6 +65,15 @@ struct Objc3PropertySynthesisIvarBindingContract {
   bool deterministic = true;
 };
 
+struct Objc3IdClassSelObjectPointerTypecheckContract {
+  std::size_t id_typecheck_sites = 0;
+  std::size_t class_typecheck_sites = 0;
+  std::size_t sel_typecheck_sites = 0;
+  std::size_t object_pointer_typecheck_sites = 0;
+  std::size_t total_typecheck_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -88,3 +99,7 @@ bool IsValidObjc3PropertySynthesisIvarBindingContract(
     const Objc3PropertySynthesisIvarBindingContract &contract);
 std::string Objc3PropertySynthesisIvarBindingReplayKey(
     const Objc3PropertySynthesisIvarBindingContract &contract);
+bool IsValidObjc3IdClassSelObjectPointerTypecheckContract(
+    const Objc3IdClassSelObjectPointerTypecheckContract &contract);
+std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
+    const Objc3IdClassSelObjectPointerTypecheckContract &contract);

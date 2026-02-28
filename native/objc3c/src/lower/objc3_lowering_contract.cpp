@@ -321,3 +321,23 @@ std::string Objc3PropertySynthesisIvarBindingReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3PropertySynthesisIvarBindingLaneContract;
 }
+
+bool IsValidObjc3IdClassSelObjectPointerTypecheckContract(
+    const Objc3IdClassSelObjectPointerTypecheckContract &contract) {
+  const std::size_t computed_total = contract.id_typecheck_sites +
+                                     contract.class_typecheck_sites +
+                                     contract.sel_typecheck_sites +
+                                     contract.object_pointer_typecheck_sites;
+  return contract.total_typecheck_sites == computed_total;
+}
+
+std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
+    const Objc3IdClassSelObjectPointerTypecheckContract &contract) {
+  return std::string("id_typecheck_sites=") + std::to_string(contract.id_typecheck_sites) +
+         ";class_typecheck_sites=" + std::to_string(contract.class_typecheck_sites) +
+         ";sel_typecheck_sites=" + std::to_string(contract.sel_typecheck_sites) +
+         ";object_pointer_typecheck_sites=" + std::to_string(contract.object_pointer_typecheck_sites) +
+         ";total_typecheck_sites=" + std::to_string(contract.total_typecheck_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3IdClassSelObjectPointerTypecheckLaneContract;
+}

@@ -56,6 +56,106 @@ Objc3PropertySynthesisIvarBindingContract BuildPropertySynthesisIvarBindingContr
       summary.deterministic_property_attribute_handoff);
 }
 
+void AccumulateIdClassSelObjectPointerTypecheckSite(
+    bool id_spelling,
+    bool class_spelling,
+    bool sel_spelling,
+    bool object_pointer_type_spelling,
+    const std::string &object_pointer_type_name,
+    Objc3IdClassSelObjectPointerTypecheckContract &contract) {
+  const std::size_t active_spelling_count =
+      (id_spelling ? 1u : 0u) +
+      (class_spelling ? 1u : 0u) +
+      (sel_spelling ? 1u : 0u) +
+      (object_pointer_type_spelling ? 1u : 0u);
+  if (active_spelling_count > 1u) {
+    contract.deterministic = false;
+  }
+
+  if (id_spelling) {
+    ++contract.id_typecheck_sites;
+  }
+  if (class_spelling) {
+    ++contract.class_typecheck_sites;
+  }
+  if (sel_spelling) {
+    ++contract.sel_typecheck_sites;
+  }
+  if (object_pointer_type_spelling) {
+    ++contract.object_pointer_typecheck_sites;
+    if (object_pointer_type_name.empty()) {
+      contract.deterministic = false;
+    }
+  }
+
+  if (active_spelling_count > 0u) {
+    ++contract.total_typecheck_sites;
+  }
+}
+
+void AccumulateIdClassSelObjectPointerTypecheckMethod(
+    const Objc3MethodDecl &method,
+    Objc3IdClassSelObjectPointerTypecheckContract &contract) {
+  AccumulateIdClassSelObjectPointerTypecheckSite(method.return_id_spelling,
+                                                 method.return_class_spelling,
+                                                 method.return_sel_spelling,
+                                                 method.return_object_pointer_type_spelling,
+                                                 method.return_object_pointer_type_name,
+                                                 contract);
+  for (const auto &param : method.params) {
+    AccumulateIdClassSelObjectPointerTypecheckSite(param.id_spelling,
+                                                   param.class_spelling,
+                                                   param.sel_spelling,
+                                                   param.object_pointer_type_spelling,
+                                                   param.object_pointer_type_name,
+                                                   contract);
+  }
+}
+
+template <typename Container>
+void AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(
+    const Container &declarations,
+    Objc3IdClassSelObjectPointerTypecheckContract &contract) {
+  for (const auto &declaration : declarations) {
+    for (const auto &property : declaration.properties) {
+      AccumulateIdClassSelObjectPointerTypecheckSite(property.id_spelling,
+                                                     property.class_spelling,
+                                                     property.sel_spelling,
+                                                     property.object_pointer_type_spelling,
+                                                     property.object_pointer_type_name,
+                                                     contract);
+    }
+    for (const auto &method : declaration.methods) {
+      AccumulateIdClassSelObjectPointerTypecheckMethod(method, contract);
+    }
+  }
+}
+
+Objc3IdClassSelObjectPointerTypecheckContract BuildIdClassSelObjectPointerTypecheckContract(
+    const Objc3Program &program) {
+  Objc3IdClassSelObjectPointerTypecheckContract contract;
+  for (const auto &fn : program.functions) {
+    AccumulateIdClassSelObjectPointerTypecheckSite(fn.return_id_spelling,
+                                                   fn.return_class_spelling,
+                                                   fn.return_sel_spelling,
+                                                   fn.return_object_pointer_type_spelling,
+                                                   fn.return_object_pointer_type_name,
+                                                   contract);
+    for (const auto &param : fn.params) {
+      AccumulateIdClassSelObjectPointerTypecheckSite(param.id_spelling,
+                                                     param.class_spelling,
+                                                     param.sel_spelling,
+                                                     param.object_pointer_type_spelling,
+                                                     param.object_pointer_type_name,
+                                                     contract);
+    }
+  }
+  AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.protocols, contract);
+  AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.interfaces, contract);
+  AccumulateIdClassSelObjectPointerTypecheckObjcDeclarations(program.implementations, contract);
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -181,6 +281,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string property_synthesis_ivar_binding_replay_key =
       Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
+  const Objc3IdClassSelObjectPointerTypecheckContract id_class_sel_object_pointer_typecheck_contract =
+      BuildIdClassSelObjectPointerTypecheckContract(program);
+  if (!IsValidObjc3IdClassSelObjectPointerTypecheckContract(id_class_sel_object_pointer_typecheck_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid id/Class/SEL/object-pointer typecheck lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string id_class_sel_object_pointer_typecheck_replay_key =
+      Objc3IdClassSelObjectPointerTypecheckReplayKey(id_class_sel_object_pointer_typecheck_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -416,6 +529,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_property_synthesis_ivar_binding_replay_key\":\""
            << property_synthesis_ivar_binding_replay_key
            << "\""
+           << ",\"deterministic_id_class_sel_object_pointer_typecheck_handoff\":"
+           << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
+           << ",\"id_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
+           << ",\"class_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.class_typecheck_sites
+           << ",\"sel_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.sel_typecheck_sites
+           << ",\"object_pointer_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.object_pointer_typecheck_sites
+           << ",\"id_class_sel_object_pointer_typecheck_sites_total\":"
+           << id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites
+           << ",\"lowering_id_class_sel_object_pointer_typecheck_replay_key\":\""
+           << id_class_sel_object_pointer_typecheck_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -600,6 +728,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
+           << ",\"class_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.class_typecheck_sites
+           << ",\"sel_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.sel_typecheck_sites
+           << ",\"object_pointer_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.object_pointer_typecheck_sites
+           << ",\"total_typecheck_sites\":"
+           << id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites
+           << ",\"replay_key\":\""
+           << id_class_sel_object_pointer_typecheck_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -679,6 +822,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3PropertySynthesisIvarBindingLaneContract
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
+           << id_class_sel_object_pointer_typecheck_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -812,6 +961,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.property_setter_selector_entries = property_attribute_summary.property_setter_selector_entries;
   ir_frontend_metadata.lowering_property_synthesis_ivar_binding_replay_key =
       property_synthesis_ivar_binding_replay_key;
+  ir_frontend_metadata.lowering_id_class_sel_object_pointer_typecheck_replay_key =
+      id_class_sel_object_pointer_typecheck_replay_key;
+  ir_frontend_metadata.id_typecheck_sites = id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites;
+  ir_frontend_metadata.class_typecheck_sites = id_class_sel_object_pointer_typecheck_contract.class_typecheck_sites;
+  ir_frontend_metadata.sel_typecheck_sites = id_class_sel_object_pointer_typecheck_contract.sel_typecheck_sites;
+  ir_frontend_metadata.object_pointer_typecheck_sites =
+      id_class_sel_object_pointer_typecheck_contract.object_pointer_typecheck_sites;
+  ir_frontend_metadata.id_class_sel_object_pointer_typecheck_sites_total =
+      id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -861,6 +1019,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       selector_normalization_summary.deterministic_selector_normalization_handoff;
   ir_frontend_metadata.deterministic_property_attribute_handoff =
       property_attribute_summary.deterministic_property_attribute_handoff;
+  ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
+      id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

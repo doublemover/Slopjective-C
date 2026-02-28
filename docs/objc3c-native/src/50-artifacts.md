@@ -2518,6 +2518,59 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py -q`
 
+## id/Class/SEL/object-pointer typecheck lowering artifact contract (M155-C001)
+
+M155-C extends lowering contract publication with a replay-stable packet that tracks Objective-C `id`, `Class`,
+`SEL`, and nominal object-pointer typecheck spellings across function/method/property type surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/id-class-sel-object-pointer-typecheck-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3IdClassSelObjectPointerTypecheckLaneContract`
+- `Objc3IdClassSelObjectPointerTypecheckContract`
+- `IsValidObjc3IdClassSelObjectPointerTypecheckContract(...)`
+- `Objc3IdClassSelObjectPointerTypecheckReplayKey(...)`
+
+Replay key publication markers:
+
+- `id_typecheck_sites=<N>`
+- `class_typecheck_sites=<N>`
+- `sel_typecheck_sites=<N>`
+- `object_pointer_typecheck_sites=<N>`
+- `total_typecheck_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m155-id-class-sel-object-pointer-typecheck-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_id_class_sel_object_pointer_typecheck_handoff`
+- `frontend.pipeline.sema_pass_manager.id_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.class_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.sel_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.object_pointer_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.id_class_sel_object_pointer_typecheck_sites_total`
+- `frontend.pipeline.sema_pass_manager.lowering_id_class_sel_object_pointer_typecheck_replay_key`
+- `frontend.pipeline.semantic_surface.objc_id_class_sel_object_pointer_typecheck_surface`
+- `lowering_id_class_sel_object_pointer_typecheck.replay_key`
+- `lowering_id_class_sel_object_pointer_typecheck.lane_contract`
+
+IR publication markers:
+
+- `; id_class_sel_object_pointer_typecheck_lowering = id_typecheck_sites=<N>;class_typecheck_sites=<N>;sel_typecheck_sites=<N>;object_pointer_typecheck_sites=<N>;total_typecheck_sites=<N>;deterministic=<bool>;lane_contract=m155-id-class-sel-object-pointer-typecheck-v1`
+- `; frontend_objc_id_class_sel_object_pointer_typecheck_profile = id_typecheck_sites=<N>, class_typecheck_sites=<N>, sel_typecheck_sites=<N>, object_pointer_typecheck_sites=<N>, total_typecheck_sites=<N>, deterministic_id_class_sel_object_pointer_typecheck_handoff=<bool>`
+- `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
+- `!8 = !{i64 <id_typecheck_sites>, i64 <class_typecheck_sites>, i64 <sel_typecheck_sites>, i64 <object_pointer_typecheck_sites>, i64 <total_typecheck_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
