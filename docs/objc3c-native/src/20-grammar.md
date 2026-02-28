@@ -363,3 +363,19 @@ Frontend whole-module optimization controls require deterministic module-shape p
   3. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
 
+## M207 frontend dispatch-specific optimization passes
+
+Frontend dispatch-specific optimization pass readiness requires deterministic message-send parse boundaries and stable dispatch-control surface export.
+
+- Required frontend dispatch-optimization signals:
+  - message-send parse entry remains `ParseMessageSendExpression()`.
+  - message-send AST tagging remains `message->kind = Expr::Kind::MessageSend`.
+  - postfix parser dispatch gate remains `if (Match(TokenKind::LBracket))`.
+  - manifest lowering control export remains `"runtime_dispatch_symbol"`, `"runtime_dispatch_arg_slots"`, and `"selector_global_ordering"`.
+  - frontend lowering knob export remains `"max_message_send_args"`.
+- Required frontend dispatch-optimization commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
+
