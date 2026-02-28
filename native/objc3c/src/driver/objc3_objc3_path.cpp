@@ -17,7 +17,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   const std::string source = ReadText(cli_options.input);
   const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
   Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
-  WriteDiagnosticsArtifacts(cli_options.out_dir, cli_options.emit_prefix, artifacts.diagnostics);
+  WriteDiagnosticsArtifacts(cli_options.out_dir,
+                            cli_options.emit_prefix,
+                            artifacts.stage_diagnostics,
+                            artifacts.post_pipeline_diagnostics);
   if (!artifacts.diagnostics.empty()) {
     return 1;
   }

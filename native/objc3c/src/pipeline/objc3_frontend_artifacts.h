@@ -7,6 +7,8 @@
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3FrontendArtifactBundle {
+  Objc3FrontendDiagnosticsBus stage_diagnostics;
+  std::vector<std::string> post_pipeline_diagnostics;
   std::vector<std::string> diagnostics;
   std::string manifest_json;
   std::string ir_text;

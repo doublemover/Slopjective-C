@@ -30,6 +30,15 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
   return out.str();
 }
 
+std::vector<std::string> FlattenStageDiagnostics(const Objc3FrontendDiagnosticsBus &diagnostics_bus) {
+  std::vector<std::string> diagnostics;
+  diagnostics.reserve(diagnostics_bus.size());
+  diagnostics.insert(diagnostics.end(), diagnostics_bus.lexer.begin(), diagnostics_bus.lexer.end());
+  diagnostics.insert(diagnostics.end(), diagnostics_bus.parser.begin(), diagnostics_bus.parser.end());
+  diagnostics.insert(diagnostics.end(), diagnostics_bus.semantic.begin(), diagnostics_bus.semantic.end());
+  return diagnostics;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -37,7 +46,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                                         const Objc3FrontendOptions &options) {
   Objc3FrontendArtifactBundle bundle;
   const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);
-  bundle.diagnostics = program.diagnostics;
+  bundle.stage_diagnostics = pipeline_result.stage_diagnostics;
+  bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);
   if (!bundle.diagnostics.empty()) {
     return bundle;
   }
@@ -77,8 +87,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   std::vector<int> resolved_global_values;
   if (!ResolveGlobalInitializerValues(program.globals, resolved_global_values) ||
       resolved_global_values.size() != program.globals.size()) {
-    bundle.diagnostics = {
+    bundle.post_pipeline_diagnostics = {
         MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: global initializer failed const evaluation")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
 
@@ -92,11 +103,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")
            << ",\n";
   manifest << "      \"stages\": {\n";
-  manifest << "        \"lexer\": {\"diagnostics\":" << pipeline_result.stage_diagnostics.lexer.size() << "},\n";
-  manifest << "        \"parser\": {\"diagnostics\":" << pipeline_result.stage_diagnostics.parser.size() << "},\n";
-  manifest << "        \"semantic\": {\"diagnostics\":" << pipeline_result.stage_diagnostics.semantic.size()
+  manifest << "        \"lexer\": {\"diagnostics\":" << bundle.stage_diagnostics.lexer.size() << "},\n";
+  manifest << "        \"parser\": {\"diagnostics\":" << bundle.stage_diagnostics.parser.size() << "},\n";
+  manifest << "        \"semantic\": {\"diagnostics\":" << bundle.stage_diagnostics.semantic.size()
            << "}\n";
   manifest << "      },\n";
+  manifest << "      \"sema_pass_manager\": {\"diagnostics_after_build\":"
+           << pipeline_result.sema_diagnostics_after_pass[0] << ",\"diagnostics_after_validate_bodies\":"
+           << pipeline_result.sema_diagnostics_after_pass[1] << ",\"diagnostics_after_validate_pure_contract\":"
+           << pipeline_result.sema_diagnostics_after_pass[2] << "},\n";
   manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()
            << ",\"declared_functions\":" << manifest_functions.size()
            << ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()
@@ -144,7 +159,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, bundle.ir_text, ir_error)) {
-    bundle.diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
+    bundle.post_pipeline_diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
     bundle.manifest_json.clear();
     bundle.ir_text.clear();
     return bundle;
