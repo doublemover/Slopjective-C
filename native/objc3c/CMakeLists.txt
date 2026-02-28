@@ -137,6 +137,7 @@ target_include_directories(objc3c_frontend PUBLIC
 )
 target_link_libraries(objc3c_frontend PUBLIC
   objc3c_pipeline
+  objc3c_runtime_abi
 )
 add_library(objc3c_driver STATIC
   src/driver/objc3_cli_options.cpp

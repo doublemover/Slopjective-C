@@ -21,6 +21,8 @@ struct RunnerOptions {
   fs::path out_dir = fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
   std::string emit_prefix = "module";
   fs::path clang_path = fs::path("clang");
+  fs::path llc_path = fs::path("llc");
+  objc3c_frontend_c_ir_object_backend_t ir_object_backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
   std::uint32_t max_message_send_args = 0;
   std::string runtime_dispatch_symbol;
   bool emit_manifest = true;
@@ -31,9 +33,22 @@ struct RunnerOptions {
 
 std::string Usage() {
   return "usage: objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] "
-         "[--clang <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
+         "[--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
-         ">] [--objc3-runtime-dispatch-symbol <symbol>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]";
+         ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-ir-object-backend <clang|llvm-direct>] "
+         "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object]";
+}
+
+bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
+  if (value == "clang") {
+    backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
+    return true;
+  }
+  if (value == "llvm-direct") {
+    backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
+    return true;
+  }
+  return false;
 }
 
 bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &error) {
@@ -53,6 +68,8 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.emit_prefix = argv[++i];
     } else if (arg == "--clang" && i + 1 < argc) {
       options.clang_path = fs::path(argv[++i]);
+    } else if (arg == "--llc" && i + 1 < argc) {
+      options.llc_path = fs::path(argv[++i]);
     } else if (arg == "--summary-out" && i + 1 < argc) {
       options.summary_out = fs::path(argv[++i]);
     } else if (arg == "--objc3-max-message-args" && i + 1 < argc) {
@@ -68,6 +85,12 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.max_message_send_args = static_cast<std::uint32_t>(parsed);
     } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
       options.runtime_dispatch_symbol = argv[++i];
+    } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
+      const std::string backend = argv[++i];
+      if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {
+        error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " + backend;
+        return false;
+      }
     } else if (arg == "--no-emit-manifest") {
       options.emit_manifest = false;
     } else if (arg == "--no-emit-ir") {
@@ -160,12 +183,15 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error) {
+  const char *backend_name =
+      options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
   out << "  \"input_path\": \"" << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
   out << "  \"out_dir\": \"" << EscapeJsonString(options.out_dir.generic_string()) << "\",\n";
   out << "  \"emit_prefix\": \"" << EscapeJsonString(options.emit_prefix) << "\",\n";
+  out << "  \"ir_object_backend\": \"" << backend_name << "\",\n";
   out << "  \"status\": " << static_cast<unsigned>(status) << ",\n";
   out << "  \"process_exit_code\": " << result.process_exit_code << ",\n";
   out << "  \"success\": " << (result.success != 0 ? "true" : "false") << ",\n";
@@ -262,18 +288,27 @@ int main(int argc, char **argv) {
   std::string input_path_text = options.input_path.string();
   std::string out_dir_text = options.out_dir.string();
   std::string clang_path_text = options.clang_path.string();
+  std::string llc_path_text = options.llc_path.string();
   const char *runtime_symbol = options.runtime_dispatch_symbol.empty() ? nullptr : options.runtime_dispatch_symbol.c_str();
 
   objc3c_frontend_c_compile_options_t compile_options = {};
   compile_options.input_path = input_path_text.c_str();
   compile_options.out_dir = out_dir_text.c_str();
   compile_options.emit_prefix = options.emit_prefix.c_str();
-  compile_options.clang_path = options.emit_object ? clang_path_text.c_str() : nullptr;
+  compile_options.clang_path =
+      options.emit_object && options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG
+          ? clang_path_text.c_str()
+          : nullptr;
+  compile_options.llc_path =
+      options.emit_object && options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
+          ? llc_path_text.c_str()
+          : nullptr;
   compile_options.runtime_dispatch_symbol = runtime_symbol;
   compile_options.max_message_send_args = options.max_message_send_args;
   compile_options.emit_manifest = options.emit_manifest ? 1u : 0u;
   compile_options.emit_ir = options.emit_ir ? 1u : 0u;
   compile_options.emit_object = options.emit_object ? 1u : 0u;
+  compile_options.ir_object_backend = options.ir_object_backend;
 
   objc3c_frontend_c_compile_result_t result = {};
   const objc3c_frontend_c_status_t status = objc3c_frontend_c_compile_file(context, &compile_options, &result);

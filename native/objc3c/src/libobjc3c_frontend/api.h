@@ -71,6 +71,12 @@ typedef enum objc3c_frontend_diagnostic_severity {
   OBJC3C_FRONTEND_DIAG_FATAL = 3
 } objc3c_frontend_diagnostic_severity_t;
 
+/* Deterministic IR->object backend selector for emit_object paths. */
+typedef enum objc3c_frontend_ir_object_backend {
+  OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG = 0,
+  OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT = 1
+} objc3c_frontend_ir_object_backend_t;
+
 /* Per-stage execution summary written to objc3c_frontend_compile_result_t. */
 typedef struct objc3c_frontend_stage_summary {
   /* Stage identity for this summary record. */
@@ -102,12 +108,14 @@ typedef struct objc3c_frontend_compile_options {
   const char *out_dir;
   const char *emit_prefix;
   const char *clang_path;
+  const char *llc_path;
   const char *runtime_dispatch_symbol;
   uint32_t max_message_send_args;
   uint8_t emit_manifest;
   uint8_t emit_ir;
   uint8_t emit_object;
-  uint8_t reserved0;
+  uint8_t ir_object_backend;
+  uint16_t reserved0;
 } objc3c_frontend_compile_options_t;
 
 /*

@@ -7,12 +7,12 @@
 #include <fstream>
 #include <new>
 #include <limits>
-#include <process.h>
 #include <sstream>
 #include <string>
 #include <system_error>
 #include <vector>
 
+#include "io/objc3_process.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
 struct objc3c_frontend_context {
@@ -240,29 +240,6 @@ static std::string BuildDiagnosticsJson(const std::vector<std::string> &diagnost
   return out.str();
 }
 
-static int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
-  std::vector<const char *> argv;
-  argv.reserve(args.size() + 2);
-  argv.push_back(executable.c_str());
-  for (const auto &arg : args) {
-    argv.push_back(arg.c_str());
-  }
-  argv.push_back(nullptr);
-
-  const int status = _spawnvp(_P_WAIT, executable.c_str(), argv.data());
-  if (status == -1) {
-    return 127;
-  }
-  return status;
-}
-
-static int RunIrCompile(const std::filesystem::path &clang_path,
-                        const std::filesystem::path &ir_path,
-                        const std::filesystem::path &object_path) {
-  return RunProcess(clang_path.string(),
-                    {"-x", "ir", "-c", ir_path.string(), "-o", object_path.string(), "-fno-color-diagnostics"});
-}
-
 struct StageDiagnosticCounts {
   uint32_t notes = 0;
   uint32_t warnings = 0;
@@ -431,22 +408,55 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   }
 
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && options->emit_object != 0) {
-    if (IsNullOrEmpty(options->clang_path)) {
+    const bool wants_clang_backend =
+        options->ir_object_backend == static_cast<uint8_t>(OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG);
+    const bool wants_llvm_direct_backend =
+        options->ir_object_backend == static_cast<uint8_t>(OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT);
+    if (!wants_clang_backend && !wants_llvm_direct_backend) {
+      result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, "emit_object requires a valid ir_object_backend (clang|llvm-direct).");
+      emit_diagnostics.push_back(
+          "error:1:1: emit_object requires valid ir_object_backend (clang|llvm-direct) [O3E001]");
+    } else if (wants_clang_backend && IsNullOrEmpty(options->clang_path)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, "emit_object requires clang_path in compile options.");
       emit_diagnostics.push_back("error:1:1: emit_object requires clang_path in compile options [O3E001]");
+    } else if (wants_llvm_direct_backend && IsNullOrEmpty(options->llc_path)) {
+      result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, "emit_object requires llc_path in compile options for llvm-direct backend.");
+      emit_diagnostics.push_back(
+          "error:1:1: emit_object requires llc_path in compile options for llvm-direct backend [O3E001]");
     } else {
       const std::filesystem::path object_out = out_dir / (emit_prefix + ".obj");
-      const int compile_status = RunIrCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+      int compile_status = 0;
+      std::string backend_error;
+      if (wants_clang_backend) {
+        compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+      } else {
+        compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
+      }
       if (compile_status != 0) {
         result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
         result->process_exit_code = compile_status;
         result->success = 0;
-        const std::string emit_error =
-            "error:1:1: LLVM object emission failed: clang exited with status " + std::to_string(compile_status) +
-            " [O3E002]";
+        std::string emit_error;
+        if (!backend_error.empty()) {
+          emit_error = "error:1:1: LLVM object emission failed: " + backend_error + " [O3E002]";
+        } else if (wants_clang_backend) {
+          emit_error =
+              "error:1:1: LLVM object emission failed: clang exited with status " + std::to_string(compile_status) +
+              " [O3E002]";
+        } else {
+          emit_error =
+              "error:1:1: LLVM object emission failed: llc exited with status " + std::to_string(compile_status) +
+              " [O3E002]";
+        }
         emit_diagnostics.push_back(emit_error);
         objc3c_frontend_set_error(context, emit_error.c_str());
       } else {
