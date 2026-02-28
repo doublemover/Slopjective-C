@@ -857,3 +857,34 @@ std::string Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3BlockDeterminismPerfBaselineLoweringLaneContract;
 }
+
+bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
+    const Objc3LightweightGenericsConstraintLoweringContract &contract) {
+  if (contract.generic_suffix_sites > contract.generic_constraint_sites ||
+      contract.object_pointer_type_sites > contract.generic_constraint_sites ||
+      contract.terminated_generic_suffix_sites > contract.generic_suffix_sites ||
+      contract.pointer_declarator_sites > contract.generic_constraint_sites ||
+      contract.normalized_constraint_sites > contract.generic_constraint_sites ||
+      contract.contract_violation_sites > contract.generic_constraint_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_constraint_sites != contract.generic_constraint_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3LightweightGenericsConstraintLoweringReplayKey(
+    const Objc3LightweightGenericsConstraintLoweringContract &contract) {
+  return std::string("generic_constraint_sites=") + std::to_string(contract.generic_constraint_sites) +
+         ";generic_suffix_sites=" + std::to_string(contract.generic_suffix_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";terminated_generic_suffix_sites=" + std::to_string(contract.terminated_generic_suffix_sites) +
+         ";pointer_declarator_sites=" + std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_constraint_sites=" + std::to_string(contract.normalized_constraint_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3LightweightGenericsConstraintLoweringLaneContract;
+}

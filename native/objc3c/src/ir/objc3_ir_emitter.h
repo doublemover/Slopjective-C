@@ -213,6 +213,15 @@ struct Objc3IRFrontendMetadata {
   std::size_t block_determinism_perf_baseline_lowering_normalized_profile_sites = 0;
   std::size_t block_determinism_perf_baseline_lowering_contract_violation_sites = 0;
   bool deterministic_block_determinism_perf_baseline_lowering_handoff = false;
+  std::string lowering_lightweight_generic_constraint_replay_key;
+  std::size_t lightweight_generic_constraint_lowering_generic_constraint_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_generic_suffix_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_object_pointer_type_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_terminated_generic_suffix_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_pointer_declarator_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_normalized_constraint_sites = 0;
+  std::size_t lightweight_generic_constraint_lowering_contract_violation_sites = 0;
+  bool deterministic_lightweight_generic_constraint_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

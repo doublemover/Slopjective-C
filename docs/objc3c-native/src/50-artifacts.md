@@ -3411,6 +3411,32 @@ Recommended M170 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q`
 
+## Lightweight generics constraint lowering artifact contract (M171-C001)
+
+M171-C lowers sema-authored lightweight generic constraint summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M171-C lowering contract anchors:
+
+- `kObjc3LightweightGenericsConstraintLoweringLaneContract`
+- `Objc3LightweightGenericsConstraintLoweringContract`
+- `IsValidObjc3LightweightGenericsConstraintLoweringContract(...)`
+- `Objc3LightweightGenericsConstraintLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_lightweight_generic_constraint_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.lightweight_generic_constraint_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface`
+- `lowering_lightweight_generic_constraint.replay_key`
+- `; lightweight_generic_constraint_lowering = generic_constraint_sites=<N>...`
+- `; frontend_objc_lightweight_generic_constraint_lowering_profile = generic_constraint_sites=<N>...`
+- `!objc3.objc_lightweight_generic_constraint_lowering = !{!24}`
+
+Recommended M171 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

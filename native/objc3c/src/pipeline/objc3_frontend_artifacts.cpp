@@ -832,6 +832,29 @@ Objc3BlockDeterminismPerfBaselineLoweringContract BuildBlockDeterminismPerfBasel
   return contract;
 }
 
+Objc3LightweightGenericsConstraintLoweringContract BuildLightweightGenericsConstraintLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3LightweightGenericsConstraintLoweringContract contract;
+  contract.generic_constraint_sites =
+      sema_parity_surface.lightweight_generic_constraint_sites_total;
+  contract.generic_suffix_sites =
+      sema_parity_surface.lightweight_generic_constraint_generic_suffix_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface.lightweight_generic_constraint_object_pointer_type_sites_total;
+  contract.terminated_generic_suffix_sites =
+      sema_parity_surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface.lightweight_generic_constraint_pointer_declarator_sites_total;
+  contract.normalized_constraint_sites =
+      sema_parity_surface.lightweight_generic_constraint_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.lightweight_generic_constraint_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.lightweight_generic_constraint_summary.deterministic &&
+      sema_parity_surface.deterministic_lightweight_generic_constraint_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1174,6 +1197,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string block_determinism_perf_baseline_lowering_replay_key =
       Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
           block_determinism_perf_baseline_lowering_contract);
+  const Objc3LightweightGenericsConstraintLoweringContract lightweight_generic_constraint_lowering_contract =
+      BuildLightweightGenericsConstraintLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
+          lightweight_generic_constraint_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid lightweight generics constraint lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string lightweight_generic_constraint_lowering_replay_key =
+      Objc3LightweightGenericsConstraintLoweringReplayKey(
+          lightweight_generic_constraint_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1742,6 +1780,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_block_determinism_perf_baseline_replay_key\":\""
            << block_determinism_perf_baseline_lowering_replay_key
            << "\""
+           << ",\"deterministic_lightweight_generic_constraint_lowering_handoff\":"
+           << (lightweight_generic_constraint_lowering_contract.deterministic ? "true" : "false")
+           << ",\"lightweight_generic_constraint_lowering_sites\":"
+           << lightweight_generic_constraint_lowering_contract.generic_constraint_sites
+           << ",\"lightweight_generic_constraint_lowering_generic_suffix_sites\":"
+           << lightweight_generic_constraint_lowering_contract.generic_suffix_sites
+           << ",\"lightweight_generic_constraint_lowering_object_pointer_type_sites\":"
+           << lightweight_generic_constraint_lowering_contract.object_pointer_type_sites
+           << ",\"lightweight_generic_constraint_lowering_terminated_generic_suffix_sites\":"
+           << lightweight_generic_constraint_lowering_contract.terminated_generic_suffix_sites
+           << ",\"lightweight_generic_constraint_lowering_pointer_declarator_sites\":"
+           << lightweight_generic_constraint_lowering_contract.pointer_declarator_sites
+           << ",\"lightweight_generic_constraint_lowering_normalized_sites\":"
+           << lightweight_generic_constraint_lowering_contract.normalized_constraint_sites
+           << ",\"lightweight_generic_constraint_lowering_contract_violation_sites\":"
+           << lightweight_generic_constraint_lowering_contract.contract_violation_sites
+           << ",\"lowering_lightweight_generic_constraint_replay_key\":\""
+           << lightweight_generic_constraint_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2258,6 +2315,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (block_determinism_perf_baseline_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_lightweight_generic_constraint_lowering_surface\":{\"generic_constraint_sites\":"
+           << lightweight_generic_constraint_lowering_contract.generic_constraint_sites
+           << ",\"generic_suffix_sites\":"
+           << lightweight_generic_constraint_lowering_contract.generic_suffix_sites
+           << ",\"object_pointer_type_sites\":"
+           << lightweight_generic_constraint_lowering_contract.object_pointer_type_sites
+           << ",\"terminated_generic_suffix_sites\":"
+           << lightweight_generic_constraint_lowering_contract.terminated_generic_suffix_sites
+           << ",\"pointer_declarator_sites\":"
+           << lightweight_generic_constraint_lowering_contract.pointer_declarator_sites
+           << ",\"normalized_constraint_sites\":"
+           << lightweight_generic_constraint_lowering_contract.normalized_constraint_sites
+           << ",\"contract_violation_sites\":"
+           << lightweight_generic_constraint_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << lightweight_generic_constraint_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (lightweight_generic_constraint_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2433,6 +2509,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3BlockDeterminismPerfBaselineLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (block_determinism_perf_baseline_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_lightweight_generic_constraint\":{\"replay_key\":\""
+           << lightweight_generic_constraint_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3LightweightGenericsConstraintLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (lightweight_generic_constraint_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2860,6 +2942,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_determinism_perf_baseline_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_block_determinism_perf_baseline_lowering_handoff =
       block_determinism_perf_baseline_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_lightweight_generic_constraint_replay_key =
+      lightweight_generic_constraint_lowering_replay_key;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_generic_constraint_sites =
+      lightweight_generic_constraint_lowering_contract.generic_constraint_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_generic_suffix_sites =
+      lightweight_generic_constraint_lowering_contract.generic_suffix_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_object_pointer_type_sites =
+      lightweight_generic_constraint_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_terminated_generic_suffix_sites =
+      lightweight_generic_constraint_lowering_contract.terminated_generic_suffix_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_pointer_declarator_sites =
+      lightweight_generic_constraint_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_normalized_constraint_sites =
+      lightweight_generic_constraint_lowering_contract.normalized_constraint_sites;
+  ir_frontend_metadata.lightweight_generic_constraint_lowering_contract_violation_sites =
+      lightweight_generic_constraint_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_lightweight_generic_constraint_lowering_handoff =
+      lightweight_generic_constraint_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

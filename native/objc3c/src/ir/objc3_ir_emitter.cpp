@@ -162,6 +162,10 @@ class Objc3IREmitter {
       out << "; block_determinism_perf_baseline_lowering = "
           << frontend_metadata_.lowering_block_determinism_perf_baseline_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_lightweight_generic_constraint_replay_key.empty()) {
+      out << "; lightweight_generic_constraint_lowering = "
+          << frontend_metadata_.lowering_lightweight_generic_constraint_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -496,6 +500,23 @@ class Objc3IREmitter {
         << ", deterministic_block_determinism_perf_baseline_lowering_handoff="
         << (frontend_metadata_.deterministic_block_determinism_perf_baseline_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_lightweight_generic_constraint_lowering_profile = generic_constraint_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_generic_constraint_sites
+        << ", generic_suffix_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_generic_suffix_sites
+        << ", object_pointer_type_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_object_pointer_type_sites
+        << ", terminated_generic_suffix_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_terminated_generic_suffix_sites
+        << ", pointer_declarator_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_pointer_declarator_sites
+        << ", normalized_constraint_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_normalized_constraint_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.lightweight_generic_constraint_lowering_contract_violation_sites
+        << ", deterministic_lightweight_generic_constraint_lowering_handoff="
+        << (frontend_metadata_.deterministic_lightweight_generic_constraint_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -682,6 +703,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_block_storage_escape_lowering = !{!21}\n";
     out << "!objc3.objc_block_copy_dispose_lowering = !{!22}\n";
     out << "!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}\n";
+    out << "!objc3.objc_lightweight_generic_constraint_lowering = !{!24}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1111,6 +1133,30 @@ class Objc3IREmitter {
                frontend_metadata_.block_determinism_perf_baseline_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_block_determinism_perf_baseline_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!24 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_generic_constraint_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_generic_suffix_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_object_pointer_type_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_terminated_generic_suffix_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_pointer_declarator_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_normalized_constraint_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.lightweight_generic_constraint_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_lightweight_generic_constraint_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 
