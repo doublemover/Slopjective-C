@@ -3193,6 +3193,71 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m166_lowering_block_literal_capture_contract.py -q`
 
+## Block ABI invoke-trampoline lowering artifact contract (M167-C001)
+
+M167-C publishes replay-stable block ABI invoke-trampoline lowering invariants
+derived from M167 sema block ABI parity surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/block-abi-invoke-trampoline-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3BlockAbiInvokeTrampolineLoweringLaneContract`
+- `Objc3BlockAbiInvokeTrampolineLoweringContract`
+- `IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(...)`
+- `Objc3BlockAbiInvokeTrampolineLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `invoke_argument_slots_total=<N>`
+- `capture_word_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `descriptor_symbolized_sites=<N>`
+- `invoke_trampoline_symbolized_sites=<N>`
+- `missing_invoke_trampoline_sites=<N>`
+- `non_normalized_layout_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m167-block-abi-invoke-trampoline-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_abi_invoke_trampoline_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_invoke_argument_slots`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_capture_word_count`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_invoke_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_missing_invoke_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_non_normalized_layout_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_abi_invoke_trampoline_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface`
+- `lowering_block_abi_invoke_trampoline.replay_key`
+- `lowering_block_abi_invoke_trampoline.lane_contract`
+
+IR publication markers:
+
+- `; block_abi_invoke_trampoline_lowering = block_literal_sites=<N>;invoke_argument_slots_total=<N>;capture_word_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;descriptor_symbolized_sites=<N>;invoke_trampoline_symbolized_sites=<N>;missing_invoke_trampoline_sites=<N>;non_normalized_layout_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1`
+- `; frontend_objc_block_abi_invoke_trampoline_lowering_profile = block_literal_sites=<N>, invoke_argument_slots_total=<N>, capture_word_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, descriptor_symbolized_sites=<N>, invoke_trampoline_symbolized_sites=<N>, missing_invoke_trampoline_sites=<N>, non_normalized_layout_sites=<N>, contract_violation_sites=<N>, deterministic_block_abi_invoke_trampoline_lowering_handoff=<bool>`
+- `!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}`
+- `!20 = !{i64 <block_literal_sites>, i64 <invoke_argument_slots_total>, i64 <capture_word_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <descriptor_symbolized_sites>, i64 <invoke_trampoline_symbolized_sites>, i64 <missing_invoke_trampoline_sites>, i64 <non_normalized_layout_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

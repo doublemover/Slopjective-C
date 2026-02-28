@@ -44,6 +44,8 @@ inline constexpr const char *kObjc3ArcDiagnosticsFixitLoweringLaneContract =
     "m165-arc-diagnostics-fixit-lowering-v1";
 inline constexpr const char *kObjc3BlockLiteralCaptureLoweringLaneContract =
     "m166-block-literal-capture-lowering-v1";
+inline constexpr const char *kObjc3BlockAbiInvokeTrampolineLoweringLaneContract =
+    "m167-block-abi-invoke-trampoline-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -217,6 +219,21 @@ struct Objc3BlockLiteralCaptureLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3BlockAbiInvokeTrampolineLoweringContract {
+  std::size_t block_literal_sites = 0;
+  std::size_t invoke_argument_slots_total = 0;
+  std::size_t capture_word_count_total = 0;
+  std::size_t parameter_entries_total = 0;
+  std::size_t capture_entries_total = 0;
+  std::size_t body_statement_entries_total = 0;
+  std::size_t descriptor_symbolized_sites = 0;
+  std::size_t invoke_trampoline_symbolized_sites = 0;
+  std::size_t missing_invoke_trampoline_sites = 0;
+  std::size_t non_normalized_layout_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -290,3 +307,7 @@ bool IsValidObjc3BlockLiteralCaptureLoweringContract(
     const Objc3BlockLiteralCaptureLoweringContract &contract);
 std::string Objc3BlockLiteralCaptureLoweringReplayKey(
     const Objc3BlockLiteralCaptureLoweringContract &contract);
+bool IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
+    const Objc3BlockAbiInvokeTrampolineLoweringContract &contract);
+std::string Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
+    const Objc3BlockAbiInvokeTrampolineLoweringContract &contract);

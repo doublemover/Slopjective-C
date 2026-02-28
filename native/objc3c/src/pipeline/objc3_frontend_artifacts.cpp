@@ -710,6 +710,37 @@ Objc3BlockLiteralCaptureLoweringContract BuildBlockLiteralCaptureLoweringContrac
   return contract;
 }
 
+Objc3BlockAbiInvokeTrampolineLoweringContract BuildBlockAbiInvokeTrampolineLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3BlockAbiInvokeTrampolineLoweringContract contract;
+  contract.block_literal_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_sites_total;
+  contract.invoke_argument_slots_total =
+      sema_parity_surface.block_abi_invoke_trampoline_invoke_argument_slots_total;
+  contract.capture_word_count_total =
+      sema_parity_surface.block_abi_invoke_trampoline_capture_word_count_total;
+  contract.parameter_entries_total =
+      sema_parity_surface.block_abi_invoke_trampoline_parameter_entries_total;
+  contract.capture_entries_total =
+      sema_parity_surface.block_abi_invoke_trampoline_capture_entries_total;
+  contract.body_statement_entries_total =
+      sema_parity_surface.block_abi_invoke_trampoline_body_statement_entries_total;
+  contract.descriptor_symbolized_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total;
+  contract.invoke_trampoline_symbolized_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total;
+  contract.missing_invoke_trampoline_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_missing_invoke_sites_total;
+  contract.non_normalized_layout_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.block_abi_invoke_trampoline_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
+      sema_parity_surface.deterministic_block_abi_invoke_trampoline_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -994,6 +1025,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string block_literal_capture_lowering_replay_key =
       Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
+  const Objc3BlockAbiInvokeTrampolineLoweringContract block_abi_invoke_trampoline_lowering_contract =
+      BuildBlockAbiInvokeTrampolineLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
+          block_abi_invoke_trampoline_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid block ABI invoke-trampoline lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string block_abi_invoke_trampoline_lowering_replay_key =
+      Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
+          block_abi_invoke_trampoline_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1454,6 +1500,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_block_literal_capture_replay_key\":\""
            << block_literal_capture_lowering_replay_key
            << "\""
+           << ",\"deterministic_block_abi_invoke_trampoline_lowering_handoff\":"
+           << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
+           << ",\"block_abi_invoke_trampoline_lowering_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.block_literal_sites
+           << ",\"block_abi_invoke_trampoline_lowering_invoke_argument_slots\":"
+           << block_abi_invoke_trampoline_lowering_contract.invoke_argument_slots_total
+           << ",\"block_abi_invoke_trampoline_lowering_capture_word_count\":"
+           << block_abi_invoke_trampoline_lowering_contract.capture_word_count_total
+           << ",\"block_abi_invoke_trampoline_lowering_parameter_entries\":"
+           << block_abi_invoke_trampoline_lowering_contract.parameter_entries_total
+           << ",\"block_abi_invoke_trampoline_lowering_capture_entries\":"
+           << block_abi_invoke_trampoline_lowering_contract.capture_entries_total
+           << ",\"block_abi_invoke_trampoline_lowering_body_statement_entries\":"
+           << block_abi_invoke_trampoline_lowering_contract.body_statement_entries_total
+           << ",\"block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.descriptor_symbolized_sites
+           << ",\"block_abi_invoke_trampoline_lowering_invoke_symbolized_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.invoke_trampoline_symbolized_sites
+           << ",\"block_abi_invoke_trampoline_lowering_missing_invoke_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.missing_invoke_trampoline_sites
+           << ",\"block_abi_invoke_trampoline_lowering_non_normalized_layout_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.non_normalized_layout_sites
+           << ",\"block_abi_invoke_trampoline_lowering_contract_violation_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.contract_violation_sites
+           << ",\"lowering_block_abi_invoke_trampoline_replay_key\":\""
+           << block_abi_invoke_trampoline_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1862,6 +1935,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_block_abi_invoke_trampoline_lowering_surface\":{\"block_literal_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.block_literal_sites
+           << ",\"invoke_argument_slots_total\":"
+           << block_abi_invoke_trampoline_lowering_contract.invoke_argument_slots_total
+           << ",\"capture_word_count_total\":"
+           << block_abi_invoke_trampoline_lowering_contract.capture_word_count_total
+           << ",\"parameter_entries_total\":"
+           << block_abi_invoke_trampoline_lowering_contract.parameter_entries_total
+           << ",\"capture_entries_total\":"
+           << block_abi_invoke_trampoline_lowering_contract.capture_entries_total
+           << ",\"body_statement_entries_total\":"
+           << block_abi_invoke_trampoline_lowering_contract.body_statement_entries_total
+           << ",\"descriptor_symbolized_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.descriptor_symbolized_sites
+           << ",\"invoke_trampoline_symbolized_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.invoke_trampoline_symbolized_sites
+           << ",\"missing_invoke_trampoline_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.missing_invoke_trampoline_sites
+           << ",\"non_normalized_layout_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.non_normalized_layout_sites
+           << ",\"contract_violation_sites\":"
+           << block_abi_invoke_trampoline_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << block_abi_invoke_trampoline_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2013,6 +2113,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3BlockLiteralCaptureLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_block_abi_invoke_trampoline\":{\"replay_key\":\""
+           << block_abi_invoke_trampoline_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3BlockAbiInvokeTrampolineLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2336,6 +2442,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_literal_capture_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_block_literal_capture_lowering_handoff =
       block_literal_capture_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_block_abi_invoke_trampoline_replay_key =
+      block_abi_invoke_trampoline_lowering_replay_key;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_block_literal_sites =
+      block_abi_invoke_trampoline_lowering_contract.block_literal_sites;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_invoke_argument_slots_total =
+      block_abi_invoke_trampoline_lowering_contract.invoke_argument_slots_total;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_capture_word_count_total =
+      block_abi_invoke_trampoline_lowering_contract.capture_word_count_total;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_parameter_entries_total =
+      block_abi_invoke_trampoline_lowering_contract.parameter_entries_total;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_capture_entries_total =
+      block_abi_invoke_trampoline_lowering_contract.capture_entries_total;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_body_statement_entries_total =
+      block_abi_invoke_trampoline_lowering_contract.body_statement_entries_total;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites =
+      block_abi_invoke_trampoline_lowering_contract.descriptor_symbolized_sites;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_invoke_symbolized_sites =
+      block_abi_invoke_trampoline_lowering_contract.invoke_trampoline_symbolized_sites;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_missing_invoke_sites =
+      block_abi_invoke_trampoline_lowering_contract.missing_invoke_trampoline_sites;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_non_normalized_layout_sites =
+      block_abi_invoke_trampoline_lowering_contract.non_normalized_layout_sites;
+  ir_frontend_metadata.block_abi_invoke_trampoline_lowering_contract_violation_sites =
+      block_abi_invoke_trampoline_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_block_abi_invoke_trampoline_lowering_handoff =
+      block_abi_invoke_trampoline_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

@@ -146,6 +146,10 @@ class Objc3IREmitter {
       out << "; block_literal_capture_lowering = "
           << frontend_metadata_.lowering_block_literal_capture_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_block_abi_invoke_trampoline_replay_key.empty()) {
+      out << "; block_abi_invoke_trampoline_lowering = "
+          << frontend_metadata_.lowering_block_abi_invoke_trampoline_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -380,6 +384,31 @@ class Objc3IREmitter {
         << ", deterministic_block_literal_capture_lowering_handoff="
         << (frontend_metadata_.deterministic_block_literal_capture_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_block_abi_invoke_trampoline_lowering_profile = block_literal_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_block_literal_sites
+        << ", invoke_argument_slots_total="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_invoke_argument_slots_total
+        << ", capture_word_count_total="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_capture_word_count_total
+        << ", parameter_entries_total="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_parameter_entries_total
+        << ", capture_entries_total="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_capture_entries_total
+        << ", body_statement_entries_total="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_body_statement_entries_total
+        << ", descriptor_symbolized_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites
+        << ", invoke_trampoline_symbolized_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_invoke_symbolized_sites
+        << ", missing_invoke_trampoline_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_missing_invoke_sites
+        << ", non_normalized_layout_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_non_normalized_layout_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.block_abi_invoke_trampoline_lowering_contract_violation_sites
+        << ", deterministic_block_abi_invoke_trampoline_lowering_handoff="
+        << (frontend_metadata_.deterministic_block_abi_invoke_trampoline_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -562,6 +591,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_weak_unowned_semantics_lowering = !{!17}\n";
     out << "!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}\n";
     out << "!objc3.objc_block_literal_capture_lowering = !{!19}\n";
+    out << "!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -849,6 +879,42 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_block_literal_capture_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!20 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_block_literal_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_invoke_argument_slots_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_capture_word_count_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_parameter_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_capture_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_body_statement_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_invoke_symbolized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_missing_invoke_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_non_normalized_layout_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_abi_invoke_trampoline_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_block_abi_invoke_trampoline_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 
