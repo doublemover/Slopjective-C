@@ -212,9 +212,53 @@ struct Objc3MethodDecl {
   unsigned column = 1;
 };
 
+struct Objc3PropertyAttributeDecl {
+  std::string name;
+  std::string value;
+  bool has_value = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3PropertyDecl {
+  std::string name;
+  ValueType type = ValueType::Unknown;
+  bool vector_spelling = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+  bool id_spelling = false;
+  bool class_spelling = false;
+  bool instancetype_spelling = false;
+  bool has_generic_suffix = false;
+  bool generic_suffix_terminated = true;
+  std::string generic_suffix_text;
+  unsigned generic_line = 1;
+  unsigned generic_column = 1;
+  bool has_pointer_declarator = false;
+  unsigned pointer_declarator_depth = 0;
+  std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
+  std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;
+  std::vector<Objc3PropertyAttributeDecl> attributes;
+  bool is_readonly = false;
+  bool is_readwrite = false;
+  bool is_atomic = false;
+  bool is_nonatomic = false;
+  bool is_copy = false;
+  bool is_strong = false;
+  bool is_weak = false;
+  bool is_assign = false;
+  bool has_getter = false;
+  bool has_setter = false;
+  std::string getter_selector;
+  std::string setter_selector;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct Objc3ProtocolDecl {
   std::string name;
   std::vector<std::string> inherited_protocols;
+  std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   bool is_forward_declaration = false;
   unsigned line = 1;
@@ -227,6 +271,7 @@ struct Objc3InterfaceDecl {
   std::string category_name;
   bool has_category = false;
   std::vector<std::string> adopted_protocols;
+  std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
   unsigned column = 1;
@@ -236,6 +281,7 @@ struct Objc3ImplementationDecl {
   std::string name;
   std::string category_name;
   bool has_category = false;
+  std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
   unsigned column = 1;

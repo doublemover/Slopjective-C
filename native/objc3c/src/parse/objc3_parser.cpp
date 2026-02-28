@@ -460,6 +460,25 @@ class Objc3Parser {
     target.return_nullability_suffix_tokens = source.return_nullability_suffix_tokens;
   }
 
+  void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
+    target.type = source.type;
+    target.vector_spelling = source.vector_spelling;
+    target.vector_base_spelling = source.vector_base_spelling;
+    target.vector_lane_count = source.vector_lane_count;
+    target.id_spelling = source.id_spelling;
+    target.class_spelling = source.class_spelling;
+    target.instancetype_spelling = source.instancetype_spelling;
+    target.has_generic_suffix = source.has_generic_suffix;
+    target.generic_suffix_terminated = source.generic_suffix_terminated;
+    target.generic_suffix_text = source.generic_suffix_text;
+    target.generic_line = source.generic_line;
+    target.generic_column = source.generic_column;
+    target.has_pointer_declarator = source.has_pointer_declarator;
+    target.pointer_declarator_depth = source.pointer_declarator_depth;
+    target.pointer_declarator_tokens = source.pointer_declarator_tokens;
+    target.nullability_suffix_tokens = source.nullability_suffix_tokens;
+  }
+
   void ConsumeBracedBodyTail() {
     int depth = 1;
     while (depth > 0 && !At(TokenKind::Eof)) {
@@ -603,9 +622,125 @@ class Objc3Parser {
     return true;
   }
 
+  std::string ParseObjcPropertyAttributeValueText() {
+    std::string value_text;
+    while (!At(TokenKind::Eof) && !At(TokenKind::Comma) && !At(TokenKind::RParen)) {
+      value_text += Advance().text;
+    }
+    return value_text;
+  }
+
+  bool ParseObjcPropertyAttributes(std::vector<Objc3PropertyAttributeDecl> &attributes) {
+    if (!Match(TokenKind::LParen)) {
+      return true;
+    }
+
+    while (true) {
+      const Token &name_token = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(
+            MakeDiag(name_token.line, name_token.column, "O3P101", "invalid Objective-C @property attribute"));
+        return false;
+      }
+
+      Objc3PropertyAttributeDecl attribute;
+      attribute.name = Previous().text;
+      attribute.line = Previous().line;
+      attribute.column = Previous().column;
+      if (Match(TokenKind::Equal)) {
+        attribute.has_value = true;
+        attribute.value = ParseObjcPropertyAttributeValueText();
+        if (attribute.value.empty()) {
+          const Token &token = Peek();
+          diagnostics_.push_back(
+              MakeDiag(token.line, token.column, "O3P100", "missing Objective-C @property attribute value"));
+          return false;
+        }
+      }
+      attributes.push_back(std::move(attribute));
+
+      if (Match(TokenKind::Comma)) {
+        continue;
+      }
+      if (Match(TokenKind::RParen)) {
+        return true;
+      }
+
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P109", "missing ')' after Objective-C @property attribute list"));
+      return false;
+    }
+  }
+
+  void ApplyObjcPropertyAttributes(Objc3PropertyDecl &property) {
+    for (const auto &attribute : property.attributes) {
+      if (attribute.name == "readonly") {
+        property.is_readonly = true;
+      } else if (attribute.name == "readwrite") {
+        property.is_readwrite = true;
+      } else if (attribute.name == "atomic") {
+        property.is_atomic = true;
+      } else if (attribute.name == "nonatomic") {
+        property.is_nonatomic = true;
+      } else if (attribute.name == "copy") {
+        property.is_copy = true;
+      } else if (attribute.name == "strong") {
+        property.is_strong = true;
+      } else if (attribute.name == "weak") {
+        property.is_weak = true;
+      } else if (attribute.name == "assign") {
+        property.is_assign = true;
+      } else if (attribute.name == "getter") {
+        property.has_getter = true;
+        property.getter_selector = attribute.value;
+      } else if (attribute.name == "setter") {
+        property.has_setter = true;
+        property.setter_selector = attribute.value;
+      }
+    }
+  }
+
+  bool ParseObjcPropertyDecl(Objc3PropertyDecl &property) {
+    if (!Match(TokenKind::KwAtProperty)) {
+      return false;
+    }
+    const Token property_marker = Previous();
+    property.line = property_marker.line;
+    property.column = property_marker.column;
+
+    if (!ParseObjcPropertyAttributes(property.attributes)) {
+      return false;
+    }
+
+    FuncParam property_type;
+    if (!ParseParameterType(property_type)) {
+      return false;
+    }
+    CopyPropertyTypeFromParam(property_type, property);
+
+    const Token &name_token = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name_token.line, name_token.column, "O3P101", "invalid Objective-C @property identifier"));
+      return false;
+    }
+    property.name = Previous().text;
+
+    if (!Match(TokenKind::Semicolon)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P104", "missing ';' after Objective-C @property declaration"));
+      return false;
+    }
+
+    ApplyObjcPropertyAttributes(property);
+    return true;
+  }
+
   void SynchronizeObjcContainer() {
     while (!At(TokenKind::Eof)) {
-      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus)) {
+      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus) || At(TokenKind::KwAtProperty)) {
         return;
       }
       if (At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) || At(TokenKind::KwAtProtocol) ||
@@ -694,6 +829,15 @@ class Objc3Parser {
     }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (At(TokenKind::KwAtProperty)) {
+        Objc3PropertyDecl property;
+        if (ParseObjcPropertyDecl(property)) {
+          decl->properties.push_back(std::move(property));
+          continue;
+        }
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
         const Token &token = Peek();
         diagnostics_.push_back(
@@ -753,6 +897,15 @@ class Objc3Parser {
     }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (At(TokenKind::KwAtProperty)) {
+        Objc3PropertyDecl property;
+        if (ParseObjcPropertyDecl(property)) {
+          decl->properties.push_back(std::move(property));
+          continue;
+        }
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
         const Token &token = Peek();
         diagnostics_.push_back(
@@ -797,6 +950,15 @@ class Objc3Parser {
     }
 
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (At(TokenKind::KwAtProperty)) {
+        Objc3PropertyDecl property;
+        if (ParseObjcPropertyDecl(property)) {
+          decl->properties.push_back(std::move(property));
+          continue;
+        }
+        SynchronizeObjcContainer();
+        continue;
+      }
       if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
         const Token &token = Peek();
         diagnostics_.push_back(
@@ -917,7 +1079,7 @@ class Objc3Parser {
       const Token &token = Peek();
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
           At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
-          At(TokenKind::KwAtProtocol) ||
+          At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty) ||
           At(TokenKind::Eof)) {
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P104", "missing ';' after function prototype declaration"));
@@ -1330,7 +1492,7 @@ class Objc3Parser {
       }
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
           At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
-          At(TokenKind::KwAtProtocol)) {
+          At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty)) {
         return;
       }
       Advance();

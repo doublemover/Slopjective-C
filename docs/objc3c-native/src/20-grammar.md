@@ -153,6 +153,37 @@ Recommended M148 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
 
+## M149 frontend @property grammar and attribute parsing
+
+Frontend parser/AST now accepts Objective-C property declarations within container bodies and captures attribute /
+accessor-modifier metadata in a deterministic structure.
+
+M149 parser surface details:
+
+- Lexer contract emits dedicated token:
+  - `KwAtProperty`
+- Property parser helpers:
+  - `ParseObjcPropertyDecl(...)`
+  - `ParseObjcPropertyAttributes(...)`
+  - `ParseObjcPropertyAttributeValueText()`
+  - `ApplyObjcPropertyAttributes(...)`
+- Container integration:
+  - `@protocol`, `@interface`, and `@implementation` now accept `@property ...;` entries.
+  - parsed properties are stored in `properties` vectors on container AST nodes.
+
+Deterministic recovery/diagnostic anchors:
+
+- invalid property attribute/name failures:
+  - `invalid Objective-C @property attribute`
+  - `invalid Objective-C @property identifier`
+- malformed attribute list / declaration termination:
+  - `missing ')' after Objective-C @property attribute list`
+  - `missing ';' after Objective-C @property declaration`
+
+Recommended M149 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

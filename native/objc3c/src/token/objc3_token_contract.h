@@ -42,6 +42,7 @@ enum class Objc3LexTokenKind {
   KwAtInterface,
   KwAtImplementation,
   KwAtProtocol,
+  KwAtProperty,
   KwAtEnd,
   LParen,
   RParen,
