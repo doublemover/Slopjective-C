@@ -19,11 +19,23 @@ struct SymbolContext {
 
 struct Expr {
   enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
+  enum class MessageSendForm { None, Unary, Keyword };
+  struct MessageSendSelectorPiece {
+    std::string keyword;
+    bool has_argument = false;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
   Kind kind = Kind::Number;
   int number = 0;
   bool bool_value = false;
   std::string ident;
   std::string selector;
+  MessageSendForm message_send_form = MessageSendForm::None;
+  std::string message_send_form_symbol;
+  std::vector<MessageSendSelectorPiece> selector_lowering_pieces;
+  std::string selector_lowering_symbol;
+  bool selector_lowering_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

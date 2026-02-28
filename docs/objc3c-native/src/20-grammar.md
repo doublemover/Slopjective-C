@@ -371,6 +371,39 @@ Recommended M155 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
 
+## M156 frontend message-send selector-lowering parser surface
+
+Frontend parser/AST now emits deterministic message-send form packets and selector-lowering metadata for bracketed
+message-send expressions.
+
+M156 parser/AST surface details:
+
+- message-send helper anchors:
+  - `BuildMessageSendFormSymbol(...)`
+  - `BuildMessageSendSelectorLoweringSymbol(...)`
+- parser assignment anchors:
+  - `message->message_send_form = Expr::MessageSendForm::Keyword;`
+  - `message->message_send_form = Expr::MessageSendForm::Unary;`
+  - `message->message_send_form_symbol = BuildMessageSendFormSymbol(message->message_send_form);`
+  - `message->selector_lowering_symbol = BuildMessageSendSelectorLoweringSymbol(message->selector_lowering_pieces);`
+  - `message->selector_lowering_is_normalized = true;`
+- AST message-send carriers:
+  - `MessageSendForm`
+  - `message_send_form`
+  - `message_send_form_symbol`
+  - `selector_lowering_pieces`
+  - `selector_lowering_symbol`
+  - `selector_lowering_is_normalized`
+
+Deterministic grammar intent:
+
+- message-send parse shape captures unary vs keyword form as a stable parser symbol.
+- selector lowering symbol packets are derived from parsed selector pieces instead of raw token replay.
+
+Recommended M156 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_frontend_message_send_selector_lowering_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

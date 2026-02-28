@@ -169,6 +169,30 @@ static std::string BuildNormalizedObjcSelector(const std::vector<Objc3MethodDecl
   return normalized;
 }
 
+static std::string BuildMessageSendFormSymbol(Expr::MessageSendForm form) {
+  switch (form) {
+  case Expr::MessageSendForm::Unary:
+    return "message-send-form:unary";
+  case Expr::MessageSendForm::Keyword:
+    return "message-send-form:keyword";
+  case Expr::MessageSendForm::None:
+  default:
+    return "message-send-form:none";
+  }
+}
+
+static std::string BuildMessageSendSelectorLoweringSymbol(
+    const std::vector<Expr::MessageSendSelectorPiece> &pieces) {
+  std::string normalized_selector;
+  for (const auto &piece : pieces) {
+    normalized_selector += piece.keyword;
+    if (piece.has_argument) {
+      normalized_selector += ":";
+    }
+  }
+  return "selector-lowering:" + normalized_selector;
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -2901,7 +2925,14 @@ class Objc3Parser {
 
     const Token selector_head = Advance();
     message->selector = selector_head.text;
+    Expr::MessageSendSelectorPiece head_piece;
+    head_piece.keyword = selector_head.text;
+    head_piece.line = selector_head.line;
+    head_piece.column = selector_head.column;
     if (Match(TokenKind::Colon)) {
+      message->message_send_form = Expr::MessageSendForm::Keyword;
+      head_piece.has_argument = true;
+      message->selector_lowering_pieces.push_back(head_piece);
       message->selector += ":";
       auto first_arg = ParseExpression();
       if (first_arg == nullptr) {
@@ -2928,6 +2959,12 @@ class Objc3Parser {
                                           "missing ':' in keyword selector segment"));
           return nullptr;
         }
+        Expr::MessageSendSelectorPiece keyword_piece;
+        keyword_piece.keyword = keyword.text;
+        keyword_piece.has_argument = true;
+        keyword_piece.line = keyword.line;
+        keyword_piece.column = keyword.column;
+        message->selector_lowering_pieces.push_back(std::move(keyword_piece));
         message->selector += keyword.text;
         message->selector += ":";
         auto arg = ParseExpression();
@@ -2936,7 +2973,13 @@ class Objc3Parser {
         }
         message->args.push_back(std::move(arg));
       }
+    } else {
+      message->message_send_form = Expr::MessageSendForm::Unary;
+      message->selector_lowering_pieces.push_back(head_piece);
     }
+    message->message_send_form_symbol = BuildMessageSendFormSymbol(message->message_send_form);
+    message->selector_lowering_symbol = BuildMessageSendSelectorLoweringSymbol(message->selector_lowering_pieces);
+    message->selector_lowering_is_normalized = true;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();
