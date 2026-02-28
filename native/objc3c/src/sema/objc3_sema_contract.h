@@ -48,6 +48,17 @@ struct Objc3VectorTypeLoweringSummary {
   std::size_t total() const { return return_annotations + param_annotations; }
 };
 
+struct Objc3ProtocolCategoryCompositionSummary {
+  std::size_t protocol_composition_sites = 0;
+  std::size_t protocol_composition_symbols = 0;
+  std::size_t category_composition_sites = 0;
+  std::size_t category_composition_symbols = 0;
+  std::size_t invalid_protocol_composition_sites = 0;
+  bool deterministic = true;
+
+  std::size_t total_composition_sites() const { return protocol_composition_sites + category_composition_sites; }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -55,10 +66,16 @@ struct FunctionInfo {
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_has_protocol_composition;
+  std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
+  std::vector<bool> param_has_invalid_protocol_composition;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
+  bool return_has_protocol_composition = false;
+  std::vector<std::string> return_protocol_composition_lexicographic;
+  bool return_has_invalid_protocol_composition = false;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };
@@ -70,10 +87,16 @@ struct Objc3MethodInfo {
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_has_protocol_composition;
+  std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
+  std::vector<bool> param_has_invalid_protocol_composition;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
+  bool return_has_protocol_composition = false;
+  std::vector<std::string> return_protocol_composition_lexicographic;
+  bool return_has_invalid_protocol_composition = false;
   bool is_class_method = false;
   bool has_definition = false;
 };
@@ -105,6 +128,7 @@ struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   bool built = false;
 };
 
@@ -116,10 +140,16 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_has_protocol_composition;
+  std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
+  std::vector<bool> param_has_invalid_protocol_composition;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
+  bool return_has_protocol_composition = false;
+  std::vector<std::string> return_protocol_composition_lexicographic;
+  bool return_has_invalid_protocol_composition = false;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };
@@ -132,10 +162,16 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_has_protocol_composition;
+  std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
+  std::vector<bool> param_has_invalid_protocol_composition;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
+  bool return_has_protocol_composition = false;
+  std::vector<std::string> return_protocol_composition_lexicographic;
+  bool return_has_invalid_protocol_composition = false;
   bool is_class_method = false;
   bool has_definition = false;
 };
@@ -158,6 +194,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   std::vector<Objc3SemanticInterfaceTypeMetadata> interfaces_lexicographic;
   std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
 };
 
 struct Objc3SemanticValidationOptions {

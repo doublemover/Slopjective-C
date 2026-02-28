@@ -94,11 +94,18 @@ struct Objc3SemaParityContractSurface {
   std::size_t interface_method_symbols_total = 0;
   std::size_t implementation_method_symbols_total = 0;
   std::size_t linked_implementation_symbols_total = 0;
+  std::size_t protocol_composition_sites_total = 0;
+  std::size_t protocol_composition_symbols_total = 0;
+  std::size_t category_composition_sites_total = 0;
+  std::size_t category_composition_symbols_total = 0;
+  std::size_t invalid_protocol_composition_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
+  bool deterministic_protocol_category_composition_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -122,7 +129,21 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.interface_implementation_summary.linked_implementation_symbols ==
              surface.linked_implementation_symbols_total &&
          surface.interface_implementation_summary.deterministic &&
-         surface.deterministic_interface_implementation_handoff;
+         surface.deterministic_interface_implementation_handoff &&
+         surface.protocol_category_composition_summary.protocol_composition_sites ==
+             surface.protocol_composition_sites_total &&
+         surface.protocol_category_composition_summary.protocol_composition_symbols ==
+             surface.protocol_composition_symbols_total &&
+         surface.protocol_category_composition_summary.category_composition_sites ==
+             surface.category_composition_sites_total &&
+         surface.protocol_category_composition_summary.category_composition_symbols ==
+             surface.category_composition_symbols_total &&
+         surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
+             surface.invalid_protocol_composition_sites_total &&
+         surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
+             surface.protocol_category_composition_summary.total_composition_sites() &&
+         surface.protocol_category_composition_summary.deterministic &&
+         surface.deterministic_protocol_category_composition_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -134,6 +155,7 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
+  bool deterministic_protocol_category_composition_handoff = false;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

@@ -2,6 +2,7 @@
 #include "sema/objc3_static_analysis.h"
 
 #include <algorithm>
+#include <cctype>
 #include <limits>
 #include <map>
 #include <optional>
@@ -129,6 +130,124 @@ static std::string SemanticTypeName(const SemanticTypeInfo &info) {
   }
   const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
   return base + "x" + std::to_string(info.vector_lane_count);
+}
+
+struct ProtocolCompositionParseResult {
+  bool has_protocol_composition = false;
+  bool malformed_composition = false;
+  bool empty_composition = false;
+  std::vector<std::string> names_lexicographic;
+  std::vector<std::string> invalid_identifiers;
+  std::vector<std::string> duplicate_identifiers;
+
+  bool IsValid() const {
+    return !malformed_composition && !empty_composition && invalid_identifiers.empty() && duplicate_identifiers.empty();
+  }
+};
+
+struct ProtocolCompositionInfo {
+  bool has_protocol_composition = false;
+  std::vector<std::string> names_lexicographic;
+  bool has_invalid_protocol_composition = false;
+};
+
+static std::string TrimAsciiWhitespace(const std::string &text) {
+  std::size_t start = 0;
+  while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start])) != 0) {
+    ++start;
+  }
+  if (start == text.size()) {
+    return "";
+  }
+
+  std::size_t end = text.size();
+  while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1])) != 0) {
+    --end;
+  }
+  return text.substr(start, end - start);
+}
+
+static bool IsValidProtocolIdentifier(const std::string &identifier) {
+  if (identifier.empty()) {
+    return false;
+  }
+  const unsigned char first = static_cast<unsigned char>(identifier.front());
+  if (!(std::isalpha(first) != 0 || first == '_')) {
+    return false;
+  }
+  for (std::size_t i = 1; i < identifier.size(); ++i) {
+    const unsigned char c = static_cast<unsigned char>(identifier[i]);
+    if (!(std::isalnum(c) != 0 || c == '_')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool IsSortedUniqueStrings(const std::vector<std::string> &values) {
+  if (!std::is_sorted(values.begin(), values.end())) {
+    return false;
+  }
+  return std::adjacent_find(values.begin(), values.end()) == values.end();
+}
+
+static ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(const std::string &suffix_text) {
+  ProtocolCompositionParseResult result;
+  if (suffix_text.empty()) {
+    return result;
+  }
+
+  result.has_protocol_composition = true;
+  if (suffix_text.size() < 2 || suffix_text.front() != '<' || suffix_text.back() != '>') {
+    result.malformed_composition = true;
+    return result;
+  }
+
+  const std::string inner = suffix_text.substr(1, suffix_text.size() - 2);
+  if (inner.find('<') != std::string::npos || inner.find('>') != std::string::npos) {
+    result.malformed_composition = true;
+  }
+
+  std::unordered_set<std::string> seen_names;
+  std::size_t start = 0;
+  while (start <= inner.size()) {
+    const std::size_t comma = inner.find(',', start);
+    const std::size_t token_end = (comma == std::string::npos) ? inner.size() : comma;
+    const std::string token = TrimAsciiWhitespace(inner.substr(start, token_end - start));
+    if (token.empty()) {
+      result.empty_composition = true;
+    } else if (!IsValidProtocolIdentifier(token)) {
+      result.invalid_identifiers.push_back(token);
+    } else if (!seen_names.insert(token).second) {
+      result.duplicate_identifiers.push_back(token);
+    } else {
+      result.names_lexicographic.push_back(token);
+    }
+
+    if (comma == std::string::npos) {
+      break;
+    }
+    start = comma + 1;
+  }
+
+  if (result.names_lexicographic.empty()) {
+    result.empty_composition = true;
+  }
+  std::sort(result.names_lexicographic.begin(), result.names_lexicographic.end());
+  return result;
+}
+
+static bool AreEquivalentProtocolCompositions(bool lhs_has_composition,
+                                              const std::vector<std::string> &lhs_names,
+                                              bool rhs_has_composition,
+                                              const std::vector<std::string> &rhs_names) {
+  if (lhs_has_composition != rhs_has_composition) {
+    return false;
+  }
+  if (!lhs_has_composition) {
+    return true;
+  }
+  return lhs_names == rhs_names;
 }
 
 static bool IsCompoundAssignmentOperator(const std::string &op) {
@@ -442,6 +561,77 @@ static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
   return has_unsupported_generic_suffix || has_unsupported_pointer_declarator || has_unsupported_nullability_suffix;
 }
 
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(const FuncParam &param) {
+  ProtocolCompositionInfo info;
+  if (!param.has_generic_suffix) {
+    return info;
+  }
+
+  const ProtocolCompositionParseResult parsed = ParseProtocolCompositionSuffixText(param.generic_suffix_text);
+  info.has_protocol_composition = true;
+  info.names_lexicographic = parsed.names_lexicographic;
+  info.has_invalid_protocol_composition = !SupportsGenericParamTypeSuffix(param) || !parsed.IsValid();
+  return info;
+}
+
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromFunctionReturn(const FunctionDecl &fn) {
+  ProtocolCompositionInfo info;
+  if (!fn.has_return_generic_suffix) {
+    return info;
+  }
+
+  const ProtocolCompositionParseResult parsed = ParseProtocolCompositionSuffixText(fn.return_generic_suffix_text);
+  info.has_protocol_composition = true;
+  info.names_lexicographic = parsed.names_lexicographic;
+  info.has_invalid_protocol_composition = !SupportsGenericReturnTypeSuffix(fn) || !parsed.IsValid();
+  return info;
+}
+
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromMethodReturn(const Objc3MethodDecl &method) {
+  ProtocolCompositionInfo info;
+  if (!method.has_return_generic_suffix) {
+    return info;
+  }
+
+  const ProtocolCompositionParseResult parsed = ParseProtocolCompositionSuffixText(method.return_generic_suffix_text);
+  info.has_protocol_composition = true;
+  info.names_lexicographic = parsed.names_lexicographic;
+  info.has_invalid_protocol_composition = !SupportsGenericReturnTypeSuffix(method) || !parsed.IsValid();
+  return info;
+}
+
+static void ValidateProtocolCompositionSuffix(const std::string &suffix_text,
+                                              unsigned line,
+                                              unsigned column,
+                                              const std::string &context,
+                                              std::vector<std::string> &diagnostics) {
+  const ProtocolCompositionParseResult parsed = ParseProtocolCompositionSuffixText(suffix_text);
+  const std::string printable_suffix = suffix_text.empty() ? "<...>" : suffix_text;
+  if (parsed.malformed_composition) {
+    diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                   "type mismatch: malformed protocol composition suffix '" + printable_suffix +
+                                       "' for " + context));
+    return;
+  }
+
+  if (parsed.empty_composition) {
+    diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                   "type mismatch: empty protocol composition suffix '" + printable_suffix +
+                                       "' for " + context));
+  }
+
+  for (const auto &identifier : parsed.invalid_identifiers) {
+    diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                   "type mismatch: invalid protocol identifier '" + identifier +
+                                       "' in protocol composition suffix '" + printable_suffix + "' for " + context));
+  }
+  for (const auto &identifier : parsed.duplicate_identifiers) {
+    diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                   "type mismatch: duplicate protocol identifier '" + identifier +
+                                       "' in protocol composition suffix '" + printable_suffix + "' for " + context));
+  }
+}
+
 static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<std::string> &diagnostics) {
   for (const auto &param : fn.params) {
     if (param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param)) {
@@ -453,6 +643,12 @@ static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<st
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for non-id/Class/instancetype parameter annotation '" +
                                          param.name + "'"));
+    } else if (param.has_generic_suffix) {
+      ValidateProtocolCompositionSuffix(param.generic_suffix_text,
+                                       param.generic_line,
+                                       param.generic_column,
+                                       "parameter '" + param.name + "' in function '" + fn.name + "'",
+                                       diagnostics);
     }
     if (!SupportsPointerParamTypeDeclarator(param)) {
       for (const auto &token : param.pointer_declarator_tokens) {
@@ -483,6 +679,12 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
                                    "type mismatch: unsupported function return type suffix '" + suffix +
                                        "' for non-id/Class/instancetype return annotation in function '" + fn.name +
                                        "'"));
+  } else if (fn.has_return_generic_suffix) {
+    ValidateProtocolCompositionSuffix(fn.return_generic_suffix_text,
+                                     fn.return_generic_line,
+                                     fn.return_generic_column,
+                                     "return annotation in function '" + fn.name + "'",
+                                     diagnostics);
   }
   if (!SupportsPointerReturnTypeDeclarator(fn)) {
     for (const auto &token : fn.return_pointer_declarator_tokens) {
@@ -521,6 +723,13 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                      "type mismatch: generic parameter type suffix '" + suffix +
                                          "' is unsupported for selector '" + selector + "' parameter '" + param.name +
                                          "' in " + owner_kind + " '" + owner_name + "'"));
+    } else if (param.has_generic_suffix) {
+      ValidateProtocolCompositionSuffix(
+          param.generic_suffix_text,
+          param.generic_line,
+          param.generic_column,
+          "selector '" + selector + "' parameter '" + param.name + "' in " + owner_kind + " '" + owner_name + "'",
+          diagnostics);
     }
     if (!SupportsPointerParamTypeDeclarator(param)) {
       for (const auto &token : param.pointer_declarator_tokens) {
@@ -555,6 +764,13 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                    "type mismatch: unsupported method return type suffix '" + suffix +
                                        "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                        "'"));
+  } else if (method.has_return_generic_suffix) {
+    ValidateProtocolCompositionSuffix(method.return_generic_suffix_text,
+                                     method.return_generic_line,
+                                     method.return_generic_column,
+                                     "selector '" + selector + "' in " + owner_kind + " '" + owner_name +
+                                         "' return annotation",
+                                     diagnostics);
   }
   if (!SupportsPointerReturnTypeDeclarator(method)) {
     for (const auto &token : method.return_pointer_declarator_tokens) {
@@ -582,17 +798,28 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method) {
   info.param_vector_base_spelling.reserve(method.params.size());
   info.param_vector_lane_count.reserve(method.params.size());
   info.param_has_invalid_type_suffix.reserve(method.params.size());
+  info.param_has_protocol_composition.reserve(method.params.size());
+  info.param_protocol_composition_lexicographic.reserve(method.params.size());
+  info.param_has_invalid_protocol_composition.reserve(method.params.size());
   for (const auto &param : method.params) {
+    const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
     info.param_types.push_back(param.type);
     info.param_is_vector.push_back(param.vector_spelling);
     info.param_vector_base_spelling.push_back(param.vector_base_spelling);
     info.param_vector_lane_count.push_back(param.vector_lane_count);
     info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
+    info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
+    info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
+    info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
   }
+  const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromMethodReturn(method);
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
   info.return_vector_lane_count = method.return_vector_lane_count;
+  info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
+  info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
+  info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
   return info;
@@ -608,10 +835,19 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
        lhs.return_vector_lane_count != rhs.return_vector_lane_count)) {
     return false;
   }
+  if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
+                                         lhs.return_protocol_composition_lexicographic,
+                                         rhs.return_has_protocol_composition,
+                                         rhs.return_protocol_composition_lexicographic)) {
+    return false;
+  }
   for (std::size_t i = 0; i < lhs.arity; ++i) {
     if (i >= lhs.param_types.size() || i >= lhs.param_is_vector.size() || i >= lhs.param_vector_base_spelling.size() ||
-        i >= lhs.param_vector_lane_count.size() || i >= rhs.param_types.size() || i >= rhs.param_is_vector.size() ||
-        i >= rhs.param_vector_base_spelling.size() || i >= rhs.param_vector_lane_count.size()) {
+        i >= lhs.param_vector_lane_count.size() || i >= lhs.param_has_protocol_composition.size() ||
+        i >= lhs.param_protocol_composition_lexicographic.size() || i >= rhs.param_types.size() ||
+        i >= rhs.param_is_vector.size() || i >= rhs.param_vector_base_spelling.size() ||
+        i >= rhs.param_vector_lane_count.size() || i >= rhs.param_has_protocol_composition.size() ||
+        i >= rhs.param_protocol_composition_lexicographic.size()) {
       return false;
     }
     if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
@@ -620,6 +856,12 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
     if (lhs.param_is_vector[i] &&
         (lhs.param_vector_base_spelling[i] != rhs.param_vector_base_spelling[i] ||
          lhs.param_vector_lane_count[i] != rhs.param_vector_lane_count[i])) {
+      return false;
+    }
+    if (!AreEquivalentProtocolCompositions(lhs.param_has_protocol_composition[i],
+                                           lhs.param_protocol_composition_lexicographic[i],
+                                           rhs.param_has_protocol_composition[i],
+                                           rhs.param_protocol_composition_lexicographic[i])) {
       return false;
     }
   }
@@ -1592,6 +1834,104 @@ Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3Semanti
   return summary;
 }
 
+static void AccumulateProtocolCompositionSite(bool has_protocol_composition,
+                                              const std::vector<std::string> &composition_names_lexicographic,
+                                              bool has_invalid_protocol_composition,
+                                              bool is_category_context,
+                                              Objc3ProtocolCategoryCompositionSummary &summary) {
+  if (!has_protocol_composition) {
+    if (has_invalid_protocol_composition) {
+      summary.deterministic = false;
+    }
+    return;
+  }
+
+  ++summary.protocol_composition_sites;
+  summary.protocol_composition_symbols += composition_names_lexicographic.size();
+  if (is_category_context) {
+    ++summary.category_composition_sites;
+    summary.category_composition_symbols += composition_names_lexicographic.size();
+  }
+  if (has_invalid_protocol_composition) {
+    ++summary.invalid_protocol_composition_sites;
+  }
+  if (!IsSortedUniqueStrings(composition_names_lexicographic)) {
+    summary.deterministic = false;
+  }
+}
+
+static void AccumulateProtocolCategoryCompositionFromFunctionInfo(const FunctionInfo &fn,
+                                                                  Objc3ProtocolCategoryCompositionSummary &summary) {
+  if (fn.param_types.size() != fn.arity ||
+      fn.param_has_protocol_composition.size() != fn.arity ||
+      fn.param_protocol_composition_lexicographic.size() != fn.arity ||
+      fn.param_has_invalid_protocol_composition.size() != fn.arity) {
+    summary.deterministic = false;
+    return;
+  }
+
+  for (std::size_t i = 0; i < fn.arity; ++i) {
+    AccumulateProtocolCompositionSite(fn.param_has_protocol_composition[i],
+                                      fn.param_protocol_composition_lexicographic[i],
+                                      fn.param_has_invalid_protocol_composition[i],
+                                      false,
+                                      summary);
+  }
+  AccumulateProtocolCompositionSite(fn.return_has_protocol_composition,
+                                    fn.return_protocol_composition_lexicographic,
+                                    fn.return_has_invalid_protocol_composition,
+                                    false,
+                                    summary);
+}
+
+static void AccumulateProtocolCategoryCompositionFromMethodInfo(const Objc3MethodInfo &method,
+                                                                Objc3ProtocolCategoryCompositionSummary &summary) {
+  if (method.param_types.size() != method.arity ||
+      method.param_has_protocol_composition.size() != method.arity ||
+      method.param_protocol_composition_lexicographic.size() != method.arity ||
+      method.param_has_invalid_protocol_composition.size() != method.arity) {
+    summary.deterministic = false;
+    return;
+  }
+
+  for (std::size_t i = 0; i < method.arity; ++i) {
+    AccumulateProtocolCompositionSite(method.param_has_protocol_composition[i],
+                                      method.param_protocol_composition_lexicographic[i],
+                                      method.param_has_invalid_protocol_composition[i],
+                                      true,
+                                      summary);
+  }
+  AccumulateProtocolCompositionSite(method.return_has_protocol_composition,
+                                    method.return_protocol_composition_lexicographic,
+                                    method.return_has_invalid_protocol_composition,
+                                    true,
+                                    summary);
+}
+
+static Objc3ProtocolCategoryCompositionSummary BuildProtocolCategoryCompositionSummaryFromSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3ProtocolCategoryCompositionSummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateProtocolCategoryCompositionFromFunctionInfo(entry.second, summary);
+  }
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      AccumulateProtocolCategoryCompositionFromMethodInfo(method_entry.second, summary);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      AccumulateProtocolCategoryCompositionFromMethodInfo(method_entry.second, summary);
+    }
+  }
+
+  summary.deterministic = summary.deterministic &&
+                          summary.invalid_protocol_composition_sites <= summary.total_composition_sites() &&
+                          summary.category_composition_sites <= summary.protocol_composition_sites &&
+                          summary.category_composition_symbols <= summary.protocol_composition_symbols;
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -1632,17 +1972,28 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_vector_base_spelling.reserve(fn.params.size());
       info.param_vector_lane_count.reserve(fn.params.size());
       info.param_has_invalid_type_suffix.reserve(fn.params.size());
+      info.param_has_protocol_composition.reserve(fn.params.size());
+      info.param_protocol_composition_lexicographic.reserve(fn.params.size());
+      info.param_has_invalid_protocol_composition.reserve(fn.params.size());
       for (const auto &param : fn.params) {
+        const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
         info.param_types.push_back(param.type);
         info.param_is_vector.push_back(param.vector_spelling);
         info.param_vector_base_spelling.push_back(param.vector_base_spelling);
         info.param_vector_lane_count.push_back(param.vector_lane_count);
         info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
+        info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
+        info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
+        info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
       }
+      const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
       info.return_vector_lane_count = fn.return_vector_lane_count;
+      info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
+      info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
+      info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
       info.has_definition = !fn.is_prototype;
       info.is_pure_annotation = fn.is_pure;
       surface.functions.emplace(fn.name, std::move(info));
@@ -1656,10 +2007,20 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
     }
+    const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
+    if (compatible && !AreEquivalentProtocolCompositions(existing.return_has_protocol_composition,
+                                                         existing.return_protocol_composition_lexicographic,
+                                                         return_protocol_composition.has_protocol_composition,
+                                                         return_protocol_composition.names_lexicographic)) {
+      compatible = false;
+    }
     if (compatible) {
       for (std::size_t i = 0; i < fn.params.size(); ++i) {
+        const ProtocolCompositionInfo param_protocol_composition = BuildProtocolCompositionInfoFromParam(fn.params[i]);
         if (i >= existing.param_types.size() || i >= existing.param_is_vector.size() ||
             i >= existing.param_vector_base_spelling.size() || i >= existing.param_vector_lane_count.size() ||
+            i >= existing.param_has_protocol_composition.size() ||
+            i >= existing.param_protocol_composition_lexicographic.size() ||
             existing.param_types[i] != fn.params[i].type ||
             existing.param_is_vector[i] != fn.params[i].vector_spelling) {
           compatible = false;
@@ -1668,6 +2029,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         if (existing.param_is_vector[i] &&
             (existing.param_vector_base_spelling[i] != fn.params[i].vector_base_spelling ||
              existing.param_vector_lane_count[i] != fn.params[i].vector_lane_count)) {
+          compatible = false;
+          break;
+        }
+        if (!AreEquivalentProtocolCompositions(existing.param_has_protocol_composition[i],
+                                               existing.param_protocol_composition_lexicographic[i],
+                                               param_protocol_composition.has_protocol_composition,
+                                               param_protocol_composition.names_lexicographic)) {
           compatible = false;
           break;
         }
@@ -1683,6 +2051,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       existing.param_has_invalid_type_suffix[i] =
           existing.param_has_invalid_type_suffix[i] || HasInvalidParamTypeSuffix(fn.params[i]);
     }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_protocol_composition.size(); ++i) {
+      const ProtocolCompositionInfo param_protocol_composition = BuildProtocolCompositionInfoFromParam(fn.params[i]);
+      existing.param_has_invalid_protocol_composition[i] =
+          existing.param_has_invalid_protocol_composition[i] || param_protocol_composition.has_invalid_protocol_composition;
+    }
+    existing.return_has_invalid_protocol_composition =
+        existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
     existing.is_pure_annotation = existing.is_pure_annotation || fn.is_pure;
 
     if (!fn.is_prototype) {
@@ -1803,6 +2178,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       interface_implementation_summary.linked_implementation_symbols <=
           interface_implementation_summary.interface_method_symbols;
   surface.interface_implementation_summary = interface_implementation_summary;
+  surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -1837,10 +2213,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_vector_base_spelling = source.param_vector_base_spelling;
     metadata.param_vector_lane_count = source.param_vector_lane_count;
     metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+    metadata.param_has_protocol_composition = source.param_has_protocol_composition;
+    metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
+    metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
     metadata.return_vector_lane_count = source.return_vector_lane_count;
+    metadata.return_has_protocol_composition = source.return_has_protocol_composition;
+    metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
+    metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
     metadata.has_definition = source.has_definition;
     metadata.is_pure_annotation = source.is_pure_annotation;
     handoff.functions_lexicographic.push_back(std::move(metadata));
@@ -1886,10 +2268,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
+      method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
+      method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
       method_metadata.return_vector_lane_count = source.return_vector_lane_count;
+      method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
+      method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
+      method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
       method_metadata.is_class_method = source.is_class_method;
       method_metadata.has_definition = source.has_definition;
       metadata.methods_lexicographic.push_back(std::move(method_metadata));
@@ -1938,10 +2326,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
+      method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
+      method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
       method_metadata.return_vector_lane_count = source.return_vector_lane_count;
+      method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
+      method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
+      method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
       method_metadata.is_class_method = source.is_class_method;
       method_metadata.has_definition = source.has_definition;
       metadata.methods_lexicographic.push_back(std::move(method_metadata));
@@ -1973,10 +2367,19 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
          lhs.return_vector_lane_count != rhs.return_vector_lane_count)) {
       return false;
     }
+    if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
+                                           lhs.return_protocol_composition_lexicographic,
+                                           rhs.return_has_protocol_composition,
+                                           rhs.return_protocol_composition_lexicographic)) {
+      return false;
+    }
     for (std::size_t i = 0; i < lhs.arity; ++i) {
       if (i >= lhs.param_types.size() || i >= lhs.param_is_vector.size() || i >= lhs.param_vector_base_spelling.size() ||
-          i >= lhs.param_vector_lane_count.size() || i >= rhs.param_types.size() || i >= rhs.param_is_vector.size() ||
-          i >= rhs.param_vector_base_spelling.size() || i >= rhs.param_vector_lane_count.size()) {
+          i >= lhs.param_vector_lane_count.size() || i >= lhs.param_has_protocol_composition.size() ||
+          i >= lhs.param_protocol_composition_lexicographic.size() || i >= rhs.param_types.size() ||
+          i >= rhs.param_is_vector.size() || i >= rhs.param_vector_base_spelling.size() ||
+          i >= rhs.param_vector_lane_count.size() || i >= rhs.param_has_protocol_composition.size() ||
+          i >= rhs.param_protocol_composition_lexicographic.size()) {
         return false;
       }
       if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
@@ -1985,6 +2388,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       if (lhs.param_is_vector[i] &&
           (lhs.param_vector_base_spelling[i] != rhs.param_vector_base_spelling[i] ||
            lhs.param_vector_lane_count[i] != rhs.param_vector_lane_count[i])) {
+        return false;
+      }
+      if (!AreEquivalentProtocolCompositions(lhs.param_has_protocol_composition[i],
+                                             lhs.param_protocol_composition_lexicographic[i],
+                                             rhs.param_has_protocol_composition[i],
+                                             rhs.param_protocol_composition_lexicographic[i])) {
         return false;
       }
     }
@@ -2025,6 +2434,72 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.interface_implementation_summary.implementation_method_symbols &&
       handoff.interface_implementation_summary.linked_implementation_symbols <=
           handoff.interface_implementation_summary.interface_method_symbols;
+
+  handoff.protocol_category_composition_summary = Objc3ProtocolCategoryCompositionSummary{};
+  const auto accumulate_function_metadata_composition =
+      [&handoff](const Objc3SemanticFunctionTypeMetadata &metadata) {
+        if (metadata.param_has_protocol_composition.size() != metadata.arity ||
+            metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+            metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+          handoff.protocol_category_composition_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          AccumulateProtocolCompositionSite(metadata.param_has_protocol_composition[i],
+                                           metadata.param_protocol_composition_lexicographic[i],
+                                           metadata.param_has_invalid_protocol_composition[i],
+                                           false,
+                                           handoff.protocol_category_composition_summary);
+        }
+        AccumulateProtocolCompositionSite(metadata.return_has_protocol_composition,
+                                         metadata.return_protocol_composition_lexicographic,
+                                         metadata.return_has_invalid_protocol_composition,
+                                         false,
+                                         handoff.protocol_category_composition_summary);
+      };
+  const auto accumulate_method_metadata_composition =
+      [&handoff](const Objc3SemanticMethodTypeMetadata &metadata) {
+        if (metadata.param_has_protocol_composition.size() != metadata.arity ||
+            metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+            metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+          handoff.protocol_category_composition_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          AccumulateProtocolCompositionSite(metadata.param_has_protocol_composition[i],
+                                           metadata.param_protocol_composition_lexicographic[i],
+                                           metadata.param_has_invalid_protocol_composition[i],
+                                           true,
+                                           handoff.protocol_category_composition_summary);
+        }
+        AccumulateProtocolCompositionSite(metadata.return_has_protocol_composition,
+                                         metadata.return_protocol_composition_lexicographic,
+                                         metadata.return_has_invalid_protocol_composition,
+                                         true,
+                                         handoff.protocol_category_composition_summary);
+      };
+
+  for (const auto &function_metadata : handoff.functions_lexicographic) {
+    accumulate_function_metadata_composition(function_metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method_metadata_composition(method_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method_metadata_composition(method_metadata);
+    }
+  }
+  handoff.protocol_category_composition_summary.deterministic =
+      handoff.protocol_category_composition_summary.deterministic &&
+      handoff.protocol_category_composition_summary.invalid_protocol_composition_sites <=
+          handoff.protocol_category_composition_summary.total_composition_sites() &&
+      handoff.protocol_category_composition_summary.category_composition_sites <=
+          handoff.protocol_category_composition_summary.protocol_composition_sites &&
+      handoff.protocol_category_composition_summary.category_composition_symbols <=
+          handoff.protocol_category_composition_summary.protocol_composition_symbols;
   return handoff;
 }
 
@@ -2054,22 +2529,65 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   }
 
   const auto is_deterministic_method_metadata = [](const Objc3SemanticMethodTypeMetadata &metadata) {
-    return metadata.param_types.size() == metadata.arity &&
-           metadata.param_is_vector.size() == metadata.arity &&
-           metadata.param_vector_base_spelling.size() == metadata.arity &&
-           metadata.param_vector_lane_count.size() == metadata.arity &&
-           metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+    if (metadata.param_types.size() != metadata.arity ||
+        metadata.param_is_vector.size() != metadata.arity ||
+        metadata.param_vector_base_spelling.size() != metadata.arity ||
+        metadata.param_vector_lane_count.size() != metadata.arity ||
+        metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
+        metadata.param_has_protocol_composition.size() != metadata.arity ||
+        metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+        metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+      return false;
+    }
+    if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
+      return false;
+    }
+    if (metadata.return_has_protocol_composition &&
+        !IsSortedUniqueStrings(metadata.return_protocol_composition_lexicographic)) {
+      return false;
+    }
+    for (std::size_t i = 0; i < metadata.arity; ++i) {
+      if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
+        return false;
+      }
+      if (metadata.param_has_invalid_protocol_composition[i] && !metadata.param_has_protocol_composition[i]) {
+        return false;
+      }
+    }
+    return true;
   };
 
   const bool deterministic_functions =
       std::all_of(handoff.functions_lexicographic.begin(),
                   handoff.functions_lexicographic.end(),
                   [](const Objc3SemanticFunctionTypeMetadata &metadata) {
-                    return metadata.param_types.size() == metadata.arity &&
-                           metadata.param_is_vector.size() == metadata.arity &&
-                           metadata.param_vector_base_spelling.size() == metadata.arity &&
-                           metadata.param_vector_lane_count.size() == metadata.arity &&
-                           metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+                    if (metadata.param_types.size() != metadata.arity ||
+                        metadata.param_is_vector.size() != metadata.arity ||
+                        metadata.param_vector_base_spelling.size() != metadata.arity ||
+                        metadata.param_vector_lane_count.size() != metadata.arity ||
+                        metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
+                        metadata.param_has_protocol_composition.size() != metadata.arity ||
+                        metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+                        metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+                      return false;
+                    }
+                    if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
+                      return false;
+                    }
+                    if (metadata.return_has_protocol_composition &&
+                        !IsSortedUniqueStrings(metadata.return_protocol_composition_lexicographic)) {
+                      return false;
+                    }
+                    for (std::size_t i = 0; i < metadata.arity; ++i) {
+                      if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
+                        return false;
+                      }
+                      if (metadata.param_has_invalid_protocol_composition[i] &&
+                          !metadata.param_has_protocol_composition[i]) {
+                        return false;
+                      }
+                    }
+                    return true;
                   });
 
   const bool deterministic_interfaces =
@@ -2107,6 +2625,69 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     return false;
   }
 
+  Objc3ProtocolCategoryCompositionSummary protocol_category_summary;
+  const auto accumulate_function_metadata_composition =
+      [&protocol_category_summary](const Objc3SemanticFunctionTypeMetadata &metadata) {
+        if (metadata.param_has_protocol_composition.size() != metadata.arity ||
+            metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+            metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+          protocol_category_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          AccumulateProtocolCompositionSite(metadata.param_has_protocol_composition[i],
+                                           metadata.param_protocol_composition_lexicographic[i],
+                                           metadata.param_has_invalid_protocol_composition[i],
+                                           false,
+                                           protocol_category_summary);
+        }
+        AccumulateProtocolCompositionSite(metadata.return_has_protocol_composition,
+                                         metadata.return_protocol_composition_lexicographic,
+                                         metadata.return_has_invalid_protocol_composition,
+                                         false,
+                                         protocol_category_summary);
+      };
+  const auto accumulate_method_metadata_composition =
+      [&protocol_category_summary](const Objc3SemanticMethodTypeMetadata &metadata) {
+        if (metadata.param_has_protocol_composition.size() != metadata.arity ||
+            metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
+            metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+          protocol_category_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          AccumulateProtocolCompositionSite(metadata.param_has_protocol_composition[i],
+                                           metadata.param_protocol_composition_lexicographic[i],
+                                           metadata.param_has_invalid_protocol_composition[i],
+                                           true,
+                                           protocol_category_summary);
+        }
+        AccumulateProtocolCompositionSite(metadata.return_has_protocol_composition,
+                                         metadata.return_protocol_composition_lexicographic,
+                                         metadata.return_has_invalid_protocol_composition,
+                                         true,
+                                         protocol_category_summary);
+      };
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function_metadata_composition(metadata);
+  }
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_method_metadata_composition(method);
+    }
+  }
+  for (const auto &metadata : handoff.implementations_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_method_metadata_composition(method);
+    }
+  }
+  protocol_category_summary.deterministic =
+      protocol_category_summary.deterministic &&
+      protocol_category_summary.invalid_protocol_composition_sites <=
+          protocol_category_summary.total_composition_sites() &&
+      protocol_category_summary.category_composition_sites <= protocol_category_summary.protocol_composition_sites &&
+      protocol_category_summary.category_composition_symbols <= protocol_category_summary.protocol_composition_symbols;
+
   std::size_t interface_method_symbols = 0;
   for (const auto &metadata : handoff.interfaces_lexicographic) {
     interface_method_symbols += metadata.methods_lexicographic.size();
@@ -2123,7 +2704,18 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          summary.interface_method_symbols == interface_method_symbols &&
          summary.implementation_method_symbols == implementation_method_symbols &&
          summary.linked_implementation_symbols <= summary.implementation_method_symbols &&
-         summary.linked_implementation_symbols <= summary.interface_method_symbols;
+         summary.linked_implementation_symbols <= summary.interface_method_symbols &&
+         handoff.protocol_category_composition_summary.deterministic &&
+         handoff.protocol_category_composition_summary.protocol_composition_sites ==
+             protocol_category_summary.protocol_composition_sites &&
+         handoff.protocol_category_composition_summary.protocol_composition_symbols ==
+             protocol_category_summary.protocol_composition_symbols &&
+         handoff.protocol_category_composition_summary.category_composition_sites ==
+             protocol_category_summary.category_composition_sites &&
+         handoff.protocol_category_composition_summary.category_composition_symbols ==
+             protocol_category_summary.category_composition_symbols &&
+         handoff.protocol_category_composition_summary.invalid_protocol_composition_sites ==
+             protocol_category_summary.invalid_protocol_composition_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

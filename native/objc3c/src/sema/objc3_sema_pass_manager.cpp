@@ -119,6 +119,19 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.interface_implementation_summary.implementation_method_symbols &&
       result.integration_surface.interface_implementation_summary.linked_implementation_symbols ==
           result.type_metadata_handoff.interface_implementation_summary.linked_implementation_symbols;
+  result.deterministic_protocol_category_composition_handoff =
+      result.type_metadata_handoff.protocol_category_composition_summary.deterministic &&
+      result.integration_surface.protocol_category_composition_summary.deterministic &&
+      result.integration_surface.protocol_category_composition_summary.protocol_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.protocol_composition_sites &&
+      result.integration_surface.protocol_category_composition_summary.protocol_composition_symbols ==
+          result.type_metadata_handoff.protocol_category_composition_summary.protocol_composition_symbols &&
+      result.integration_surface.protocol_category_composition_summary.category_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.category_composition_sites &&
+      result.integration_surface.protocol_category_composition_summary.category_composition_symbols ==
+          result.type_metadata_handoff.protocol_category_composition_summary.category_composition_symbols &&
+      result.integration_surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
+          result.type_metadata_handoff.protocol_category_composition_summary.invalid_protocol_composition_sites;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -142,6 +155,18 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.interface_implementation_summary.implementation_method_symbols;
   result.parity_surface.linked_implementation_symbols_total =
       result.parity_surface.interface_implementation_summary.linked_implementation_symbols;
+  result.parity_surface.protocol_category_composition_summary =
+      result.type_metadata_handoff.protocol_category_composition_summary;
+  result.parity_surface.protocol_composition_sites_total =
+      result.parity_surface.protocol_category_composition_summary.protocol_composition_sites;
+  result.parity_surface.protocol_composition_symbols_total =
+      result.parity_surface.protocol_category_composition_summary.protocol_composition_symbols;
+  result.parity_surface.category_composition_sites_total =
+      result.parity_surface.protocol_category_composition_summary.category_composition_sites;
+  result.parity_surface.category_composition_symbols_total =
+      result.parity_surface.protocol_category_composition_summary.category_composition_symbols;
+  result.parity_surface.invalid_protocol_composition_sites_total =
+      result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -154,6 +179,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.type_metadata_interface_entries &&
       result.parity_surface.interface_implementation_summary.resolved_implementations ==
           result.parity_surface.type_metadata_implementation_entries;
+  result.parity_surface.deterministic_protocol_category_composition_handoff =
+      result.deterministic_protocol_category_composition_handoff &&
+      result.parity_surface.protocol_category_composition_summary.protocol_composition_sites ==
+          result.parity_surface.protocol_composition_sites_total &&
+      result.parity_surface.protocol_category_composition_summary.protocol_composition_symbols ==
+          result.parity_surface.protocol_composition_symbols_total &&
+      result.parity_surface.protocol_category_composition_summary.category_composition_sites ==
+          result.parity_surface.category_composition_sites_total &&
+      result.parity_surface.protocol_category_composition_summary.category_composition_symbols ==
+          result.parity_surface.category_composition_symbols_total &&
+      result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
+          result.parity_surface.invalid_protocol_composition_sites_total &&
+      result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
+          result.parity_surface.protocol_category_composition_summary.total_composition_sites();
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -171,6 +210,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.interfaces_total == result.parity_surface.type_metadata_interface_entries &&
       result.parity_surface.implementations_total == result.parity_surface.type_metadata_implementation_entries &&
       result.parity_surface.interface_implementation_summary.deterministic &&
-      result.parity_surface.deterministic_interface_implementation_handoff;
+      result.parity_surface.deterministic_interface_implementation_handoff &&
+      result.parity_surface.protocol_category_composition_summary.deterministic &&
+      result.parity_surface.deterministic_protocol_category_composition_handoff;
   return result;
 }
