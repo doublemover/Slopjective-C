@@ -475,6 +475,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain derive/synthesis anchors.
 
+## M201 integration macro expansion architecture and isolation
+
+- Gate intent: enforce deterministic macro-expansion architecture/isolation evidence across all lanes.
+### 1.1 Macro-expansion architecture integration chain
+- Deterministic macro-expansion architecture gate:
+  - `npm run check:objc3c:m201-macro-expansion-arch`
+- Chain order:
+  - replays `check:objc3c:m202-derive-synthesis`.
+  - enforces all M201 lane contracts:
+    `tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_sema_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_lowering_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_validation_macro_expansion_contract.py`,
+    `tests/tooling/test_objc3c_m201_integration_macro_expansion_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-expansion architecture validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-expansion architecture anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
