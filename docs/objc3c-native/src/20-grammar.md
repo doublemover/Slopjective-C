@@ -135,3 +135,18 @@ Operator evidence sequence for frontend readiness:
 2. run parser extraction contract gate (`npm run test:objc3c:parser-extraction-ast-builder-contract`).
 3. run M224 frontend docs contract test (`python -m pytest tests/tooling/test_objc3c_m224_frontend_release_contract.py -q`).
 
+## M225 frontend roadmap-seeding packet
+
+Post-1.0 backlog seeding for frontend/parser work should capture these deterministic frontend signals:
+
+- pragma-prelude diagnostics distribution (`O3L005`/`O3L006`/`O3L007`/`O3L008`) from parser-boundary test runs.
+- manifest packet stability for `frontend.language_version_pragma_contract` fields.
+- parser/AST boundary invariants proving `BuildObjc3AstFromTokens(...)` stays the single pipeline ingress.
+- token-to-sema bridge continuity via `Objc3SemaTokenMetadata` evidence surfaces.
+
+Recommended seeding commands (frontend lane):
+
+1. `npm run test:objc3c:parser-ast-extraction`
+2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
+
