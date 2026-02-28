@@ -201,6 +201,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t dispatch_abi_marshalling_arity_mismatch_sites_total = 0;
   std::size_t dispatch_abi_marshalling_missing_selector_symbol_sites_total = 0;
   std::size_t dispatch_abi_marshalling_contract_violation_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_receiver_nil_literal_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_enabled_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_foldable_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_non_nil_receiver_sites_total = 0;
+  std::size_t nil_receiver_semantics_foldability_contract_violation_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -216,6 +223,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
+  bool deterministic_nil_receiver_semantics_foldability_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -228,6 +236,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -611,7 +620,35 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.dispatch_abi_marshalling_summary.contract_violation_sites <=
              surface.dispatch_abi_marshalling_summary.message_send_sites &&
          surface.dispatch_abi_marshalling_summary.deterministic &&
-         surface.deterministic_dispatch_abi_marshalling_handoff;
+         surface.deterministic_dispatch_abi_marshalling_handoff &&
+         surface.nil_receiver_semantics_foldability_summary.message_send_sites ==
+             surface.nil_receiver_semantics_foldability_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+             surface.nil_receiver_semantics_foldability_receiver_nil_literal_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites ==
+             surface.nil_receiver_semantics_foldability_enabled_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+             surface.nil_receiver_semantics_foldability_foldable_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites ==
+             surface.nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+             surface.nil_receiver_semantics_foldability_non_nil_receiver_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.contract_violation_sites ==
+             surface.nil_receiver_semantics_foldability_contract_violation_sites_total &&
+         surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+             surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
+             surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites +
+                 surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+             surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites +
+                 surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+             surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         surface.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
+             surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         surface.nil_receiver_semantics_foldability_summary.deterministic &&
+         surface.deterministic_nil_receiver_semantics_foldability_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -644,6 +681,8 @@ struct Objc3SemaPassManagerResult {
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  bool deterministic_nil_receiver_semantics_foldability_handoff = false;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

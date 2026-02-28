@@ -3352,6 +3352,19 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
       expr.selector_lowering_is_normalized ||
       (!metadata.selector.empty() && !metadata.selector_lowering_symbol.empty() &&
        metadata.selector == metadata.selector_lowering_symbol);
+  metadata.receiver_is_nil_literal = expr.receiver != nullptr && expr.receiver->kind == Expr::Kind::NilLiteral;
+  metadata.nil_receiver_semantics_enabled =
+      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_semantics_enabled : metadata.receiver_is_nil_literal;
+  metadata.nil_receiver_foldable =
+      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_foldable : metadata.nil_receiver_semantics_enabled;
+  metadata.nil_receiver_requires_runtime_dispatch =
+      expr.nil_receiver_semantics_is_normalized ? expr.nil_receiver_requires_runtime_dispatch
+                                                : !metadata.nil_receiver_foldable;
+  metadata.nil_receiver_semantics_is_normalized =
+      expr.nil_receiver_semantics_is_normalized ||
+      (metadata.nil_receiver_semantics_enabled == metadata.receiver_is_nil_literal &&
+       metadata.nil_receiver_semantics_enabled == metadata.nil_receiver_foldable &&
+       metadata.nil_receiver_requires_runtime_dispatch == !metadata.nil_receiver_foldable);
   return metadata;
 }
 
@@ -3488,6 +3501,21 @@ static bool IsMessageSendSelectorLoweringSiteMetadataLess(
   }
   if (lhs.selector_lowering_is_normalized != rhs.selector_lowering_is_normalized) {
     return lhs.selector_lowering_is_normalized < rhs.selector_lowering_is_normalized;
+  }
+  if (lhs.receiver_is_nil_literal != rhs.receiver_is_nil_literal) {
+    return lhs.receiver_is_nil_literal < rhs.receiver_is_nil_literal;
+  }
+  if (lhs.nil_receiver_semantics_enabled != rhs.nil_receiver_semantics_enabled) {
+    return lhs.nil_receiver_semantics_enabled < rhs.nil_receiver_semantics_enabled;
+  }
+  if (lhs.nil_receiver_foldable != rhs.nil_receiver_foldable) {
+    return lhs.nil_receiver_foldable < rhs.nil_receiver_foldable;
+  }
+  if (lhs.nil_receiver_requires_runtime_dispatch != rhs.nil_receiver_requires_runtime_dispatch) {
+    return lhs.nil_receiver_requires_runtime_dispatch < rhs.nil_receiver_requires_runtime_dispatch;
+  }
+  if (lhs.nil_receiver_semantics_is_normalized != rhs.nil_receiver_semantics_is_normalized) {
+    return lhs.nil_receiver_semantics_is_normalized < rhs.nil_receiver_semantics_is_normalized;
   }
   if (lhs.line != rhs.line) {
     return lhs.line < rhs.line;
@@ -3673,6 +3701,72 @@ static Objc3DispatchAbiMarshallingSummary BuildDispatchAbiMarshallingSummaryFrom
 static Objc3DispatchAbiMarshallingSummary BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   return BuildDispatchAbiMarshallingSummaryFromSites(
+      handoff.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3NilReceiverSemanticsFoldabilitySummary BuildNilReceiverSemanticsFoldabilitySummaryFromSites(
+    const std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  Objc3NilReceiverSemanticsFoldabilitySummary summary;
+  for (const auto &site : sites) {
+    ++summary.message_send_sites;
+    if (site.receiver_is_nil_literal) {
+      ++summary.receiver_nil_literal_sites;
+    }
+    if (site.nil_receiver_semantics_enabled) {
+      ++summary.nil_receiver_semantics_enabled_sites;
+    } else {
+      ++summary.non_nil_receiver_sites;
+    }
+    if (site.nil_receiver_foldable) {
+      ++summary.nil_receiver_foldable_sites;
+    }
+    if (site.nil_receiver_requires_runtime_dispatch) {
+      ++summary.nil_receiver_runtime_dispatch_required_sites;
+    }
+
+    bool contract_violation = false;
+    if (!site.nil_receiver_semantics_is_normalized) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.receiver_is_nil_literal != site.nil_receiver_semantics_enabled) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.nil_receiver_semantics_enabled != site.nil_receiver_foldable) {
+      contract_violation = true;
+    }
+    if (site.nil_receiver_requires_runtime_dispatch == site.nil_receiver_foldable) {
+      contract_violation = true;
+    }
+    if (!site.nil_receiver_semantics_enabled && site.nil_receiver_foldable) {
+      contract_violation = true;
+    }
+    if (contract_violation) {
+      ++summary.contract_violation_sites;
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.receiver_nil_literal_sites == summary.nil_receiver_semantics_enabled_sites &&
+      summary.nil_receiver_foldable_sites <= summary.nil_receiver_semantics_enabled_sites &&
+      summary.nil_receiver_runtime_dispatch_required_sites + summary.nil_receiver_foldable_sites ==
+          summary.message_send_sites &&
+      summary.nil_receiver_semantics_enabled_sites + summary.non_nil_receiver_sites == summary.message_send_sites &&
+      summary.contract_violation_sites <= summary.message_send_sites;
+  return summary;
+}
+
+static Objc3NilReceiverSemanticsFoldabilitySummary
+BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  return BuildNilReceiverSemanticsFoldabilitySummaryFromSites(
+      surface.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3NilReceiverSemanticsFoldabilitySummary
+BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  return BuildNilReceiverSemanticsFoldabilitySummaryFromSites(
       handoff.message_send_selector_lowering_sites_lexicographic);
 }
 
@@ -4371,6 +4465,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.message_send_selector_lowering_summary =
       BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface(surface);
   surface.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromIntegrationSurface(surface);
+  surface.nil_receiver_semantics_foldability_summary =
+      BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -5141,6 +5237,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);
   handoff.dispatch_abi_marshalling_summary =
       BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);
+  handoff.nil_receiver_semantics_foldability_summary =
+      BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -5668,6 +5766,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);
   const Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary =
       BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary =
+      BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -5978,7 +6078,34 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.dispatch_abi_marshalling_summary.arity_mismatch_sites <=
              handoff.dispatch_abi_marshalling_summary.message_send_sites &&
          handoff.dispatch_abi_marshalling_summary.contract_violation_sites <=
-             handoff.dispatch_abi_marshalling_summary.message_send_sites;
+             handoff.dispatch_abi_marshalling_summary.message_send_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.deterministic &&
+         handoff.nil_receiver_semantics_foldability_summary.message_send_sites ==
+             nil_receiver_semantics_foldability_summary.message_send_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+             nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites ==
+             nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+             nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites ==
+             nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+             nil_receiver_semantics_foldability_summary.non_nil_receiver_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites ==
+             nil_receiver_semantics_foldability_summary.contract_violation_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+             handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
+             handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites +
+                 handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+             handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites +
+                 handoff.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+             handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
+             handoff.nil_receiver_semantics_foldability_summary.message_send_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

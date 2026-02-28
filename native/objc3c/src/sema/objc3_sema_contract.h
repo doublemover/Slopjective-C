@@ -234,6 +234,11 @@ struct Objc3MessageSendSelectorLoweringSiteMetadata {
   bool unary_form = false;
   bool keyword_form = false;
   bool selector_lowering_is_normalized = false;
+  bool receiver_is_nil_literal = false;
+  bool nil_receiver_semantics_enabled = false;
+  bool nil_receiver_foldable = false;
+  bool nil_receiver_requires_runtime_dispatch = true;
+  bool nil_receiver_semantics_is_normalized = false;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -263,6 +268,17 @@ struct Objc3DispatchAbiMarshallingSummary {
   std::size_t unary_argument_slots = 0;
   std::size_t arity_mismatch_sites = 0;
   std::size_t missing_selector_symbol_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3NilReceiverSemanticsFoldabilitySummary {
+  std::size_t message_send_sites = 0;
+  std::size_t receiver_nil_literal_sites = 0;
+  std::size_t nil_receiver_semantics_enabled_sites = 0;
+  std::size_t nil_receiver_foldable_sites = 0;
+  std::size_t nil_receiver_runtime_dispatch_required_sites = 0;
+  std::size_t non_nil_receiver_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
 };
@@ -431,6 +447,7 @@ struct Objc3SemanticIntegrationSurface {
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   bool built = false;
 };
 
@@ -592,6 +609,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
+  Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
 };
 
 struct Objc3SemanticValidationOptions {

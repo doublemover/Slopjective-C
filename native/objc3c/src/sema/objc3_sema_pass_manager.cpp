@@ -225,6 +225,18 @@ bool IsEquivalentDispatchAbiMarshallingSummary(const Objc3DispatchAbiMarshalling
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentNilReceiverSemanticsFoldabilitySummary(
+    const Objc3NilReceiverSemanticsFoldabilitySummary &lhs,
+    const Objc3NilReceiverSemanticsFoldabilitySummary &rhs) {
+  return lhs.message_send_sites == rhs.message_send_sites &&
+         lhs.receiver_nil_literal_sites == rhs.receiver_nil_literal_sites &&
+         lhs.nil_receiver_semantics_enabled_sites == rhs.nil_receiver_semantics_enabled_sites &&
+         lhs.nil_receiver_foldable_sites == rhs.nil_receiver_foldable_sites &&
+         lhs.nil_receiver_runtime_dispatch_required_sites == rhs.nil_receiver_runtime_dispatch_required_sites &&
+         lhs.non_nil_receiver_sites == rhs.non_nil_receiver_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -503,6 +515,27 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.dispatch_abi_marshalling_summary.message_send_sites &&
       result.type_metadata_handoff.dispatch_abi_marshalling_summary.contract_violation_sites <=
           result.type_metadata_handoff.dispatch_abi_marshalling_summary.message_send_sites;
+  result.nil_receiver_semantics_foldability_summary =
+      result.integration_surface.nil_receiver_semantics_foldability_summary;
+  result.deterministic_nil_receiver_semantics_foldability_handoff =
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.deterministic &&
+      result.integration_surface.nil_receiver_semantics_foldability_summary.deterministic &&
+      IsEquivalentNilReceiverSemanticsFoldabilitySummary(
+          result.integration_surface.nil_receiver_semantics_foldability_summary,
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary) &&
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary
+              .nil_receiver_runtime_dispatch_required_sites +
+              result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites +
+              result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
+          result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.message_send_sites;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -759,6 +792,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites;
   result.parity_surface.dispatch_abi_marshalling_contract_violation_sites_total =
       result.parity_surface.dispatch_abi_marshalling_summary.contract_violation_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_summary =
+      result.type_metadata_handoff.nil_receiver_semantics_foldability_summary;
+  result.parity_surface.nil_receiver_semantics_foldability_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_receiver_nil_literal_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_enabled_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_foldable_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_non_nil_receiver_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites;
+  result.parity_surface.nil_receiver_semantics_foldability_contract_violation_sites_total =
+      result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -1167,6 +1216,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.dispatch_abi_marshalling_summary.contract_violation_sites <=
           result.parity_surface.dispatch_abi_marshalling_summary.message_send_sites &&
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic;
+  result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff =
+      result.deterministic_nil_receiver_semantics_foldability_handoff &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_receiver_nil_literal_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_enabled_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_foldable_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_non_nil_receiver_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_contract_violation_sites_total &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.receiver_nil_literal_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites <=
+          result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_runtime_dispatch_required_sites +
+              result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_foldable_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.nil_receiver_semantics_enabled_sites +
+              result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
+          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
+          result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -1206,6 +1284,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.message_send_selector_lowering_summary.deterministic &&
       result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic &&
-      result.parity_surface.deterministic_dispatch_abi_marshalling_handoff;
+      result.parity_surface.deterministic_dispatch_abi_marshalling_handoff &&
+      result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic &&
+      result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff;
   return result;
 }

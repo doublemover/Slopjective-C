@@ -2686,3 +2686,51 @@ Sema/type metadata handoff contract:
 Recommended M157 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py -q`
+
+## M158 sema/type nil-receiver semantics/foldability contract (M158-B001)
+
+M158-B adds deterministic semantic summary carriers for nil-receiver semantics and
+compile-time foldability across message-send sites.
+
+Sema/type contract markers:
+
+- `Objc3NilReceiverSemanticsFoldabilitySummary`
+- `nil_receiver_semantics_foldability_summary`
+- `BuildNilReceiverSemanticsFoldabilitySummaryFromSites`
+- `BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface`
+- `BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff`
+- `deterministic_nil_receiver_semantics_foldability_handoff`
+- `result.parity_surface.nil_receiver_semantics_foldability_summary`
+
+Deterministic nil-receiver invariants (fail-closed):
+
+- receiver nil-literal detection stays aligned with enabled semantics
+  (`receiver_nil_literal_sites == nil_receiver_semantics_enabled_sites`).
+- foldable nil-receiver sites are a subset of enabled sites
+  (`nil_receiver_foldable_sites <= nil_receiver_semantics_enabled_sites`).
+- runtime-dispatch partition remains total
+  (`nil_receiver_runtime_dispatch_required_sites + nil_receiver_foldable_sites == message_send_sites`).
+- enabled/non-enabled partition remains total
+  (`nil_receiver_semantics_enabled_sites + non_nil_receiver_sites == message_send_sites`).
+- contract-violation counters remain bounded by message-send sites.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.nil_receiver_semantics_foldability_summary = BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.nil_receiver_semantics_foldability_summary = BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `nil_receiver_semantics_foldability_sites_total`
+  - `nil_receiver_semantics_foldability_receiver_nil_literal_sites_total`
+  - `nil_receiver_semantics_foldability_enabled_sites_total`
+  - `nil_receiver_semantics_foldability_foldable_sites_total`
+  - `nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total`
+  - `nil_receiver_semantics_foldability_non_nil_receiver_sites_total`
+  - `nil_receiver_semantics_foldability_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff`
+
+Recommended M158 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m158_sema_nil_receiver_semantics_foldability_contract.py -q`
