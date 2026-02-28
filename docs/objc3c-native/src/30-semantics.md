@@ -3583,3 +3583,34 @@ Deterministic sema intent:
 Recommended M178 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py -q`
+
+## M179 sema/type incremental module cache and invalidation contract (M179-B001)
+
+M179-B defines deterministic sema summaries for incremental module cache and
+invalidation handoff safety over public/private API partition packets.
+
+M179 sema/type surface details:
+
+- `Objc3IncrementalModuleCacheInvalidationSummary`
+- `BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary`
+- parity counters:
+  - `incremental_module_cache_invalidation_sites_total`
+  - `incremental_module_cache_invalidation_namespace_segment_sites_total`
+  - `incremental_module_cache_invalidation_import_edge_candidate_sites_total`
+  - `incremental_module_cache_invalidation_object_pointer_type_sites_total`
+  - `incremental_module_cache_invalidation_pointer_declarator_sites_total`
+  - `incremental_module_cache_invalidation_normalized_sites_total`
+  - `incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total`
+  - `incremental_module_cache_invalidation_contract_violation_sites_total`
+  - `deterministic_incremental_module_cache_invalidation_handoff`
+
+Deterministic sema intent:
+
+- incremental module cache invalidation summaries are derived from deterministic
+  public/private API partition packets and preserve handoff parity constraints.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization/invalidation routing.
+
+Recommended M179 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q`

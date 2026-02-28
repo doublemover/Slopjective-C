@@ -1182,6 +1182,34 @@ Recommended M178 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py -q`
 
+## M179 frontend incremental module cache and invalidation parser/AST surface (M179-A001)
+
+Frontend parser/AST now emits deterministic incremental-module-cache/invalidation
+profiles for parameter/property/return type annotations.
+
+M179 parser/AST surface details:
+
+- incremental module-cache/invalidation anchors:
+  - `BuildIncrementalModuleCacheInvalidationProfile(...)`
+  - `IsIncrementalModuleCacheInvalidationProfileNormalized(...)`
+- parser assignment anchors:
+  - `incremental_module_cache_invalidation_profile`
+  - `incremental_module_cache_invalidation_profile_is_normalized`
+  - `return_incremental_module_cache_invalidation_profile`
+  - `return_incremental_module_cache_invalidation_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives cache-key readiness and invalidation-on-shape-change state from
+  object-pointer spelling, generic suffix packets, namespace-segment shape, and
+  pointer declarator participation.
+- profile normalization is fail-closed for malformed packets that would
+  destabilize incremental module-cache replay and invalidation handoff.
+
+Recommended M179 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -5330,6 +5358,37 @@ Deterministic sema intent:
 Recommended M178 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py -q`
+
+## M179 sema/type incremental module cache and invalidation contract (M179-B001)
+
+M179-B defines deterministic sema summaries for incremental module cache and
+invalidation handoff safety over public/private API partition packets.
+
+M179 sema/type surface details:
+
+- `Objc3IncrementalModuleCacheInvalidationSummary`
+- `BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary`
+- parity counters:
+  - `incremental_module_cache_invalidation_sites_total`
+  - `incremental_module_cache_invalidation_namespace_segment_sites_total`
+  - `incremental_module_cache_invalidation_import_edge_candidate_sites_total`
+  - `incremental_module_cache_invalidation_object_pointer_type_sites_total`
+  - `incremental_module_cache_invalidation_pointer_declarator_sites_total`
+  - `incremental_module_cache_invalidation_normalized_sites_total`
+  - `incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total`
+  - `incremental_module_cache_invalidation_contract_violation_sites_total`
+  - `deterministic_incremental_module_cache_invalidation_handoff`
+
+Deterministic sema intent:
+
+- incremental module cache invalidation summaries are derived from deterministic
+  public/private API partition packets and preserve handoff parity constraints.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization/invalidation routing.
+
+Recommended M179 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -9033,6 +9092,29 @@ Recommended M177 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py -q`
 
+## Public-private API partition semantics lowering artifact contract (M178-C001)
+
+M178-C lowers sema-authored public/private API partition summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M178-C lowering contract anchors:
+
+- `kObjc3PublicPrivateApiPartitionLoweringLaneContract`
+- `Objc3PublicPrivateApiPartitionLoweringContract`
+- `IsValidObjc3PublicPrivateApiPartitionLoweringContract(...)`
+- `Objc3PublicPrivateApiPartitionLoweringReplayKey(...)`
+- `BuildPublicPrivateApiPartitionLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_public_private_api_partition_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface`
+- `lowering_public_private_api_partition.replay_key`
+- `; public_private_api_partition_lowering = public_private_api_partition_sites=<N>...`
+- `; frontend_objc_public_private_api_partition_lowering_profile = public_private_api_partition_sites=<N>...`
+- `!objc3.objc_public_private_api_partition_lowering = !{!31}`
+
+Recommended M178 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m178_lowering_public_private_api_partition_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -11369,6 +11451,42 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py -q
 ```
 
+## M178 validation/conformance/perf public/private API partition runbook
+
+Deterministic M178 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m178_validation_public_private_api_partition_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_public_private_api_partition_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_public_private_api_partition_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface.deterministic_handoff`
+  - `lowering_public_private_api_partition.replay_key`
+- `replay_run_1/module.ll`
+  - `public_private_api_partition_lowering`
+  - `frontend_objc_public_private_api_partition_lowering_profile`
+  - `!objc3.objc_public_private_api_partition_lowering = !{!31}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Current gap: dedicated M178-C IR emitter markers are not yet source-emitted; fixture IR markers above are deterministic replay anchors for validation/conformance contract coverage.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -12197,6 +12315,22 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py`
   - `tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py`
   - `tests/tooling/test_objc3c_m177_integration_namespace_collision_shadowing_contract.py`
+
+## M178 integration public/private API partition semantics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m178-public-private-api-partition-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m178`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py`
+  - `tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py`
+  - `tests/tooling/test_objc3c_m178_integration_public_private_api_partition_contract.py`
+- Assumptions:
+  - M178-C001 and M178-D001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on M178-A001 plus M178-B001 surfaces and this M178-E001 wiring contract, while remaining forward-compatible for future M178-C001/M178-D001 additions.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

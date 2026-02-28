@@ -3275,6 +3275,44 @@ BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
   return summary;
 }
 
+static Objc3IncrementalModuleCacheInvalidationSummary
+BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
+    const Objc3PublicPrivateApiPartitionSummary
+        &public_private_api_partition_summary) {
+  Objc3IncrementalModuleCacheInvalidationSummary summary;
+  summary.incremental_module_cache_invalidation_sites =
+      public_private_api_partition_summary.public_private_api_partition_sites;
+  summary.namespace_segment_sites =
+      public_private_api_partition_summary.namespace_segment_sites;
+  summary.import_edge_candidate_sites =
+      public_private_api_partition_summary.import_edge_candidate_sites;
+  summary.object_pointer_type_sites =
+      public_private_api_partition_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      public_private_api_partition_summary.pointer_declarator_sites;
+  summary.normalized_sites =
+      std::min(public_private_api_partition_summary.normalized_sites,
+               summary.incremental_module_cache_invalidation_sites);
+  summary.cache_invalidation_candidate_sites =
+      summary.incremental_module_cache_invalidation_sites -
+      summary.normalized_sites;
+  summary.contract_violation_sites =
+      public_private_api_partition_summary.contract_violation_sites;
+  summary.deterministic =
+      public_private_api_partition_summary.deterministic &&
+      summary.namespace_segment_sites <=
+          summary.incremental_module_cache_invalidation_sites &&
+      summary.import_edge_candidate_sites <=
+          summary.incremental_module_cache_invalidation_sites &&
+      summary.normalized_sites <=
+          summary.incremental_module_cache_invalidation_sites &&
+      summary.cache_invalidation_candidate_sites <=
+          summary.incremental_module_cache_invalidation_sites &&
+      summary.contract_violation_sites <=
+          summary.incremental_module_cache_invalidation_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7413,6 +7451,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.public_private_api_partition_summary =
       BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
           surface.namespace_collision_shadowing_summary);
+  surface.incremental_module_cache_invalidation_summary =
+      BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
+          surface.public_private_api_partition_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8425,6 +8466,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.public_private_api_partition_summary =
       BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
           handoff.namespace_collision_shadowing_summary);
+  handoff.incremental_module_cache_invalidation_summary =
+      BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
+          handoff.public_private_api_partition_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9178,6 +9222,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary =
       BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
           handoff.namespace_collision_shadowing_summary);
+  const Objc3IncrementalModuleCacheInvalidationSummary
+      incremental_module_cache_invalidation_summary =
+          BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
+              handoff.public_private_api_partition_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9478,6 +9526,54 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
          handoff.public_private_api_partition_summary.contract_violation_sites <=
              handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
+         handoff.incremental_module_cache_invalidation_summary.deterministic &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites ==
+             incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .namespace_segment_sites ==
+             incremental_module_cache_invalidation_summary.namespace_segment_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .import_edge_candidate_sites ==
+             incremental_module_cache_invalidation_summary
+                 .import_edge_candidate_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .object_pointer_type_sites ==
+             incremental_module_cache_invalidation_summary
+                 .object_pointer_type_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .pointer_declarator_sites ==
+             incremental_module_cache_invalidation_summary
+                 .pointer_declarator_sites &&
+         handoff.incremental_module_cache_invalidation_summary.normalized_sites ==
+             incremental_module_cache_invalidation_summary.normalized_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .cache_invalidation_candidate_sites ==
+             incremental_module_cache_invalidation_summary
+                 .cache_invalidation_candidate_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .contract_violation_sites ==
+             incremental_module_cache_invalidation_summary.contract_violation_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .namespace_segment_sites <=
+             handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .import_edge_candidate_sites <=
+             handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
+         handoff.incremental_module_cache_invalidation_summary.normalized_sites <=
+             handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .cache_invalidation_candidate_sites <=
+             handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
+         handoff.incremental_module_cache_invalidation_summary
+                 .contract_violation_sites <=
+             handoff.incremental_module_cache_invalidation_summary
+                 .incremental_module_cache_invalidation_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
