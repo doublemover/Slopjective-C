@@ -221,6 +221,8 @@ def test_parity_source_mode_generates_and_compares_cli_and_c_api_outputs(
         "module.obj",
     ]
     assert payload["execution"]["source"].endswith("sample.objc3")
+    assert payload["execution"]["work_key"] is not None
+    assert len(payload["execution"]["work_key"]) == 16
     assert [item["role"] for item in payload["execution"]["commands"]] == [
         "cli",
         "c-api",
@@ -238,6 +240,69 @@ def test_parity_source_mode_requires_binaries(tmp_path: Path) -> None:
                 str(source),
             ]
         )
+
+
+def test_parity_source_mode_rejects_non_tmp_work_dir_by_default(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="work-dir must be under tmp"):
+        parity.run(
+            [
+                "--source",
+                str(source),
+                "--cli-bin",
+                str(cli_bin),
+                "--c-api-bin",
+                str(c_api_bin),
+                "--work-dir",
+                str(tmp_path / "outside_tmp"),
+            ]
+        )
+
+
+def test_parity_source_mode_can_allow_non_tmp_work_dir_when_opted_in(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    def _fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        out_dir = Path(command[command.index("--out-dir") + 1])
+        emit_prefix = command[command.index("--emit-prefix") + 1]
+        _write_source_mode_artifacts(out_dir, emit_prefix=emit_prefix, marker="tmp-override")
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(parity.subprocess, "run", _fake_run)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--work-dir",
+            str(tmp_path / "outside_tmp"),
+            "--allow-non-tmp-work-dir",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+    assert exit_code == 0
 
 
 def test_parity_fixture_contract_matches_golden_and_is_replay_deterministic(

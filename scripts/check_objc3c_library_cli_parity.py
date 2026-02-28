@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
+TMP_ROOT = ROOT / "tmp"
 MODE = "objc3c-library-cli-parity-v2"
 DEFAULT_ARTIFACTS = (
     "module.diagnostics.json",
@@ -88,6 +89,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         type=Path,
         default=Path("tmp/objc3c_library_cli_parity_work"),
         help="workspace for generated artifacts in --source mode",
+    )
+    parser.add_argument(
+        "--work-key",
+        default=None,
+        help="deterministic subdirectory key under --work-dir for --source mode (default derives from source + emit-prefix)",
+    )
+    parser.add_argument(
+        "--allow-non-tmp-work-dir",
+        action="store_true",
+        help="allow --source work/output directories outside repo tmp/",
     )
     parser.add_argument(
         "--emit-prefix",
@@ -176,6 +187,19 @@ def ensure_file(path: Path, *, label: str) -> None:
         raise ValueError(f"{label} does not exist: {display_path(path)}")
     if not path.is_file():
         raise ValueError(f"{label} must be a file: {display_path(path)}")
+
+
+def ensure_under_tmp(path: Path, *, label: str) -> None:
+    try:
+        resolved = path.resolve()
+    except OSError:
+        resolved = path
+    try:
+        resolved.relative_to(TMP_ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError(
+            f"{label} must be under {display_path(TMP_ROOT)}: {display_path(path)}"
+        ) from exc
 
 
 def canonical_json(payload: object) -> str:
@@ -330,7 +354,9 @@ def build_source_mode_artifacts(*, emit_prefix: str) -> list[str]:
     ]
 
 
-def prepare_source_mode(args: argparse.Namespace) -> tuple[Path, Path, list[CommandResult], list[str]]:
+def prepare_source_mode(
+    args: argparse.Namespace,
+) -> tuple[Path, Path, str, list[CommandResult], list[str]]:
     if args.cli_bin is None:
         raise ValueError("--cli-bin is required when using --source")
     if args.c_api_bin is None:
@@ -340,9 +366,22 @@ def prepare_source_mode(args: argparse.Namespace) -> tuple[Path, Path, list[Comm
     ensure_file(args.c_api_bin, label="c-api-bin")
 
     work_dir = args.work_dir
+    if not args.allow_non_tmp_work_dir:
+        ensure_under_tmp(work_dir, label="work-dir")
     work_dir.mkdir(parents=True, exist_ok=True)
-    library_dir = args.library_dir if args.library_dir is not None else work_dir / "library"
-    cli_dir = args.cli_dir if args.cli_dir is not None else work_dir / "cli"
+
+    work_key = args.work_key
+    if work_key is None:
+        work_key = sha256_text(
+            f"{display_path(args.source)}|{args.emit_prefix}"
+        )[:16]
+    work_root = work_dir / work_key
+
+    library_dir = args.library_dir if args.library_dir is not None else work_root / "library"
+    cli_dir = args.cli_dir if args.cli_dir is not None else work_root / "cli"
+    if not args.allow_non_tmp_work_dir:
+        ensure_under_tmp(library_dir, label="library-dir")
+        ensure_under_tmp(cli_dir, label="cli-dir")
     library_dir.mkdir(parents=True, exist_ok=True)
     cli_dir.mkdir(parents=True, exist_ok=True)
 
@@ -389,7 +428,7 @@ def prepare_source_mode(args: argparse.Namespace) -> tuple[Path, Path, list[Comm
         for result in results
         if result.exit_code != 0
     ]
-    return library_dir, cli_dir, results, failures
+    return library_dir, cli_dir, work_key, results, failures
 
 
 def run(argv: Sequence[str]) -> int:
@@ -401,8 +440,15 @@ def run(argv: Sequence[str]) -> int:
 
     execution_results: list[CommandResult] = []
     execution_failures: list[str] = []
+    execution_work_key: str | None = None
     if args.source is not None:
-        library_dir, cli_dir, execution_results, execution_failures = prepare_source_mode(args)
+        (
+            library_dir,
+            cli_dir,
+            execution_work_key,
+            execution_results,
+            execution_failures,
+        ) = prepare_source_mode(args)
         default_dimension_map = default_dimension_map_for_emit_prefix(
             emit_prefix=args.emit_prefix,
             object_artifact=f"{args.emit_prefix}.obj",
@@ -500,6 +546,7 @@ def run(argv: Sequence[str]) -> int:
         summary["execution"] = {
             "source": display_path(args.source),
             "emit_prefix": args.emit_prefix,
+            "work_key": execution_work_key,
             "commands": [
                 {
                     "role": result.role,
