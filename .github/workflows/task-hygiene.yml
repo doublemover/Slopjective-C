@@ -135,6 +135,8 @@ jobs:
         run: npm run check:objc3c:m196-c-interop-headers-abi
       - name: 42 Run M195 system-extension policy gate
         run: npm run check:objc3c:m195-system-extension-policy
+      - name: 43 Run M194 atomics memory-order mapping gate
+        run: npm run check:objc3c:m194-atomics-memory-order
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

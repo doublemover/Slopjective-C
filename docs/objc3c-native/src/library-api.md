@@ -615,6 +615,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain system-extension conformance/policy anchors.
 
+## M194 integration atomics and memory-order mapping
+
+- Gate intent: enforce deterministic atomics/memory-order mapping evidence across all lanes.
+### 1.1 Atomics/memory-order integration chain
+- Deterministic atomics/memory-order gate:
+  - `npm run check:objc3c:m194-atomics-memory-order`
+- Chain order:
+  - replays `check:objc3c:m195-system-extension-policy`.
+  - enforces all M194 lane contracts:
+    `tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_lowering_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_validation_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_integration_atomics_memory_order_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through atomics/memory-order validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain atomics/memory-order mapping anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
