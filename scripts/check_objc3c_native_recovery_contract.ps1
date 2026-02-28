@@ -631,40 +631,40 @@ $negativeFixtures = Get-RecoveryFixtures -Directory $negativeFixtureDir -Fixture
 Assert-RecoveryFixtureClass -Fixtures $negativeFixtures -FixtureKind "negative native recovery"
 $negativeFixtureDiagnosticTokenContracts = @{
   "negative_pure_definition_impure_global_write.objc3" = @(
-    "error:5:9",
+    "error:7:9",
     "O3S215",
     "pure contract violation",
     "declared 'pure' has side effects",
     "cause: global-write",
-    "cause-site:6:3",
-    "detail:global-write@6:3"
+    "cause-site:8:3",
+    "detail:global-write@8:3"
   )
   "negative_pure_definition_impure_transitive_call.objc3" = @(
-    "error:10:9",
+    "error:12:9",
     "O3S215",
     "pure contract violation",
     "declared 'pure' has side effects",
     "cause: impure-callee:bump",
-    "cause-site:11:10",
-    "detail:global-write@6:3"
+    "cause-site:13:10",
+    "detail:global-write@8:3"
   )
   "negative_pure_definition_impure_unannotated_extern_call.objc3" = @(
-    "error:5:9",
+    "error:7:9",
     "O3S215",
     "pure contract violation",
     "declared 'pure' has side effects",
     "cause: unannotated-extern-call:ext_impure",
-    "cause-site:6:10",
-    "detail:unannotated-extern-call:ext_impure@6:10"
+    "cause-site:8:10",
+    "detail:unannotated-extern-call:ext_impure@8:10"
   )
   "negative_pure_definition_impure_message_send.objc3" = @(
-    "error:3:9",
+    "error:5:9",
     "O3S215",
     "pure contract violation",
     "declared 'pure' has side effects",
     "cause: message-send",
-    "cause-site:4:10",
-    "detail:message-send@4:10"
+    "cause-site:6:10",
+    "detail:message-send@6:10"
   )
 }
 foreach ($fixture in $negativeFixtures) {
