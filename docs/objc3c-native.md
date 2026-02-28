@@ -138,6 +138,39 @@ Lexical support:
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
 
+## M146 frontend @interface/@implementation grammar
+
+Frontend parser/AST support now accepts Objective-C container declarations:
+
+- `@interface <Name> [: <Super>] ... @end`
+- `@implementation <Name> ... @end`
+- `@end`
+
+M146 parser surface details:
+
+- Lexer contract emits dedicated tokens:
+  - `KwAtInterface`
+  - `KwAtImplementation`
+  - `KwAtEnd`
+- Parser top-level routes:
+  - `ParseObjcInterfaceDecl()`
+  - `ParseObjcImplementationDecl()`
+- Parser class-method surface:
+  - `ParseObjcMethodDecl(...)` supports `-` and `+` method markers.
+  - `@interface` requires `;` method declarations.
+  - `@implementation` accepts `;` declarations and braced method bodies (balanced-brace recovery).
+
+Deterministic recovery/diagnostic anchors:
+
+- unsupported `@` directives fail closed (`unsupported '@' directive '@<name>'`).
+- missing container terminators fail closed:
+  - `missing '@end' after @interface`
+  - `missing '@end' after @implementation`
+
+Recommended M146 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -2948,6 +2981,38 @@ SIMD/vector packet map:
 Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
+
+## M146 sema/type @interface/@implementation parity contract (M146-B001)
+
+M146-B extends sema/type metadata to track Objective-C interface/implementation declarations and selector-level coherence.
+
+Sema/type contract markers:
+
+- `Objc3MethodInfo`
+- `Objc3InterfaceInfo`
+- `Objc3ImplementationInfo`
+- `Objc3InterfaceImplementationSummary`
+- `interfaces_total`
+- `implementations_total`
+- `type_metadata_interface_entries`
+- `type_metadata_implementation_entries`
+- `deterministic_interface_implementation_handoff`
+
+Semantic coherence diagnostics (fail-closed):
+
+- missing interface declaration for implementation
+- duplicate interface selector / duplicate implementation selector
+- incompatible method signature for selector
+
+Sema/type metadata handoff contract:
+
+- interface metadata packet: `handoff.interfaces_lexicographic`
+- implementation metadata packet: `handoff.implementations_lexicographic`
+- deterministic summary packet: `interface_implementation_summary`
+
+Recommended M146 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5270,6 +5335,39 @@ Lane-D artifact roots:
   - `tests/conformance/lowering_abi/manifest.json`
   - `tests/conformance/lowering_abi/M145-D001.json`
 
+## Interface/implementation lowering artifact contract (M146-C001)
+
+M146-C hardens lowering/runtime ABI artifact publication for `@interface` + `@implementation` parser/sema metadata.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m146/lowering-interface-implementation-contract/interface-implementation-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_interface_implementation_handoff`
+- `frontend.pipeline.sema_pass_manager.type_metadata_interface_entries`
+- `frontend.pipeline.sema_pass_manager.type_metadata_implementation_entries`
+- `frontend.pipeline.semantic_surface.declared_interfaces`
+- `frontend.pipeline.semantic_surface.declared_implementations`
+- `frontend.pipeline.semantic_surface.resolved_interface_symbols`
+- `frontend.pipeline.semantic_surface.resolved_implementation_symbols`
+- `frontend.pipeline.semantic_surface.objc_interface_implementation_surface`
+- top-level `"interfaces"` and `"implementations"` arrays sourced from sema metadata handoff.
+
+IR publication markers:
+
+- `; frontend_objc_interface_implementation_profile = declared_interfaces=<N>, declared_implementations=<N>, resolved_interface_symbols=<N>, resolved_implementation_symbols=<N>, interface_method_symbols=<N>, implementation_method_symbols=<N>, linked_implementation_symbols=<N>, deterministic_interface_implementation_handoff=<bool>`
+- `!objc3.objc_interface_implementation = !{!1}`
+- `!1 = !{i64 <declared_interfaces>, i64 <declared_implementations>, i64 <resolved_interface_symbols>, i64 <resolved_implementation_symbols>, i64 <interface_method_symbols>, i64 <implementation_method_symbols>, i64 <linked_implementation_symbols>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -5623,6 +5721,16 @@ python -m pytest tests/tooling/test_objc3c_m224_validation_release_contract.py -
 ## M225 validation/perf roadmap seeding runbook
 
 From repo root, run this deterministic order and stop immediately on the first non-zero exit:
+
+## M146 validation @interface/@implementation runbook
+
+From repo root, execute deterministic M146 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py -q`
+- `npm run check:objc3c:m146-interface-implementation`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -7328,6 +7436,17 @@ int objc3c_frontend_startup_check(void) {
 ## M208 integration whole-module optimization controls
 
 - Gate intent: enforce deterministic whole-module optimization control evidence across all lanes.
+
+## M146 integration @interface/@implementation grammar
+
+- Integration gate:
+  - `npm run check:objc3c:m146-interface-implementation`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_integration_interface_implementation_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
