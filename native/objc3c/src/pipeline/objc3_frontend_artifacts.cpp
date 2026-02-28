@@ -878,6 +878,29 @@ Objc3NullabilityFlowWarningPrecisionLoweringContract BuildNullabilityFlowWarning
   return contract;
 }
 
+Objc3ProtocolQualifiedObjectTypeLoweringContract BuildProtocolQualifiedObjectTypeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3ProtocolQualifiedObjectTypeLoweringContract contract;
+  contract.protocol_qualified_object_type_sites =
+      sema_parity_surface.protocol_qualified_object_type_sites_total;
+  contract.protocol_composition_sites =
+      sema_parity_surface.protocol_qualified_object_type_protocol_composition_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface.protocol_qualified_object_type_object_pointer_type_sites_total;
+  contract.terminated_protocol_composition_sites =
+      sema_parity_surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface.protocol_qualified_object_type_pointer_declarator_sites_total;
+  contract.normalized_protocol_composition_sites =
+      sema_parity_surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.protocol_qualified_object_type_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.protocol_qualified_object_type_summary.deterministic &&
+      sema_parity_surface.deterministic_protocol_qualified_object_type_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1250,6 +1273,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string nullability_flow_warning_precision_lowering_replay_key =
       Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
           nullability_flow_warning_precision_lowering_contract);
+  const Objc3ProtocolQualifiedObjectTypeLoweringContract protocol_qualified_object_type_lowering_contract =
+      BuildProtocolQualifiedObjectTypeLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
+          protocol_qualified_object_type_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid protocol-qualified object type lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string protocol_qualified_object_type_lowering_replay_key =
+      Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
+          protocol_qualified_object_type_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1856,6 +1894,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_nullability_flow_warning_precision_replay_key\":\""
            << nullability_flow_warning_precision_lowering_replay_key
            << "\""
+           << ",\"deterministic_protocol_qualified_object_type_lowering_handoff\":"
+           << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
+           << ",\"protocol_qualified_object_type_lowering_sites\":"
+           << protocol_qualified_object_type_lowering_contract.protocol_qualified_object_type_sites
+           << ",\"protocol_qualified_object_type_lowering_protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.protocol_composition_sites
+           << ",\"protocol_qualified_object_type_lowering_object_pointer_type_sites\":"
+           << protocol_qualified_object_type_lowering_contract.object_pointer_type_sites
+           << ",\"protocol_qualified_object_type_lowering_terminated_protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.terminated_protocol_composition_sites
+           << ",\"protocol_qualified_object_type_lowering_pointer_declarator_sites\":"
+           << protocol_qualified_object_type_lowering_contract.pointer_declarator_sites
+           << ",\"protocol_qualified_object_type_lowering_normalized_protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.normalized_protocol_composition_sites
+           << ",\"protocol_qualified_object_type_lowering_contract_violation_sites\":"
+           << protocol_qualified_object_type_lowering_contract.contract_violation_sites
+           << ",\"lowering_protocol_qualified_object_type_replay_key\":\""
+           << protocol_qualified_object_type_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2410,6 +2467,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (nullability_flow_warning_precision_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_protocol_qualified_object_type_lowering_surface\":{\"protocol_qualified_object_type_sites\":"
+           << protocol_qualified_object_type_lowering_contract.protocol_qualified_object_type_sites
+           << ",\"protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.protocol_composition_sites
+           << ",\"object_pointer_type_sites\":"
+           << protocol_qualified_object_type_lowering_contract.object_pointer_type_sites
+           << ",\"terminated_protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.terminated_protocol_composition_sites
+           << ",\"pointer_declarator_sites\":"
+           << protocol_qualified_object_type_lowering_contract.pointer_declarator_sites
+           << ",\"normalized_protocol_composition_sites\":"
+           << protocol_qualified_object_type_lowering_contract.normalized_protocol_composition_sites
+           << ",\"contract_violation_sites\":"
+           << protocol_qualified_object_type_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << protocol_qualified_object_type_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2597,6 +2673,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (nullability_flow_warning_precision_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_protocol_qualified_object_type\":{\"replay_key\":\""
+           << protocol_qualified_object_type_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -3060,6 +3142,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       nullability_flow_warning_precision_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_nullability_flow_warning_precision_lowering_handoff =
       nullability_flow_warning_precision_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_protocol_qualified_object_type_replay_key =
+      protocol_qualified_object_type_lowering_replay_key;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_sites =
+      protocol_qualified_object_type_lowering_contract.protocol_qualified_object_type_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_protocol_composition_sites =
+      protocol_qualified_object_type_lowering_contract.protocol_composition_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_object_pointer_type_sites =
+      protocol_qualified_object_type_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_terminated_protocol_composition_sites =
+      protocol_qualified_object_type_lowering_contract.terminated_protocol_composition_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_pointer_declarator_sites =
+      protocol_qualified_object_type_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_normalized_protocol_composition_sites =
+      protocol_qualified_object_type_lowering_contract.normalized_protocol_composition_sites;
+  ir_frontend_metadata.protocol_qualified_object_type_lowering_contract_violation_sites =
+      protocol_qualified_object_type_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_protocol_qualified_object_type_lowering_handoff =
+      protocol_qualified_object_type_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

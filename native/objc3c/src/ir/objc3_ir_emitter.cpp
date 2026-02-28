@@ -170,6 +170,10 @@ class Objc3IREmitter {
       out << "; nullability_flow_warning_precision_lowering = "
           << frontend_metadata_.lowering_nullability_flow_warning_precision_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_protocol_qualified_object_type_replay_key.empty()) {
+      out << "; protocol_qualified_object_type_lowering = "
+          << frontend_metadata_.lowering_protocol_qualified_object_type_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -538,6 +542,23 @@ class Objc3IREmitter {
         << ", deterministic_nullability_flow_warning_precision_lowering_handoff="
         << (frontend_metadata_.deterministic_nullability_flow_warning_precision_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_protocol_qualified_object_type_lowering_profile = protocol_qualified_object_type_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_sites
+        << ", protocol_composition_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_protocol_composition_sites
+        << ", object_pointer_type_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_object_pointer_type_sites
+        << ", terminated_protocol_composition_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_terminated_protocol_composition_sites
+        << ", pointer_declarator_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_pointer_declarator_sites
+        << ", normalized_protocol_composition_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_normalized_protocol_composition_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.protocol_qualified_object_type_lowering_contract_violation_sites
+        << ", deterministic_protocol_qualified_object_type_lowering_handoff="
+        << (frontend_metadata_.deterministic_protocol_qualified_object_type_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -726,6 +747,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}\n";
     out << "!objc3.objc_lightweight_generic_constraint_lowering = !{!24}\n";
     out << "!objc3.objc_nullability_flow_warning_precision_lowering = !{!25}\n";
+    out << "!objc3.objc_protocol_qualified_object_type_lowering = !{!26}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1203,6 +1225,30 @@ class Objc3IREmitter {
                frontend_metadata_.nullability_flow_warning_precision_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_nullability_flow_warning_precision_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!26 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_protocol_composition_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_object_pointer_type_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_terminated_protocol_composition_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_pointer_declarator_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_normalized_protocol_composition_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.protocol_qualified_object_type_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_protocol_qualified_object_type_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

@@ -923,3 +923,36 @@ std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract;
 }
+
+bool IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract) {
+  if (contract.protocol_composition_sites > contract.protocol_qualified_object_type_sites ||
+      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
+      contract.terminated_protocol_composition_sites > contract.protocol_composition_sites ||
+      contract.pointer_declarator_sites > contract.protocol_qualified_object_type_sites ||
+      contract.normalized_protocol_composition_sites > contract.protocol_qualified_object_type_sites ||
+      contract.contract_violation_sites > contract.protocol_qualified_object_type_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_protocol_composition_sites != contract.protocol_qualified_object_type_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract) {
+  return std::string("protocol_qualified_object_type_sites=") +
+         std::to_string(contract.protocol_qualified_object_type_sites) +
+         ";protocol_composition_sites=" + std::to_string(contract.protocol_composition_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";terminated_protocol_composition_sites=" + std::to_string(contract.terminated_protocol_composition_sites) +
+         ";pointer_declarator_sites=" + std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_protocol_composition_sites=" +
+         std::to_string(contract.normalized_protocol_composition_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract;
+}

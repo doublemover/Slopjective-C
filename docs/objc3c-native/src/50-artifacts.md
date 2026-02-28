@@ -3463,6 +3463,32 @@ Recommended M172 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py -q`
 
+## Protocol-qualified object type lowering artifact contract (M173-C001)
+
+M173-C lowers sema-authored protocol-qualified object type summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M173-C lowering contract anchors:
+
+- `kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract`
+- `Objc3ProtocolQualifiedObjectTypeLoweringContract`
+- `IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(...)`
+- `Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_protocol_qualified_object_type_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.protocol_qualified_object_type_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_protocol_qualified_object_type_lowering_surface`
+- `lowering_protocol_qualified_object_type.replay_key`
+- `; protocol_qualified_object_type_lowering = protocol_qualified_object_type_sites=<N>...`
+- `; frontend_objc_protocol_qualified_object_type_lowering_profile = protocol_qualified_object_type_sites=<N>...`
+- `!objc3.objc_protocol_qualified_object_type_lowering = !{!26}`
+
+Recommended M173 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m173_lowering_protocol_qualified_object_type_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
