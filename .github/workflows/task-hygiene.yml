@@ -139,6 +139,8 @@ jobs:
         run: npm run check:objc3c:m194-atomics-memory-order
       - name: 44 Run M193 SIMD vector type lowering gate
         run: npm run check:objc3c:m193-simd-vector-lowering
+      - name: 44a Run M146 @interface/@implementation grammar gate
+        run: npm run check:objc3c:m146-interface-implementation
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 

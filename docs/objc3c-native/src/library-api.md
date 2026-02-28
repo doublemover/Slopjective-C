@@ -338,6 +338,17 @@ int objc3c_frontend_startup_check(void) {
 ## M208 integration whole-module optimization controls
 
 - Gate intent: enforce deterministic whole-module optimization control evidence across all lanes.
+
+## M146 integration @interface/@implementation grammar
+
+- Integration gate:
+  - `npm run check:objc3c:m146-interface-implementation`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py`
+  - `tests/tooling/test_objc3c_m146_integration_interface_implementation_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
