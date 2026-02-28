@@ -374,6 +374,21 @@ Frontend code-action/refactor support requires deterministic parser/AST boundary
   3. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
 
+## M211 frontend LSP semantic packet
+
+Frontend LSP semantic-token/navigation support requires deterministic parser/AST boundary evidence.
+
+- Required LSP signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required LSP commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2083,6 +2098,35 @@ Recommended code-action safety commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m212_sema_code_action_contract.py -q`
 
+## M211 sema/type LSP semantic profile
+
+For semantic tokens/navigation support in LSP clients, capture deterministic sema/type evidence packets from parser token metadata, sema diagnostics ordering, and manifest source anchors before enabling editor integration.
+
+LSP semantic packet map:
+
+- `lsp packet 1.1 deterministic semantic-token metadata` -> `m211_lsp_semantic_token_metadata_packet`
+- `lsp packet 1.2 deterministic navigation source-anchor` -> `m211_lsp_navigation_source_anchor_packet`
+
+### 1.1 Deterministic semantic-token metadata packet
+
+- Token metadata contract anchors: `Objc3SemaTokenMetadata` and `MakeObjc3SemaTokenMetadata(...)`.
+- Parser capture anchors: `MakeSemaTokenMetadata(...)`, `Objc3SemaTokenKind::PointerDeclarator`, and `Objc3SemaTokenKind::NullabilitySuffix`.
+- AST handoff anchors: `pointer_declarator_tokens`, `nullability_suffix_tokens`, `return_pointer_declarator_tokens`, and `return_nullability_suffix_tokens`.
+- Deterministic semantic-token packet key: `m211_lsp_semantic_token_metadata_packet`.
+
+### 1.2 Deterministic navigation source-anchor packet
+
+- Sema diagnostics ordering anchor for stable locations: `CanonicalizePassDiagnostics(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest semantic-surface anchors for navigation indexing: `frontend.pipeline.semantic_surface`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Manifest source-location anchors for go-to navigation: `program.globals[i].line`, `program.globals[i].column`, `fn.line`, and `fn.column`.
+- Deterministic navigation packet key: `m211_lsp_navigation_source_anchor_packet`.
+
+Recommended LSP semantic contract commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_m211_sema_lsp_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2351,6 +2395,70 @@ Code-action capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json > tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
 3. `@("@@ rewrite_scope:module") | Set-Content tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m212_lowering_code_action_contract.py -q`
+
+## M211 lowering/runtime LSP semantic profile
+
+Lowering/runtime semantic token and symbol-navigation evidence is captured as a deterministic packet rooted under `tmp/` for replay-stable LSP contract validation.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/`
+  - `tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `symbol-navigation markers` (required in marker extracts):
+  - `@@ lsp_profile:semantic_tokens_navigation`
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `"semantic_surface":`
+  - `"declared_globals":`
+  - `"declared_functions":`
+  - `"resolved_global_symbols":`
+  - `"resolved_function_symbols":`
+  - `"globals":`
+  - `"functions":`
+  - `"name":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `manifest << ",\"declared_functions\":" << manifest_functions.size()`
+  - `manifest << ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()`
+  - `manifest << ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `manifest << "  \"globals\": [\n";`
+  - `manifest << "  \"functions\": [\n";`
+  - `manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]`
+  - `<< ",\"line\":" << program.globals[i].line << ",\"column\":" << program.globals[i].column << "}";`
+  - `manifest << "    {\"name\":\"" << fn.name << "\",\"params\":" << fn.params.size() << ",\"param_types\":[";`
+  - `<< ",\"line\":" << fn.line << ",\"column\":" << fn.column << "}";`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and symbol-navigation marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, symbol-navigation marker, or source anchor is missing.
+
+LSP semantic profile capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
+3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
 
 ## M214 lowering/runtime daemonized compiler profile
 
@@ -3999,6 +4107,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m212_validation_code_action_contract.py -q
 ```
 
+## M211 validation/perf LSP semantic runbook
+
+LSP semantic-token/navigation validation runbook verifies deterministic editor-facing evidence.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+LSP semantic evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `semantic_token_map`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `semantic_token_map`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `semantic_token_map`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `semantic_token_map`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m211_validation_lsp_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4296,6 +4449,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain code-action anchors.
+
+## M211 integration LSP semantic tokens and navigation
+
+- Gate intent: enforce deterministic LSP semantic-token/navigation evidence across all lanes.
+### 1.1 LSP integration chain
+- Deterministic LSP gate:
+  - `npm run check:objc3c:m211-lsp-semantics`
+- Chain order:
+  - replays `check:objc3c:m212-code-action`.
+  - enforces all M211 lane contracts:
+    `tests/tooling/test_objc3c_m211_frontend_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_sema_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_lowering_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_validation_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_integration_lsp_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through LSP semantic validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain LSP anchors.
 
 ## Current call contract
 
