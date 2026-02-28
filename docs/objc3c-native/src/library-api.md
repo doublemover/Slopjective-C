@@ -38,6 +38,20 @@ int objc3c_frontend_startup_check(void) {
 }
 ```
 
+## M224 integration/release-readiness (1.0 ABI/version gates)
+
+- Gate intent: fail closed on ABI/version drift before a 1.0 cut.
+- Required startup/version invariants:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` must pass before compile entrypoints are used.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()` must remain true.
+  - `OBJC3C_FRONTEND_ABI_VERSION` must stay inside the inclusive compatibility window
+    `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through
+    `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+- Deterministic M224 integration gate:
+  - `npm run check:objc3c:m224-integration-release-readiness`
+  - This gate chains existing deterministic checks for M222 compatibility migration,
+    library/CLI parity golden replay, and M224 tooling wiring.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
