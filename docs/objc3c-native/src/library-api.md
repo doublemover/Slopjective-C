@@ -495,6 +495,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-expansion architecture anchors.
 
+## M200 integration interop integration suite and packaging
+
+- Gate intent: enforce deterministic interop integration suite/packaging evidence across all lanes.
+### 1.1 Interop integration suite packaging chain
+- Deterministic interop integration suite packaging gate:
+  - `npm run check:objc3c:m200-interop-packaging`
+- Chain order:
+  - replays `check:objc3c:m201-macro-expansion-arch`.
+  - enforces all M200 lane contracts:
+    `tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_sema_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_lowering_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_validation_interop_packaging_contract.py`,
+    `tests/tooling/test_objc3c_m200_integration_interop_packaging_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through interop integration suite packaging validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain interop integration suite packaging anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

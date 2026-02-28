@@ -123,6 +123,8 @@ jobs:
         run: npm run check:objc3c:m202-derive-synthesis
       - name: 36 Run M201 macro-expansion architecture integration gate
         run: npm run check:objc3c:m201-macro-expansion-arch
+      - name: 37 Run M200 interop integration suite packaging gate
+        run: npm run check:objc3c:m200-interop-packaging
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
