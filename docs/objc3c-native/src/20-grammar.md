@@ -1081,6 +1081,33 @@ Recommended M177 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m177_frontend_namespace_collision_shadowing_parser_contract.py -q`
 
+## M178 frontend public/private API partition parser/AST surface (M178-A001)
+
+Frontend parser/AST now emits deterministic public/private API partition
+profiles for parameter/property/return type annotations.
+
+M178 parser/AST surface details:
+
+- public/private API partition anchors:
+  - `BuildPublicPrivateApiPartitionProfile(...)`
+  - `IsPublicPrivateApiPartitionProfileNormalized(...)`
+- parser assignment anchors:
+  - `public_private_api_partition_profile`
+  - `public_private_api_partition_profile_is_normalized`
+  - `return_public_private_api_partition_profile`
+  - `return_public_private_api_partition_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives visibility-partition readiness from namespace-segment shape,
+  generic suffix packets, and pointer declarator participation.
+- profile normalization is fail-closed for private-partition packets that would
+  destabilize downstream visibility-boundary diagnostics.
+
+Recommended M178 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

@@ -273,6 +273,8 @@ struct FuncParam {
   std::string module_import_graph_profile;
   bool namespace_collision_shadowing_profile_is_normalized = false;
   std::string namespace_collision_shadowing_profile;
+  bool public_private_api_partition_profile_is_normalized = false;
+  std::string public_private_api_partition_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -341,6 +343,8 @@ struct Objc3MethodDecl {
   std::string return_module_import_graph_profile;
   bool return_namespace_collision_shadowing_profile_is_normalized = false;
   std::string return_namespace_collision_shadowing_profile;
+  bool return_public_private_api_partition_profile_is_normalized = false;
+  std::string return_public_private_api_partition_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
@@ -413,6 +417,8 @@ struct Objc3PropertyDecl {
   std::string module_import_graph_profile;
   bool namespace_collision_shadowing_profile_is_normalized = false;
   std::string namespace_collision_shadowing_profile;
+  bool public_private_api_partition_profile_is_normalized = false;
+  std::string public_private_api_partition_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -550,6 +556,8 @@ struct FunctionDecl {
   std::string return_module_import_graph_profile;
   bool return_namespace_collision_shadowing_profile_is_normalized = false;
   std::string return_namespace_collision_shadowing_profile;
+  bool return_public_private_api_partition_profile_is_normalized = false;
+  std::string return_public_private_api_partition_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;

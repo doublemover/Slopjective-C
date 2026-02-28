@@ -687,6 +687,64 @@ static bool IsNamespaceCollisionShadowingProfileNormalized(
          object_pointer_type_spelling;
 }
 
+static std::string BuildPublicPrivateApiPartitionProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  const bool private_partition_required = namespace_segments > 1;
+  const bool public_api_safe = !private_partition_required;
+  const bool partition_ready = !private_partition_required ||
+                               (generic_suffix_terminated &&
+                                object_pointer_type_spelling);
+  const bool pointer_partition_overlap =
+      has_pointer_declarator && private_partition_required;
+
+  std::ostringstream out;
+  out << "public-private-api-partition:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";namespace-segments=" << namespace_segments
+      << ";import-edge-candidates=" << import_edge_candidates
+      << ";public-api-safe=" << (public_api_safe ? "true" : "false")
+      << ";private-partition-required="
+      << (private_partition_required ? "true" : "false")
+      << ";partition-ready=" << (partition_ready ? "true" : "false")
+      << ";pointer-partition-overlap="
+      << (pointer_partition_overlap ? "true" : "false");
+  return out.str();
+}
+
+static bool IsPublicPrivateApiPartitionProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  const bool private_partition_required = namespace_segments > 1;
+  if (!private_partition_required) {
+    return true;
+  }
+  if (import_edge_candidates == 0) {
+    return object_pointer_type_spelling;
+  }
+  return generic_suffix_terminated && object_pointer_type_spelling;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1498,6 +1556,10 @@ class Objc3Parser {
         source.return_namespace_collision_shadowing_profile_is_normalized;
     target.return_namespace_collision_shadowing_profile =
         source.return_namespace_collision_shadowing_profile;
+    target.return_public_private_api_partition_profile_is_normalized =
+        source.return_public_private_api_partition_profile_is_normalized;
+    target.return_public_private_api_partition_profile =
+        source.return_public_private_api_partition_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1566,6 +1628,10 @@ class Objc3Parser {
         source.namespace_collision_shadowing_profile_is_normalized;
     target.namespace_collision_shadowing_profile =
         source.namespace_collision_shadowing_profile;
+    target.public_private_api_partition_profile_is_normalized =
+        source.public_private_api_partition_profile_is_normalized;
+    target.public_private_api_partition_profile =
+        source.public_private_api_partition_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2429,6 +2495,8 @@ class Objc3Parser {
     fn.return_module_import_graph_profile.clear();
     fn.return_namespace_collision_shadowing_profile_is_normalized = false;
     fn.return_namespace_collision_shadowing_profile.clear();
+    fn.return_public_private_api_partition_profile_is_normalized = false;
+    fn.return_public_private_api_partition_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2700,6 +2768,21 @@ class Objc3Parser {
             fn.return_generic_suffix_terminated,
             fn.return_generic_suffix_text,
             fn.return_object_pointer_type_name);
+    fn.return_public_private_api_partition_profile =
+        BuildPublicPrivateApiPartitionProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
+    fn.return_public_private_api_partition_profile_is_normalized =
+        IsPublicPrivateApiPartitionProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
 
     return true;
   }
@@ -2734,6 +2817,8 @@ class Objc3Parser {
     param.module_import_graph_profile.clear();
     param.namespace_collision_shadowing_profile_is_normalized = false;
     param.namespace_collision_shadowing_profile.clear();
+    param.public_private_api_partition_profile_is_normalized = false;
+    param.public_private_api_partition_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2940,6 +3025,21 @@ class Objc3Parser {
             param.object_pointer_type_name);
     param.namespace_collision_shadowing_profile_is_normalized =
         IsNamespaceCollisionShadowingProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.public_private_api_partition_profile =
+        BuildPublicPrivateApiPartitionProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.public_private_api_partition_profile_is_normalized =
+        IsPublicPrivateApiPartitionProfileNormalized(
             param.object_pointer_type_spelling,
             param.has_generic_suffix,
             param.generic_suffix_terminated,
