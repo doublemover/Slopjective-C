@@ -43,6 +43,23 @@ If a change exceeds any cap, split into multiple PRs before review.
 
 - `docs/refactor/objc3c_refactor_workflow.md`
 - `docs/refactor/objc3c_refactor_cutover_governance.md`
+- `docs/refactor/objc3c_dependency_violation_playbook.md`
+
+## Modular architecture onboarding (M134+)
+
+Use the modular guide when working inside a specific ObjC3C module or subsystem:
+
+- `docs/refactor/objc3c_modular_developer_guide.md`
+
+Quick subsystem entrypoints:
+
+- `npm run dev:objc3c:lex`
+- `npm run dev:objc3c:parse`
+- `npm run dev:objc3c:sema`
+- `npm run dev:objc3c:lower`
+- `npm run dev:objc3c:ir`
+
+Always run `npm run check:objc3c:boundaries` before opening or updating a PR that changes module boundaries.
 
 ## Local checks
 
