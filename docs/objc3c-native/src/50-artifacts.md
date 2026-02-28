@@ -3325,6 +3325,66 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q`
 
+## Block copy-dispose helper lowering artifact contract (M169-C001)
+
+M169-C lowers sema-authored block copy/dispose helper semantics into deterministic
+artifact packets and IR metadata publication surfaces.
+
+Lowering contract markers:
+
+- `kObjc3BlockCopyDisposeLoweringLaneContract`
+- `Objc3BlockCopyDisposeLoweringContract`
+- `IsValidObjc3BlockCopyDisposeLoweringContract(...)`
+- `Objc3BlockCopyDisposeLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `mutable_capture_count_total=<N>`
+- `byref_slot_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `copy_helper_required_sites=<N>`
+- `dispose_helper_required_sites=<N>`
+- `profile_normalized_sites=<N>`
+- `copy_helper_symbolized_sites=<N>`
+- `dispose_helper_symbolized_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m169-block-copy-dispose-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_copy_dispose_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_mutable_capture_count`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_byref_slot_count`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_copy_helper_required_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_dispose_helper_required_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_profile_normalized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_copy_helper_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_dispose_helper_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_copy_dispose_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface`
+- `lowering_block_copy_dispose.replay_key`
+- `lowering_block_copy_dispose.lane_contract`
+
+IR publication markers:
+
+- `; block_copy_dispose_lowering = block_literal_sites=<N>;mutable_capture_count_total=<N>;byref_slot_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;copy_helper_required_sites=<N>;dispose_helper_required_sites=<N>;profile_normalized_sites=<N>;copy_helper_symbolized_sites=<N>;dispose_helper_symbolized_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m169-block-copy-dispose-lowering-v1`
+- `; frontend_objc_block_copy_dispose_lowering_profile = block_literal_sites=<N>, mutable_capture_count_total=<N>, byref_slot_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, copy_helper_required_sites=<N>, dispose_helper_required_sites=<N>, profile_normalized_sites=<N>, copy_helper_symbolized_sites=<N>, dispose_helper_symbolized_sites=<N>, contract_violation_sites=<N>, deterministic_block_copy_dispose_lowering_handoff=<bool>`
+- `!objc3.objc_block_copy_dispose_lowering = !{!22}`
+- `!22 = !{i64 <block_literal_sites>, i64 <mutable_capture_count_total>, i64 <byref_slot_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <copy_helper_required_sites>, i64 <dispose_helper_required_sites>, i64 <profile_normalized_sites>, i64 <copy_helper_symbolized_sites>, i64 <dispose_helper_symbolized_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

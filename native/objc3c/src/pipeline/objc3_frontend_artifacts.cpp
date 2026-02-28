@@ -773,6 +773,38 @@ Objc3BlockStorageEscapeLoweringContract BuildBlockStorageEscapeLoweringContract(
   return contract;
 }
 
+Objc3BlockCopyDisposeLoweringContract BuildBlockCopyDisposeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3BlockCopyDisposeLoweringContract contract;
+  contract.block_literal_sites = sema_parity_surface.block_copy_dispose_sites_total;
+  contract.mutable_capture_count_total =
+      sema_parity_surface.block_copy_dispose_mutable_capture_count_total;
+  contract.byref_slot_count_total =
+      sema_parity_surface.block_copy_dispose_byref_slot_count_total;
+  contract.parameter_entries_total =
+      sema_parity_surface.block_copy_dispose_parameter_entries_total;
+  contract.capture_entries_total =
+      sema_parity_surface.block_copy_dispose_capture_entries_total;
+  contract.body_statement_entries_total =
+      sema_parity_surface.block_copy_dispose_body_statement_entries_total;
+  contract.copy_helper_required_sites =
+      sema_parity_surface.block_copy_dispose_copy_helper_required_sites_total;
+  contract.dispose_helper_required_sites =
+      sema_parity_surface.block_copy_dispose_dispose_helper_required_sites_total;
+  contract.profile_normalized_sites =
+      sema_parity_surface.block_copy_dispose_profile_normalized_sites_total;
+  contract.copy_helper_symbolized_sites =
+      sema_parity_surface.block_copy_dispose_copy_helper_symbolized_sites_total;
+  contract.dispose_helper_symbolized_sites =
+      sema_parity_surface.block_copy_dispose_dispose_helper_symbolized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.block_copy_dispose_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.block_copy_dispose_semantics_summary.deterministic &&
+      sema_parity_surface.deterministic_block_copy_dispose_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1086,6 +1118,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string block_storage_escape_lowering_replay_key =
       Objc3BlockStorageEscapeLoweringReplayKey(block_storage_escape_lowering_contract);
+  const Objc3BlockCopyDisposeLoweringContract block_copy_dispose_lowering_contract =
+      BuildBlockCopyDisposeLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3BlockCopyDisposeLoweringContract(
+          block_copy_dispose_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid block copy-dispose lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string block_copy_dispose_lowering_replay_key =
+      Objc3BlockCopyDisposeLoweringReplayKey(block_copy_dispose_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1602,6 +1648,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_block_storage_escape_replay_key\":\""
            << block_storage_escape_lowering_replay_key
            << "\""
+           << ",\"deterministic_block_copy_dispose_lowering_handoff\":"
+           << (block_copy_dispose_lowering_contract.deterministic ? "true" : "false")
+           << ",\"block_copy_dispose_lowering_sites\":"
+           << block_copy_dispose_lowering_contract.block_literal_sites
+           << ",\"block_copy_dispose_lowering_mutable_capture_count\":"
+           << block_copy_dispose_lowering_contract.mutable_capture_count_total
+           << ",\"block_copy_dispose_lowering_byref_slot_count\":"
+           << block_copy_dispose_lowering_contract.byref_slot_count_total
+           << ",\"block_copy_dispose_lowering_parameter_entries\":"
+           << block_copy_dispose_lowering_contract.parameter_entries_total
+           << ",\"block_copy_dispose_lowering_capture_entries\":"
+           << block_copy_dispose_lowering_contract.capture_entries_total
+           << ",\"block_copy_dispose_lowering_body_statement_entries\":"
+           << block_copy_dispose_lowering_contract.body_statement_entries_total
+           << ",\"block_copy_dispose_lowering_copy_helper_required_sites\":"
+           << block_copy_dispose_lowering_contract.copy_helper_required_sites
+           << ",\"block_copy_dispose_lowering_dispose_helper_required_sites\":"
+           << block_copy_dispose_lowering_contract.dispose_helper_required_sites
+           << ",\"block_copy_dispose_lowering_profile_normalized_sites\":"
+           << block_copy_dispose_lowering_contract.profile_normalized_sites
+           << ",\"block_copy_dispose_lowering_copy_helper_symbolized_sites\":"
+           << block_copy_dispose_lowering_contract.copy_helper_symbolized_sites
+           << ",\"block_copy_dispose_lowering_dispose_helper_symbolized_sites\":"
+           << block_copy_dispose_lowering_contract.dispose_helper_symbolized_sites
+           << ",\"block_copy_dispose_lowering_contract_violation_sites\":"
+           << block_copy_dispose_lowering_contract.contract_violation_sites
+           << ",\"lowering_block_copy_dispose_replay_key\":\""
+           << block_copy_dispose_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2066,6 +2141,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (block_storage_escape_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_block_copy_dispose_lowering_surface\":{\"block_literal_sites\":"
+           << block_copy_dispose_lowering_contract.block_literal_sites
+           << ",\"mutable_capture_count_total\":"
+           << block_copy_dispose_lowering_contract.mutable_capture_count_total
+           << ",\"byref_slot_count_total\":"
+           << block_copy_dispose_lowering_contract.byref_slot_count_total
+           << ",\"parameter_entries_total\":"
+           << block_copy_dispose_lowering_contract.parameter_entries_total
+           << ",\"capture_entries_total\":"
+           << block_copy_dispose_lowering_contract.capture_entries_total
+           << ",\"body_statement_entries_total\":"
+           << block_copy_dispose_lowering_contract.body_statement_entries_total
+           << ",\"copy_helper_required_sites\":"
+           << block_copy_dispose_lowering_contract.copy_helper_required_sites
+           << ",\"dispose_helper_required_sites\":"
+           << block_copy_dispose_lowering_contract.dispose_helper_required_sites
+           << ",\"profile_normalized_sites\":"
+           << block_copy_dispose_lowering_contract.profile_normalized_sites
+           << ",\"copy_helper_symbolized_sites\":"
+           << block_copy_dispose_lowering_contract.copy_helper_symbolized_sites
+           << ",\"dispose_helper_symbolized_sites\":"
+           << block_copy_dispose_lowering_contract.dispose_helper_symbolized_sites
+           << ",\"contract_violation_sites\":"
+           << block_copy_dispose_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << block_copy_dispose_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (block_copy_dispose_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2229,6 +2333,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3BlockStorageEscapeLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (block_storage_escape_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_block_copy_dispose\":{\"replay_key\":\""
+           << block_copy_dispose_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3BlockCopyDisposeLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (block_copy_dispose_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2606,6 +2716,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_storage_escape_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_block_storage_escape_lowering_handoff =
       block_storage_escape_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_block_copy_dispose_replay_key =
+      block_copy_dispose_lowering_replay_key;
+  ir_frontend_metadata.block_copy_dispose_lowering_block_literal_sites =
+      block_copy_dispose_lowering_contract.block_literal_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_mutable_capture_count_total =
+      block_copy_dispose_lowering_contract.mutable_capture_count_total;
+  ir_frontend_metadata.block_copy_dispose_lowering_byref_slot_count_total =
+      block_copy_dispose_lowering_contract.byref_slot_count_total;
+  ir_frontend_metadata.block_copy_dispose_lowering_parameter_entries_total =
+      block_copy_dispose_lowering_contract.parameter_entries_total;
+  ir_frontend_metadata.block_copy_dispose_lowering_capture_entries_total =
+      block_copy_dispose_lowering_contract.capture_entries_total;
+  ir_frontend_metadata.block_copy_dispose_lowering_body_statement_entries_total =
+      block_copy_dispose_lowering_contract.body_statement_entries_total;
+  ir_frontend_metadata.block_copy_dispose_lowering_copy_helper_required_sites =
+      block_copy_dispose_lowering_contract.copy_helper_required_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_dispose_helper_required_sites =
+      block_copy_dispose_lowering_contract.dispose_helper_required_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_profile_normalized_sites =
+      block_copy_dispose_lowering_contract.profile_normalized_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_copy_helper_symbolized_sites =
+      block_copy_dispose_lowering_contract.copy_helper_symbolized_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_dispose_helper_symbolized_sites =
+      block_copy_dispose_lowering_contract.dispose_helper_symbolized_sites;
+  ir_frontend_metadata.block_copy_dispose_lowering_contract_violation_sites =
+      block_copy_dispose_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_block_copy_dispose_lowering_handoff =
+      block_copy_dispose_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

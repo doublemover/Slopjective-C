@@ -772,3 +772,51 @@ std::string Objc3BlockStorageEscapeLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3BlockStorageEscapeLoweringLaneContract;
 }
+
+bool IsValidObjc3BlockCopyDisposeLoweringContract(
+    const Objc3BlockCopyDisposeLoweringContract &contract) {
+  if (contract.copy_helper_required_sites > contract.block_literal_sites ||
+      contract.dispose_helper_required_sites > contract.block_literal_sites ||
+      contract.profile_normalized_sites > contract.block_literal_sites ||
+      contract.copy_helper_symbolized_sites > contract.block_literal_sites ||
+      contract.dispose_helper_symbolized_sites > contract.block_literal_sites ||
+      contract.contract_violation_sites > contract.block_literal_sites) {
+    return false;
+  }
+  if (contract.block_literal_sites == 0) {
+    return contract.mutable_capture_count_total == 0 &&
+           contract.byref_slot_count_total == 0 &&
+           contract.parameter_entries_total == 0 &&
+           contract.capture_entries_total == 0 &&
+           contract.body_statement_entries_total == 0;
+  }
+  if (contract.mutable_capture_count_total != contract.capture_entries_total ||
+      contract.byref_slot_count_total != contract.capture_entries_total ||
+      contract.copy_helper_required_sites != contract.dispose_helper_required_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 || contract.profile_normalized_sites !=
+                                            contract.block_literal_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3BlockCopyDisposeLoweringReplayKey(
+    const Objc3BlockCopyDisposeLoweringContract &contract) {
+  return std::string("block_literal_sites=") + std::to_string(contract.block_literal_sites) +
+         ";mutable_capture_count_total=" + std::to_string(contract.mutable_capture_count_total) +
+         ";byref_slot_count_total=" + std::to_string(contract.byref_slot_count_total) +
+         ";parameter_entries_total=" + std::to_string(contract.parameter_entries_total) +
+         ";capture_entries_total=" + std::to_string(contract.capture_entries_total) +
+         ";body_statement_entries_total=" + std::to_string(contract.body_statement_entries_total) +
+         ";copy_helper_required_sites=" + std::to_string(contract.copy_helper_required_sites) +
+         ";dispose_helper_required_sites=" + std::to_string(contract.dispose_helper_required_sites) +
+         ";profile_normalized_sites=" + std::to_string(contract.profile_normalized_sites) +
+         ";copy_helper_symbolized_sites=" + std::to_string(contract.copy_helper_symbolized_sites) +
+         ";dispose_helper_symbolized_sites=" + std::to_string(contract.dispose_helper_symbolized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3BlockCopyDisposeLoweringLaneContract;
+}
