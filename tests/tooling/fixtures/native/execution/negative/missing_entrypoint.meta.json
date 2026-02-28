@@ -4,7 +4,8 @@
   "expect_failure": {
     "stage": "link",
     "required_diagnostic_tokens": [
-      "entry point"
+      "link.entrypoint_missing",
+      "link.input_object_basename:module."
     ]
   },
   "execution": {

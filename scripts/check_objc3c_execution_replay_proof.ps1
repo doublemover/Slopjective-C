@@ -95,6 +95,7 @@ function Get-CanonicalSummaryJson {
   )
 
   $canonical = [ordered]@{
+    native_exe = if ($summary.PSObject.Properties.Name -contains "native_exe") { "$($summary.native_exe)" } else { "" }
     runtime_shim = "$($summary.runtime_shim)"
     clang = "$($summary.clang)"
     total = [int]$summary.total

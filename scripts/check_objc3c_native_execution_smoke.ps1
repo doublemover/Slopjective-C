@@ -13,7 +13,10 @@ $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
-$nativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
+$nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
+$nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $configuredClangPath = $env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH
 $clangCommand = if ([string]::IsNullOrWhiteSpace($configuredClangPath)) { "clang" } else { $configuredClangPath }
@@ -189,8 +192,10 @@ function Get-NegativeExpectation {
   }
 
   $requiresRuntimeShim = $false
+  $requiresRuntimeShimExplicit = $false
   if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_runtime_shim") {
     $requiresRuntimeShim = [bool]$spec.execution.requires_runtime_shim
+    $requiresRuntimeShimExplicit = $true
   }
 
   $runtimeDispatchSymbol = "objc3_msgsend_i32"
@@ -204,6 +209,7 @@ function Get-NegativeExpectation {
   return [pscustomobject]@{
     stage = $stage
     requires_runtime_shim = $requiresRuntimeShim
+    requires_runtime_shim_explicit = $requiresRuntimeShimExplicit
     runtime_dispatch_symbol = $runtimeDispatchSymbol
     required_link_tokens = @($requiredTokens)
     expectation_path = $expectPath
@@ -226,6 +232,89 @@ function Get-MissingTokens {
     }
   }
   return @($missing.ToArray())
+}
+
+function Resolve-NativeObjectPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$CompileDir,
+    [Parameter(Mandatory = $true)][string]$FixtureRel
+  )
+
+  $preferredNames = @("module.obj", "module.o")
+  foreach ($name in $preferredNames) {
+    $candidate = Join-Path $CompileDir $name
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+      return $candidate
+    }
+  }
+
+  $moduleNamedCandidates = @(
+    Get-ChildItem -LiteralPath $CompileDir -File -ErrorAction SilentlyContinue |
+      Where-Object { $_.BaseName -eq "module" -and ($_.Extension -eq ".obj" -or $_.Extension -eq ".o") } |
+      Sort-Object -Property Name
+  )
+  if ($moduleNamedCandidates.Count -eq 1) {
+    return $moduleNamedCandidates[0].FullName
+  }
+  if ($moduleNamedCandidates.Count -gt 1) {
+    throw "execution smoke FAIL: ambiguous native object artifacts for $fixtureRel in $CompileDir"
+  }
+
+  $allObjectCandidates = @(
+    Get-ChildItem -LiteralPath $CompileDir -File -ErrorAction SilentlyContinue |
+      Where-Object { $_.Extension -eq ".obj" -or $_.Extension -eq ".o" } |
+      Sort-Object -Property Name
+  )
+  if ($allObjectCandidates.Count -eq 1) {
+    return $allObjectCandidates[0].FullName
+  }
+
+  throw "execution smoke FAIL: missing native object artifact (.obj/.o) for $fixtureRel in $CompileDir"
+}
+
+function Get-CanonicalLinkDiagnosticsText {
+  param(
+    [Parameter(Mandatory = $true)][string]$RawText,
+    [Parameter(Mandatory = $true)][string]$ObjectPath,
+    [Parameter(Mandatory = $true)][string]$RepoRoot
+  )
+
+  $normalizedRaw = "$RawText"
+  $normalizedRaw = $normalizedRaw -replace "`r`n", "`n"
+  $normalizedRaw = $normalizedRaw -replace "`r", "`n"
+
+  $lines = New-Object 'System.Collections.Generic.List[string]'
+  $null = $lines.Add("link.input_object:$(Get-RepoRelativePath -Path $ObjectPath -Root $RepoRoot)")
+  $null = $lines.Add("link.input_object_basename:$([System.IO.Path]::GetFileName($ObjectPath))")
+
+  $unresolvedSymbols = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+  foreach ($match in [regex]::Matches($normalizedRaw, '(?im)unresolved external symbol\s+([A-Za-z_.$?@][A-Za-z0-9_.$?@]*)')) {
+    $null = $unresolvedSymbols.Add($match.Groups[1].Value)
+  }
+  foreach ($match in [regex]::Matches($normalizedRaw, '(?im)undefined (?:reference|symbol)(?:\s+to)?\s+[^A-Za-z_.$?@]*([A-Za-z_.$?@][A-Za-z0-9_.$?@]*)')) {
+    $null = $unresolvedSymbols.Add($match.Groups[1].Value)
+  }
+  foreach ($symbol in @($unresolvedSymbols) | Sort-Object) {
+    $null = $lines.Add("link.unresolved_symbol:$symbol")
+  }
+
+  $entryPointMissing = $false
+  if ($normalizedRaw -match '(?im)\bentry point\b') {
+    $entryPointMissing = $true
+  } elseif ($normalizedRaw -match '(?im)undefined (?:reference|symbol)(?:\s+to)?\s+[^A-Za-z_.$?@]*main\b') {
+    $entryPointMissing = $true
+  }
+  if ($entryPointMissing) {
+    $null = $lines.Add("link.entrypoint_missing")
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($normalizedRaw)) {
+    $null = $lines.Add("link.raw.begin")
+    $null = $lines.Add($normalizedRaw.Trim())
+    $null = $lines.Add("link.raw.end")
+  }
+
+  return ($lines -join "`n")
 }
 
 function Assert-RuntimeDispatchParityFromLl {
@@ -260,7 +349,7 @@ function Assert-RuntimeDispatchParityFromLl {
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
-  if (!(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
+  if (-not $nativeExeExplicit -and !(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
     & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
     if ($LASTEXITCODE -ne 0) {
       throw "execution smoke FAIL: native compiler build failed with exit $LASTEXITCODE"
@@ -313,16 +402,13 @@ try {
         -RuntimeDispatchSymbol $expectation.runtime_dispatch_symbol
     }
 
-    $objPath = Join-Path $compileDir "module.obj"
-    if (!(Test-Path -LiteralPath $objPath -PathType Leaf)) {
-      throw "execution smoke FAIL: missing module.obj for $fixtureRel"
-    }
+    $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
 
     $linkArgs = @($objPath)
     if ($expectation.requires_runtime_shim) {
       $linkArgs += $runtimeShimSource
     }
-    $linkArgs += @("-o", $exePath)
+    $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
     $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
     if ($linkExit -ne 0) {
       throw "execution smoke FAIL: link failed for $fixtureRel (exit=$linkExit)"
@@ -411,12 +497,17 @@ try {
       throw "execution smoke FAIL: compile failed for negative fixture $fixtureRel (exit=$compileExit)"
     }
 
-    $objPath = Join-Path $compileDir "module.obj"
-    if (!(Test-Path -LiteralPath $objPath -PathType Leaf)) {
-      throw "execution smoke FAIL: missing module.obj for negative fixture $fixtureRel"
+    if ($spec.requires_runtime_shim_explicit) {
+      $llPath = Join-Path $compileDir "module.ll"
+      Assert-RuntimeDispatchParityFromLl `
+        -LlPath $llPath `
+        -FixtureRel $fixtureRel `
+        -RequiresRuntimeShim $spec.requires_runtime_shim `
+        -RuntimeDispatchSymbol $spec.runtime_dispatch_symbol
     }
 
-    $linkArgs = @($objPath, "-o", $exePath)
+    $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
+    $linkArgs = @($objPath, "-o", $exePath, "-fno-color-diagnostics")
     if ($spec.stage -eq "link") {
       $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
       if ($linkExit -eq 0) {
@@ -424,9 +515,13 @@ try {
       }
 
       $linkText = if (Test-Path -LiteralPath $linkLog -PathType Leaf) { Get-Content -LiteralPath $linkLog -Raw } else { "" }
-      $missingTokens = @(Get-MissingTokens -Text $linkText -Tokens $spec.required_link_tokens)
+      $linkDiagnosticsPath = Join-Path $caseDir "link.diagnostics.txt"
+      $canonicalLinkText = Get-CanonicalLinkDiagnosticsText -RawText $linkText -ObjectPath $objPath -RepoRoot $repoRoot
+      Set-Content -LiteralPath $linkDiagnosticsPath -Value $canonicalLinkText -Encoding utf8
+      $missingTokens = @(Get-MissingTokens -Text $canonicalLinkText -Tokens $spec.required_link_tokens)
       if ($missingTokens.Count -gt 0) {
-        throw "execution smoke FAIL: missing expected link diagnostics for $fixtureRel (missing=$($missingTokens -join '|'))"
+        $linkDiagnosticsRel = Get-RepoRelativePath -Path $linkDiagnosticsPath -Root $repoRoot
+        throw "execution smoke FAIL: missing expected link diagnostics for $fixtureRel (missing=$($missingTokens -join '|') diagnostics=$linkDiagnosticsRel)"
       }
 
       $results += [pscustomobject]@{
@@ -441,6 +536,7 @@ try {
         run_exit = -1
         required_link_tokens = $spec.required_link_tokens
         missing_link_tokens = @()
+        link_diagnostics = Get-RepoRelativePath -Path $linkDiagnosticsPath -Root $repoRoot
         passed = $true
         out_dir = Get-RepoRelativePath -Path $caseDir -Root $repoRoot
       }
@@ -450,7 +546,7 @@ try {
 
     if ($spec.stage -eq "run") {
       if ($spec.requires_runtime_shim) {
-        $linkArgs = @($objPath, $runtimeShimSource, "-o", $exePath)
+        $linkArgs = @($objPath, $runtimeShimSource, "-o", $exePath, "-fno-color-diagnostics")
       }
       $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
       if ($linkExit -ne 0) {
@@ -494,6 +590,7 @@ try {
   $failedCount = $total - $passedCount
   $summary = [ordered]@{
     run_dir = Get-RepoRelativePath -Path $runDir -Root $repoRoot
+    native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_shim = Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot
     clang = $clangCommand
     total = $total

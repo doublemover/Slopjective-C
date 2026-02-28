@@ -4,7 +4,8 @@
   "expect_failure": {
     "stage": "link",
     "required_diagnostic_tokens": [
-      "external_add"
+      "link.unresolved_symbol:external_add",
+      "link.input_object_basename:module."
     ]
   },
   "execution": {

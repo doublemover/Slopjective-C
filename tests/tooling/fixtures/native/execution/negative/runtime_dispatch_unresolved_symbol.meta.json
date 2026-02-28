@@ -4,7 +4,8 @@
   "expect_failure": {
     "stage": "link",
     "required_diagnostic_tokens": [
-      "objc3_msgsend_i32"
+      "link.unresolved_symbol:objc3_msgsend_i32",
+      "link.input_object_basename:module."
     ]
   },
   "execution": {
