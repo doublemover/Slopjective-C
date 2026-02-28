@@ -45,6 +45,9 @@ Minimum scope:
 - `M178-D001.json`: M178 Lane D public/private API partition lowering replay
   fixture covering deterministic replay-key/profile/metadata parity anchors and
   integration coverage for issue `#4482`.
+- `M179-D001.json`: M179 Lane D incremental module cache/invalidation lowering
+  replay fixture covering deterministic replay-key/profile/metadata parity
+  anchors and integration coverage for issue `#4487`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

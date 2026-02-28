@@ -1,0 +1,4 @@
+; incremental_module_cache_invalidation_lowering = incremental_module_cache_invalidation_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;cache_invalidation_candidate_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m179-incremental-module-cache-invalidation-lowering-v1
+; frontend_objc_incremental_module_cache_invalidation_lowering_profile = incremental_module_cache_invalidation_sites=4, namespace_segment_sites=3, import_edge_candidate_sites=4, object_pointer_type_sites=4, pointer_declarator_sites=2, normalized_sites=4, cache_invalidation_candidate_sites=0, contract_violation_sites=0, deterministic_incremental_module_cache_invalidation_lowering_handoff=true
+!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}
+!32 = !{i64 4, i64 3, i64 4, i64 4, i64 2, i64 4, i64 0, i64 0, i1 1}

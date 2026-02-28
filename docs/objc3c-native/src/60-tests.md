@@ -2356,6 +2356,42 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
 ```
 
+## M179 validation/conformance/perf incremental module cache and invalidation runbook
+
+Deterministic M179 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m179_validation_incremental_module_cache_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_incremental_module_cache_invalidation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_incremental_module_cache_invalidation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface.deterministic_handoff`
+  - `lowering_incremental_module_cache_invalidation.replay_key`
+- `replay_run_1/module.ll`
+  - `incremental_module_cache_invalidation_lowering`
+  - `frontend_objc_incremental_module_cache_invalidation_lowering_profile`
+  - `!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+M179-C source emission now includes dedicated IR markers; fixture IR markers above are pinned replay anchors for deterministic validation/conformance coverage.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m179_validation_incremental_module_cache_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

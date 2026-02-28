@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_incremental_module_cache_invalidation_lowering_handoff": true,
+        "incremental_module_cache_invalidation_lowering_sites": 4,
+        "incremental_module_cache_invalidation_lowering_namespace_segment_sites": 3,
+        "incremental_module_cache_invalidation_lowering_import_edge_candidate_sites": 4,
+        "incremental_module_cache_invalidation_lowering_object_pointer_type_sites": 4,
+        "incremental_module_cache_invalidation_lowering_pointer_declarator_sites": 2,
+        "incremental_module_cache_invalidation_lowering_normalized_sites": 4,
+        "incremental_module_cache_invalidation_lowering_cache_invalidation_candidate_sites": 0,
+        "incremental_module_cache_invalidation_lowering_contract_violation_sites": 0,
+        "lowering_incremental_module_cache_invalidation_replay_key": "incremental_module_cache_invalidation_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;cache_invalidation_candidate_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m179-incremental-module-cache-invalidation-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_incremental_module_cache_invalidation_lowering_surface": {
+          "incremental_module_cache_invalidation_sites": 4,
+          "namespace_segment_sites": 3,
+          "import_edge_candidate_sites": 4,
+          "object_pointer_type_sites": 4,
+          "pointer_declarator_sites": 2,
+          "normalized_sites": 4,
+          "cache_invalidation_candidate_sites": 0,
+          "contract_violation_sites": 0,
+          "replay_key": "incremental_module_cache_invalidation_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;cache_invalidation_candidate_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m179-incremental-module-cache-invalidation-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_incremental_module_cache_invalidation": {
+    "replay_key": "incremental_module_cache_invalidation_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;cache_invalidation_candidate_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m179-incremental-module-cache-invalidation-lowering-v1",
+    "lane_contract": "m179-incremental-module-cache-invalidation-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
