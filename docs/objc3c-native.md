@@ -405,6 +405,22 @@ Frontend performance-budget and regression gating requires deterministic lexer/p
   3. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
 
+## M209 frontend profile-guided optimization hooks
+
+Frontend profile-guided optimization (PGO) hook readiness uses deterministic lexer/parser profile surfaces that can seed cross-run optimization decisions.
+
+- Required frontend PGO hook signals:
+  - lexer hint counters remain deterministic: `result.migration_hints.legacy_yes_count`, `legacy_no_count`, `legacy_null_count`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - parser diagnostics handoff remains `result.stage_diagnostics.parser = std::move(parse_result.diagnostics);`.
+  - pragma contract counters remain exported: `directive_count`, `duplicate`, `non_leading`.
+  - manifest frontend profile surface remains emitted with `"migration_hints":{"legacy_yes":...,"legacy_no":...,"legacy_null":...,"legacy_total":...}`.
+- Required frontend PGO hook commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2170,6 +2186,33 @@ Recommended M210 sema/type regression-gate validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
 
+## M209 sema/type profile-guided optimization hooks
+
+For deterministic sema/type profile-guided optimization (PGO) hooks, capture replay-stable packet evidence from sema pass diagnostics emission, type metadata handoff, and semantic-surface counters before changing optimization heuristics.
+
+PGO hook packet map:
+
+- `pgo hook packet 1.1 deterministic sema diagnostics emission profile` -> `m209_sema_diagnostics_emission_pgo_hook_packet`
+- `pgo hook packet 1.2 deterministic type/symbol surface profile` -> `m209_type_symbol_surface_pgo_hook_packet`
+
+### 1.1 Deterministic sema diagnostics emission profile hook packet
+
+- Source hook anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest PGO hook anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, `diagnostics_emitted_by_validate_pure_contract`, and `diagnostics_monotonic`.
+- Deterministic sema PGO hook packet key: `m209_sema_diagnostics_emission_pgo_hook_packet`.
+
+### 1.2 Deterministic type/symbol surface profile hook packet
+
+- Source hook anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, and `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`.
+- Manifest type-metadata hook anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface hook anchors from `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic type/symbol PGO hook packet key: `m209_type_symbol_surface_pgo_hook_packet`.
+
+Recommended M209 sema/type PGO regression gate command:
+
+- `python -m pytest tests/tooling/test_objc3c_m209_sema_pgo_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2502,6 +2545,56 @@ LSP semantic profile capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
+
+## M209 lowering/runtime profile-guided optimization hooks
+
+Lowering/runtime LLVM profile-guided optimization (PGO) hook evidence is captured as deterministic packet artifacts rooted under `tmp/` so profile surfaces remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.manifest.json`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/pgo-hook-source-anchors.txt`
+- `PGO hook ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `!0 = !{i32 <language_version>, !"compatibility_mode", i1 <migration_assist>, i64 <legacy_yes>, i64 <legacy_no>, i64 <legacy_null>, i64 <legacy_total>}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `source anchors`:
+  - `Objc3IRFrontendMetadata ir_frontend_metadata;`
+  - `ir_frontend_metadata.language_version = options.language_version;`
+  - `ir_frontend_metadata.compatibility_mode = CompatibilityModeName(options.compatibility_mode);`
+  - `ir_frontend_metadata.migration_assist = options.migration_assist;`
+  - `ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;`
+  - `ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;`
+  - `ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)`
+  - `out << "!objc3.frontend = !{!0}\n";`
+  - `out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning identical source + lowering/runtime options preserves byte-identical `module.ll` and `module.manifest.json`.
+  - PGO hook ABI/IR anchors and source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, or source anchor is missing.
+
+PGO hook capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|!0 = !{|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.ll tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.manifest.json > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/abi-ir-anchors.txt`
+3. `rg -n "Objc3IRFrontendMetadata ir_frontend_metadata;|ir_frontend_metadata\\.language_version = options\\.language_version;|ir_frontend_metadata\\.compatibility_mode = CompatibilityModeName\\(options\\.compatibility_mode\\);|ir_frontend_metadata\\.migration_assist = options\\.migration_assist;|ir_frontend_metadata\\.migration_legacy_yes = pipeline_result\\.migration_hints\\.legacy_yes_count;|ir_frontend_metadata\\.migration_legacy_no = pipeline_result\\.migration_hints\\.legacy_no_count;|ir_frontend_metadata\\.migration_legacy_null = pipeline_result\\.migration_hints\\.legacy_null_count;|Objc3LoweringIRBoundaryReplayKey\\(|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|runtime_dispatch_arg_slots=|selector_global_ordering=lexicographic" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/pgo-hook-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m209_lowering_pgo_contract.py -q`
 
 ## M210 lowering/runtime performance budgets and regression gates
 
@@ -4300,6 +4393,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m210_validation_perf_regression_contract.py -q
 ```
 
+## M209 validation/perf profile-guided optimization runbook
+
+Profile-guided optimization (PGO) validation runbook verifies deterministic profile evidence surfaces before enabling optimization-driven policy changes.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+PGO evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m209_validation_pgo_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4637,6 +4775,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain regression-gate anchors.
+
+## M209 integration profile-guided optimization hooks
+
+- Gate intent: enforce deterministic profile-guided optimization hook evidence across all lanes.
+### 1.1 PGO integration chain
+- Deterministic PGO hook gate:
+  - `npm run check:objc3c:m209-pgo-hooks`
+- Chain order:
+  - replays `check:objc3c:m210-performance-regression`.
+  - enforces all M209 lane contracts:
+    `tests/tooling/test_objc3c_m209_frontend_pgo_contract.py`,
+    `tests/tooling/test_objc3c_m209_sema_pgo_contract.py`,
+    `tests/tooling/test_objc3c_m209_lowering_pgo_contract.py`,
+    `tests/tooling/test_objc3c_m209_validation_pgo_contract.py`,
+    `tests/tooling/test_objc3c_m209_integration_pgo_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through PGO-hook validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain PGO anchors.
 
 ## Current call contract
 
