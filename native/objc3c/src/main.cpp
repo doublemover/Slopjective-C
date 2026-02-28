@@ -23,6 +23,7 @@
 #include "io/objc3_process.h"
 #include "lex/objc3_lexer.h"
 #include "lower/objc3_lowering_contract.h"
+#include "pipeline/objc3_frontend_types.h"
 #include "token/objc3_token.h"
 
 namespace fs = std::filesystem;
@@ -2323,15 +2324,6 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
   return true;
 }
 
-struct FunctionInfo {
-  std::size_t arity = 0;
-  std::vector<ValueType> param_types;
-  std::vector<bool> param_has_invalid_type_suffix;
-  ValueType return_type = ValueType::I32;
-  bool has_definition = false;
-  bool is_pure_annotation = false;
-};
-
 static ValueType ScopeLookupType(const std::vector<std::unordered_map<std::string, ValueType>> &scopes,
                                  const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
@@ -3086,28 +3078,6 @@ static void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
                                        std::to_string(cause.detail_column) + ")"));
   }
 }
-
-struct Objc3FrontendOptions {
-  Objc3LoweringContract lowering;
-};
-
-struct Objc3FrontendStageDiagnostics {
-  std::vector<std::string> lexer;
-  std::vector<std::string> parser;
-  std::vector<std::string> semantic;
-};
-
-struct Objc3SemanticIntegrationSurface {
-  std::unordered_map<std::string, ValueType> globals;
-  std::unordered_map<std::string, FunctionInfo> functions;
-  bool built = false;
-};
-
-struct Objc3FrontendPipelineResult {
-  Objc3Program program;
-  Objc3FrontendStageDiagnostics stage_diagnostics;
-  Objc3SemanticIntegrationSurface integration_surface;
-};
 
 static bool IsMessageI32CompatibleType(ValueType type) {
   return type == ValueType::I32 || type == ValueType::Bool;
