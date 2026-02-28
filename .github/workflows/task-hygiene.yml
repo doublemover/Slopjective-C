@@ -113,6 +113,8 @@ jobs:
         run: npm run check:objc3c:m207-dispatch-optimizations
       - name: 31 Run M206 canonical-optimization stage-1 integration gate
         run: npm run check:objc3c:m206-canonical-optimization-stage1
+      - name: 32 Run M205 macro-security integration gate
+        run: npm run check:objc3c:m205-macro-security
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

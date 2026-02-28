@@ -395,6 +395,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain canonical-optimization anchors.
 
+## M205 integration macro security policy enforcement
+
+- Gate intent: enforce deterministic macro-security policy evidence across all lanes.
+### 1.1 Macro-security integration chain
+- Deterministic macro-security gate:
+  - `npm run check:objc3c:m205-macro-security`
+- Chain order:
+  - replays `check:objc3c:m206-canonical-optimization-stage1`.
+  - enforces all M205 lane contracts:
+    `tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_sema_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_lowering_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_validation_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_integration_macro_security_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-security validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-security anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
