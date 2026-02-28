@@ -224,6 +224,21 @@ Recommended seeding commands (frontend lane):
 2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
 3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
 
+## M221 frontend GA blocker burn-down packet
+
+GA blocker closure for frontend/parser requires deterministic parser/AST boundary evidence and fail-closed pragma diagnostics.
+
+- Required blocker-closure signals:
+  - prelude pragma diagnostics remain stable for `O3L005`/`O3L006`/`O3L007`/`O3L008`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - pipeline manifest continues exporting `frontend.language_version_pragma_contract`.
+  - token-to-sema bridge metadata remains present through `Objc3SemaTokenMetadata`.
+- Required proof commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1653,6 +1668,29 @@ Recommended seeding commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
 
+## M221 sema/type GA blocker burn-down profile
+
+To burn down sema/type GA blockers with deterministic, replay-stable evidence, capture two explicit packets before closing blocker state.
+
+### 1.1 Deterministic semantic diagnostics blocker packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest blocker counters under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+
+### 1.2 Deterministic type-metadata parity blocker packet
+
+- Sema handoff/parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface blocker sizing anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+
+Recommended burn-down commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -1822,6 +1860,35 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M221 lowering/runtime GA blocker burn-down profile
+
+GA-blocker burn-down evidence for lowering/runtime should be captured as a deterministic packet rooted under `tmp/`:
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.manifest.json`
+  - `tmp/reports/objc3c-native/m221/lowering-ga-blocker-burndown/replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in triage packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors to include in packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `GA blocker closure signal`:
+  - identical source + lowering options produce byte-identical packet artifacts and stable replay markers.
+
+Burn-down capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.ll > tmp/reports/objc3c-native/m221/lowering-ga-blocker-burndown/replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.manifest.json >> tmp/reports/objc3c-native/m221/lowering-ga-blocker-burndown/replay-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m221_lowering_ga_blocker_contract.py -q`
 
 ## M224 lowering/LLVM IR/runtime ABI release readiness
 
@@ -2694,6 +2761,50 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py -q
 ```
 
+## M221 validation/perf GA blocker burn-down runbook
+
+From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+GA blocker evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m221_validation_ga_blocker_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -2791,6 +2902,26 @@ int objc3c_frontend_startup_check(void) {
     `tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py`.
+
+## M221 integration GA blocker burn-down
+
+- Gate intent: fail closed on unresolved GA blockers by chaining release-readiness and M221 lane contracts.
+### 1.1 GA blocker integration chain
+- Deterministic blocker gate:
+  - `npm run check:objc3c:m221-ga-blocker-burndown`
+- Chain order:
+  - replays `check:objc3c:m225-roadmap-seeding`.
+  - enforces all M221 lane contract surfaces:
+    `tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_lowering_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_validation_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_integration_ga_blocker_contract.py`.
+### 1.2 ABI/version continuity constraints
+- Keep startup/version invariants unchanged while burning down GA blockers:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain release anchors.
 
 ## Current call contract
 
