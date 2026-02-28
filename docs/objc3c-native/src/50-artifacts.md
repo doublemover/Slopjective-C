@@ -51,6 +51,51 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M217 lowering/runtime differential parity profile
+
+Lowering/runtime differential parity is captured as a deterministic packet versus baseline toolchains under `tmp/`.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/`
+- `packet toolchain roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/`
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang/`
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct/`
+- `packet artifacts` (required in each toolchain root):
+  - `module.ll`
+  - `module.manifest.json`
+- `diff marker reports`:
+  - `tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/ir-diff-markers.txt`
+  - `tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/manifest-diff-markers.txt`
+- `ABI/IR anchors` (persist verbatim in native and baseline packets):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `differential source markers` (source anchors to include in parity packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `diff markers` (required deterministic parity rows):
+  - `@@ anchor:lowering_ir_boundary`
+  - `@@ anchor:frontend_profile`
+  - `@@ anchor:objc3.frontend`
+  - `@@ anchor:runtime_dispatch_declare`
+  - `@@ anchor:manifest.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical packet artifacts inside each toolchain root.
+  - native and baseline toolchains may differ in non-anchor payloads, but ABI/IR anchors and diff marker rows must remain stable across reruns.
+  - closure remains open if any required toolchain packet artifact, ABI/IR anchor, differential source marker, or diff marker report is missing.
+
+Differential parity capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang --emit-prefix module --cli-ir-object-backend clang`
+3. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct --emit-prefix module --cli-ir-object-backend llvm-direct`
+4. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.ll > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/ir-diff-markers.txt`
+5. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.manifest.json > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/manifest-diff-markers.txt`
+6. `python -m pytest tests/tooling/test_objc3c_m217_lowering_differential_contract.py -q`
+
 ## M218 lowering/runtime RC provenance profile
 
 Release-candidate lowering/runtime provenance is captured as a deterministic packet rooted under `tmp/`.
