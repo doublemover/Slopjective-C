@@ -244,6 +244,58 @@ static std::string BuildNilReceiverFoldingSymbol(bool nil_receiver_foldable,
   return out.str();
 }
 
+static bool IsSuperDispatchReceiver(const Expr &receiver) {
+  return receiver.kind == Expr::Kind::Identifier && receiver.ident == "super";
+}
+
+static std::string ClassifyMethodFamilyFromSelector(const std::string &selector) {
+  if (selector.rfind("mutableCopy", 0) == 0) {
+    return "mutableCopy";
+  }
+  if (selector.rfind("copy", 0) == 0) {
+    return "copy";
+  }
+  if (selector.rfind("init", 0) == 0) {
+    return "init";
+  }
+  if (selector.rfind("new", 0) == 0) {
+    return "new";
+  }
+  return "none";
+}
+
+static std::string BuildSuperDispatchSymbol(bool super_dispatch_enabled,
+                                            bool super_dispatch_requires_class_context,
+                                            Expr::MessageSendForm form) {
+  std::ostringstream out;
+  out << "super-dispatch:enabled=" << (super_dispatch_enabled ? "true" : "false")
+      << ";class-context=" << (super_dispatch_requires_class_context ? "required" : "not-required")
+      << ";form=";
+  switch (form) {
+  case Expr::MessageSendForm::Unary:
+    out << "unary";
+    break;
+  case Expr::MessageSendForm::Keyword:
+    out << "keyword";
+    break;
+  case Expr::MessageSendForm::None:
+  default:
+    out << "none";
+    break;
+  }
+  return out.str();
+}
+
+static std::string BuildMethodFamilySemanticsSymbol(const std::string &method_family_name,
+                                                    bool returns_retained_result,
+                                                    bool returns_related_result) {
+  std::ostringstream out;
+  out << "method-family:name=" << method_family_name
+      << ";returns-retained=" << (returns_retained_result ? "true" : "false")
+      << ";returns-related=" << (returns_related_result ? "true" : "false");
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3054,6 +3106,21 @@ class Objc3Parser {
     message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(
         message->nil_receiver_foldable, message->nil_receiver_requires_runtime_dispatch, message->message_send_form);
     message->nil_receiver_semantics_is_normalized = true;
+    message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
+    message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
+    message->super_dispatch_symbol = BuildSuperDispatchSymbol(
+        message->super_dispatch_enabled, message->super_dispatch_requires_class_context, message->message_send_form);
+    message->super_dispatch_semantics_is_normalized = true;
+    message->method_family_name = ClassifyMethodFamilyFromSelector(message->selector);
+    message->method_family_returns_retained_result = message->method_family_name == "init" ||
+                                                     message->method_family_name == "copy" ||
+                                                     message->method_family_name == "mutableCopy" ||
+                                                     message->method_family_name == "new";
+    message->method_family_returns_related_result = message->method_family_name == "init";
+    message->method_family_semantics_symbol = BuildMethodFamilySemanticsSymbol(
+        message->method_family_name, message->method_family_returns_retained_result,
+        message->method_family_returns_related_result);
+    message->method_family_semantics_is_normalized = true;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();

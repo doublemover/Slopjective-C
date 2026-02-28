@@ -50,6 +50,15 @@ struct Expr {
   bool nil_receiver_requires_runtime_dispatch = true;
   std::string nil_receiver_folding_symbol;
   bool nil_receiver_semantics_is_normalized = false;
+  bool super_dispatch_enabled = false;
+  bool super_dispatch_requires_class_context = false;
+  std::string super_dispatch_symbol;
+  bool super_dispatch_semantics_is_normalized = false;
+  std::string method_family_name;
+  bool method_family_returns_retained_result = false;
+  bool method_family_returns_related_result = false;
+  std::string method_family_semantics_symbol;
+  bool method_family_semantics_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

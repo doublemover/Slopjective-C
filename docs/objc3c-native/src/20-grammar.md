@@ -473,6 +473,50 @@ Recommended M158 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m158_frontend_nil_receiver_semantics_foldability_contract.py -q`
 
+## M159 frontend super-dispatch and method-family parser/AST surface
+
+Frontend parser/AST now emits deterministic super-dispatch and method-family packets for
+message-send expressions.
+
+M159 parser/AST surface details:
+
+- super-dispatch helper anchors:
+  - `IsSuperDispatchReceiver(...)`
+  - `BuildSuperDispatchSymbol(...)`
+- method-family helper anchors:
+  - `ClassifyMethodFamilyFromSelector(...)`
+  - `BuildMethodFamilySemanticsSymbol(...)`
+- parser assignment anchors:
+  - `message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);`
+  - `message->super_dispatch_requires_class_context = message->super_dispatch_enabled;`
+  - `message->super_dispatch_symbol = BuildSuperDispatchSymbol(...)`
+  - `message->super_dispatch_semantics_is_normalized = true;`
+  - `message->method_family_name = ClassifyMethodFamilyFromSelector(message->selector);`
+  - `message->method_family_returns_retained_result = ...`
+  - `message->method_family_returns_related_result = message->method_family_name == "init";`
+  - `message->method_family_semantics_symbol = BuildMethodFamilySemanticsSymbol(...)`
+  - `message->method_family_semantics_is_normalized = true;`
+- AST super-dispatch carriers:
+  - `super_dispatch_enabled`
+  - `super_dispatch_requires_class_context`
+  - `super_dispatch_symbol`
+  - `super_dispatch_semantics_is_normalized`
+- AST method-family carriers:
+  - `method_family_name`
+  - `method_family_returns_retained_result`
+  - `method_family_returns_related_result`
+  - `method_family_semantics_symbol`
+  - `method_family_semantics_is_normalized`
+
+Deterministic grammar intent:
+
+- super dispatch detection is derived from receiver spelling (`Identifier == "super"`).
+- method-family classification is selector-prefix normalized (`init`, `copy`, `mutableCopy`, `new`, `none`).
+
+Recommended M159 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_frontend_super_dispatch_method_family_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
