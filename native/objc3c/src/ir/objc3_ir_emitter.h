@@ -202,6 +202,17 @@ struct Objc3IRFrontendMetadata {
   std::size_t block_copy_dispose_lowering_dispose_helper_symbolized_sites = 0;
   std::size_t block_copy_dispose_lowering_contract_violation_sites = 0;
   bool deterministic_block_copy_dispose_lowering_handoff = false;
+  std::string lowering_block_determinism_perf_baseline_replay_key;
+  std::size_t block_determinism_perf_baseline_lowering_block_literal_sites = 0;
+  std::size_t block_determinism_perf_baseline_lowering_baseline_weight_total = 0;
+  std::size_t block_determinism_perf_baseline_lowering_parameter_entries_total = 0;
+  std::size_t block_determinism_perf_baseline_lowering_capture_entries_total = 0;
+  std::size_t block_determinism_perf_baseline_lowering_body_statement_entries_total = 0;
+  std::size_t block_determinism_perf_baseline_lowering_deterministic_capture_sites = 0;
+  std::size_t block_determinism_perf_baseline_lowering_heavy_tier_sites = 0;
+  std::size_t block_determinism_perf_baseline_lowering_normalized_profile_sites = 0;
+  std::size_t block_determinism_perf_baseline_lowering_contract_violation_sites = 0;
+  bool deterministic_block_determinism_perf_baseline_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

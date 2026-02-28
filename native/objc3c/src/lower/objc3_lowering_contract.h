@@ -50,6 +50,8 @@ inline constexpr const char *kObjc3BlockStorageEscapeLoweringLaneContract =
     "m168-block-storage-escape-lowering-v1";
 inline constexpr const char *kObjc3BlockCopyDisposeLoweringLaneContract =
     "m169-block-copy-dispose-lowering-v1";
+inline constexpr const char *kObjc3BlockDeterminismPerfBaselineLoweringLaneContract =
+    "m170-block-determinism-perf-baseline-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -270,6 +272,19 @@ struct Objc3BlockCopyDisposeLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3BlockDeterminismPerfBaselineLoweringContract {
+  std::size_t block_literal_sites = 0;
+  std::size_t baseline_weight_total = 0;
+  std::size_t parameter_entries_total = 0;
+  std::size_t capture_entries_total = 0;
+  std::size_t body_statement_entries_total = 0;
+  std::size_t deterministic_capture_sites = 0;
+  std::size_t heavy_tier_sites = 0;
+  std::size_t normalized_profile_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -355,3 +370,7 @@ bool IsValidObjc3BlockCopyDisposeLoweringContract(
     const Objc3BlockCopyDisposeLoweringContract &contract);
 std::string Objc3BlockCopyDisposeLoweringReplayKey(
     const Objc3BlockCopyDisposeLoweringContract &contract);
+bool IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(
+    const Objc3BlockDeterminismPerfBaselineLoweringContract &contract);
+std::string Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
+    const Objc3BlockDeterminismPerfBaselineLoweringContract &contract);

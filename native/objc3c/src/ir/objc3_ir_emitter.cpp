@@ -158,6 +158,10 @@ class Objc3IREmitter {
       out << "; block_copy_dispose_lowering = "
           << frontend_metadata_.lowering_block_copy_dispose_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_block_determinism_perf_baseline_replay_key.empty()) {
+      out << "; block_determinism_perf_baseline_lowering = "
+          << frontend_metadata_.lowering_block_determinism_perf_baseline_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -471,6 +475,27 @@ class Objc3IREmitter {
         << ", deterministic_block_copy_dispose_lowering_handoff="
         << (frontend_metadata_.deterministic_block_copy_dispose_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_block_determinism_perf_baseline_lowering_profile = block_literal_sites="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_block_literal_sites
+        << ", baseline_weight_total="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_baseline_weight_total
+        << ", parameter_entries_total="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_parameter_entries_total
+        << ", capture_entries_total="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_capture_entries_total
+        << ", body_statement_entries_total="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_body_statement_entries_total
+        << ", deterministic_capture_sites="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_deterministic_capture_sites
+        << ", heavy_tier_sites="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_heavy_tier_sites
+        << ", normalized_profile_sites="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_normalized_profile_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.block_determinism_perf_baseline_lowering_contract_violation_sites
+        << ", deterministic_block_determinism_perf_baseline_lowering_handoff="
+        << (frontend_metadata_.deterministic_block_determinism_perf_baseline_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -656,6 +681,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}\n";
     out << "!objc3.objc_block_storage_escape_lowering = !{!21}\n";
     out << "!objc3.objc_block_copy_dispose_lowering = !{!22}\n";
+    out << "!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1055,6 +1081,36 @@ class Objc3IREmitter {
                frontend_metadata_.block_copy_dispose_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_block_copy_dispose_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!23 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_block_literal_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_baseline_weight_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_parameter_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_capture_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_body_statement_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_deterministic_capture_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_heavy_tier_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_normalized_profile_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_determinism_perf_baseline_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_block_determinism_perf_baseline_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

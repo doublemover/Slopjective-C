@@ -3385,6 +3385,32 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q`
 
+## Block determinism/perf baseline lowering artifact contract (M170-C001)
+
+M170-C lowers sema-authored block determinism/perf baseline summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M170-C lowering contract anchors:
+
+- `kObjc3BlockDeterminismPerfBaselineLoweringLaneContract`
+- `Objc3BlockDeterminismPerfBaselineLoweringContract`
+- `IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(...)`
+- `Objc3BlockDeterminismPerfBaselineLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_determinism_perf_baseline_handoff`
+- `frontend.pipeline.sema_pass_manager.block_determinism_perf_baseline_sites_total`
+- `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface`
+- `lowering_block_determinism_perf_baseline.replay_key`
+- `; block_determinism_perf_baseline_lowering = block_literal_sites=<N>...`
+- `; frontend_objc_block_determinism_perf_baseline_lowering_profile = block_literal_sites=<N>...`
+- `!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}`
+
+Recommended M170 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
