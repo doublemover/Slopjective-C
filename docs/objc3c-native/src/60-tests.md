@@ -292,6 +292,29 @@ Fail-closed operator guidance:
 2. inspect failing summary JSON first, then per-case logs under the same run root.
 3. do not interpret replay/perf regressions without comparing both run1/run2 evidence packets.
 
+## M224 validation/conformance/perf release readiness
+
+For M224 release-readiness operators, run this fail-closed order from repo root:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Fail-closed release criteria:
+
+1. any non-zero exit code in sequence is a hard stop; do not execute later commands.
+2. `test:objc3c:m145-direct-llvm-matrix:lane-d` must execute both `scripts/check_conformance_suite.ps1` and `npm run test:objc3c:perf-budget`; treat either missing as release-blocking.
+3. release-ready evidence requires both `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json` and `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`; missing summary evidence is a failure.
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m224_validation_release_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
