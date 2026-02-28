@@ -485,6 +485,22 @@ Frontend macro-security policy enforcement relies on deterministic prelude-direc
   3. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
 
+## M204 frontend macro diagnostics and provenance
+
+Frontend macro diagnostics/provenance requires deterministic directive source-location capture and stable diagnostic formatting for replay.
+
+- Required frontend macro-diagnostics signals:
+  - deterministic diagnostic formatter remains `MakeDiag(...)` with `error:<line>:<column>: <message> [<code>]`.
+  - directive provenance capture remains `first_line`, `first_column`, `last_line`, and `last_column`.
+  - pipeline transport preserves directive provenance through `result.language_version_pragma_contract.*`.
+  - manifest provenance packet remains `frontend.language_version_pragma_contract`.
+  - fail-closed directive diagnostics remain `O3L005`, `O3L006`, `O3L007`, and `O3L008`.
+- Required frontend macro-diagnostics commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2391,6 +2407,35 @@ Recommended M205 sema/type macro-security validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m205_sema_macro_security_contract.py -q`
 
+## M204 sema/type macro diagnostics and provenance
+
+For deterministic sema/type macro diagnostics and provenance, capture replay-stable packet evidence from macro-hint intake, canonical sema diagnostics emission, and manifest provenance surfaces.
+
+Macro diagnostics/provenance packet map:
+
+- `macro diagnostics packet 1.1 deterministic canonical sema diagnostics hooks` -> `m204_macro_diagnostics_packet`
+- `macro provenance packet 1.2 deterministic sema/type provenance hooks` -> `m204_macro_provenance_packet`
+
+### 1.1 Deterministic canonical sema diagnostics packet
+
+- Source macro-diagnostics anchors: `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`, `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, `"O3S216"`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source macro-hint intake anchors: `if (options_.migration_assist) {`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Source deterministic sema diagnostics anchors: `result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;` and `result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;`.
+- Deterministic canonical sema diagnostics packet key: `m204_macro_diagnostics_packet`.
+
+### 1.2 Deterministic sema/type provenance packet
+
+- Source sema-input provenance anchors: `bool migration_assist = false;`, `Objc3SemaMigrationHints migration_hints;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source type/provenance determinism anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Manifest macro provenance anchors under `frontend`: `migration_assist`, `migration_hints`, `legacy_yes`, `legacy_no`, `legacy_null`, and `legacy_total`.
+- Manifest sema/type provenance anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Deterministic sema/type provenance packet key: `m204_macro_provenance_packet`.
+
+Recommended M204 sema/type macro diagnostics/provenance validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2797,6 +2842,90 @@ Canonical optimization stage-1 capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.ll tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.manifest.json > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/abi-ir-anchors.txt`
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
+
+## M204 lowering/runtime macro diagnostics and provenance
+
+Lowering/runtime macro diagnostics and provenance evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma diagnostics metadata and lowering replay boundaries remain auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `macro diagnostics/provenance markers` (required in source-anchor extracts):
+  - `MakeDiag(...)`
+  - `error:<line>:<column>: <message> [<code>]`
+  - `ConsumeLanguageVersionPragmas(diagnostics)`
+  - `ConsumeLanguageVersionPragmaDirective(...)`
+  - `O3L005`
+  - `O3L006`
+  - `O3L007`
+  - `O3L008`
+  - `first_line`
+  - `first_column`
+  - `last_line`
+  - `last_column`
+  - `ParseDiagSortKey(...)`
+  - `"severity"`
+  - `"line"`
+  - `"column"`
+  - `"code"`
+  - `"message"`
+  - `"raw"`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";`
+  - `ConsumeLanguageVersionPragmas(diagnostics);`
+  - `ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false))`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L007", kDuplicatePragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L008", kNonLeadingPragmaMessage));`
+  - `language_version_pragma_contract_.first_line = line;`
+  - `language_version_pragma_contract_.first_column = column;`
+  - `language_version_pragma_contract_.last_line = line;`
+  - `language_version_pragma_contract_.last_column = column;`
+  - `result.language_version_pragma_contract.first_line = pragma_contract.first_line;`
+  - `result.language_version_pragma_contract.first_column = pragma_contract.first_column;`
+  - `result.language_version_pragma_contract.last_line = pragma_contract.last_line;`
+  - `result.language_version_pragma_contract.last_column = pragma_contract.last_column;`
+  - `manifest << "    \"language_version_pragma_contract\":{\"seen\":"`
+  - `<< ",\"first_line\":" << pipeline_result.language_version_pragma_contract.first_line`
+  - `<< ",\"first_column\":" << pipeline_result.language_version_pragma_contract.first_column`
+  - `<< ",\"last_line\":" << pipeline_result.language_version_pragma_contract.last_line`
+  - `<< ",\"last_column\":" << pipeline_result.language_version_pragma_contract.last_column << "},\n";`
+  - `const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+  - `<< EscapeJsonString(key.message) << "\",\"raw\":\"" << EscapeJsonString(diagnostics[i]) << "\"}";`
+  - `WriteText(out_dir / (emit_prefix + ".diagnostics.json"), out.str());`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and macro diagnostics/provenance source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, macro diagnostics/provenance marker, or source anchor is missing.
+
+Macro diagnostics/provenance capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
+3. `rg -n "MakeDiag\(|error:|ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|O3L005|O3L006|O3L007|O3L008|first_line|first_column|last_line|last_column|ParseDiagSortKey\(|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py -q`
 
 ## M205 lowering/runtime macro security policy enforcement
 
@@ -5049,6 +5178,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m205_validation_macro_security_contract.py -q
 ```
 
+## M204 validation/perf macro diagnostics and provenance runbook
+
+Macro diagnostics/provenance validation runbook verifies deterministic diagnostic packet and source-location evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Macro-diagnostics evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m204_validation_macro_diagnostics_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -5486,6 +5660,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-security anchors.
+
+## M204 integration macro diagnostics and provenance
+
+- Gate intent: enforce deterministic macro-diagnostics/provenance evidence across all lanes.
+### 1.1 Macro-diagnostics integration chain
+- Deterministic macro-diagnostics gate:
+  - `npm run check:objc3c:m204-macro-diagnostics`
+- Chain order:
+  - replays `check:objc3c:m205-macro-security`.
+  - enforces all M204 lane contracts:
+    `tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_validation_macro_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m204_integration_macro_diagnostics_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-diagnostics validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-diagnostics anchors.
 
 ## Current call contract
 
