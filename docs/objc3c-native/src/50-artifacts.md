@@ -2203,6 +2203,39 @@ Lane-D artifact roots:
   - `tests/conformance/lowering_abi/manifest.json`
   - `tests/conformance/lowering_abi/M145-D001.json`
 
+## Interface/implementation lowering artifact contract (M146-C001)
+
+M146-C hardens lowering/runtime ABI artifact publication for `@interface` + `@implementation` parser/sema metadata.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m146/lowering-interface-implementation-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m146/lowering-interface-implementation-contract/interface-implementation-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_interface_implementation_handoff`
+- `frontend.pipeline.sema_pass_manager.type_metadata_interface_entries`
+- `frontend.pipeline.sema_pass_manager.type_metadata_implementation_entries`
+- `frontend.pipeline.semantic_surface.declared_interfaces`
+- `frontend.pipeline.semantic_surface.declared_implementations`
+- `frontend.pipeline.semantic_surface.resolved_interface_symbols`
+- `frontend.pipeline.semantic_surface.resolved_implementation_symbols`
+- `frontend.pipeline.semantic_surface.objc_interface_implementation_surface`
+- top-level `"interfaces"` and `"implementations"` arrays sourced from sema metadata handoff.
+
+IR publication markers:
+
+- `; frontend_objc_interface_implementation_profile = declared_interfaces=<N>, declared_implementations=<N>, resolved_interface_symbols=<N>, resolved_implementation_symbols=<N>, interface_method_symbols=<N>, implementation_method_symbols=<N>, linked_implementation_symbols=<N>, deterministic_interface_implementation_handoff=<bool>`
+- `!objc3.objc_interface_implementation = !{!1}`
+- `!1 = !{i64 <declared_interfaces>, i64 <declared_implementations>, i64 <resolved_interface_symbols>, i64 <resolved_implementation_symbols>, i64 <interface_method_symbols>, i64 <implementation_method_symbols>, i64 <linked_implementation_symbols>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

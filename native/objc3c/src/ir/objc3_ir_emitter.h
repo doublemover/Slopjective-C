@@ -14,6 +14,14 @@ struct Objc3IRFrontendMetadata {
   std::size_t migration_legacy_yes = 0;
   std::size_t migration_legacy_no = 0;
   std::size_t migration_legacy_null = 0;
+  std::size_t declared_interfaces = 0;
+  std::size_t declared_implementations = 0;
+  std::size_t resolved_interface_symbols = 0;
+  std::size_t resolved_implementation_symbols = 0;
+  std::size_t interface_method_symbols = 0;
+  std::size_t implementation_method_symbols = 0;
+  std::size_t linked_implementation_symbols = 0;
+  bool deterministic_interface_implementation_handoff = false;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };

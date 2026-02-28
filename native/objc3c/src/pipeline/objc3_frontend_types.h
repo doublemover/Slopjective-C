@@ -52,6 +52,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
+  Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };

@@ -147,6 +147,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ++vector_signature_functions;
     }
   }
+  const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff = pipeline_result.sema_type_metadata_handoff;
+  const Objc3InterfaceImplementationSummary &interface_implementation_summary =
+      type_metadata_handoff.interface_implementation_summary;
+  std::size_t interface_class_method_symbols = 0;
+  std::size_t interface_instance_method_symbols = 0;
+  for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      if (method_metadata.is_class_method) {
+        ++interface_class_method_symbols;
+      } else {
+        ++interface_instance_method_symbols;
+      }
+    }
+  }
+  std::size_t implementation_class_method_symbols = 0;
+  std::size_t implementation_instance_method_symbols = 0;
+  std::size_t implementation_methods_with_body = 0;
+  for (const auto &implementation_metadata : type_metadata_handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      if (method_metadata.is_class_method) {
+        ++implementation_class_method_symbols;
+      } else {
+        ++implementation_instance_method_symbols;
+      }
+      if (method_metadata.has_definition) {
+        ++implementation_methods_with_body;
+      }
+    }
+  }
 
   std::vector<int> resolved_global_values;
   if (!ResolveGlobalInitializerValues(program.globals, resolved_global_values) ||
@@ -254,7 +283,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"type_metadata_global_entries\":"
            << pipeline_result.sema_parity_surface.type_metadata_global_entries
            << ",\"type_metadata_function_entries\":"
-           << pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";
+           << pipeline_result.sema_parity_surface.type_metadata_function_entries
+           << ",\"deterministic_interface_implementation_handoff\":"
+           << (pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff ? "true" : "false")
+           << ",\"interfaces_total\":"
+           << pipeline_result.sema_parity_surface.interfaces_total
+           << ",\"implementations_total\":"
+           << pipeline_result.sema_parity_surface.implementations_total
+           << ",\"type_metadata_interface_entries\":"
+           << pipeline_result.sema_parity_surface.type_metadata_interface_entries
+           << ",\"type_metadata_implementation_entries\":"
+           << pipeline_result.sema_parity_surface.type_metadata_implementation_entries
+           << ",\"declared_interfaces\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.declared_interfaces
+           << ",\"declared_implementations\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.declared_implementations
+           << ",\"resolved_interfaces\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.resolved_interfaces
+           << ",\"resolved_implementations\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.resolved_implementations
+           << ",\"interface_method_symbols_total\":"
+           << pipeline_result.sema_parity_surface.interface_method_symbols_total
+           << ",\"implementation_method_symbols_total\":"
+           << pipeline_result.sema_parity_surface.implementation_method_symbols_total
+           << ",\"linked_implementation_symbols_total\":"
+           << pipeline_result.sema_parity_surface.linked_implementation_symbols_total
+           << ",\"deterministic_interface_implementation_summary\":"
+           << (pipeline_result.sema_parity_surface.interface_implementation_summary.deterministic ? "true" : "false")
+           << "},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
            << ",\"vector_param_signatures\":" << vector_param_signatures
@@ -265,8 +321,31 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lane16\":" << vector_lane16_signatures << "},\n";
   manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()
            << ",\"declared_functions\":" << manifest_functions.size()
+           << ",\"declared_interfaces\":" << program.interfaces.size()
+           << ",\"declared_implementations\":" << program.implementations.size()
            << ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()
            << ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()
+           << ",\"resolved_interface_symbols\":" << pipeline_result.integration_surface.interfaces.size()
+           << ",\"resolved_implementation_symbols\":" << pipeline_result.integration_surface.implementations.size()
+           << ",\"interface_method_symbols\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.interface_method_symbols
+           << ",\"implementation_method_symbols\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.implementation_method_symbols
+           << ",\"linked_implementation_symbols\":"
+           << pipeline_result.sema_parity_surface.interface_implementation_summary.linked_implementation_symbols
+           << ",\"objc_interface_implementation_surface\":{\"interface_class_method_symbols\":"
+           << interface_class_method_symbols
+           << ",\"interface_instance_method_symbols\":"
+           << interface_instance_method_symbols
+           << ",\"implementation_class_method_symbols\":"
+           << implementation_class_method_symbols
+           << ",\"implementation_instance_method_symbols\":"
+           << implementation_instance_method_symbols
+           << ",\"implementation_methods_with_body\":"
+           << implementation_methods_with_body
+           << ",\"deterministic_handoff\":"
+           << (pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff ? "true" : "false")
+           << "}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
            << ",\"scalar_return_void\":" << scalar_return_void << ",\"scalar_param_i32\":" << scalar_param_i32
@@ -307,6 +386,48 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     }
     manifest << "\n";
   }
+  manifest << "  ],\n";
+  manifest << "  \"interfaces\": [\n";
+  for (std::size_t i = 0; i < type_metadata_handoff.interfaces_lexicographic.size(); ++i) {
+    const auto &interface_metadata = type_metadata_handoff.interfaces_lexicographic[i];
+    manifest << "    {\"name\":\"" << interface_metadata.name << "\",\"super\":\"" << interface_metadata.super_name
+             << "\",\"method_count\":" << interface_metadata.methods_lexicographic.size() << ",\"selectors\":[";
+    for (std::size_t s = 0; s < interface_metadata.methods_lexicographic.size(); ++s) {
+      const auto &method_metadata = interface_metadata.methods_lexicographic[s];
+      manifest << "\"" << method_metadata.selector << "\"";
+      if (s + 1 != interface_metadata.methods_lexicographic.size()) {
+        manifest << ",";
+      }
+    }
+    manifest << "]}";
+    if (i + 1 != type_metadata_handoff.interfaces_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
+  manifest << "  ],\n";
+  manifest << "  \"implementations\": [\n";
+  for (std::size_t i = 0; i < type_metadata_handoff.implementations_lexicographic.size(); ++i) {
+    const auto &implementation_metadata = type_metadata_handoff.implementations_lexicographic[i];
+    manifest << "    {\"name\":\"" << implementation_metadata.name << "\",\"has_matching_interface\":"
+             << (implementation_metadata.has_matching_interface ? "true" : "false")
+             << ",\"method_count\":" << implementation_metadata.methods_lexicographic.size()
+             << ",\"selectors\":[";
+    for (std::size_t s = 0; s < implementation_metadata.methods_lexicographic.size(); ++s) {
+      const auto &method_metadata = implementation_metadata.methods_lexicographic[s];
+      manifest << "{\"selector\":\"" << method_metadata.selector << "\",\"is_class_method\":"
+               << (method_metadata.is_class_method ? "true" : "false")
+               << ",\"has_body\":" << (method_metadata.has_definition ? "true" : "false") << "}";
+      if (s + 1 != implementation_metadata.methods_lexicographic.size()) {
+        manifest << ",";
+      }
+    }
+    manifest << "]}";
+    if (i + 1 != type_metadata_handoff.implementations_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
   manifest << "  ]\n";
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
@@ -318,6 +439,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;
   ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;
   ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;
+  ir_frontend_metadata.declared_interfaces = interface_implementation_summary.declared_interfaces;
+  ir_frontend_metadata.declared_implementations = interface_implementation_summary.declared_implementations;
+  ir_frontend_metadata.resolved_interface_symbols = interface_implementation_summary.resolved_interfaces;
+  ir_frontend_metadata.resolved_implementation_symbols = interface_implementation_summary.resolved_implementations;
+  ir_frontend_metadata.interface_method_symbols = interface_implementation_summary.interface_method_symbols;
+  ir_frontend_metadata.implementation_method_symbols = interface_implementation_summary.implementation_method_symbols;
+  ir_frontend_metadata.linked_implementation_symbols = interface_implementation_summary.linked_implementation_symbols;
+  ir_frontend_metadata.deterministic_interface_implementation_handoff =
+      pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
+      interface_implementation_summary.deterministic;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {

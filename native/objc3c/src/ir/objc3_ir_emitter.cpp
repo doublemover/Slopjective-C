@@ -99,6 +99,16 @@ class Objc3IREmitter {
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
         << ", migration_assist=" << (frontend_metadata_.migration_assist ? "true" : "false")
         << ", migration_legacy_total=" << frontend_metadata_.migration_legacy_total() << "\n";
+    out << "; frontend_objc_interface_implementation_profile = declared_interfaces="
+        << frontend_metadata_.declared_interfaces
+        << ", declared_implementations=" << frontend_metadata_.declared_implementations
+        << ", resolved_interface_symbols=" << frontend_metadata_.resolved_interface_symbols
+        << ", resolved_implementation_symbols=" << frontend_metadata_.resolved_implementation_symbols
+        << ", interface_method_symbols=" << frontend_metadata_.interface_method_symbols
+        << ", implementation_method_symbols=" << frontend_metadata_.implementation_method_symbols
+        << ", linked_implementation_symbols=" << frontend_metadata_.linked_implementation_symbols
+        << ", deterministic_interface_implementation_handoff="
+        << (frontend_metadata_.deterministic_interface_implementation_handoff ? "true" : "false") << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
@@ -220,13 +230,22 @@ class Objc3IREmitter {
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
     out << "!objc3.frontend = !{!0}\n";
+    out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_yes) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_no) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_null) << ", i64 "
-        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_total()) << "}\n\n";
+        << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_total()) << "}\n";
+    out << "!1 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.declared_interfaces) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.declared_implementations) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.resolved_interface_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.resolved_implementation_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.interface_method_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.implementation_method_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.linked_implementation_symbols) << ", i1 "
+        << (frontend_metadata_.deterministic_interface_implementation_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
