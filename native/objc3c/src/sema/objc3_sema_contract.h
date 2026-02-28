@@ -349,6 +349,16 @@ struct Objc3WeakUnownedSemanticsSummary {
   bool deterministic = true;
 };
 
+struct Objc3ArcDiagnosticsFixitSummary {
+  std::size_t ownership_arc_diagnostic_candidate_sites = 0;
+  std::size_t ownership_arc_fixit_available_sites = 0;
+  std::size_t ownership_arc_profiled_sites = 0;
+  std::size_t ownership_arc_weak_unowned_conflict_diagnostic_sites = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
@@ -386,6 +396,10 @@ struct FunctionInfo {
   std::vector<bool> param_ownership_is_weak_reference;
   std::vector<bool> param_ownership_is_unowned_reference;
   std::vector<bool> param_ownership_is_unowned_safe_reference;
+  std::vector<bool> param_ownership_arc_diagnostic_candidate;
+  std::vector<bool> param_ownership_arc_fixit_available;
+  std::vector<std::string> param_ownership_arc_diagnostic_profile;
+  std::vector<std::string> param_ownership_arc_fixit_hint;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -405,6 +419,10 @@ struct FunctionInfo {
   bool return_ownership_is_weak_reference = false;
   bool return_ownership_is_unowned_reference = false;
   bool return_ownership_is_unowned_safe_reference = false;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -445,6 +463,10 @@ struct Objc3MethodInfo {
   std::vector<bool> param_ownership_insert_retain;
   std::vector<bool> param_ownership_insert_release;
   std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_arc_diagnostic_candidate;
+  std::vector<bool> param_ownership_arc_fixit_available;
+  std::vector<std::string> param_ownership_arc_diagnostic_profile;
+  std::vector<std::string> param_ownership_arc_fixit_hint;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -461,6 +483,10 @@ struct Objc3MethodInfo {
   bool return_ownership_insert_retain = false;
   bool return_ownership_insert_release = false;
   bool return_ownership_insert_autorelease = false;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -496,6 +522,10 @@ struct Objc3PropertyInfo {
   bool ownership_is_weak_reference = false;
   bool ownership_is_unowned_reference = false;
   bool ownership_is_unowned_safe_reference = false;
+  bool ownership_arc_diagnostic_candidate = false;
+  bool ownership_arc_fixit_available = false;
+  std::string ownership_arc_diagnostic_profile;
+  std::string ownership_arc_fixit_hint;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -569,6 +599,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
   std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   bool built = false;
@@ -597,6 +628,10 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_ownership_is_weak_reference;
   std::vector<bool> param_ownership_is_unowned_reference;
   std::vector<bool> param_ownership_is_unowned_safe_reference;
+  std::vector<bool> param_ownership_arc_diagnostic_candidate;
+  std::vector<bool> param_ownership_arc_fixit_available;
+  std::vector<std::string> param_ownership_arc_diagnostic_profile;
+  std::vector<std::string> param_ownership_arc_fixit_hint;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -616,6 +651,10 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_ownership_is_weak_reference = false;
   bool return_ownership_is_unowned_reference = false;
   bool return_ownership_is_unowned_safe_reference = false;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -660,6 +699,10 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_ownership_is_weak_reference;
   std::vector<bool> param_ownership_is_unowned_reference;
   std::vector<bool> param_ownership_is_unowned_safe_reference;
+  std::vector<bool> param_ownership_arc_diagnostic_candidate;
+  std::vector<bool> param_ownership_arc_fixit_available;
+  std::vector<std::string> param_ownership_arc_diagnostic_profile;
+  std::vector<std::string> param_ownership_arc_fixit_hint;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -679,6 +722,10 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_ownership_is_weak_reference = false;
   bool return_ownership_is_unowned_reference = false;
   bool return_ownership_is_unowned_safe_reference = false;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -715,6 +762,10 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool ownership_is_weak_reference = false;
   bool ownership_is_unowned_reference = false;
   bool ownership_is_unowned_safe_reference = false;
+  bool ownership_arc_diagnostic_candidate = false;
+  bool ownership_arc_fixit_available = false;
+  std::string ownership_arc_diagnostic_profile;
+  std::string ownership_arc_fixit_hint;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -779,6 +830,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
   std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
 };

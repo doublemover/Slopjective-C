@@ -1181,6 +1181,10 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.ownership_is_weak_reference = property.ownership_is_weak_reference;
   info.ownership_is_unowned_reference = property.ownership_is_unowned_reference;
   info.ownership_is_unowned_safe_reference = property.ownership_is_unowned_safe_reference;
+  info.ownership_arc_diagnostic_candidate = property.ownership_arc_diagnostic_candidate;
+  info.ownership_arc_fixit_available = property.ownership_arc_fixit_available;
+  info.ownership_arc_diagnostic_profile = property.ownership_arc_diagnostic_profile;
+  info.ownership_arc_fixit_hint = property.ownership_arc_fixit_hint;
   info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
   info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
   info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
@@ -1374,6 +1378,10 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_ownership_is_weak_reference.reserve(method.params.size());
   info.param_ownership_is_unowned_reference.reserve(method.params.size());
   info.param_ownership_is_unowned_safe_reference.reserve(method.params.size());
+  info.param_ownership_arc_diagnostic_candidate.reserve(method.params.size());
+  info.param_ownership_arc_fixit_available.reserve(method.params.size());
+  info.param_ownership_arc_diagnostic_profile.reserve(method.params.size());
+  info.param_ownership_arc_fixit_hint.reserve(method.params.size());
   info.param_has_protocol_composition.reserve(method.params.size());
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
   info.param_has_invalid_protocol_composition.reserve(method.params.size());
@@ -1399,6 +1407,10 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_ownership_is_weak_reference.push_back(param.ownership_is_weak_reference);
     info.param_ownership_is_unowned_reference.push_back(param.ownership_is_unowned_reference);
     info.param_ownership_is_unowned_safe_reference.push_back(param.ownership_is_unowned_safe_reference);
+    info.param_ownership_arc_diagnostic_candidate.push_back(param.ownership_arc_diagnostic_candidate);
+    info.param_ownership_arc_fixit_available.push_back(param.ownership_arc_fixit_available);
+    info.param_ownership_arc_diagnostic_profile.push_back(param.ownership_arc_diagnostic_profile);
+    info.param_ownership_arc_fixit_hint.push_back(param.ownership_arc_fixit_hint);
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
     info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -1423,6 +1435,10 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_ownership_is_weak_reference = method.return_ownership_is_weak_reference;
   info.return_ownership_is_unowned_reference = method.return_ownership_is_unowned_reference;
   info.return_ownership_is_unowned_safe_reference = method.return_ownership_is_unowned_safe_reference;
+  info.return_ownership_arc_diagnostic_candidate = method.return_ownership_arc_diagnostic_candidate;
+  info.return_ownership_arc_fixit_available = method.return_ownership_arc_fixit_available;
+  info.return_ownership_arc_diagnostic_profile = method.return_ownership_arc_diagnostic_profile;
+  info.return_ownership_arc_fixit_hint = method.return_ownership_arc_fixit_hint;
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
@@ -1444,7 +1460,11 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
       lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease ||
       lhs.return_ownership_is_weak_reference != rhs.return_ownership_is_weak_reference ||
       lhs.return_ownership_is_unowned_reference != rhs.return_ownership_is_unowned_reference ||
-      lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference) {
+      lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference ||
+      lhs.return_ownership_arc_diagnostic_candidate != rhs.return_ownership_arc_diagnostic_candidate ||
+      lhs.return_ownership_arc_fixit_available != rhs.return_ownership_arc_fixit_available ||
+      lhs.return_ownership_arc_diagnostic_profile != rhs.return_ownership_arc_diagnostic_profile ||
+      lhs.return_ownership_arc_fixit_hint != rhs.return_ownership_arc_fixit_hint) {
     return false;
   }
   if (lhs.return_is_vector &&
@@ -1467,7 +1487,15 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
       lhs.param_ownership_is_unowned_reference.size() != lhs.arity ||
       rhs.param_ownership_is_unowned_reference.size() != rhs.arity ||
       lhs.param_ownership_is_unowned_safe_reference.size() != lhs.arity ||
-      rhs.param_ownership_is_unowned_safe_reference.size() != rhs.arity) {
+      rhs.param_ownership_is_unowned_safe_reference.size() != rhs.arity ||
+      lhs.param_ownership_arc_diagnostic_candidate.size() != lhs.arity ||
+      rhs.param_ownership_arc_diagnostic_candidate.size() != rhs.arity ||
+      lhs.param_ownership_arc_fixit_available.size() != lhs.arity ||
+      rhs.param_ownership_arc_fixit_available.size() != rhs.arity ||
+      lhs.param_ownership_arc_diagnostic_profile.size() != lhs.arity ||
+      rhs.param_ownership_arc_diagnostic_profile.size() != rhs.arity ||
+      lhs.param_ownership_arc_fixit_hint.size() != lhs.arity ||
+      rhs.param_ownership_arc_fixit_hint.size() != rhs.arity) {
     return false;
   }
   if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
@@ -1499,7 +1527,11 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
         lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i] ||
         lhs.param_ownership_is_weak_reference[i] != rhs.param_ownership_is_weak_reference[i] ||
         lhs.param_ownership_is_unowned_reference[i] != rhs.param_ownership_is_unowned_reference[i] ||
-        lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i]) {
+        lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i] ||
+        lhs.param_ownership_arc_diagnostic_candidate[i] != rhs.param_ownership_arc_diagnostic_candidate[i] ||
+        lhs.param_ownership_arc_fixit_available[i] != rhs.param_ownership_arc_fixit_available[i] ||
+        lhs.param_ownership_arc_diagnostic_profile[i] != rhs.param_ownership_arc_diagnostic_profile[i] ||
+        lhs.param_ownership_arc_fixit_hint[i] != rhs.param_ownership_arc_fixit_hint[i]) {
       return false;
     }
     if (lhs.param_is_vector[i] &&
@@ -4970,6 +5002,250 @@ BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeM
   return summary;
 }
 
+static Objc3ArcDiagnosticsFixitSummary
+BuildArcDiagnosticsFixitSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3ArcDiagnosticsFixitSummary summary;
+
+  const auto accumulate_site = [&summary](bool diagnostic_candidate,
+                                          bool fixit_available,
+                                          const std::string &diagnostic_profile,
+                                          const std::string &fixit_hint,
+                                          bool weak_unowned_conflict) {
+    if (diagnostic_candidate) {
+      ++summary.ownership_arc_diagnostic_candidate_sites;
+    }
+    if (fixit_available) {
+      ++summary.ownership_arc_fixit_available_sites;
+    }
+    if (!diagnostic_profile.empty()) {
+      ++summary.ownership_arc_profiled_sites;
+    }
+    if (diagnostic_profile == "arc-weak-unowned-conflict") {
+      ++summary.ownership_arc_weak_unowned_conflict_diagnostic_sites;
+    }
+    if (fixit_available && fixit_hint.empty()) {
+      ++summary.ownership_arc_empty_fixit_hint_sites;
+    }
+    if ((fixit_available && !diagnostic_candidate) ||
+        (!diagnostic_profile.empty() && !diagnostic_candidate) ||
+        (!fixit_hint.empty() && !fixit_available) ||
+        (fixit_available && fixit_hint.empty()) ||
+        (weak_unowned_conflict && diagnostic_profile != "arc-weak-unowned-conflict") ||
+        (!weak_unowned_conflict && diagnostic_profile == "arc-weak-unowned-conflict")) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_function = [&summary, &accumulate_site](const FunctionInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_ownership_arc_diagnostic_candidate.size() != arity ||
+        info.param_ownership_arc_fixit_available.size() != arity ||
+        info.param_ownership_arc_diagnostic_profile.size() != arity ||
+        info.param_ownership_arc_fixit_hint.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      accumulate_site(info.param_ownership_arc_diagnostic_candidate[i],
+                      info.param_ownership_arc_fixit_available[i],
+                      info.param_ownership_arc_diagnostic_profile[i],
+                      info.param_ownership_arc_fixit_hint[i],
+                      false);
+    }
+    accumulate_site(info.return_ownership_arc_diagnostic_candidate,
+                    info.return_ownership_arc_fixit_available,
+                    info.return_ownership_arc_diagnostic_profile,
+                    info.return_ownership_arc_fixit_hint,
+                    false);
+  };
+
+  const auto accumulate_method = [&summary, &accumulate_site](const Objc3MethodInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_ownership_arc_diagnostic_candidate.size() != arity ||
+        info.param_ownership_arc_fixit_available.size() != arity ||
+        info.param_ownership_arc_diagnostic_profile.size() != arity ||
+        info.param_ownership_arc_fixit_hint.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      accumulate_site(info.param_ownership_arc_diagnostic_candidate[i],
+                      info.param_ownership_arc_fixit_available[i],
+                      info.param_ownership_arc_diagnostic_profile[i],
+                      info.param_ownership_arc_fixit_hint[i],
+                      false);
+    }
+    accumulate_site(info.return_ownership_arc_diagnostic_candidate,
+                    info.return_ownership_arc_fixit_available,
+                    info.return_ownership_arc_diagnostic_profile,
+                    info.return_ownership_arc_fixit_hint,
+                    false);
+  };
+
+  const auto accumulate_property = [&accumulate_site](const Objc3PropertyInfo &info) {
+    const bool weak_unowned_conflict = info.has_weak_unowned_conflict || (info.is_weak && info.is_unowned);
+    accumulate_site(info.ownership_arc_diagnostic_candidate,
+                    info.ownership_arc_fixit_available,
+                    info.ownership_arc_diagnostic_profile,
+                    info.ownership_arc_fixit_hint,
+                    weak_unowned_conflict);
+  };
+
+  for (const auto &entry : surface.functions) {
+    accumulate_function(entry.second);
+  }
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.ownership_arc_fixit_available_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_profiled_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_empty_fixit_hint_sites <=
+          summary.ownership_arc_fixit_available_sites + summary.contract_violation_sites;
+  return summary;
+}
+
+static Objc3ArcDiagnosticsFixitSummary
+BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3ArcDiagnosticsFixitSummary summary;
+
+  const auto accumulate_site = [&summary](bool diagnostic_candidate,
+                                          bool fixit_available,
+                                          const std::string &diagnostic_profile,
+                                          const std::string &fixit_hint,
+                                          bool weak_unowned_conflict) {
+    if (diagnostic_candidate) {
+      ++summary.ownership_arc_diagnostic_candidate_sites;
+    }
+    if (fixit_available) {
+      ++summary.ownership_arc_fixit_available_sites;
+    }
+    if (!diagnostic_profile.empty()) {
+      ++summary.ownership_arc_profiled_sites;
+    }
+    if (diagnostic_profile == "arc-weak-unowned-conflict") {
+      ++summary.ownership_arc_weak_unowned_conflict_diagnostic_sites;
+    }
+    if (fixit_available && fixit_hint.empty()) {
+      ++summary.ownership_arc_empty_fixit_hint_sites;
+    }
+    if ((fixit_available && !diagnostic_candidate) ||
+        (!diagnostic_profile.empty() && !diagnostic_candidate) ||
+        (!fixit_hint.empty() && !fixit_available) ||
+        (fixit_available && fixit_hint.empty()) ||
+        (weak_unowned_conflict && diagnostic_profile != "arc-weak-unowned-conflict") ||
+        (!weak_unowned_conflict && diagnostic_profile == "arc-weak-unowned-conflict")) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_function = [&summary, &accumulate_site](const Objc3SemanticFunctionTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_ownership_arc_diagnostic_candidate.size() != arity ||
+        metadata.param_ownership_arc_fixit_available.size() != arity ||
+        metadata.param_ownership_arc_diagnostic_profile.size() != arity ||
+        metadata.param_ownership_arc_fixit_hint.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      accumulate_site(metadata.param_ownership_arc_diagnostic_candidate[i],
+                      metadata.param_ownership_arc_fixit_available[i],
+                      metadata.param_ownership_arc_diagnostic_profile[i],
+                      metadata.param_ownership_arc_fixit_hint[i],
+                      false);
+    }
+    accumulate_site(metadata.return_ownership_arc_diagnostic_candidate,
+                    metadata.return_ownership_arc_fixit_available,
+                    metadata.return_ownership_arc_diagnostic_profile,
+                    metadata.return_ownership_arc_fixit_hint,
+                    false);
+  };
+
+  const auto accumulate_method = [&summary, &accumulate_site](const Objc3SemanticMethodTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_ownership_arc_diagnostic_candidate.size() != arity ||
+        metadata.param_ownership_arc_fixit_available.size() != arity ||
+        metadata.param_ownership_arc_diagnostic_profile.size() != arity ||
+        metadata.param_ownership_arc_fixit_hint.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      accumulate_site(metadata.param_ownership_arc_diagnostic_candidate[i],
+                      metadata.param_ownership_arc_fixit_available[i],
+                      metadata.param_ownership_arc_diagnostic_profile[i],
+                      metadata.param_ownership_arc_fixit_hint[i],
+                      false);
+    }
+    accumulate_site(metadata.return_ownership_arc_diagnostic_candidate,
+                    metadata.return_ownership_arc_fixit_available,
+                    metadata.return_ownership_arc_diagnostic_profile,
+                    metadata.return_ownership_arc_fixit_hint,
+                    false);
+  };
+
+  const auto accumulate_property = [&accumulate_site](const Objc3SemanticPropertyTypeMetadata &metadata) {
+    const bool weak_unowned_conflict = metadata.has_weak_unowned_conflict || (metadata.is_weak && metadata.is_unowned);
+    accumulate_site(metadata.ownership_arc_diagnostic_candidate,
+                    metadata.ownership_arc_fixit_available,
+                    metadata.ownership_arc_diagnostic_profile,
+                    metadata.ownership_arc_fixit_hint,
+                    weak_unowned_conflict);
+  };
+
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function(metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : interface_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.ownership_arc_fixit_available_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_profiled_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+          summary.ownership_arc_diagnostic_candidate_sites + summary.contract_violation_sites &&
+      summary.ownership_arc_empty_fixit_hint_sites <=
+          summary.ownership_arc_fixit_available_sites + summary.contract_violation_sites;
+  return summary;
+}
+
 static Objc3AutoreleasePoolScopeSummary
 BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
   return BuildAutoreleasePoolScopeSummaryFromSites(surface.autoreleasepool_scope_sites_lexicographic);
@@ -5338,6 +5614,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_ownership_is_weak_reference.reserve(fn.params.size());
       info.param_ownership_is_unowned_reference.reserve(fn.params.size());
       info.param_ownership_is_unowned_safe_reference.reserve(fn.params.size());
+      info.param_ownership_arc_diagnostic_candidate.reserve(fn.params.size());
+      info.param_ownership_arc_fixit_available.reserve(fn.params.size());
+      info.param_ownership_arc_diagnostic_profile.reserve(fn.params.size());
+      info.param_ownership_arc_fixit_hint.reserve(fn.params.size());
       info.param_has_protocol_composition.reserve(fn.params.size());
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
       info.param_has_invalid_protocol_composition.reserve(fn.params.size());
@@ -5363,6 +5643,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_ownership_is_weak_reference.push_back(param.ownership_is_weak_reference);
         info.param_ownership_is_unowned_reference.push_back(param.ownership_is_unowned_reference);
         info.param_ownership_is_unowned_safe_reference.push_back(param.ownership_is_unowned_safe_reference);
+        info.param_ownership_arc_diagnostic_candidate.push_back(param.ownership_arc_diagnostic_candidate);
+        info.param_ownership_arc_fixit_available.push_back(param.ownership_arc_fixit_available);
+        info.param_ownership_arc_diagnostic_profile.push_back(param.ownership_arc_diagnostic_profile);
+        info.param_ownership_arc_fixit_hint.push_back(param.ownership_arc_fixit_hint);
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
         info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -5387,6 +5671,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_ownership_is_weak_reference = fn.return_ownership_is_weak_reference;
       info.return_ownership_is_unowned_reference = fn.return_ownership_is_unowned_reference;
       info.return_ownership_is_unowned_safe_reference = fn.return_ownership_is_unowned_safe_reference;
+      info.return_ownership_arc_diagnostic_candidate = fn.return_ownership_arc_diagnostic_candidate;
+      info.return_ownership_arc_fixit_available = fn.return_ownership_arc_fixit_available;
+      info.return_ownership_arc_diagnostic_profile = fn.return_ownership_arc_diagnostic_profile;
+      info.return_ownership_arc_fixit_hint = fn.return_ownership_arc_fixit_hint;
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
@@ -5410,7 +5698,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                       existing.return_ownership_is_weak_reference == fn.return_ownership_is_weak_reference &&
                       existing.return_ownership_is_unowned_reference == fn.return_ownership_is_unowned_reference &&
                       existing.return_ownership_is_unowned_safe_reference ==
-                          fn.return_ownership_is_unowned_safe_reference;
+                          fn.return_ownership_is_unowned_safe_reference &&
+                      existing.return_ownership_arc_diagnostic_candidate ==
+                          fn.return_ownership_arc_diagnostic_candidate &&
+                      existing.return_ownership_arc_fixit_available == fn.return_ownership_arc_fixit_available &&
+                      existing.return_ownership_arc_diagnostic_profile ==
+                          fn.return_ownership_arc_diagnostic_profile &&
+                      existing.return_ownership_arc_fixit_hint == fn.return_ownership_arc_fixit_hint;
     if (compatible && existing.return_is_vector) {
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
@@ -5434,6 +5728,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
             i >= existing.param_ownership_is_weak_reference.size() ||
             i >= existing.param_ownership_is_unowned_reference.size() ||
             i >= existing.param_ownership_is_unowned_safe_reference.size() ||
+            i >= existing.param_ownership_arc_diagnostic_candidate.size() ||
+            i >= existing.param_ownership_arc_fixit_available.size() ||
+            i >= existing.param_ownership_arc_diagnostic_profile.size() ||
+            i >= existing.param_ownership_arc_fixit_hint.size() ||
             i >= existing.param_has_protocol_composition.size() ||
             i >= existing.param_protocol_composition_lexicographic.size() ||
             existing.param_types[i] != fn.params[i].type ||
@@ -5451,7 +5749,14 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
             existing.param_ownership_is_weak_reference[i] != fn.params[i].ownership_is_weak_reference ||
             existing.param_ownership_is_unowned_reference[i] != fn.params[i].ownership_is_unowned_reference ||
             existing.param_ownership_is_unowned_safe_reference[i] !=
-                fn.params[i].ownership_is_unowned_safe_reference) {
+                fn.params[i].ownership_is_unowned_safe_reference ||
+            existing.param_ownership_arc_diagnostic_candidate[i] !=
+                fn.params[i].ownership_arc_diagnostic_candidate ||
+            existing.param_ownership_arc_fixit_available[i] !=
+                fn.params[i].ownership_arc_fixit_available ||
+            existing.param_ownership_arc_diagnostic_profile[i] !=
+                fn.params[i].ownership_arc_diagnostic_profile ||
+            existing.param_ownership_arc_fixit_hint[i] != fn.params[i].ownership_arc_fixit_hint) {
           compatible = false;
           break;
         }
@@ -5753,6 +6058,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);
   surface.weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromIntegrationSurface(surface);
+  surface.arc_diagnostics_fixit_summary =
+      BuildArcDiagnosticsFixitSummaryFromIntegrationSurface(surface);
   surface.autoreleasepool_scope_sites_lexicographic =
       BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);
   surface.autoreleasepool_scope_summary =
@@ -5806,6 +6113,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
     metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
     metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
+    metadata.param_ownership_arc_diagnostic_candidate = source.param_ownership_arc_diagnostic_candidate;
+    metadata.param_ownership_arc_fixit_available = source.param_ownership_arc_fixit_available;
+    metadata.param_ownership_arc_diagnostic_profile = source.param_ownership_arc_diagnostic_profile;
+    metadata.param_ownership_arc_fixit_hint = source.param_ownership_arc_fixit_hint;
     metadata.param_has_protocol_composition = source.param_has_protocol_composition;
     metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
     metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5825,6 +6136,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
     metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
     metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
+    metadata.return_ownership_arc_diagnostic_candidate = source.return_ownership_arc_diagnostic_candidate;
+    metadata.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
+    metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
+    metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5894,6 +6209,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_is_weak_reference = source.ownership_is_weak_reference;
       property_metadata.ownership_is_unowned_reference = source.ownership_is_unowned_reference;
       property_metadata.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
+      property_metadata.ownership_arc_diagnostic_candidate = source.ownership_arc_diagnostic_candidate;
+      property_metadata.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
+      property_metadata.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
+      property_metadata.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -5969,6 +6288,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
       method_metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
       method_metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
+      method_metadata.param_ownership_arc_diagnostic_candidate = source.param_ownership_arc_diagnostic_candidate;
+      method_metadata.param_ownership_arc_fixit_available = source.param_ownership_arc_fixit_available;
+      method_metadata.param_ownership_arc_diagnostic_profile = source.param_ownership_arc_diagnostic_profile;
+      method_metadata.param_ownership_arc_fixit_hint = source.param_ownership_arc_fixit_hint;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5988,6 +6311,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
       method_metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
       method_metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
+      method_metadata.return_ownership_arc_diagnostic_candidate = source.return_ownership_arc_diagnostic_candidate;
+      method_metadata.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
+      method_metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
+      method_metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -6060,6 +6387,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_is_weak_reference = source.ownership_is_weak_reference;
       property_metadata.ownership_is_unowned_reference = source.ownership_is_unowned_reference;
       property_metadata.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
+      property_metadata.ownership_arc_diagnostic_candidate = source.ownership_arc_diagnostic_candidate;
+      property_metadata.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
+      property_metadata.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
+      property_metadata.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -6135,6 +6466,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
       method_metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
       method_metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
+      method_metadata.param_ownership_arc_diagnostic_candidate = source.param_ownership_arc_diagnostic_candidate;
+      method_metadata.param_ownership_arc_fixit_available = source.param_ownership_arc_fixit_available;
+      method_metadata.param_ownership_arc_diagnostic_profile = source.param_ownership_arc_diagnostic_profile;
+      method_metadata.param_ownership_arc_fixit_hint = source.param_ownership_arc_fixit_hint;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -6154,6 +6489,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
       method_metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
       method_metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
+      method_metadata.return_ownership_arc_diagnostic_candidate = source.return_ownership_arc_diagnostic_candidate;
+      method_metadata.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
+      method_metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
+      method_metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -6190,7 +6529,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease ||
         lhs.return_ownership_is_weak_reference != rhs.return_ownership_is_weak_reference ||
         lhs.return_ownership_is_unowned_reference != rhs.return_ownership_is_unowned_reference ||
-        lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference) {
+        lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference ||
+        lhs.return_ownership_arc_diagnostic_candidate != rhs.return_ownership_arc_diagnostic_candidate ||
+        lhs.return_ownership_arc_fixit_available != rhs.return_ownership_arc_fixit_available ||
+        lhs.return_ownership_arc_diagnostic_profile != rhs.return_ownership_arc_diagnostic_profile ||
+        lhs.return_ownership_arc_fixit_hint != rhs.return_ownership_arc_fixit_hint) {
       return false;
     }
     if (lhs.return_is_vector &&
@@ -6212,6 +6555,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           i >= lhs.param_ownership_is_weak_reference.size() ||
           i >= lhs.param_ownership_is_unowned_reference.size() ||
           i >= lhs.param_ownership_is_unowned_safe_reference.size() ||
+          i >= lhs.param_ownership_arc_diagnostic_candidate.size() ||
+          i >= lhs.param_ownership_arc_fixit_available.size() ||
+          i >= lhs.param_ownership_arc_diagnostic_profile.size() ||
+          i >= lhs.param_ownership_arc_fixit_hint.size() ||
           i >= rhs.param_types.size() ||
           i >= rhs.param_is_vector.size() || i >= rhs.param_vector_base_spelling.size() ||
           i >= rhs.param_vector_lane_count.size() || i >= rhs.param_has_protocol_composition.size() ||
@@ -6219,7 +6566,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           i >= rhs.param_ownership_insert_release.size() || i >= rhs.param_ownership_insert_autorelease.size() ||
           i >= rhs.param_ownership_is_weak_reference.size() ||
           i >= rhs.param_ownership_is_unowned_reference.size() ||
-          i >= rhs.param_ownership_is_unowned_safe_reference.size()) {
+          i >= rhs.param_ownership_is_unowned_safe_reference.size() ||
+          i >= rhs.param_ownership_arc_diagnostic_candidate.size() ||
+          i >= rhs.param_ownership_arc_fixit_available.size() ||
+          i >= rhs.param_ownership_arc_diagnostic_profile.size() ||
+          i >= rhs.param_ownership_arc_fixit_hint.size()) {
         return false;
       }
       if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
@@ -6230,7 +6581,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i] ||
           lhs.param_ownership_is_weak_reference[i] != rhs.param_ownership_is_weak_reference[i] ||
           lhs.param_ownership_is_unowned_reference[i] != rhs.param_ownership_is_unowned_reference[i] ||
-          lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i]) {
+          lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i] ||
+          lhs.param_ownership_arc_diagnostic_candidate[i] != rhs.param_ownership_arc_diagnostic_candidate[i] ||
+          lhs.param_ownership_arc_fixit_available[i] != rhs.param_ownership_arc_fixit_available[i] ||
+          lhs.param_ownership_arc_diagnostic_profile[i] != rhs.param_ownership_arc_diagnostic_profile[i] ||
+          lhs.param_ownership_arc_fixit_hint[i] != rhs.param_ownership_arc_fixit_hint[i]) {
         return false;
       }
       if (lhs.param_is_vector[i] &&
@@ -6669,6 +7024,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
   handoff.weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
+  handoff.arc_diagnostics_fixit_summary =
+      BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   handoff.autoreleasepool_scope_sites_lexicographic =
       surface.autoreleasepool_scope_sites_lexicographic;
   handoff.autoreleasepool_scope_summary =
@@ -6749,9 +7106,21 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_ownership_insert_retain.size() != metadata.arity ||
         metadata.param_ownership_insert_release.size() != metadata.arity ||
         metadata.param_ownership_insert_autorelease.size() != metadata.arity ||
+        metadata.param_ownership_arc_diagnostic_candidate.size() != metadata.arity ||
+        metadata.param_ownership_arc_fixit_available.size() != metadata.arity ||
+        metadata.param_ownership_arc_diagnostic_profile.size() != metadata.arity ||
+        metadata.param_ownership_arc_fixit_hint.size() != metadata.arity ||
         metadata.param_has_protocol_composition.size() != metadata.arity ||
         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+      return false;
+    }
+    if ((!metadata.return_ownership_arc_diagnostic_candidate &&
+         (metadata.return_ownership_arc_fixit_available ||
+          !metadata.return_ownership_arc_diagnostic_profile.empty() ||
+          !metadata.return_ownership_arc_fixit_hint.empty())) ||
+        (metadata.return_ownership_arc_fixit_available &&
+         metadata.return_ownership_arc_fixit_hint.empty())) {
       return false;
     }
     if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
@@ -6787,6 +7156,14 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
             metadata.param_ownership_insert_autorelease[i])) ||
           (metadata.param_ownership_insert_autorelease[i] &&
            (metadata.param_ownership_insert_retain[i] || metadata.param_ownership_insert_release[i]))) {
+        return false;
+      }
+      if ((!metadata.param_ownership_arc_diagnostic_candidate[i] &&
+           (metadata.param_ownership_arc_fixit_available[i] ||
+            !metadata.param_ownership_arc_diagnostic_profile[i].empty() ||
+            !metadata.param_ownership_arc_fixit_hint[i].empty())) ||
+          (metadata.param_ownership_arc_fixit_available[i] &&
+           metadata.param_ownership_arc_fixit_hint[i].empty())) {
         return false;
       }
       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
@@ -6827,9 +7204,21 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                         metadata.param_ownership_insert_retain.size() != metadata.arity ||
                         metadata.param_ownership_insert_release.size() != metadata.arity ||
                         metadata.param_ownership_insert_autorelease.size() != metadata.arity ||
+                        metadata.param_ownership_arc_diagnostic_candidate.size() != metadata.arity ||
+                        metadata.param_ownership_arc_fixit_available.size() != metadata.arity ||
+                        metadata.param_ownership_arc_diagnostic_profile.size() != metadata.arity ||
+                        metadata.param_ownership_arc_fixit_hint.size() != metadata.arity ||
                         metadata.param_has_protocol_composition.size() != metadata.arity ||
                         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
                         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+                      return false;
+                    }
+                    if ((!metadata.return_ownership_arc_diagnostic_candidate &&
+                         (metadata.return_ownership_arc_fixit_available ||
+                          !metadata.return_ownership_arc_diagnostic_profile.empty() ||
+                          !metadata.return_ownership_arc_fixit_hint.empty())) ||
+                        (metadata.return_ownership_arc_fixit_available &&
+                         metadata.return_ownership_arc_fixit_hint.empty())) {
                       return false;
                     }
                     if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
@@ -6868,6 +7257,14 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                           (metadata.param_ownership_insert_autorelease[i] &&
                            (metadata.param_ownership_insert_retain[i] ||
                             metadata.param_ownership_insert_release[i]))) {
+                        return false;
+                      }
+                      if ((!metadata.param_ownership_arc_diagnostic_candidate[i] &&
+                           (metadata.param_ownership_arc_fixit_available[i] ||
+                            !metadata.param_ownership_arc_diagnostic_profile[i].empty() ||
+                            !metadata.param_ownership_arc_fixit_hint[i].empty())) ||
+                          (metadata.param_ownership_arc_fixit_available[i] &&
+                           metadata.param_ownership_arc_fixit_hint[i].empty())) {
                         return false;
                       }
                       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
@@ -7302,6 +7699,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
   const Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary =
       BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary =
+      BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
       BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);
 
@@ -7746,6 +8145,31 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.weak_unowned_semantics_summary.contract_violation_sites <=
              handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
                  handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
+         handoff.arc_diagnostics_fixit_summary.deterministic &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites ==
+             arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites ==
+             arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites ==
+             arc_diagnostics_fixit_summary.ownership_arc_profiled_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
+             arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites ==
+             arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites &&
+         handoff.arc_diagnostics_fixit_summary.contract_violation_sites ==
+             arc_diagnostics_fixit_summary.contract_violation_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
+             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
+             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+             handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         handoff.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
+             handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
+                 handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
          handoff.autoreleasepool_scope_summary.deterministic &&
          handoff.autoreleasepool_scope_summary.scope_sites ==
              autoreleasepool_scope_summary.scope_sites &&

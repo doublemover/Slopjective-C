@@ -4404,6 +4404,65 @@ Sema/type metadata handoff contract:
 Recommended M164 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m164_sema_weak_unowned_contract.py -q`
+
+## M165 sema/type ARC diagnostics-fixit contract (M165-B001)
+
+M165-B wires parser-authored ARC diagnostic candidate/fix-it metadata into sema
+integration, type-metadata handoff, and parity packets so lane-C lowering can consume
+deterministic ownership diagnostics contracts without reparsing source qualifiers.
+
+Sema/type ARC diagnostics-fixit contract markers:
+
+- `Objc3ArcDiagnosticsFixitSummary`
+- `param_ownership_arc_diagnostic_candidate`
+- `param_ownership_arc_fixit_available`
+- `param_ownership_arc_diagnostic_profile`
+- `param_ownership_arc_fixit_hint`
+- `return_ownership_arc_diagnostic_candidate`
+- `return_ownership_arc_fixit_available`
+- `return_ownership_arc_diagnostic_profile`
+- `return_ownership_arc_fixit_hint`
+- `ownership_arc_diagnostic_candidate`
+- `ownership_arc_fixit_available`
+- `ownership_arc_diagnostic_profile`
+- `ownership_arc_fixit_hint`
+- `BuildArcDiagnosticsFixitSummaryFromIntegrationSurface`
+- `BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff`
+- `ownership_arc_diagnostic_candidate_sites_total`
+- `ownership_arc_weak_unowned_conflict_diagnostic_sites_total`
+- `deterministic_arc_diagnostics_fixit_handoff`
+
+Deterministic ARC diagnostics-fixit invariants (fail-closed):
+
+- ARC diagnostics metadata vectors must match declaration arity for functions and methods.
+- fix-it counters must remain bounded by
+  `ownership_arc_diagnostic_candidate_sites + contract_violation_sites`.
+- profiled-site counters must remain bounded by
+  `ownership_arc_diagnostic_candidate_sites + contract_violation_sites`.
+- weak/unowned conflict diagnostic counters must remain bounded by
+  `ownership_arc_diagnostic_candidate_sites + contract_violation_sites`.
+- empty fix-it hint counters must remain bounded by
+  `ownership_arc_fixit_available_sites + contract_violation_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.arc_diagnostics_fixit_summary = BuildArcDiagnosticsFixitSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.arc_diagnostics_fixit_summary = BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `ownership_arc_diagnostic_candidate_sites_total`
+  - `ownership_arc_fixit_available_sites_total`
+  - `ownership_arc_profiled_sites_total`
+  - `ownership_arc_weak_unowned_conflict_diagnostic_sites_total`
+  - `ownership_arc_empty_fixit_hint_sites_total`
+  - `ownership_arc_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_arc_diagnostics_fixit_handoff`
+
+Recommended M165 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m165_sema_arc_diagnostics_fixit_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

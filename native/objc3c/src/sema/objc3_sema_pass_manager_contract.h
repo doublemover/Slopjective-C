@@ -242,6 +242,12 @@ struct Objc3SemaParityContractSurface {
   std::size_t weak_unowned_semantics_unowned_safe_reference_sites_total = 0;
   std::size_t weak_unowned_semantics_conflict_sites_total = 0;
   std::size_t weak_unowned_semantics_contract_violation_sites_total = 0;
+  std::size_t ownership_arc_diagnostic_candidate_sites_total = 0;
+  std::size_t ownership_arc_fixit_available_sites_total = 0;
+  std::size_t ownership_arc_profiled_sites_total = 0;
+  std::size_t ownership_arc_weak_unowned_conflict_diagnostic_sites_total = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites_total = 0;
+  std::size_t ownership_arc_contract_violation_sites_total = 0;
   std::size_t autoreleasepool_scope_sites_total = 0;
   std::size_t autoreleasepool_scope_symbolized_sites_total = 0;
   std::size_t autoreleasepool_scope_contract_violation_sites_total = 0;
@@ -266,6 +272,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_runtime_shim_host_link_handoff = false;
   bool deterministic_retain_release_operation_handoff = false;
   bool deterministic_weak_unowned_semantics_handoff = false;
+  bool deterministic_arc_diagnostics_fixit_handoff = false;
   bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
@@ -284,6 +291,7 @@ struct Objc3SemaParityContractSurface {
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
@@ -816,6 +824,32 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
          surface.weak_unowned_semantics_summary.deterministic &&
          surface.deterministic_weak_unowned_semantics_handoff &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites ==
+             surface.ownership_arc_diagnostic_candidate_sites_total &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites ==
+             surface.ownership_arc_fixit_available_sites_total &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites ==
+             surface.ownership_arc_profiled_sites_total &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
+             surface.ownership_arc_weak_unowned_conflict_diagnostic_sites_total &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites ==
+             surface.ownership_arc_empty_fixit_hint_sites_total &&
+         surface.arc_diagnostics_fixit_summary.contract_violation_sites ==
+             surface.ownership_arc_contract_violation_sites_total &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
+             surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
+             surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+             surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+                 surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
+             surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
+                 surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+         surface.arc_diagnostics_fixit_summary.deterministic &&
+         surface.deterministic_arc_diagnostics_fixit_handoff &&
          surface.autoreleasepool_scope_summary.scope_sites == surface.autoreleasepool_scope_sites_total &&
          surface.autoreleasepool_scope_summary.scope_symbolized_sites ==
              surface.autoreleasepool_scope_symbolized_sites_total &&
@@ -874,6 +908,8 @@ struct Objc3SemaPassManagerResult {
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   bool deterministic_weak_unowned_semantics_handoff = false;
   Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
+  bool deterministic_arc_diagnostics_fixit_handoff = false;
+  Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary;
   bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;

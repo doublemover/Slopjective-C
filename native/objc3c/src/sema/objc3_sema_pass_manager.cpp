@@ -286,6 +286,17 @@ bool IsEquivalentWeakUnownedSemanticsSummary(const Objc3WeakUnownedSemanticsSumm
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentArcDiagnosticsFixitSummary(const Objc3ArcDiagnosticsFixitSummary &lhs,
+                                            const Objc3ArcDiagnosticsFixitSummary &rhs) {
+  return lhs.ownership_arc_diagnostic_candidate_sites == rhs.ownership_arc_diagnostic_candidate_sites &&
+         lhs.ownership_arc_fixit_available_sites == rhs.ownership_arc_fixit_available_sites &&
+         lhs.ownership_arc_profiled_sites == rhs.ownership_arc_profiled_sites &&
+         lhs.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
+             rhs.ownership_arc_weak_unowned_conflict_diagnostic_sites &&
+         lhs.ownership_arc_empty_fixit_hint_sites == rhs.ownership_arc_empty_fixit_hint_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentAutoreleasePoolScopeSummary(const Objc3AutoreleasePoolScopeSummary &lhs,
                                              const Objc3AutoreleasePoolScopeSummary &rhs) {
   return lhs.scope_sites == rhs.scope_sites &&
@@ -667,6 +678,26 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.weak_unowned_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
               result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
+  result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
+  result.deterministic_arc_diagnostics_fixit_handoff =
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&
+      result.integration_surface.arc_diagnostics_fixit_summary.deterministic &&
+      IsEquivalentArcDiagnosticsFixitSummary(
+          result.integration_surface.arc_diagnostics_fixit_summary,
+          result.type_metadata_handoff.arc_diagnostics_fixit_summary) &&
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
+          result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.type_metadata_handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
+          result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.type_metadata_handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary
+              .ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+          result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.type_metadata_handoff.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
+          result.type_metadata_handoff.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
+              result.type_metadata_handoff.arc_diagnostics_fixit_summary.contract_violation_sites;
   result.autoreleasepool_scope_summary = result.integration_surface.autoreleasepool_scope_summary;
   result.deterministic_autoreleasepool_scope_handoff =
       result.type_metadata_handoff.autoreleasepool_scope_summary.deterministic &&
@@ -1028,6 +1059,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
   result.parity_surface.weak_unowned_semantics_contract_violation_sites_total =
       result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites;
+  result.parity_surface.arc_diagnostics_fixit_summary =
+      result.type_metadata_handoff.arc_diagnostics_fixit_summary;
+  result.parity_surface.ownership_arc_diagnostic_candidate_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites;
+  result.parity_surface.ownership_arc_fixit_available_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites;
+  result.parity_surface.ownership_arc_profiled_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites;
+  result.parity_surface.ownership_arc_weak_unowned_conflict_diagnostic_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites;
+  result.parity_surface.ownership_arc_empty_fixit_hint_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites;
+  result.parity_surface.ownership_arc_contract_violation_sites_total =
+      result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites;
   result.parity_surface.autoreleasepool_scope_summary = result.type_metadata_handoff.autoreleasepool_scope_summary;
   result.parity_surface.autoreleasepool_scope_sites_total =
       result.parity_surface.autoreleasepool_scope_summary.scope_sites;
@@ -1597,6 +1642,33 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites +
               result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
       result.parity_surface.weak_unowned_semantics_summary.deterministic;
+  result.parity_surface.deterministic_arc_diagnostics_fixit_handoff =
+      result.deterministic_arc_diagnostics_fixit_handoff &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites ==
+          result.parity_surface.ownership_arc_diagnostic_candidate_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites ==
+          result.parity_surface.ownership_arc_fixit_available_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites ==
+          result.parity_surface.ownership_arc_profiled_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites ==
+          result.parity_surface.ownership_arc_weak_unowned_conflict_diagnostic_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites ==
+          result.parity_surface.ownership_arc_empty_fixit_hint_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites ==
+          result.parity_surface.ownership_arc_contract_violation_sites_total &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites <=
+          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_profiled_sites <=
+          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_diagnostic_candidate_sites +
+              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_empty_fixit_hint_sites <=
+          result.parity_surface.arc_diagnostics_fixit_summary.ownership_arc_fixit_available_sites +
+              result.parity_surface.arc_diagnostics_fixit_summary.contract_violation_sites &&
+      result.parity_surface.arc_diagnostics_fixit_summary.deterministic;
   result.parity_surface.deterministic_autoreleasepool_scope_handoff =
       result.deterministic_autoreleasepool_scope_handoff &&
       result.parity_surface.autoreleasepool_scope_summary.scope_sites ==
@@ -1666,6 +1738,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_retain_release_operation_handoff &&
       result.parity_surface.weak_unowned_semantics_summary.deterministic &&
       result.parity_surface.deterministic_weak_unowned_semantics_handoff &&
+      result.parity_surface.arc_diagnostics_fixit_summary.deterministic &&
+      result.parity_surface.deterministic_arc_diagnostics_fixit_handoff &&
       result.parity_surface.autoreleasepool_scope_summary.deterministic &&
       result.parity_surface.deterministic_autoreleasepool_scope_handoff;
   return result;
