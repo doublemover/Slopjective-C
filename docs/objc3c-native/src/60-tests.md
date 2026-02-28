@@ -555,6 +555,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_super_dispatch_method_family_profile`
 - `!objc3.objc_super_dispatch_method_family = !{!12}`
 
+## M160 validation/conformance/perf runtime-shim host-link runbook
+
+From repo root, execute deterministic M160 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m160_frontend_runtime_shim_host_link_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m160_sema_runtime_shim_host_link_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m160_lowering_runtime_shim_host_link_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m160_validation_runtime_shim_host_link_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_runtime_shim_host_link.replay_key`
+- `deterministic_runtime_shim_host_link_handoff`
+- `runtime_shim_host_link_lowering`
+- `frontend_objc_runtime_shim_host_link_profile`
+- `!objc3.objc_runtime_shim_host_link = !{!13}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:

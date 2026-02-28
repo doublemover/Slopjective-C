@@ -1,0 +1,38 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_runtime_shim_host_link_handoff": true,
+        "runtime_shim_host_link_message_send_sites": 8,
+        "runtime_shim_host_link_required_runtime_shim_sites": 5,
+        "runtime_shim_host_link_elided_runtime_shim_sites": 3,
+        "runtime_shim_host_link_runtime_dispatch_arg_slots": 3,
+        "runtime_shim_host_link_runtime_dispatch_declaration_parameter_count": 5,
+        "runtime_shim_host_link_runtime_dispatch_symbol": "objc3_msgsend_i32",
+        "runtime_shim_host_link_default_runtime_dispatch_symbol_binding": true,
+        "runtime_shim_host_link_contract_violation_sites": 0,
+        "lowering_runtime_shim_host_link_replay_key": "message_send_sites=8;runtime_shim_required_sites=5;runtime_shim_elided_sites=3;runtime_dispatch_arg_slots=3;runtime_dispatch_declaration_parameter_count=5;runtime_dispatch_symbol=objc3_msgsend_i32;default_runtime_dispatch_symbol_binding=true;contract_violation_sites=0;deterministic=true;lane_contract=m160-runtime-shim-host-link-v1"
+      },
+      "semantic_surface": {
+        "objc_runtime_shim_host_link_surface": {
+          "message_send_sites": 8,
+          "runtime_shim_required_sites": 5,
+          "runtime_shim_elided_sites": 3,
+          "runtime_dispatch_arg_slots": 3,
+          "runtime_dispatch_declaration_parameter_count": 5,
+          "runtime_dispatch_symbol": "objc3_msgsend_i32",
+          "default_runtime_dispatch_symbol_binding": true,
+          "contract_violation_sites": 0,
+          "replay_key": "message_send_sites=8;runtime_shim_required_sites=5;runtime_shim_elided_sites=3;runtime_dispatch_arg_slots=3;runtime_dispatch_declaration_parameter_count=5;runtime_dispatch_symbol=objc3_msgsend_i32;default_runtime_dispatch_symbol_binding=true;contract_violation_sites=0;deterministic=true;lane_contract=m160-runtime-shim-host-link-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_runtime_shim_host_link": {
+    "replay_key": "message_send_sites=8;runtime_shim_required_sites=5;runtime_shim_elided_sites=3;runtime_dispatch_arg_slots=3;runtime_dispatch_declaration_parameter_count=5;runtime_dispatch_symbol=objc3_msgsend_i32;default_runtime_dispatch_symbol_binding=true;contract_violation_sites=0;deterministic=true;lane_contract=m160-runtime-shim-host-link-v1",
+    "lane_contract": "m160-runtime-shim-host-link-v1",
+    "deterministic_handoff": true
+  }
+}
