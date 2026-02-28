@@ -38,7 +38,11 @@ def test_m142_integration_cli_c_api_parity_gate_is_wired() -> None:
     assert '"check:objc3c:m142-cli-c-api-parity"' in package_json
     assert (
         "npm run check:compiler-closeout:m142 && python -m pytest "
-        "tests/tooling/test_objc3c_m142_*_cli_c_api_parity_contract.py -q"
+        "tests/tooling/test_objc3c_m142_frontend_cli_c_api_parity_contract.py "
+        "tests/tooling/test_objc3c_m142_sema_cli_c_api_parity_contract.py "
+        "tests/tooling/test_objc3c_m142_lowering_cli_c_api_parity_contract.py "
+        "tests/tooling/test_objc3c_m142_validation_cli_c_api_parity_contract.py "
+        "tests/tooling/test_objc3c_m142_integration_cli_c_api_parity_contract.py -q"
     ) in package_json
 
     assert "Run M142 CLI and C API parity gate" in workflow
