@@ -126,6 +126,15 @@ class Objc3IREmitter {
         << ", selector_piece_parameter_links=" << frontend_metadata_.selector_piece_parameter_links
         << ", deterministic_selector_normalization_handoff="
         << (frontend_metadata_.deterministic_selector_normalization_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_property_attribute_profile = property_declaration_entries="
+        << frontend_metadata_.property_declaration_entries
+        << ", property_attribute_entries=" << frontend_metadata_.property_attribute_entries
+        << ", property_attribute_value_entries=" << frontend_metadata_.property_attribute_value_entries
+        << ", property_accessor_modifier_entries=" << frontend_metadata_.property_accessor_modifier_entries
+        << ", property_getter_selector_entries=" << frontend_metadata_.property_getter_selector_entries
+        << ", property_setter_selector_entries=" << frontend_metadata_.property_setter_selector_entries
+        << ", deterministic_property_attribute_handoff="
+        << (frontend_metadata_.deterministic_property_attribute_handoff ? "true" : "false") << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
@@ -250,6 +259,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";
     out << "!objc3.objc_selector_normalization = !{!3}\n";
+    out << "!objc3.objc_property_attribute = !{!4}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -277,7 +287,14 @@ class Objc3IREmitter {
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.selector_normalized_method_declarations)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.selector_piece_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.selector_piece_parameter_links) << ", i1 "
-        << (frontend_metadata_.deterministic_selector_normalization_handoff ? 1 : 0) << "}\n\n";
+        << (frontend_metadata_.deterministic_selector_normalization_handoff ? 1 : 0) << "}\n";
+    out << "!4 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.property_declaration_entries)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.property_attribute_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.property_attribute_value_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.property_accessor_modifier_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.property_getter_selector_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.property_setter_selector_entries) << ", i1 "
+        << (frontend_metadata_.deterministic_property_attribute_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

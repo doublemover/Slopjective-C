@@ -35,6 +35,13 @@ struct Objc3IRFrontendMetadata {
   std::size_t selector_piece_entries = 0;
   std::size_t selector_piece_parameter_links = 0;
   bool deterministic_selector_normalization_handoff = false;
+  std::size_t property_declaration_entries = 0;
+  std::size_t property_attribute_entries = 0;
+  std::size_t property_attribute_value_entries = 0;
+  std::size_t property_accessor_modifier_entries = 0;
+  std::size_t property_getter_selector_entries = 0;
+  std::size_t property_setter_selector_entries = 0;
+  bool deterministic_property_attribute_handoff = false;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };

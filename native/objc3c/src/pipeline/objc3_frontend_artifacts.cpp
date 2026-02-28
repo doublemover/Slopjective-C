@@ -153,6 +153,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendProtocolCategorySummary &protocol_category_summary = pipeline_result.protocol_category_summary;
   const Objc3FrontendSelectorNormalizationSummary &selector_normalization_summary =
       pipeline_result.selector_normalization_summary;
+  const Objc3FrontendPropertyAttributeSummary &property_attribute_summary =
+      pipeline_result.property_attribute_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -329,6 +331,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << selector_normalization_summary.selector_piece_entries
            << ",\"selector_piece_parameter_links\":"
            << selector_normalization_summary.selector_piece_parameter_links
+           << ",\"deterministic_property_attribute_handoff\":"
+           << (property_attribute_summary.deterministic_property_attribute_handoff ? "true" : "false")
+           << ",\"property_declaration_entries\":"
+           << property_attribute_summary.property_declaration_entries
+           << ",\"property_attribute_entries\":"
+           << property_attribute_summary.property_attribute_entries
+           << ",\"property_attribute_value_entries\":"
+           << property_attribute_summary.property_attribute_value_entries
+           << ",\"property_accessor_modifier_entries\":"
+           << property_attribute_summary.property_accessor_modifier_entries
+           << ",\"property_getter_selector_entries\":"
+           << property_attribute_summary.property_getter_selector_entries
+           << ",\"property_setter_selector_entries\":"
+           << property_attribute_summary.property_setter_selector_entries
            << "},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
@@ -391,6 +407,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << selector_normalization_summary.selector_piece_parameter_links
            << ",\"deterministic_handoff\":"
            << (selector_normalization_summary.deterministic_selector_normalization_handoff ? "true" : "false")
+           << "}"
+           << ",\"objc_property_attribute_surface\":{\"property_declaration_entries\":"
+           << property_attribute_summary.property_declaration_entries
+           << ",\"property_attribute_entries\":"
+           << property_attribute_summary.property_attribute_entries
+           << ",\"property_attribute_value_entries\":"
+           << property_attribute_summary.property_attribute_value_entries
+           << ",\"property_accessor_modifier_entries\":"
+           << property_attribute_summary.property_accessor_modifier_entries
+           << ",\"property_getter_selector_entries\":"
+           << property_attribute_summary.property_getter_selector_entries
+           << ",\"property_setter_selector_entries\":"
+           << property_attribute_summary.property_setter_selector_entries
+           << ",\"deterministic_handoff\":"
+           << (property_attribute_summary.deterministic_property_attribute_handoff ? "true" : "false")
            << "}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
@@ -508,6 +539,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       selector_normalization_summary.normalized_method_declarations;
   ir_frontend_metadata.selector_piece_entries = selector_normalization_summary.selector_piece_entries;
   ir_frontend_metadata.selector_piece_parameter_links = selector_normalization_summary.selector_piece_parameter_links;
+  ir_frontend_metadata.property_declaration_entries = property_attribute_summary.property_declaration_entries;
+  ir_frontend_metadata.property_attribute_entries = property_attribute_summary.property_attribute_entries;
+  ir_frontend_metadata.property_attribute_value_entries = property_attribute_summary.property_attribute_value_entries;
+  ir_frontend_metadata.property_accessor_modifier_entries = property_attribute_summary.property_accessor_modifier_entries;
+  ir_frontend_metadata.property_getter_selector_entries = property_attribute_summary.property_getter_selector_entries;
+  ir_frontend_metadata.property_setter_selector_entries = property_attribute_summary.property_setter_selector_entries;
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
       interface_implementation_summary.deterministic;
@@ -515,6 +552,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       protocol_category_summary.deterministic_protocol_category_handoff;
   ir_frontend_metadata.deterministic_selector_normalization_handoff =
       selector_normalization_summary.deterministic_selector_normalization_handoff;
+  ir_frontend_metadata.deterministic_property_attribute_handoff =
+      property_attribute_summary.deterministic_property_attribute_handoff;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {

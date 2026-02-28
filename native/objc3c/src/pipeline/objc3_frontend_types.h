@@ -65,6 +65,16 @@ struct Objc3FrontendSelectorNormalizationSummary {
   bool deterministic_selector_normalization_handoff = true;
 };
 
+struct Objc3FrontendPropertyAttributeSummary {
+  std::size_t property_declaration_entries = 0;
+  std::size_t property_attribute_entries = 0;
+  std::size_t property_attribute_value_entries = 0;
+  std::size_t property_accessor_modifier_entries = 0;
+  std::size_t property_getter_selector_entries = 0;
+  std::size_t property_setter_selector_entries = 0;
+  bool deterministic_property_attribute_handoff = true;
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
@@ -74,6 +84,7 @@ struct Objc3FrontendPipelineResult {
   Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
   Objc3FrontendProtocolCategorySummary protocol_category_summary;
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
+  Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };
