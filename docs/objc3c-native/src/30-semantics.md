@@ -1407,3 +1407,25 @@ Operator evidence sequence for sema/type-system readiness:
 2. run parser/sema integration contract checks (`python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`).
 3. run M224 sema release contract test (`python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`).
 
+## M225 sema/type roadmap seeding profile
+
+To seed post-GA sema/type backlog items from shipped behavior, capture deterministic evidence in two packets:
+
+### 1.1 Deterministic semantic diagnostics packet
+
+- Pass-order and normalization anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics wiring anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest counters under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+
+### 1.2 Deterministic type-metadata handoff packet
+
+- Sema handoff and readiness anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity/type anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Backlog sizing surface from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counts (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+
+Recommended seeding commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
+
