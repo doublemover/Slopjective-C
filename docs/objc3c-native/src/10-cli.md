@@ -13,7 +13,7 @@ This document captures the currently implemented behavior for the native `objc3c
 objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
-- Default `--out-dir`: `artifacts/compilation/objc3c-native`
+- Default `--out-dir`: `tmp/artifacts/compilation/objc3c-native`
 - Default `--emit-prefix`: `module`
 - Default `--clang`: `clang` (or explicit path)
 - Default `--llc`: `llc` (or explicit path)
@@ -31,6 +31,14 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
 - Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
 - For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
+
+## Artifact tmp-path governance (M143-D001)
+
+- Source-mode parity workflows are tmp-governed by default:
+  - `--work-dir` defaults to `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work`.
+  - Derived outputs are rooted under `<work-dir>/<work_key>/{library,cli}`.
+- `--work-key` is deterministic by default (derived from source + emit controls) and can be pinned explicitly for reproducible path contracts.
+- Non-tmp source-mode work directories are rejected unless `--allow-non-tmp-work-dir` is set.
 
 ## Driver shell split boundaries (M136-E001)
 

@@ -345,6 +345,11 @@ npm run check:compiler-closeout:m142
 - `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/cli/`
 - `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
 
+Where `<work_key>` is deterministic (derived from source + emit/lowering/runtime controls when not passed explicitly), effective replay roots are:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/<work_key>/library/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/<work_key>/cli/`
+
 Expected compared artifacts per side (`emit_prefix=module` default):
 
 - `module.diagnostics.json`
@@ -362,6 +367,33 @@ Object backend note for harness replay:
 
 - `python scripts/check_m142_frontend_lowering_parity_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`
+
+## Artifact tmp-path governance artifacts (M143-D001)
+
+Tmp-governed parity governance commands:
+
+```powershell
+npm run check:objc3c:library-cli-parity:source:m143
+npm run check:compiler-closeout:m143
+```
+
+`npm run check:objc3c:library-cli-parity:source:m143` writes replay-governed outputs under:
+
+- `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work/<work-key>/library/`
+- `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work/<work-key>/cli/`
+- `tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json`
+
+Governance contract notes:
+
+- Work roots are deterministic via `--work-key` (or default-derived deterministic key when omitted).
+- Source mode fail-closes when stale `<emit-prefix>` outputs are detected in target work roots.
+- Source mode fail-closes when expected generated parity artifacts are missing after command execution.
+- Tmp-path policy is default-enforced; non-tmp work roots require explicit opt-in.
+
+`npm run check:compiler-closeout:m143` fail-closes on tmp-governance source/docs/package drift via:
+
+- `python scripts/check_m143_artifact_tmp_governance_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 

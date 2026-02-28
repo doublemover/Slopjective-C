@@ -13,7 +13,7 @@ This document captures the currently implemented behavior for the native `objc3c
 objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
-- Default `--out-dir`: `artifacts/compilation/objc3c-native`
+- Default `--out-dir`: `tmp/artifacts/compilation/objc3c-native`
 - Default `--emit-prefix`: `module`
 - Default `--clang`: `clang` (or explicit path)
 - Default `--llc`: `llc` (or explicit path)
@@ -31,6 +31,14 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
 - Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
 - For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
+
+## Artifact tmp-path governance (M143-E001)
+
+- Source-mode parity workflows are tmp-governed by default:
+  - `--work-dir` defaults to `tmp/objc3c_library_cli_parity_work`.
+  - Derived outputs are rooted under `<work-dir>/<work_key>/{library,cli}`.
+- `--work-key` is deterministic by default (derived from source + emit controls) and can be pinned explicitly for reproducible path contracts.
+- Non-tmp source-mode work directories are rejected unless `--allow-non-tmp-work-dir` is set.
 
 ## Driver shell split boundaries (M136-E001)
 
@@ -1444,6 +1452,18 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m142_frontend_lowering_parity_contract.py`
   - `npm run check:compiler-closeout:m142`
 
+## Artifact tmp-path replay semantics (M143-E001)
+
+- Source-mode parity replay is partitioned by deterministic `work_key`:
+  - Default `work_key` derives from source path + emit controls + lowering/runtime-affecting options.
+  - Source-mode output roots are `<work-dir>/<work_key>/library` and `<work-dir>/<work_key>/cli`.
+- Tmp-path governance defaults are fail-closed:
+  - `--work-dir` and derived output roots must remain under `tmp/`.
+  - Explicit override requires `--allow-non-tmp-work-dir`.
+- Replay safety contract for source mode:
+  - Fails when expected generated artifacts for `<emit-prefix>` are missing after command execution.
+  - Fails when stale `<emit-prefix>` artifacts are already present in target output roots prior to command execution.
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:
@@ -1917,6 +1937,11 @@ npm run check:compiler-closeout:m142
 - `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/cli/`
 - `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
 
+Where `<work_key>` is deterministic (derived from source + emit/lowering/runtime controls when not passed explicitly), effective replay roots are:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/<work_key>/library/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/<work_key>/cli/`
+
 Expected compared artifacts per side (`emit_prefix=module` default):
 
 - `module.diagnostics.json`
@@ -1934,6 +1959,33 @@ Object backend note for harness replay:
 
 - `python scripts/check_m142_frontend_lowering_parity_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`
+
+## Deterministic tmp-path governance artifacts (M143-E001)
+
+Tmp-governed parity governance commands:
+
+```powershell
+npm run check:objc3c:library-cli-parity:source:m143
+npm run check:compiler-closeout:m143
+```
+
+`npm run check:objc3c:library-cli-parity:source:m143` writes replay-governed outputs under:
+
+- `tmp/artifacts/objc3c-native/m143/library-cli-parity/work/hello-default/library/`
+- `tmp/artifacts/objc3c-native/m143/library-cli-parity/work/hello-default/cli/`
+- `tmp/artifacts/objc3c-native/m143/library-cli-parity/summary.json`
+
+Governance contract notes:
+
+- Work roots are deterministic via `--work-key hello-default` (or default-derived deterministic key when omitted).
+- Source mode fail-closes when stale `<emit-prefix>` outputs are detected in target work roots.
+- Source mode fail-closes when expected generated parity artifacts are missing after command execution.
+- Tmp-path policy is default-enforced; non-tmp work roots require explicit opt-in.
+
+`npm run check:compiler-closeout:m143` fail-closes on tmp-governance source/docs/package drift via:
+
+- `python scripts/check_m143_artifact_tmp_governance_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 
@@ -1982,6 +2034,9 @@ npm run check:compiler-closeout:m141
 npm run test:objc3c:m142-lowering-parity
 npm run check:objc3c:library-cli-parity:source
 npm run check:compiler-closeout:m142
+npm run test:objc3c:m143-artifact-governance
+npm run check:objc3c:library-cli-parity:source:m143
+npm run check:compiler-closeout:m143
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -2065,6 +2120,16 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m143-artifact-governance`
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py -q`.
+  - Verifies tmp-governed default output paths, source-mode work-root governance, and M143 docs/package wiring.
+- `npm run check:objc3c:library-cli-parity:source:m143`
+  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --work-dir tmp/artifacts/objc3c-native/m143/library-cli-parity/work --work-key hello-default ...`.
+  - Enforces deterministic replay roots and fail-closed stale/missing artifact checks under tmp-governed paths.
+- `npm run check:compiler-closeout:m143`
+  - Runs `python scripts/check_m143_artifact_tmp_governance_contract.py`.
+  - Runs `npm run test:objc3c:m143-artifact-governance`.
+  - Enforces fail-closed M143 tmp-governance wiring across source/docs/package/workflow surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -2146,6 +2211,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pa
 python scripts/check_m137_lexer_contract.py
 python scripts/check_m139_sema_pass_manager_contract.py
 python scripts/check_m142_frontend_lowering_parity_contract.py
+python scripts/check_m143_artifact_tmp_governance_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

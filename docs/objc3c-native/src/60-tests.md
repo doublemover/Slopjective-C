@@ -31,6 +31,9 @@ npm run check:compiler-closeout:m141
 npm run test:objc3c:m142-lowering-parity
 npm run check:objc3c:library-cli-parity:source
 npm run check:compiler-closeout:m142
+npm run test:objc3c:m143-artifact-governance
+npm run check:objc3c:library-cli-parity:source:m143
+npm run check:compiler-closeout:m143
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -114,6 +117,16 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m143-artifact-governance`
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
+  - Verifies tmp-governed default output paths, source-mode work-root governance, and M143 docs/package wiring.
+- `npm run check:objc3c:library-cli-parity:source:m143`
+  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --summary-out tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json ...`.
+  - Enforces deterministic replay roots and fail-closed stale/missing artifact checks under tmp-governed paths.
+- `npm run check:compiler-closeout:m143`
+  - Runs `python scripts/check_m143_artifact_tmp_governance_contract.py`.
+  - Runs `npm run test:objc3c:m143-artifact-governance`.
+  - Enforces fail-closed M143 tmp-governance wiring across source/docs/package/workflow surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -195,6 +208,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pa
 python scripts/check_m137_lexer_contract.py
 python scripts/check_m139_sema_pass_manager_contract.py
 python scripts/check_m142_frontend_lowering_parity_contract.py
+python scripts/check_m143_artifact_tmp_governance_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

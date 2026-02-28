@@ -1297,6 +1297,18 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m142_frontend_lowering_parity_contract.py`
   - `npm run check:compiler-closeout:m142`
 
+## Artifact tmp-path governance contract (M143-D001)
+
+- Source-mode parity replay is partitioned by deterministic `--work-key`:
+  - Default `--work-key` derives from source path + emit controls + lowering/runtime-affecting options.
+  - Source-mode output roots are `<work-dir>/<work-key>/library` and `<work-dir>/<work-key>/cli`.
+- Tmp-path governance defaults are fail-closed:
+  - `--work-dir` and derived output roots must remain under `tmp/`.
+  - Explicit override requires `--allow-non-tmp-work-dir`.
+- Replay safety contract for source mode:
+  - Fails when expected generated artifacts for `<emit-prefix>` are missing after command execution.
+  - Fails when stale `<emit-prefix>` artifacts are already present in target output roots prior to command execution.
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:
