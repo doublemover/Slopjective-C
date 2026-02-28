@@ -2180,6 +2180,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m173_validation_protocol_qualified_object_type_contract.py -q
 ```
 
+## M174 validation/conformance/perf variance and bridged-cast runbook
+
+Deterministic M174 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m174_frontend_variance_bridge_cast_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m174_sema_variance_bridge_cast_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m174_lowering_variance_bridge_cast_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m174_validation_variance_bridge_cast_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m174_validation_variance_bridge_cast_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_variance_bridge_cast_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_variance_bridge_cast_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_variance_bridge_cast_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_variance_bridge_cast_lowering_surface.deterministic_handoff`
+  - `lowering_variance_bridge_cast.replay_key`
+- `replay_run_1/module.ll`
+  - `variance_bridge_cast_lowering`
+  - `frontend_objc_variance_bridge_cast_lowering_profile`
+  - `!objc3.objc_variance_bridge_cast_lowering = !{!27}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m174_validation_variance_bridge_cast_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

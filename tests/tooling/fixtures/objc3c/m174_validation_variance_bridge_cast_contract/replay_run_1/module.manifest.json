@@ -1,0 +1,35 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_variance_bridge_cast_lowering_handoff": true,
+        "variance_bridge_cast_lowering_sites": 4,
+        "variance_bridge_cast_lowering_protocol_composition_sites": 2,
+        "variance_bridge_cast_lowering_ownership_qualifier_sites": 2,
+        "variance_bridge_cast_lowering_object_pointer_type_sites": 4,
+        "variance_bridge_cast_lowering_pointer_declarator_sites": 2,
+        "variance_bridge_cast_lowering_normalized_sites": 4,
+        "variance_bridge_cast_lowering_contract_violation_sites": 0,
+        "lowering_variance_bridge_cast_replay_key": "variance_bridge_cast_sites=4;protocol_composition_sites=2;ownership_qualifier_sites=2;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m174-variance-bridge-cast-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_variance_bridge_cast_lowering_surface": {
+          "variance_bridge_cast_sites": 4,
+          "protocol_composition_sites": 2,
+          "ownership_qualifier_sites": 2,
+          "object_pointer_type_sites": 4,
+          "pointer_declarator_sites": 2,
+          "normalized_sites": 4,
+          "contract_violation_sites": 0,
+          "replay_key": "variance_bridge_cast_sites=4;protocol_composition_sites=2;ownership_qualifier_sites=2;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m174-variance-bridge-cast-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_variance_bridge_cast": {
+    "replay_key": "variance_bridge_cast_sites=4;protocol_composition_sites=2;ownership_qualifier_sites=2;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m174-variance-bridge-cast-lowering-v1",
+    "lane_contract": "m174-variance-bridge-cast-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
