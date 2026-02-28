@@ -51,6 +51,37 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M220 lowering/runtime public-beta triage profile
+
+Public-beta lowering/runtime triage must ship as deterministic packet evidence rooted under `tmp/`:
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.manifest.json`
+  - `tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each beta triage packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors to include in packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `patch-loop closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - replay markers stay stable across reruns (no added/removed lines, no reordered anchors).
+  - closure remains open if any ABI/IR anchor or replay marker is missing.
+
+Public-beta triage capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.ll > tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.manifest.json >> tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m220_lowering_public_beta_contract.py -q`
+
 ## M221 lowering/runtime GA blocker burn-down profile
 
 GA-blocker burn-down evidence for lowering/runtime should be captured as a deterministic packet rooted under `tmp/`:
