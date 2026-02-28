@@ -4583,6 +4583,63 @@ Sema/type metadata handoff contract:
 Recommended M166 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m166_sema_block_literal_capture_contract.py -q`
+
+## M167 sema/type block ABI invoke-trampoline semantics contract (M167-B001)
+
+M167-B extends block-literal semantic handoff with ABI invoke-trampoline metadata so
+lowering/runtime lanes can consume deterministic block descriptor + trampoline contracts
+without reparsing or recomputing block layout shape.
+
+Sema/type block-ABI invoke-trampoline contract markers:
+
+- `Objc3BlockAbiInvokeTrampolineSiteMetadata`
+- `Objc3BlockAbiInvokeTrampolineSemanticsSummary`
+- `BuildBlockAbiInvokeTrampolineSiteMetadataLexicographic`
+- `BuildBlockAbiInvokeTrampolineSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockAbiInvokeTrampolineSemanticsSummaryFromTypeMetadataHandoff`
+- `block_abi_invoke_trampoline_sites_total`
+- `block_abi_invoke_trampoline_invoke_argument_slots_total`
+- `block_abi_invoke_trampoline_capture_word_count_total`
+- `block_abi_invoke_trampoline_contract_violation_sites_total`
+- `deterministic_block_abi_invoke_trampoline_handoff`
+
+Deterministic block-ABI invoke-trampoline invariants (fail-closed):
+
+- block ABI invoke-trampoline site metadata must remain lexicographically sorted.
+- parser-authored invoke-slot and capture-word counts must match parameter/capture entries.
+- descriptor symbolized, invoke symbolized, missing invoke, and non-normalized layout counters
+  must remain bounded by `block_literal_sites`.
+- invoke symbolized + missing invoke counts must equal `block_literal_sites`.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_abi_invoke_trampoline_sites_lexicographic = BuildBlockAbiInvokeTrampolineSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_abi_invoke_trampoline_semantics_summary = BuildBlockAbiInvokeTrampolineSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_abi_invoke_trampoline_sites_lexicographic = surface.block_abi_invoke_trampoline_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_abi_invoke_trampoline_semantics_summary = BuildBlockAbiInvokeTrampolineSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_abi_invoke_trampoline_sites_total`
+  - `block_abi_invoke_trampoline_invoke_argument_slots_total`
+  - `block_abi_invoke_trampoline_capture_word_count_total`
+  - `block_abi_invoke_trampoline_parameter_entries_total`
+  - `block_abi_invoke_trampoline_capture_entries_total`
+  - `block_abi_invoke_trampoline_body_statement_entries_total`
+  - `block_abi_invoke_trampoline_descriptor_symbolized_sites_total`
+  - `block_abi_invoke_trampoline_invoke_symbolized_sites_total`
+  - `block_abi_invoke_trampoline_missing_invoke_sites_total`
+  - `block_abi_invoke_trampoline_non_normalized_layout_sites_total`
+  - `block_abi_invoke_trampoline_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff`
+
+Recommended M167 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -7895,6 +7952,71 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m166_lowering_block_literal_capture_contract.py -q`
 
+## Block ABI invoke-trampoline lowering artifact contract (M167-C001)
+
+M167-C publishes replay-stable block ABI invoke-trampoline lowering invariants
+derived from M167 sema block ABI parity surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m167/lowering-block-abi-invoke-trampoline-contract/block-abi-invoke-trampoline-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3BlockAbiInvokeTrampolineLoweringLaneContract`
+- `Objc3BlockAbiInvokeTrampolineLoweringContract`
+- `IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(...)`
+- `Objc3BlockAbiInvokeTrampolineLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `invoke_argument_slots_total=<N>`
+- `capture_word_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `descriptor_symbolized_sites=<N>`
+- `invoke_trampoline_symbolized_sites=<N>`
+- `missing_invoke_trampoline_sites=<N>`
+- `non_normalized_layout_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m167-block-abi-invoke-trampoline-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_abi_invoke_trampoline_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_invoke_argument_slots`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_capture_word_count`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_invoke_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_missing_invoke_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_non_normalized_layout_sites`
+- `frontend.pipeline.sema_pass_manager.block_abi_invoke_trampoline_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_abi_invoke_trampoline_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface`
+- `lowering_block_abi_invoke_trampoline.replay_key`
+- `lowering_block_abi_invoke_trampoline.lane_contract`
+
+IR publication markers:
+
+- `; block_abi_invoke_trampoline_lowering = block_literal_sites=<N>;invoke_argument_slots_total=<N>;capture_word_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;descriptor_symbolized_sites=<N>;invoke_trampoline_symbolized_sites=<N>;missing_invoke_trampoline_sites=<N>;non_normalized_layout_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1`
+- `; frontend_objc_block_abi_invoke_trampoline_lowering_profile = block_literal_sites=<N>, invoke_argument_slots_total=<N>, capture_word_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, descriptor_symbolized_sites=<N>, invoke_trampoline_symbolized_sites=<N>, missing_invoke_trampoline_sites=<N>, non_normalized_layout_sites=<N>, contract_violation_sites=<N>, deterministic_block_abi_invoke_trampoline_lowering_handoff=<bool>`
+- `!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}`
+- `!20 = !{i64 <block_literal_sites>, i64 <invoke_argument_slots_total>, i64 <capture_word_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <descriptor_symbolized_sites>, i64 <invoke_trampoline_symbolized_sites>, i64 <missing_invoke_trampoline_sites>, i64 <non_normalized_layout_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -8584,6 +8706,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `block_literal_capture_lowering`
 - `frontend_objc_block_literal_capture_lowering_profile`
 - `!objc3.objc_block_literal_capture_lowering = !{!19}`
+
+## M167 validation/conformance/perf block ABI invoke-trampoline runbook
+
+From repo root, execute deterministic M167 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_validation_block_abi_invoke_trampoline_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_block_abi_invoke_trampoline.replay_key`
+- `deterministic_block_abi_invoke_trampoline_lowering_handoff`
+- `block_abi_invoke_trampoline_lowering`
+- `frontend_objc_block_abi_invoke_trampoline_lowering_profile`
+- `!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}`
 
 ## M221 validation/perf GA blocker burn-down runbook
 
@@ -10537,6 +10676,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m166_lowering_block_literal_capture_contract.py`
   - `tests/tooling/test_objc3c_m166_validation_block_literal_capture_contract.py`
   - `tests/tooling/test_objc3c_m166_integration_block_literal_capture_contract.py`
+
+## M167 integration block ABI invoke-trampoline contract
+
+- Integration gate:
+  - `npm run check:objc3c:m167-block-abi-invoke-trampoline-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m167`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py`
+  - `tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py`
+  - `tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py`
+  - `tests/tooling/test_objc3c_m167_validation_block_abi_invoke_trampoline_contract.py`
+  - `tests/tooling/test_objc3c_m167_integration_block_abi_invoke_trampoline_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

@@ -72,6 +72,8 @@ jobs:
         run: npm run check:compiler-closeout:m165
       - name: 00v Enforce M166 block-literal-capture packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m166
+      - name: 00w Enforce M167 block-ABI invoke-trampoline packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m167
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -209,6 +211,8 @@ jobs:
         run: npm run check:objc3c:m165-arc-diagnostics-fixit-contracts
       - name: 44v Run M166 block literal capture integration gate
         run: npm run check:objc3c:m166-block-literal-capture-contracts
+      - name: 44w Run M167 block ABI invoke-trampoline integration gate
+        run: npm run check:objc3c:m167-block-abi-invoke-trampoline-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
