@@ -269,6 +269,29 @@ Operational intent:
 - `test:objc3c:m222-compatibility-migration` verifies compatibility/migration contract surfaces.
 - `build_objc3c_native_docs.py --check` verifies generated docs are in sync with source fragments.
 
+## M223 validation/perf triage sequence
+
+When validating release-facing behavior after compiler/runtime changes, run this ordered triage:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Expected evidence roots:
+
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+
+Fail-closed operator guidance:
+
+1. treat non-zero exit in the above sequence as a hard stop.
+2. inspect failing summary JSON first, then per-case logs under the same run root.
+3. do not interpret replay/perf regressions without comparing both run1/run2 evidence packets.
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
