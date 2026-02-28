@@ -389,6 +389,22 @@ Frontend LSP semantic-token/navigation support requires deterministic parser/AST
   3. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
 
+## M210 frontend performance budgets and regression gates
+
+Frontend performance-budget and regression gating requires deterministic lexer/parser throughput anchors, parser boundary stability, and manifest stage-count visibility.
+
+- Required frontend regression-budget signals:
+  - lexer ingress remains `std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - parser diagnostics handoff remains `result.stage_diagnostics.parser = std::move(parse_result.diagnostics);`.
+  - manifest pipeline stage counters remain emitted for `"lexer": {"diagnostics":...}` and `"parser": {"diagnostics":...}`.
+  - pragma prelude contract remains exported via `frontend.language_version_pragma_contract`.
+- Required frontend regression-gate commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2127,6 +2143,33 @@ Recommended LSP semantic contract commands (sema/type lane):
 1. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
 2. `python -m pytest tests/tooling/test_objc3c_m211_sema_lsp_contract.py -q`
 
+## M210 sema/type performance budgets and regression gates
+
+For deterministic sema/type performance budgeting and regression gating, capture deterministic packet evidence from pass-manager budget counters, pipeline diagnostics transport, and manifest gate anchors before lane promotion.
+
+Performance budget packet map:
+
+- `budget packet 1.1 deterministic sema pass-manager budget counters` -> `m210_sema_pass_manager_budget_packet`
+- `budget packet 1.2 deterministic sema/type regression gate anchors` -> `m210_sema_type_regression_gate_packet`
+
+### 1.1 Deterministic sema pass-manager budget packet
+
+- Source budget anchors: `kObjc3SemaPassOrder`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest budget anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, and `diagnostics_emitted_by_validate_pure_contract`.
+- Deterministic sema budget packet key: `m210_sema_pass_manager_budget_packet`.
+
+### 1.2 Deterministic sema/type regression gate anchor packet
+
+- Source regression anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `IsReadyObjc3SemaParityContractSurface(...)`, and `result.parity_surface.ready =`.
+- Manifest regression-gate anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_monotonic`, `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface regression anchors from `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Deterministic sema/type regression packet key: `m210_sema_type_regression_gate_packet`.
+
+Recommended M210 sema/type regression-gate validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2459,6 +2502,63 @@ LSP semantic profile capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
+
+## M210 lowering/runtime performance budgets and regression gates
+
+Lowering/LLVM/runtime perf regression evidence is captured as a deterministic packet rooted under `tmp/` so throughput budget and cache-proof gates fail closed.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/`
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.manifest.json`
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/perf-regression-gates.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `perf regression gate markers` (required in gate extracts):
+  - `tmp/artifacts/objc3c-native/perf-budget`
+  - `summary.json`
+  - `defaultMaxElapsedMs`
+  - `defaultPerFixtureBudgetMs`
+  - `cache_hit=(true|false)`
+  - `dispatch_fixture_count`
+  - `max_elapsed_ms`
+  - `total_elapsed_ms`
+  - `budget_breached`
+  - `cache_proof`
+  - `status`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `$perfRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/perf-budget"`
+  - `$summaryPath = Join-Path $runDir "summary.json"`
+  - `$defaultMaxElapsedMs = 4000`
+  - `$defaultPerFixtureBudgetMs = 150`
+  - `$matches = [regex]::Matches($OutputText, "(?m)^cache_hit=(true|false)\s*$")`
+  - `throw "perf-budget FAIL: cache-proof run2 expected cache_hit=true, observed false"`
+  - `dispatch_fixture_count = $dispatchFixtureCount`
+- `closure criteria`:
+  - rerunning the same source + lowering options must preserve byte-identical `module.ll` and `module.manifest.json` plus stable perf-budget summary gate markers.
+  - perf-budget packets remain fail-closed when `status != "PASS"`, `budget_breached == true`, or cache-proof gates drift.
+  - closure remains open if any required packet artifact, ABI/IR anchor, perf regression gate marker, or source anchor is missing.
+
+Performance-budget capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression --emit-prefix module`
+2. `npm run test:objc3c:perf-budget`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.ll tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.manifest.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/abi-ir-anchors.txt`
+4. `rg -n "tmp/artifacts/objc3c-native/perf-budget|summary.json|defaultMaxElapsedMs|defaultPerFixtureBudgetMs|cache_hit=|dispatch_fixture_count|max_elapsed_ms|total_elapsed_ms|budget_breached|cache_proof|status" scripts/check_objc3c_native_perf_budget.ps1 tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/perf-regression-gates.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m210_lowering_perf_regression_contract.py -q`
 
 ## M214 lowering/runtime daemonized compiler profile
 
@@ -4152,6 +4252,54 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m211_validation_lsp_contract.py -q
 ```
 
+## M210 validation/perf performance-budget regression runbook
+
+Performance-budget regression gating runbook verifies deterministic budget and replay surfaces before integration promotion.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Performance-regression evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m210_validation_perf_regression_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4469,6 +4617,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain LSP anchors.
+
+## M210 integration performance budgets and regression gates
+
+- Gate intent: enforce deterministic performance-budget and regression-gate evidence across all lanes.
+### 1.1 Performance-regression integration chain
+- Deterministic performance-regression gate:
+  - `npm run check:objc3c:m210-performance-regression`
+- Chain order:
+  - replays `check:objc3c:m211-lsp-semantics`.
+  - enforces all M210 lane contracts:
+    `tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_lowering_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_validation_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_integration_perf_regression_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through performance-regression validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain regression-gate anchors.
 
 ## Current call contract
 
