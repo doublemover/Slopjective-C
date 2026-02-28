@@ -1429,6 +1429,36 @@ Recommended seeding commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
 
+## M219 sema/type cross-platform parity profile
+
+To prove sema/type parity across Windows/Linux/macOS before lane promotion, capture deterministic evidence packets for each replay run in stable platform order: `windows-msvc-x64`, `linux-clang-x64`, `macos-clang-arm64`.
+
+### 1.1 Deterministic sema diagnostics cross-platform packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics handoff anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Cross-platform diagnostics evidence packet names (deterministic tuple order):
+  - `windows_sema_diagnostics_packet`
+  - `linux_sema_diagnostics_packet`
+  - `macos_sema_diagnostics_packet`
+
+### 1.2 Deterministic type-metadata handoff cross-platform packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface metadata anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Cross-platform metadata handoff evidence packet names (deterministic tuple order):
+  - `windows_type_metadata_handoff_packet`
+  - `linux_type_metadata_handoff_packet`
+  - `macos_type_metadata_handoff_packet`
+
+Recommended cross-platform parity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m219_sema_cross_platform_contract.py -q`
+
 ## M220 sema/type public-beta triage profile
 
 For sema/type public-beta intake, triage, and patch loops, capture deterministic evidence in two replay-stable packets before promoting fixes to GA-bound lanes.
