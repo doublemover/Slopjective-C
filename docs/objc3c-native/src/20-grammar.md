@@ -658,6 +658,45 @@ Recommended M163 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m163_frontend_autorelease_pool_parser_contract.py -q`
 
+## M164 frontend weak/unowned parser/AST surface
+
+Frontend parser/AST now derives deterministic weak/unowned lifetime metadata
+from ownership qualifiers and property attributes so downstream lanes can
+enforce safety diagnostics without reclassifying ownership spellings.
+
+M164 parser/AST surface details:
+
+- lifetime-profile helper anchors:
+  - `BuildWeakUnownedLifetimeProfile(...)`
+  - `BuildPropertyWeakUnownedLifetimeProfile(...)`
+- parser assignment anchors:
+  - `param.ownership_is_weak_reference`
+  - `param.ownership_is_unowned_reference`
+  - `param.ownership_lifetime_profile`
+  - `fn.return_ownership_is_weak_reference`
+  - `fn.return_ownership_is_unowned_reference`
+  - `fn.return_ownership_runtime_hook_profile`
+  - `property.ownership_is_weak_reference`
+  - `property.ownership_is_unowned_reference`
+  - `property.ownership_lifetime_profile`
+- attribute/consistency anchors:
+  - `property.is_unowned`
+  - `property.has_weak_unowned_conflict`
+
+Deterministic grammar intent:
+
+- weak/unowned classification remains parser-owned:
+  - `__weak` -> weak reference + side-table runtime profile.
+  - `__unsafe_unretained` -> unowned reference + unsafe runtime profile.
+  - `@property (..., unowned)` -> unowned reference + safe runtime profile.
+- property-level consistency is replay-stable through
+  `property.has_weak_unowned_conflict` so lane-B diagnostics can stay
+  deterministic.
+
+Recommended M164 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m164_frontend_weak_unowned_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

@@ -423,6 +423,14 @@ struct Objc3OwnershipOperationProfile {
   std::string profile;
 };
 
+struct Objc3WeakUnownedLifetimeProfile {
+  bool is_weak_reference = false;
+  bool is_unowned_reference = false;
+  bool is_unowned_safe_reference = false;
+  std::string lifetime_profile;
+  std::string runtime_hook_profile;
+};
+
 static Objc3OwnershipOperationProfile BuildParamOwnershipOperationProfile(const std::string &spelling) {
   Objc3OwnershipOperationProfile profile;
   if (spelling == "__strong") {
@@ -455,6 +463,44 @@ static Objc3OwnershipOperationProfile BuildReturnOwnershipOperationProfile(const
     profile.profile = "return-unsafe-unretained";
   }
   return profile;
+}
+
+static Objc3WeakUnownedLifetimeProfile BuildWeakUnownedLifetimeProfile(const std::string &spelling,
+                                                                       bool prefer_safe_unowned) {
+  Objc3WeakUnownedLifetimeProfile profile;
+  if (spelling == "__weak") {
+    profile.is_weak_reference = true;
+    profile.lifetime_profile = "weak";
+    profile.runtime_hook_profile = "objc-weak-side-table";
+  } else if (spelling == "__unsafe_unretained") {
+    profile.is_unowned_reference = true;
+    profile.is_unowned_safe_reference = prefer_safe_unowned;
+    profile.lifetime_profile = prefer_safe_unowned ? "unowned-safe" : "unowned-unsafe";
+    profile.runtime_hook_profile = prefer_safe_unowned ? "objc-unowned-safe-guard"
+                                                       : "objc-unowned-unsafe-direct";
+  } else if (spelling == "__strong") {
+    profile.lifetime_profile = "strong-owned";
+  } else if (spelling == "__autoreleasing") {
+    profile.lifetime_profile = "autoreleasing";
+  }
+  return profile;
+}
+
+static Objc3WeakUnownedLifetimeProfile BuildPropertyWeakUnownedLifetimeProfile(
+    const Objc3PropertyDecl &property) {
+  if (property.is_weak) {
+    return BuildWeakUnownedLifetimeProfile("__weak", false);
+  }
+  if (property.is_unowned) {
+    return BuildWeakUnownedLifetimeProfile("__unsafe_unretained", true);
+  }
+  if (!property.ownership_qualifier_spelling.empty()) {
+    return BuildWeakUnownedLifetimeProfile(property.ownership_qualifier_spelling, false);
+  }
+  if (property.is_assign) {
+    return BuildWeakUnownedLifetimeProfile("__unsafe_unretained", false);
+  }
+  return Objc3WeakUnownedLifetimeProfile{};
 }
 
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
@@ -857,6 +903,11 @@ class Objc3Parser {
     target.return_ownership_insert_release = source.return_ownership_insert_release;
     target.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
     target.return_ownership_operation_profile = source.return_ownership_operation_profile;
+    target.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
+    target.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
+    target.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
+    target.return_ownership_lifetime_profile = source.return_ownership_lifetime_profile;
+    target.return_ownership_runtime_hook_profile = source.return_ownership_runtime_hook_profile;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -888,6 +939,11 @@ class Objc3Parser {
     target.ownership_insert_release = source.ownership_insert_release;
     target.ownership_insert_autorelease = source.ownership_insert_autorelease;
     target.ownership_operation_profile = source.ownership_operation_profile;
+    target.ownership_is_weak_reference = source.ownership_is_weak_reference;
+    target.ownership_is_unowned_reference = source.ownership_is_unowned_reference;
+    target.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
+    target.ownership_lifetime_profile = source.ownership_lifetime_profile;
+    target.ownership_runtime_hook_profile = source.ownership_runtime_hook_profile;
   }
 
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
@@ -1132,6 +1188,8 @@ class Objc3Parser {
         property.is_strong = true;
       } else if (attribute.name == "weak") {
         property.is_weak = true;
+      } else if (attribute.name == "unowned") {
+        property.is_unowned = true;
       } else if (attribute.name == "assign") {
         property.is_assign = true;
       } else if (attribute.name == "getter") {
@@ -1178,6 +1236,14 @@ class Objc3Parser {
     }
 
     ApplyObjcPropertyAttributes(property);
+    const Objc3WeakUnownedLifetimeProfile property_lifetime_profile =
+        BuildPropertyWeakUnownedLifetimeProfile(property);
+    property.ownership_is_weak_reference = property_lifetime_profile.is_weak_reference;
+    property.ownership_is_unowned_reference = property_lifetime_profile.is_unowned_reference;
+    property.ownership_is_unowned_safe_reference = property_lifetime_profile.is_unowned_safe_reference;
+    property.ownership_lifetime_profile = property_lifetime_profile.lifetime_profile;
+    property.ownership_runtime_hook_profile = property_lifetime_profile.runtime_hook_profile;
+    property.has_weak_unowned_conflict = property.is_weak && property.is_unowned;
     return true;
   }
 
@@ -1708,6 +1774,11 @@ class Objc3Parser {
     fn.return_ownership_insert_release = false;
     fn.return_ownership_insert_autorelease = false;
     fn.return_ownership_operation_profile.clear();
+    fn.return_ownership_is_weak_reference = false;
+    fn.return_ownership_is_unowned_reference = false;
+    fn.return_ownership_is_unowned_safe_reference = false;
+    fn.return_ownership_lifetime_profile.clear();
+    fn.return_ownership_runtime_hook_profile.clear();
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
@@ -1851,6 +1922,13 @@ class Objc3Parser {
     fn.return_ownership_insert_release = return_ownership_profile.insert_release;
     fn.return_ownership_insert_autorelease = return_ownership_profile.insert_autorelease;
     fn.return_ownership_operation_profile = return_ownership_profile.profile;
+    const Objc3WeakUnownedLifetimeProfile return_lifetime_profile =
+        BuildWeakUnownedLifetimeProfile(fn.return_ownership_qualifier_spelling, false);
+    fn.return_ownership_is_weak_reference = return_lifetime_profile.is_weak_reference;
+    fn.return_ownership_is_unowned_reference = return_lifetime_profile.is_unowned_reference;
+    fn.return_ownership_is_unowned_safe_reference = return_lifetime_profile.is_unowned_safe_reference;
+    fn.return_ownership_lifetime_profile = return_lifetime_profile.lifetime_profile;
+    fn.return_ownership_runtime_hook_profile = return_lifetime_profile.runtime_hook_profile;
 
     return true;
   }
@@ -1883,6 +1961,11 @@ class Objc3Parser {
     param.ownership_insert_release = false;
     param.ownership_insert_autorelease = false;
     param.ownership_operation_profile.clear();
+    param.ownership_is_weak_reference = false;
+    param.ownership_is_unowned_reference = false;
+    param.ownership_is_unowned_safe_reference = false;
+    param.ownership_lifetime_profile.clear();
+    param.ownership_runtime_hook_profile.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -1966,6 +2049,13 @@ class Objc3Parser {
     param.ownership_insert_release = param_ownership_profile.insert_release;
     param.ownership_insert_autorelease = param_ownership_profile.insert_autorelease;
     param.ownership_operation_profile = param_ownership_profile.profile;
+    const Objc3WeakUnownedLifetimeProfile param_lifetime_profile =
+        BuildWeakUnownedLifetimeProfile(param.ownership_qualifier_spelling, false);
+    param.ownership_is_weak_reference = param_lifetime_profile.is_weak_reference;
+    param.ownership_is_unowned_reference = param_lifetime_profile.is_unowned_reference;
+    param.ownership_is_unowned_safe_reference = param_lifetime_profile.is_unowned_safe_reference;
+    param.ownership_lifetime_profile = param_lifetime_profile.lifetime_profile;
+    param.ownership_runtime_hook_profile = param_lifetime_profile.runtime_hook_profile;
 
     return true;
   }
