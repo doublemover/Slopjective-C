@@ -637,6 +637,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m167_validation_block_abi_invoke_trampoline_contract.py`
   - `tests/tooling/test_objc3c_m167_integration_block_abi_invoke_trampoline_contract.py`
 
+## M168 integration block storage escape contract
+
+- Integration gate:
+  - `npm run check:objc3c:m168-block-storage-escape-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m168`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py`
+  - `tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_integration_block_storage_escape_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

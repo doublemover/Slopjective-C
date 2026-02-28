@@ -872,6 +872,39 @@ Recommended M167 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
 
+## M168 frontend __block storage and escape parser/AST surface (M168-A001)
+
+Frontend parser/AST now emits deterministic mutable-capture storage and escape
+profile carrier metadata for block literals.
+
+M168 parser/AST surface details:
+
+- storage/escape helper anchors:
+  - `BuildBlockStorageEscapeProfile(...)`
+  - `BuildBlockStorageByrefLayoutSymbol(...)`
+- parser assignment anchors:
+  - `block_storage_mutable_capture_count`
+  - `block_storage_byref_slot_count`
+  - `block_storage_requires_byref_cells`
+  - `block_storage_escape_analysis_enabled`
+  - `block_storage_escape_to_heap`
+  - `block_storage_escape_profile`
+  - `block_storage_byref_layout_symbol`
+  - `block_storage_escape_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable storage/escape metadata from block literal shape:
+  - mutable-capture and byref-slot counts mirror deterministic capture count.
+  - escape profile and byref-layout symbol remain stable from source coordinates
+    and block capture shape.
+  - normalized storage/escape flags remain tied to block-literal normalization
+    and deterministic capture-set derivation.
+
+Recommended M168 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4640,6 +4673,65 @@ Sema/type metadata handoff contract:
 Recommended M167 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
+
+## M168 sema/type __block storage and escape semantics contract (M168-B001)
+
+M168-B lifts parser-authored mutable-capture storage and escape-profile metadata
+into sema integration, type-metadata handoff, and pass-manager parity packets so
+downstream lowering/runtime lanes consume deterministic `__block` storage contracts.
+
+Sema/type block-storage escape contract markers:
+
+- `Objc3BlockStorageEscapeSiteMetadata`
+- `Objc3BlockStorageEscapeSemanticsSummary`
+- `BuildBlockStorageEscapeSiteMetadataLexicographic`
+- `BuildBlockStorageEscapeSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockStorageEscapeSemanticsSummaryFromTypeMetadataHandoff`
+- `block_storage_escape_sites_total`
+- `block_storage_escape_mutable_capture_count_total`
+- `block_storage_escape_byref_slot_count_total`
+- `block_storage_escape_contract_violation_sites_total`
+- `deterministic_block_storage_escape_handoff`
+
+Deterministic block-storage escape invariants (fail-closed):
+
+- block-storage escape site metadata must remain lexicographically sorted.
+- mutable-capture and byref-slot counts must match capture-entry totals.
+- requires-byref, escape-analysis, escape-to-heap, profile-normalized, and
+  symbolized-site counters must remain bounded by `block_literal_sites`.
+- escape-analysis-enabled counters must equal `block_literal_sites`.
+- requires-byref-cells counters must equal escape-to-heap counters.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_storage_escape_sites_lexicographic = BuildBlockStorageEscapeSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_storage_escape_semantics_summary = BuildBlockStorageEscapeSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_storage_escape_sites_lexicographic = surface.block_storage_escape_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_storage_escape_semantics_summary = BuildBlockStorageEscapeSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_storage_escape_sites_total`
+  - `block_storage_escape_mutable_capture_count_total`
+  - `block_storage_escape_byref_slot_count_total`
+  - `block_storage_escape_parameter_entries_total`
+  - `block_storage_escape_capture_entries_total`
+  - `block_storage_escape_body_statement_entries_total`
+  - `block_storage_escape_requires_byref_cells_sites_total`
+  - `block_storage_escape_escape_analysis_enabled_sites_total`
+  - `block_storage_escape_escape_to_heap_sites_total`
+  - `block_storage_escape_escape_profile_normalized_sites_total`
+  - `block_storage_escape_byref_layout_symbolized_sites_total`
+  - `block_storage_escape_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_storage_escape_handoff`
+
+Recommended M168 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -8017,6 +8109,73 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
 
+## Block storage escape lowering artifact contract (M168-C001)
+
+M168-C publishes replay-stable block storage escape lowering invariants derived
+from M168 sema `__block` storage/escape parity surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m168/lowering-block-storage-escape-contract/block-storage-escape-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3BlockStorageEscapeLoweringLaneContract`
+- `Objc3BlockStorageEscapeLoweringContract`
+- `IsValidObjc3BlockStorageEscapeLoweringContract(...)`
+- `Objc3BlockStorageEscapeLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `mutable_capture_count_total=<N>`
+- `byref_slot_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `requires_byref_cells_sites=<N>`
+- `escape_analysis_enabled_sites=<N>`
+- `escape_to_heap_sites=<N>`
+- `escape_profile_normalized_sites=<N>`
+- `byref_layout_symbolized_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m168-block-storage-escape-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_storage_escape_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_mutable_capture_count`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_byref_slot_count`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_requires_byref_cells_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_analysis_enabled_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_to_heap_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_profile_normalized_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_byref_layout_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_storage_escape_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface`
+- `lowering_block_storage_escape.replay_key`
+- `lowering_block_storage_escape.lane_contract`
+
+IR publication markers:
+
+- `; block_storage_escape_lowering = block_literal_sites=<N>;mutable_capture_count_total=<N>;byref_slot_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;requires_byref_cells_sites=<N>;escape_analysis_enabled_sites=<N>;escape_to_heap_sites=<N>;escape_profile_normalized_sites=<N>;byref_layout_symbolized_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m168-block-storage-escape-lowering-v1`
+- `; frontend_objc_block_storage_escape_lowering_profile = block_literal_sites=<N>, mutable_capture_count_total=<N>, byref_slot_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, requires_byref_cells_sites=<N>, escape_analysis_enabled_sites=<N>, escape_to_heap_sites=<N>, escape_profile_normalized_sites=<N>, byref_layout_symbolized_sites=<N>, contract_violation_sites=<N>, deterministic_block_storage_escape_lowering_handoff=<bool>`
+- `!objc3.objc_block_storage_escape_lowering = !{!21}`
+- `!21 = !{i64 <block_literal_sites>, i64 <mutable_capture_count_total>, i64 <byref_slot_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <requires_byref_cells_sites>, i64 <escape_analysis_enabled_sites>, i64 <escape_to_heap_sites>, i64 <escape_profile_normalized_sites>, i64 <byref_layout_symbolized_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -10032,6 +10191,36 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m193_validation_simd_vector_lowering_contract.py -q
 ```
 
+## M168 validation/conformance/perf block storage escape runbook
+
+Block storage escape validation runbook verifies deterministic parser/sema/lowering packet replay for `__block` mutable capture + byref-layout/escape metadata.
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
+```
+
+Block-storage escape evidence packet fields:
+
+- `tests/tooling/fixtures/objc3c/m168_validation_block_storage_escape_contract/replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_storage_escape_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_storage_escape_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface.deterministic_handoff`
+  - `lowering_block_storage_escape.replay_key`
+- `tests/tooling/fixtures/objc3c/m168_validation_block_storage_escape_contract/replay_run_1/module.ll`
+  - `block_storage_escape_lowering`
+  - `frontend_objc_block_storage_escape_lowering_profile`
+  - `!objc3.objc_block_storage_escape_lowering = !{!21}`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -10691,6 +10880,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py`
   - `tests/tooling/test_objc3c_m167_validation_block_abi_invoke_trampoline_contract.py`
   - `tests/tooling/test_objc3c_m167_integration_block_abi_invoke_trampoline_contract.py`
+
+## M168 integration block storage escape contract
+
+- Integration gate:
+  - `npm run check:objc3c:m168-block-storage-escape-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m168`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py`
+  - `tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py`
+  - `tests/tooling/test_objc3c_m168_integration_block_storage_escape_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
