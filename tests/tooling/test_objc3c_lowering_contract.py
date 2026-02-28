@@ -16,7 +16,12 @@ def test_lowering_contract_module_is_wired() -> None:
     assert SOURCE.exists()
     assert '#include "lower/objc3_lowering_contract.h"' in _read(PIPELINE_TYPES)
     header = _read(HEADER)
+    source = _read(SOURCE)
     assert "TryGetCompoundAssignmentBinaryOpcode" in header
+    assert '#include "lex/objc3_lexer.h"' not in header
+    assert '#include "lex/objc3_lexer.h"' not in source
+    assert '#include "token/objc3_token.h"' not in header
+    assert '#include "token/objc3_token.h"' not in source
 
 
 def test_cmake_links_lowering_contract_target() -> None:

@@ -14,6 +14,12 @@ def _read(path: Path) -> str:
 def test_ir_emitter_module_exists_and_pipeline_artifacts_use_api() -> None:
     assert IR_HEADER.exists()
     assert IR_SOURCE.exists()
+    ir_header = _read(IR_HEADER)
+    ir_source = _read(IR_SOURCE)
+    assert '#include "lex/objc3_lexer.h"' not in ir_header
+    assert '#include "lex/objc3_lexer.h"' not in ir_source
+    assert '#include "token/objc3_token.h"' not in ir_header
+    assert '#include "token/objc3_token.h"' not in ir_source
 
     artifacts_cpp = _read(PIPELINE_ARTIFACTS_CPP)
     assert '#include "ir/objc3_ir_emitter.h"' in artifacts_cpp

@@ -13,7 +13,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   Objc3FrontendPipelineResult result;
 
   Objc3Lexer lexer(source);
-  std::vector<Token> tokens = lexer.Run(result.stage_diagnostics.lexer);
+  std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
 
   Objc3ParseResult parse_result = ParseObjc3Program(tokens);
   result.program = std::move(parse_result.program);
