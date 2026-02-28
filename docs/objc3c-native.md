@@ -344,6 +344,21 @@ Frontend daemon/watch mode requires deterministic parser/AST boundary evidence a
   3. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
 
+## M213 frontend debug-info fidelity packet
+
+Frontend debug-info fidelity requires deterministic parser/AST boundary evidence tied to source-level stepping surfaces.
+
+- Required debug-fidelity signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required debug-fidelity commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1992,6 +2007,37 @@ Recommended daemonized compiler commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
 
+## M213 sema/type debug-info fidelity profile
+
+For deterministic sema/type debug-info fidelity across native debugger stacks, capture evidence packets in stable debug format order: `dwarf`, `pdb`.
+
+Debug-info fidelity packet map:
+
+- `debug format 1.1 deterministic sema diagnostics` -> `m213_dwarf_sema_diagnostics_packet`, `m213_pdb_sema_diagnostics_packet`
+- `debug format 1.2 deterministic type-metadata + debug stepping fidelity` -> `m213_dwarf_type_metadata_stepping_packet`, `m213_pdb_type_metadata_stepping_packet`
+
+### 1.1 Deterministic sema diagnostics debug-info packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- DWARF/PDB sema diagnostics packet keys: `m213_dwarf_sema_diagnostics_packet` and `m213_pdb_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata + debug stepping fidelity packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Debug stepping source-location anchors in manifest emission: `program.globals[i].line`, `program.globals[i].column`, `fn.line`, and `fn.column`.
+- DWARF/PDB type-metadata + stepping packet keys: `m213_dwarf_type_metadata_stepping_packet` and `m213_pdb_type_metadata_stepping_packet`.
+
+Recommended debug-info fidelity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2161,6 +2207,54 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M213 lowering/runtime debug-info fidelity profile
+
+Lowering/runtime debug-info fidelity is captured as a deterministic packet rooted under `tmp/` to preserve replay-stable source mapping evidence.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/`
+  - `tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/debug-metadata-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `debug metadata markers` (required in debug metadata marker extracts):
+  - `source_filename = "<module>.objc3"`
+  - `"source":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `out << "source_filename = \"" << program_.module_name << ".objc3"\n\n";`
+  - `manifest << "  \"source\": \"" << input_path.generic_string() << "\",\n";`
+  - `manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]`
+  - `<< ",\"line\":" << program.globals[i].line << ",\"column\":" << program.globals[i].column << "}";`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and debug metadata marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, debug metadata marker, or source anchor is missing.
+
+Debug-info fidelity capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/abi-ir-anchors.txt`
+3. `rg -n "source_filename =|\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.diagnostics.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/debug-metadata-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py -q`
 
 ## M214 lowering/runtime daemonized compiler profile
 
@@ -3719,6 +3813,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m214_validation_daemonized_contract.py -q
 ```
 
+## M213 validation/perf debug-info fidelity runbook
+
+Debug-fidelity validation runbook verifies deterministic evidence for DWARF/PDB emission and source-level stepping.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Debug-fidelity evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `debug_symbol_map`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `debug_symbol_map`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `debug_symbol_map`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `debug_symbol_map`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m213_validation_debug_fidelity_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3976,6 +4115,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain daemonized anchors.
+
+## M213 integration debug-info fidelity
+
+- Gate intent: enforce deterministic debug-info fidelity evidence across all lanes.
+### 1.1 Debug-fidelity integration chain
+- Deterministic debug-fidelity gate:
+  - `npm run check:objc3c:m213-debug-fidelity`
+- Chain order:
+  - replays `check:objc3c:m214-daemonized-watch`.
+  - enforces all M213 lane contracts:
+    `tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_validation_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_integration_debug_fidelity_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through debug-fidelity validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain debug-fidelity anchors.
 
 ## Current call contract
 
