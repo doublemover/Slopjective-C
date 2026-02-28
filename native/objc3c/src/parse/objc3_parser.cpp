@@ -9,6 +9,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace {
@@ -327,6 +328,21 @@ static std::string BuildRuntimeShimHostLinkSymbol(bool runtime_shim_required,
   default:
     out << "none";
     break;
+  }
+  return out.str();
+}
+
+static std::string BuildBlockLiteralCaptureProfile(const std::vector<std::string> &capture_names_lexicographic) {
+  if (capture_names_lexicographic.empty()) {
+    return "block-captures:none";
+  }
+  std::ostringstream out;
+  out << "block-captures:";
+  for (std::size_t i = 0; i < capture_names_lexicographic.size(); ++i) {
+    out << capture_names_lexicographic[i];
+    if (i + 1u != capture_names_lexicographic.size()) {
+      out << ",";
+    }
   }
   return out.str();
 }
@@ -3301,6 +3317,243 @@ class Objc3Parser {
     return expr;
   }
 
+  void CollectBlockLiteralExprIdentifiers(const Expr *expr, std::vector<std::string> &used_identifiers) {
+    if (expr == nullptr) {
+      return;
+    }
+    switch (expr->kind) {
+    case Expr::Kind::Identifier:
+      if (!expr->ident.empty()) {
+        used_identifiers.push_back(expr->ident);
+      }
+      return;
+    case Expr::Kind::Binary:
+      CollectBlockLiteralExprIdentifiers(expr->left.get(), used_identifiers);
+      CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
+      return;
+    case Expr::Kind::Conditional:
+      CollectBlockLiteralExprIdentifiers(expr->left.get(), used_identifiers);
+      CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
+      CollectBlockLiteralExprIdentifiers(expr->third.get(), used_identifiers);
+      return;
+    case Expr::Kind::Call:
+      for (const auto &arg : expr->args) {
+        CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
+      }
+      return;
+    case Expr::Kind::MessageSend:
+      CollectBlockLiteralExprIdentifiers(expr->receiver.get(), used_identifiers);
+      for (const auto &arg : expr->args) {
+        CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
+      }
+      return;
+    case Expr::Kind::BlockLiteral:
+      return;
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+    default:
+      return;
+    }
+  }
+
+  void CollectBlockLiteralForClauseIdentifiers(const ForClause &clause,
+                                               std::vector<std::string> &used_identifiers,
+                                               std::vector<std::string> &declared_identifiers) {
+    if (clause.kind == ForClause::Kind::Let && !clause.name.empty()) {
+      declared_identifiers.push_back(clause.name);
+    } else if ((clause.kind == ForClause::Kind::Assign || clause.kind == ForClause::Kind::Expr) &&
+               !clause.name.empty()) {
+      used_identifiers.push_back(clause.name);
+    }
+    CollectBlockLiteralExprIdentifiers(clause.value.get(), used_identifiers);
+  }
+
+  void CollectBlockLiteralStmtIdentifiers(const Stmt *stmt,
+                                          std::vector<std::string> &used_identifiers,
+                                          std::vector<std::string> &declared_identifiers) {
+    if (stmt == nullptr) {
+      return;
+    }
+    switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        if (!stmt->let_stmt->name.empty()) {
+          declared_identifiers.push_back(stmt->let_stmt->name);
+        }
+        CollectBlockLiteralExprIdentifiers(stmt->let_stmt->value.get(), used_identifiers);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        if (!stmt->assign_stmt->name.empty()) {
+          used_identifiers.push_back(stmt->assign_stmt->name);
+        }
+        CollectBlockLiteralExprIdentifiers(stmt->assign_stmt->value.get(), used_identifiers);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        CollectBlockLiteralExprIdentifiers(stmt->return_stmt->value.get(), used_identifiers);
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        CollectBlockLiteralExprIdentifiers(stmt->expr_stmt->value.get(), used_identifiers);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        CollectBlockLiteralExprIdentifiers(stmt->if_stmt->condition.get(), used_identifiers);
+        for (const auto &then_stmt : stmt->if_stmt->then_body) {
+          CollectBlockLiteralStmtIdentifiers(then_stmt.get(), used_identifiers, declared_identifiers);
+        }
+        for (const auto &else_stmt : stmt->if_stmt->else_body) {
+          CollectBlockLiteralStmtIdentifiers(else_stmt.get(), used_identifiers, declared_identifiers);
+        }
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->do_while_stmt->body) {
+          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
+        }
+        CollectBlockLiteralExprIdentifiers(stmt->do_while_stmt->condition.get(), used_identifiers);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        CollectBlockLiteralForClauseIdentifiers(stmt->for_stmt->init, used_identifiers, declared_identifiers);
+        CollectBlockLiteralExprIdentifiers(stmt->for_stmt->condition.get(), used_identifiers);
+        CollectBlockLiteralForClauseIdentifiers(stmt->for_stmt->step, used_identifiers, declared_identifiers);
+        for (const auto &body_stmt : stmt->for_stmt->body) {
+          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
+        }
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        CollectBlockLiteralExprIdentifiers(stmt->switch_stmt->condition.get(), used_identifiers);
+        for (const auto &switch_case : stmt->switch_stmt->cases) {
+          for (const auto &case_stmt : switch_case.body) {
+            CollectBlockLiteralStmtIdentifiers(case_stmt.get(), used_identifiers, declared_identifiers);
+          }
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectBlockLiteralExprIdentifiers(stmt->while_stmt->condition.get(), used_identifiers);
+        for (const auto &body_stmt : stmt->while_stmt->body) {
+          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
+        }
+      }
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->block_stmt->body) {
+          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
+        }
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+    }
+  }
+
+  std::vector<std::string> BuildBlockLiteralCaptureSet(const std::vector<std::unique_ptr<Stmt>> &body,
+                                                       const std::vector<std::string> &parameter_names,
+                                                       bool &deterministic) {
+    deterministic = true;
+    std::unordered_set<std::string> parameter_name_set;
+    for (const auto &name : parameter_names) {
+      if (!parameter_name_set.insert(name).second) {
+        deterministic = false;
+      }
+    }
+
+    std::vector<std::string> used_identifiers;
+    std::vector<std::string> declared_identifiers = parameter_names;
+    for (const auto &stmt : body) {
+      CollectBlockLiteralStmtIdentifiers(stmt.get(), used_identifiers, declared_identifiers);
+    }
+
+    std::unordered_set<std::string> declared_name_set;
+    for (const auto &name : declared_identifiers) {
+      if (!name.empty()) {
+        declared_name_set.insert(name);
+      }
+    }
+
+    std::vector<std::string> capture_names;
+    capture_names.reserve(used_identifiers.size());
+    for (const auto &used_name : used_identifiers) {
+      if (used_name.empty() || declared_name_set.count(used_name) != 0u) {
+        continue;
+      }
+      capture_names.push_back(used_name);
+    }
+    return BuildSortedUniqueStrings(std::move(capture_names));
+  }
+
+  std::unique_ptr<Expr> ParseBlockLiteralExpression() {
+    const Token caret = Previous();
+    auto block = std::make_unique<Expr>();
+    block->kind = Expr::Kind::BlockLiteral;
+    block->line = caret.line;
+    block->column = caret.column;
+
+    std::vector<std::string> parameter_names;
+    if (Match(TokenKind::LParen)) {
+      if (!At(TokenKind::RParen)) {
+        while (true) {
+          if (At(TokenKind::KwI32) || At(TokenKind::KwBool) || At(TokenKind::KwVoid)) {
+            Advance();
+          }
+          if (!At(TokenKind::Identifier)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(
+                token.line, token.column, "O3P166", "expected parameter identifier in block literal"));
+            return nullptr;
+          }
+          parameter_names.push_back(Advance().text);
+          if (!Match(TokenKind::Comma)) {
+            break;
+          }
+        }
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109",
+                                        "missing ')' after block literal parameter list"));
+        return nullptr;
+      }
+    }
+
+    if (!Match(TokenKind::LBrace)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P166", "expected '{' before block literal body"));
+      return nullptr;
+    }
+
+    const auto body = ParseBlock();
+    bool deterministic_capture_set = true;
+    block->block_parameter_count = parameter_names.size();
+    block->block_parameter_names_lexicographic = BuildSortedUniqueStrings(parameter_names);
+    block->block_capture_names_lexicographic =
+        BuildBlockLiteralCaptureSet(body, parameter_names, deterministic_capture_set);
+    block->block_capture_count = block->block_capture_names_lexicographic.size();
+    block->block_body_statement_count = body.size();
+    block->block_capture_set_deterministic = deterministic_capture_set;
+    block->block_capture_profile =
+        BuildBlockLiteralCaptureProfile(block->block_capture_names_lexicographic);
+    block->block_literal_is_normalized = true;
+    return block;
+  }
+
   std::unique_ptr<Expr> ParsePrimary() {
     if (Match(TokenKind::Number)) {
       auto expr = std::make_unique<Expr>();
@@ -3328,6 +3581,9 @@ class Objc3Parser {
       expr->line = Previous().line;
       expr->column = Previous().column;
       return expr;
+    }
+    if (Match(TokenKind::Caret)) {
+      return ParseBlockLiteralExpression();
     }
     if (Match(TokenKind::Identifier)) {
       auto expr = std::make_unique<Expr>();

@@ -17,8 +17,20 @@ struct SymbolContext {
   std::vector<SymbolRow> rows;
 };
 
+enum class ValueType { Unknown, I32, Bool, Void, Function };
+
 struct Expr {
-  enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
+  enum class Kind {
+    Number,
+    BoolLiteral,
+    NilLiteral,
+    Identifier,
+    Binary,
+    Conditional,
+    Call,
+    MessageSend,
+    BlockLiteral
+  };
   enum class MessageSendForm { None, Unary, Keyword };
   struct MessageSendSelectorPiece {
     std::string keyword;
@@ -65,6 +77,14 @@ struct Expr {
   std::string runtime_dispatch_bridge_symbol;
   std::string runtime_shim_host_link_symbol;
   bool runtime_shim_host_link_is_normalized = false;
+  std::vector<std::string> block_parameter_names_lexicographic;
+  std::size_t block_parameter_count = 0;
+  std::vector<std::string> block_capture_names_lexicographic;
+  std::size_t block_capture_count = 0;
+  std::size_t block_body_statement_count = 0;
+  std::string block_capture_profile;
+  bool block_capture_set_deterministic = false;
+  bool block_literal_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;
@@ -74,8 +94,6 @@ struct Expr {
   unsigned line = 1;
   unsigned column = 1;
 };
-
-enum class ValueType { Unknown, I32, Bool, Void, Function };
 
 struct LetStmt;
 struct AssignStmt;

@@ -730,6 +730,43 @@ Recommended M165 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m165_frontend_arc_diagnostics_fixit_parser_contract.py -q`
 
+## M166 frontend block literal syntax and capture-set parser/AST surface
+
+Frontend parser/AST now accepts Objective-C block literal expression syntax and
+derives deterministic lexical capture sets from block-local declarations and
+identifier uses.
+
+M166 parser/AST surface details:
+
+- block-literal parser anchors:
+  - `ParseBlockLiteralExpression(...)`
+  - `if (Match(TokenKind::Caret)) {`
+- capture-set derivation anchors:
+  - `CollectBlockLiteralExprIdentifiers(...)`
+  - `CollectBlockLiteralStmtIdentifiers(...)`
+  - `BuildBlockLiteralCaptureSet(...)`
+  - `BuildBlockLiteralCaptureProfile(...)`
+- AST carrier anchors:
+  - `Expr::Kind::BlockLiteral`
+  - `block_parameter_names_lexicographic`
+  - `block_capture_names_lexicographic`
+  - `block_capture_profile`
+  - `block_literal_is_normalized`
+
+Deterministic grammar intent:
+
+- block literal parsing remains parser-owned:
+  - `^{ ... }` parses as a block literal expression.
+  - `^(type name, ...) { ... }` parses block parameter names and body shape.
+- capture-set emission is replay-stable:
+  - capture candidates derive from identifier uses minus block parameters and
+    block-local declarations.
+  - capture names are published in lexicographic stable order.
+
+Recommended M166 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m166_frontend_block_literal_capture_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
