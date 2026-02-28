@@ -119,6 +119,45 @@ struct Objc3TypeAnnotationSurfaceSummary {
   }
 };
 
+struct Objc3SymbolGraphScopeResolutionSummary {
+  std::size_t global_symbol_nodes = 0;
+  std::size_t function_symbol_nodes = 0;
+  std::size_t interface_symbol_nodes = 0;
+  std::size_t implementation_symbol_nodes = 0;
+  std::size_t interface_property_symbol_nodes = 0;
+  std::size_t implementation_property_symbol_nodes = 0;
+  std::size_t interface_method_symbol_nodes = 0;
+  std::size_t implementation_method_symbol_nodes = 0;
+  std::size_t top_level_scope_symbols = 0;
+  std::size_t nested_scope_symbols = 0;
+  std::size_t scope_frames_total = 0;
+  std::size_t implementation_interface_resolution_sites = 0;
+  std::size_t implementation_interface_resolution_hits = 0;
+  std::size_t implementation_interface_resolution_misses = 0;
+  std::size_t method_resolution_sites = 0;
+  std::size_t method_resolution_hits = 0;
+  std::size_t method_resolution_misses = 0;
+  bool deterministic = true;
+
+  std::size_t symbol_nodes_total() const {
+    return global_symbol_nodes + function_symbol_nodes + interface_symbol_nodes + implementation_symbol_nodes +
+           interface_property_symbol_nodes + implementation_property_symbol_nodes + interface_method_symbol_nodes +
+           implementation_method_symbol_nodes;
+  }
+
+  std::size_t resolution_sites_total() const {
+    return implementation_interface_resolution_sites + method_resolution_sites;
+  }
+
+  std::size_t resolution_hits_total() const {
+    return implementation_interface_resolution_hits + method_resolution_hits;
+  }
+
+  std::size_t resolution_misses_total() const {
+    return implementation_interface_resolution_misses + method_resolution_misses;
+  }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -275,6 +314,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool built = false;
 };
 
@@ -428,6 +468,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
 };
 
 struct Objc3SemanticValidationOptions {

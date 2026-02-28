@@ -2433,3 +2433,34 @@ Sema/type metadata handoff contract:
 Recommended M150 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py -q`
+
+## M151 sema/type symbol graph and scope resolution contract (M151-B001)
+
+M151-B extends sema/type metadata and pass-manager parity surfaces with deterministic symbol-graph
+and scope-resolution summaries derived from integration surface and replayed through type-metadata handoff.
+
+Sema/type contract markers:
+
+- `Objc3SymbolGraphScopeResolutionSummary`
+- `symbol_graph_scope_resolution_summary`
+- `symbol_graph_scope_frames_total`
+- `implementation_interface_resolution_hits`
+- `method_resolution_hits`
+- `deterministic_symbol_graph_scope_resolution_handoff`
+
+Deterministic semantic diagnostics and resolution contract (fail-closed):
+
+- interface/implementation symbol counts must remain parity-aligned between integration and handoff surfaces.
+- implementation-to-interface and method-link resolution counters must satisfy `hits <= sites` with deterministic misses.
+- symbol-node totals must remain deterministic (`symbol_nodes_total == top_level_scope_symbols + nested_scope_symbols`).
+
+Sema/type metadata handoff contract:
+
+- integration summary packet: `surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);`
+- handoff summary packet: `handoff.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic validator anchor: `BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet gate: `result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff`
+
+Recommended M151 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py -q`

@@ -113,6 +113,27 @@ bool IsEquivalentTypeAnnotationSurfaceSummary(const Objc3TypeAnnotationSurfaceSu
          lhs.invalid_nullability_suffix_sites == rhs.invalid_nullability_suffix_sites;
 }
 
+bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
+                                                   const Objc3SymbolGraphScopeResolutionSummary &rhs) {
+  return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
+         lhs.function_symbol_nodes == rhs.function_symbol_nodes &&
+         lhs.interface_symbol_nodes == rhs.interface_symbol_nodes &&
+         lhs.implementation_symbol_nodes == rhs.implementation_symbol_nodes &&
+         lhs.interface_property_symbol_nodes == rhs.interface_property_symbol_nodes &&
+         lhs.implementation_property_symbol_nodes == rhs.implementation_property_symbol_nodes &&
+         lhs.interface_method_symbol_nodes == rhs.interface_method_symbol_nodes &&
+         lhs.implementation_method_symbol_nodes == rhs.implementation_method_symbol_nodes &&
+         lhs.top_level_scope_symbols == rhs.top_level_scope_symbols &&
+         lhs.nested_scope_symbols == rhs.nested_scope_symbols &&
+         lhs.scope_frames_total == rhs.scope_frames_total &&
+         lhs.implementation_interface_resolution_sites == rhs.implementation_interface_resolution_sites &&
+         lhs.implementation_interface_resolution_hits == rhs.implementation_interface_resolution_hits &&
+         lhs.implementation_interface_resolution_misses == rhs.implementation_interface_resolution_misses &&
+         lhs.method_resolution_sites == rhs.method_resolution_sites &&
+         lhs.method_resolution_hits == rhs.method_resolution_hits &&
+         lhs.method_resolution_misses == rhs.method_resolution_misses;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -211,6 +232,31 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.type_annotation_surface_summary.nullability_suffix_sites &&
       result.type_metadata_handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.type_metadata_handoff.type_annotation_surface_summary.total_type_annotation_sites();
+  result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
+  result.deterministic_symbol_graph_scope_resolution_handoff =
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
+      result.integration_surface.symbol_graph_scope_resolution_summary.deterministic &&
+      IsEquivalentSymbolGraphScopeResolutionSummary(result.integration_surface.symbol_graph_scope_resolution_summary,
+                                                    result.type_metadata_handoff.symbol_graph_scope_resolution_summary) &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.symbol_nodes_total() ==
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.top_level_scope_symbols +
+              result.type_metadata_handoff.symbol_graph_scope_resolution_summary.nested_scope_symbols &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits <=
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits +
+              result.type_metadata_handoff.symbol_graph_scope_resolution_summary
+                  .implementation_interface_resolution_misses ==
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.method_resolution_hits <=
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.method_resolution_hits +
+              result.type_metadata_handoff.symbol_graph_scope_resolution_summary.method_resolution_misses ==
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_hits_total() <=
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_hits_total() +
+              result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
+          result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_sites_total();
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -311,6 +357,42 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites;
   result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total =
       result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+  result.parity_surface.symbol_graph_scope_resolution_summary =
+      result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
+  result.parity_surface.symbol_graph_global_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes;
+  result.parity_surface.symbol_graph_function_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.function_symbol_nodes;
+  result.parity_surface.symbol_graph_interface_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_symbol_nodes;
+  result.parity_surface.symbol_graph_implementation_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_symbol_nodes;
+  result.parity_surface.symbol_graph_interface_property_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_property_symbol_nodes;
+  result.parity_surface.symbol_graph_implementation_property_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes;
+  result.parity_surface.symbol_graph_interface_method_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_method_symbol_nodes;
+  result.parity_surface.symbol_graph_implementation_method_symbol_nodes_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes;
+  result.parity_surface.symbol_graph_top_level_scope_symbols_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.top_level_scope_symbols;
+  result.parity_surface.symbol_graph_nested_scope_symbols_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.nested_scope_symbols;
+  result.parity_surface.symbol_graph_scope_frames_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.scope_frames_total;
+  result.parity_surface.symbol_graph_implementation_interface_resolution_sites_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites;
+  result.parity_surface.symbol_graph_implementation_interface_resolution_hits_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits;
+  result.parity_surface.symbol_graph_implementation_interface_resolution_misses_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses;
+  result.parity_surface.symbol_graph_method_resolution_sites_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_sites;
+  result.parity_surface.symbol_graph_method_resolution_hits_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_hits;
+  result.parity_surface.symbol_graph_method_resolution_misses_total =
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_misses;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -426,6 +508,62 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.parity_surface.type_annotation_surface_summary.total_type_annotation_sites() &&
       result.parity_surface.type_annotation_surface_summary.deterministic;
+  result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
+      result.deterministic_symbol_graph_scope_resolution_handoff &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
+          result.parity_surface.symbol_graph_global_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
+          result.parity_surface.symbol_graph_function_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_symbol_nodes ==
+          result.parity_surface.symbol_graph_interface_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_symbol_nodes ==
+          result.parity_surface.symbol_graph_implementation_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_property_symbol_nodes ==
+          result.parity_surface.symbol_graph_interface_property_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes ==
+          result.parity_surface.symbol_graph_implementation_property_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.interface_method_symbol_nodes ==
+          result.parity_surface.symbol_graph_interface_method_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes ==
+          result.parity_surface.symbol_graph_implementation_method_symbol_nodes_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.top_level_scope_symbols ==
+          result.parity_surface.symbol_graph_top_level_scope_symbols_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.nested_scope_symbols ==
+          result.parity_surface.symbol_graph_nested_scope_symbols_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.scope_frames_total ==
+          result.parity_surface.symbol_graph_scope_frames_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites ==
+          result.parity_surface.symbol_graph_implementation_interface_resolution_sites_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits ==
+          result.parity_surface.symbol_graph_implementation_interface_resolution_hits_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses ==
+          result.parity_surface.symbol_graph_implementation_interface_resolution_misses_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_sites ==
+          result.parity_surface.symbol_graph_method_resolution_sites_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_hits ==
+          result.parity_surface.symbol_graph_method_resolution_hits_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_misses ==
+          result.parity_surface.symbol_graph_method_resolution_misses_total &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.symbol_nodes_total() ==
+          result.parity_surface.symbol_graph_scope_resolution_summary.top_level_scope_symbols +
+              result.parity_surface.symbol_graph_scope_resolution_summary.nested_scope_symbols &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits <=
+          result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits +
+              result.parity_surface.symbol_graph_scope_resolution_summary
+                  .implementation_interface_resolution_misses ==
+          result.parity_surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_hits <=
+          result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_hits +
+              result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_misses ==
+          result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.resolution_hits_total() <=
+          result.parity_surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.resolution_hits_total() +
+              result.parity_surface.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
+          result.parity_surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -451,6 +589,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.property_attribute_summary.deterministic &&
       result.parity_surface.deterministic_property_attribute_handoff &&
       result.parity_surface.type_annotation_surface_summary.deterministic &&
-      result.parity_surface.deterministic_type_annotation_surface_handoff;
+      result.parity_surface.deterministic_type_annotation_surface_handoff &&
+      result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
+      result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff;
   return result;
 }

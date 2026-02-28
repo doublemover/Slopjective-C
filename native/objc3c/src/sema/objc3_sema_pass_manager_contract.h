@@ -130,6 +130,23 @@ struct Objc3SemaParityContractSurface {
   std::size_t type_annotation_invalid_generic_suffix_sites_total = 0;
   std::size_t type_annotation_invalid_pointer_declarator_sites_total = 0;
   std::size_t type_annotation_invalid_nullability_suffix_sites_total = 0;
+  std::size_t symbol_graph_global_symbol_nodes_total = 0;
+  std::size_t symbol_graph_function_symbol_nodes_total = 0;
+  std::size_t symbol_graph_interface_symbol_nodes_total = 0;
+  std::size_t symbol_graph_implementation_symbol_nodes_total = 0;
+  std::size_t symbol_graph_interface_property_symbol_nodes_total = 0;
+  std::size_t symbol_graph_implementation_property_symbol_nodes_total = 0;
+  std::size_t symbol_graph_interface_method_symbol_nodes_total = 0;
+  std::size_t symbol_graph_implementation_method_symbol_nodes_total = 0;
+  std::size_t symbol_graph_top_level_scope_symbols_total = 0;
+  std::size_t symbol_graph_nested_scope_symbols_total = 0;
+  std::size_t symbol_graph_scope_frames_total = 0;
+  std::size_t symbol_graph_implementation_interface_resolution_sites_total = 0;
+  std::size_t symbol_graph_implementation_interface_resolution_hits_total = 0;
+  std::size_t symbol_graph_implementation_interface_resolution_misses_total = 0;
+  std::size_t symbol_graph_method_resolution_sites_total = 0;
+  std::size_t symbol_graph_method_resolution_hits_total = 0;
+  std::size_t symbol_graph_method_resolution_misses_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -138,11 +155,13 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_selector_normalization_handoff = false;
   bool deterministic_property_attribute_handoff = false;
   bool deterministic_type_annotation_surface_handoff = false;
+  bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -249,7 +268,60 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
              surface.type_annotation_surface_summary.total_type_annotation_sites() &&
          surface.type_annotation_surface_summary.deterministic &&
-         surface.deterministic_type_annotation_surface_handoff;
+         surface.deterministic_type_annotation_surface_handoff &&
+         surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
+             surface.symbol_graph_global_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
+             surface.symbol_graph_function_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.interface_symbol_nodes ==
+             surface.symbol_graph_interface_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_symbol_nodes ==
+             surface.symbol_graph_implementation_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.interface_property_symbol_nodes ==
+             surface.symbol_graph_interface_property_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_property_symbol_nodes ==
+             surface.symbol_graph_implementation_property_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.interface_method_symbol_nodes ==
+             surface.symbol_graph_interface_method_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_method_symbol_nodes ==
+             surface.symbol_graph_implementation_method_symbol_nodes_total &&
+         surface.symbol_graph_scope_resolution_summary.top_level_scope_symbols ==
+             surface.symbol_graph_top_level_scope_symbols_total &&
+         surface.symbol_graph_scope_resolution_summary.nested_scope_symbols ==
+             surface.symbol_graph_nested_scope_symbols_total &&
+         surface.symbol_graph_scope_resolution_summary.scope_frames_total == surface.symbol_graph_scope_frames_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites ==
+             surface.symbol_graph_implementation_interface_resolution_sites_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits ==
+             surface.symbol_graph_implementation_interface_resolution_hits_total &&
+         surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses ==
+             surface.symbol_graph_implementation_interface_resolution_misses_total &&
+         surface.symbol_graph_scope_resolution_summary.method_resolution_sites ==
+             surface.symbol_graph_method_resolution_sites_total &&
+         surface.symbol_graph_scope_resolution_summary.method_resolution_hits ==
+             surface.symbol_graph_method_resolution_hits_total &&
+         surface.symbol_graph_scope_resolution_summary.method_resolution_misses ==
+             surface.symbol_graph_method_resolution_misses_total &&
+         surface.symbol_graph_scope_resolution_summary.symbol_nodes_total() ==
+             surface.symbol_graph_scope_resolution_summary.top_level_scope_symbols +
+                 surface.symbol_graph_scope_resolution_summary.nested_scope_symbols &&
+         surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits <=
+             surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+         surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_hits +
+                 surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_misses ==
+             surface.symbol_graph_scope_resolution_summary.implementation_interface_resolution_sites &&
+         surface.symbol_graph_scope_resolution_summary.method_resolution_hits <=
+             surface.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+         surface.symbol_graph_scope_resolution_summary.method_resolution_hits +
+                 surface.symbol_graph_scope_resolution_summary.method_resolution_misses ==
+             surface.symbol_graph_scope_resolution_summary.method_resolution_sites &&
+         surface.symbol_graph_scope_resolution_summary.resolution_hits_total() <=
+             surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
+         surface.symbol_graph_scope_resolution_summary.resolution_hits_total() +
+                 surface.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
+             surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
+         surface.symbol_graph_scope_resolution_summary.deterministic &&
+         surface.deterministic_symbol_graph_scope_resolution_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -268,6 +340,8 @@ struct Objc3SemaPassManagerResult {
   Objc3PropertyAttributeSummary property_attribute_summary;
   bool deterministic_type_annotation_surface_handoff = false;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
+  bool deterministic_symbol_graph_scope_resolution_handoff = false;
+  Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
