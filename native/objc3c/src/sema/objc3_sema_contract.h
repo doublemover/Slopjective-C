@@ -12,6 +12,27 @@ inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMinor = 0;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionPatch = 0;
 
+enum class Objc3SemaAtomicMemoryOrder : std::uint8_t {
+  Relaxed = 0,
+  Acquire = 1,
+  Release = 2,
+  AcqRel = 3,
+  SeqCst = 4,
+  Unsupported = 5,
+};
+
+struct Objc3AtomicMemoryOrderMappingSummary {
+  std::size_t relaxed = 0;
+  std::size_t acquire = 0;
+  std::size_t release = 0;
+  std::size_t acq_rel = 0;
+  std::size_t seq_cst = 0;
+  std::size_t unsupported = 0;
+  bool deterministic = true;
+
+  std::size_t total() const { return relaxed + acquire + release + acq_rel + seq_cst + unsupported; }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;

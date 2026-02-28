@@ -149,6 +149,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
+           << ",\"deterministic_atomic_memory_order_mapping\":"
+           << (pipeline_result.sema_parity_surface.deterministic_atomic_memory_order_mapping ? "true" : "false")
+           << ",\"atomic_memory_order_mapping_total\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.total()
+           << ",\"atomic_relaxed_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.relaxed
+           << ",\"atomic_acquire_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.acquire
+           << ",\"atomic_release_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.release
+           << ",\"atomic_acq_rel_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.acq_rel
+           << ",\"atomic_seq_cst_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.seq_cst
+           << ",\"atomic_unmapped_ops\":"
+           << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.unsupported
            << ",\"parity_ready\":"
            << (IsReadyObjc3SemaParityContractSurface(pipeline_result.sema_parity_surface) ? "true" : "false")
            << ",\"type_metadata_global_entries\":"

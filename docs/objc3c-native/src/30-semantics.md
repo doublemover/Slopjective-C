@@ -2177,3 +2177,30 @@ System-extension conformance + policy packet map:
 Recommended M195 sema/type system-extension conformance and policy validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q`
+
+## M194 sema/type atomics and memory-order mapping
+
+For deterministic sema/type atomics and memory-order mapping behavior, capture replay-stable packet evidence from assignment-operator memory-order classification, sema pass-manager parity transport, and manifest isolation surfaces.
+
+Atomics memory-order packet map:
+
+- `atomics packet 1.1 deterministic sema/type memory-order architecture anchors` -> `m194_sema_type_atomic_memory_order_architecture_packet`
+- `atomics packet 1.2 deterministic sema/type memory-order isolation anchors` -> `m194_sema_type_atomic_memory_order_isolation_packet`
+
+### 1.1 Deterministic sema/type memory-order architecture packet
+
+- Source sema contract anchors: `enum class Objc3SemaAtomicMemoryOrder : std::uint8_t {` and `struct Objc3AtomicMemoryOrderMappingSummary {`.
+- Source sema mapping anchors: `MapAssignmentOperatorToAtomicMemoryOrder(...)`, `FormatAtomicMemoryOrderMappingHint(...)`, and `BuildAtomicMemoryOrderMappingSummary(...)`.
+- Source sema pass-manager architecture anchors: `result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);` and `result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;`.
+- Deterministic sema/type atomics architecture packet key: `m194_sema_type_atomic_memory_order_architecture_packet`.
+
+### 1.2 Deterministic sema/type memory-order isolation packet
+
+- Source sema pass-manager isolation anchors: `result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;`, `result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;`, and `result.parity_surface.ready =`.
+- Source sema parity contract anchors: `Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;` and `bool deterministic_atomic_memory_order_mapping = false;`.
+- Manifest isolation anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_atomic_memory_order_mapping`, `atomic_memory_order_mapping_total`, `atomic_relaxed_ops`, `atomic_acquire_ops`, `atomic_release_ops`, `atomic_acq_rel_ops`, `atomic_seq_cst_ops`, and `atomic_unmapped_ops`.
+- Deterministic sema/type atomics isolation packet key: `m194_sema_type_atomic_memory_order_isolation_packet`.
+
+Recommended M194 sema/type atomics and memory-order mapping validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py -q`

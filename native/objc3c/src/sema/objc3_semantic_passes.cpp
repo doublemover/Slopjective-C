@@ -35,6 +35,75 @@ static bool IsCompoundAssignmentOperator(const std::string &op) {
          op == "^=" || op == "<<=" || op == ">>=";
 }
 
+static Objc3SemaAtomicMemoryOrder MapAssignmentOperatorToAtomicMemoryOrder(const std::string &op) {
+  if (op == "=" || op == "|=" || op == "^=") {
+    return Objc3SemaAtomicMemoryOrder::Release;
+  }
+  if (op == "&=" || op == "<<=" || op == ">>=") {
+    return Objc3SemaAtomicMemoryOrder::Acquire;
+  }
+  if (op == "+=" || op == "-=" || op == "++" || op == "--") {
+    return Objc3SemaAtomicMemoryOrder::AcqRel;
+  }
+  if (op == "*=" || op == "/=" || op == "%=") {
+    return Objc3SemaAtomicMemoryOrder::SeqCst;
+  }
+  return Objc3SemaAtomicMemoryOrder::Unsupported;
+}
+
+static const char *AtomicMemoryOrderName(Objc3SemaAtomicMemoryOrder order) {
+  switch (order) {
+    case Objc3SemaAtomicMemoryOrder::Relaxed:
+      return "relaxed";
+    case Objc3SemaAtomicMemoryOrder::Acquire:
+      return "acquire";
+    case Objc3SemaAtomicMemoryOrder::Release:
+      return "release";
+    case Objc3SemaAtomicMemoryOrder::AcqRel:
+      return "acq_rel";
+    case Objc3SemaAtomicMemoryOrder::SeqCst:
+      return "seq_cst";
+    case Objc3SemaAtomicMemoryOrder::Unsupported:
+    default:
+      return "unsupported";
+  }
+}
+
+static void RecordAtomicMemoryOrderMapping(const std::string &op, Objc3AtomicMemoryOrderMappingSummary &summary) {
+  const Objc3SemaAtomicMemoryOrder order = MapAssignmentOperatorToAtomicMemoryOrder(op);
+  switch (order) {
+    case Objc3SemaAtomicMemoryOrder::Relaxed:
+      ++summary.relaxed;
+      break;
+    case Objc3SemaAtomicMemoryOrder::Acquire:
+      ++summary.acquire;
+      break;
+    case Objc3SemaAtomicMemoryOrder::Release:
+      ++summary.release;
+      break;
+    case Objc3SemaAtomicMemoryOrder::AcqRel:
+      ++summary.acq_rel;
+      break;
+    case Objc3SemaAtomicMemoryOrder::SeqCst:
+      ++summary.seq_cst;
+      break;
+    case Objc3SemaAtomicMemoryOrder::Unsupported:
+    default:
+      ++summary.unsupported;
+      summary.deterministic = false;
+      break;
+  }
+}
+
+static std::string FormatAtomicMemoryOrderMappingHint(const std::string &op) {
+  const Objc3SemaAtomicMemoryOrder order = MapAssignmentOperatorToAtomicMemoryOrder(op);
+  if (order == Objc3SemaAtomicMemoryOrder::Unsupported) {
+    return "atomic memory-order mapping unavailable for operator '" + op + "'";
+  }
+  return "atomic memory-order mapping for operator '" + op + "' uses '" +
+         std::string(AtomicMemoryOrderName(order)) + "'";
+}
+
 static bool IsMessageI32CompatibleType(ValueType type) {
   return type == ValueType::I32 || type == ValueType::Bool;
 }
@@ -547,14 +616,16 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
                                          std::string(TypeName(target_type)) + "', got '" +
-                                         std::string(TypeName(value_type)) + "'"));
+                                         std::string(TypeName(value_type)) + "'; " +
+                                         FormatAtomicMemoryOrderMappingHint(op)));
       return;
     }
     if (found_target && target_known_scalar && value_known_scalar && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
                                          std::string(TypeName(target_type)) + "', got '" +
-                                         std::string(TypeName(value_type)) + "'"));
+                                         std::string(TypeName(value_type)) + "'; " +
+                                         FormatAtomicMemoryOrderMappingHint(op)));
     }
     return;
   }
@@ -564,12 +635,14 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
       if (found_target && target_type != ValueType::Unknown && target_type != ValueType::I32) {
         diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                        "type mismatch: update operator '" + op + "' target '" + target_name +
-                                           "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'"));
+                                           "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'; " +
+                                           FormatAtomicMemoryOrderMappingHint(op)));
       }
       return;
     }
-    diagnostics.push_back(
-        MakeDiag(line, column, "O3S206", "type mismatch: unsupported assignment operator '" + op + "'"));
+    diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                   "type mismatch: unsupported assignment operator '" + op + "'; " +
+                                       FormatAtomicMemoryOrderMappingHint(op)));
     return;
   }
   if (!found_target) {
@@ -578,12 +651,88 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
   if (target_type != ValueType::Unknown && target_type != ValueType::I32) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' target '" + target_name +
-                                       "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'"));
+                                       "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'; " +
+                                       FormatAtomicMemoryOrderMappingHint(op)));
   }
   if (target_type == ValueType::I32 && value_type != ValueType::Unknown && value_type != ValueType::I32) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' value for '" + target_name +
-                                       "' must be 'i32', got '" + std::string(TypeName(value_type)) + "'"));
+                                       "' must be 'i32', got '" + std::string(TypeName(value_type)) + "'; " +
+                                       FormatAtomicMemoryOrderMappingHint(op)));
+  }
+}
+
+static void CollectAtomicMemoryOrderMappingsInStatements(const std::vector<std::unique_ptr<Stmt>> &statements,
+                                                         Objc3AtomicMemoryOrderMappingSummary &summary);
+
+static void CollectAtomicMemoryOrderMappingsInForClause(const ForClause &clause,
+                                                        Objc3AtomicMemoryOrderMappingSummary &summary) {
+  if (clause.kind != ForClause::Kind::Assign) {
+    return;
+  }
+  RecordAtomicMemoryOrderMapping(clause.op, summary);
+}
+
+static void CollectAtomicMemoryOrderMappingsInStatement(const Stmt *stmt,
+                                                        Objc3AtomicMemoryOrderMappingSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        RecordAtomicMemoryOrderMapping(stmt->assign_stmt->op, summary);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->if_stmt->then_body, summary);
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->if_stmt->else_body, summary);
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->do_while_stmt->body, summary);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInForClause(stmt->for_stmt->init, summary);
+        CollectAtomicMemoryOrderMappingsInForClause(stmt->for_stmt->step, summary);
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->for_stmt->body, summary);
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          CollectAtomicMemoryOrderMappingsInStatements(case_stmt.body, summary);
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->while_stmt->body, summary);
+      }
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        CollectAtomicMemoryOrderMappingsInStatements(stmt->block_stmt->body, summary);
+      }
+      return;
+    case Stmt::Kind::Let:
+    case Stmt::Kind::Return:
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+    case Stmt::Kind::Expr:
+      return;
+  }
+}
+
+static void CollectAtomicMemoryOrderMappingsInStatements(const std::vector<std::unique_ptr<Stmt>> &statements,
+                                                         Objc3AtomicMemoryOrderMappingSummary &summary) {
+  for (const auto &stmt : statements) {
+    CollectAtomicMemoryOrderMappingsInStatement(stmt.get(), summary);
   }
 }
 
@@ -1109,6 +1258,15 @@ static StaticScalarBindings CollectFunctionStaticScalarBindings(const FunctionDe
     }
   }
   return bindings;
+}
+
+Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const Objc3ParsedProgram &program) {
+  Objc3AtomicMemoryOrderMappingSummary summary;
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  for (const auto &fn : ast.functions) {
+    CollectAtomicMemoryOrderMappingsInStatements(fn.body, summary);
+  }
+  return summary;
 }
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,

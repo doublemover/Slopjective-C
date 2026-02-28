@@ -90,12 +90,15 @@ struct Objc3SemaParityContractSurface {
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
+  Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
+  bool deterministic_atomic_memory_order_mapping = false;
   bool ready = false;
 };
 
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready && surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
-         surface.deterministic_type_metadata_handoff &&
+         surface.deterministic_type_metadata_handoff && surface.deterministic_atomic_memory_order_mapping &&
+         surface.atomic_memory_order_mapping.deterministic &&
          surface.globals_total == surface.type_metadata_global_entries &&
          surface.functions_total == surface.type_metadata_function_entries;
 }
@@ -108,6 +111,8 @@ struct Objc3SemaPassManagerResult {
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
+  Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
+  bool deterministic_atomic_memory_order_mapping = false;
   Objc3SemaParityContractSurface parity_surface;
   bool executed = false;
 };
