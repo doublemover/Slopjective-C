@@ -1765,6 +1765,34 @@ Recommended M210 sema/type regression-gate validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
 
+## M208 sema/type whole-module optimization controls
+
+For deterministic sema/type whole-module optimization (WMO) controls, capture replay-stable packet evidence from sema pass ordering, integration-surface module shape, and manifest semantic-surface counters before enabling module-wide optimization heuristics.
+
+Whole-module optimization control packet map:
+
+- `wmo control packet 1.1 deterministic sema pass-order + integration surface` -> `m208_sema_pass_order_wmo_control_packet`
+- `wmo control packet 1.2 deterministic type/symbol module-shape parity` -> `m208_type_symbol_module_shape_wmo_control_packet`
+
+### 1.1 Deterministic sema pass-order + integration surface control packet
+
+- Source control anchors: `kObjc3SemaPassOrder`, `BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`.
+- Source diagnostics canonicalization anchor: `CanonicalizePassDiagnostics(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Deterministic sema WMO control packet key: `m208_sema_pass_order_wmo_control_packet`.
+
+### 1.2 Deterministic type/symbol module-shape parity control packet
+
+- Source module-shape anchors: `BuildSemanticTypeMetadataHandoff(...)`, `result.parity_surface.globals_total = result.integration_surface.globals.size();`, `result.parity_surface.functions_total = result.integration_surface.functions.size();`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, and `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`.
+- Source readiness anchor: `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest WMO control anchors under `frontend.pipeline.sema_pass_manager`: `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Manifest semantic-surface module-shape anchors under `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Deterministic type/symbol WMO control packet key: `m208_type_symbol_module_shape_wmo_control_packet`.
+
+Recommended M208 sema/type whole-module optimization control command:
+
+- `python -m pytest tests/tooling/test_objc3c_m208_sema_wmo_contract.py -q`
+
 ## M209 sema/type profile-guided optimization hooks
 
 For deterministic sema/type profile-guided optimization (PGO) hooks, capture replay-stable packet evidence from sema pass diagnostics emission, type metadata handoff, and semantic-surface counters before changing optimization heuristics.
