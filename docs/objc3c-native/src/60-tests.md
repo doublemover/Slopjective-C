@@ -378,6 +378,16 @@ From repo root, execute deterministic M149 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py -q`
 - `npm run check:objc3c:m149-property-attributes`
 
+## M150 validation object-pointer declarators, nullability, lightweight generics parse runbook
+
+From repo root, execute deterministic M150 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_validation_object_pointer_nullability_generics_contract.py -q`
+- `npm run check:objc3c:m150-object-pointer-nullability-generics`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
