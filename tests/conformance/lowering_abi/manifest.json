@@ -1104,6 +1104,14 @@
       "files": [
         "M180-D001.json"
       ]
+    },
+    {
+      "name": "m181_lane_d_issue_4497_throws_propagation_lowering_replay_contract",
+      "feature": "M181 Lane D throws propagation lowering replay contract conformance fixture and deterministic validation coverage",
+      "issue": 4497,
+      "files": [
+        "M181-D001.json"
+      ]
     }
   ]
 }

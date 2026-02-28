@@ -1,0 +1,24 @@
+{
+  "id": "M181-D001",
+  "title": "Throws propagation lowering replay contract fixture (issue #4497 / task M181-D001)",
+  "feature": "m181 lane-d throws propagation lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M181",
+    "milestone_number": 266,
+    "lane": "D",
+    "issue": 4497,
+    "task": "M181-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native.md",
+    "tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: throws_propagation_lowering\n// EXPECT: deterministic_throws_propagation_lowering_handoff=true\n\nmodule m181_lane_d_throws_propagation;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -2454,6 +2454,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
 ```
 
+## M181 validation/conformance/perf throws propagation runbook (M181-D001)
+
+Deterministic M181 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m181_validation_throws_propagation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_throws_propagation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_throws_propagation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_throws_propagation_lowering_surface.deterministic_handoff`
+  - `lowering_throws_propagation.replay_key`
+- `replay_run_1/module.ll`
+  - `throws_propagation_lowering`
+  - `frontend_objc_throws_propagation_lowering_profile`
+  - `!objc3.objc_throws_propagation_lowering = !{!34}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + propagation_boundary_sites == throws_propagation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

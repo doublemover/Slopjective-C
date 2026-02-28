@@ -51,6 +51,9 @@ Minimum scope:
 - `M180-D001.json`: M180 Lane D cross-module conformance lowering replay
   fixture covering deterministic replay-key/profile/metadata parity anchors and
   integration coverage for issue `#4492`.
+- `M181-D001.json`: M181 Lane D throws-propagation lowering replay fixture
+  covering deterministic replay-key/profile/metadata parity anchors and
+  integration coverage for issue `#4497`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

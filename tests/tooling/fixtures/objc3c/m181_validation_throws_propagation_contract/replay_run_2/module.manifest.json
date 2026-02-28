@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_throws_propagation_lowering_handoff": true,
+        "throws_propagation_lowering_sites": 5,
+        "throws_propagation_lowering_throws_clause_sites": 2,
+        "throws_propagation_lowering_throws_annotation_sites": 2,
+        "throws_propagation_lowering_throws_path_sites": 1,
+        "throws_propagation_lowering_propagating_call_sites": 3,
+        "throws_propagation_lowering_normalized_sites": 4,
+        "throws_propagation_lowering_propagation_boundary_sites": 1,
+        "throws_propagation_lowering_contract_violation_sites": 0,
+        "lowering_throws_propagation_replay_key": "throws_propagation_sites=5;throws_clause_sites=2;throws_annotation_sites=2;throws_path_sites=1;propagating_call_sites=3;normalized_sites=4;propagation_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m181-throws-propagation-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_throws_propagation_lowering_surface": {
+          "throws_propagation_sites": 5,
+          "throws_clause_sites": 2,
+          "throws_annotation_sites": 2,
+          "throws_path_sites": 1,
+          "propagating_call_sites": 3,
+          "normalized_sites": 4,
+          "propagation_boundary_sites": 1,
+          "contract_violation_sites": 0,
+          "replay_key": "throws_propagation_sites=5;throws_clause_sites=2;throws_annotation_sites=2;throws_path_sites=1;propagating_call_sites=3;normalized_sites=4;propagation_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m181-throws-propagation-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_throws_propagation": {
+    "replay_key": "throws_propagation_sites=5;throws_clause_sites=2;throws_annotation_sites=2;throws_path_sites=1;propagating_call_sites=3;normalized_sites=4;propagation_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m181-throws-propagation-lowering-v1",
+    "lane_contract": "m181-throws-propagation-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
