@@ -965,6 +965,33 @@ Recommended M170 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q`
 
+## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
+
+Frontend parser/AST now emits deterministic lightweight-generic constraint
+profiles for parameter and return type annotations.
+
+M171 parser/AST surface details:
+
+- lightweight-generic anchors:
+  - `BuildLightweightGenericConstraintProfile(...)`
+  - `IsLightweightGenericConstraintProfileNormalized(...)`
+- parser assignment anchors:
+  - `lightweight_generic_constraint_profile`
+  - `lightweight_generic_constraint_profile_is_normalized`
+  - `return_lightweight_generic_constraint_profile`
+  - `return_lightweight_generic_constraint_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser computes generic-instantiation validity from object-pointer spelling,
+  suffix termination, and pointer declarator participation.
+- profile normalization is fail-closed for malformed/unterminated generic
+  suffixes.
+
+Recommended M171 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4880,6 +4907,32 @@ Deterministic sema intent:
 Recommended M170 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q`
+
+## M171 sema/type lightweight generics semantic constraints contract (M171-B001)
+
+M171-B defines deterministic sema summaries for lightweight generic
+parameterization consistency and fail-closed instantiation validation.
+
+M171 sema/type surface details:
+
+- `Objc3LightweightGenericConstraintSummary`
+- `BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `lightweight_generic_constraint_sites_total`
+  - `lightweight_generic_constraint_normalized_sites_total`
+  - `lightweight_generic_constraint_contract_violation_sites_total`
+  - `deterministic_lightweight_generic_constraint_handoff`
+
+Deterministic sema intent:
+
+- generic constraint packets are derived from deterministic type-annotation
+  counters.
+- invalid generic suffix packets and non-object-pointer instantiations are
+  surfaced as contract violations.
+
+Recommended M171 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -8410,6 +8463,32 @@ Recommended M170 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q`
 
+## Lightweight generics constraint lowering artifact contract (M171-C001)
+
+M171-C lowers sema-authored lightweight generic constraint summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M171-C lowering contract anchors:
+
+- `kObjc3LightweightGenericsConstraintLoweringLaneContract`
+- `Objc3LightweightGenericsConstraintLoweringContract`
+- `IsValidObjc3LightweightGenericsConstraintLoweringContract(...)`
+- `Objc3LightweightGenericsConstraintLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_lightweight_generic_constraint_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.lightweight_generic_constraint_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface`
+- `lowering_lightweight_generic_constraint.replay_key`
+- `; lightweight_generic_constraint_lowering = generic_constraint_sites=<N>...`
+- `; frontend_objc_lightweight_generic_constraint_lowering_profile = generic_constraint_sites=<N>...`
+- `!objc3.objc_lightweight_generic_constraint_lowering = !{!24}`
+
+Recommended M171 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -10501,6 +10580,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
 ```
 
+## M171 validation/conformance/perf lightweight generics constraints runbook
+
+Deterministic M171 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m171_validation_lightweight_generics_constraints_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_lightweight_generic_constraint_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_lightweight_generic_constraint_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface.deterministic_handoff`
+  - `lowering_lightweight_generic_constraint.replay_key`
+- `replay_run_1/module.ll`
+  - `lightweight_generic_constraint_lowering`
+  - `frontend_objc_lightweight_generic_constraint_lowering_profile`
+  - `!objc3.objc_lightweight_generic_constraint_lowering = !{!24}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -11224,6 +11338,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py`
   - `tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py`
   - `tests/tooling/test_objc3c_m170_integration_block_determinism_perf_baseline_contract.py`
+
+## M171 integration lightweight generics constraints contract
+
+- Integration gate:
+  - `npm run check:objc3c:m171-lightweight-generics-constraints-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m171`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py`
+  - `tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_integration_lightweight_generics_constraints_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

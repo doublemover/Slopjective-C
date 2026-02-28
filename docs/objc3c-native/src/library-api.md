@@ -682,6 +682,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py`
   - `tests/tooling/test_objc3c_m170_integration_block_determinism_perf_baseline_contract.py`
 
+## M171 integration lightweight generics constraints contract
+
+- Integration gate:
+  - `npm run check:objc3c:m171-lightweight-generics-constraints-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m171`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py`
+  - `tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py`
+  - `tests/tooling/test_objc3c_m171_integration_lightweight_generics_constraints_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
