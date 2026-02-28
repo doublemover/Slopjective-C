@@ -1,0 +1,10 @@
+# Loop-scoped dynamic receiver nil short-circuit markers.
+define i32 @choose(i32 %arg0)
+define i32 @main()
+@.objc3.sel.0 = private unnamed_addr constant [10 x i8] c"mix:with:\00", align 1
+call i32 @choose(i32 %t7)
+%t17 = icmp eq i32 %t11, 0
+br i1 %t17, label %msg_nil_7, label %msg_dispatch_8
+call i32 @objc3_msgsend_i32(i32 %t11, ptr %t16, i32 %t12, i32 %t15, i32 0, i32 0)
+%t19 = phi i32 [0, %msg_nil_7], [%t18, %msg_dispatch_8]
+ret i32 %t23

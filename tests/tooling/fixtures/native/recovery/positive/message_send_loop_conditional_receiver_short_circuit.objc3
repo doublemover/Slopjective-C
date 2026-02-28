@@ -1,0 +1,14 @@
+// Positive fixture: loop-local control flow drives runtime nil short-circuit around message dispatch.
+module MessageSendLoopConditionalReceiverShortCircuit;
+
+fn choose(value: i32) -> i32 {
+  return value;
+}
+
+fn main() -> i32 {
+  let total = 0;
+  for (let i = 0; i < 2; i = i + 1) {
+    total = total + [(choose(i) ? 5 : nil) mix: i with: (i < 1)];
+  }
+  return total;
+}

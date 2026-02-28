@@ -1,0 +1,13 @@
+// Positive fixture: keyword-arity dispatch with bool/i32 args and compile-time nonzero control-flow receiver.
+module MessageSendKeywordBoolControlFlowMix;
+
+fn fallback() -> i32 {
+  return 0;
+}
+
+fn main() -> i32 {
+  let receiver = (1 ? 9 : fallback());
+  let unary = [receiver ping];
+  let keyword = [receiver fold: (2 < 3) with: (4 >= 4) then: (0 ? 5 : 6) finally: 7];
+  return unary + keyword;
+}

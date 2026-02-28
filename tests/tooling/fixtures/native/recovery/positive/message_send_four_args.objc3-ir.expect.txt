@@ -1,0 +1,5 @@
+# Four-argument selector dispatch markers.
+define i32 @main()
+@.objc3.sel.0 = private unnamed_addr constant [23 x i8] c"mix:with:then:finally:\00", align 1
+call i32 @objc3_msgsend_i32(i32 %t1, ptr %t2, i32 1, i32 2, i32 3, i32 4)
+ret i32 %t3

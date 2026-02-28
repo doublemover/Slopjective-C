@@ -1,0 +1,8 @@
+# Control-flow receiver + mixed bool/i32 keyword dispatch markers.
+define i32 @fallback()
+define i32 @main()
+@.objc3.sel.0 = private unnamed_addr constant [24 x i8] c"fold:with:then:finally:\00", align 1
+br i1 %t0, label %cond_true_0, label %cond_false_1
+call i32 @objc3_msgsend_i32(i32 %t5, ptr %t6, i32 0, i32 0, i32 0, i32 0)
+call i32 @objc3_msgsend_i32(i32 %t9, ptr %t17, i32 %t11, i32 %t13, i32 %t16, i32 7)
+ret i32 %t22

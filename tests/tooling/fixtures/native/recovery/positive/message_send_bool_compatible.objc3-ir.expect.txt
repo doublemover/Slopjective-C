@@ -1,0 +1,7 @@
+# Bool-to-i32 compatible receiver/argument dispatch markers.
+define i32 @main()
+@.objc3.sel.0 = private unnamed_addr constant [9 x i8] c"setFlag:\00", align 1
+%t0 = icmp slt i32 1, 2
+%t3 = icmp sge i32 3, 3
+call i32 @objc3_msgsend_i32(i32 %t6, ptr %t8, i32 %t7, i32 0, i32 0, i32 0)
+ret i32 %t9
