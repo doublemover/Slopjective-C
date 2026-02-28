@@ -22,7 +22,9 @@ def test_m180_frontend_cross_module_conformance_section_exists() -> None:
         "return_cross_module_conformance_profile",
         "return_cross_module_conformance_profile_is_normalized",
         "CopyMethodReturnTypeFromFunctionDecl(...)",
+        "target.return_cross_module_conformance_profile_is_normalized = source.return_cross_module_conformance_profile_is_normalized;",
         "CopyPropertyTypeFromParam(...)",
+        "target.cross_module_conformance_profile_is_normalized = source.cross_module_conformance_profile_is_normalized;",
         "python -m pytest tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py -q",
     ):
         assert text in fragment
@@ -54,8 +56,10 @@ def test_m180_frontend_cross_module_conformance_markers_map_to_sources() -> None
         "fn.return_cross_module_conformance_profile =",
         "fn.return_cross_module_conformance_profile_is_normalized =",
         "CopyMethodReturnTypeFromFunctionDecl(",
+        "target.return_cross_module_conformance_profile_is_normalized =",
         "target.return_cross_module_conformance_profile =",
         "CopyPropertyTypeFromParam(",
+        "target.cross_module_conformance_profile_is_normalized =",
         "target.cross_module_conformance_profile =",
     ):
         assert marker in parser_source

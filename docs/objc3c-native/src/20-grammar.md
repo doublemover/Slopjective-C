@@ -1155,7 +1155,9 @@ M180 parser/AST surface details:
 - parser transfer/copy anchors:
   - `CopyMethodReturnTypeFromFunctionDecl(...)`
   - `CopyPropertyTypeFromParam(...)`
+  - `target.return_cross_module_conformance_profile_is_normalized = source.return_cross_module_conformance_profile_is_normalized;`
   - `target.return_cross_module_conformance_profile = source.return_cross_module_conformance_profile;`
+  - `target.cross_module_conformance_profile_is_normalized = source.cross_module_conformance_profile_is_normalized;`
   - `target.cross_module_conformance_profile = source.cross_module_conformance_profile;`
 
 Deterministic grammar intent:
@@ -1164,7 +1166,8 @@ Deterministic grammar intent:
   readiness from object-pointer spelling, generic suffix packets,
   namespace-segment shape, and pointer declarator participation.
 - parameter/profile normalization remains deterministic across direct parameter
-  parsing and property/method type transfer surfaces.
+  parsing and property/method type transfer surfaces, including normalized-flag
+  transfer anchors.
 - profile normalization is fail-closed for malformed packets that would
   destabilize cross-module conformance replay and handoff.
 
