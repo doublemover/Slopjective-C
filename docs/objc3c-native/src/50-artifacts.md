@@ -3024,6 +3024,61 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m163_lowering_autoreleasepool_scope_contract.py -q`
 
+## Weak/unowned semantics lowering artifact contract (M164-C001)
+
+M164-C publishes replay-stable weak/unowned ownership semantics lowering invariants derived
+from sema weak-unowned summary surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m164/lowering-weak-unowned-semantics-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m164/lowering-weak-unowned-semantics-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m164/lowering-weak-unowned-semantics-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m164/lowering-weak-unowned-semantics-contract/weak-unowned-semantics-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3WeakUnownedSemanticsLoweringLaneContract`
+- `Objc3WeakUnownedSemanticsLoweringContract`
+- `IsValidObjc3WeakUnownedSemanticsLoweringContract(...)`
+- `Objc3WeakUnownedSemanticsLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `ownership_candidate_sites=<N>`
+- `weak_reference_sites=<N>`
+- `unowned_reference_sites=<N>`
+- `unowned_safe_reference_sites=<N>`
+- `weak_unowned_conflict_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m164-weak-unowned-semantics-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_weak_unowned_semantics_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_ownership_candidate_sites`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_weak_reference_sites`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_unowned_reference_sites`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_unowned_safe_reference_sites`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_conflict_sites`
+- `frontend.pipeline.sema_pass_manager.weak_unowned_semantics_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_weak_unowned_semantics_replay_key`
+- `frontend.pipeline.semantic_surface.objc_weak_unowned_semantics_lowering_surface`
+- `lowering_weak_unowned_semantics.replay_key`
+- `lowering_weak_unowned_semantics.lane_contract`
+
+IR publication markers:
+
+- `; weak_unowned_semantics_lowering = ownership_candidate_sites=<N>;weak_reference_sites=<N>;unowned_reference_sites=<N>;unowned_safe_reference_sites=<N>;weak_unowned_conflict_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m164-weak-unowned-semantics-lowering-v1`
+- `; frontend_objc_weak_unowned_semantics_lowering_profile = ownership_candidate_sites=<N>, weak_reference_sites=<N>, unowned_reference_sites=<N>, unowned_safe_reference_sites=<N>, weak_unowned_conflict_sites=<N>, contract_violation_sites=<N>, deterministic_weak_unowned_semantics_lowering_handoff=<bool>`
+- `!objc3.objc_weak_unowned_semantics_lowering = !{!17}`
+- `!17 = !{i64 <ownership_candidate_sites>, i64 <weak_reference_sites>, i64 <unowned_reference_sites>, i64 <unowned_safe_reference_sites>, i64 <weak_unowned_conflict_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m164_lowering_weak_unowned_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

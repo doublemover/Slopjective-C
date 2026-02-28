@@ -591,3 +591,25 @@ std::string Objc3AutoreleasePoolScopeLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3AutoreleasePoolScopeLoweringLaneContract;
 }
+
+bool IsValidObjc3WeakUnownedSemanticsLoweringContract(
+    const Objc3WeakUnownedSemanticsLoweringContract &contract) {
+  return contract.weak_reference_sites <= contract.ownership_candidate_sites &&
+         contract.unowned_reference_sites <= contract.ownership_candidate_sites &&
+         contract.unowned_safe_reference_sites <= contract.unowned_reference_sites &&
+         contract.weak_unowned_conflict_sites <= contract.ownership_candidate_sites &&
+         contract.contract_violation_sites <=
+             contract.ownership_candidate_sites + contract.weak_unowned_conflict_sites;
+}
+
+std::string Objc3WeakUnownedSemanticsLoweringReplayKey(
+    const Objc3WeakUnownedSemanticsLoweringContract &contract) {
+  return std::string("ownership_candidate_sites=") + std::to_string(contract.ownership_candidate_sites) +
+         ";weak_reference_sites=" + std::to_string(contract.weak_reference_sites) +
+         ";unowned_reference_sites=" + std::to_string(contract.unowned_reference_sites) +
+         ";unowned_safe_reference_sites=" + std::to_string(contract.unowned_safe_reference_sites) +
+         ";weak_unowned_conflict_sites=" + std::to_string(contract.weak_unowned_conflict_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3WeakUnownedSemanticsLoweringLaneContract;
+}

@@ -643,6 +643,27 @@ Objc3AutoreleasePoolScopeLoweringContract BuildAutoreleasePoolScopeLoweringContr
   return contract;
 }
 
+Objc3WeakUnownedSemanticsLoweringContract BuildWeakUnownedSemanticsLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3WeakUnownedSemanticsLoweringContract contract;
+  contract.ownership_candidate_sites =
+      sema_parity_surface.weak_unowned_semantics_ownership_candidate_sites_total;
+  contract.weak_reference_sites =
+      sema_parity_surface.weak_unowned_semantics_weak_reference_sites_total;
+  contract.unowned_reference_sites =
+      sema_parity_surface.weak_unowned_semantics_unowned_reference_sites_total;
+  contract.unowned_safe_reference_sites =
+      sema_parity_surface.weak_unowned_semantics_unowned_safe_reference_sites_total;
+  contract.weak_unowned_conflict_sites =
+      sema_parity_surface.weak_unowned_semantics_conflict_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.weak_unowned_semantics_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.weak_unowned_semantics_summary.deterministic &&
+      sema_parity_surface.deterministic_weak_unowned_semantics_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -888,6 +909,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string autoreleasepool_scope_lowering_replay_key =
       Objc3AutoreleasePoolScopeLoweringReplayKey(autoreleasepool_scope_lowering_contract);
+  const Objc3WeakUnownedSemanticsLoweringContract weak_unowned_semantics_lowering_contract =
+      BuildWeakUnownedSemanticsLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3WeakUnownedSemanticsLoweringContract(weak_unowned_semantics_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid weak-unowned semantics lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string weak_unowned_semantics_lowering_replay_key =
+      Objc3WeakUnownedSemanticsLoweringReplayKey(weak_unowned_semantics_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1293,6 +1327,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_autoreleasepool_scope_replay_key\":\""
            << autoreleasepool_scope_lowering_replay_key
            << "\""
+           << ",\"deterministic_weak_unowned_semantics_lowering_handoff\":"
+           << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
+           << ",\"weak_unowned_semantics_lowering_ownership_candidate_sites\":"
+           << weak_unowned_semantics_lowering_contract.ownership_candidate_sites
+           << ",\"weak_unowned_semantics_lowering_weak_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.weak_reference_sites
+           << ",\"weak_unowned_semantics_lowering_unowned_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.unowned_reference_sites
+           << ",\"weak_unowned_semantics_lowering_unowned_safe_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.unowned_safe_reference_sites
+           << ",\"weak_unowned_semantics_lowering_conflict_sites\":"
+           << weak_unowned_semantics_lowering_contract.weak_unowned_conflict_sites
+           << ",\"weak_unowned_semantics_lowering_contract_violation_sites\":"
+           << weak_unowned_semantics_lowering_contract.contract_violation_sites
+           << ",\"lowering_weak_unowned_semantics_replay_key\":\""
+           << weak_unowned_semantics_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1646,6 +1697,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (autoreleasepool_scope_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_weak_unowned_semantics_lowering_surface\":{\"ownership_candidate_sites\":"
+           << weak_unowned_semantics_lowering_contract.ownership_candidate_sites
+           << ",\"weak_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.weak_reference_sites
+           << ",\"unowned_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.unowned_reference_sites
+           << ",\"unowned_safe_reference_sites\":"
+           << weak_unowned_semantics_lowering_contract.unowned_safe_reference_sites
+           << ",\"weak_unowned_conflict_sites\":"
+           << weak_unowned_semantics_lowering_contract.weak_unowned_conflict_sites
+           << ",\"contract_violation_sites\":"
+           << weak_unowned_semantics_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << weak_unowned_semantics_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1779,6 +1847,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3AutoreleasePoolScopeLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (autoreleasepool_scope_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_weak_unowned_semantics\":{\"replay_key\":\""
+           << weak_unowned_semantics_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3WeakUnownedSemanticsLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2049,6 +2123,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       autoreleasepool_scope_lowering_contract.scope_exit_transition_sites;
   ir_frontend_metadata.autoreleasepool_scope_lowering_contract_violation_sites =
       autoreleasepool_scope_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.lowering_weak_unowned_semantics_replay_key =
+      weak_unowned_semantics_lowering_replay_key;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_ownership_candidate_sites =
+      weak_unowned_semantics_lowering_contract.ownership_candidate_sites;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_weak_reference_sites =
+      weak_unowned_semantics_lowering_contract.weak_reference_sites;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_unowned_reference_sites =
+      weak_unowned_semantics_lowering_contract.unowned_reference_sites;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_unowned_safe_reference_sites =
+      weak_unowned_semantics_lowering_contract.unowned_safe_reference_sites;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_conflict_sites =
+      weak_unowned_semantics_lowering_contract.weak_unowned_conflict_sites;
+  ir_frontend_metadata.weak_unowned_semantics_lowering_contract_violation_sites =
+      weak_unowned_semantics_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_weak_unowned_semantics_lowering_handoff =
+      weak_unowned_semantics_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

@@ -135,6 +135,14 @@ struct Objc3IRFrontendMetadata {
   std::size_t autoreleasepool_scope_lowering_scope_exit_transition_sites = 0;
   std::size_t autoreleasepool_scope_lowering_contract_violation_sites = 0;
   bool deterministic_autoreleasepool_scope_lowering_handoff = false;
+  std::string lowering_weak_unowned_semantics_replay_key;
+  std::size_t weak_unowned_semantics_lowering_ownership_candidate_sites = 0;
+  std::size_t weak_unowned_semantics_lowering_weak_reference_sites = 0;
+  std::size_t weak_unowned_semantics_lowering_unowned_reference_sites = 0;
+  std::size_t weak_unowned_semantics_lowering_unowned_safe_reference_sites = 0;
+  std::size_t weak_unowned_semantics_lowering_conflict_sites = 0;
+  std::size_t weak_unowned_semantics_lowering_contract_violation_sites = 0;
+  bool deterministic_weak_unowned_semantics_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

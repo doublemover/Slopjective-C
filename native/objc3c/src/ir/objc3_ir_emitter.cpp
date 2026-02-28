@@ -134,6 +134,10 @@ class Objc3IREmitter {
       out << "; autoreleasepool_scope_lowering = "
           << frontend_metadata_.lowering_autoreleasepool_scope_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_weak_unowned_semantics_replay_key.empty()) {
+      out << "; weak_unowned_semantics_lowering = "
+          << frontend_metadata_.lowering_weak_unowned_semantics_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -319,6 +323,21 @@ class Objc3IREmitter {
         << ", deterministic_autoreleasepool_scope_lowering_handoff="
         << (frontend_metadata_.deterministic_autoreleasepool_scope_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_weak_unowned_semantics_lowering_profile = ownership_candidate_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_ownership_candidate_sites
+        << ", weak_reference_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_weak_reference_sites
+        << ", unowned_reference_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_unowned_reference_sites
+        << ", unowned_safe_reference_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_unowned_safe_reference_sites
+        << ", weak_unowned_conflict_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_conflict_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.weak_unowned_semantics_lowering_contract_violation_sites
+        << ", deterministic_weak_unowned_semantics_lowering_handoff="
+        << (frontend_metadata_.deterministic_weak_unowned_semantics_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -494,6 +513,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_ownership_qualifier_lowering = !{!14}\n";
     out << "!objc3.objc_retain_release_operation_lowering = !{!15}\n";
     out << "!objc3.objc_autoreleasepool_scope_lowering = !{!16}\n";
+    out << "!objc3.objc_weak_unowned_semantics_lowering = !{!17}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -720,6 +740,24 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.autoreleasepool_scope_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_autoreleasepool_scope_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!17 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.weak_unowned_semantics_lowering_ownership_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.weak_unowned_semantics_lowering_weak_reference_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.weak_unowned_semantics_lowering_unowned_reference_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.weak_unowned_semantics_lowering_unowned_safe_reference_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.weak_unowned_semantics_lowering_conflict_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.weak_unowned_semantics_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_weak_unowned_semantics_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 
