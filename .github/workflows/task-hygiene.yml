@@ -101,6 +101,8 @@ jobs:
         run: npm run check:objc3c:m213-debug-fidelity
       - name: 25 Run M212 refactor/code-action integration gate
         run: npm run check:objc3c:m212-code-action
+      - name: 26 Run M211 LSP semantic integration gate
+        run: npm run check:objc3c:m211-lsp-semantics
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

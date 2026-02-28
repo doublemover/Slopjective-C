@@ -275,6 +275,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain code-action anchors.
 
+## M211 integration LSP semantic tokens and navigation
+
+- Gate intent: enforce deterministic LSP semantic-token/navigation evidence across all lanes.
+### 1.1 LSP integration chain
+- Deterministic LSP gate:
+  - `npm run check:objc3c:m211-lsp-semantics`
+- Chain order:
+  - replays `check:objc3c:m212-code-action`.
+  - enforces all M211 lane contracts:
+    `tests/tooling/test_objc3c_m211_frontend_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_sema_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_lowering_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_validation_lsp_contract.py`,
+    `tests/tooling/test_objc3c_m211_integration_lsp_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through LSP semantic validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain LSP anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
