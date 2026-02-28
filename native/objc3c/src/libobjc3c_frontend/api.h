@@ -150,9 +150,12 @@ OBJC3C_FRONTEND_API void objc3c_frontend_context_destroy(objc3c_frontend_context
 
 /*
  * Compile entrypoint for file-backed embedding.
- * Current implementation status: scaffolded; for non-null inputs it currently returns
- * OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR and sets context last-error text.
- * Returns OBJC3C_FRONTEND_STATUS_USAGE_ERROR when context/options/result is NULL.
+ * Pipeline-backed behavior:
+ * - Runs lexer/parser/sema/lower/emit through the extracted frontend pipeline.
+ * - Writes selected artifacts to out_dir (when provided) based on emit flags.
+ * - Returns OBJC3C_FRONTEND_STATUS_DIAGNOSTICS on source diagnostics,
+ *   OBJC3C_FRONTEND_STATUS_EMIT_ERROR on object emission failures,
+ *   and OBJC3C_FRONTEND_STATUS_USAGE_ERROR for invalid arguments.
  */
 OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_file(
     objc3c_frontend_context_t *context,
@@ -161,9 +164,8 @@ OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_file(
 
 /*
  * Compile entrypoint for in-memory source embedding.
- * Current implementation status: scaffolded; for non-null inputs it currently returns
- * OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR and sets context last-error text.
- * Returns OBJC3C_FRONTEND_STATUS_USAGE_ERROR when context/options/result is NULL.
+ * Pipeline-backed behavior mirrors objc3c_frontend_compile_file and accepts
+ * compile_options.source_text as the source input.
  */
 OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_source(
     objc3c_frontend_context_t *context,
