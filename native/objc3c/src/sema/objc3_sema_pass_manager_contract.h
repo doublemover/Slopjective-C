@@ -236,6 +236,12 @@ struct Objc3SemaParityContractSurface {
   std::size_t retain_release_operation_release_insertion_sites_total = 0;
   std::size_t retain_release_operation_autorelease_insertion_sites_total = 0;
   std::size_t retain_release_operation_contract_violation_sites_total = 0;
+  std::size_t weak_unowned_semantics_ownership_candidate_sites_total = 0;
+  std::size_t weak_unowned_semantics_weak_reference_sites_total = 0;
+  std::size_t weak_unowned_semantics_unowned_reference_sites_total = 0;
+  std::size_t weak_unowned_semantics_unowned_safe_reference_sites_total = 0;
+  std::size_t weak_unowned_semantics_conflict_sites_total = 0;
+  std::size_t weak_unowned_semantics_contract_violation_sites_total = 0;
   std::size_t autoreleasepool_scope_sites_total = 0;
   std::size_t autoreleasepool_scope_symbolized_sites_total = 0;
   std::size_t autoreleasepool_scope_contract_violation_sites_total = 0;
@@ -259,6 +265,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_super_dispatch_method_family_handoff = false;
   bool deterministic_runtime_shim_host_link_handoff = false;
   bool deterministic_retain_release_operation_handoff = false;
+  bool deterministic_weak_unowned_semantics_handoff = false;
   bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
@@ -276,6 +283,7 @@ struct Objc3SemaParityContractSurface {
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
@@ -787,6 +795,27 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  surface.retain_release_operation_summary.contract_violation_sites &&
          surface.retain_release_operation_summary.deterministic &&
          surface.deterministic_retain_release_operation_handoff &&
+         surface.weak_unowned_semantics_summary.ownership_candidate_sites ==
+             surface.weak_unowned_semantics_ownership_candidate_sites_total &&
+         surface.weak_unowned_semantics_summary.weak_reference_sites ==
+             surface.weak_unowned_semantics_weak_reference_sites_total &&
+         surface.weak_unowned_semantics_summary.unowned_reference_sites ==
+             surface.weak_unowned_semantics_unowned_reference_sites_total &&
+         surface.weak_unowned_semantics_summary.unowned_safe_reference_sites ==
+             surface.weak_unowned_semantics_unowned_safe_reference_sites_total &&
+         surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites ==
+             surface.weak_unowned_semantics_conflict_sites_total &&
+         surface.weak_unowned_semantics_summary.contract_violation_sites ==
+             surface.weak_unowned_semantics_contract_violation_sites_total &&
+         surface.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
+             surface.weak_unowned_semantics_summary.unowned_reference_sites &&
+         surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
+             surface.weak_unowned_semantics_summary.ownership_candidate_sites &&
+         surface.weak_unowned_semantics_summary.contract_violation_sites <=
+             surface.weak_unowned_semantics_summary.ownership_candidate_sites +
+                 surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
+         surface.weak_unowned_semantics_summary.deterministic &&
+         surface.deterministic_weak_unowned_semantics_handoff &&
          surface.autoreleasepool_scope_summary.scope_sites == surface.autoreleasepool_scope_sites_total &&
          surface.autoreleasepool_scope_summary.scope_symbolized_sites ==
              surface.autoreleasepool_scope_symbolized_sites_total &&
@@ -843,6 +872,8 @@ struct Objc3SemaPassManagerResult {
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   bool deterministic_retain_release_operation_handoff = false;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  bool deterministic_weak_unowned_semantics_handoff = false;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
   bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;

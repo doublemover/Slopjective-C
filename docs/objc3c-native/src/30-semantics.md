@@ -2981,3 +2981,57 @@ Sema/type metadata handoff contract:
 Recommended M163 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m163_sema_autorelease_pool_scope_contract.py -q`
+
+## M164 sema/type weak-unowned semantics contract (M164-B001)
+
+M164-B wires frontend weak/unowned ownership classifications into sema integration,
+type-metadata handoff, and parity packets so lane-C lowering can consume deterministic
+weak/unowned lifetime policy without reparsing qualifiers.
+
+Sema/type weak-unowned contract markers:
+
+- `Objc3WeakUnownedSemanticsSummary`
+- `param_ownership_is_weak_reference`
+- `param_ownership_is_unowned_reference`
+- `param_ownership_is_unowned_safe_reference`
+- `return_ownership_is_weak_reference`
+- `return_ownership_is_unowned_reference`
+- `return_ownership_is_unowned_safe_reference`
+- `ownership_is_weak_reference`
+- `ownership_is_unowned_reference`
+- `ownership_is_unowned_safe_reference`
+- `is_unowned`
+- `has_weak_unowned_conflict`
+- `BuildWeakUnownedSemanticsSummaryFromIntegrationSurface`
+- `BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff`
+- `weak_unowned_semantics_ownership_candidate_sites_total`
+- `weak_unowned_semantics_unowned_safe_reference_sites_total`
+- `deterministic_weak_unowned_semantics_handoff`
+
+Deterministic weak/unowned invariants (fail-closed):
+
+- ownership metadata vectors for weak/unowned flags must match declaration arity.
+- safe-unowned counters must be bounded by unowned-reference counters.
+- weak/unowned conflict counters must be bounded by ownership-candidate sites.
+- weak/unowned contract-violation counters must be bounded by
+  `ownership_candidate_sites + weak_unowned_conflict_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.weak_unowned_semantics_summary = BuildWeakUnownedSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.weak_unowned_semantics_summary = BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `weak_unowned_semantics_ownership_candidate_sites_total`
+  - `weak_unowned_semantics_weak_reference_sites_total`
+  - `weak_unowned_semantics_unowned_reference_sites_total`
+  - `weak_unowned_semantics_unowned_safe_reference_sites_total`
+  - `weak_unowned_semantics_conflict_sites_total`
+  - `weak_unowned_semantics_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_weak_unowned_semantics_handoff`
+
+Recommended M164 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m164_sema_weak_unowned_contract.py -q`

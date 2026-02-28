@@ -1178,6 +1178,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.ownership_insert_retain = property.ownership_insert_retain;
   info.ownership_insert_release = property.ownership_insert_release;
   info.ownership_insert_autorelease = property.ownership_insert_autorelease;
+  info.ownership_is_weak_reference = property.ownership_is_weak_reference;
+  info.ownership_is_unowned_reference = property.ownership_is_unowned_reference;
+  info.ownership_is_unowned_safe_reference = property.ownership_is_unowned_safe_reference;
   info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
   info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
   info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
@@ -1191,6 +1194,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.is_copy = property.is_copy;
   info.is_strong = property.is_strong;
   info.is_weak = property.is_weak;
+  info.is_unowned = property.is_unowned;
   info.is_assign = property.is_assign;
   info.has_getter = property.has_getter;
   info.has_setter = property.has_setter;
@@ -1279,7 +1283,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
             "' in " + owner_kind + " '" + owner_name + "'");
   }
   const std::size_t ownership_modifiers = (info.is_copy ? 1u : 0u) + (info.is_strong ? 1u : 0u) +
-                                          (info.is_weak ? 1u : 0u) + (info.is_assign ? 1u : 0u);
+                                          (info.is_weak ? 1u : 0u) + (info.is_unowned ? 1u : 0u) +
+                                          (info.is_assign ? 1u : 0u);
   if (ownership_modifiers > 1u) {
     info.has_ownership_conflict = true;
     emit_property_contract_violation(
@@ -1287,6 +1292,14 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         property.column,
         "type mismatch: @property ownership modifiers conflict for property '" + property.name + "' in " + owner_kind +
             " '" + owner_name + "'");
+  }
+  info.has_weak_unowned_conflict = property.has_weak_unowned_conflict || (info.is_weak && info.is_unowned);
+  if (info.has_weak_unowned_conflict) {
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property ownership modifiers 'weak' and 'unowned' conflict for property '" + property.name +
+            "' in " + owner_kind + " '" + owner_name + "'");
   }
   if (info.is_readonly && info.has_setter) {
     info.has_accessor_selector_contract_violation = true;
@@ -1319,6 +1332,7 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
          lhs.is_copy == rhs.is_copy &&
          lhs.is_strong == rhs.is_strong &&
          lhs.is_weak == rhs.is_weak &&
+         lhs.is_unowned == rhs.is_unowned &&
          lhs.is_assign == rhs.is_assign &&
          lhs.has_getter == rhs.has_getter &&
          lhs.has_setter == rhs.has_setter &&
@@ -1357,6 +1371,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_ownership_insert_retain.reserve(method.params.size());
   info.param_ownership_insert_release.reserve(method.params.size());
   info.param_ownership_insert_autorelease.reserve(method.params.size());
+  info.param_ownership_is_weak_reference.reserve(method.params.size());
+  info.param_ownership_is_unowned_reference.reserve(method.params.size());
+  info.param_ownership_is_unowned_safe_reference.reserve(method.params.size());
   info.param_has_protocol_composition.reserve(method.params.size());
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
   info.param_has_invalid_protocol_composition.reserve(method.params.size());
@@ -1379,6 +1396,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_ownership_insert_retain.push_back(param.ownership_insert_retain);
     info.param_ownership_insert_release.push_back(param.ownership_insert_release);
     info.param_ownership_insert_autorelease.push_back(param.ownership_insert_autorelease);
+    info.param_ownership_is_weak_reference.push_back(param.ownership_is_weak_reference);
+    info.param_ownership_is_unowned_reference.push_back(param.ownership_is_unowned_reference);
+    info.param_ownership_is_unowned_safe_reference.push_back(param.ownership_is_unowned_safe_reference);
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
     info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -1400,6 +1420,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_ownership_insert_retain = method.return_ownership_insert_retain;
   info.return_ownership_insert_release = method.return_ownership_insert_release;
   info.return_ownership_insert_autorelease = method.return_ownership_insert_autorelease;
+  info.return_ownership_is_weak_reference = method.return_ownership_is_weak_reference;
+  info.return_ownership_is_unowned_reference = method.return_ownership_is_unowned_reference;
+  info.return_ownership_is_unowned_safe_reference = method.return_ownership_is_unowned_safe_reference;
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
@@ -1418,7 +1441,10 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
       lhs.return_has_ownership_qualifier != rhs.return_has_ownership_qualifier ||
       lhs.return_ownership_insert_retain != rhs.return_ownership_insert_retain ||
       lhs.return_ownership_insert_release != rhs.return_ownership_insert_release ||
-      lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease) {
+      lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease ||
+      lhs.return_ownership_is_weak_reference != rhs.return_ownership_is_weak_reference ||
+      lhs.return_ownership_is_unowned_reference != rhs.return_ownership_is_unowned_reference ||
+      lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference) {
     return false;
   }
   if (lhs.return_is_vector &&
@@ -1435,7 +1461,13 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
       lhs.param_ownership_insert_release.size() != lhs.arity ||
       rhs.param_ownership_insert_release.size() != rhs.arity ||
       lhs.param_ownership_insert_autorelease.size() != lhs.arity ||
-      rhs.param_ownership_insert_autorelease.size() != rhs.arity) {
+      rhs.param_ownership_insert_autorelease.size() != rhs.arity ||
+      lhs.param_ownership_is_weak_reference.size() != lhs.arity ||
+      rhs.param_ownership_is_weak_reference.size() != rhs.arity ||
+      lhs.param_ownership_is_unowned_reference.size() != lhs.arity ||
+      rhs.param_ownership_is_unowned_reference.size() != rhs.arity ||
+      lhs.param_ownership_is_unowned_safe_reference.size() != lhs.arity ||
+      rhs.param_ownership_is_unowned_safe_reference.size() != rhs.arity) {
     return false;
   }
   if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
@@ -1464,7 +1496,10 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
     }
     if (lhs.param_ownership_insert_retain[i] != rhs.param_ownership_insert_retain[i] ||
         lhs.param_ownership_insert_release[i] != rhs.param_ownership_insert_release[i] ||
-        lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i]) {
+        lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i] ||
+        lhs.param_ownership_is_weak_reference[i] != rhs.param_ownership_is_weak_reference[i] ||
+        lhs.param_ownership_is_unowned_reference[i] != rhs.param_ownership_is_unowned_reference[i] ||
+        lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i]) {
       return false;
     }
     if (lhs.param_is_vector[i] &&
@@ -4665,6 +4700,276 @@ BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(const Objc3SemanticTyp
   return summary;
 }
 
+static Objc3WeakUnownedSemanticsSummary
+BuildWeakUnownedSemanticsSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3WeakUnownedSemanticsSummary summary;
+
+  const auto accumulate_site = [&summary](bool ownership_candidate,
+                                          bool weak_reference,
+                                          bool unowned_reference,
+                                          bool unowned_safe_reference,
+                                          bool conflict) {
+    if (ownership_candidate) {
+      ++summary.ownership_candidate_sites;
+    }
+    if (weak_reference) {
+      ++summary.weak_reference_sites;
+    }
+    if (unowned_reference) {
+      ++summary.unowned_reference_sites;
+    }
+    if (unowned_safe_reference) {
+      ++summary.unowned_safe_reference_sites;
+    }
+    if (conflict) {
+      ++summary.weak_unowned_conflict_sites;
+    }
+    if (conflict || (unowned_safe_reference && !unowned_reference) ||
+        (!ownership_candidate && (weak_reference || unowned_reference))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_function = [&summary, &accumulate_site](const FunctionInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_has_ownership_qualifier.size() != arity ||
+        info.param_ownership_is_weak_reference.size() != arity ||
+        info.param_ownership_is_unowned_reference.size() != arity ||
+        info.param_ownership_is_unowned_safe_reference.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool weak_reference = info.param_ownership_is_weak_reference[i];
+      const bool unowned_reference = info.param_ownership_is_unowned_reference[i];
+      const bool unowned_safe_reference = info.param_ownership_is_unowned_safe_reference[i];
+      const bool ownership_candidate = info.param_has_ownership_qualifier[i] || weak_reference || unowned_reference;
+      accumulate_site(ownership_candidate,
+                      weak_reference,
+                      unowned_reference,
+                      unowned_safe_reference,
+                      weak_reference && unowned_reference);
+    }
+    const bool return_weak_reference = info.return_ownership_is_weak_reference;
+    const bool return_unowned_reference = info.return_ownership_is_unowned_reference;
+    const bool return_unowned_safe_reference = info.return_ownership_is_unowned_safe_reference;
+    const bool return_ownership_candidate =
+        info.return_has_ownership_qualifier || return_weak_reference || return_unowned_reference;
+    accumulate_site(return_ownership_candidate,
+                    return_weak_reference,
+                    return_unowned_reference,
+                    return_unowned_safe_reference,
+                    return_weak_reference && return_unowned_reference);
+  };
+
+  const auto accumulate_method = [&summary, &accumulate_site](const Objc3MethodInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_has_ownership_qualifier.size() != arity ||
+        info.param_ownership_is_weak_reference.size() != arity ||
+        info.param_ownership_is_unowned_reference.size() != arity ||
+        info.param_ownership_is_unowned_safe_reference.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool weak_reference = info.param_ownership_is_weak_reference[i];
+      const bool unowned_reference = info.param_ownership_is_unowned_reference[i];
+      const bool unowned_safe_reference = info.param_ownership_is_unowned_safe_reference[i];
+      const bool ownership_candidate = info.param_has_ownership_qualifier[i] || weak_reference || unowned_reference;
+      accumulate_site(ownership_candidate,
+                      weak_reference,
+                      unowned_reference,
+                      unowned_safe_reference,
+                      weak_reference && unowned_reference);
+    }
+    const bool return_weak_reference = info.return_ownership_is_weak_reference;
+    const bool return_unowned_reference = info.return_ownership_is_unowned_reference;
+    const bool return_unowned_safe_reference = info.return_ownership_is_unowned_safe_reference;
+    const bool return_ownership_candidate =
+        info.return_has_ownership_qualifier || return_weak_reference || return_unowned_reference;
+    accumulate_site(return_ownership_candidate,
+                    return_weak_reference,
+                    return_unowned_reference,
+                    return_unowned_safe_reference,
+                    return_weak_reference && return_unowned_reference);
+  };
+
+  const auto accumulate_property = [&accumulate_site](const Objc3PropertyInfo &info) {
+    const bool weak_reference = info.ownership_is_weak_reference || info.is_weak;
+    const bool unowned_reference = info.ownership_is_unowned_reference || info.is_unowned || info.is_assign;
+    const bool unowned_safe_reference = info.ownership_is_unowned_safe_reference || info.is_unowned;
+    const bool ownership_candidate = info.has_ownership_qualifier || info.is_weak || info.is_unowned || info.is_assign ||
+                                     weak_reference || unowned_reference;
+    const bool conflict = info.has_weak_unowned_conflict || (info.is_weak && info.is_unowned) ||
+                          (weak_reference && unowned_reference);
+    accumulate_site(
+        ownership_candidate, weak_reference, unowned_reference, unowned_safe_reference, conflict);
+  };
+
+  for (const auto &entry : surface.functions) {
+    accumulate_function(entry.second);
+  }
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.unowned_safe_reference_sites <= summary.unowned_reference_sites &&
+      summary.weak_unowned_conflict_sites <= summary.ownership_candidate_sites &&
+      summary.contract_violation_sites <= summary.ownership_candidate_sites + summary.weak_unowned_conflict_sites;
+  return summary;
+}
+
+static Objc3WeakUnownedSemanticsSummary
+BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3WeakUnownedSemanticsSummary summary;
+
+  const auto accumulate_site = [&summary](bool ownership_candidate,
+                                          bool weak_reference,
+                                          bool unowned_reference,
+                                          bool unowned_safe_reference,
+                                          bool conflict) {
+    if (ownership_candidate) {
+      ++summary.ownership_candidate_sites;
+    }
+    if (weak_reference) {
+      ++summary.weak_reference_sites;
+    }
+    if (unowned_reference) {
+      ++summary.unowned_reference_sites;
+    }
+    if (unowned_safe_reference) {
+      ++summary.unowned_safe_reference_sites;
+    }
+    if (conflict) {
+      ++summary.weak_unowned_conflict_sites;
+    }
+    if (conflict || (unowned_safe_reference && !unowned_reference) ||
+        (!ownership_candidate && (weak_reference || unowned_reference))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_function = [&summary, &accumulate_site](const Objc3SemanticFunctionTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_has_ownership_qualifier.size() != arity ||
+        metadata.param_ownership_is_weak_reference.size() != arity ||
+        metadata.param_ownership_is_unowned_reference.size() != arity ||
+        metadata.param_ownership_is_unowned_safe_reference.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool weak_reference = metadata.param_ownership_is_weak_reference[i];
+      const bool unowned_reference = metadata.param_ownership_is_unowned_reference[i];
+      const bool unowned_safe_reference = metadata.param_ownership_is_unowned_safe_reference[i];
+      const bool ownership_candidate =
+          metadata.param_has_ownership_qualifier[i] || weak_reference || unowned_reference;
+      accumulate_site(ownership_candidate,
+                      weak_reference,
+                      unowned_reference,
+                      unowned_safe_reference,
+                      weak_reference && unowned_reference);
+    }
+    const bool return_weak_reference = metadata.return_ownership_is_weak_reference;
+    const bool return_unowned_reference = metadata.return_ownership_is_unowned_reference;
+    const bool return_unowned_safe_reference = metadata.return_ownership_is_unowned_safe_reference;
+    const bool return_ownership_candidate =
+        metadata.return_has_ownership_qualifier || return_weak_reference || return_unowned_reference;
+    accumulate_site(return_ownership_candidate,
+                    return_weak_reference,
+                    return_unowned_reference,
+                    return_unowned_safe_reference,
+                    return_weak_reference && return_unowned_reference);
+  };
+
+  const auto accumulate_method = [&summary, &accumulate_site](const Objc3SemanticMethodTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_has_ownership_qualifier.size() != arity ||
+        metadata.param_ownership_is_weak_reference.size() != arity ||
+        metadata.param_ownership_is_unowned_reference.size() != arity ||
+        metadata.param_ownership_is_unowned_safe_reference.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool weak_reference = metadata.param_ownership_is_weak_reference[i];
+      const bool unowned_reference = metadata.param_ownership_is_unowned_reference[i];
+      const bool unowned_safe_reference = metadata.param_ownership_is_unowned_safe_reference[i];
+      const bool ownership_candidate =
+          metadata.param_has_ownership_qualifier[i] || weak_reference || unowned_reference;
+      accumulate_site(ownership_candidate,
+                      weak_reference,
+                      unowned_reference,
+                      unowned_safe_reference,
+                      weak_reference && unowned_reference);
+    }
+    const bool return_weak_reference = metadata.return_ownership_is_weak_reference;
+    const bool return_unowned_reference = metadata.return_ownership_is_unowned_reference;
+    const bool return_unowned_safe_reference = metadata.return_ownership_is_unowned_safe_reference;
+    const bool return_ownership_candidate =
+        metadata.return_has_ownership_qualifier || return_weak_reference || return_unowned_reference;
+    accumulate_site(return_ownership_candidate,
+                    return_weak_reference,
+                    return_unowned_reference,
+                    return_unowned_safe_reference,
+                    return_weak_reference && return_unowned_reference);
+  };
+
+  const auto accumulate_property = [&accumulate_site](const Objc3SemanticPropertyTypeMetadata &metadata) {
+    const bool weak_reference = metadata.ownership_is_weak_reference || metadata.is_weak;
+    const bool unowned_reference = metadata.ownership_is_unowned_reference || metadata.is_unowned || metadata.is_assign;
+    const bool unowned_safe_reference = metadata.ownership_is_unowned_safe_reference || metadata.is_unowned;
+    const bool ownership_candidate = metadata.has_ownership_qualifier || metadata.is_weak || metadata.is_unowned ||
+                                     metadata.is_assign || weak_reference || unowned_reference;
+    const bool conflict = metadata.has_weak_unowned_conflict || (metadata.is_weak && metadata.is_unowned) ||
+                          (weak_reference && unowned_reference);
+    accumulate_site(
+        ownership_candidate, weak_reference, unowned_reference, unowned_safe_reference, conflict);
+  };
+
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function(metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : interface_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.unowned_safe_reference_sites <= summary.unowned_reference_sites &&
+      summary.weak_unowned_conflict_sites <= summary.ownership_candidate_sites &&
+      summary.contract_violation_sites <= summary.ownership_candidate_sites + summary.weak_unowned_conflict_sites;
+  return summary;
+}
+
 static Objc3AutoreleasePoolScopeSummary
 BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
   return BuildAutoreleasePoolScopeSummaryFromSites(surface.autoreleasepool_scope_sites_lexicographic);
@@ -5030,6 +5335,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_ownership_insert_retain.reserve(fn.params.size());
       info.param_ownership_insert_release.reserve(fn.params.size());
       info.param_ownership_insert_autorelease.reserve(fn.params.size());
+      info.param_ownership_is_weak_reference.reserve(fn.params.size());
+      info.param_ownership_is_unowned_reference.reserve(fn.params.size());
+      info.param_ownership_is_unowned_safe_reference.reserve(fn.params.size());
       info.param_has_protocol_composition.reserve(fn.params.size());
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
       info.param_has_invalid_protocol_composition.reserve(fn.params.size());
@@ -5052,6 +5360,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_ownership_insert_retain.push_back(param.ownership_insert_retain);
         info.param_ownership_insert_release.push_back(param.ownership_insert_release);
         info.param_ownership_insert_autorelease.push_back(param.ownership_insert_autorelease);
+        info.param_ownership_is_weak_reference.push_back(param.ownership_is_weak_reference);
+        info.param_ownership_is_unowned_reference.push_back(param.ownership_is_unowned_reference);
+        info.param_ownership_is_unowned_safe_reference.push_back(param.ownership_is_unowned_safe_reference);
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
         info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -5073,6 +5384,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_ownership_insert_retain = fn.return_ownership_insert_retain;
       info.return_ownership_insert_release = fn.return_ownership_insert_release;
       info.return_ownership_insert_autorelease = fn.return_ownership_insert_autorelease;
+      info.return_ownership_is_weak_reference = fn.return_ownership_is_weak_reference;
+      info.return_ownership_is_unowned_reference = fn.return_ownership_is_unowned_reference;
+      info.return_ownership_is_unowned_safe_reference = fn.return_ownership_is_unowned_safe_reference;
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
@@ -5092,7 +5406,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                       existing.return_has_ownership_qualifier == fn.has_return_ownership_qualifier &&
                       existing.return_ownership_insert_retain == fn.return_ownership_insert_retain &&
                       existing.return_ownership_insert_release == fn.return_ownership_insert_release &&
-                      existing.return_ownership_insert_autorelease == fn.return_ownership_insert_autorelease;
+                      existing.return_ownership_insert_autorelease == fn.return_ownership_insert_autorelease &&
+                      existing.return_ownership_is_weak_reference == fn.return_ownership_is_weak_reference &&
+                      existing.return_ownership_is_unowned_reference == fn.return_ownership_is_unowned_reference &&
+                      existing.return_ownership_is_unowned_safe_reference ==
+                          fn.return_ownership_is_unowned_safe_reference;
     if (compatible && existing.return_is_vector) {
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
@@ -5113,6 +5431,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
             i >= existing.param_ownership_insert_retain.size() ||
             i >= existing.param_ownership_insert_release.size() ||
             i >= existing.param_ownership_insert_autorelease.size() ||
+            i >= existing.param_ownership_is_weak_reference.size() ||
+            i >= existing.param_ownership_is_unowned_reference.size() ||
+            i >= existing.param_ownership_is_unowned_safe_reference.size() ||
             i >= existing.param_has_protocol_composition.size() ||
             i >= existing.param_protocol_composition_lexicographic.size() ||
             existing.param_types[i] != fn.params[i].type ||
@@ -5126,7 +5447,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         }
         if (existing.param_ownership_insert_retain[i] != fn.params[i].ownership_insert_retain ||
             existing.param_ownership_insert_release[i] != fn.params[i].ownership_insert_release ||
-            existing.param_ownership_insert_autorelease[i] != fn.params[i].ownership_insert_autorelease) {
+            existing.param_ownership_insert_autorelease[i] != fn.params[i].ownership_insert_autorelease ||
+            existing.param_ownership_is_weak_reference[i] != fn.params[i].ownership_is_weak_reference ||
+            existing.param_ownership_is_unowned_reference[i] != fn.params[i].ownership_is_unowned_reference ||
+            existing.param_ownership_is_unowned_safe_reference[i] !=
+                fn.params[i].ownership_is_unowned_safe_reference) {
           compatible = false;
           break;
         }
@@ -5426,6 +5751,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(surface);
   surface.retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);
+  surface.weak_unowned_semantics_summary =
+      BuildWeakUnownedSemanticsSummaryFromIntegrationSurface(surface);
   surface.autoreleasepool_scope_sites_lexicographic =
       BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);
   surface.autoreleasepool_scope_summary =
@@ -5476,6 +5803,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
     metadata.param_ownership_insert_release = source.param_ownership_insert_release;
     metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
+    metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
+    metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
+    metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
     metadata.param_has_protocol_composition = source.param_has_protocol_composition;
     metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
     metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5492,6 +5822,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
     metadata.return_ownership_insert_release = source.return_ownership_insert_release;
     metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
+    metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
+    metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
+    metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5558,6 +5891,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_insert_retain = source.ownership_insert_retain;
       property_metadata.ownership_insert_release = source.ownership_insert_release;
       property_metadata.ownership_insert_autorelease = source.ownership_insert_autorelease;
+      property_metadata.ownership_is_weak_reference = source.ownership_is_weak_reference;
+      property_metadata.ownership_is_unowned_reference = source.ownership_is_unowned_reference;
+      property_metadata.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -5567,6 +5903,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.is_copy = source.is_copy;
       property_metadata.is_strong = source.is_strong;
       property_metadata.is_weak = source.is_weak;
+      property_metadata.is_unowned = source.is_unowned;
       property_metadata.is_assign = source.is_assign;
       property_metadata.has_getter = source.has_getter;
       property_metadata.has_setter = source.has_setter;
@@ -5579,6 +5916,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_readwrite_conflict = source.has_readwrite_conflict;
       property_metadata.has_atomicity_conflict = source.has_atomicity_conflict;
       property_metadata.has_ownership_conflict = source.has_ownership_conflict;
+      property_metadata.has_weak_unowned_conflict = source.has_weak_unowned_conflict;
       property_metadata.has_accessor_selector_contract_violation = source.has_accessor_selector_contract_violation;
       property_metadata.has_invalid_attribute_contract = source.has_invalid_attribute_contract;
       metadata.properties_lexicographic.push_back(std::move(property_metadata));
@@ -5628,6 +5966,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
       method_metadata.param_ownership_insert_release = source.param_ownership_insert_release;
       method_metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
+      method_metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
+      method_metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
+      method_metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5644,6 +5985,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
       method_metadata.return_ownership_insert_release = source.return_ownership_insert_release;
       method_metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
+      method_metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
+      method_metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
+      method_metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5713,6 +6057,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_insert_retain = source.ownership_insert_retain;
       property_metadata.ownership_insert_release = source.ownership_insert_release;
       property_metadata.ownership_insert_autorelease = source.ownership_insert_autorelease;
+      property_metadata.ownership_is_weak_reference = source.ownership_is_weak_reference;
+      property_metadata.ownership_is_unowned_reference = source.ownership_is_unowned_reference;
+      property_metadata.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -5722,6 +6069,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.is_copy = source.is_copy;
       property_metadata.is_strong = source.is_strong;
       property_metadata.is_weak = source.is_weak;
+      property_metadata.is_unowned = source.is_unowned;
       property_metadata.is_assign = source.is_assign;
       property_metadata.has_getter = source.has_getter;
       property_metadata.has_setter = source.has_setter;
@@ -5734,6 +6082,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_readwrite_conflict = source.has_readwrite_conflict;
       property_metadata.has_atomicity_conflict = source.has_atomicity_conflict;
       property_metadata.has_ownership_conflict = source.has_ownership_conflict;
+      property_metadata.has_weak_unowned_conflict = source.has_weak_unowned_conflict;
       property_metadata.has_accessor_selector_contract_violation = source.has_accessor_selector_contract_violation;
       property_metadata.has_invalid_attribute_contract = source.has_invalid_attribute_contract;
       metadata.properties_lexicographic.push_back(std::move(property_metadata));
@@ -5783,6 +6132,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
       method_metadata.param_ownership_insert_release = source.param_ownership_insert_release;
       method_metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
+      method_metadata.param_ownership_is_weak_reference = source.param_ownership_is_weak_reference;
+      method_metadata.param_ownership_is_unowned_reference = source.param_ownership_is_unowned_reference;
+      method_metadata.param_ownership_is_unowned_safe_reference = source.param_ownership_is_unowned_safe_reference;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5799,6 +6151,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
       method_metadata.return_ownership_insert_release = source.return_ownership_insert_release;
       method_metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
+      method_metadata.return_ownership_is_weak_reference = source.return_ownership_is_weak_reference;
+      method_metadata.return_ownership_is_unowned_reference = source.return_ownership_is_unowned_reference;
+      method_metadata.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5832,7 +6187,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         lhs.is_class_method != rhs.is_class_method ||
         lhs.return_ownership_insert_retain != rhs.return_ownership_insert_retain ||
         lhs.return_ownership_insert_release != rhs.return_ownership_insert_release ||
-        lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease) {
+        lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease ||
+        lhs.return_ownership_is_weak_reference != rhs.return_ownership_is_weak_reference ||
+        lhs.return_ownership_is_unowned_reference != rhs.return_ownership_is_unowned_reference ||
+        lhs.return_ownership_is_unowned_safe_reference != rhs.return_ownership_is_unowned_safe_reference) {
       return false;
     }
     if (lhs.return_is_vector &&
@@ -5851,11 +6209,17 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           i >= lhs.param_vector_lane_count.size() || i >= lhs.param_has_protocol_composition.size() ||
           i >= lhs.param_protocol_composition_lexicographic.size() || i >= lhs.param_ownership_insert_retain.size() ||
           i >= lhs.param_ownership_insert_release.size() || i >= lhs.param_ownership_insert_autorelease.size() ||
+          i >= lhs.param_ownership_is_weak_reference.size() ||
+          i >= lhs.param_ownership_is_unowned_reference.size() ||
+          i >= lhs.param_ownership_is_unowned_safe_reference.size() ||
           i >= rhs.param_types.size() ||
           i >= rhs.param_is_vector.size() || i >= rhs.param_vector_base_spelling.size() ||
           i >= rhs.param_vector_lane_count.size() || i >= rhs.param_has_protocol_composition.size() ||
           i >= rhs.param_protocol_composition_lexicographic.size() || i >= rhs.param_ownership_insert_retain.size() ||
-          i >= rhs.param_ownership_insert_release.size() || i >= rhs.param_ownership_insert_autorelease.size()) {
+          i >= rhs.param_ownership_insert_release.size() || i >= rhs.param_ownership_insert_autorelease.size() ||
+          i >= rhs.param_ownership_is_weak_reference.size() ||
+          i >= rhs.param_ownership_is_unowned_reference.size() ||
+          i >= rhs.param_ownership_is_unowned_safe_reference.size()) {
         return false;
       }
       if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
@@ -5863,7 +6227,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       }
       if (lhs.param_ownership_insert_retain[i] != rhs.param_ownership_insert_retain[i] ||
           lhs.param_ownership_insert_release[i] != rhs.param_ownership_insert_release[i] ||
-          lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i]) {
+          lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i] ||
+          lhs.param_ownership_is_weak_reference[i] != rhs.param_ownership_is_weak_reference[i] ||
+          lhs.param_ownership_is_unowned_reference[i] != rhs.param_ownership_is_unowned_reference[i] ||
+          lhs.param_ownership_is_unowned_safe_reference[i] != rhs.param_ownership_is_unowned_safe_reference[i]) {
         return false;
       }
       if (lhs.param_is_vector[i] &&
@@ -6300,6 +6667,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
   handoff.retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
+  handoff.weak_unowned_semantics_summary =
+      BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
   handoff.autoreleasepool_scope_sites_lexicographic =
       surface.autoreleasepool_scope_sites_lexicographic;
   handoff.autoreleasepool_scope_summary =
@@ -6931,6 +7300,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
   const Objc3RetainReleaseOperationSummary retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary =
+      BuildWeakUnownedSemanticsSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
       BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);
 
@@ -7355,6 +7726,26 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              retain_release_operation_summary.autorelease_insertion_sites &&
          handoff.retain_release_operation_summary.contract_violation_sites ==
              retain_release_operation_summary.contract_violation_sites &&
+         handoff.weak_unowned_semantics_summary.deterministic &&
+         handoff.weak_unowned_semantics_summary.ownership_candidate_sites ==
+             weak_unowned_semantics_summary.ownership_candidate_sites &&
+         handoff.weak_unowned_semantics_summary.weak_reference_sites ==
+             weak_unowned_semantics_summary.weak_reference_sites &&
+         handoff.weak_unowned_semantics_summary.unowned_reference_sites ==
+             weak_unowned_semantics_summary.unowned_reference_sites &&
+         handoff.weak_unowned_semantics_summary.unowned_safe_reference_sites ==
+             weak_unowned_semantics_summary.unowned_safe_reference_sites &&
+         handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites ==
+             weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
+         handoff.weak_unowned_semantics_summary.contract_violation_sites ==
+             weak_unowned_semantics_summary.contract_violation_sites &&
+         handoff.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
+             handoff.weak_unowned_semantics_summary.unowned_reference_sites &&
+         handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
+             handoff.weak_unowned_semantics_summary.ownership_candidate_sites &&
+         handoff.weak_unowned_semantics_summary.contract_violation_sites <=
+             handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
+                 handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
          handoff.autoreleasepool_scope_summary.deterministic &&
          handoff.autoreleasepool_scope_summary.scope_sites ==
              autoreleasepool_scope_summary.scope_sites &&

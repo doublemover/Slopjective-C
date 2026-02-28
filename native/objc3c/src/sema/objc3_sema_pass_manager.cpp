@@ -276,6 +276,16 @@ bool IsEquivalentRetainReleaseOperationSummary(const Objc3RetainReleaseOperation
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentWeakUnownedSemanticsSummary(const Objc3WeakUnownedSemanticsSummary &lhs,
+                                             const Objc3WeakUnownedSemanticsSummary &rhs) {
+  return lhs.ownership_candidate_sites == rhs.ownership_candidate_sites &&
+         lhs.weak_reference_sites == rhs.weak_reference_sites &&
+         lhs.unowned_reference_sites == rhs.unowned_reference_sites &&
+         lhs.unowned_safe_reference_sites == rhs.unowned_safe_reference_sites &&
+         lhs.weak_unowned_conflict_sites == rhs.weak_unowned_conflict_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentAutoreleasePoolScopeSummary(const Objc3AutoreleasePoolScopeSummary &lhs,
                                              const Objc3AutoreleasePoolScopeSummary &rhs) {
   return lhs.scope_sites == rhs.scope_sites &&
@@ -643,6 +653,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.retain_release_operation_summary.autorelease_insertion_sites <=
           result.type_metadata_handoff.retain_release_operation_summary.ownership_qualified_sites +
               result.type_metadata_handoff.retain_release_operation_summary.contract_violation_sites;
+  result.weak_unowned_semantics_summary = result.integration_surface.weak_unowned_semantics_summary;
+  result.deterministic_weak_unowned_semantics_handoff =
+      result.type_metadata_handoff.weak_unowned_semantics_summary.deterministic &&
+      result.integration_surface.weak_unowned_semantics_summary.deterministic &&
+      IsEquivalentWeakUnownedSemanticsSummary(
+          result.integration_surface.weak_unowned_semantics_summary,
+          result.type_metadata_handoff.weak_unowned_semantics_summary) &&
+      result.type_metadata_handoff.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
+          result.type_metadata_handoff.weak_unowned_semantics_summary.unowned_reference_sites &&
+      result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
+          result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites &&
+      result.type_metadata_handoff.weak_unowned_semantics_summary.contract_violation_sites <=
+          result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
+              result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
   result.autoreleasepool_scope_summary = result.integration_surface.autoreleasepool_scope_summary;
   result.deterministic_autoreleasepool_scope_handoff =
       result.type_metadata_handoff.autoreleasepool_scope_summary.deterministic &&
@@ -990,6 +1014,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.retain_release_operation_summary.autorelease_insertion_sites;
   result.parity_surface.retain_release_operation_contract_violation_sites_total =
       result.parity_surface.retain_release_operation_summary.contract_violation_sites;
+  result.parity_surface.weak_unowned_semantics_summary =
+      result.type_metadata_handoff.weak_unowned_semantics_summary;
+  result.parity_surface.weak_unowned_semantics_ownership_candidate_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites;
+  result.parity_surface.weak_unowned_semantics_weak_reference_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.weak_reference_sites;
+  result.parity_surface.weak_unowned_semantics_unowned_reference_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.unowned_reference_sites;
+  result.parity_surface.weak_unowned_semantics_unowned_safe_reference_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.unowned_safe_reference_sites;
+  result.parity_surface.weak_unowned_semantics_conflict_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
+  result.parity_surface.weak_unowned_semantics_contract_violation_sites_total =
+      result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites;
   result.parity_surface.autoreleasepool_scope_summary = result.type_metadata_handoff.autoreleasepool_scope_summary;
   result.parity_surface.autoreleasepool_scope_sites_total =
       result.parity_surface.autoreleasepool_scope_summary.scope_sites;
@@ -1537,6 +1575,28 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.retain_release_operation_summary.ownership_qualified_sites +
               result.parity_surface.retain_release_operation_summary.contract_violation_sites &&
       result.parity_surface.retain_release_operation_summary.deterministic;
+  result.parity_surface.deterministic_weak_unowned_semantics_handoff =
+      result.deterministic_weak_unowned_semantics_handoff &&
+      result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites ==
+          result.parity_surface.weak_unowned_semantics_ownership_candidate_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.weak_reference_sites ==
+          result.parity_surface.weak_unowned_semantics_weak_reference_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.unowned_reference_sites ==
+          result.parity_surface.weak_unowned_semantics_unowned_reference_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.unowned_safe_reference_sites ==
+          result.parity_surface.weak_unowned_semantics_unowned_safe_reference_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites ==
+          result.parity_surface.weak_unowned_semantics_conflict_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites ==
+          result.parity_surface.weak_unowned_semantics_contract_violation_sites_total &&
+      result.parity_surface.weak_unowned_semantics_summary.unowned_safe_reference_sites <=
+          result.parity_surface.weak_unowned_semantics_summary.unowned_reference_sites &&
+      result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites <=
+          result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites &&
+      result.parity_surface.weak_unowned_semantics_summary.contract_violation_sites <=
+          result.parity_surface.weak_unowned_semantics_summary.ownership_candidate_sites +
+              result.parity_surface.weak_unowned_semantics_summary.weak_unowned_conflict_sites &&
+      result.parity_surface.weak_unowned_semantics_summary.deterministic;
   result.parity_surface.deterministic_autoreleasepool_scope_handoff =
       result.deterministic_autoreleasepool_scope_handoff &&
       result.parity_surface.autoreleasepool_scope_summary.scope_sites ==
@@ -1604,6 +1664,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_runtime_shim_host_link_handoff &&
       result.parity_surface.retain_release_operation_summary.deterministic &&
       result.parity_surface.deterministic_retain_release_operation_handoff &&
+      result.parity_surface.weak_unowned_semantics_summary.deterministic &&
+      result.parity_surface.deterministic_weak_unowned_semantics_handoff &&
       result.parity_surface.autoreleasepool_scope_summary.deterministic &&
       result.parity_surface.deterministic_autoreleasepool_scope_handoff;
   return result;

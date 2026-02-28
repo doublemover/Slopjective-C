@@ -339,6 +339,16 @@ struct Objc3RetainReleaseOperationSummary {
   bool deterministic = true;
 };
 
+struct Objc3WeakUnownedSemanticsSummary {
+  std::size_t ownership_candidate_sites = 0;
+  std::size_t weak_reference_sites = 0;
+  std::size_t unowned_reference_sites = 0;
+  std::size_t unowned_safe_reference_sites = 0;
+  std::size_t weak_unowned_conflict_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
@@ -373,6 +383,9 @@ struct FunctionInfo {
   std::vector<bool> param_ownership_insert_retain;
   std::vector<bool> param_ownership_insert_release;
   std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_is_weak_reference;
+  std::vector<bool> param_ownership_is_unowned_reference;
+  std::vector<bool> param_ownership_is_unowned_safe_reference;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -389,6 +402,9 @@ struct FunctionInfo {
   bool return_ownership_insert_retain = false;
   bool return_ownership_insert_release = false;
   bool return_ownership_insert_autorelease = false;
+  bool return_ownership_is_weak_reference = false;
+  bool return_ownership_is_unowned_reference = false;
+  bool return_ownership_is_unowned_safe_reference = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -477,6 +493,9 @@ struct Objc3PropertyInfo {
   bool ownership_insert_retain = false;
   bool ownership_insert_release = false;
   bool ownership_insert_autorelease = false;
+  bool ownership_is_weak_reference = false;
+  bool ownership_is_unowned_reference = false;
+  bool ownership_is_unowned_safe_reference = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -486,6 +505,7 @@ struct Objc3PropertyInfo {
   bool is_copy = false;
   bool is_strong = false;
   bool is_weak = false;
+  bool is_unowned = false;
   bool is_assign = false;
   bool has_getter = false;
   bool has_setter = false;
@@ -498,6 +518,7 @@ struct Objc3PropertyInfo {
   bool has_readwrite_conflict = false;
   bool has_atomicity_conflict = false;
   bool has_ownership_conflict = false;
+  bool has_weak_unowned_conflict = false;
   bool has_accessor_selector_contract_violation = false;
   bool has_invalid_attribute_contract = false;
 };
@@ -547,6 +568,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
   std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   bool built = false;
@@ -572,6 +594,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_ownership_insert_retain;
   std::vector<bool> param_ownership_insert_release;
   std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_is_weak_reference;
+  std::vector<bool> param_ownership_is_unowned_reference;
+  std::vector<bool> param_ownership_is_unowned_safe_reference;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -588,6 +613,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_ownership_insert_retain = false;
   bool return_ownership_insert_release = false;
   bool return_ownership_insert_autorelease = false;
+  bool return_ownership_is_weak_reference = false;
+  bool return_ownership_is_unowned_reference = false;
+  bool return_ownership_is_unowned_safe_reference = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -629,6 +657,9 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_ownership_insert_retain;
   std::vector<bool> param_ownership_insert_release;
   std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_is_weak_reference;
+  std::vector<bool> param_ownership_is_unowned_reference;
+  std::vector<bool> param_ownership_is_unowned_safe_reference;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -645,6 +676,9 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_ownership_insert_retain = false;
   bool return_ownership_insert_release = false;
   bool return_ownership_insert_autorelease = false;
+  bool return_ownership_is_weak_reference = false;
+  bool return_ownership_is_unowned_reference = false;
+  bool return_ownership_is_unowned_safe_reference = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -678,6 +712,9 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool ownership_insert_retain = false;
   bool ownership_insert_release = false;
   bool ownership_insert_autorelease = false;
+  bool ownership_is_weak_reference = false;
+  bool ownership_is_unowned_reference = false;
+  bool ownership_is_unowned_safe_reference = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -687,6 +724,7 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool is_copy = false;
   bool is_strong = false;
   bool is_weak = false;
+  bool is_unowned = false;
   bool is_assign = false;
   bool has_getter = false;
   bool has_setter = false;
@@ -699,6 +737,7 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool has_readwrite_conflict = false;
   bool has_atomicity_conflict = false;
   bool has_ownership_conflict = false;
+  bool has_weak_unowned_conflict = false;
   bool has_accessor_selector_contract_violation = false;
   bool has_invalid_attribute_contract = false;
 };
@@ -739,6 +778,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  Objc3WeakUnownedSemanticsSummary weak_unowned_semantics_summary;
   std::vector<Objc3AutoreleasePoolScopeSiteMetadata> autoreleasepool_scope_sites_lexicographic;
   Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
 };
