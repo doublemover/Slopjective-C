@@ -20,6 +20,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_parser_contract_exports_parsed_program_aliases() -> None:
     contract = _read(PARSER_CONTRACT)
     assert "struct Objc3ParsedProgram {" in contract
@@ -70,6 +79,30 @@ def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:
     cmake = _read(CMAKE_FILE)
     build_script = _read(BUILD_SCRIPT)
     assert "src/parse/objc3_ast_builder.cpp" in cmake
+    assert "target_link_libraries(objc3c_parse PUBLIC" in cmake
+    assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
+    assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
+    assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
+    assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
+    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
+    assert "objc3c_sema_type_system" in cmake
+
+    _assert_in_order(
+        cmake,
+        [
+            "add_library(objc3c_parse STATIC",
+            "target_link_libraries(objc3c_parse PUBLIC",
+            "add_library(objc3c_sema STATIC",
+            "target_link_libraries(objc3c_sema PUBLIC",
+            "add_library(objc3c_sema_type_system INTERFACE)",
+            "target_link_libraries(objc3c_sema_type_system INTERFACE",
+            "add_library(objc3c_lower STATIC",
+            "target_link_libraries(objc3c_lower PUBLIC",
+            "add_library(objc3c_ir STATIC",
+            "target_link_libraries(objc3c_ir PUBLIC",
+        ],
+    )
+
     assert '"native/objc3c/src/parse/objc3_ast_builder.cpp"' in build_script
 
 
