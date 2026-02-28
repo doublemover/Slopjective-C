@@ -406,6 +406,46 @@ static std::size_t CountMarkerOccurrences(const std::string &text, const std::st
   return count;
 }
 
+static std::size_t CountTopLevelGenericArgumentSlots(const std::string &generic_suffix_text) {
+  if (generic_suffix_text.size() < 2) {
+    return 0;
+  }
+  std::size_t begin = 0;
+  std::size_t end = generic_suffix_text.size();
+  if (generic_suffix_text.front() == '<' && generic_suffix_text.back() == '>') {
+    begin = 1;
+    end -= 1;
+  }
+  if (begin >= end) {
+    return 0;
+  }
+
+  std::size_t slots = 1;
+  std::size_t depth = 0;
+  bool saw_non_whitespace = false;
+  for (std::size_t i = begin; i < end; ++i) {
+    const char c = generic_suffix_text[i];
+    if (!std::isspace(static_cast<unsigned char>(c))) {
+      saw_non_whitespace = true;
+    }
+    if (c == '<') {
+      ++depth;
+      continue;
+    }
+    if (c == '>') {
+      if (depth > 0) {
+        --depth;
+      }
+      continue;
+    }
+    if (c == ',' && depth == 0) {
+      ++slots;
+    }
+  }
+
+  return saw_non_whitespace ? slots : 0;
+}
+
 static std::string BuildVarianceBridgeCastProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -483,6 +523,65 @@ static bool IsVarianceBridgeCastProfileNormalized(
     return false;
   }
   return variance_safe && bridge_cast_valid;
+}
+
+static std::string BuildGenericMetadataAbiProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &ownership_qualifier_spelling) {
+  const std::size_t generic_argument_slots =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text) : 0;
+  const std::size_t variance_markers =
+      CountMarkerOccurrences(generic_suffix_text, "__covariant") +
+      CountMarkerOccurrences(generic_suffix_text, "__contravariant") +
+      CountMarkerOccurrences(generic_suffix_text, "__invariant");
+  const std::size_t bridge_markers =
+      CountMarkerOccurrences(generic_suffix_text, "__bridge") +
+      CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge");
+  const bool metadata_emission_ready =
+      has_generic_suffix && generic_suffix_terminated && object_pointer_type_spelling &&
+      generic_argument_slots > 0;
+  const bool abi_layout_stable = metadata_emission_ready &&
+                                 (!has_pointer_declarator || object_pointer_type_spelling);
+
+  std::ostringstream out;
+  out << "generic-metadata-abi:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";generic-argument-slots=" << generic_argument_slots
+      << ";variance-markers=" << variance_markers
+      << ";bridge-markers=" << bridge_markers
+      << ";metadata-emission-ready=" << (metadata_emission_ready ? "true" : "false")
+      << ";abi-layout-stable=" << (abi_layout_stable ? "true" : "false");
+  return out.str();
+}
+
+static bool IsGenericMetadataAbiProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text) {
+  if (!has_generic_suffix) {
+    return true;
+  }
+
+  const std::size_t generic_argument_slots =
+      CountTopLevelGenericArgumentSlots(generic_suffix_text);
+  if (!generic_suffix_terminated || !object_pointer_type_spelling ||
+      generic_argument_slots == 0) {
+    return false;
+  }
+
+  if (has_pointer_declarator && !object_pointer_type_spelling) {
+    return false;
+  }
+  return true;
 }
 
 static std::string BuildProtocolQualifiedObjectTypeProfile(
@@ -1284,6 +1383,10 @@ class Objc3Parser {
         source.return_variance_bridge_cast_profile_is_normalized;
     target.return_variance_bridge_cast_profile =
         source.return_variance_bridge_cast_profile;
+    target.return_generic_metadata_abi_profile_is_normalized =
+        source.return_generic_metadata_abi_profile_is_normalized;
+    target.return_generic_metadata_abi_profile =
+        source.return_generic_metadata_abi_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1340,6 +1443,10 @@ class Objc3Parser {
         source.variance_bridge_cast_profile_is_normalized;
     target.variance_bridge_cast_profile =
         source.variance_bridge_cast_profile;
+    target.generic_metadata_abi_profile_is_normalized =
+        source.generic_metadata_abi_profile_is_normalized;
+    target.generic_metadata_abi_profile =
+        source.generic_metadata_abi_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2197,6 +2304,8 @@ class Objc3Parser {
     fn.return_protocol_qualified_object_type_profile.clear();
     fn.return_variance_bridge_cast_profile_is_normalized = false;
     fn.return_variance_bridge_cast_profile.clear();
+    fn.return_generic_metadata_abi_profile_is_normalized = false;
+    fn.return_generic_metadata_abi_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2424,6 +2533,21 @@ class Objc3Parser {
             fn.return_generic_suffix_terminated,
             fn.return_generic_suffix_text,
             fn.return_ownership_qualifier_spelling);
+    fn.return_generic_metadata_abi_profile =
+        BuildGenericMetadataAbiProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_ownership_qualifier_spelling);
+    fn.return_generic_metadata_abi_profile_is_normalized =
+        IsGenericMetadataAbiProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text);
 
     return true;
   }
@@ -2452,6 +2576,8 @@ class Objc3Parser {
     param.protocol_qualified_object_type_profile.clear();
     param.variance_bridge_cast_profile_is_normalized = false;
     param.variance_bridge_cast_profile.clear();
+    param.generic_metadata_abi_profile_is_normalized = false;
+    param.generic_metadata_abi_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2619,6 +2745,21 @@ class Objc3Parser {
             param.generic_suffix_terminated,
             param.generic_suffix_text,
             param.ownership_qualifier_spelling);
+    param.generic_metadata_abi_profile =
+        BuildGenericMetadataAbiProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
+    param.generic_metadata_abi_profile_is_normalized =
+        IsGenericMetadataAbiProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
 
     return true;
   }

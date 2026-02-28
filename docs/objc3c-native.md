@@ -1074,6 +1074,33 @@ Recommended M174 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m174_frontend_variance_bridge_cast_parser_contract.py -q`
 
+## M175 frontend generic metadata emission and ABI checks parser/AST surface (M175-A001)
+
+Frontend parser/AST now emits deterministic generic-metadata/ABI profiles for
+parameter/property/return type annotations.
+
+M175 parser/AST surface details:
+
+- generic-metadata ABI anchors:
+  - `BuildGenericMetadataAbiProfile(...)`
+  - `IsGenericMetadataAbiProfileNormalized(...)`
+- parser assignment anchors:
+  - `generic_metadata_abi_profile`
+  - `generic_metadata_abi_profile_is_normalized`
+  - `return_generic_metadata_abi_profile`
+  - `return_generic_metadata_abi_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives generic metadata emission readiness from object-pointer spelling,
+  generic suffix termination, and top-level generic argument-slot accounting.
+- profile normalization is fail-closed for malformed generic packets that would
+  destabilize ABI-side metadata interpretation.
+
+Recommended M175 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m175_frontend_generic_metadata_abi_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
