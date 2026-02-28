@@ -258,6 +258,64 @@ Recommended M149 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
 
+## M150 frontend object pointer declarators, nullability, lightweight generics parse
+
+Frontend parser/AST type parsing now accepts nominal object-pointer spellings for parameter, return, and property type
+annotations while preserving pointer/nullability/generic suffix contracts.
+
+M150 parser/AST surface details:
+
+- function return type parse (`ParseFunctionReturnType(...)`) accepts identifier-based object pointer base spellings.
+- parameter type parse (`ParseParameterType(...)`) accepts identifier-based object pointer base spellings.
+- object-pointer AST markers:
+  - `object_pointer_type_spelling`
+  - `object_pointer_type_name`
+  - `return_object_pointer_type_spelling`
+  - `return_object_pointer_type_name`
+- property type handoff preserves object pointer markers through `CopyPropertyTypeFromParam(...)`.
+
+Deterministic grammar intent:
+
+- object pointer spellings may carry generic suffix text, pointer declarators, and nullability suffix tokens.
+- vector-type spellings remain parsed through the existing vector branch.
+
+Recommended M150 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
+
+## M151 frontend symbol graph and scope-resolution parser surface
+
+Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member
+declarations and top-level functions.
+
+M151 parser/AST surface details:
+
+- scope helper anchors:
+  - `BuildScopePathLexicographic(...)`
+  - `BuildObjcContainerScopeOwner(...)`
+  - `BuildObjcMethodScopePathSymbol(...)`
+  - `BuildObjcPropertyScopePathSymbol(...)`
+- function scope markers:
+  - `fn->scope_owner_symbol = "global";`
+  - `fn->scope_path_lexicographic = BuildScopePathLexicographic(...)`
+- Objective-C container scope markers:
+  - `decl->scope_owner_symbol = BuildObjcContainerScopeOwner(...)`
+  - `decl->scope_path_lexicographic = BuildScopePathLexicographic(...)`
+- Objective-C member scope markers:
+  - `method.scope_owner_symbol = decl->scope_owner_symbol;`
+  - `method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);`
+  - `property.scope_owner_symbol = decl->scope_owner_symbol;`
+  - `property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);`
+
+Deterministic grammar intent:
+
+- symbol/scope metadata is attached at parse time and remains replay-stable for sema/lowering handoff.
+- scope path packets are lexicographically normalized via `BuildScopePathLexicographic(...)`.
+
+Recommended M151 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3206,6 +3264,86 @@ Sema/type metadata handoff contract:
 Recommended M149 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`
+
+## M150 sema/type object pointer, nullability, lightweight generic annotation contract (M150-B001)
+
+M150-B extends sema/type metadata and pass-manager parity surfaces for object-pointer declarator,
+nullability suffix, and lightweight generic annotation tracking across functions, methods, and properties.
+
+Sema/type contract markers:
+
+- `Objc3TypeAnnotationSurfaceSummary`
+- `type_annotation_surface_summary`
+- `param_has_generic_suffix`
+- `param_has_pointer_declarator`
+- `param_has_nullability_suffix`
+- `param_object_pointer_type_spelling`
+- `param_has_invalid_generic_suffix`
+- `param_has_invalid_pointer_declarator`
+- `param_has_invalid_nullability_suffix`
+- `return_has_generic_suffix`
+- `return_has_pointer_declarator`
+- `return_has_nullability_suffix`
+- `return_object_pointer_type_spelling`
+- `has_generic_suffix`
+- `has_pointer_declarator`
+- `has_nullability_suffix`
+- `object_pointer_type_spelling`
+- `deterministic_type_annotation_surface_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- generic suffixes remain constrained to supported Objective-C object spellings
+- nullability suffixes remain constrained to supported Objective-C object spellings
+- incompatible redeclarations keep deterministic type-mismatch diagnostics
+
+Sema/type metadata handoff contract:
+
+- integration summary packet: `BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface)`
+- handoff summary packet: `handoff.type_annotation_surface_summary`
+- parity packet totals:
+  - `type_annotation_generic_suffix_sites_total`
+  - `type_annotation_pointer_declarator_sites_total`
+  - `type_annotation_nullability_suffix_sites_total`
+  - `type_annotation_object_pointer_type_sites_total`
+  - `type_annotation_invalid_generic_suffix_sites_total`
+  - `type_annotation_invalid_pointer_declarator_sites_total`
+  - `type_annotation_invalid_nullability_suffix_sites_total`
+
+Recommended M150 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py -q`
+
+## M151 sema/type symbol graph and scope resolution contract (M151-B001)
+
+M151-B extends sema/type metadata and pass-manager parity surfaces with deterministic symbol-graph
+and scope-resolution summaries derived from integration surface and replayed through type-metadata handoff.
+
+Sema/type contract markers:
+
+- `Objc3SymbolGraphScopeResolutionSummary`
+- `symbol_graph_scope_resolution_summary`
+- `symbol_graph_scope_frames_total`
+- `implementation_interface_resolution_hits`
+- `method_resolution_hits`
+- `deterministic_symbol_graph_scope_resolution_handoff`
+
+Deterministic semantic diagnostics and resolution contract (fail-closed):
+
+- interface/implementation symbol counts must remain parity-aligned between integration and handoff surfaces.
+- implementation-to-interface and method-link resolution counters must satisfy `hits <= sites` with deterministic misses.
+- symbol-node totals must remain deterministic (`symbol_nodes_total == top_level_scope_symbols + nested_scope_symbols`).
+
+Sema/type metadata handoff contract:
+
+- integration summary packet: `surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);`
+- handoff summary packet: `handoff.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic validator anchor: `BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet gate: `result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff`
+
+Recommended M151 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5656,6 +5794,70 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
 
+## Object-pointer/nullability/generics lowering artifact contract (M150-C001)
+
+M150-C extends lowering/runtime ABI artifact publication with object-pointer declarator, nullability suffix, and lightweight-generic parse envelope markers.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m150/lowering-object-pointer-nullability-generics-contract/object-pointer-nullability-generics-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_object_pointer_nullability_generics_handoff`
+- `frontend.pipeline.sema_pass_manager.object_pointer_type_spellings`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_entries`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_depth_total`
+- `frontend.pipeline.sema_pass_manager.pointer_declarator_token_entries`
+- `frontend.pipeline.sema_pass_manager.nullability_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.generic_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.terminated_generic_suffix_entries`
+- `frontend.pipeline.sema_pass_manager.unterminated_generic_suffix_entries`
+- `frontend.pipeline.semantic_surface.objc_object_pointer_nullability_generics_surface`
+
+IR publication markers:
+
+- `; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings=<N>, pointer_declarator_entries=<N>, pointer_declarator_depth_total=<N>, pointer_declarator_token_entries=<N>, nullability_suffix_entries=<N>, generic_suffix_entries=<N>, terminated_generic_suffix_entries=<N>, unterminated_generic_suffix_entries=<N>, deterministic_object_pointer_nullability_generics_handoff=<bool>`
+- `!objc3.objc_object_pointer_nullability_generics = !{!5}`
+- `!5 = !{i64 <object_pointer_type_spellings>, i64 <pointer_declarator_entries>, i64 <pointer_declarator_depth_total>, i64 <pointer_declarator_token_entries>, i64 <nullability_suffix_entries>, i64 <generic_suffix_entries>, i64 <terminated_generic_suffix_entries>, i64 <unterminated_generic_suffix_entries>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py -q`
+
+## Symbol-graph/scope-resolution lowering artifact contract (M151-C001)
+
+M151-C extends lowering/runtime ABI artifact publication with symbol-graph and scope-resolution handoff envelopes sourced from sema integration + type-metadata replay packets.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m151/lowering-symbol-graph-scope-resolution-contract/symbol-graph-scope-resolution-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.symbol_graph_global_symbol_nodes`
+- `frontend.pipeline.sema_pass_manager.scope_resolution_scope_frames_total`
+- `frontend.pipeline.sema_pass_manager.deterministic_symbol_graph_handoff`
+- `frontend.pipeline.sema_pass_manager.deterministic_scope_resolution_handoff`
+- `frontend.pipeline.sema_pass_manager.symbol_graph_scope_resolution_handoff_key`
+- `frontend.pipeline.semantic_surface.objc_symbol_graph_scope_resolution_surface`
+
+IR publication markers:
+
+- `; frontend_objc_symbol_graph_scope_resolution_profile = global_symbol_nodes=<N>, function_symbol_nodes=<N>, interface_symbol_nodes=<N>, implementation_symbol_nodes=<N>, interface_property_symbol_nodes=<N>, implementation_property_symbol_nodes=<N>, interface_method_symbol_nodes=<N>, implementation_method_symbol_nodes=<N>, top_level_scope_symbols=<N>, nested_scope_symbols=<N>, scope_frames_total=<N>, implementation_interface_resolution_sites=<N>, implementation_interface_resolution_hits=<N>, implementation_interface_resolution_misses=<N>, method_resolution_sites=<N>, method_resolution_hits=<N>, method_resolution_misses=<N>, deterministic_symbol_graph_handoff=<bool>, deterministic_scope_resolution_handoff=<bool>, deterministic_symbol_graph_scope_resolution_handoff_key=<key>`
+- `!objc3.objc_symbol_graph_scope_resolution = !{!6}`
+- `!6 = !{i64 <global_symbol_nodes>, i64 <function_symbol_nodes>, i64 <interface_symbol_nodes>, i64 <implementation_symbol_nodes>, i64 <interface_property_symbol_nodes>, i64 <implementation_property_symbol_nodes>, i64 <interface_method_symbol_nodes>, i64 <implementation_method_symbol_nodes>, i64 <top_level_scope_symbols>, i64 <nested_scope_symbols>, i64 <scope_frames_total>, i64 <implementation_interface_resolution_sites>, i64 <implementation_interface_resolution_hits>, i64 <implementation_interface_resolution_misses>, i64 <method_resolution_sites>, i64 <method_resolution_hits>, i64 <method_resolution_misses>, i1 <deterministic_symbol_graph_handoff>, i1 <deterministic_scope_resolution_handoff>, !"<handoff_key>"}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6049,6 +6251,26 @@ From repo root, execute deterministic M149 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py -q`
 - `npm run check:objc3c:m149-property-attributes`
+
+## M150 validation object-pointer declarators, nullability, lightweight generics parse runbook
+
+From repo root, execute deterministic M150 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m150_validation_object_pointer_nullability_generics_contract.py -q`
+- `npm run check:objc3c:m150-object-pointer-nullability-generics`
+
+## M151 validation symbol graph and scope resolution overhaul runbook
+
+From repo root, execute deterministic M151 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py -q`
+- `npm run check:objc3c:m151-symbol-graph-scope-resolution`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -7798,6 +8020,28 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py`
   - `tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py`
   - `tests/tooling/test_objc3c_m149_integration_property_attribute_contract.py`
+
+## M150 integration object-pointer declarators, nullability, lightweight generics parse
+
+- Integration gate:
+  - `npm run check:objc3c:m150-object-pointer-nullability-generics`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_validation_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_integration_object_pointer_nullability_generics_contract.py`
+
+## M151 integration symbol graph and scope resolution overhaul
+
+- Integration gate:
+  - `npm run check:objc3c:m151-symbol-graph-scope-resolution`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_integration_symbol_graph_scope_resolution_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
