@@ -475,6 +475,22 @@ Frontend interop integration suite/packaging contract relies on deterministic me
   3. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
 
+## M199 frontend foreign type import diagnostics
+
+Frontend foreign-type import diagnostics contract relies on deterministic parser-level unsupported-type boundaries, explicit imported-type allowlists, and stable type-spelling carrier fields into AST/sema.
+
+- Required frontend foreign-type diagnostics signals:
+  - unsupported parameter-type import diagnostics remain parser fail-closed `O3P108`.
+  - unsupported return-type import diagnostics remain parser fail-closed `O3P114`.
+  - imported-type allowlists remain explicit: `'id', 'Class', 'SEL', 'Protocol', or 'instancetype'`.
+  - parser spelling carriers remain `param.id_spelling`, `param.class_spelling`, `param.instancetype_spelling`, `fn.return_id_spelling`, `fn.return_class_spelling`, and `fn.return_instancetype_spelling`.
+  - AST carrier continuity remains `bool id_spelling = false;`, `bool class_spelling = false;`, `bool instancetype_spelling = false;`, and return equivalents.
+- Required frontend foreign-type diagnostics commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
