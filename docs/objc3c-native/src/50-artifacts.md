@@ -515,6 +515,76 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
+## M194 lowering/runtime atomics and memory-order mapping
+
+Lowering/runtime atomics memory-order mapping evidence is captured as deterministic packet artifacts rooted under `tmp/` so language atomic-order normalization and LLVM memory-order lowering mappings remain replay-stable and auditable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/atomic-memory-order-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `atomic memory-order architecture/isolation anchors` (required in source-anchor extracts):
+  - `kObjc3AtomicMemoryOrderRelaxed = "relaxed"`
+  - `kObjc3AtomicMemoryOrderAcquire = "acquire"`
+  - `kObjc3AtomicMemoryOrderRelease = "release"`
+  - `kObjc3AtomicMemoryOrderAcqRel = "acq_rel"`
+  - `kObjc3AtomicMemoryOrderSeqCst = "seq_cst"`
+  - `enum class Objc3AtomicMemoryOrder`
+  - `TryParseObjc3AtomicMemoryOrder(...)`
+  - `Objc3AtomicMemoryOrderToLLVMOrdering(...)`
+  - `Objc3AtomicMemoryOrderMappingReplayKey()`
+  - `acquire_release`
+  - `monotonic`
+  - `acquire`
+  - `release`
+  - `acq_rel`
+  - `seq_cst`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `source anchors`:
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderAcqRel = "acq_rel";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderSeqCst = "seq_cst";`
+  - `enum class Objc3AtomicMemoryOrder : std::uint8_t {`
+  - `bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order) {`
+  - `if (token == kObjc3AtomicMemoryOrderAcqRel || token == "acquire_release") {`
+  - `const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order) {`
+  - `return "monotonic";`
+  - `return "acquire";`
+  - `return "release";`
+  - `return "acq_rel";`
+  - `return "seq_cst";`
+  - `std::string Objc3AtomicMemoryOrderMappingReplayKey() {`
+  - `std::string(AtomicMemoryOrderToken(Objc3AtomicMemoryOrder::Relaxed)) + "=" +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and atomic memory-order source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, atomic memory-order marker, or source anchor is missing.
+
+Atomics memory-order capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.ll tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.manifest.json > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/abi-ir-anchors.txt`
+3. `rg -n "kObjc3AtomicMemoryOrderRelaxed|kObjc3AtomicMemoryOrderAcquire|kObjc3AtomicMemoryOrderRelease|kObjc3AtomicMemoryOrderAcqRel|kObjc3AtomicMemoryOrderSeqCst|enum class Objc3AtomicMemoryOrder|TryParseObjc3AtomicMemoryOrder|Objc3AtomicMemoryOrderToLLVMOrdering|Objc3AtomicMemoryOrderMappingReplayKey|acquire_release|monotonic|acq_rel|seq_cst|Objc3LoweringIRBoundaryReplayKey\\(|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/atomic-memory-order-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m194_lowering_atomics_memory_order_contract.py -q`
+
 ## M195 lowering/runtime system-extension conformance and policy
 
 Lowering/runtime system-extension conformance/policy evidence is captured as deterministic packet artifacts rooted under `tmp/` so policy validation guards, lowering boundary serialization, and runtime dispatch surfaces remain replay-stable and isolated across reruns.

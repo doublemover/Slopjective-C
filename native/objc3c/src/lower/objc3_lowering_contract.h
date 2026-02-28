@@ -1,12 +1,26 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 
 inline constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
 inline constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
 inline constexpr const char *kObjc3RuntimeDispatchSymbol = "objc3_msgsend_i32";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
+inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";
+inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";
+inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";
+inline constexpr const char *kObjc3AtomicMemoryOrderAcqRel = "acq_rel";
+inline constexpr const char *kObjc3AtomicMemoryOrderSeqCst = "seq_cst";
+
+enum class Objc3AtomicMemoryOrder : std::uint8_t {
+  Relaxed = 0,
+  Acquire = 1,
+  Release = 2,
+  AcqRel = 3,
+  SeqCst = 4,
+};
 
 struct Objc3LoweringContract {
   std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;
@@ -28,3 +42,6 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
                                      std::string &error);
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
+bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
+const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);
+std::string Objc3AtomicMemoryOrderMappingReplayKey();
