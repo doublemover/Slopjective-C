@@ -79,6 +79,8 @@ jobs:
         run: npm run check:objc3c:m223-operator-guides
       - name: 14 Run M224 integration/release-readiness ABI+version gate
         run: npm run check:objc3c:m224-integration-release-readiness
+      - name: 15 Run M225 integration roadmap seeding ABI+version export gate
+        run: npm run check:objc3c:m225-roadmap-seeding
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

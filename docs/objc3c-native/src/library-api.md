@@ -52,6 +52,28 @@ int objc3c_frontend_startup_check(void) {
   - This gate chains existing deterministic checks for M222 compatibility migration,
     library/CLI parity golden replay, and M224 tooling wiring.
 
+## M225 integration roadmap seeding
+
+- Gate intent: export ABI/version and deterministic gate evidence into 1.1/1.2 planning intake.
+### 1.1 ABI/version continuity planning intake
+- Preserve these intake invariants as seeded evidence for 1.1 planning:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` remains the required startup guard.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()` remains true.
+  - `OBJC3C_FRONTEND_ABI_VERSION` stays within
+    `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through
+    `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain the planning intake anchors.
+### 1.2 Gate-evidence planning intake
+- Deterministic export gate:
+  - `npm run check:objc3c:m225-roadmap-seeding`
+- Exported evidence chain for 1.2 planning intake:
+  - Replays `check:objc3c:m224-integration-release-readiness` as the baseline deterministic ABI/version gate.
+  - Runs M225 roadmap-seeding contracts for frontend, sema/type, lowering/runtime, and integration wiring:
+    `tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py`.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
