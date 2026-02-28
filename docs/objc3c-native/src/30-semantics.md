@@ -2931,3 +2931,53 @@ Sema/type metadata handoff contract:
 Recommended M162 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m162_sema_retain_release_contract.py -q`
+
+## M163 sema/type autoreleasepool scope contract (M163-B001)
+
+M163-B wires parser-authored `@autoreleasepool` scope metadata into sema integration,
+type-metadata handoff, and parity packets so lowering can consume deterministic scope
+lifetime boundaries.
+
+Sema/type autoreleasepool contract markers:
+
+- `Objc3AutoreleasePoolScopeSiteMetadata`
+- `Objc3AutoreleasePoolScopeSummary`
+- `autoreleasepool_scope_sites_lexicographic`
+- `BuildAutoreleasePoolScopeSiteMetadataLexicographic`
+- `IsAutoreleasePoolScopeSiteMetadataLess`
+- `BuildAutoreleasePoolScopeSummaryFromIntegrationSurface`
+- `BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff`
+- `autoreleasepool_scope_sites_total`
+- `autoreleasepool_scope_symbolized_sites_total`
+- `autoreleasepool_scope_contract_violation_sites_total`
+- `autoreleasepool_scope_max_depth_total`
+- `deterministic_autoreleasepool_scope_handoff`
+
+Deterministic autoreleasepool invariants (fail-closed):
+
+- all handoff scope-site metadata must remain lexicographically sorted.
+- each recorded scope must carry positive depth (`scope_depth >= 1`).
+- `scope_symbolized_sites` and `contract_violation_sites` must both remain bounded by `scope_sites`.
+- `max_scope_depth` must remain zero when no scopes exist, else bounded by `scope_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.autoreleasepool_scope_sites_lexicographic = BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.autoreleasepool_scope_summary = BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.autoreleasepool_scope_sites_lexicographic = surface.autoreleasepool_scope_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.autoreleasepool_scope_summary = BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `autoreleasepool_scope_sites_total`
+  - `autoreleasepool_scope_symbolized_sites_total`
+  - `autoreleasepool_scope_contract_violation_sites_total`
+  - `autoreleasepool_scope_max_depth_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_autoreleasepool_scope_handoff`
+
+Recommended M163 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m163_sema_autorelease_pool_scope_contract.py -q`

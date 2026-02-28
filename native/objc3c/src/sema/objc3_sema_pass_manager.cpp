@@ -276,6 +276,14 @@ bool IsEquivalentRetainReleaseOperationSummary(const Objc3RetainReleaseOperation
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentAutoreleasePoolScopeSummary(const Objc3AutoreleasePoolScopeSummary &lhs,
+                                             const Objc3AutoreleasePoolScopeSummary &rhs) {
+  return lhs.scope_sites == rhs.scope_sites &&
+         lhs.scope_symbolized_sites == rhs.scope_symbolized_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites &&
+         lhs.max_scope_depth == rhs.max_scope_depth;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -635,6 +643,21 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.retain_release_operation_summary.autorelease_insertion_sites <=
           result.type_metadata_handoff.retain_release_operation_summary.ownership_qualified_sites +
               result.type_metadata_handoff.retain_release_operation_summary.contract_violation_sites;
+  result.autoreleasepool_scope_summary = result.integration_surface.autoreleasepool_scope_summary;
+  result.deterministic_autoreleasepool_scope_handoff =
+      result.type_metadata_handoff.autoreleasepool_scope_summary.deterministic &&
+      result.integration_surface.autoreleasepool_scope_summary.deterministic &&
+      IsEquivalentAutoreleasePoolScopeSummary(
+          result.integration_surface.autoreleasepool_scope_summary,
+          result.type_metadata_handoff.autoreleasepool_scope_summary) &&
+      result.type_metadata_handoff.autoreleasepool_scope_summary.scope_symbolized_sites <=
+          result.type_metadata_handoff.autoreleasepool_scope_summary.scope_sites &&
+      result.type_metadata_handoff.autoreleasepool_scope_summary.contract_violation_sites <=
+          result.type_metadata_handoff.autoreleasepool_scope_summary.scope_sites &&
+      (result.type_metadata_handoff.autoreleasepool_scope_summary.scope_sites > 0u ||
+       result.type_metadata_handoff.autoreleasepool_scope_summary.max_scope_depth == 0u) &&
+      result.type_metadata_handoff.autoreleasepool_scope_summary.max_scope_depth <=
+          static_cast<unsigned>(result.type_metadata_handoff.autoreleasepool_scope_summary.scope_sites);
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -967,6 +990,15 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.retain_release_operation_summary.autorelease_insertion_sites;
   result.parity_surface.retain_release_operation_contract_violation_sites_total =
       result.parity_surface.retain_release_operation_summary.contract_violation_sites;
+  result.parity_surface.autoreleasepool_scope_summary = result.type_metadata_handoff.autoreleasepool_scope_summary;
+  result.parity_surface.autoreleasepool_scope_sites_total =
+      result.parity_surface.autoreleasepool_scope_summary.scope_sites;
+  result.parity_surface.autoreleasepool_scope_symbolized_sites_total =
+      result.parity_surface.autoreleasepool_scope_summary.scope_symbolized_sites;
+  result.parity_surface.autoreleasepool_scope_contract_violation_sites_total =
+      result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites;
+  result.parity_surface.autoreleasepool_scope_max_depth_total =
+      result.parity_surface.autoreleasepool_scope_summary.max_scope_depth;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -1505,6 +1537,25 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.retain_release_operation_summary.ownership_qualified_sites +
               result.parity_surface.retain_release_operation_summary.contract_violation_sites &&
       result.parity_surface.retain_release_operation_summary.deterministic;
+  result.parity_surface.deterministic_autoreleasepool_scope_handoff =
+      result.deterministic_autoreleasepool_scope_handoff &&
+      result.parity_surface.autoreleasepool_scope_summary.scope_sites ==
+          result.parity_surface.autoreleasepool_scope_sites_total &&
+      result.parity_surface.autoreleasepool_scope_summary.scope_symbolized_sites ==
+          result.parity_surface.autoreleasepool_scope_symbolized_sites_total &&
+      result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites ==
+          result.parity_surface.autoreleasepool_scope_contract_violation_sites_total &&
+      result.parity_surface.autoreleasepool_scope_summary.max_scope_depth ==
+          result.parity_surface.autoreleasepool_scope_max_depth_total &&
+      result.parity_surface.autoreleasepool_scope_summary.scope_symbolized_sites <=
+          result.parity_surface.autoreleasepool_scope_summary.scope_sites &&
+      result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites <=
+          result.parity_surface.autoreleasepool_scope_summary.scope_sites &&
+      (result.parity_surface.autoreleasepool_scope_summary.scope_sites > 0u ||
+       result.parity_surface.autoreleasepool_scope_summary.max_scope_depth == 0u) &&
+      result.parity_surface.autoreleasepool_scope_summary.max_scope_depth <=
+          static_cast<unsigned>(result.parity_surface.autoreleasepool_scope_summary.scope_sites) &&
+      result.parity_surface.autoreleasepool_scope_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -1552,6 +1603,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.runtime_shim_host_link_summary.deterministic &&
       result.parity_surface.deterministic_runtime_shim_host_link_handoff &&
       result.parity_surface.retain_release_operation_summary.deterministic &&
-      result.parity_surface.deterministic_retain_release_operation_handoff;
+      result.parity_surface.deterministic_retain_release_operation_handoff &&
+      result.parity_surface.autoreleasepool_scope_summary.deterministic &&
+      result.parity_surface.deterministic_autoreleasepool_scope_handoff;
   return result;
 }

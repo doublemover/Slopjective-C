@@ -3817,6 +3817,122 @@ BuildMessageSendSelectorLoweringSiteMetadataLexicographic(const Objc3Program &as
   return sites;
 }
 
+static Objc3AutoreleasePoolScopeSiteMetadata BuildAutoreleasePoolScopeSiteMetadata(const BlockStmt &block) {
+  Objc3AutoreleasePoolScopeSiteMetadata metadata;
+  metadata.scope_symbol = block.autoreleasepool_scope_symbol;
+  metadata.scope_depth = block.autoreleasepool_scope_depth;
+  metadata.line = block.line;
+  metadata.column = block.column;
+  return metadata;
+}
+
+static void CollectAutoreleasePoolScopeSiteMetadataFromStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Objc3AutoreleasePoolScopeSiteMetadata> &sites);
+
+static void CollectAutoreleasePoolScopeSiteMetadataFromStatement(
+    const Stmt *stmt, std::vector<Objc3AutoreleasePoolScopeSiteMetadata> &sites) {
+  if (stmt == nullptr) {
+    return;
+  }
+
+  switch (stmt->kind) {
+    case Stmt::Kind::If:
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->if_stmt->then_body, sites);
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->if_stmt->else_body, sites);
+      return;
+    case Stmt::Kind::DoWhile:
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->do_while_stmt->body, sites);
+      return;
+    case Stmt::Kind::For:
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->for_stmt->body, sites);
+      return;
+    case Stmt::Kind::Switch:
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        CollectAutoreleasePoolScopeSiteMetadataFromStatements(switch_case.body, sites);
+      }
+      return;
+    case Stmt::Kind::While:
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->while_stmt->body, sites);
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt->is_autoreleasepool_scope) {
+        sites.push_back(BuildAutoreleasePoolScopeSiteMetadata(*stmt->block_stmt));
+      }
+      CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->block_stmt->body, sites);
+      return;
+    case Stmt::Kind::Let:
+    case Stmt::Kind::Assign:
+    case Stmt::Kind::Return:
+    case Stmt::Kind::Expr:
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void CollectAutoreleasePoolScopeSiteMetadataFromStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Objc3AutoreleasePoolScopeSiteMetadata> &sites) {
+  for (const auto &statement : statements) {
+    CollectAutoreleasePoolScopeSiteMetadataFromStatement(statement.get(), sites);
+  }
+}
+
+static bool IsAutoreleasePoolScopeSiteMetadataLess(const Objc3AutoreleasePoolScopeSiteMetadata &lhs,
+                                                   const Objc3AutoreleasePoolScopeSiteMetadata &rhs) {
+  if (lhs.scope_symbol != rhs.scope_symbol) {
+    return lhs.scope_symbol < rhs.scope_symbol;
+  }
+  if (lhs.scope_depth != rhs.scope_depth) {
+    return lhs.scope_depth < rhs.scope_depth;
+  }
+  if (lhs.line != rhs.line) {
+    return lhs.line < rhs.line;
+  }
+  return lhs.column < rhs.column;
+}
+
+static std::vector<Objc3AutoreleasePoolScopeSiteMetadata>
+BuildAutoreleasePoolScopeSiteMetadataLexicographic(const Objc3Program &ast) {
+  std::vector<Objc3AutoreleasePoolScopeSiteMetadata> sites;
+  for (const auto &fn : ast.functions) {
+    CollectAutoreleasePoolScopeSiteMetadataFromStatements(fn.body, sites);
+  }
+  std::sort(sites.begin(), sites.end(), IsAutoreleasePoolScopeSiteMetadataLess);
+  return sites;
+}
+
+static Objc3AutoreleasePoolScopeSummary BuildAutoreleasePoolScopeSummaryFromSites(
+    const std::vector<Objc3AutoreleasePoolScopeSiteMetadata> &sites) {
+  Objc3AutoreleasePoolScopeSummary summary;
+  for (const auto &site : sites) {
+    ++summary.scope_sites;
+    if (site.scope_symbol.empty()) {
+      ++summary.contract_violation_sites;
+    } else {
+      ++summary.scope_symbolized_sites;
+      if (site.scope_symbol.rfind("autoreleasepool#", 0) != 0) {
+        ++summary.contract_violation_sites;
+      }
+    }
+    if (site.scope_depth == 0u) {
+      ++summary.contract_violation_sites;
+    } else if (site.scope_depth > summary.max_scope_depth) {
+      summary.max_scope_depth = site.scope_depth;
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.scope_symbolized_sites <= summary.scope_sites &&
+      summary.contract_violation_sites <= summary.scope_sites &&
+      (summary.scope_sites > 0u || summary.max_scope_depth == 0u) &&
+      summary.max_scope_depth <= static_cast<unsigned>(summary.scope_sites);
+  return summary;
+}
+
 static Objc3MessageSendSelectorLoweringSummary BuildMessageSendSelectorLoweringSummaryFromSites(
     const std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
   Objc3MessageSendSelectorLoweringSummary summary;
@@ -4547,6 +4663,16 @@ BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(const Objc3SemanticTyp
       summary.release_insertion_sites <= qualified_or_violation &&
       summary.autorelease_insertion_sites <= qualified_or_violation;
   return summary;
+}
+
+static Objc3AutoreleasePoolScopeSummary
+BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  return BuildAutoreleasePoolScopeSummaryFromSites(surface.autoreleasepool_scope_sites_lexicographic);
+}
+
+static Objc3AutoreleasePoolScopeSummary
+BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  return BuildAutoreleasePoolScopeSummaryFromSites(handoff.autoreleasepool_scope_sites_lexicographic);
 }
 
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
@@ -5300,6 +5426,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(surface);
   surface.retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);
+  surface.autoreleasepool_scope_sites_lexicographic =
+      BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);
+  surface.autoreleasepool_scope_summary =
+      BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -6170,6 +6300,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
   handoff.retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
+  handoff.autoreleasepool_scope_sites_lexicographic =
+      surface.autoreleasepool_scope_sites_lexicographic;
+  handoff.autoreleasepool_scope_summary =
+      BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -6200,6 +6334,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   if (!std::is_sorted(handoff.message_send_selector_lowering_sites_lexicographic.begin(),
                       handoff.message_send_selector_lowering_sites_lexicographic.end(),
                       IsMessageSendSelectorLoweringSiteMetadataLess)) {
+    return false;
+  }
+  if (!std::is_sorted(handoff.autoreleasepool_scope_sites_lexicographic.begin(),
+                      handoff.autoreleasepool_scope_sites_lexicographic.end(),
+                      IsAutoreleasePoolScopeSiteMetadataLess)) {
     return false;
   }
 
@@ -6792,6 +6931,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
   const Objc3RetainReleaseOperationSummary retain_release_operation_summary =
       BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
+      BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -7213,7 +7354,24 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.retain_release_operation_summary.autorelease_insertion_sites ==
              retain_release_operation_summary.autorelease_insertion_sites &&
          handoff.retain_release_operation_summary.contract_violation_sites ==
-             retain_release_operation_summary.contract_violation_sites;
+             retain_release_operation_summary.contract_violation_sites &&
+         handoff.autoreleasepool_scope_summary.deterministic &&
+         handoff.autoreleasepool_scope_summary.scope_sites ==
+             autoreleasepool_scope_summary.scope_sites &&
+         handoff.autoreleasepool_scope_summary.scope_symbolized_sites ==
+             autoreleasepool_scope_summary.scope_symbolized_sites &&
+         handoff.autoreleasepool_scope_summary.contract_violation_sites ==
+             autoreleasepool_scope_summary.contract_violation_sites &&
+         handoff.autoreleasepool_scope_summary.max_scope_depth ==
+             autoreleasepool_scope_summary.max_scope_depth &&
+         handoff.autoreleasepool_scope_summary.scope_symbolized_sites <=
+             handoff.autoreleasepool_scope_summary.scope_sites &&
+         handoff.autoreleasepool_scope_summary.contract_violation_sites <=
+             handoff.autoreleasepool_scope_summary.scope_sites &&
+         (handoff.autoreleasepool_scope_summary.scope_sites > 0u ||
+          handoff.autoreleasepool_scope_summary.max_scope_depth == 0u) &&
+         handoff.autoreleasepool_scope_summary.max_scope_depth <=
+             static_cast<unsigned>(handoff.autoreleasepool_scope_summary.scope_sites);
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

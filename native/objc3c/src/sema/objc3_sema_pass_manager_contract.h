@@ -236,6 +236,10 @@ struct Objc3SemaParityContractSurface {
   std::size_t retain_release_operation_release_insertion_sites_total = 0;
   std::size_t retain_release_operation_autorelease_insertion_sites_total = 0;
   std::size_t retain_release_operation_contract_violation_sites_total = 0;
+  std::size_t autoreleasepool_scope_sites_total = 0;
+  std::size_t autoreleasepool_scope_symbolized_sites_total = 0;
+  std::size_t autoreleasepool_scope_contract_violation_sites_total = 0;
+  unsigned autoreleasepool_scope_max_depth_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -255,6 +259,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_super_dispatch_method_family_handoff = false;
   bool deterministic_runtime_shim_host_link_handoff = false;
   bool deterministic_retain_release_operation_handoff = false;
+  bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -271,6 +276,7 @@ struct Objc3SemaParityContractSurface {
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -780,7 +786,23 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.retain_release_operation_summary.ownership_qualified_sites +
                  surface.retain_release_operation_summary.contract_violation_sites &&
          surface.retain_release_operation_summary.deterministic &&
-         surface.deterministic_retain_release_operation_handoff;
+         surface.deterministic_retain_release_operation_handoff &&
+         surface.autoreleasepool_scope_summary.scope_sites == surface.autoreleasepool_scope_sites_total &&
+         surface.autoreleasepool_scope_summary.scope_symbolized_sites ==
+             surface.autoreleasepool_scope_symbolized_sites_total &&
+         surface.autoreleasepool_scope_summary.contract_violation_sites ==
+             surface.autoreleasepool_scope_contract_violation_sites_total &&
+         surface.autoreleasepool_scope_summary.max_scope_depth == surface.autoreleasepool_scope_max_depth_total &&
+         surface.autoreleasepool_scope_summary.scope_symbolized_sites <=
+             surface.autoreleasepool_scope_summary.scope_sites &&
+         surface.autoreleasepool_scope_summary.contract_violation_sites <=
+             surface.autoreleasepool_scope_summary.scope_sites &&
+         (surface.autoreleasepool_scope_summary.scope_sites > 0u ||
+          surface.autoreleasepool_scope_summary.max_scope_depth == 0u) &&
+         surface.autoreleasepool_scope_summary.max_scope_depth <=
+             static_cast<unsigned>(surface.autoreleasepool_scope_summary.scope_sites) &&
+         surface.autoreleasepool_scope_summary.deterministic &&
+         surface.deterministic_autoreleasepool_scope_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -821,6 +843,8 @@ struct Objc3SemaPassManagerResult {
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   bool deterministic_retain_release_operation_handoff = false;
   Objc3RetainReleaseOperationSummary retain_release_operation_summary;
+  bool deterministic_autoreleasepool_scope_handoff = false;
+  Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
