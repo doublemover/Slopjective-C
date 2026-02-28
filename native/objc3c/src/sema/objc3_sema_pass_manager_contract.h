@@ -214,6 +214,18 @@ struct Objc3SemaParityContractSurface {
   std::size_t block_storage_escape_escape_profile_normalized_sites_total = 0;
   std::size_t block_storage_escape_byref_layout_symbolized_sites_total = 0;
   std::size_t block_storage_escape_contract_violation_sites_total = 0;
+  std::size_t block_copy_dispose_sites_total = 0;
+  std::size_t block_copy_dispose_mutable_capture_count_total = 0;
+  std::size_t block_copy_dispose_byref_slot_count_total = 0;
+  std::size_t block_copy_dispose_parameter_entries_total = 0;
+  std::size_t block_copy_dispose_capture_entries_total = 0;
+  std::size_t block_copy_dispose_body_statement_entries_total = 0;
+  std::size_t block_copy_dispose_copy_helper_required_sites_total = 0;
+  std::size_t block_copy_dispose_dispose_helper_required_sites_total = 0;
+  std::size_t block_copy_dispose_profile_normalized_sites_total = 0;
+  std::size_t block_copy_dispose_copy_helper_symbolized_sites_total = 0;
+  std::size_t block_copy_dispose_dispose_helper_symbolized_sites_total = 0;
+  std::size_t block_copy_dispose_contract_violation_sites_total = 0;
   std::size_t message_send_selector_lowering_sites_total = 0;
   std::size_t message_send_selector_lowering_unary_form_sites_total = 0;
   std::size_t message_send_selector_lowering_keyword_form_sites_total = 0;
@@ -299,6 +311,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_block_literal_capture_semantics_handoff = false;
   bool deterministic_block_abi_invoke_trampoline_handoff = false;
   bool deterministic_block_storage_escape_handoff = false;
+  bool deterministic_block_copy_dispose_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
@@ -321,6 +334,7 @@ struct Objc3SemaParityContractSurface {
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
+  Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
@@ -748,6 +762,50 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_storage_escape_semantics_summary.escape_to_heap_sites &&
          surface.block_storage_escape_semantics_summary.deterministic &&
          surface.deterministic_block_storage_escape_handoff &&
+         surface.block_copy_dispose_semantics_summary.block_literal_sites ==
+             surface.block_copy_dispose_sites_total &&
+         surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+             surface.block_copy_dispose_mutable_capture_count_total &&
+         surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+             surface.block_copy_dispose_byref_slot_count_total &&
+         surface.block_copy_dispose_semantics_summary.parameter_entries_total ==
+             surface.block_copy_dispose_parameter_entries_total &&
+         surface.block_copy_dispose_semantics_summary.capture_entries_total ==
+             surface.block_copy_dispose_capture_entries_total &&
+         surface.block_copy_dispose_semantics_summary.body_statement_entries_total ==
+             surface.block_copy_dispose_body_statement_entries_total &&
+         surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+             surface.block_copy_dispose_copy_helper_required_sites_total &&
+         surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites ==
+             surface.block_copy_dispose_dispose_helper_required_sites_total &&
+         surface.block_copy_dispose_semantics_summary.profile_normalized_sites ==
+             surface.block_copy_dispose_profile_normalized_sites_total &&
+         surface.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites ==
+             surface.block_copy_dispose_copy_helper_symbolized_sites_total &&
+         surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites ==
+             surface.block_copy_dispose_dispose_helper_symbolized_sites_total &&
+         surface.block_copy_dispose_semantics_summary.contract_violation_sites ==
+             surface.block_copy_dispose_contract_violation_sites_total &&
+         surface.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.profile_normalized_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.contract_violation_sites <=
+             surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+         surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+             surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+         surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+             surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+         surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+             surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
+         surface.block_copy_dispose_semantics_summary.deterministic &&
+         surface.deterministic_block_copy_dispose_handoff &&
          surface.message_send_selector_lowering_summary.message_send_sites ==
              surface.message_send_selector_lowering_sites_total &&
          surface.message_send_selector_lowering_summary.unary_form_sites ==
@@ -1050,6 +1108,8 @@ struct Objc3SemaPassManagerResult {
   Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   bool deterministic_block_storage_escape_handoff = false;
   Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
+  bool deterministic_block_copy_dispose_handoff = false;
+  Objc3BlockCopyDisposeSemanticsSummary block_copy_dispose_semantics_summary;
   bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool deterministic_dispatch_abi_marshalling_handoff = false;

@@ -243,6 +243,23 @@ bool IsEquivalentBlockStorageEscapeSemanticsSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentBlockCopyDisposeSemanticsSummary(
+    const Objc3BlockCopyDisposeSemanticsSummary &lhs,
+    const Objc3BlockCopyDisposeSemanticsSummary &rhs) {
+  return lhs.block_literal_sites == rhs.block_literal_sites &&
+         lhs.mutable_capture_count_total == rhs.mutable_capture_count_total &&
+         lhs.byref_slot_count_total == rhs.byref_slot_count_total &&
+         lhs.parameter_entries_total == rhs.parameter_entries_total &&
+         lhs.capture_entries_total == rhs.capture_entries_total &&
+         lhs.body_statement_entries_total == rhs.body_statement_entries_total &&
+         lhs.copy_helper_required_sites == rhs.copy_helper_required_sites &&
+         lhs.dispose_helper_required_sites == rhs.dispose_helper_required_sites &&
+         lhs.profile_normalized_sites == rhs.profile_normalized_sites &&
+         lhs.copy_helper_symbolized_sites == rhs.copy_helper_symbolized_sites &&
+         lhs.dispose_helper_symbolized_sites == rhs.dispose_helper_symbolized_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentMessageSendSelectorLoweringSummary(const Objc3MessageSendSelectorLoweringSummary &lhs,
                                                     const Objc3MessageSendSelectorLoweringSummary &rhs) {
   return lhs.message_send_sites == rhs.message_send_sites &&
@@ -654,6 +671,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
           result.type_metadata_handoff.block_storage_escape_semantics_summary.escape_to_heap_sites;
+  result.block_copy_dispose_semantics_summary =
+      result.integration_surface.block_copy_dispose_semantics_summary;
+  result.deterministic_block_copy_dispose_handoff =
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.deterministic &&
+      result.integration_surface.block_copy_dispose_semantics_summary.deterministic &&
+      IsEquivalentBlockCopyDisposeSemanticsSummary(
+          result.integration_surface.block_copy_dispose_semantics_summary,
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary) &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.profile_normalized_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.contract_violation_sites <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites;
   result.message_send_selector_lowering_summary =
       result.integration_surface.message_send_selector_lowering_summary;
   result.deterministic_message_send_selector_lowering_handoff =
@@ -1118,6 +1161,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_storage_escape_semantics_summary.byref_layout_symbolized_sites;
   result.parity_surface.block_storage_escape_contract_violation_sites_total =
       result.parity_surface.block_storage_escape_semantics_summary.contract_violation_sites;
+  result.parity_surface.block_copy_dispose_semantics_summary =
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary;
+  result.parity_surface.block_copy_dispose_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites;
+  result.parity_surface.block_copy_dispose_mutable_capture_count_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total;
+  result.parity_surface.block_copy_dispose_byref_slot_count_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total;
+  result.parity_surface.block_copy_dispose_parameter_entries_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.parameter_entries_total;
+  result.parity_surface.block_copy_dispose_capture_entries_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total;
+  result.parity_surface.block_copy_dispose_body_statement_entries_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.body_statement_entries_total;
+  result.parity_surface.block_copy_dispose_copy_helper_required_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites;
+  result.parity_surface.block_copy_dispose_dispose_helper_required_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites;
+  result.parity_surface.block_copy_dispose_profile_normalized_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.profile_normalized_sites;
+  result.parity_surface.block_copy_dispose_copy_helper_symbolized_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites;
+  result.parity_surface.block_copy_dispose_dispose_helper_symbolized_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites;
+  result.parity_surface.block_copy_dispose_contract_violation_sites_total =
+      result.parity_surface.block_copy_dispose_semantics_summary.contract_violation_sites;
   result.parity_surface.message_send_selector_lowering_summary =
       result.type_metadata_handoff.message_send_selector_lowering_summary;
   result.parity_surface.message_send_selector_lowering_sites_total =
@@ -1717,6 +1786,51 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
           result.parity_surface.block_storage_escape_semantics_summary.escape_to_heap_sites &&
       result.parity_surface.block_storage_escape_semantics_summary.deterministic;
+  result.parity_surface.deterministic_block_copy_dispose_handoff =
+      result.deterministic_block_copy_dispose_handoff &&
+      result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites ==
+          result.parity_surface.block_copy_dispose_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+          result.parity_surface.block_copy_dispose_mutable_capture_count_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+          result.parity_surface.block_copy_dispose_byref_slot_count_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.parameter_entries_total ==
+          result.parity_surface.block_copy_dispose_parameter_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total ==
+          result.parity_surface.block_copy_dispose_capture_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.body_statement_entries_total ==
+          result.parity_surface.block_copy_dispose_body_statement_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+          result.parity_surface.block_copy_dispose_copy_helper_required_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites ==
+          result.parity_surface.block_copy_dispose_dispose_helper_required_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.profile_normalized_sites ==
+          result.parity_surface.block_copy_dispose_profile_normalized_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites ==
+          result.parity_surface.block_copy_dispose_copy_helper_symbolized_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites ==
+          result.parity_surface.block_copy_dispose_dispose_helper_symbolized_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.contract_violation_sites ==
+          result.parity_surface.block_copy_dispose_contract_violation_sites_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.profile_normalized_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_symbolized_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_symbolized_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.contract_violation_sites <=
+          result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+          result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+          result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+          result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
+      result.parity_surface.block_copy_dispose_semantics_summary.deterministic;
   result.parity_surface.deterministic_message_send_selector_lowering_handoff =
       result.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.message_send_sites ==
@@ -2038,6 +2152,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff &&
       result.parity_surface.block_storage_escape_semantics_summary.deterministic &&
       result.parity_surface.deterministic_block_storage_escape_handoff &&
+      result.parity_surface.block_copy_dispose_semantics_summary.deterministic &&
+      result.parity_surface.deterministic_block_copy_dispose_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.deterministic &&
       result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic &&

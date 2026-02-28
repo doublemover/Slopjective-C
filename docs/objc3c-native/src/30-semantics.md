@@ -3262,3 +3262,61 @@ Sema/type metadata handoff contract:
 Recommended M168 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q`
+
+## M169 sema/type block copy-dispose helper semantics contract (M169-B001)
+
+M169-B lifts parser-authored block copy/dispose helper metadata into sema
+integration, type-metadata handoff, and pass-manager parity packets so
+lowering/runtime lanes consume deterministic helper contracts.
+
+Sema/type block copy-dispose contract markers:
+
+- `Objc3BlockCopyDisposeSiteMetadata`
+- `Objc3BlockCopyDisposeSemanticsSummary`
+- `BuildBlockCopyDisposeSiteMetadataLexicographic`
+- `BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockCopyDisposeSemanticsSummaryFromTypeMetadataHandoff`
+- `block_copy_dispose_sites_total`
+- `block_copy_dispose_copy_helper_required_sites_total`
+- `block_copy_dispose_dispose_helper_required_sites_total`
+- `block_copy_dispose_contract_violation_sites_total`
+- `deterministic_block_copy_dispose_handoff`
+
+Deterministic block copy-dispose invariants (fail-closed):
+
+- block copy-dispose site metadata must remain lexicographically sorted.
+- mutable-capture and byref-slot counts must match capture-entry totals.
+- copy-helper/dispose-helper/profile-normalized/symbolized counters must remain
+  bounded by `block_literal_sites`.
+- copy-helper-required counters must equal dispose-helper-required counters.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_copy_dispose_sites_lexicographic = BuildBlockCopyDisposeSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_copy_dispose_semantics_summary = BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_copy_dispose_sites_lexicographic = surface.block_copy_dispose_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_copy_dispose_semantics_summary = BuildBlockCopyDisposeSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_copy_dispose_sites_total`
+  - `block_copy_dispose_mutable_capture_count_total`
+  - `block_copy_dispose_byref_slot_count_total`
+  - `block_copy_dispose_parameter_entries_total`
+  - `block_copy_dispose_capture_entries_total`
+  - `block_copy_dispose_body_statement_entries_total`
+  - `block_copy_dispose_copy_helper_required_sites_total`
+  - `block_copy_dispose_dispose_helper_required_sites_total`
+  - `block_copy_dispose_profile_normalized_sites_total`
+  - `block_copy_dispose_copy_helper_symbolized_sites_total`
+  - `block_copy_dispose_dispose_helper_symbolized_sites_total`
+  - `block_copy_dispose_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_copy_dispose_handoff`
+
+Recommended M169 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q`
