@@ -2646,6 +2646,37 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 ```
 
+## M190 integration concurrency replay-proof and race-guard contract runbook (M190-E001)
+
+Deterministic M190 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_integration_concurrency_replay_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m190-concurrency-replay-race-guard-contracts`
+- `npm run check:compiler-closeout:m190`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M190 concurrency replay/race-guard packet/docs contract`
+  - `Run M190 concurrency replay/race-guard integration gate`
+
+Scope assumptions:
+
+- M190-A001, M190-B001, and M190-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- M190-D001 packet-specific artifacts are landed in this workspace.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M190-D001 validation/conformance packet.
+- This runbook enforces those currently landed lane surfaces plus M190-E001 integration wiring.
+
 ## M190 validation/conformance/perf concurrency replay-proof and race-guard runbook (M190-D001)
 
 Deterministic M190 validation sequence:

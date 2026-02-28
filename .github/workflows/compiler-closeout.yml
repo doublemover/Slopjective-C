@@ -40,6 +40,10 @@ jobs:
         run: npm run check:compiler-closeout:m183
       - name: Run M183 NSError bridging integration gate
         run: npm run check:objc3c:m183-ns-error-bridging-contracts
+      - name: Enforce M190 concurrency replay/race-guard packet/docs contract
+        run: npm run check:compiler-closeout:m190
+      - name: Run M190 concurrency replay/race-guard integration gate
+        run: npm run check:objc3c:m190-concurrency-replay-race-guard-contracts
       - name: Enforce M191 unsafe-pointer packet/docs contract
         run: npm run check:compiler-closeout:m191
       - name: Run M191 unsafe-pointer integration gate
