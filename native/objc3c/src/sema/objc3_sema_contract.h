@@ -254,6 +254,19 @@ struct Objc3MessageSendSelectorLoweringSummary {
   bool deterministic = true;
 };
 
+struct Objc3DispatchAbiMarshallingSummary {
+  std::size_t message_send_sites = 0;
+  std::size_t receiver_slots = 0;
+  std::size_t selector_symbol_slots = 0;
+  std::size_t argument_slots = 0;
+  std::size_t keyword_argument_slots = 0;
+  std::size_t unary_argument_slots = 0;
+  std::size_t arity_mismatch_sites = 0;
+  std::size_t missing_selector_symbol_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -417,6 +430,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   bool built = false;
 };
 
@@ -577,6 +591,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
 };
 
 struct Objc3SemanticValidationOptions {

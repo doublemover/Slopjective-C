@@ -192,6 +192,15 @@ struct Objc3SemaParityContractSurface {
   std::size_t message_send_selector_lowering_symbol_mismatch_sites_total = 0;
   std::size_t message_send_selector_lowering_missing_symbol_sites_total = 0;
   std::size_t message_send_selector_lowering_contract_violation_sites_total = 0;
+  std::size_t dispatch_abi_marshalling_sites_total = 0;
+  std::size_t dispatch_abi_marshalling_receiver_slots_total = 0;
+  std::size_t dispatch_abi_marshalling_selector_symbol_slots_total = 0;
+  std::size_t dispatch_abi_marshalling_argument_slots_total = 0;
+  std::size_t dispatch_abi_marshalling_keyword_argument_slots_total = 0;
+  std::size_t dispatch_abi_marshalling_unary_argument_slots_total = 0;
+  std::size_t dispatch_abi_marshalling_arity_mismatch_sites_total = 0;
+  std::size_t dispatch_abi_marshalling_missing_selector_symbol_sites_total = 0;
+  std::size_t dispatch_abi_marshalling_contract_violation_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -206,6 +215,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
+  bool deterministic_dispatch_abi_marshalling_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -217,6 +227,7 @@ struct Objc3SemaParityContractSurface {
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -560,7 +571,47 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.message_send_selector_lowering_summary.selector_lowering_contract_violation_sites <=
              surface.message_send_selector_lowering_summary.message_send_sites &&
          surface.message_send_selector_lowering_summary.deterministic &&
-         surface.deterministic_message_send_selector_lowering_handoff;
+         surface.deterministic_message_send_selector_lowering_handoff &&
+         surface.dispatch_abi_marshalling_summary.message_send_sites ==
+             surface.dispatch_abi_marshalling_sites_total &&
+         surface.dispatch_abi_marshalling_summary.receiver_slots ==
+             surface.dispatch_abi_marshalling_receiver_slots_total &&
+         surface.dispatch_abi_marshalling_summary.selector_symbol_slots ==
+             surface.dispatch_abi_marshalling_selector_symbol_slots_total &&
+         surface.dispatch_abi_marshalling_summary.argument_slots ==
+             surface.dispatch_abi_marshalling_argument_slots_total &&
+         surface.dispatch_abi_marshalling_summary.keyword_argument_slots ==
+             surface.dispatch_abi_marshalling_keyword_argument_slots_total &&
+         surface.dispatch_abi_marshalling_summary.unary_argument_slots ==
+             surface.dispatch_abi_marshalling_unary_argument_slots_total &&
+         surface.dispatch_abi_marshalling_summary.arity_mismatch_sites ==
+             surface.dispatch_abi_marshalling_arity_mismatch_sites_total &&
+         surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites ==
+             surface.dispatch_abi_marshalling_missing_selector_symbol_sites_total &&
+         surface.dispatch_abi_marshalling_summary.contract_violation_sites ==
+             surface.dispatch_abi_marshalling_contract_violation_sites_total &&
+         surface.dispatch_abi_marshalling_summary.receiver_slots ==
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.selector_symbol_slots +
+                 surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites ==
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.keyword_argument_slots +
+                 surface.dispatch_abi_marshalling_summary.unary_argument_slots ==
+             surface.dispatch_abi_marshalling_summary.argument_slots &&
+         surface.dispatch_abi_marshalling_summary.keyword_argument_slots <=
+             surface.dispatch_abi_marshalling_summary.argument_slots &&
+         surface.dispatch_abi_marshalling_summary.unary_argument_slots <=
+             surface.dispatch_abi_marshalling_summary.argument_slots &&
+         surface.dispatch_abi_marshalling_summary.selector_symbol_slots <=
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.missing_selector_symbol_sites <=
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.arity_mismatch_sites <=
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.contract_violation_sites <=
+             surface.dispatch_abi_marshalling_summary.message_send_sites &&
+         surface.dispatch_abi_marshalling_summary.deterministic &&
+         surface.deterministic_dispatch_abi_marshalling_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -591,6 +642,8 @@ struct Objc3SemaPassManagerResult {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
+  bool deterministic_dispatch_abi_marshalling_handoff = false;
+  Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

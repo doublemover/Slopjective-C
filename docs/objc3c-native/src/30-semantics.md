@@ -2637,3 +2637,52 @@ Sema/type metadata handoff contract:
 Recommended M156 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`
+
+## M157 sema/type dispatch ABI marshalling contract (M157-B001)
+
+M157-B adds a deterministic semantic summary for dispatch ABI marshalling surfaces derived from
+Objective-C message-send selector-lowering metadata and replays that packet through sema handoff
+and pass-manager parity carriers.
+
+Sema/type contract markers:
+
+- `Objc3DispatchAbiMarshallingSummary`
+- `dispatch_abi_marshalling_summary`
+- `BuildDispatchAbiMarshallingSummaryFromSites`
+- `BuildDispatchAbiMarshallingSummaryFromIntegrationSurface`
+- `BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff`
+- `deterministic_dispatch_abi_marshalling_handoff`
+- `result.parity_surface.dispatch_abi_marshalling_summary`
+
+Deterministic dispatch ABI marshalling invariants (fail-closed):
+
+- receiver marshalling remains complete (`receiver_slots == message_send_sites`).
+- selector symbol marshalling partition remains complete
+  (`selector_symbol_slots + missing_selector_symbol_sites == message_send_sites`).
+- argument marshalling partition remains complete
+  (`keyword_argument_slots + unary_argument_slots == argument_slots`).
+- mismatch and contract-violation counters remain bounded by message-send sites.
+- integration and handoff dispatch ABI marshalling summaries remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `dispatch_abi_marshalling_sites_total`
+  - `dispatch_abi_marshalling_receiver_slots_total`
+  - `dispatch_abi_marshalling_selector_symbol_slots_total`
+  - `dispatch_abi_marshalling_argument_slots_total`
+  - `dispatch_abi_marshalling_keyword_argument_slots_total`
+  - `dispatch_abi_marshalling_unary_argument_slots_total`
+  - `dispatch_abi_marshalling_arity_mismatch_sites_total`
+  - `dispatch_abi_marshalling_missing_selector_symbol_sites_total`
+  - `dispatch_abi_marshalling_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_dispatch_abi_marshalling_handoff`
+
+Recommended M157 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py -q`
