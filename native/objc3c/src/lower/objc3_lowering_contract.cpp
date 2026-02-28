@@ -569,3 +569,25 @@ std::string Objc3RetainReleaseOperationLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3RetainReleaseOperationLoweringLaneContract;
 }
+
+bool IsValidObjc3AutoreleasePoolScopeLoweringContract(
+    const Objc3AutoreleasePoolScopeLoweringContract &contract) {
+  return contract.scope_symbolized_sites <= contract.scope_sites &&
+         contract.contract_violation_sites <= contract.scope_sites &&
+         contract.scope_entry_transition_sites == contract.scope_sites &&
+         contract.scope_exit_transition_sites == contract.scope_sites &&
+         (contract.scope_sites > 0u || contract.max_scope_depth == 0u) &&
+         contract.max_scope_depth <= static_cast<unsigned>(contract.scope_sites);
+}
+
+std::string Objc3AutoreleasePoolScopeLoweringReplayKey(
+    const Objc3AutoreleasePoolScopeLoweringContract &contract) {
+  return std::string("scope_sites=") + std::to_string(contract.scope_sites) +
+         ";scope_symbolized_sites=" + std::to_string(contract.scope_symbolized_sites) +
+         ";max_scope_depth=" + std::to_string(contract.max_scope_depth) +
+         ";scope_entry_transition_sites=" + std::to_string(contract.scope_entry_transition_sites) +
+         ";scope_exit_transition_sites=" + std::to_string(contract.scope_exit_transition_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3AutoreleasePoolScopeLoweringLaneContract;
+}

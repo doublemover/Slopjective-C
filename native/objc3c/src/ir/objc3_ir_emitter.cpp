@@ -130,6 +130,10 @@ class Objc3IREmitter {
       out << "; retain_release_operation_lowering = "
           << frontend_metadata_.lowering_retain_release_operation_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_autoreleasepool_scope_replay_key.empty()) {
+      out << "; autoreleasepool_scope_lowering = "
+          << frontend_metadata_.lowering_autoreleasepool_scope_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -299,6 +303,21 @@ class Objc3IREmitter {
         << frontend_metadata_.retain_release_operation_lowering_contract_violation_sites
         << ", deterministic_retain_release_operation_lowering_handoff="
         << (frontend_metadata_.deterministic_retain_release_operation_lowering_handoff ? "true" : "false")
+        << "\n";
+    out << "; frontend_objc_autoreleasepool_scope_lowering_profile = scope_sites="
+        << frontend_metadata_.autoreleasepool_scope_lowering_scope_sites
+        << ", scope_symbolized_sites="
+        << frontend_metadata_.autoreleasepool_scope_lowering_scope_symbolized_sites
+        << ", max_scope_depth="
+        << frontend_metadata_.autoreleasepool_scope_lowering_max_scope_depth
+        << ", scope_entry_transition_sites="
+        << frontend_metadata_.autoreleasepool_scope_lowering_scope_entry_transition_sites
+        << ", scope_exit_transition_sites="
+        << frontend_metadata_.autoreleasepool_scope_lowering_scope_exit_transition_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.autoreleasepool_scope_lowering_contract_violation_sites
+        << ", deterministic_autoreleasepool_scope_lowering_handoff="
+        << (frontend_metadata_.deterministic_autoreleasepool_scope_lowering_handoff ? "true" : "false")
         << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
@@ -474,6 +493,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_shim_host_link = !{!13}\n";
     out << "!objc3.objc_ownership_qualifier_lowering = !{!14}\n";
     out << "!objc3.objc_retain_release_operation_lowering = !{!15}\n";
+    out << "!objc3.objc_autoreleasepool_scope_lowering = !{!16}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -683,6 +703,23 @@ class Objc3IREmitter {
                frontend_metadata_.retain_release_operation_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_retain_release_operation_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!16 = !{i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.autoreleasepool_scope_lowering_scope_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.autoreleasepool_scope_lowering_scope_symbolized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.autoreleasepool_scope_lowering_max_scope_depth)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.autoreleasepool_scope_lowering_scope_entry_transition_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.autoreleasepool_scope_lowering_scope_exit_transition_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.autoreleasepool_scope_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_autoreleasepool_scope_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

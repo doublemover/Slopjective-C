@@ -2969,6 +2969,61 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m162_lowering_retain_release_operation_contract.py -q`
 
+## Autoreleasepool scope lowering artifact contract (M163-C001)
+
+M163-C publishes replay-stable autoreleasepool scope/lifetime lowering invariants derived
+from sema scope-summary surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m163/lowering-autoreleasepool-scope-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m163/lowering-autoreleasepool-scope-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m163/lowering-autoreleasepool-scope-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m163/lowering-autoreleasepool-scope-contract/autoreleasepool-scope-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3AutoreleasePoolScopeLoweringLaneContract`
+- `Objc3AutoreleasePoolScopeLoweringContract`
+- `IsValidObjc3AutoreleasePoolScopeLoweringContract(...)`
+- `Objc3AutoreleasePoolScopeLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `scope_sites=<N>`
+- `scope_symbolized_sites=<N>`
+- `max_scope_depth=<N>`
+- `scope_entry_transition_sites=<N>`
+- `scope_exit_transition_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m163-autoreleasepool-scope-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_autoreleasepool_scope_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_scope_sites`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_scope_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_max_scope_depth`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_scope_entry_transition_sites`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_scope_exit_transition_sites`
+- `frontend.pipeline.sema_pass_manager.autoreleasepool_scope_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_autoreleasepool_scope_replay_key`
+- `frontend.pipeline.semantic_surface.objc_autoreleasepool_scope_lowering_surface`
+- `lowering_autoreleasepool_scope.replay_key`
+- `lowering_autoreleasepool_scope.lane_contract`
+
+IR publication markers:
+
+- `; autoreleasepool_scope_lowering = scope_sites=<N>;scope_symbolized_sites=<N>;max_scope_depth=<N>;scope_entry_transition_sites=<N>;scope_exit_transition_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m163-autoreleasepool-scope-lowering-v1`
+- `; frontend_objc_autoreleasepool_scope_lowering_profile = scope_sites=<N>, scope_symbolized_sites=<N>, max_scope_depth=<N>, scope_entry_transition_sites=<N>, scope_exit_transition_sites=<N>, contract_violation_sites=<N>, deterministic_autoreleasepool_scope_lowering_handoff=<bool>`
+- `!objc3.objc_autoreleasepool_scope_lowering = !{!16}`
+- `!16 = !{i64 <scope_sites>, i64 <scope_symbolized_sites>, i64 <max_scope_depth>, i64 <scope_entry_transition_sites>, i64 <scope_exit_transition_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m163_lowering_autoreleasepool_scope_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

@@ -127,6 +127,14 @@ struct Objc3IRFrontendMetadata {
   std::size_t retain_release_operation_lowering_autorelease_insertion_sites = 0;
   std::size_t retain_release_operation_lowering_contract_violation_sites = 0;
   bool deterministic_retain_release_operation_lowering_handoff = false;
+  std::string lowering_autoreleasepool_scope_replay_key;
+  std::size_t autoreleasepool_scope_lowering_scope_sites = 0;
+  std::size_t autoreleasepool_scope_lowering_scope_symbolized_sites = 0;
+  unsigned autoreleasepool_scope_lowering_max_scope_depth = 0;
+  std::size_t autoreleasepool_scope_lowering_scope_entry_transition_sites = 0;
+  std::size_t autoreleasepool_scope_lowering_scope_exit_transition_sites = 0;
+  std::size_t autoreleasepool_scope_lowering_contract_violation_sites = 0;
+  bool deterministic_autoreleasepool_scope_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

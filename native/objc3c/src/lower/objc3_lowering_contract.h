@@ -36,6 +36,8 @@ inline constexpr const char *kObjc3OwnershipQualifierLoweringLaneContract =
     "m161-ownership-qualifier-lowering-v1";
 inline constexpr const char *kObjc3RetainReleaseOperationLoweringLaneContract =
     "m162-retain-release-operation-lowering-v1";
+inline constexpr const char *kObjc3AutoreleasePoolScopeLoweringLaneContract =
+    "m163-autoreleasepool-scope-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -167,6 +169,16 @@ struct Objc3RetainReleaseOperationLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3AutoreleasePoolScopeLoweringContract {
+  std::size_t scope_sites = 0;
+  std::size_t scope_symbolized_sites = 0;
+  unsigned max_scope_depth = 0;
+  std::size_t scope_entry_transition_sites = 0;
+  std::size_t scope_exit_transition_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -224,3 +236,7 @@ bool IsValidObjc3RetainReleaseOperationLoweringContract(
     const Objc3RetainReleaseOperationLoweringContract &contract);
 std::string Objc3RetainReleaseOperationLoweringReplayKey(
     const Objc3RetainReleaseOperationLoweringContract &contract);
+bool IsValidObjc3AutoreleasePoolScopeLoweringContract(
+    const Objc3AutoreleasePoolScopeLoweringContract &contract);
+std::string Objc3AutoreleasePoolScopeLoweringReplayKey(
+    const Objc3AutoreleasePoolScopeLoweringContract &contract);
