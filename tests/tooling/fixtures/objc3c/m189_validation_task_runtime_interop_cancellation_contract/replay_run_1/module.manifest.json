@@ -1,0 +1,39 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_task_runtime_interop_cancellation_lowering_handoff": true,
+        "task_runtime_interop_cancellation_lowering_sites": 9,
+        "task_runtime_interop_cancellation_lowering_runtime_interop_sites": 5,
+        "task_runtime_interop_cancellation_lowering_cancellation_probe_sites": 4,
+        "task_runtime_interop_cancellation_lowering_cancellation_handler_sites": 3,
+        "task_runtime_interop_cancellation_lowering_runtime_resume_sites": 4,
+        "task_runtime_interop_cancellation_lowering_runtime_cancel_sites": 2,
+        "task_runtime_interop_cancellation_lowering_normalized_sites": 7,
+        "task_runtime_interop_cancellation_lowering_guard_blocked_sites": 2,
+        "task_runtime_interop_cancellation_lowering_contract_violation_sites": 0,
+        "lowering_task_runtime_interop_cancellation_replay_key": "task_runtime_sites=9;task_runtime_interop_sites=5;cancellation_probe_sites=4;cancellation_handler_sites=3;runtime_resume_sites=4;runtime_cancel_sites=2;normalized_sites=7;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m189-task-runtime-interop-cancellation-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_task_runtime_interop_cancellation_lowering_surface": {
+          "task_runtime_sites": 9,
+          "task_runtime_interop_sites": 5,
+          "cancellation_probe_sites": 4,
+          "cancellation_handler_sites": 3,
+          "runtime_resume_sites": 4,
+          "runtime_cancel_sites": 2,
+          "normalized_sites": 7,
+          "guard_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "task_runtime_sites=9;task_runtime_interop_sites=5;cancellation_probe_sites=4;cancellation_handler_sites=3;runtime_resume_sites=4;runtime_cancel_sites=2;normalized_sites=7;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m189-task-runtime-interop-cancellation-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_task_runtime_interop_cancellation": {
+    "replay_key": "task_runtime_sites=9;task_runtime_interop_sites=5;cancellation_probe_sites=4;cancellation_handler_sites=3;runtime_resume_sites=4;runtime_cancel_sites=2;normalized_sites=7;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m189-task-runtime-interop-cancellation-lowering-v1",
+    "lane_contract": "m189-task-runtime-interop-cancellation-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

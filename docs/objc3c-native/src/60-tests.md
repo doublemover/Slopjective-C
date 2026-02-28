@@ -2677,6 +2677,44 @@ Scope assumptions:
 - This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M190-D001 validation/conformance packet.
 - This runbook enforces those currently landed lane surfaces plus M190-E001 integration wiring.
 
+## M189 validation/conformance/perf task runtime interop and cancellation runbook (M189-D001)
+
+Deterministic M189 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m189_validation_task_runtime_interop_cancellation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_task_runtime_interop_cancellation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_task_runtime_interop_cancellation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_task_runtime_interop_cancellation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_task_runtime_interop_cancellation_lowering_surface.deterministic_handoff`
+  - `lowering_task_runtime_interop_cancellation.replay_key`
+- `replay_run_1/module.ll`
+  - `task_runtime_interop_cancellation_lowering`
+  - `frontend_objc_task_runtime_interop_cancellation_lowering_profile`
+  - `!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}`
+- `M189-D001.json`
+  - `tracking.issue = 4537`
+  - `tracking.task = M189-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + guard_blocked_sites == task_runtime_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+```
+
 ## M190 validation/conformance/perf concurrency replay-proof and race-guard runbook (M190-D001)
 
 Deterministic M190 validation sequence:

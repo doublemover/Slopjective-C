@@ -1,0 +1,25 @@
+{
+  "id": "M189-D001",
+  "title": "Task runtime interop and cancellation lowering replay contract fixture (issue #4537 / task M189-D001)",
+  "feature": "m189 lane-d task runtime interop and cancellation lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M189",
+    "milestone_number": 274,
+    "lane": "D",
+    "issue": 4537,
+    "task": "M189-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py",
+    "tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: task_runtime_interop_cancellation_lowering\n// EXPECT: deterministic_task_runtime_interop_cancellation_lowering_handoff=true\n\nmodule m189_lane_d_task_runtime_interop_cancellation;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
