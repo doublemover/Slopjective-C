@@ -215,6 +215,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain packaging anchors.
 
+## M214 integration daemonized compiler/watch mode
+
+- Gate intent: enforce deterministic daemon/watch mode evidence across all lanes.
+### 1.1 Daemonized integration chain
+- Deterministic daemonized gate:
+  - `npm run check:objc3c:m214-daemonized-watch`
+- Chain order:
+  - replays `check:objc3c:m215-sdk-packaging`.
+  - enforces all M214 lane contracts:
+    `tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_sema_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_lowering_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_validation_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_integration_daemonized_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through daemonized/watch validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain daemonized anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

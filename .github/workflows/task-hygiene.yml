@@ -95,6 +95,8 @@ jobs:
         run: npm run check:objc3c:m216-conformance-suite-v1
       - name: 22 Run M215 SDK/toolchain packaging integration gate
         run: npm run check:objc3c:m215-sdk-packaging
+      - name: 23 Run M214 daemonized compiler/watch integration gate
+        run: npm run check:objc3c:m214-daemonized-watch
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
