@@ -347,3 +347,19 @@ Frontend profile-guided optimization (PGO) hook readiness uses deterministic lex
   3. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
 
+## M208 frontend whole-module optimization controls
+
+Frontend whole-module optimization controls require deterministic module-shape packet surfaces from parser ingress to manifest staging.
+
+- Required frontend whole-module control signals:
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - module AST extraction remains `const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);`.
+  - module function set shaping remains deterministic via `manifest_functions.reserve(program.functions.size())`.
+  - unique function identity set remains `std::unordered_set<std::string> manifest_function_names`.
+  - manifest semantic surface remains emitted with `"declared_globals"`, `"declared_functions"`, `"resolved_global_symbols"`, and `"resolved_function_symbols"`.
+- Required frontend whole-module commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
+
