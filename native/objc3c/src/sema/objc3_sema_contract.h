@@ -33,11 +33,32 @@ struct Objc3AtomicMemoryOrderMappingSummary {
   std::size_t total() const { return relaxed + acquire + release + acq_rel + seq_cst + unsupported; }
 };
 
+struct Objc3VectorTypeLoweringSummary {
+  std::size_t return_annotations = 0;
+  std::size_t param_annotations = 0;
+  std::size_t i32_annotations = 0;
+  std::size_t bool_annotations = 0;
+  std::size_t lane2_annotations = 0;
+  std::size_t lane4_annotations = 0;
+  std::size_t lane8_annotations = 0;
+  std::size_t lane16_annotations = 0;
+  std::size_t unsupported_annotations = 0;
+  bool deterministic = true;
+
+  std::size_t total() const { return return_annotations + param_annotations; }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<bool> param_is_vector;
+  std::vector<std::string> param_vector_base_spelling;
+  std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
   ValueType return_type = ValueType::I32;
+  bool return_is_vector = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };
@@ -52,8 +73,14 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::string name;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<bool> param_is_vector;
+  std::vector<std::string> param_vector_base_spelling;
+  std::vector<unsigned> param_vector_lane_count;
   std::vector<bool> param_has_invalid_type_suffix;
   ValueType return_type = ValueType::I32;
+  bool return_is_vector = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };

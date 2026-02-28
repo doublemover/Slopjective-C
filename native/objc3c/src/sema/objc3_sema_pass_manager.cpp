@@ -104,6 +104,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
+  result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
+  result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
   result.parity_surface.diagnostics_total = result.diagnostics.size();
@@ -117,12 +119,16 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
+  result.parity_surface.vector_type_lowering = result.vector_type_lowering;
+  result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;
   result.parity_surface.ready =
       result.executed && result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
       result.parity_surface.deterministic_atomic_memory_order_mapping &&
+      result.parity_surface.deterministic_vector_type_lowering &&
       result.parity_surface.atomic_memory_order_mapping.deterministic &&
+      result.parity_surface.vector_type_lowering.deterministic &&
       result.parity_surface.globals_total == result.parity_surface.type_metadata_global_entries &&
       result.parity_surface.functions_total == result.parity_surface.type_metadata_function_entries;
   return result;

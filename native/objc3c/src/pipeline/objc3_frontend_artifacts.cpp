@@ -76,6 +76,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   std::size_t scalar_return_void = 0;
   std::size_t scalar_param_i32 = 0;
   std::size_t scalar_param_bool = 0;
+  std::size_t vector_signature_functions = 0;
+  std::size_t vector_return_signatures = 0;
+  std::size_t vector_param_signatures = 0;
+  std::size_t vector_i32_signatures = 0;
+  std::size_t vector_bool_signatures = 0;
+  std::size_t vector_lane2_signatures = 0;
+  std::size_t vector_lane4_signatures = 0;
+  std::size_t vector_lane8_signatures = 0;
+  std::size_t vector_lane16_signatures = 0;
   for (const auto &entry : pipeline_result.integration_surface.functions) {
     const FunctionInfo &signature = entry.second;
     if (signature.return_type == ValueType::Bool) {
@@ -91,6 +100,51 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       } else {
         ++scalar_param_i32;
       }
+    }
+  }
+  for (const FunctionDecl *fn : manifest_functions) {
+    bool has_vector_signature = false;
+    if (fn->return_vector_spelling) {
+      has_vector_signature = true;
+      ++vector_return_signatures;
+      if (fn->return_vector_base_spelling == kObjc3SimdVectorBaseBool) {
+        ++vector_bool_signatures;
+      } else {
+        ++vector_i32_signatures;
+      }
+      if (fn->return_vector_lane_count == 2u) {
+        ++vector_lane2_signatures;
+      } else if (fn->return_vector_lane_count == 4u) {
+        ++vector_lane4_signatures;
+      } else if (fn->return_vector_lane_count == 8u) {
+        ++vector_lane8_signatures;
+      } else if (fn->return_vector_lane_count == 16u) {
+        ++vector_lane16_signatures;
+      }
+    }
+    for (const FuncParam &param : fn->params) {
+      if (!param.vector_spelling) {
+        continue;
+      }
+      has_vector_signature = true;
+      ++vector_param_signatures;
+      if (param.vector_base_spelling == kObjc3SimdVectorBaseBool) {
+        ++vector_bool_signatures;
+      } else {
+        ++vector_i32_signatures;
+      }
+      if (param.vector_lane_count == 2u) {
+        ++vector_lane2_signatures;
+      } else if (param.vector_lane_count == 4u) {
+        ++vector_lane4_signatures;
+      } else if (param.vector_lane_count == 8u) {
+        ++vector_lane8_signatures;
+      } else if (param.vector_lane_count == 16u) {
+        ++vector_lane16_signatures;
+      }
+    }
+    if (has_vector_signature) {
+      ++vector_signature_functions;
     }
   }
 
@@ -165,12 +219,42 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.seq_cst
            << ",\"atomic_unmapped_ops\":"
            << pipeline_result.sema_parity_surface.atomic_memory_order_mapping.unsupported
+           << ",\"deterministic_vector_type_lowering\":"
+           << (pipeline_result.sema_parity_surface.deterministic_vector_type_lowering ? "true" : "false")
+           << ",\"vector_type_lowering_total\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.total()
+           << ",\"vector_return_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.return_annotations
+           << ",\"vector_param_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.param_annotations
+           << ",\"vector_i32_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.i32_annotations
+           << ",\"vector_bool_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.bool_annotations
+           << ",\"vector_lane2_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.lane2_annotations
+           << ",\"vector_lane4_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.lane4_annotations
+           << ",\"vector_lane8_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.lane8_annotations
+           << ",\"vector_lane16_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.lane16_annotations
+           << ",\"vector_unsupported_annotations\":"
+           << pipeline_result.sema_parity_surface.vector_type_lowering.unsupported_annotations
            << ",\"parity_ready\":"
            << (IsReadyObjc3SemaParityContractSurface(pipeline_result.sema_parity_surface) ? "true" : "false")
            << ",\"type_metadata_global_entries\":"
            << pipeline_result.sema_parity_surface.type_metadata_global_entries
            << ",\"type_metadata_function_entries\":"
            << pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";
+  manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
+           << ",\"vector_return_signatures\":" << vector_return_signatures
+           << ",\"vector_param_signatures\":" << vector_param_signatures
+           << ",\"vector_i32_signatures\":" << vector_i32_signatures
+           << ",\"vector_bool_signatures\":" << vector_bool_signatures
+           << ",\"lane2\":" << vector_lane2_signatures
+           << ",\"lane4\":" << vector_lane4_signatures << ",\"lane8\":" << vector_lane8_signatures
+           << ",\"lane16\":" << vector_lane16_signatures << "},\n";
   manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()
            << ",\"declared_functions\":" << manifest_functions.size()
            << ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()
@@ -184,6 +268,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol
            << "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args
            << ",\"selector_global_ordering\":\"lexicographic\"},\n";
+  manifest << "  \"lowering_vector_abi\":{\"replay_key\":\"" << Objc3SimdVectorTypeLoweringReplayKey()
+           << "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract
+           << "\",\"vector_signature_functions\":" << vector_signature_functions << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
     manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]

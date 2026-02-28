@@ -2204,3 +2204,32 @@ Atomics memory-order packet map:
 Recommended M194 sema/type atomics and memory-order mapping validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py -q`
+
+## M193 sema/type SIMD/vector type lowering
+
+For deterministic sema/type SIMD/vector type-lowering behavior, capture replay-stable packet evidence from vector-aware type metadata transport, semantic diagnostics isolation, and sema parity-surface replay fields.
+
+SIMD/vector packet map:
+
+- `simd vector packet 1.1 deterministic sema/type vector architecture anchors` -> `m193_sema_type_simd_vector_architecture_packet`
+- `simd vector packet 1.2 deterministic sema/type vector isolation anchors` -> `m193_sema_type_simd_vector_isolation_packet`
+
+### 1.1 Deterministic sema/type vector architecture packet
+
+- Source sema contract anchors: `struct Objc3VectorTypeLoweringSummary {`, `std::vector<bool> param_is_vector;`, `std::vector<std::string> param_vector_base_spelling;`, `std::vector<unsigned> param_vector_lane_count;`, `bool return_is_vector = false;`, and `unsigned return_vector_lane_count = 1;`.
+- Source semantic type-system anchors: `struct SemanticTypeInfo {`, `MakeSemanticTypeFromParam(...)`, `MakeSemanticTypeFromFunctionReturn(...)`, `MakeSemanticTypeFromFunctionInfoParam(...)`, `IsSameSemanticType(...)`, and `SemanticTypeName(...)`.
+- Source sema behavior anchors: `RecordVectorTypeLoweringAnnotation(...)`, `BuildVectorTypeLoweringSummary(...)`, `existing.return_is_vector == fn.return_vector_spelling`, and `type mismatch: incompatible function signature for`.
+- Source diagnostics anchors: `type mismatch: expected '`, `type mismatch: assignment to '`, and `type mismatch: return expression in function '`.
+- Deterministic sema/type SIMD/vector architecture packet key: `m193_sema_type_simd_vector_architecture_packet`.
+
+### 1.2 Deterministic sema/type vector isolation packet
+
+- Source sema pass-manager anchors: `result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);`, `result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;`, `result.parity_surface.vector_type_lowering = result.vector_type_lowering;`, and `result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;`.
+- Source sema parity contract anchors: `Objc3VectorTypeLoweringSummary vector_type_lowering;`, `bool deterministic_vector_type_lowering = false;`, and `surface.deterministic_vector_type_lowering`.
+- Manifest isolation anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_vector_type_lowering`, `vector_type_lowering_total`, `vector_return_annotations`, `vector_param_annotations`, `vector_i32_annotations`, `vector_bool_annotations`, `vector_lane2_annotations`, `vector_lane4_annotations`, `vector_lane8_annotations`, `vector_lane16_annotations`, and `vector_unsupported_annotations`.
+- Vector lane contract remains deterministic as parser-accepted `2/4/8/16` lane spellings.
+- Deterministic sema/type SIMD/vector isolation packet key: `m193_sema_type_simd_vector_isolation_packet`.
+
+Recommended M193 sema/type SIMD/vector type lowering validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`

@@ -30,6 +30,107 @@ static const char *TypeName(ValueType type) {
   }
 }
 
+struct SemanticTypeInfo {
+  ValueType type = ValueType::Unknown;
+  bool is_vector = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+};
+
+using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
+
+static SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
+  SemanticTypeInfo info;
+  info.type = type;
+  return info;
+}
+
+static SemanticTypeInfo MakeVectorSemanticType(ValueType base_type, const std::string &base_spelling,
+                                               unsigned lane_count) {
+  SemanticTypeInfo info;
+  info.type = base_type;
+  info.is_vector = true;
+  info.vector_base_spelling = base_spelling;
+  info.vector_lane_count = lane_count;
+  return info;
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
+  if (param.vector_spelling) {
+    return MakeVectorSemanticType(param.type, param.vector_base_spelling, param.vector_lane_count);
+  }
+  return MakeScalarSemanticType(param.type);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &fn) {
+  if (fn.return_vector_spelling) {
+    return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
+  }
+  return MakeScalarSemanticType(fn.return_type);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo &fn, std::size_t index) {
+  if (index >= fn.param_types.size()) {
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+
+  if (index < fn.param_is_vector.size() && fn.param_is_vector[index]) {
+    const std::string base_spelling =
+        index < fn.param_vector_base_spelling.size() ? fn.param_vector_base_spelling[index] : "";
+    const unsigned lane_count = index < fn.param_vector_lane_count.size() ? fn.param_vector_lane_count[index] : 1u;
+    return MakeVectorSemanticType(fn.param_types[index], base_spelling, lane_count);
+  }
+  return MakeScalarSemanticType(fn.param_types[index]);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInfo &fn) {
+  if (fn.return_is_vector) {
+    return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
+  }
+  return MakeScalarSemanticType(fn.return_type);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
+  return MakeScalarSemanticType(type);
+}
+
+static bool IsUnknownSemanticType(const SemanticTypeInfo &info) {
+  return !info.is_vector && info.type == ValueType::Unknown;
+}
+
+static bool IsScalarSemanticType(const SemanticTypeInfo &info) {
+  return !info.is_vector;
+}
+
+static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
+  return !info.is_vector && (info.type == ValueType::Bool || info.type == ValueType::I32);
+}
+
+static bool IsMessageI32CompatibleType(const SemanticTypeInfo &info) {
+  return !info.is_vector && (info.type == ValueType::I32 || info.type == ValueType::Bool);
+}
+
+static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
+  if (lhs.is_vector != rhs.is_vector) {
+    return false;
+  }
+  if (lhs.type != rhs.type) {
+    return false;
+  }
+  if (!lhs.is_vector) {
+    return true;
+  }
+  return lhs.vector_lane_count == rhs.vector_lane_count && lhs.vector_base_spelling == rhs.vector_base_spelling;
+}
+
+static std::string SemanticTypeName(const SemanticTypeInfo &info) {
+  if (!info.is_vector) {
+    return TypeName(info.type);
+  }
+  const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
+  return base + "x" + std::to_string(info.vector_lane_count);
+}
+
 static bool IsCompoundAssignmentOperator(const std::string &op) {
   return op == "+=" || op == "-=" || op == "*=" || op == "/=" || op == "%=" || op == "&=" || op == "|=" ||
          op == "^=" || op == "<<=" || op == ">>=";
@@ -104,8 +205,41 @@ static std::string FormatAtomicMemoryOrderMappingHint(const std::string &op) {
          std::string(AtomicMemoryOrderName(order)) + "'";
 }
 
-static bool IsMessageI32CompatibleType(ValueType type) {
-  return type == ValueType::I32 || type == ValueType::Bool;
+static void RecordVectorTypeLoweringAnnotation(ValueType base_type, unsigned lane_count, bool is_return,
+                                               Objc3VectorTypeLoweringSummary &summary) {
+  if (is_return) {
+    ++summary.return_annotations;
+  } else {
+    ++summary.param_annotations;
+  }
+
+  if (base_type == ValueType::Bool) {
+    ++summary.bool_annotations;
+  } else if (base_type == ValueType::I32) {
+    ++summary.i32_annotations;
+  } else {
+    ++summary.unsupported_annotations;
+    summary.deterministic = false;
+  }
+
+  switch (lane_count) {
+    case 2u:
+      ++summary.lane2_annotations;
+      break;
+    case 4u:
+      ++summary.lane4_annotations;
+      break;
+    case 8u:
+      ++summary.lane8_annotations;
+      break;
+    case 16u:
+      ++summary.lane16_annotations;
+      break;
+    default:
+      ++summary.unsupported_annotations;
+      summary.deterministic = false;
+      break;
+  }
 }
 
 static bool EvalConstExpr(const Expr *expr, int &value,
@@ -253,15 +387,14 @@ bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &gl
   return true;
 }
 
-static ValueType ScopeLookupType(const std::vector<std::unordered_map<std::string, ValueType>> &scopes,
-                                 const std::string &name) {
+static SemanticTypeInfo ScopeLookupType(const std::vector<SemanticScope> &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
       return found->second;
     }
   }
-  return ValueType::Unknown;
+  return MakeScalarSemanticType(ValueType::Unknown);
 }
 
 static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {
@@ -357,160 +490,170 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
   }
 }
 
-static ValueType ValidateMessageSendExpr(const Expr *expr,
-                                         const std::vector<std::unordered_map<std::string, ValueType>> &scopes,
-                                         const std::unordered_map<std::string, ValueType> &globals,
-                                         const std::unordered_map<std::string, FunctionInfo> &functions,
-                                         std::vector<std::string> &diagnostics,
-                                         std::size_t max_message_send_args);
+static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
+                                                const std::vector<SemanticScope> &scopes,
+                                                const std::unordered_map<std::string, ValueType> &globals,
+                                                const std::unordered_map<std::string, FunctionInfo> &functions,
+                                                std::vector<std::string> &diagnostics,
+                                                std::size_t max_message_send_args);
 
-static ValueType ValidateExpr(const Expr *expr, const std::vector<std::unordered_map<std::string, ValueType>> &scopes,
-                              const std::unordered_map<std::string, ValueType> &globals,
-                              const std::unordered_map<std::string, FunctionInfo> &functions,
-                              std::vector<std::string> &diagnostics,
-                              std::size_t max_message_send_args) {
+static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
+                                     const std::unordered_map<std::string, ValueType> &globals,
+                                     const std::unordered_map<std::string, FunctionInfo> &functions,
+                                     std::vector<std::string> &diagnostics,
+                                     std::size_t max_message_send_args) {
   if (expr == nullptr) {
-    return ValueType::Unknown;
+    return MakeScalarSemanticType(ValueType::Unknown);
   }
   switch (expr->kind) {
     case Expr::Kind::Number:
-      return ValueType::I32;
+      return MakeScalarSemanticType(ValueType::I32);
     case Expr::Kind::BoolLiteral:
-      return ValueType::Bool;
+      return MakeScalarSemanticType(ValueType::Bool);
     case Expr::Kind::NilLiteral:
-      return ValueType::I32;
+      return MakeScalarSemanticType(ValueType::I32);
     case Expr::Kind::Identifier: {
-      const ValueType local_type = ScopeLookupType(scopes, expr->ident);
-      if (local_type != ValueType::Unknown) {
+      const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
+      if (!IsUnknownSemanticType(local_type)) {
         return local_type;
       }
       auto global_it = globals.find(expr->ident);
       if (global_it != globals.end()) {
-        return global_it->second;
+        return MakeSemanticTypeFromGlobal(global_it->second);
       }
       if (functions.find(expr->ident) != functions.end()) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                        "type mismatch: function '" + expr->ident +
                                            "' cannot be used as a value"));
-        return ValueType::Function;
+        return MakeScalarSemanticType(ValueType::Function);
       }
       diagnostics.push_back(
           MakeDiag(expr->line, expr->column, "O3S202", "undefined identifier '" + expr->ident + "'"));
-      return ValueType::Unknown;
+      return MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::Binary: {
-      const ValueType lhs =
+      const SemanticTypeInfo lhs =
           ValidateExpr(expr->left.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      const ValueType rhs =
+      const SemanticTypeInfo rhs =
           ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics, max_message_send_args);
 
       if (expr->op == "+" || expr->op == "-" || expr->op == "*" || expr->op == "/" || expr->op == "%") {
-        if (lhs != ValueType::Unknown && lhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for arithmetic lhs, got '" +
-                                             std::string(TypeName(lhs)) + "'"));
+                                             SemanticTypeName(lhs) + "'"));
         }
-        if (rhs != ValueType::Unknown && rhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for arithmetic rhs, got '" +
-                                             std::string(TypeName(rhs)) + "'"));
+                                             SemanticTypeName(rhs) + "'"));
         }
-        return ValueType::I32;
+        return MakeScalarSemanticType(ValueType::I32);
       }
 
       if (expr->op == "&" || expr->op == "|" || expr->op == "^" || expr->op == "<<" || expr->op == ">>") {
-        if (lhs != ValueType::Unknown && lhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for bitwise lhs, got '" +
-                                             std::string(TypeName(lhs)) + "'"));
+                                             SemanticTypeName(lhs) + "'"));
         }
-        if (rhs != ValueType::Unknown && rhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for bitwise rhs, got '" +
-                                             std::string(TypeName(rhs)) + "'"));
+                                             SemanticTypeName(rhs) + "'"));
         }
-        return ValueType::I32;
+        return MakeScalarSemanticType(ValueType::I32);
       }
 
       if (expr->op == "==" || expr->op == "!=") {
-        const bool bool_to_i32_literal =
-            (lhs == ValueType::Bool && rhs == ValueType::I32 && IsBoolLikeI32Literal(expr->right.get())) ||
-            (rhs == ValueType::Bool && lhs == ValueType::I32 && IsBoolLikeI32Literal(expr->left.get()));
-        if (lhs != ValueType::Unknown && rhs != ValueType::Unknown && lhs != rhs && !bool_to_i32_literal) {
-          diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
-                                         "type mismatch: equality compares '" + std::string(TypeName(lhs)) +
-                                             "' with '" + std::string(TypeName(rhs)) + "'"));
+        if (lhs.is_vector || rhs.is_vector) {
+          if (!IsUnknownSemanticType(lhs) && !IsUnknownSemanticType(rhs) && !IsSameSemanticType(lhs, rhs)) {
+            diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                           "type mismatch: equality compares '" + SemanticTypeName(lhs) +
+                                               "' with '" + SemanticTypeName(rhs) + "'"));
+          }
+          return MakeScalarSemanticType(ValueType::Bool);
         }
-        return ValueType::Bool;
+
+        const bool bool_to_i32_literal =
+            (lhs.type == ValueType::Bool && rhs.type == ValueType::I32 && IsBoolLikeI32Literal(expr->right.get())) ||
+            (rhs.type == ValueType::Bool && lhs.type == ValueType::I32 && IsBoolLikeI32Literal(expr->left.get()));
+        if (!IsUnknownSemanticType(lhs) && !IsUnknownSemanticType(rhs) && lhs.type != rhs.type && !bool_to_i32_literal) {
+          diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                         "type mismatch: equality compares '" + SemanticTypeName(lhs) +
+                                             "' with '" + SemanticTypeName(rhs) + "'"));
+        }
+        return MakeScalarSemanticType(ValueType::Bool);
       }
 
       if (expr->op == "<" || expr->op == "<=" || expr->op == ">" || expr->op == ">=") {
-        if (lhs != ValueType::Unknown && lhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for relational lhs, got '" +
-                                             std::string(TypeName(lhs)) + "'"));
+                                             SemanticTypeName(lhs) + "'"));
         }
-        if (rhs != ValueType::Unknown && rhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for relational rhs, got '" +
-                                             std::string(TypeName(rhs)) + "'"));
+                                             SemanticTypeName(rhs) + "'"));
         }
-        return ValueType::Bool;
+        return MakeScalarSemanticType(ValueType::Bool);
       }
 
       if (expr->op == "&&" || expr->op == "||") {
-        if (lhs != ValueType::Unknown && lhs != ValueType::Bool && lhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || (lhs.type != ValueType::Bool && lhs.type != ValueType::I32))) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected bool for logical lhs, got '" +
-                                             std::string(TypeName(lhs)) + "'"));
+                                             SemanticTypeName(lhs) + "'"));
         }
-        if (rhs != ValueType::Unknown && rhs != ValueType::Bool && rhs != ValueType::I32) {
+        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || (rhs.type != ValueType::Bool && rhs.type != ValueType::I32))) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected bool for logical rhs, got '" +
-                                             std::string(TypeName(rhs)) + "'"));
+                                             SemanticTypeName(rhs) + "'"));
         }
-        return ValueType::Bool;
+        return MakeScalarSemanticType(ValueType::Bool);
       }
 
-      return ValueType::Unknown;
+      return MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::Conditional: {
       if (expr->left == nullptr || expr->right == nullptr || expr->third == nullptr) {
-        return ValueType::Unknown;
+        return MakeScalarSemanticType(ValueType::Unknown);
       }
 
-      const ValueType condition_type =
+      const SemanticTypeInfo condition_type =
           ValidateExpr(expr->left.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-          condition_type != ValueType::I32) {
+      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                        "type mismatch: conditional condition must be bool-compatible"));
       }
 
-      const ValueType then_type =
+      const SemanticTypeInfo then_type =
           ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      const ValueType else_type =
+      const SemanticTypeInfo else_type =
           ValidateExpr(expr->third.get(), scopes, globals, functions, diagnostics, max_message_send_args);
 
-      if (then_type == ValueType::Unknown) {
+      if (IsUnknownSemanticType(then_type)) {
         return else_type;
       }
-      if (else_type == ValueType::Unknown) {
+      if (IsUnknownSemanticType(else_type)) {
         return then_type;
       }
-      const bool then_scalar = then_type == ValueType::I32 || then_type == ValueType::Bool;
-      const bool else_scalar = else_type == ValueType::I32 || else_type == ValueType::Bool;
+      const bool then_scalar = IsScalarSemanticType(then_type) &&
+                               (then_type.type == ValueType::I32 || then_type.type == ValueType::Bool);
+      const bool else_scalar = IsScalarSemanticType(else_type) &&
+                               (else_type.type == ValueType::I32 || else_type.type == ValueType::Bool);
       if (then_scalar && else_scalar) {
-        if (then_type == else_type) {
+        if (then_type.type == else_type.type) {
           return then_type;
         }
-        return ValueType::I32;
+        return MakeScalarSemanticType(ValueType::I32);
       }
-      if (then_type != else_type) {
+      if (!IsSameSemanticType(then_type, else_type)) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
-                                       "type mismatch: conditional branches must be scalar-compatible"));
+                                       "type mismatch: conditional branches must be type-compatible"));
       }
-      return then_type == else_type ? then_type : ValueType::Unknown;
+      return IsSameSemanticType(then_type, else_type) ? then_type : MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::Call: {
       auto fn_it = functions.find(expr->ident);
@@ -523,52 +666,54 @@ static ValueType ValidateExpr(const Expr *expr, const std::vector<std::unordered
       }
 
       for (std::size_t i = 0; i < expr->args.size(); ++i) {
-        const ValueType arg_type = ValidateExpr(expr->args[i].get(), scopes, globals, functions, diagnostics,
-                                                max_message_send_args);
+        const SemanticTypeInfo arg_type =
+            ValidateExpr(expr->args[i].get(), scopes, globals, functions, diagnostics, max_message_send_args);
         if (fn_it != functions.end() && i < fn_it->second.param_types.size()) {
           if (i < fn_it->second.param_has_invalid_type_suffix.size() &&
               fn_it->second.param_has_invalid_type_suffix[i]) {
             continue;
           }
-          const ValueType expected = fn_it->second.param_types[i];
-          const bool bool_coercion = expected == ValueType::Bool && arg_type == ValueType::I32;
-          if (arg_type != ValueType::Unknown && expected != ValueType::Unknown && arg_type != expected &&
+          const SemanticTypeInfo expected = MakeSemanticTypeFromFunctionInfoParam(fn_it->second, i);
+          const bool bool_coercion =
+              !expected.is_vector && expected.type == ValueType::Bool && !arg_type.is_vector && arg_type.type == ValueType::I32;
+          if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
+              !IsSameSemanticType(arg_type, expected) &&
               !bool_coercion) {
             diagnostics.push_back(MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S206",
-                                           "type mismatch: expected '" + std::string(TypeName(expected)) +
+                                           "type mismatch: expected '" + SemanticTypeName(expected) +
                                                "' argument for parameter " + std::to_string(i) + " of '" +
-                                               expr->ident + "', got '" + std::string(TypeName(arg_type)) + "'"));
+                                               expr->ident + "', got '" + SemanticTypeName(arg_type) + "'"));
           }
         }
       }
       if (fn_it != functions.end()) {
-        return fn_it->second.return_type;
+        return MakeSemanticTypeFromFunctionInfoReturn(fn_it->second);
       }
-      return ValueType::Unknown;
+      return MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::MessageSend: {
       return ValidateMessageSendExpr(expr, scopes, globals, functions, diagnostics, max_message_send_args);
     }
   }
-  return ValueType::Unknown;
+  return MakeScalarSemanticType(ValueType::Unknown);
 }
 
-static ValueType ValidateMessageSendExpr(const Expr *expr,
-                                         const std::vector<std::unordered_map<std::string, ValueType>> &scopes,
-                                         const std::unordered_map<std::string, ValueType> &globals,
-                                         const std::unordered_map<std::string, FunctionInfo> &functions,
-                                         std::vector<std::string> &diagnostics,
-                                         std::size_t max_message_send_args) {
-  const ValueType receiver_type =
+static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
+                                                const std::vector<SemanticScope> &scopes,
+                                                const std::unordered_map<std::string, ValueType> &globals,
+                                                const std::unordered_map<std::string, FunctionInfo> &functions,
+                                                std::vector<std::string> &diagnostics,
+                                                std::size_t max_message_send_args) {
+  const SemanticTypeInfo receiver_type =
       ValidateExpr(expr->receiver.get(), scopes, globals, functions, diagnostics, max_message_send_args);
   const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
-  if (receiver_type != ValueType::Unknown && !IsMessageI32CompatibleType(receiver_type)) {
+  if (!IsUnknownSemanticType(receiver_type) && !IsMessageI32CompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column = expr->receiver != nullptr ? expr->receiver->column : expr->column;
     diagnostics.push_back(MakeDiag(diag_line, diag_column, "O3S207",
                                    "type mismatch: message receiver for selector '" + selector +
                                        "' must be i32-compatible, got '" +
-                                       std::string(TypeName(receiver_type)) + "'"));
+                                       SemanticTypeName(receiver_type) + "'"));
   }
 
   if (expr->args.size() > max_message_send_args) {
@@ -581,50 +726,66 @@ static ValueType ValidateMessageSendExpr(const Expr *expr,
 
   for (std::size_t i = 0; i < expr->args.size(); ++i) {
     const auto &arg = expr->args[i];
-    const ValueType arg_type =
+    const SemanticTypeInfo arg_type =
         ValidateExpr(arg.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-    if (arg_type != ValueType::Unknown && !IsMessageI32CompatibleType(arg_type)) {
+    if (!IsUnknownSemanticType(arg_type) && !IsMessageI32CompatibleType(arg_type)) {
       diagnostics.push_back(MakeDiag(arg->line, arg->column, "O3S209",
                                      "type mismatch: message argument " + std::to_string(i) +
                                          " for selector '" + selector +
                                          "' must be i32-compatible, got '" +
-                                         std::string(TypeName(arg_type)) + "'"));
+                                         SemanticTypeName(arg_type) + "'"));
     }
   }
-  return ValueType::I32;
+  return MakeScalarSemanticType(ValueType::I32);
 }
 
 static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &statements,
-                               std::vector<std::unordered_map<std::string, ValueType>> &scopes,
+                               std::vector<SemanticScope> &scopes,
                                const std::unordered_map<std::string, ValueType> &globals,
                                const std::unordered_map<std::string, FunctionInfo> &functions,
-                               ValueType expected_return_type, const std::string &function_name,
+                               const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
                                std::size_t max_message_send_args);
 
 static void ValidateAssignmentCompatibility(const std::string &target_name, const std::string &op,
                                            const Expr *value_expr, unsigned line, unsigned column,
-                                           bool found_target, ValueType target_type, ValueType value_type,
+                                           bool found_target,
+                                           const SemanticTypeInfo &target_type,
+                                           const SemanticTypeInfo &value_type,
                                            std::vector<std::string> &diagnostics) {
   if (op == "=") {
-    const bool target_known_scalar = target_type == ValueType::I32 || target_type == ValueType::Bool;
-    const bool value_known_scalar = value_type == ValueType::I32 || value_type == ValueType::Bool;
+    const bool target_known_scalar = IsScalarSemanticType(target_type) &&
+                                     (target_type.type == ValueType::I32 || target_type.type == ValueType::Bool);
+    const bool value_known_scalar = IsScalarSemanticType(value_type) &&
+                                    (value_type.type == ValueType::I32 || value_type.type == ValueType::Bool);
     const bool assign_matches =
-        target_type == value_type || (target_type == ValueType::I32 && value_type == ValueType::Bool) ||
-        (target_type == ValueType::Bool && value_type == ValueType::I32 && IsBoolLikeI32Literal(value_expr));
-    if (found_target && target_known_scalar && value_type != ValueType::Unknown && !value_known_scalar) {
+        IsSameSemanticType(target_type, value_type) ||
+        (target_known_scalar && value_known_scalar && target_type.type == ValueType::I32 &&
+         value_type.type == ValueType::Bool) ||
+        (target_known_scalar && value_known_scalar && target_type.type == ValueType::Bool &&
+         value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr));
+    if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) && !value_known_scalar) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
-                                         std::string(TypeName(target_type)) + "', got '" +
-                                         std::string(TypeName(value_type)) + "'; " +
+                                         SemanticTypeName(target_type) + "', got '" +
+                                         SemanticTypeName(value_type) + "'; " +
                                          FormatAtomicMemoryOrderMappingHint(op)));
       return;
     }
     if (found_target && target_known_scalar && value_known_scalar && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
-                                         std::string(TypeName(target_type)) + "', got '" +
-                                         std::string(TypeName(value_type)) + "'; " +
+                                         SemanticTypeName(target_type) + "', got '" +
+                                         SemanticTypeName(value_type) + "'; " +
+                                         FormatAtomicMemoryOrderMappingHint(op)));
+      return;
+    }
+
+    if (found_target && target_type.is_vector && !IsUnknownSemanticType(value_type) && !assign_matches) {
+      diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                     "type mismatch: assignment to '" + target_name + "' expects '" +
+                                         SemanticTypeName(target_type) + "', got '" +
+                                         SemanticTypeName(value_type) + "'; " +
                                          FormatAtomicMemoryOrderMappingHint(op)));
     }
     return;
@@ -632,10 +793,11 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
 
   if (!IsCompoundAssignmentOperator(op)) {
     if (op == "++" || op == "--") {
-      if (found_target && target_type != ValueType::Unknown && target_type != ValueType::I32) {
+      if (found_target && !IsUnknownSemanticType(target_type) &&
+          (target_type.is_vector || target_type.type != ValueType::I32)) {
         diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                        "type mismatch: update operator '" + op + "' target '" + target_name +
-                                           "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'; " +
+                                           "' must be 'i32', got '" + SemanticTypeName(target_type) + "'; " +
                                            FormatAtomicMemoryOrderMappingHint(op)));
       }
       return;
@@ -648,16 +810,17 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
   if (!found_target) {
     return;
   }
-  if (target_type != ValueType::Unknown && target_type != ValueType::I32) {
+  if (!IsUnknownSemanticType(target_type) && (target_type.is_vector || target_type.type != ValueType::I32)) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' target '" + target_name +
-                                       "' must be 'i32', got '" + std::string(TypeName(target_type)) + "'; " +
+                                       "' must be 'i32', got '" + SemanticTypeName(target_type) + "'; " +
                                        FormatAtomicMemoryOrderMappingHint(op)));
   }
-  if (target_type == ValueType::I32 && value_type != ValueType::Unknown && value_type != ValueType::I32) {
+  if (target_type.type == ValueType::I32 && !target_type.is_vector &&
+      !IsUnknownSemanticType(value_type) && (value_type.is_vector || value_type.type != ValueType::I32)) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' value for '" + target_name +
-                                       "' must be 'i32', got '" + std::string(TypeName(value_type)) + "'; " +
+                                       "' must be 'i32', got '" + SemanticTypeName(value_type) + "'; " +
                                        FormatAtomicMemoryOrderMappingHint(op)));
   }
 }
@@ -736,16 +899,16 @@ static void CollectAtomicMemoryOrderMappingsInStatements(const std::vector<std::
   }
 }
 
-static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<std::string, ValueType>> &scopes,
+static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scopes,
                               const std::unordered_map<std::string, ValueType> &globals,
                               const std::unordered_map<std::string, FunctionInfo> &functions,
-                              ValueType expected_return_type, const std::string &function_name,
+                              const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                               std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
                               std::size_t max_message_send_args) {
   if (stmt == nullptr) {
     return;
   }
-  const auto resolve_assignment_target_type = [&](const std::string &target_name, ValueType &target_type) {
+  const auto resolve_assignment_target_type = [&](const std::string &target_name, SemanticTypeInfo &target_type) {
     for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
       auto found = it->find(target_name);
       if (found != it->end()) {
@@ -755,7 +918,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
     }
     auto global_it = globals.find(target_name);
     if (global_it != globals.end()) {
-      target_type = global_it->second;
+      target_type = MakeSemanticTypeFromGlobal(global_it->second);
       return true;
     }
     return false;
@@ -771,7 +934,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
         if (scopes.empty()) {
           return;
         }
-        const ValueType value_type =
+        const SemanticTypeInfo value_type =
             ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
         if (scopes.back().find(clause.name) != scopes.back().end()) {
           diagnostics.push_back(MakeDiag(clause.line, clause.column, "O3S201",
@@ -785,14 +948,14 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
         if (scopes.empty()) {
           return;
         }
-        ValueType target_type = ValueType::Unknown;
+        SemanticTypeInfo target_type = MakeScalarSemanticType(ValueType::Unknown);
         const bool found_target = resolve_assignment_target_type(clause.name, target_type);
         if (!found_target) {
           diagnostics.push_back(MakeDiag(clause.line, clause.column, "O3S214",
                                          "invalid assignment target '" + clause.name +
                                              "': target must be a mutable symbol"));
         }
-        const ValueType value_type =
+        const SemanticTypeInfo value_type =
             ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
         ValidateAssignmentCompatibility(clause.name, clause.op, clause.value.get(), clause.line, clause.column,
                                         found_target, target_type, value_type, diagnostics);
@@ -807,7 +970,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (let == nullptr || scopes.empty()) {
         return;
       }
-      const ValueType value_type =
+      const SemanticTypeInfo value_type =
           ValidateExpr(let->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
       if (scopes.back().find(let->name) != scopes.back().end()) {
         diagnostics.push_back(MakeDiag(let->line, let->column, "O3S201",
@@ -822,14 +985,14 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (assign == nullptr || scopes.empty()) {
         return;
       }
-      ValueType target_type = ValueType::Unknown;
+      SemanticTypeInfo target_type = MakeScalarSemanticType(ValueType::Unknown);
       const bool found_target = resolve_assignment_target_type(assign->name, target_type);
       if (!found_target) {
         diagnostics.push_back(MakeDiag(assign->line, assign->column, "O3S214",
                                        "invalid assignment target '" + assign->name +
                                            "': target must be a mutable symbol"));
       }
-      const ValueType value_type =
+      const SemanticTypeInfo value_type =
           ValidateExpr(assign->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
       ValidateAssignmentCompatibility(assign->name, assign->op, assign->value.get(), assign->line, assign->column,
                                       found_target, target_type, value_type, diagnostics);
@@ -839,15 +1002,15 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (stmt->return_stmt != nullptr) {
         const ReturnStmt *ret = stmt->return_stmt.get();
         if (ret->value == nullptr) {
-          if (expected_return_type != ValueType::Void) {
+          if (!(IsScalarSemanticType(expected_return_type) && expected_return_type.type == ValueType::Void)) {
             diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",
                                            "type mismatch: function '" + function_name + "' must return '" +
-                                               std::string(TypeName(expected_return_type)) + "'"));
+                                               SemanticTypeName(expected_return_type) + "'"));
           }
           return;
         }
 
-        if (expected_return_type == ValueType::Void) {
+        if (IsScalarSemanticType(expected_return_type) && expected_return_type.type == ValueType::Void) {
           diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",
                                          "type mismatch: void function '" + function_name +
                                              "' must use 'return;'"));
@@ -855,18 +1018,20 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
           return;
         }
 
-        const ValueType return_type =
+        const SemanticTypeInfo return_type =
             ValidateExpr(ret->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-        const bool return_matches =
-            return_type == expected_return_type ||
-            (expected_return_type == ValueType::I32 && return_type == ValueType::Bool) ||
-            (expected_return_type == ValueType::Bool && return_type == ValueType::I32 &&
+        const bool return_matches = IsSameSemanticType(return_type, expected_return_type) ||
+            (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
+             expected_return_type.type == ValueType::I32 && return_type.type == ValueType::Bool) ||
+            (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
+             expected_return_type.type == ValueType::Bool && return_type.type == ValueType::I32 &&
              IsBoolLikeI32Literal(ret->value.get()));
-        if (!return_matches && return_type != ValueType::Unknown && return_type != ValueType::Function) {
+        if (!return_matches && !IsUnknownSemanticType(return_type) &&
+            !(IsScalarSemanticType(return_type) && return_type.type == ValueType::Function)) {
           diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",
                                          "type mismatch: return expression in function '" + function_name +
-                                             "' must be '" + std::string(TypeName(expected_return_type)) +
-                                             "', got '" + std::string(TypeName(return_type)) + "'"));
+                                             "' must be '" + SemanticTypeName(expected_return_type) +
+                                             "', got '" + SemanticTypeName(return_type) + "'"));
         }
       }
       return;
@@ -881,10 +1046,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (if_stmt == nullptr) {
         return;
       }
-      const ValueType condition_type =
+      const SemanticTypeInfo condition_type =
           ValidateExpr(if_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-          condition_type != ValueType::I32) {
+      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(if_stmt->line, if_stmt->column, "O3S206",
                                        "type mismatch: if condition must be bool-compatible"));
       }
@@ -908,10 +1072,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
                          diagnostics, loop_depth + 1, switch_depth, max_message_send_args);
       scopes.pop_back();
 
-      const ValueType condition_type =
+      const SemanticTypeInfo condition_type =
           ValidateExpr(do_while_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-          condition_type != ValueType::I32) {
+      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(do_while_stmt->line, do_while_stmt->column, "O3S206",
                                        "type mismatch: do-while condition must be bool-compatible"));
       }
@@ -925,10 +1088,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       scopes.push_back({});
       validate_for_clause(for_stmt->init);
       if (for_stmt->condition != nullptr) {
-        const ValueType condition_type =
+        const SemanticTypeInfo condition_type =
             ValidateExpr(for_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-        if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-            condition_type != ValueType::I32) {
+        if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
           diagnostics.push_back(MakeDiag(for_stmt->line, for_stmt->column, "O3S206",
                                          "type mismatch: for condition must be bool-compatible"));
         }
@@ -946,10 +1108,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (switch_stmt == nullptr) {
         return;
       }
-      const ValueType condition_type =
+      const SemanticTypeInfo condition_type =
           ValidateExpr(switch_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-          condition_type != ValueType::I32) {
+      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(switch_stmt->line, switch_stmt->column, "O3S206",
                                        "type mismatch: switch condition must be i32-compatible"));
       }
@@ -982,10 +1143,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
       if (while_stmt == nullptr) {
         return;
       }
-      const ValueType condition_type =
+      const SemanticTypeInfo condition_type =
           ValidateExpr(while_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      if (condition_type != ValueType::Unknown && condition_type != ValueType::Bool &&
-          condition_type != ValueType::I32) {
+      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(while_stmt->line, while_stmt->column, "O3S206",
                                        "type mismatch: while condition must be bool-compatible"));
       }
@@ -1023,10 +1183,10 @@ static void ValidateStatement(const Stmt *stmt, std::vector<std::unordered_map<s
 }
 
 static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &statements,
-                               std::vector<std::unordered_map<std::string, ValueType>> &scopes,
+                               std::vector<SemanticScope> &scopes,
                                const std::unordered_map<std::string, ValueType> &globals,
                                const std::unordered_map<std::string, FunctionInfo> &functions,
-                               ValueType expected_return_type, const std::string &function_name,
+                               const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
                                std::size_t max_message_send_args) {
   for (const auto &stmt : statements) {
@@ -1269,6 +1429,33 @@ Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const 
   return summary;
 }
 
+Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3VectorTypeLoweringSummary summary;
+  for (const auto &entry : surface.functions) {
+    const FunctionInfo &fn = entry.second;
+    if (fn.param_types.size() != fn.arity ||
+        fn.param_is_vector.size() != fn.arity ||
+        fn.param_vector_base_spelling.size() != fn.arity ||
+        fn.param_vector_lane_count.size() != fn.arity ||
+        fn.param_has_invalid_type_suffix.size() != fn.arity) {
+      summary.deterministic = false;
+      continue;
+    }
+
+    if (fn.return_is_vector) {
+      RecordVectorTypeLoweringAnnotation(fn.return_type, fn.return_vector_lane_count, true, summary);
+    }
+
+    for (std::size_t i = 0; i < fn.arity; ++i) {
+      if (!fn.param_is_vector[i]) {
+        continue;
+      }
+      RecordVectorTypeLoweringAnnotation(fn.param_types[i], fn.param_vector_lane_count[i], false, summary);
+    }
+  }
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                        std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -1302,12 +1489,21 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       FunctionInfo info;
       info.arity = fn.params.size();
       info.param_types.reserve(fn.params.size());
+      info.param_is_vector.reserve(fn.params.size());
+      info.param_vector_base_spelling.reserve(fn.params.size());
+      info.param_vector_lane_count.reserve(fn.params.size());
       info.param_has_invalid_type_suffix.reserve(fn.params.size());
       for (const auto &param : fn.params) {
         info.param_types.push_back(param.type);
+        info.param_is_vector.push_back(param.vector_spelling);
+        info.param_vector_base_spelling.push_back(param.vector_base_spelling);
+        info.param_vector_lane_count.push_back(param.vector_lane_count);
         info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
       }
       info.return_type = fn.return_type;
+      info.return_is_vector = fn.return_vector_spelling;
+      info.return_vector_base_spelling = fn.return_vector_base_spelling;
+      info.return_vector_lane_count = fn.return_vector_lane_count;
       info.has_definition = !fn.is_prototype;
       info.is_pure_annotation = fn.is_pure;
       surface.functions.emplace(fn.name, std::move(info));
@@ -1315,10 +1511,24 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     }
 
     FunctionInfo &existing = it->second;
-    bool compatible = existing.arity == fn.params.size() && existing.return_type == fn.return_type;
+    bool compatible = existing.arity == fn.params.size() && existing.return_type == fn.return_type &&
+                      existing.return_is_vector == fn.return_vector_spelling;
+    if (compatible && existing.return_is_vector) {
+      compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
+                   existing.return_vector_lane_count == fn.return_vector_lane_count;
+    }
     if (compatible) {
       for (std::size_t i = 0; i < fn.params.size(); ++i) {
-        if (existing.param_types[i] != fn.params[i].type) {
+        if (i >= existing.param_types.size() || i >= existing.param_is_vector.size() ||
+            i >= existing.param_vector_base_spelling.size() || i >= existing.param_vector_lane_count.size() ||
+            existing.param_types[i] != fn.params[i].type ||
+            existing.param_is_vector[i] != fn.params[i].vector_spelling) {
+          compatible = false;
+          break;
+        }
+        if (existing.param_is_vector[i] &&
+            (existing.param_vector_base_spelling[i] != fn.params[i].vector_base_spelling ||
+             existing.param_vector_lane_count[i] != fn.params[i].vector_lane_count)) {
           compatible = false;
           break;
         }
@@ -1375,8 +1585,14 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.name = name;
     metadata.arity = source.arity;
     metadata.param_types = source.param_types;
+    metadata.param_is_vector = source.param_is_vector;
+    metadata.param_vector_base_spelling = source.param_vector_base_spelling;
+    metadata.param_vector_lane_count = source.param_vector_lane_count;
     metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
     metadata.return_type = source.return_type;
+    metadata.return_is_vector = source.return_is_vector;
+    metadata.return_vector_base_spelling = source.return_vector_base_spelling;
+    metadata.return_vector_lane_count = source.return_vector_lane_count;
     metadata.has_definition = source.has_definition;
     metadata.is_pure_annotation = source.is_pure_annotation;
     handoff.functions_lexicographic.push_back(std::move(metadata));
@@ -1397,6 +1613,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
                      [](const Objc3SemanticFunctionTypeMetadata &metadata) {
                        return metadata.param_types.size() == metadata.arity &&
+                              metadata.param_is_vector.size() == metadata.arity &&
+                              metadata.param_vector_base_spelling.size() == metadata.arity &&
+                              metadata.param_vector_lane_count.size() == metadata.arity &&
                               metadata.param_has_invalid_type_suffix.size() == metadata.arity;
                      });
 }
@@ -1426,21 +1645,23 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     ValidateReturnTypeSuffixes(fn, diagnostics);
     ValidateParameterTypeSuffixes(fn, diagnostics);
 
-    std::vector<std::unordered_map<std::string, ValueType>> scopes;
+    std::vector<SemanticScope> scopes;
     scopes.push_back({});
     for (const auto &param : fn.params) {
       if (scopes.back().find(param.name) != scopes.back().end()) {
         diagnostics.push_back(MakeDiag(param.line, param.column, "O3S201", "duplicate parameter '" + param.name + "'"));
       } else {
-        scopes.back().emplace(param.name, param.type);
+        scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
       }
     }
 
     if (!fn.is_prototype) {
+      const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
-      ValidateStatements(fn.body, scopes, surface.globals, surface.functions, fn.return_type, fn.name, diagnostics,
+      ValidateStatements(fn.body, scopes, surface.globals, surface.functions, expected_return_type, fn.name, diagnostics,
                          0, 0, options.max_message_send_args);
-      if (fn.return_type != ValueType::Void && !BlockAlwaysReturns(fn.body, &static_scalar_bindings)) {
+      if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
+          !BlockAlwaysReturns(fn.body, &static_scalar_bindings)) {
         diagnostics.push_back(
             MakeDiag(fn.line, fn.column, "O3S205", "missing return path in function '" + fn.name + "'"));
       }
