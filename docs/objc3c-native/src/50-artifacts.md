@@ -214,6 +214,58 @@ LSP semantic profile capture commands (lowering/runtime lane):
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
 
+## M208 lowering/runtime whole-module optimization controls
+
+Lowering/runtime whole-module optimization (WMO) controls are captured as deterministic packet artifacts rooted under `tmp/` so module-shape and runtime-dispatch surfaces remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.manifest.json`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/wmo-control-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `whole-module control markers` (required in source-anchor extracts):
+  - `max_message_send_args`
+  - `semantic_surface`
+  - `declared_functions`
+  - `resolved_function_symbols`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `manifest_functions.reserve(program.functions.size())`
+  - `std::unordered_set<std::string> manifest_function_names`
+  - `if (manifest_function_names.insert(fn.name).second)`
+  - `manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `<< ",\"declared_functions\":" << manifest_functions.size()`
+  - `<< ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `if (input.max_message_send_args > kObjc3RuntimeDispatchMaxArgs) {`
+  - `error = "invalid lowering contract max_message_send_args: "`
+  - `boundary.runtime_dispatch_arg_slots = normalized.max_message_send_args;`
+  - `boundary.selector_global_ordering = kObjc3SelectorGlobalOrdering;`
+  - `if (expr->args.size() > lowering_ir_boundary_.runtime_dispatch_arg_slots) {`
+  - `lowered.args.assign(lowering_ir_boundary_.runtime_dispatch_arg_slots, "0");`
+  - `call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "`
+- `closure criteria`:
+  - rerunning identical source + lowering/runtime options preserves byte-identical `module.ll` and `module.manifest.json`.
+  - ABI/IR anchors and WMO control source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, whole-module control marker, or source anchor is missing.
+
+WMO control capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.ll tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.manifest.json > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/abi-ir-anchors.txt`
+3. `rg -n "manifest_functions\\.reserve\\(program\\.functions\\.size\\(\\)\\)|manifest_function_names|max_message_send_args|semantic_surface|declared_functions|resolved_function_symbols|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/wmo-control-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m208_lowering_wmo_contract.py -q`
+
 ## M209 lowering/runtime profile-guided optimization hooks
 
 Lowering/runtime LLVM profile-guided optimization (PGO) hook evidence is captured as deterministic packet artifacts rooted under `tmp/` so profile surfaces remain replay-stable.
