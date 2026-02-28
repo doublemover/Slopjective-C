@@ -1648,3 +1648,34 @@ Recommended daemonized compiler commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
 
+## M213 sema/type debug-info fidelity profile
+
+For deterministic sema/type debug-info fidelity across native debugger stacks, capture evidence packets in stable debug format order: `dwarf`, `pdb`.
+
+Debug-info fidelity packet map:
+
+- `debug format 1.1 deterministic sema diagnostics` -> `m213_dwarf_sema_diagnostics_packet`, `m213_pdb_sema_diagnostics_packet`
+- `debug format 1.2 deterministic type-metadata + debug stepping fidelity` -> `m213_dwarf_type_metadata_stepping_packet`, `m213_pdb_type_metadata_stepping_packet`
+
+### 1.1 Deterministic sema diagnostics debug-info packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- DWARF/PDB sema diagnostics packet keys: `m213_dwarf_sema_diagnostics_packet` and `m213_pdb_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata + debug stepping fidelity packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Debug stepping source-location anchors in manifest emission: `program.globals[i].line`, `program.globals[i].column`, `fn.line`, and `fn.column`.
+- DWARF/PDB type-metadata + stepping packet keys: `m213_dwarf_type_metadata_stepping_packet` and `m213_pdb_type_metadata_stepping_packet`.
+
+Recommended debug-info fidelity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
+
