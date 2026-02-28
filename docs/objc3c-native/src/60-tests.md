@@ -1999,6 +1999,36 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m193_validation_simd_vector_lowering_contract.py -q
 ```
 
+## M168 validation/conformance/perf block storage escape runbook
+
+Block storage escape validation runbook verifies deterministic parser/sema/lowering packet replay for `__block` mutable capture + byref-layout/escape metadata.
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
+```
+
+Block-storage escape evidence packet fields:
+
+- `tests/tooling/fixtures/objc3c/m168_validation_block_storage_escape_contract/replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_storage_escape_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_storage_escape_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface.deterministic_handoff`
+  - `lowering_block_storage_escape.replay_key`
+- `tests/tooling/fixtures/objc3c/m168_validation_block_storage_escape_contract/replay_run_1/module.ll`
+  - `block_storage_escape_lowering`
+  - `frontend_objc_block_storage_escape_lowering_profile`
+  - `!objc3.objc_block_storage_escape_lowering = !{!21}`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
