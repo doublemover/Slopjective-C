@@ -45,6 +45,11 @@ struct Expr {
   unsigned dispatch_abi_runtime_arg_slots = 0;
   std::string dispatch_abi_marshalling_symbol;
   bool dispatch_abi_marshalling_is_normalized = false;
+  bool nil_receiver_semantics_enabled = false;
+  bool nil_receiver_foldable = false;
+  bool nil_receiver_requires_runtime_dispatch = true;
+  std::string nil_receiver_folding_symbol;
+  bool nil_receiver_semantics_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

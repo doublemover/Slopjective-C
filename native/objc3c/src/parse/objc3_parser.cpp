@@ -222,6 +222,28 @@ static std::string BuildDispatchAbiMarshallingSymbol(unsigned receiver_slots,
   return out.str();
 }
 
+static std::string BuildNilReceiverFoldingSymbol(bool nil_receiver_foldable,
+                                                 bool requires_runtime_dispatch,
+                                                 Expr::MessageSendForm form) {
+  std::ostringstream out;
+  out << "nil-receiver:foldable=" << (nil_receiver_foldable ? "true" : "false")
+      << ";runtime-dispatch=" << (requires_runtime_dispatch ? "required" : "elided")
+      << ";form=";
+  switch (form) {
+  case Expr::MessageSendForm::Unary:
+    out << "unary";
+    break;
+  case Expr::MessageSendForm::Keyword:
+    out << "keyword";
+    break;
+  case Expr::MessageSendForm::None:
+  default:
+    out << "none";
+    break;
+  }
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3026,6 +3048,12 @@ class Objc3Parser {
         message->dispatch_abi_argument_total_slots_marshaled, message->dispatch_abi_total_slots_marshaled,
         message->dispatch_abi_runtime_arg_slots);
     message->dispatch_abi_marshalling_is_normalized = true;
+    message->nil_receiver_semantics_enabled = message->receiver->kind == Expr::Kind::NilLiteral;
+    message->nil_receiver_foldable = message->nil_receiver_semantics_enabled;
+    message->nil_receiver_requires_runtime_dispatch = !message->nil_receiver_foldable;
+    message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(
+        message->nil_receiver_foldable, message->nil_receiver_requires_runtime_dispatch, message->message_send_form);
+    message->nil_receiver_semantics_is_normalized = true;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();

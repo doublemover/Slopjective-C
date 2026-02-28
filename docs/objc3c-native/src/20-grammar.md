@@ -442,6 +442,37 @@ Recommended M157 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py -q`
 
+## M158 frontend nil-receiver semantics/foldability parser/AST surface
+
+Frontend parser/AST now emits deterministic nil-receiver semantics/foldability packets for
+message-send expressions with compile-time nil receivers.
+
+M158 parser/AST surface details:
+
+- nil-receiver helper anchor:
+  - `BuildNilReceiverFoldingSymbol(...)`
+- parser assignment anchors:
+  - `message->nil_receiver_semantics_enabled = message->receiver->kind == Expr::Kind::NilLiteral;`
+  - `message->nil_receiver_foldable = message->nil_receiver_semantics_enabled;`
+  - `message->nil_receiver_requires_runtime_dispatch = !message->nil_receiver_foldable;`
+  - `message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(...)`
+  - `message->nil_receiver_semantics_is_normalized = true;`
+- AST nil-receiver carriers:
+  - `nil_receiver_semantics_enabled`
+  - `nil_receiver_foldable`
+  - `nil_receiver_requires_runtime_dispatch`
+  - `nil_receiver_folding_symbol`
+  - `nil_receiver_semantics_is_normalized`
+
+Deterministic grammar intent:
+
+- nil receiver detection is derived from parsed receiver expression kind (`NilLiteral`).
+- foldability and runtime-dispatch requirements are normalized as stable parser-owned packet fields.
+
+Recommended M158 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m158_frontend_nil_receiver_semantics_foldability_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
