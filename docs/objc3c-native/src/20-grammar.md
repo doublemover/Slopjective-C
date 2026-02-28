@@ -697,6 +697,39 @@ Recommended M164 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m164_frontend_weak_unowned_parser_contract.py -q`
 
+## M165 frontend ARC diagnostics/fix-it parser/AST surface
+
+Frontend parser/AST now derives deterministic ARC diagnostic/fix-it hint
+profiles from ownership qualifiers and weak/unowned consistency signals so
+downstream semantic diagnostics can stay policy-driven and replay-stable.
+
+M165 parser/AST surface details:
+
+- ARC diagnostic helper anchor:
+  - `BuildArcDiagnosticFixitProfile(...)`
+- parser assignment anchors:
+  - `param.ownership_arc_diagnostic_candidate`
+  - `param.ownership_arc_fixit_hint`
+  - `fn.return_ownership_arc_diagnostic_profile`
+  - `fn.return_ownership_arc_fixit_hint`
+  - `property.ownership_arc_diagnostic_profile`
+  - `property.ownership_arc_fixit_available`
+- consistency anchor:
+  - `property.has_weak_unowned_conflict`
+
+Deterministic grammar intent:
+
+- parser emits deterministic diagnostic/fix-it profiles without firing semantic
+  diagnostics directly; lane-B consumes these carrier fields.
+- common ARC misuse patterns map to stable parser-owned profile tags:
+  - `__unsafe_unretained` -> unsafe-unretained diagnostic candidate + fix-it.
+  - `__autoreleasing` -> autoreleasing-transfer/misuse diagnostic candidate + fix-it.
+  - weak+unowned property attribute conflict -> deterministic conflict diagnostic + fix-it.
+
+Recommended M165 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m165_frontend_arc_diagnostics_fixit_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

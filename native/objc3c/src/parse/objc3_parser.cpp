@@ -431,6 +431,13 @@ struct Objc3WeakUnownedLifetimeProfile {
   std::string runtime_hook_profile;
 };
 
+struct Objc3ArcDiagnosticFixitProfile {
+  bool diagnostic_candidate = false;
+  bool fixit_available = false;
+  std::string diagnostic_profile;
+  std::string fixit_hint;
+};
+
 static Objc3OwnershipOperationProfile BuildParamOwnershipOperationProfile(const std::string &spelling) {
   Objc3OwnershipOperationProfile profile;
   if (spelling == "__strong") {
@@ -501,6 +508,46 @@ static Objc3WeakUnownedLifetimeProfile BuildPropertyWeakUnownedLifetimeProfile(
     return BuildWeakUnownedLifetimeProfile("__unsafe_unretained", false);
   }
   return Objc3WeakUnownedLifetimeProfile{};
+}
+
+static Objc3ArcDiagnosticFixitProfile BuildArcDiagnosticFixitProfile(const std::string &spelling,
+                                                                     bool is_return_type,
+                                                                     bool is_property_type,
+                                                                     bool weak_unowned_conflict) {
+  Objc3ArcDiagnosticFixitProfile profile;
+  if (weak_unowned_conflict) {
+    profile.diagnostic_candidate = true;
+    profile.fixit_available = true;
+    profile.diagnostic_profile = "arc-weak-unowned-conflict";
+    profile.fixit_hint = "remove-weak-or-unowned-attribute";
+    return profile;
+  }
+
+  if (spelling == "__unsafe_unretained") {
+    profile.diagnostic_candidate = true;
+    profile.fixit_available = true;
+    profile.diagnostic_profile = is_return_type ? "arc-return-unsafe-unretained" : "arc-unsafe-unretained";
+    profile.fixit_hint = is_property_type ? "replace-with-weak-or-strong-attribute"
+                                          : "replace-with-__weak-or-__strong";
+    return profile;
+  }
+
+  if (spelling == "__autoreleasing") {
+    profile.diagnostic_candidate = true;
+    profile.fixit_available = true;
+    profile.diagnostic_profile = is_return_type ? "arc-return-autoreleasing-transfer" : "arc-autoreleasing-misuse";
+    profile.fixit_hint = is_return_type ? "replace-return-qualifier-with-__strong"
+                                        : "replace-with-__strong-or-out-parameter";
+    return profile;
+  }
+
+  if (is_return_type && spelling == "__weak") {
+    profile.diagnostic_candidate = true;
+    profile.fixit_available = true;
+    profile.diagnostic_profile = "arc-return-weak-escape";
+    profile.fixit_hint = "replace-return-qualifier-with-__strong";
+  }
+  return profile;
 }
 
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
@@ -908,6 +955,10 @@ class Objc3Parser {
     target.return_ownership_is_unowned_safe_reference = source.return_ownership_is_unowned_safe_reference;
     target.return_ownership_lifetime_profile = source.return_ownership_lifetime_profile;
     target.return_ownership_runtime_hook_profile = source.return_ownership_runtime_hook_profile;
+    target.return_ownership_arc_diagnostic_candidate = source.return_ownership_arc_diagnostic_candidate;
+    target.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
+    target.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
+    target.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -944,6 +995,10 @@ class Objc3Parser {
     target.ownership_is_unowned_safe_reference = source.ownership_is_unowned_safe_reference;
     target.ownership_lifetime_profile = source.ownership_lifetime_profile;
     target.ownership_runtime_hook_profile = source.ownership_runtime_hook_profile;
+    target.ownership_arc_diagnostic_candidate = source.ownership_arc_diagnostic_candidate;
+    target.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
+    target.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
+    target.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
   }
 
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
@@ -1244,6 +1299,16 @@ class Objc3Parser {
     property.ownership_lifetime_profile = property_lifetime_profile.lifetime_profile;
     property.ownership_runtime_hook_profile = property_lifetime_profile.runtime_hook_profile;
     property.has_weak_unowned_conflict = property.is_weak && property.is_unowned;
+    const Objc3ArcDiagnosticFixitProfile property_arc_diagnostic_profile =
+        BuildArcDiagnosticFixitProfile(
+            property.ownership_qualifier_spelling,
+            false,
+            true,
+            property.has_weak_unowned_conflict);
+    property.ownership_arc_diagnostic_candidate = property_arc_diagnostic_profile.diagnostic_candidate;
+    property.ownership_arc_fixit_available = property_arc_diagnostic_profile.fixit_available;
+    property.ownership_arc_diagnostic_profile = property_arc_diagnostic_profile.diagnostic_profile;
+    property.ownership_arc_fixit_hint = property_arc_diagnostic_profile.fixit_hint;
     return true;
   }
 
@@ -1779,6 +1844,10 @@ class Objc3Parser {
     fn.return_ownership_is_unowned_safe_reference = false;
     fn.return_ownership_lifetime_profile.clear();
     fn.return_ownership_runtime_hook_profile.clear();
+    fn.return_ownership_arc_diagnostic_candidate = false;
+    fn.return_ownership_arc_fixit_available = false;
+    fn.return_ownership_arc_diagnostic_profile.clear();
+    fn.return_ownership_arc_fixit_hint.clear();
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
@@ -1929,6 +1998,12 @@ class Objc3Parser {
     fn.return_ownership_is_unowned_safe_reference = return_lifetime_profile.is_unowned_safe_reference;
     fn.return_ownership_lifetime_profile = return_lifetime_profile.lifetime_profile;
     fn.return_ownership_runtime_hook_profile = return_lifetime_profile.runtime_hook_profile;
+    const Objc3ArcDiagnosticFixitProfile return_arc_diagnostic_profile =
+        BuildArcDiagnosticFixitProfile(fn.return_ownership_qualifier_spelling, true, false, false);
+    fn.return_ownership_arc_diagnostic_candidate = return_arc_diagnostic_profile.diagnostic_candidate;
+    fn.return_ownership_arc_fixit_available = return_arc_diagnostic_profile.fixit_available;
+    fn.return_ownership_arc_diagnostic_profile = return_arc_diagnostic_profile.diagnostic_profile;
+    fn.return_ownership_arc_fixit_hint = return_arc_diagnostic_profile.fixit_hint;
 
     return true;
   }
@@ -1966,6 +2041,10 @@ class Objc3Parser {
     param.ownership_is_unowned_safe_reference = false;
     param.ownership_lifetime_profile.clear();
     param.ownership_runtime_hook_profile.clear();
+    param.ownership_arc_diagnostic_candidate = false;
+    param.ownership_arc_fixit_available = false;
+    param.ownership_arc_diagnostic_profile.clear();
+    param.ownership_arc_fixit_hint.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -2056,6 +2135,12 @@ class Objc3Parser {
     param.ownership_is_unowned_safe_reference = param_lifetime_profile.is_unowned_safe_reference;
     param.ownership_lifetime_profile = param_lifetime_profile.lifetime_profile;
     param.ownership_runtime_hook_profile = param_lifetime_profile.runtime_hook_profile;
+    const Objc3ArcDiagnosticFixitProfile param_arc_diagnostic_profile =
+        BuildArcDiagnosticFixitProfile(param.ownership_qualifier_spelling, false, false, false);
+    param.ownership_arc_diagnostic_candidate = param_arc_diagnostic_profile.diagnostic_candidate;
+    param.ownership_arc_fixit_available = param_arc_diagnostic_profile.fixit_available;
+    param.ownership_arc_diagnostic_profile = param_arc_diagnostic_profile.diagnostic_profile;
+    param.ownership_arc_fixit_hint = param_arc_diagnostic_profile.fixit_hint;
 
     return true;
   }

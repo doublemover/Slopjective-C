@@ -234,6 +234,10 @@ struct FuncParam {
   bool ownership_is_unowned_safe_reference = false;
   std::string ownership_lifetime_profile;
   std::string ownership_runtime_hook_profile;
+  bool ownership_arc_diagnostic_candidate = false;
+  bool ownership_arc_fixit_available = false;
+  std::string ownership_arc_diagnostic_profile;
+  std::string ownership_arc_fixit_hint;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -284,6 +288,10 @@ struct Objc3MethodDecl {
   bool return_ownership_is_unowned_safe_reference = false;
   std::string return_ownership_lifetime_profile;
   std::string return_ownership_runtime_hook_profile;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
   std::string method_lookup_symbol;
@@ -349,6 +357,10 @@ struct Objc3PropertyDecl {
   bool ownership_is_unowned_safe_reference = false;
   std::string ownership_lifetime_profile;
   std::string ownership_runtime_hook_profile;
+  bool ownership_arc_diagnostic_candidate = false;
+  bool ownership_arc_fixit_available = false;
+  std::string ownership_arc_diagnostic_profile;
+  std::string ownership_arc_fixit_hint;
   bool has_getter = false;
   bool has_setter = false;
   std::string getter_selector;
@@ -457,6 +469,10 @@ struct FunctionDecl {
   bool return_ownership_is_unowned_safe_reference = false;
   std::string return_ownership_lifetime_profile;
   std::string return_ownership_runtime_hook_profile;
+  bool return_ownership_arc_diagnostic_candidate = false;
+  bool return_ownership_arc_fixit_available = false;
+  std::string return_ownership_arc_diagnostic_profile;
+  std::string return_ownership_arc_fixit_hint;
   bool is_prototype = false;
   bool is_pure = false;
   std::vector<std::unique_ptr<Stmt>> body;
