@@ -80,3 +80,20 @@ Lexical support:
 - AST integration contract:
   - `native/objc3c/src/ast/objc3_ast.h` stores suffix token evidence in `std::vector<Objc3SemaTokenMetadata>` fields.
 
+## Parser subsystem + AST builder scaffolding contract (M138-E001)
+
+- Parser implementation remains in:
+  - `native/objc3c/src/parse/objc3_parser.h`
+  - `native/objc3c/src/parse/objc3_parser.cpp`
+- Parser-to-AST-builder contract surface remains in:
+  - `native/objc3c/src/parse/objc3_ast_builder_contract.h`
+  - `native/objc3c/src/parse/objc3_ast_builder_contract.cpp`
+- Pipeline boundary contract:
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp` consumes `BuildObjc3AstFromTokens(tokens)`.
+  - Pipeline must not include parser implementation headers directly (`parse/objc3_parser.h`) or inline parser internals.
+- AST scaffolding contract types are anchored in `native/objc3c/src/ast/objc3_ast.h`:
+  - `Expr`
+  - `Stmt`
+  - `FunctionDecl`
+  - `Objc3Program`
+

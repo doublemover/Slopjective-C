@@ -24,5 +24,7 @@ jobs:
         run: python scripts/check_m135_direct_llvm_contract.py
       - name: Enforce M137 lexer token packet/docs contract
         run: python scripts/check_m137_lexer_contract.py
+      - name: Enforce M138 parser and AST packet/docs contract
+        run: python scripts/check_m138_parser_ast_contract.py
       - name: Run planning-scope lint
         run: python scripts/planning_lint.py

@@ -265,6 +265,24 @@ npm run test:objc3c:lexer-parity
 npm run check:compiler-closeout:m137
 ```
 
+## Parser/AST extraction validation artifacts (M138-E001)
+
+`npm run test:objc3c:parser-replay-proof` writes deterministic replay-proof outputs under:
+
+- `tmp/artifacts/objc3c-native/parser-replay-proof/<proof_run_id>/summary.json`
+
+Parser/AST extraction surface validation commands:
+
+```powershell
+npm run test:objc3c:parser-ast-extraction
+npm run check:compiler-closeout:m138
+```
+
+`npm run check:compiler-closeout:m138` fail-closes on parser + AST builder + docs/CI/release wiring drift via:
+
+- `python scripts/check_m138_parser_ast_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
