@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
+    "m190-concurrency-replay-race-guard-lowering-v1";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "m191-unsafe-pointer-extension-gating-lowering-v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
@@ -464,6 +466,18 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3ConcurrencyReplayRaceGuardLoweringContract {
+  std::size_t concurrency_replay_sites = 0;
+  std::size_t replay_proof_sites = 0;
+  std::size_t race_guard_sites = 0;
+  std::size_t task_handoff_sites = 0;
+  std::size_t actor_isolation_sites = 0;
+  std::size_t deterministic_schedule_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3UnsafePointerExtensionLoweringContract {
   std::size_t unsafe_pointer_extension_sites = 0;
   std::size_t unsafe_keyword_sites = 0;
@@ -629,6 +643,10 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract);
+std::string Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract);
 bool IsValidObjc3UnsafePointerExtensionLoweringContract(
     const Objc3UnsafePointerExtensionLoweringContract &contract);
 std::string Objc3UnsafePointerExtensionLoweringReplayKey(

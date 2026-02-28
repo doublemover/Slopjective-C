@@ -326,6 +326,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t ns_error_bridging_lowering_bridge_boundary_sites = 0;
   std::size_t ns_error_bridging_lowering_contract_violation_sites = 0;
   bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::string lowering_concurrency_replay_race_guard_replay_key;
+  std::size_t concurrency_replay_race_guard_lowering_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_replay_proof_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_race_guard_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_task_handoff_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_actor_isolation_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_deterministic_schedule_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_guard_blocked_sites = 0;
+  std::size_t concurrency_replay_race_guard_lowering_contract_violation_sites = 0;
+  bool deterministic_concurrency_replay_race_guard_lowering_handoff = false;
   std::string lowering_unsafe_pointer_extension_replay_key;
   std::size_t unsafe_pointer_extension_lowering_sites = 0;
   std::size_t unsafe_pointer_extension_lowering_unsafe_keyword_sites = 0;

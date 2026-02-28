@@ -1364,6 +1364,47 @@ std::string Objc3NSErrorBridgingLoweringReplayKey(
          ";lane_contract=" + kObjc3NSErrorBridgingLoweringLaneContract;
 }
 
+bool IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract) {
+  if (contract.replay_proof_sites > contract.concurrency_replay_sites ||
+      contract.race_guard_sites > contract.concurrency_replay_sites ||
+      contract.task_handoff_sites > contract.concurrency_replay_sites ||
+      contract.actor_isolation_sites > contract.concurrency_replay_sites ||
+      contract.deterministic_schedule_sites > contract.concurrency_replay_sites ||
+      contract.guard_blocked_sites > contract.concurrency_replay_sites ||
+      contract.contract_violation_sites > contract.concurrency_replay_sites) {
+    return false;
+  }
+  if (contract.deterministic_schedule_sites + contract.guard_blocked_sites !=
+      contract.concurrency_replay_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract) {
+  return std::string("concurrency_replay_sites=") +
+             std::to_string(contract.concurrency_replay_sites) +
+         ";replay_proof_sites=" + std::to_string(contract.replay_proof_sites) +
+         ";race_guard_sites=" + std::to_string(contract.race_guard_sites) +
+         ";task_handoff_sites=" + std::to_string(contract.task_handoff_sites) +
+         ";actor_isolation_sites=" +
+         std::to_string(contract.actor_isolation_sites) +
+         ";deterministic_schedule_sites=" +
+         std::to_string(contract.deterministic_schedule_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract;
+}
+
 bool IsValidObjc3UnsafePointerExtensionLoweringContract(
     const Objc3UnsafePointerExtensionLoweringContract &contract) {
   if (contract.unsafe_keyword_sites > contract.unsafe_pointer_extension_sites ||

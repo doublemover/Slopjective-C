@@ -3726,6 +3726,34 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Concurrency replay-proof and race-guard lowering artifact contract (M190-C001)
+
+M190-C publishes deterministic lowering replay metadata for concurrency
+replay-proof scheduling and race-guard boundaries.
+
+M190-C lowering contract anchors:
+
+- `kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract`
+- `Objc3ConcurrencyReplayRaceGuardLoweringContract`
+- `IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(...)`
+- `Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(...)`
+- `concurrency_replay_race_guard_lowering = concurrency_replay_sites=<N>`
+- `frontend_objc_concurrency_replay_race_guard_lowering_profile`
+- `!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}`
+
+Deterministic handoff checks:
+
+- `deterministic_schedule_sites + guard_blocked_sites == concurrency_replay_sites`
+- each of `replay_proof_sites`, `race_guard_sites`, `task_handoff_sites`,
+  `actor_isolation_sites`, and `contract_violation_sites` is bounded by
+  `concurrency_replay_sites`
+- `deterministic_concurrency_replay_race_guard_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m190_lowering_concurrency_replay_race_guard_contract.py -q`
+
 ## Unsafe and pointer-arithmetic extension gating lowering artifact contract (M191-C001)
 
 M191-C publishes deterministic lowering replay metadata for unsafe low-level

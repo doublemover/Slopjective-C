@@ -222,6 +222,13 @@ class Objc3IREmitter {
       out << "; ns_error_bridging_lowering = "
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_concurrency_replay_race_guard_replay_key
+             .empty()) {
+      out << "; concurrency_replay_race_guard_lowering = "
+          << frontend_metadata_
+                 .lowering_concurrency_replay_race_guard_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_unsafe_pointer_extension_replay_key
              .empty()) {
       out << "; unsafe_pointer_extension_lowering = "
@@ -834,6 +841,35 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_concurrency_replay_race_guard_lowering_profile = concurrency_replay_sites="
+        << frontend_metadata_.concurrency_replay_race_guard_lowering_sites
+        << ", replay_proof_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_replay_proof_sites
+        << ", race_guard_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_race_guard_sites
+        << ", task_handoff_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_task_handoff_sites
+        << ", actor_isolation_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_actor_isolation_sites
+        << ", deterministic_schedule_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_deterministic_schedule_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .concurrency_replay_race_guard_lowering_contract_violation_sites
+        << ", deterministic_concurrency_replay_race_guard_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_concurrency_replay_race_guard_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_unsafe_pointer_extension_lowering_profile = unsafe_pointer_extension_sites="
         << frontend_metadata_.unsafe_pointer_extension_lowering_sites
         << ", unsafe_keyword_sites="
@@ -1091,6 +1127,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
     out << "!objc3.objc_unsafe_pointer_extension_lowering = !{!37}\n";
     out << "!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}\n";
+    out << "!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1950,6 +1987,43 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_inline_asm_intrinsic_governance_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!39 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.concurrency_replay_race_guard_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_replay_proof_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_race_guard_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_task_handoff_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_actor_isolation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_deterministic_schedule_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .concurrency_replay_race_guard_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_concurrency_replay_race_guard_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
