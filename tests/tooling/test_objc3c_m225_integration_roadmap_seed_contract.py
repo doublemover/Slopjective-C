@@ -26,6 +26,7 @@ def test_m225_integration_roadmap_seeding_is_documented() -> None:
         "tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py",
         "tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py",
         "tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py",
+        "tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py",
         "tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py",
     ):
         assert text in library_api_doc
@@ -41,6 +42,7 @@ def test_m225_integration_roadmap_seeding_gate_is_wired() -> None:
         "tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py "
         "tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py "
         "tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py "
+        "tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py "
         "tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py -q"
     ) in package_json
 

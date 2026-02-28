@@ -209,6 +209,21 @@ Operator evidence sequence for frontend readiness:
 2. run parser extraction contract gate (`npm run test:objc3c:parser-extraction-ast-builder-contract`).
 3. run M224 frontend docs contract test (`python -m pytest tests/tooling/test_objc3c_m224_frontend_release_contract.py -q`).
 
+## M225 frontend roadmap-seeding packet
+
+Post-1.0 backlog seeding for frontend/parser work should capture these deterministic frontend signals:
+
+- pragma-prelude diagnostics distribution (`O3L005`/`O3L006`/`O3L007`/`O3L008`) from parser-boundary test runs.
+- manifest packet stability for `frontend.language_version_pragma_contract` fields.
+- parser/AST boundary invariants proving `BuildObjc3AstFromTokens(...)` stays the single pipeline ingress.
+- token-to-sema bridge continuity via `Objc3SemaTokenMetadata` evidence surfaces.
+
+Recommended seeding commands (frontend lane):
+
+1. `npm run test:objc3c:parser-ast-extraction`
+2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1616,6 +1631,28 @@ Operator evidence sequence for sema/type-system readiness:
 2. run parser/sema integration contract checks (`python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`).
 3. run M224 sema release contract test (`python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`).
 
+## M225 sema/type roadmap seeding profile
+
+To seed post-GA sema/type backlog items from shipped behavior, capture deterministic evidence in two packets:
+
+### 1.1 Deterministic semantic diagnostics packet
+
+- Pass-order and normalization anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics wiring anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest counters under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+
+### 1.2 Deterministic type-metadata handoff packet
+
+- Sema handoff and readiness anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity/type anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Backlog sizing surface from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counts (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+
+Recommended seeding commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -1816,6 +1853,28 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tm
   - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`
 3. Run contract guard:
   - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
+
+## M225 lowering/runtime roadmap seeding profile
+
+Post-1.0 backlog seeding for lowering/runtime 1.1/1.2 should record deterministic artifact evidence plus source-anchored ABI/IR signals:
+
+- `1.1 artifact evidence capture`:
+  - `tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding/module.manifest.json`
+  - extract and persist:
+    - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+    - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+    - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+    - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `1.2 ABI/IR signal extraction`:
+  - replay-key source marker: `Objc3LoweringIRBoundaryReplayKey(...)`
+  - IR ABI declaration marker: `declare i32 @` + `runtime_dispatch_symbol`
+  - lowering normalization marker: `invalid lowering contract runtime_dispatch_symbol`
+
+Roadmap-seeding commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding --emit-prefix module`
+2. `python -m pytest tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py -q`
 
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
 
@@ -2596,6 +2655,45 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m224_validation_release_contract.py -q
 ```
 
+## M225 validation/perf roadmap seeding runbook
+
+From repo root, run this deterministic order and stop immediately on the first non-zero exit:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Evidence packet fields for next-cycle milestone seeding:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -2670,6 +2768,29 @@ int objc3c_frontend_startup_check(void) {
   - `npm run check:objc3c:m224-integration-release-readiness`
   - This gate chains existing deterministic checks for M222 compatibility migration,
     library/CLI parity golden replay, and M224 tooling wiring.
+
+## M225 integration roadmap seeding
+
+- Gate intent: export ABI/version and deterministic gate evidence into 1.1/1.2 planning intake.
+### 1.1 ABI/version continuity planning intake
+- Preserve these intake invariants as seeded evidence for 1.1 planning:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` remains the required startup guard.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()` remains true.
+  - `OBJC3C_FRONTEND_ABI_VERSION` stays within
+    `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through
+    `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain the planning intake anchors.
+### 1.2 Gate-evidence planning intake
+- Deterministic export gate:
+  - `npm run check:objc3c:m225-roadmap-seeding`
+- Exported evidence chain for 1.2 planning intake:
+  - Replays `check:objc3c:m224-integration-release-readiness` as the baseline deterministic ABI/version gate.
+  - Runs M225 roadmap-seeding contracts for frontend, sema/type, lowering/runtime, validation/perf, and integration wiring:
+    `tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py`.
 
 ## Current call contract
 

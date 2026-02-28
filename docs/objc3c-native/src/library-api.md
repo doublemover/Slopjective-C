@@ -68,10 +68,11 @@ int objc3c_frontend_startup_check(void) {
   - `npm run check:objc3c:m225-roadmap-seeding`
 - Exported evidence chain for 1.2 planning intake:
   - Replays `check:objc3c:m224-integration-release-readiness` as the baseline deterministic ABI/version gate.
-  - Runs M225 roadmap-seeding contracts for frontend, sema/type, lowering/runtime, and integration wiring:
+  - Runs M225 roadmap-seeding contracts for frontend, sema/type, lowering/runtime, validation/perf, and integration wiring:
     `tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py`,
+    `tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py`.
 
 ## Current call contract
