@@ -25,12 +25,15 @@ def test_m143_package_and_docs_wiring_contract() -> None:
         "check:objc3c:library-cli-parity:source:m143"
     ]
     assert "--work-key hello-default" in scripts["check:objc3c:library-cli-parity:source:m143"]
-    assert "--summary-out tmp/artifacts/objc3c-native/m143/library-cli-parity/summary.json" in scripts[
+    assert "--summary-out tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json" in scripts[
         "check:objc3c:library-cli-parity:source:m143"
     ]
 
     assert "test:objc3c:m143-artifact-governance" in scripts
     assert "tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_check_m143_artifact_tmp_governance_contract.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
 
@@ -44,8 +47,8 @@ def test_m143_package_and_docs_wiring_contract() -> None:
     ]
     assert "check:compiler-closeout:m143" in scripts["check:task-hygiene"]
 
-    assert "## Artifact tmp-path governance (M143-E001)" in _read(CLI_FRAGMENT)
-    assert "## Artifact tmp-path replay semantics (M143-E001)" in _read(SEMANTICS_FRAGMENT)
-    assert "## Deterministic tmp-path governance artifacts (M143-E001)" in _read(ARTIFACTS_FRAGMENT)
+    assert "## Artifact tmp-path governance (M143-D001)" in _read(CLI_FRAGMENT)
+    assert "## Artifact tmp-path governance contract (M143-D001)" in _read(SEMANTICS_FRAGMENT)
+    assert "## Artifact tmp-path governance artifacts (M143-D001)" in _read(ARTIFACTS_FRAGMENT)
     assert "npm run check:compiler-closeout:m143" in _read(TESTS_FRAGMENT)
     assert "Contract ID: `objc3c-artifact-tmp-governance-contract/m143-v1`" in _read(CONTRACT_DOC)

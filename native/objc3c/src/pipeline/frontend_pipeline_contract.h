@@ -91,7 +91,7 @@ struct FrontendPipelineInput {
   std::string source_path;
   std::string source_text;
   std::string emit_prefix = "module";
-  std::string output_dir = "artifacts/compilation/objc3c-native";
+  std::string output_dir = "tmp/artifacts/compilation/objc3c-native";
   std::string clang_path = "clang";
   std::size_t max_message_send_args = kRuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;

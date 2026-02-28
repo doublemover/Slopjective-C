@@ -16,6 +16,7 @@ from typing import Any, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 TMP_ROOT = ROOT / "tmp"
 MODE = "objc3c-library-cli-parity-v2"
+LLVM_CAPABILITY_MODE = "objc3c-llvm-capabilities-v2"
 DEFAULT_ARTIFACTS = (
     "module.diagnostics.json",
     "module.manifest.json",
@@ -48,6 +49,18 @@ class CommandResult:
     exit_code: int
     stdout: str
     stderr: str
+
+
+@dataclass(frozen=True)
+class LLVMCapabilitySummary:
+    summary_path: str
+    clang_path: str
+    clang_found: bool
+    llc_path: str
+    llc_found: bool
+    llc_supports_filetype_obj: bool
+    parity_ready: bool
+    blockers: tuple[str, ...]
 
 
 def display_path(path: Path) -> str:
@@ -89,7 +102,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--work-dir",
         type=Path,
-        default=Path("tmp/objc3c_library_cli_parity_work"),
+        default=Path("tmp/artifacts/compilation/objc3c-native/library-cli-parity/work"),
         help="workspace for generated artifacts in --source mode",
     )
     parser.add_argument(
@@ -117,13 +130,24 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--llc-path",
         type=Path,
         default=None,
-        help="llc path forwarded to CLI in --source mode",
+        help="llc path forwarded to CLI/C API runner in --source mode",
     )
     parser.add_argument(
         "--cli-ir-object-backend",
         choices=("clang", "llvm-direct"),
         default="clang",
         help="IR object backend for CLI command in --source mode",
+    )
+    parser.add_argument(
+        "--llvm-capabilities-summary",
+        type=Path,
+        default=None,
+        help="capability summary JSON produced by scripts/probe_objc3c_llvm_capabilities.py",
+    )
+    parser.add_argument(
+        "--route-cli-backend-from-capabilities",
+        action="store_true",
+        help="derive IR object backend from --llvm-capabilities-summary (llvm-direct when supported, otherwise clang)",
     )
     parser.add_argument(
         "--objc3-max-message-args",
@@ -303,6 +327,77 @@ def parse_proxy_digest(path: Path) -> str:
     return text
 
 
+def read_capability_summary(path: Path) -> LLVMCapabilitySummary:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ValueError(f"llvm capabilities summary missing: {display_path(path)}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"llvm capabilities summary parse error at {display_path(path)}: {exc}"
+        ) from exc
+
+    if not isinstance(payload, dict):
+        raise ValueError(
+            f"llvm capabilities summary must be a JSON object: {display_path(path)}"
+        )
+
+    mode = payload.get("mode")
+    if mode != LLVM_CAPABILITY_MODE:
+        raise ValueError(
+            "llvm capabilities summary mode mismatch: "
+            f"expected {LLVM_CAPABILITY_MODE!r}, observed {mode!r}"
+        )
+
+    def require_object(container: dict[str, Any], key: str) -> dict[str, Any]:
+        value = container.get(key)
+        if not isinstance(value, dict):
+            raise ValueError(
+                f"llvm capabilities summary field '{key}' must be an object"
+            )
+        return value
+
+    def require_bool(container: dict[str, Any], key: str) -> bool:
+        value = container.get(key)
+        if not isinstance(value, bool):
+            raise ValueError(
+                f"llvm capabilities summary field '{key}' must be boolean"
+            )
+        return value
+
+    def require_str(container: dict[str, Any], key: str) -> str:
+        value = container.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(
+                f"llvm capabilities summary field '{key}' must be a non-empty string"
+            )
+        return value
+
+    clang = require_object(payload, "clang")
+    llc = require_object(payload, "llc")
+    llc_features = require_object(payload, "llc_features")
+    sema_type_system_parity = require_object(payload, "sema_type_system_parity")
+    blockers_raw = sema_type_system_parity.get("blockers")
+    if not isinstance(blockers_raw, list) or not all(
+        isinstance(item, str) for item in blockers_raw
+    ):
+        raise ValueError(
+            "llvm capabilities summary field 'sema_type_system_parity.blockers' "
+            "must be a list of strings"
+        )
+
+    return LLVMCapabilitySummary(
+        summary_path=display_path(path),
+        clang_path=require_str(clang, "path"),
+        clang_found=require_bool(clang, "found"),
+        llc_path=require_str(llc, "path"),
+        llc_found=require_bool(llc, "found"),
+        llc_supports_filetype_obj=require_bool(llc_features, "supports_filetype_obj"),
+        parity_ready=require_bool(sema_type_system_parity, "parity_ready"),
+        blockers=tuple(blockers_raw),
+    )
+
+
 def resolve_artifact_digest(
     *,
     base_dir: Path,
@@ -404,6 +499,12 @@ def default_source_mode_work_key(args: argparse.Namespace) -> str:
         "cli_ir_object_backend": args.cli_ir_object_backend,
         "clang_path": display_path(args.clang_path) if args.clang_path is not None else None,
         "llc_path": display_path(args.llc_path) if args.llc_path is not None else None,
+        "llvm_capabilities_summary": (
+            display_path(args.llvm_capabilities_summary)
+            if args.llvm_capabilities_summary is not None
+            else None
+        ),
+        "route_cli_backend_from_capabilities": args.route_cli_backend_from_capabilities,
         "objc3_max_message_args": args.objc3_max_message_args,
         "objc3_runtime_dispatch_symbol": args.objc3_runtime_dispatch_symbol,
     }
@@ -441,7 +542,7 @@ def assert_no_stale_source_mode_outputs(
 
 def prepare_source_mode(
     args: argparse.Namespace,
-) -> tuple[Path, Path, str, list[CommandResult], list[str]]:
+) -> tuple[Path, Path, str, list[CommandResult], list[str], dict[str, Any]]:
     if args.cli_bin is None:
         raise ValueError("--cli-bin is required when using --source")
     if args.c_api_bin is None:
@@ -480,6 +581,70 @@ def prepare_source_mode(
         label="cli-dir",
     )
 
+    effective_clang_path = args.clang_path
+    effective_llc_path = args.llc_path
+    effective_backend = args.cli_ir_object_backend
+    routing: dict[str, Any] = {
+        "requested_cli_ir_object_backend": args.cli_ir_object_backend,
+        "effective_ir_object_backend": effective_backend,
+        "routed_from_capabilities": args.route_cli_backend_from_capabilities,
+    }
+    capability_failures: list[str] = []
+    if args.llvm_capabilities_summary is not None:
+        try:
+            capability_summary = read_capability_summary(args.llvm_capabilities_summary)
+        except ValueError as exc:
+            capability_failures.append(
+                f"capability routing fail-closed: {exc}"
+            )
+            return library_dir, cli_dir, work_key, [], capability_failures, routing
+        routing["llvm_capabilities_summary"] = capability_summary.summary_path
+        routing["llvm_capabilities"] = {
+            "clang_found": capability_summary.clang_found,
+            "llc_found": capability_summary.llc_found,
+            "llc_supports_filetype_obj": capability_summary.llc_supports_filetype_obj,
+            "parity_ready": capability_summary.parity_ready,
+            "blockers": list(capability_summary.blockers),
+        }
+        if not capability_summary.parity_ready:
+            blockers = ", ".join(capability_summary.blockers) if capability_summary.blockers else "unspecified"
+            capability_failures.append(
+                "capability routing fail-closed: sema/type-system parity capability unavailable: "
+                f"{blockers}"
+            )
+        if args.route_cli_backend_from_capabilities:
+            effective_backend = (
+                "llvm-direct" if capability_summary.llc_supports_filetype_obj else "clang"
+            )
+        if effective_backend == "clang" and not capability_summary.clang_found:
+            capability_failures.append(
+                "capability routing fail-closed: clang backend selected but capability summary reports clang unavailable"
+            )
+        if effective_backend == "llvm-direct" and (
+            not capability_summary.llc_found or not capability_summary.llc_supports_filetype_obj
+        ):
+            capability_failures.append(
+                "capability routing fail-closed: llvm-direct backend selected but llc --filetype=obj capability is unavailable"
+            )
+        if effective_clang_path is None:
+            effective_clang_path = Path(capability_summary.clang_path)
+        if effective_llc_path is None:
+            effective_llc_path = Path(capability_summary.llc_path)
+
+    if args.route_cli_backend_from_capabilities and args.llvm_capabilities_summary is None:
+        capability_failures.append(
+            "capability routing fail-closed: --route-cli-backend-from-capabilities requires --llvm-capabilities-summary"
+        )
+
+    routing["effective_ir_object_backend"] = effective_backend
+    if effective_clang_path is not None:
+        routing["effective_clang_path"] = display_path(effective_clang_path)
+    if effective_llc_path is not None:
+        routing["effective_llc_path"] = display_path(effective_llc_path)
+
+    if capability_failures:
+        return library_dir, cli_dir, work_key, [], capability_failures, routing
+
     cli_command: list[str] = [
         str(args.cli_bin),
         str(args.source),
@@ -488,12 +653,12 @@ def prepare_source_mode(
         "--emit-prefix",
         args.emit_prefix,
         "--objc3-ir-object-backend",
-        args.cli_ir_object_backend,
+        effective_backend,
     ]
-    if args.clang_path is not None:
-        cli_command.extend(["--clang", str(args.clang_path)])
-    if args.llc_path is not None:
-        cli_command.extend(["--llc", str(args.llc_path)])
+    if effective_clang_path is not None:
+        cli_command.extend(["--clang", str(effective_clang_path)])
+    if effective_llc_path is not None:
+        cli_command.extend(["--llc", str(effective_llc_path)])
     if args.objc3_max_message_args is not None:
         cli_command.extend(["--objc3-max-message-args", str(args.objc3_max_message_args)])
     if args.objc3_runtime_dispatch_symbol:
@@ -506,9 +671,13 @@ def prepare_source_mode(
         str(library_dir),
         "--emit-prefix",
         args.emit_prefix,
+        "--objc3-ir-object-backend",
+        effective_backend,
     ]
-    if args.clang_path is not None:
-        c_api_command.extend(["--clang", str(args.clang_path)])
+    if effective_clang_path is not None:
+        c_api_command.extend(["--clang", str(effective_clang_path)])
+    if effective_llc_path is not None:
+        c_api_command.extend(["--llc", str(effective_llc_path)])
     if args.objc3_max_message_args is not None:
         c_api_command.extend(["--objc3-max-message-args", str(args.objc3_max_message_args)])
     if args.objc3_runtime_dispatch_symbol:
@@ -523,7 +692,7 @@ def prepare_source_mode(
         for result in results
         if result.exit_code != 0
     ]
-    return library_dir, cli_dir, work_key, results, failures
+    return library_dir, cli_dir, work_key, results, failures, routing
 
 
 def run(argv: Sequence[str]) -> int:
@@ -532,10 +701,15 @@ def run(argv: Sequence[str]) -> int:
         raise ValueError("--check-golden and --write-golden cannot be used together")
     if (args.check_golden or args.write_golden) and args.golden_summary is None:
         raise ValueError("--golden-summary is required when using --check-golden/--write-golden")
+    args.emit_prefix = normalize_artifact_name(
+        args.emit_prefix,
+        context="--emit-prefix",
+    )
 
     execution_results: list[CommandResult] = []
     execution_failures: list[str] = []
     execution_work_key: str | None = None
+    execution_routing: dict[str, Any] | None = None
     if args.source is not None:
         (
             library_dir,
@@ -543,6 +717,7 @@ def run(argv: Sequence[str]) -> int:
             execution_work_key,
             execution_results,
             execution_failures,
+            execution_routing,
         ) = prepare_source_mode(args)
         default_dimension_map = default_dimension_map_for_emit_prefix(
             emit_prefix=args.emit_prefix,
@@ -642,6 +817,7 @@ def run(argv: Sequence[str]) -> int:
             "source": display_path(args.source),
             "emit_prefix": args.emit_prefix,
             "work_key": execution_work_key,
+            "routing": execution_routing,
             "commands": [
                 {
                     "role": result.role,

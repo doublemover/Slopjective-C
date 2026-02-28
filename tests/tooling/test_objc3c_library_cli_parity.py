@@ -33,6 +33,36 @@ def _write_source_mode_artifacts(out_dir: Path, *, emit_prefix: str, marker: str
     (out_dir / f"{emit_prefix}.obj").write_bytes(b"\x00OBJ")
 
 
+def _write_capability_summary(
+    path: Path,
+    *,
+    clang_found: bool = True,
+    llc_found: bool = True,
+    llc_supports_filetype_obj: bool = True,
+    parity_ready: bool = True,
+    blockers: list[str] | None = None,
+) -> None:
+    payload = {
+        "mode": "objc3c-llvm-capabilities-v2",
+        "clang": {
+            "path": "clang",
+            "found": clang_found,
+        },
+        "llc": {
+            "path": "llc",
+            "found": llc_found,
+        },
+        "llc_features": {
+            "supports_filetype_obj": llc_supports_filetype_obj,
+        },
+        "sema_type_system_parity": {
+            "parity_ready": parity_ready,
+            "blockers": blockers or [],
+        },
+    }
+    _write(path, json.dumps(payload, indent=2) + "\n")
+
+
 def test_parity_pass(tmp_path: Path) -> None:
     library_dir = tmp_path / "library"
     cli_dir = tmp_path / "cli"
@@ -229,6 +259,141 @@ def test_parity_source_mode_generates_and_compares_cli_and_c_api_outputs(
     ]
 
 
+def test_parity_source_mode_routes_backend_from_capabilities_when_enabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    summary_path = tmp_path / "capabilities.json"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+    _write_capability_summary(summary_path)
+
+    observed_commands: list[list[str]] = []
+
+    def _fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        observed_commands.append(command)
+        out_dir = Path(command[command.index("--out-dir") + 1])
+        emit_prefix = command[command.index("--emit-prefix") + 1]
+        _write_source_mode_artifacts(out_dir, emit_prefix=emit_prefix, marker="route")
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(parity.subprocess, "run", _fake_run)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--llvm-capabilities-summary",
+            str(summary_path),
+            "--route-cli-backend-from-capabilities",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["execution"]["routing"]["effective_ir_object_backend"] == "llvm-direct"
+    assert len(observed_commands) == 2
+    for command in observed_commands:
+        backend_index = command.index("--objc3-ir-object-backend")
+        assert command[backend_index + 1] == "llvm-direct"
+        assert "--llc" in command
+
+
+def test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    summary_path = tmp_path / "capabilities.json"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+    _write_capability_summary(
+        summary_path,
+        parity_ready=False,
+        blockers=["llc executable missing"],
+    )
+
+    def _never_run(_: list[str], **__: object) -> subprocess.CompletedProcess[str]:
+        raise AssertionError("commands must not execute on capability fail-closed preflight")
+
+    monkeypatch.setattr(parity.subprocess, "run", _never_run)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--llvm-capabilities-summary",
+            str(summary_path),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert payload["execution"]["commands"] == []
+    assert any(
+        "capability routing fail-closed: sema/type-system parity capability unavailable"
+        in failure
+        for failure in payload["failures"]
+    )
+
+
+def test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--route-cli-backend-from-capabilities",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(
+        "--route-cli-backend-from-capabilities requires --llvm-capabilities-summary"
+        in failure
+        for failure in payload["failures"]
+    )
+
+
 def test_parity_source_mode_requires_binaries(tmp_path: Path) -> None:
     source = tmp_path / "sample.objc3"
     source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
@@ -414,6 +579,109 @@ def test_parity_source_mode_work_key_changes_with_backend_and_runtime_contract(
     assert len(key_b) == 16
 
 
+def test_parity_source_mode_default_work_key_is_deterministic_for_same_inputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    def _fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        out_dir = Path(command[command.index("--out-dir") + 1])
+        emit_prefix = command[command.index("--emit-prefix") + 1]
+        _write_source_mode_artifacts(out_dir, emit_prefix=emit_prefix, marker="det-key")
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(parity.subprocess, "run", _fake_run)
+
+    summary_a = tmp_path / "summary_a.json"
+    summary_b = tmp_path / "summary_b.json"
+    base_args = [
+        "--source",
+        str(source),
+        "--cli-bin",
+        str(cli_bin),
+        "--c-api-bin",
+        str(c_api_bin),
+        "--objc3-runtime-dispatch-symbol",
+        "objc3_msgsend_i32",
+        "--cli-ir-object-backend",
+        "clang",
+    ]
+    exit_code_a = parity.run(
+        [
+            *base_args,
+            "--allow-non-tmp-work-dir",
+            "--work-dir",
+            str(tmp_path / "work_a"),
+            "--summary-out",
+            str(summary_a),
+        ]
+    )
+    exit_code_b = parity.run(
+        [
+            *base_args,
+            "--allow-non-tmp-work-dir",
+            "--work-dir",
+            str(tmp_path / "work_b"),
+            "--summary-out",
+            str(summary_b),
+        ]
+    )
+    assert exit_code_a == 0
+    assert exit_code_b == 0
+
+    payload_a = json.loads(summary_a.read_text(encoding="utf-8"))
+    payload_b = json.loads(summary_b.read_text(encoding="utf-8"))
+    key_a = payload_a["execution"]["work_key"]
+    key_b = payload_b["execution"]["work_key"]
+    assert key_a == key_b
+    assert len(key_a) == 16
+    assert all(char in "0123456789abcdef" for char in key_a)
+
+
+@pytest.mark.parametrize(
+    "emit_prefix",
+    [
+        "",
+        "../module",
+        "bad/prefix",
+        ".module",
+    ],
+)
+def test_parity_source_mode_rejects_invalid_emit_prefix(
+    tmp_path: Path,
+    emit_prefix: str,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="--emit-prefix"):
+        parity.run(
+            [
+                "--source",
+                str(source),
+                "--cli-bin",
+                str(cli_bin),
+                "--c-api-bin",
+                str(c_api_bin),
+                "--allow-non-tmp-work-dir",
+                "--work-dir",
+                str(tmp_path / "work"),
+                "--emit-prefix",
+                emit_prefix,
+            ]
+        )
+
+
 def test_parity_source_mode_fails_when_stale_generated_outputs_exist(
     tmp_path: Path,
 ) -> None:
@@ -443,6 +711,39 @@ def test_parity_source_mode_fails_when_stale_generated_outputs_exist(
                 str(work_dir),
                 "--work-key",
                 "stale_key",
+            ]
+        )
+
+
+def test_parity_source_mode_fails_when_stale_proxy_outputs_exist(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    work_dir = tmp_path / "work"
+    stale_dir = work_dir / "stale_proxy_key" / "cli"
+    stale_dir.mkdir(parents=True, exist_ok=True)
+    _write(stale_dir / "module.obj.sha256", "3" * 64 + "\n")
+
+    with pytest.raises(ValueError, match="stale generated artifacts"):
+        parity.run(
+            [
+                "--source",
+                str(source),
+                "--cli-bin",
+                str(cli_bin),
+                "--c-api-bin",
+                str(c_api_bin),
+                "--allow-non-tmp-work-dir",
+                "--work-dir",
+                str(work_dir),
+                "--work-key",
+                "stale_proxy_key",
             ]
         )
 
