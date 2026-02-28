@@ -43,16 +43,16 @@ It is the single operational workflow for lane owners, reviewers, and integrator
 ## 5. Remediation workflow (`FIX-E002-01`..`FIX-E002-06`)
 
 1. Remove or replace forbidden include with an allowed dependency path.
-2. If logic crosses layer boundaries, move shared contracts to an allowed upstream module.
-3. Keep fix PR slice minimal and include only required dependency-surface changes.
-4. Add or adjust tests/evidence proving no regressions from dependency inversion change.
-5. Re-run:
+1. If logic crosses layer boundaries, move shared contracts to an allowed upstream module.
+1. Keep fix PR slice minimal and include only required dependency-surface changes.
+1. Add or adjust tests/evidence proving no regressions from dependency inversion change.
+1. Re-run:
 
 ```sh
 python scripts/check_objc3c_dependency_boundaries.py --strict
 ```
 
-6. Include checker output and rationale in PR under `Boundary remediation evidence`.
+1. Include checker output and rationale in PR under `Boundary remediation evidence`.
 
 ## 6. Severity and escalation matrix
 
