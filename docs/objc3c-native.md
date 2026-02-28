@@ -936,6 +936,35 @@ Recommended M169 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q`
 
+## M170 frontend block determinism/perf baseline parser/AST surface (M170-A001)
+
+Frontend parser/AST now emits deterministic block determinism/perf baseline
+metadata so validation and release lanes can replay a stable baseline profile.
+
+M170 parser/AST surface details:
+
+- determinism/perf baseline anchors:
+  - `BuildBlockDeterminismPerfBaselineWeight(...)`
+  - `BuildBlockDeterminismPerfBaselineProfile(...)`
+- parser assignment anchors:
+  - `block_determinism_perf_baseline_weight`
+  - `block_determinism_perf_baseline_profile`
+  - `block_determinism_perf_baseline_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable block baseline metrics from canonical block shape:
+  - baseline weight uses deterministic parameter/capture/body counts plus helper
+    enablement.
+  - baseline profile remains normalized only when capture and copy/dispose
+    metadata are normalized.
+  - profile tiering (`light`/`medium`/`heavy`) is deterministic from baseline
+    weight thresholds.
+
+Recommended M170 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4821,6 +4850,36 @@ Sema/type metadata handoff contract:
 Recommended M169 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q`
+
+## M170 sema/type block determinism perf baseline contract (M170-B001)
+
+M170-B lifts parser-authored block determinism/perf baseline metadata into sema
+integration and type metadata handoff surfaces so replay and perf-validation
+lanes consume one deterministic packet.
+
+M170 sema/type surface details:
+
+- `Objc3BlockDeterminismPerfBaselineSiteMetadata`
+- `Objc3BlockDeterminismPerfBaselineSummary`
+- `BuildBlockDeterminismPerfBaselineSummaryFromIntegrationSurface`
+- `BuildBlockDeterminismPerfBaselineSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `block_determinism_perf_baseline_sites_total`
+  - `block_determinism_perf_baseline_weight_total`
+  - `block_determinism_perf_baseline_contract_violation_sites_total`
+  - `deterministic_block_determinism_perf_baseline_handoff`
+
+Deterministic sema intent:
+
+- sema derives block baseline summary from lexicographically ordered site
+  metadata.
+- handoff determinism requires equivalence across integration and type metadata
+  summaries.
+- contract violations are fail-closed and surfaced in parity counters.
+
+Recommended M170 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -8325,6 +8384,32 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q`
 
+## Block determinism/perf baseline lowering artifact contract (M170-C001)
+
+M170-C lowers sema-authored block determinism/perf baseline summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M170-C lowering contract anchors:
+
+- `kObjc3BlockDeterminismPerfBaselineLoweringLaneContract`
+- `Objc3BlockDeterminismPerfBaselineLoweringContract`
+- `IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(...)`
+- `Objc3BlockDeterminismPerfBaselineLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_determinism_perf_baseline_handoff`
+- `frontend.pipeline.sema_pass_manager.block_determinism_perf_baseline_sites_total`
+- `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface`
+- `lowering_block_determinism_perf_baseline.replay_key`
+- `; block_determinism_perf_baseline_lowering = block_literal_sites=<N>...`
+- `; frontend_objc_block_determinism_perf_baseline_lowering_profile = block_literal_sites=<N>...`
+- `!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}`
+
+Recommended M170 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -10381,6 +10466,41 @@ python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_cont
 python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
 ```
 
+## M170 validation/conformance/perf block determinism baseline runbook
+
+Deterministic M170 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m170_validation_block_determinism_perf_baseline_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_determinism_perf_baseline_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_determinism_perf_baseline_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface.deterministic_handoff`
+  - `lowering_block_determinism_perf_baseline.replay_key`
+- `replay_run_1/module.ll`
+  - `block_determinism_perf_baseline_lowering`
+  - `frontend_objc_block_determinism_perf_baseline_lowering_profile`
+  - `!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -11089,6 +11209,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py`
   - `tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py`
   - `tests/tooling/test_objc3c_m169_integration_block_copy_dispose_contract.py`
+
+## M170 integration block determinism/perf baseline contract
+
+- Integration gate:
+  - `npm run check:objc3c:m170-block-determinism-perf-baseline-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m170`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py`
+  - `tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py`
+  - `tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py`
+  - `tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py`
+  - `tests/tooling/test_objc3c_m170_integration_block_determinism_perf_baseline_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
