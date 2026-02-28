@@ -371,6 +371,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py`
   - `tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py`
   - `tests/tooling/test_objc3c_m148_integration_selector_normalization_contract.py`
+
+## M149 integration @property grammar and attribute parsing
+
+- Integration gate:
+  - `npm run check:objc3c:m149-property-attributes`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_integration_property_attribute_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
