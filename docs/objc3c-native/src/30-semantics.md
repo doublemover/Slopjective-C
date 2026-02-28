@@ -1589,3 +1589,32 @@ Recommended conformance suite command sequence (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m216_sema_conformance_contract.py -q`
 
+## M215 sema/type SDK packaging profile
+
+For deterministic SDK/toolchain IDE consumption on the sema/type lane, capture two replay-stable evidence packets and ship them as the canonical packaging profile.
+
+SDK packaging packet map:
+
+- `sdk packet 1.1 deterministic sema diagnostics` -> `m215_sdk_sema_diagnostics_packet`
+- `sdk packet 1.2 deterministic type-metadata handoff` -> `m215_sdk_type_metadata_handoff_packet`
+
+### 1.1 Deterministic sema diagnostics SDK packaging packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic SDK diagnostics packet key: `m215_sdk_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata handoff SDK packaging packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic SDK type-metadata packet key: `m215_sdk_type_metadata_handoff_packet`.
+
+Recommended SDK packaging contract commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
+
