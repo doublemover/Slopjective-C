@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,7 +13,10 @@
 #include "sema/objc3_sema_contract.h"
 #include "sema/objc3_sema_pass_manager_contract.h"
 
+inline constexpr std::uint8_t kObjc3DefaultLanguageVersion = 3u;
+
 struct Objc3FrontendOptions {
+  std::uint8_t language_version = kObjc3DefaultLanguageVersion;
   Objc3LoweringContract lowering;
 };
 

@@ -8,6 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "native" / "objc3c" / "src"
+API_H = SRC_ROOT / "libobjc3c_frontend" / "api.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
 C_API_CPP = SRC_ROOT / "libobjc3c_frontend" / "c_api.cpp"
 
@@ -26,8 +27,12 @@ def _find_compiler(candidates: list[str]) -> str | None:
 
 def test_c_api_header_exposes_wrapper_surface() -> None:
     header = _read(C_API_H)
+    api_header = _read(API_H)
 
     assert "#include \"api.h\"" in header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in api_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in api_header
+    assert "uint8_t language_version;" in api_header
     assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header

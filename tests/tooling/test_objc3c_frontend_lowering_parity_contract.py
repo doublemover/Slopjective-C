@@ -27,6 +27,8 @@ def _assert_in_order(text: str, snippets: list[str]) -> None:
 def test_c_api_frontend_prevalidates_lowering_contract_before_pipeline_run() -> None:
     source = _read(FRONTEND_ANCHOR)
 
+    assert "ValidateSupportedLanguageVersion(options->language_version, language_version_error)" in source
+    assert "return SetUsageError(context, result, language_version_error);" in source
     assert "TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)" in source
     assert "result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;" in source
     assert "result->process_exit_code = 2;" in source
@@ -37,8 +39,8 @@ def test_c_api_frontend_prevalidates_lowering_contract_before_pipeline_run() -> 
         [
             "Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);",
             "if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {",
-            "result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;",
-            "return result->status;",
+            "objc3c_frontend_set_error(context, lowering_error.c_str());",
+            "frontend_options.lowering = normalized_lowering;",
             "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);",
         ],
     )

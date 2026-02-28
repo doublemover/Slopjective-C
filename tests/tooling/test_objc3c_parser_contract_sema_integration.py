@@ -126,6 +126,7 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "std::vector<std::string> post_pipeline_diagnostics;" in artifacts_header
     assert "bundle.stage_diagnostics = pipeline_result.stage_diagnostics;" in artifacts_source
     assert "bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);" in artifacts_source
+    assert '\\"language_version\\":' in artifacts_source
     assert "sema_pass_manager" in artifacts_source
     assert "diagnostics_after_build" in artifacts_source
     assert "diagnostics_emitted_by_build" in artifacts_source

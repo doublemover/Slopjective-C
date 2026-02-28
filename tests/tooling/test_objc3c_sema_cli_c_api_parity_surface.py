@@ -33,6 +33,7 @@ def test_c_api_and_cli_diagnostics_json_surface_match() -> None:
 def test_manifest_emits_sema_parity_contract_fields() -> None:
     artifacts = _read(PIPELINE_ARTIFACTS)
 
+    assert "language_version" in artifacts
     assert "diagnostics_after_build" in artifacts
     assert "diagnostics_after_validate_bodies" in artifacts
     assert "diagnostics_after_validate_pure_contract" in artifacts

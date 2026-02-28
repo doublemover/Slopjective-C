@@ -44,6 +44,24 @@ static std::string ToLowerCopy(std::string value) {
 static const char *DefaultEmitPrefix = "module";
 static const char *DefaultMemoryInputPath = "<memory>";
 
+static uint8_t NormalizeLanguageVersion(uint8_t requested_language_version) {
+  if (requested_language_version == 0u) {
+    return static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT);
+  }
+  return requested_language_version;
+}
+
+static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {
+  const uint8_t normalized_language_version = NormalizeLanguageVersion(requested_language_version);
+  if (normalized_language_version == static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3)) {
+    return true;
+  }
+
+  error = "unsupported compile_options.language_version: " + std::to_string(normalized_language_version) +
+          " (only Objective-C version 3 is supported).";
+  return false;
+}
+
 static std::filesystem::path ResolveInputPath(const objc3c_frontend_compile_options_t &options) {
   if (!IsNullOrEmpty(options.input_path)) {
     return std::filesystem::path(options.input_path);
@@ -309,8 +327,20 @@ static void PopulateResultPaths(objc3c_frontend_context_t *context, objc3c_front
   result->object_path = OptionalCString(context->object_path);
 }
 
+static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context,
+                                              objc3c_frontend_compile_result_t *result,
+                                              const std::string &message) {
+  *result = {};
+  result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+  result->process_exit_code = 2;
+  result->success = 0;
+  objc3c_frontend_set_error(context, message.c_str());
+  return result->status;
+}
+
 static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {
   Objc3FrontendOptions frontend_options;
+  frontend_options.language_version = NormalizeLanguageVersion(options.language_version);
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }
@@ -531,21 +561,19 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (context == nullptr || options == nullptr || result == nullptr) {
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
+  std::string language_version_error;
+  if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
+    return SetUsageError(context, result, language_version_error);
+  }
   if (IsNullOrEmpty(options->input_path)) {
-    *result = {};
-    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-    objc3c_frontend_set_error(context, "compile_file requires compile_options.input_path.");
-    return result->status;
+    return SetUsageError(context, result, "compile_file requires compile_options.input_path.");
   }
 
   std::string source_text;
   std::string io_error;
   const std::filesystem::path input_path(options->input_path);
   if (!ReadTextFile(input_path, source_text, io_error)) {
-    *result = {};
-    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-    objc3c_frontend_set_error(context, io_error.c_str());
-    return result->status;
+    return SetUsageError(context, result, io_error);
   }
   return CompileObjc3SourceImpl(context, input_path, source_text, options, result);
 }
@@ -557,11 +585,12 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (context == nullptr || options == nullptr || result == nullptr) {
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
+  std::string language_version_error;
+  if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
+    return SetUsageError(context, result, language_version_error);
+  }
   if (IsNullOrEmpty(options->source_text)) {
-    *result = {};
-    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
-    objc3c_frontend_set_error(context, "compile_source requires compile_options.source_text.");
-    return result->status;
+    return SetUsageError(context, result, "compile_source requires compile_options.source_text.");
   }
   const std::filesystem::path input_path = ResolveInputPath(*options);
   return CompileObjc3SourceImpl(context, input_path, std::string(options->source_text), options, result);

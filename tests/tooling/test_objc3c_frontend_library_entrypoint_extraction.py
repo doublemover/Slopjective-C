@@ -33,6 +33,9 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     assert "OBJC3C_FRONTEND_STATUS_EMIT_ERROR" in source
     assert "OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT" in source
     assert "RunIRCompileLLVMDirect(" in source
+    assert "NormalizeLanguageVersion(options.language_version)" in source
+    assert "ValidateSupportedLanguageVersion(options->language_version, language_version_error)" in source
+    assert "unsupported compile_options.language_version:" in source
     assert "Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
     assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);" in source
     assert "std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;" in source
@@ -46,6 +49,15 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
             "result->sema = BuildStageSummary(",
             "result->lower = BuildStageSummary(",
             "result->emit = BuildStageSummary(",
+        ],
+    )
+
+    _assert_in_order(
+        source,
+        [
+            "if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {",
+            "return SetUsageError(context, result, language_version_error);",
+            "if (IsNullOrEmpty(options->input_path)) {",
         ],
     )
 
@@ -72,3 +84,6 @@ def test_public_api_documents_pipeline_backed_compile_behavior() -> None:
     assert "Pipeline-backed behavior:" in api_header
     assert "Runs lexer/parser/sema/lower/emit through the extracted frontend pipeline." in api_header
     assert "Current implementation status: scaffolded" not in api_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in api_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in api_header
+    assert "uint8_t language_version;" in api_header

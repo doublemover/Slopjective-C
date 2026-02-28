@@ -32,6 +32,9 @@
 #endif
 #endif
 
+#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u
+#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,6 +103,7 @@ typedef struct objc3c_frontend_stage_summary {
  * Compile options consumed by objc3c_frontend_compile_file/source.
  * - input_path is used by file-backed workflows.
  * - source_text is used by in-memory workflows.
+ * - language_version uses Objective-C version 3 by default when set to 0.
  * - Set unused pointers to NULL and reserved fields to 0.
  */
 typedef struct objc3c_frontend_compile_options {
@@ -115,7 +119,8 @@ typedef struct objc3c_frontend_compile_options {
   uint8_t emit_ir;
   uint8_t emit_object;
   uint8_t ir_object_backend;
-  uint16_t reserved0;
+  uint8_t language_version;
+  uint8_t reserved0;
 } objc3c_frontend_compile_options_t;
 
 /*
