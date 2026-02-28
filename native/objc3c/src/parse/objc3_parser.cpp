@@ -410,6 +410,47 @@ static std::string BuildOwnershipQualifierSymbol(const std::string &spelling, bo
   return std::string(is_return_type ? "return-ownership-qualifier:" : "ownership-qualifier:") + spelling;
 }
 
+struct Objc3OwnershipOperationProfile {
+  bool insert_retain = false;
+  bool insert_release = false;
+  bool insert_autorelease = false;
+  std::string profile;
+};
+
+static Objc3OwnershipOperationProfile BuildParamOwnershipOperationProfile(const std::string &spelling) {
+  Objc3OwnershipOperationProfile profile;
+  if (spelling == "__strong") {
+    profile.insert_retain = true;
+    profile.insert_release = true;
+    profile.profile = "param-retain-release";
+  } else if (spelling == "__weak") {
+    profile.profile = "param-weak-side-table";
+  } else if (spelling == "__autoreleasing") {
+    profile.insert_autorelease = true;
+    profile.profile = "param-autorelease-bridge";
+  } else if (spelling == "__unsafe_unretained") {
+    profile.profile = "param-unsafe-unretained";
+  }
+  return profile;
+}
+
+static Objc3OwnershipOperationProfile BuildReturnOwnershipOperationProfile(const std::string &spelling) {
+  Objc3OwnershipOperationProfile profile;
+  if (spelling == "__strong") {
+    profile.insert_retain = true;
+    profile.insert_release = true;
+    profile.profile = "return-retain-release-transfer";
+  } else if (spelling == "__weak") {
+    profile.profile = "return-weak-load";
+  } else if (spelling == "__autoreleasing") {
+    profile.insert_autorelease = true;
+    profile.profile = "return-autorelease-transfer";
+  } else if (spelling == "__unsafe_unretained") {
+    profile.profile = "return-unsafe-unretained";
+  }
+  return profile;
+}
+
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
   std::sort(values.begin(), values.end());
   values.erase(std::unique(values.begin(), values.end()), values.end());
@@ -806,6 +847,10 @@ class Objc3Parser {
     target.return_ownership_qualifier_spelling = source.return_ownership_qualifier_spelling;
     target.return_ownership_qualifier_symbol = source.return_ownership_qualifier_symbol;
     target.return_ownership_qualifier_tokens = source.return_ownership_qualifier_tokens;
+    target.return_ownership_insert_retain = source.return_ownership_insert_retain;
+    target.return_ownership_insert_release = source.return_ownership_insert_release;
+    target.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
+    target.return_ownership_operation_profile = source.return_ownership_operation_profile;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -833,6 +878,10 @@ class Objc3Parser {
     target.ownership_qualifier_spelling = source.ownership_qualifier_spelling;
     target.ownership_qualifier_symbol = source.ownership_qualifier_symbol;
     target.ownership_qualifier_tokens = source.ownership_qualifier_tokens;
+    target.ownership_insert_retain = source.ownership_insert_retain;
+    target.ownership_insert_release = source.ownership_insert_release;
+    target.ownership_insert_autorelease = source.ownership_insert_autorelease;
+    target.ownership_operation_profile = source.ownership_operation_profile;
   }
 
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
@@ -1649,6 +1698,10 @@ class Objc3Parser {
     fn.return_ownership_qualifier_spelling.clear();
     fn.return_ownership_qualifier_symbol.clear();
     fn.return_ownership_qualifier_tokens.clear();
+    fn.return_ownership_insert_retain = false;
+    fn.return_ownership_insert_release = false;
+    fn.return_ownership_insert_autorelease = false;
+    fn.return_ownership_operation_profile.clear();
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
@@ -1786,6 +1839,12 @@ class Objc3Parser {
 
     fn.return_ownership_qualifier_symbol =
         BuildOwnershipQualifierSymbol(fn.return_ownership_qualifier_spelling, true);
+    const Objc3OwnershipOperationProfile return_ownership_profile =
+        BuildReturnOwnershipOperationProfile(fn.return_ownership_qualifier_spelling);
+    fn.return_ownership_insert_retain = return_ownership_profile.insert_retain;
+    fn.return_ownership_insert_release = return_ownership_profile.insert_release;
+    fn.return_ownership_insert_autorelease = return_ownership_profile.insert_autorelease;
+    fn.return_ownership_operation_profile = return_ownership_profile.profile;
 
     return true;
   }
@@ -1814,6 +1873,10 @@ class Objc3Parser {
     param.ownership_qualifier_spelling.clear();
     param.ownership_qualifier_symbol.clear();
     param.ownership_qualifier_tokens.clear();
+    param.ownership_insert_retain = false;
+    param.ownership_insert_release = false;
+    param.ownership_insert_autorelease = false;
+    param.ownership_operation_profile.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -1891,6 +1954,12 @@ class Objc3Parser {
     }
 
     param.ownership_qualifier_symbol = BuildOwnershipQualifierSymbol(param.ownership_qualifier_spelling, false);
+    const Objc3OwnershipOperationProfile param_ownership_profile =
+        BuildParamOwnershipOperationProfile(param.ownership_qualifier_spelling);
+    param.ownership_insert_retain = param_ownership_profile.insert_retain;
+    param.ownership_insert_release = param_ownership_profile.insert_release;
+    param.ownership_insert_autorelease = param_ownership_profile.insert_autorelease;
+    param.ownership_operation_profile = param_ownership_profile.profile;
 
     return true;
   }

@@ -222,6 +222,10 @@ struct FuncParam {
   std::string ownership_qualifier_spelling;
   std::string ownership_qualifier_symbol;
   std::vector<Objc3SemaTokenMetadata> ownership_qualifier_tokens;
+  bool ownership_insert_retain = false;
+  bool ownership_insert_release = false;
+  bool ownership_insert_autorelease = false;
+  std::string ownership_operation_profile;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -263,6 +267,10 @@ struct Objc3MethodDecl {
   std::string return_ownership_qualifier_spelling;
   std::string return_ownership_qualifier_symbol;
   std::vector<Objc3SemaTokenMetadata> return_ownership_qualifier_tokens;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
+  std::string return_ownership_operation_profile;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
   std::string method_lookup_symbol;
@@ -308,6 +316,10 @@ struct Objc3PropertyDecl {
   std::string ownership_qualifier_spelling;
   std::string ownership_qualifier_symbol;
   std::vector<Objc3SemaTokenMetadata> ownership_qualifier_tokens;
+  bool ownership_insert_retain = false;
+  bool ownership_insert_release = false;
+  bool ownership_insert_autorelease = false;
+  std::string ownership_operation_profile;
   std::vector<Objc3PropertyAttributeDecl> attributes;
   bool is_readonly = false;
   bool is_readwrite = false;
@@ -416,6 +428,10 @@ struct FunctionDecl {
   std::string return_ownership_qualifier_spelling;
   std::string return_ownership_qualifier_symbol;
   std::vector<Objc3SemaTokenMetadata> return_ownership_qualifier_tokens;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
+  std::string return_ownership_operation_profile;
   bool is_prototype = false;
   bool is_pure = false;
   std::vector<std::unique_ptr<Stmt>> body;

@@ -589,6 +589,44 @@ Recommended M161 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m161_frontend_ownership_qualifier_parser_contract.py -q`
 
+## M162 frontend retain/release ownership-operation profile surface
+
+Frontend parser/AST now derives deterministic ownership-operation profile hints
+from ownership qualifiers so lowering can insert retain/release operations
+without reclassifying qualifier spellings.
+
+M162 parser/AST surface details:
+
+- ownership-operation helper anchors:
+  - `BuildParamOwnershipOperationProfile(...)`
+  - `BuildReturnOwnershipOperationProfile(...)`
+- parser assignment anchors:
+  - `param.ownership_insert_retain`
+  - `param.ownership_insert_release`
+  - `param.ownership_insert_autorelease`
+  - `param.ownership_operation_profile`
+  - `fn.return_ownership_insert_retain`
+  - `fn.return_ownership_insert_release`
+  - `fn.return_ownership_insert_autorelease`
+  - `fn.return_ownership_operation_profile`
+- AST transfer anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `CopyPropertyTypeFromParam(...)`
+
+Deterministic grammar intent:
+
+- qualifier-to-operation-profile mapping is parser-owned and fail-closed:
+  - `__strong` -> retain/release profile
+  - `__weak` -> weak-side-table profile
+  - `__autoreleasing` -> autorelease-bridge profile
+  - `__unsafe_unretained` -> unsafe-unretained profile
+- parsed ownership-operation hints are copied into method/property surfaces so
+  lane-B/lane-C consumers use a single deterministic source of truth.
+
+Recommended M162 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m162_frontend_retain_release_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
