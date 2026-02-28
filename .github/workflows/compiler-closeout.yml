@@ -1,0 +1,30 @@
+name: Compiler Closeout
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-closeout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Python tooling dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+      - name: Install Node dependencies
+        run: npm install
+      - name: Enforce M180 cross-module conformance packet/docs contract
+        run: npm run check:compiler-closeout:m180
+      - name: Run M180 cross-module conformance integration gate
+        run: npm run check:objc3c:m180-cross-module-conformance-contracts
