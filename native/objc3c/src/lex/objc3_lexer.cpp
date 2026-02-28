@@ -33,6 +33,10 @@ bool IsDigitSeparator(char c) {
   return c == '_';
 }
 
+bool IsHorizontalWhitespace(char c) {
+  return c == ' ' || c == '\t' || c == '\r' || c == '\v' || c == '\f';
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -44,6 +48,7 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
 Objc3Lexer::Objc3Lexer(const std::string &source) : source_(source) {}
 
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
+  ConsumeLanguageVersionPragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {
     SkipTrivia(diagnostics);
@@ -282,6 +287,125 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
     }
   }
   return tokens;
+}
+
+void Objc3Lexer::ConsumeLanguageVersionPragmas(std::vector<std::string> &diagnostics) {
+  static constexpr char kMalformedPragmaMessage[] =
+      "malformed '#pragma objc_language_version' directive; expected '#pragma objc_language_version(3)'";
+
+  while (true) {
+    SkipTrivia(diagnostics);
+    if (index_ >= source_.size() || source_[index_] != '#') {
+      return;
+    }
+
+    std::size_t cursor = index_ + 1;
+    while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+      ++cursor;
+    }
+    static constexpr char kPragmaToken[] = "pragma";
+    bool matches_pragma = true;
+    for (const char expected : kPragmaToken) {
+      if (expected == '\0') {
+        break;
+      }
+      if (cursor >= source_.size() || source_[cursor] != expected) {
+        matches_pragma = false;
+        break;
+      }
+      ++cursor;
+    }
+    if (!matches_pragma) {
+      return;
+    }
+
+    const unsigned directive_line = line_;
+    const unsigned directive_column = column_;
+    Advance();
+    SkipHorizontalWhitespace();
+    MatchLiteral("pragma");
+    SkipHorizontalWhitespace();
+    if (!MatchLiteral("objc_language_version")) {
+      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+      ConsumeToEndOfLine();
+      continue;
+    }
+
+    SkipHorizontalWhitespace();
+    if (!MatchChar('(')) {
+      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+      ConsumeToEndOfLine();
+      continue;
+    }
+
+    SkipHorizontalWhitespace();
+    const unsigned version_line = line_;
+    const unsigned version_column = column_;
+    if (index_ >= source_.size() || std::isdigit(static_cast<unsigned char>(source_[index_])) == 0) {
+      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+      ConsumeToEndOfLine();
+      continue;
+    }
+
+    std::string version;
+    while (index_ < source_.size() && std::isdigit(static_cast<unsigned char>(source_[index_])) != 0) {
+      version.push_back(source_[index_]);
+      Advance();
+    }
+
+    SkipHorizontalWhitespace();
+    if (!MatchChar(')')) {
+      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+      ConsumeToEndOfLine();
+      continue;
+    }
+
+    SkipHorizontalWhitespace();
+    if (index_ < source_.size() && source_[index_] != '\n') {
+      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+      ConsumeToEndOfLine();
+      continue;
+    }
+
+    if (version != "3") {
+      diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",
+                                     "unsupported objc language version '" + version + "'; expected 3"));
+    }
+
+    if (index_ < source_.size() && source_[index_] == '\n') {
+      Advance();
+    }
+  }
+}
+
+void Objc3Lexer::SkipHorizontalWhitespace() {
+  while (index_ < source_.size() && IsHorizontalWhitespace(source_[index_])) {
+    Advance();
+  }
+}
+
+bool Objc3Lexer::MatchLiteral(const char *literal) {
+  std::size_t cursor = index_;
+  for (const char *it = literal; *it != '\0'; ++it) {
+    if (cursor >= source_.size() || source_[cursor] != *it) {
+      return false;
+    }
+    ++cursor;
+  }
+
+  while (index_ < cursor) {
+    Advance();
+  }
+  return true;
+}
+
+void Objc3Lexer::ConsumeToEndOfLine() {
+  while (index_ < source_.size() && source_[index_] != '\n') {
+    Advance();
+  }
+  if (index_ < source_.size() && source_[index_] == '\n') {
+    Advance();
+  }
 }
 
 void Objc3Lexer::SkipTrivia(std::vector<std::string> &diagnostics) {

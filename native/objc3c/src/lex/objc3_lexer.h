@@ -12,6 +12,10 @@ class Objc3Lexer {
   std::vector<Objc3LexToken> Run(std::vector<std::string> &diagnostics);
 
  private:
+  void ConsumeLanguageVersionPragmas(std::vector<std::string> &diagnostics);
+  void SkipHorizontalWhitespace();
+  bool MatchLiteral(const char *literal);
+  void ConsumeToEndOfLine();
   void SkipTrivia(std::vector<std::string> &diagnostics);
   std::string ConsumeIdentifier();
   std::string ConsumeNumber();

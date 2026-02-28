@@ -24,3 +24,16 @@ def test_cmake_registers_lexer_target() -> None:
     cmake = read_text(CMAKE_FILE)
     assert "add_library(objc3c_lex STATIC" in cmake
     assert "src/lex/objc3_lexer.cpp" in cmake
+
+
+def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics() -> None:
+    lexer_source = read_text(LEX_SOURCE)
+    assert "ConsumeLanguageVersionPragmas(diagnostics);" in lexer_source
+    assert "MatchLiteral(\"objc_language_version\")" in lexer_source
+    assert (
+        "malformed '#pragma objc_language_version' directive; expected '#pragma objc_language_version(3)'"
+        in lexer_source
+    )
+    assert "MakeDiag(directive_line, directive_column, \"O3L005\"" in lexer_source
+    assert "unsupported objc language version '" in lexer_source
+    assert "MakeDiag(version_line, version_column, \"O3L006\"" in lexer_source
