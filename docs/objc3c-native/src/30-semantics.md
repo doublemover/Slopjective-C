@@ -3203,3 +3203,62 @@ Sema/type metadata handoff contract:
 Recommended M167 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
+
+## M168 sema/type __block storage and escape semantics contract (M168-B001)
+
+M168-B lifts parser-authored mutable-capture storage and escape-profile metadata
+into sema integration, type-metadata handoff, and pass-manager parity packets so
+downstream lowering/runtime lanes consume deterministic `__block` storage contracts.
+
+Sema/type block-storage escape contract markers:
+
+- `Objc3BlockStorageEscapeSiteMetadata`
+- `Objc3BlockStorageEscapeSemanticsSummary`
+- `BuildBlockStorageEscapeSiteMetadataLexicographic`
+- `BuildBlockStorageEscapeSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockStorageEscapeSemanticsSummaryFromTypeMetadataHandoff`
+- `block_storage_escape_sites_total`
+- `block_storage_escape_mutable_capture_count_total`
+- `block_storage_escape_byref_slot_count_total`
+- `block_storage_escape_contract_violation_sites_total`
+- `deterministic_block_storage_escape_handoff`
+
+Deterministic block-storage escape invariants (fail-closed):
+
+- block-storage escape site metadata must remain lexicographically sorted.
+- mutable-capture and byref-slot counts must match capture-entry totals.
+- requires-byref, escape-analysis, escape-to-heap, profile-normalized, and
+  symbolized-site counters must remain bounded by `block_literal_sites`.
+- escape-analysis-enabled counters must equal `block_literal_sites`.
+- requires-byref-cells counters must equal escape-to-heap counters.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_storage_escape_sites_lexicographic = BuildBlockStorageEscapeSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_storage_escape_semantics_summary = BuildBlockStorageEscapeSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_storage_escape_sites_lexicographic = surface.block_storage_escape_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_storage_escape_semantics_summary = BuildBlockStorageEscapeSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_storage_escape_sites_total`
+  - `block_storage_escape_mutable_capture_count_total`
+  - `block_storage_escape_byref_slot_count_total`
+  - `block_storage_escape_parameter_entries_total`
+  - `block_storage_escape_capture_entries_total`
+  - `block_storage_escape_body_statement_entries_total`
+  - `block_storage_escape_requires_byref_cells_sites_total`
+  - `block_storage_escape_escape_analysis_enabled_sites_total`
+  - `block_storage_escape_escape_to_heap_sites_total`
+  - `block_storage_escape_escape_profile_normalized_sites_total`
+  - `block_storage_escape_byref_layout_symbolized_sites_total`
+  - `block_storage_escape_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_storage_escape_handoff`
+
+Recommended M168 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q`

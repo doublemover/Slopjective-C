@@ -202,6 +202,18 @@ struct Objc3SemaParityContractSurface {
   std::size_t block_abi_invoke_trampoline_missing_invoke_sites_total = 0;
   std::size_t block_abi_invoke_trampoline_non_normalized_layout_sites_total = 0;
   std::size_t block_abi_invoke_trampoline_contract_violation_sites_total = 0;
+  std::size_t block_storage_escape_sites_total = 0;
+  std::size_t block_storage_escape_mutable_capture_count_total = 0;
+  std::size_t block_storage_escape_byref_slot_count_total = 0;
+  std::size_t block_storage_escape_parameter_entries_total = 0;
+  std::size_t block_storage_escape_capture_entries_total = 0;
+  std::size_t block_storage_escape_body_statement_entries_total = 0;
+  std::size_t block_storage_escape_requires_byref_cells_sites_total = 0;
+  std::size_t block_storage_escape_escape_analysis_enabled_sites_total = 0;
+  std::size_t block_storage_escape_escape_to_heap_sites_total = 0;
+  std::size_t block_storage_escape_escape_profile_normalized_sites_total = 0;
+  std::size_t block_storage_escape_byref_layout_symbolized_sites_total = 0;
+  std::size_t block_storage_escape_contract_violation_sites_total = 0;
   std::size_t message_send_selector_lowering_sites_total = 0;
   std::size_t message_send_selector_lowering_unary_form_sites_total = 0;
   std::size_t message_send_selector_lowering_keyword_form_sites_total = 0;
@@ -286,6 +298,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   bool deterministic_block_literal_capture_semantics_handoff = false;
   bool deterministic_block_abi_invoke_trampoline_handoff = false;
+  bool deterministic_block_storage_escape_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
@@ -307,6 +320,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
+  Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
@@ -688,6 +702,52 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total &&
          surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
          surface.deterministic_block_abi_invoke_trampoline_handoff &&
+         surface.block_storage_escape_semantics_summary.block_literal_sites ==
+             surface.block_storage_escape_sites_total &&
+         surface.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+             surface.block_storage_escape_mutable_capture_count_total &&
+         surface.block_storage_escape_semantics_summary.byref_slot_count_total ==
+             surface.block_storage_escape_byref_slot_count_total &&
+         surface.block_storage_escape_semantics_summary.parameter_entries_total ==
+             surface.block_storage_escape_parameter_entries_total &&
+         surface.block_storage_escape_semantics_summary.capture_entries_total ==
+             surface.block_storage_escape_capture_entries_total &&
+         surface.block_storage_escape_semantics_summary.body_statement_entries_total ==
+             surface.block_storage_escape_body_statement_entries_total &&
+         surface.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
+             surface.block_storage_escape_requires_byref_cells_sites_total &&
+         surface.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
+             surface.block_storage_escape_escape_analysis_enabled_sites_total &&
+         surface.block_storage_escape_semantics_summary.escape_to_heap_sites ==
+             surface.block_storage_escape_escape_to_heap_sites_total &&
+         surface.block_storage_escape_semantics_summary.escape_profile_normalized_sites ==
+             surface.block_storage_escape_escape_profile_normalized_sites_total &&
+         surface.block_storage_escape_semantics_summary.byref_layout_symbolized_sites ==
+             surface.block_storage_escape_byref_layout_symbolized_sites_total &&
+         surface.block_storage_escape_semantics_summary.contract_violation_sites ==
+             surface.block_storage_escape_contract_violation_sites_total &&
+         surface.block_storage_escape_semantics_summary.requires_byref_cells_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.escape_analysis_enabled_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.escape_to_heap_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.escape_profile_normalized_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.byref_layout_symbolized_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.contract_violation_sites <=
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+             surface.block_storage_escape_semantics_summary.capture_entries_total &&
+         surface.block_storage_escape_semantics_summary.byref_slot_count_total ==
+             surface.block_storage_escape_semantics_summary.capture_entries_total &&
+         surface.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
+             surface.block_storage_escape_semantics_summary.block_literal_sites &&
+         surface.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
+             surface.block_storage_escape_semantics_summary.escape_to_heap_sites &&
+         surface.block_storage_escape_semantics_summary.deterministic &&
+         surface.deterministic_block_storage_escape_handoff &&
          surface.message_send_selector_lowering_summary.message_send_sites ==
              surface.message_send_selector_lowering_sites_total &&
          surface.message_send_selector_lowering_summary.unary_form_sites ==
@@ -988,6 +1048,8 @@ struct Objc3SemaPassManagerResult {
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   bool deterministic_block_abi_invoke_trampoline_handoff = false;
   Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
+  bool deterministic_block_storage_escape_handoff = false;
+  Objc3BlockStorageEscapeSemanticsSummary block_storage_escape_semantics_summary;
   bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
