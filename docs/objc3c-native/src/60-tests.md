@@ -2578,6 +2578,32 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
 ```
 
+## M183 integration NSError bridging contract runbook (M183-E001)
+
+Deterministic M183 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m183-ns-error-bridging-contracts`
+- `npm run check:compiler-closeout:m183`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M183 NSError bridging packet/docs contract`
+  - `Run M183 NSError bridging integration gate`
+
+Scope assumptions:
+
+- M183-A001, M183-B001, and M183-C001 surfaces are not yet landed in this workspace.
+- This runbook enforces the landed M183-D001 validation/conformance surface plus M183-E001 integration wiring.
+
 ## M183 validation/conformance/perf NSError bridging runbook (M183-D001)
 
 Deterministic M183 validation sequence:

@@ -36,3 +36,7 @@ jobs:
         run: npm run check:compiler-closeout:m182
       - name: Run M182 result-like lowering integration gate
         run: npm run check:objc3c:m182-result-like-contracts
+      - name: Enforce M183 NSError bridging packet/docs contract
+        run: npm run check:compiler-closeout:m183
+      - name: Run M183 NSError bridging integration gate
+        run: npm run check:objc3c:m183-ns-error-bridging-contracts

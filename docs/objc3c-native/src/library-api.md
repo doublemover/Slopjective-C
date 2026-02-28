@@ -874,6 +874,22 @@ int objc3c_frontend_startup_check(void) {
   - M182-A001, M182-B001, and M182-C001 outputs are not yet landed in this workspace.
   - The integration gate fail-closes on the landed M182-D001 surfaces plus this M182-E001 wiring contract, while remaining forward-compatible for future M182-A001/M182-B001/M182-C001 additions.
 
+## M183 integration NSError bridging contract
+
+- Integration gate:
+  - `npm run check:objc3c:m183-ns-error-bridging-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m183`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_integration_ns_error_bridging_contract.py`
+- Assumptions:
+  - M183-A001, M183-B001, and M183-C001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M183-D001 surfaces plus this M183-E001 wiring contract, while remaining forward-compatible for future M183-A001/M183-B001/M183-C001 additions.
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
