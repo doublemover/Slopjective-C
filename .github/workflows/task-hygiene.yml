@@ -48,6 +48,8 @@ jobs:
         run: npm run check:compiler-closeout:m153
       - name: 00i Enforce M154 property-synthesis/ivar-binding packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m154
+      - name: 00j Enforce M155 id/class/SEL/object-pointer typecheck packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m155
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -161,6 +163,8 @@ jobs:
         run: npm run check:objc3c:m153-method-lookup-override-conflicts
       - name: 44i Run M154 property-synthesis/ivar-binding integration gate
         run: npm run check:objc3c:m154-property-synthesis-ivar-bindings
+      - name: 44j Run M155 id/class/SEL/object-pointer typecheck integration gate
+        run: npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 

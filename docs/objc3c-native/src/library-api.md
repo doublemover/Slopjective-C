@@ -442,6 +442,19 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m154_validation_property_synthesis_ivar_binding_contract.py`
   - `tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py`
 
+## M155 integration id/class/SEL/object-pointer typecheck contract
+
+- Integration gate:
+  - `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m155`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

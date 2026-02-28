@@ -465,6 +465,16 @@ From repo root, execute deterministic M154 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py -q`
 - `npm run check:objc3c:m154-property-synthesis-ivar-bindings`
 
+## M155 validation id/class/SEL/object-pointer typecheck semantics runbook
+
+From repo root, execute deterministic M155 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
+- `npm run check:compiler-closeout:m155`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
