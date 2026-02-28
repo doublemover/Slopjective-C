@@ -1,0 +1,91 @@
+# libobjc3c_frontend Library API (Embedding Contract)
+
+This document defines the current public embedding API exposed by `native/objc3c/src/libobjc3c_frontend/api.h`.
+
+## Public Surface
+
+- Primary header: `native/objc3c/src/libobjc3c_frontend/api.h`
+- Version header: `native/objc3c/src/libobjc3c_frontend/version.h`
+- Optional C shim header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+
+`api.h` exposes a C ABI usable from C and C++ with an opaque context type (`objc3c_frontend_context_t`).
+
+## Stability
+
+- stability boundary: exported symbols, enums, and struct layouts in `api.h`.
+- ABI growth rule: append-only struct evolution; reserved fields remain reserved.
+- Embedding rule: zero-initialize option/result structs to keep reserved fields deterministic.
+- Current compile behavior is stable and intentional for now: compile entrypoints are scaffolded and return `OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR` after argument validation.
+
+## Compatibility and versioning
+
+- Semantic version source: `OBJC3C_FRONTEND_VERSION_{MAJOR,MINOR,PATCH}`.
+- Current version string macro: `OBJC3C_FRONTEND_VERSION_STRING` (`"0.1.0"` in this workspace).
+- ABI version source: `OBJC3C_FRONTEND_ABI_VERSION` (`1u` in this workspace).
+- Compatibility window (inclusive): `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+- Startup check: call `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints.
+
+```c
+#include "libobjc3c_frontend/api.h"
+
+int objc3c_frontend_startup_check(void) {
+  if (!objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)) {
+    return 0;
+  }
+
+  const objc3c_frontend_version_t v = objc3c_frontend_version();
+  return v.abi_version == objc3c_frontend_abi_version();
+}
+```
+
+## Current call contract
+
+- `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
+- `objc3c_frontend_context_destroy(ctx)` releases context resources.
+- `objc3c_frontend_compile_file(...)` and `objc3c_frontend_compile_source(...)`:
+  - Return `OBJC3C_FRONTEND_STATUS_USAGE_ERROR` when `context`, `options`, or `result` is `NULL`.
+  - For non-null pointers, currently return `OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR` and set context error text to a scaffolded-entrypoint message.
+- `objc3c_frontend_copy_last_error(ctx, buffer, buffer_size)`:
+  - Returns required byte count including the trailing NUL.
+  - Supports size probing with `buffer == NULL` or `buffer_size == 0`.
+  - NUL-terminates written buffers when `buffer_size > 0`.
+
+## Minimal embedding example (current API reality)
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+#include "libobjc3c_frontend/api.h"
+
+int main(void) {
+  if (!objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)) {
+    return 2;
+  }
+
+  objc3c_frontend_context_t *ctx = objc3c_frontend_context_create();
+  if (ctx == NULL) {
+    return 3;
+  }
+
+  objc3c_frontend_compile_options_t opts;
+  memset(&opts, 0, sizeof(opts));
+  opts.input_path = "example.objc3";
+  opts.out_dir = "artifacts/compilation/objc3c-native";
+
+  objc3c_frontend_compile_result_t result;
+  memset(&result, 0, sizeof(result));
+
+  const objc3c_frontend_status_t status = objc3c_frontend_compile_file(ctx, &opts, &result);
+  if (status == OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR) {
+    char err[512];
+    (void)objc3c_frontend_copy_last_error(ctx, err, sizeof(err));
+    fprintf(stderr, "frontend unavailable yet: %s\n", err);
+  }
+
+  objc3c_frontend_context_destroy(ctx);
+  return status == OBJC3C_FRONTEND_STATUS_OK ? 0 : 1;
+}
+```
+
+For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
