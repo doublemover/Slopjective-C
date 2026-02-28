@@ -3310,6 +3310,309 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
   return summary;
 }
 
+static Objc3IdClassSelObjectPointerTypeCheckingSummary
+BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
+
+  const auto accumulate_function = [&summary](const FunctionInfo &info) {
+    ++summary.return_type_sites;
+    if (info.return_id_spelling) {
+      ++summary.return_id_spelling_sites;
+    }
+    if (info.return_class_spelling) {
+      ++summary.return_class_spelling_sites;
+    }
+    if (info.return_instancetype_spelling) {
+      ++summary.return_instancetype_spelling_sites;
+    }
+    if (info.return_object_pointer_type_spelling) {
+      ++summary.return_object_pointer_type_sites;
+    }
+
+    summary.param_type_sites += info.param_types.size();
+    const std::size_t count = std::min(
+        info.param_types.size(),
+        std::min(info.param_id_spelling.size(),
+                 std::min(info.param_class_spelling.size(),
+                          std::min(info.param_instancetype_spelling.size(),
+                                   info.param_object_pointer_type_spelling.size()))));
+    for (std::size_t i = 0; i < count; ++i) {
+      if (info.param_id_spelling[i]) {
+        ++summary.param_id_spelling_sites;
+      }
+      if (info.param_class_spelling[i]) {
+        ++summary.param_class_spelling_sites;
+      }
+      if (info.param_instancetype_spelling[i]) {
+        ++summary.param_instancetype_spelling_sites;
+      }
+      if (info.param_object_pointer_type_spelling[i]) {
+        ++summary.param_object_pointer_type_sites;
+      }
+    }
+    if (count != info.param_types.size()) {
+      summary.deterministic = false;
+    }
+  };
+
+  const auto accumulate_method = [&summary](const Objc3MethodInfo &info) {
+    ++summary.return_type_sites;
+    if (info.return_id_spelling) {
+      ++summary.return_id_spelling_sites;
+    }
+    if (info.return_class_spelling) {
+      ++summary.return_class_spelling_sites;
+    }
+    if (info.return_instancetype_spelling) {
+      ++summary.return_instancetype_spelling_sites;
+    }
+    if (info.return_object_pointer_type_spelling) {
+      ++summary.return_object_pointer_type_sites;
+    }
+
+    summary.param_type_sites += info.param_types.size();
+    const std::size_t count = std::min(
+        info.param_types.size(),
+        std::min(info.param_id_spelling.size(),
+                 std::min(info.param_class_spelling.size(),
+                          std::min(info.param_instancetype_spelling.size(),
+                                   info.param_object_pointer_type_spelling.size()))));
+    for (std::size_t i = 0; i < count; ++i) {
+      if (info.param_id_spelling[i]) {
+        ++summary.param_id_spelling_sites;
+      }
+      if (info.param_class_spelling[i]) {
+        ++summary.param_class_spelling_sites;
+      }
+      if (info.param_instancetype_spelling[i]) {
+        ++summary.param_instancetype_spelling_sites;
+      }
+      if (info.param_object_pointer_type_spelling[i]) {
+        ++summary.param_object_pointer_type_sites;
+      }
+    }
+    if (count != info.param_types.size()) {
+      summary.deterministic = false;
+    }
+  };
+
+  const auto accumulate_property = [&summary](const Objc3PropertyInfo &info) {
+    ++summary.property_type_sites;
+    if (info.id_spelling) {
+      ++summary.property_id_spelling_sites;
+    }
+    if (info.class_spelling) {
+      ++summary.property_class_spelling_sites;
+    }
+    if (info.instancetype_spelling) {
+      ++summary.property_instancetype_spelling_sites;
+    }
+    if (info.object_pointer_type_spelling) {
+      ++summary.property_object_pointer_type_sites;
+    }
+  };
+
+  for (const auto &entry : surface.functions) {
+    accumulate_function(entry.second);
+  }
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.param_id_spelling_sites <= summary.param_type_sites &&
+      summary.param_class_spelling_sites <= summary.param_type_sites &&
+      summary.param_sel_spelling_sites <= summary.param_type_sites &&
+      summary.param_instancetype_spelling_sites <= summary.param_type_sites &&
+      summary.param_object_pointer_type_sites <= summary.param_type_sites &&
+      summary.return_id_spelling_sites <= summary.return_type_sites &&
+      summary.return_class_spelling_sites <= summary.return_type_sites &&
+      summary.return_sel_spelling_sites <= summary.return_type_sites &&
+      summary.return_instancetype_spelling_sites <= summary.return_type_sites &&
+      summary.return_object_pointer_type_sites <= summary.return_type_sites &&
+      summary.property_id_spelling_sites <= summary.property_type_sites &&
+      summary.property_class_spelling_sites <= summary.property_type_sites &&
+      summary.property_sel_spelling_sites <= summary.property_type_sites &&
+      summary.property_instancetype_spelling_sites <= summary.property_type_sites &&
+      summary.property_object_pointer_type_sites <= summary.property_type_sites &&
+      summary.param_id_spelling_sites + summary.param_class_spelling_sites + summary.param_sel_spelling_sites +
+              summary.param_instancetype_spelling_sites + summary.param_object_pointer_type_sites <=
+          summary.param_type_sites &&
+      summary.return_id_spelling_sites + summary.return_class_spelling_sites + summary.return_sel_spelling_sites +
+              summary.return_instancetype_spelling_sites + summary.return_object_pointer_type_sites <=
+          summary.return_type_sites &&
+      summary.property_id_spelling_sites + summary.property_class_spelling_sites + summary.property_sel_spelling_sites +
+              summary.property_instancetype_spelling_sites + summary.property_object_pointer_type_sites <=
+          summary.property_type_sites;
+  return summary;
+}
+
+static Objc3IdClassSelObjectPointerTypeCheckingSummary
+BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
+
+  const auto accumulate_function = [&summary](const Objc3SemanticFunctionTypeMetadata &metadata) {
+    ++summary.return_type_sites;
+    if (metadata.return_id_spelling) {
+      ++summary.return_id_spelling_sites;
+    }
+    if (metadata.return_class_spelling) {
+      ++summary.return_class_spelling_sites;
+    }
+    if (metadata.return_instancetype_spelling) {
+      ++summary.return_instancetype_spelling_sites;
+    }
+    if (metadata.return_object_pointer_type_spelling) {
+      ++summary.return_object_pointer_type_sites;
+    }
+
+    summary.param_type_sites += metadata.param_types.size();
+    const std::size_t count = std::min(
+        metadata.param_types.size(),
+        std::min(metadata.param_id_spelling.size(),
+                 std::min(metadata.param_class_spelling.size(),
+                          std::min(metadata.param_instancetype_spelling.size(),
+                                   metadata.param_object_pointer_type_spelling.size()))));
+    for (std::size_t i = 0; i < count; ++i) {
+      if (metadata.param_id_spelling[i]) {
+        ++summary.param_id_spelling_sites;
+      }
+      if (metadata.param_class_spelling[i]) {
+        ++summary.param_class_spelling_sites;
+      }
+      if (metadata.param_instancetype_spelling[i]) {
+        ++summary.param_instancetype_spelling_sites;
+      }
+      if (metadata.param_object_pointer_type_spelling[i]) {
+        ++summary.param_object_pointer_type_sites;
+      }
+    }
+    if (count != metadata.param_types.size()) {
+      summary.deterministic = false;
+    }
+  };
+
+  const auto accumulate_method = [&summary](const Objc3SemanticMethodTypeMetadata &metadata) {
+    ++summary.return_type_sites;
+    if (metadata.return_id_spelling) {
+      ++summary.return_id_spelling_sites;
+    }
+    if (metadata.return_class_spelling) {
+      ++summary.return_class_spelling_sites;
+    }
+    if (metadata.return_instancetype_spelling) {
+      ++summary.return_instancetype_spelling_sites;
+    }
+    if (metadata.return_object_pointer_type_spelling) {
+      ++summary.return_object_pointer_type_sites;
+    }
+
+    summary.param_type_sites += metadata.param_types.size();
+    const std::size_t count = std::min(
+        metadata.param_types.size(),
+        std::min(metadata.param_id_spelling.size(),
+                 std::min(metadata.param_class_spelling.size(),
+                          std::min(metadata.param_instancetype_spelling.size(),
+                                   metadata.param_object_pointer_type_spelling.size()))));
+    for (std::size_t i = 0; i < count; ++i) {
+      if (metadata.param_id_spelling[i]) {
+        ++summary.param_id_spelling_sites;
+      }
+      if (metadata.param_class_spelling[i]) {
+        ++summary.param_class_spelling_sites;
+      }
+      if (metadata.param_instancetype_spelling[i]) {
+        ++summary.param_instancetype_spelling_sites;
+      }
+      if (metadata.param_object_pointer_type_spelling[i]) {
+        ++summary.param_object_pointer_type_sites;
+      }
+    }
+    if (count != metadata.param_types.size()) {
+      summary.deterministic = false;
+    }
+  };
+
+  const auto accumulate_property = [&summary](const Objc3SemanticPropertyTypeMetadata &metadata) {
+    ++summary.property_type_sites;
+    if (metadata.id_spelling) {
+      ++summary.property_id_spelling_sites;
+    }
+    if (metadata.class_spelling) {
+      ++summary.property_class_spelling_sites;
+    }
+    if (metadata.instancetype_spelling) {
+      ++summary.property_instancetype_spelling_sites;
+    }
+    if (metadata.object_pointer_type_spelling) {
+      ++summary.property_object_pointer_type_sites;
+    }
+  };
+
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function(metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : interface_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.param_id_spelling_sites <= summary.param_type_sites &&
+      summary.param_class_spelling_sites <= summary.param_type_sites &&
+      summary.param_sel_spelling_sites <= summary.param_type_sites &&
+      summary.param_instancetype_spelling_sites <= summary.param_type_sites &&
+      summary.param_object_pointer_type_sites <= summary.param_type_sites &&
+      summary.return_id_spelling_sites <= summary.return_type_sites &&
+      summary.return_class_spelling_sites <= summary.return_type_sites &&
+      summary.return_sel_spelling_sites <= summary.return_type_sites &&
+      summary.return_instancetype_spelling_sites <= summary.return_type_sites &&
+      summary.return_object_pointer_type_sites <= summary.return_type_sites &&
+      summary.property_id_spelling_sites <= summary.property_type_sites &&
+      summary.property_class_spelling_sites <= summary.property_type_sites &&
+      summary.property_sel_spelling_sites <= summary.property_type_sites &&
+      summary.property_instancetype_spelling_sites <= summary.property_type_sites &&
+      summary.property_object_pointer_type_sites <= summary.property_type_sites &&
+      summary.param_id_spelling_sites + summary.param_class_spelling_sites + summary.param_sel_spelling_sites +
+              summary.param_instancetype_spelling_sites + summary.param_object_pointer_type_sites <=
+          summary.param_type_sites &&
+      summary.return_id_spelling_sites + summary.return_class_spelling_sites + summary.return_sel_spelling_sites +
+              summary.return_instancetype_spelling_sites + summary.return_object_pointer_type_sites <=
+          summary.return_type_sites &&
+      summary.property_id_spelling_sites + summary.property_class_spelling_sites + summary.property_sel_spelling_sites +
+              summary.property_instancetype_spelling_sites + summary.property_object_pointer_type_sites <=
+          summary.property_type_sites;
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -3695,6 +3998,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
   surface.property_synthesis_ivar_binding_summary =
       BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(surface);
+  surface.id_class_sel_object_pointer_type_checking_summary =
+      BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -4457,6 +4762,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   handoff.property_synthesis_ivar_binding_summary =
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);
+  handoff.id_class_sel_object_pointer_type_checking_summary =
+      BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -4973,6 +5280,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary =
+      BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -5145,7 +5454,62 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.property_synthesis_ivar_binding_summary.ivar_binding_resolved +
                  handoff.property_synthesis_ivar_binding_summary.ivar_binding_missing +
                  handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
-             handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites;
+             handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.deterministic &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_instancetype_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_instancetype_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_instancetype_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_instancetype_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_object_pointer_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.return_object_pointer_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_class_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_class_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites ==
+             id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.param_instancetype_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites <=
+             handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.return_instancetype_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.return_object_pointer_type_sites <=
+             handoff.id_class_sel_object_pointer_type_checking_summary.return_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.property_class_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites +
+                 handoff.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites <=
+             handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

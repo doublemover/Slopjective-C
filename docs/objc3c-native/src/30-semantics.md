@@ -2564,3 +2564,36 @@ Sema/type metadata handoff contract:
 Recommended M154 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py -q`
+
+## M155 sema/type id/class/SEL/object-pointer type-checking contract (M155-B001)
+
+M155-B adds a deterministic semantic summary for object-centric type spellings across parameter, return, and property
+surfaces and replays it through sema handoff and pass-manager parity packets.
+
+Sema/type contract markers:
+
+- `Objc3IdClassSelObjectPointerTypeCheckingSummary`
+- `id_class_sel_object_pointer_type_checking_summary`
+- `BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface`
+- `BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff`
+- `deterministic_id_class_sel_object_pointer_type_checking_handoff`
+- `result.parity_surface.id_class_sel_object_pointer_type_checking_summary`
+
+Deterministic type-check invariants (fail-closed):
+
+- each object-centric spelling counter remains bounded by its owning site class (`*_sites <= *_type_sites`).
+- aggregated spelling counters remain bounded (`id + class + sel + instancetype + object_pointer <= type_sites`).
+- integration and handoff summaries must remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.id_class_sel_object_pointer_type_checking_summary = BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.id_class_sel_object_pointer_type_checking_summary = BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_id_class_sel_object_pointer_type_checking_handoff`
+
+Recommended M155 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`

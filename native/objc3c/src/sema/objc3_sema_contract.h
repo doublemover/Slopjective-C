@@ -203,6 +203,28 @@ struct Objc3PropertySynthesisIvarBindingSummary {
   bool deterministic = true;
 };
 
+struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
+  std::size_t param_type_sites = 0;
+  std::size_t param_id_spelling_sites = 0;
+  std::size_t param_class_spelling_sites = 0;
+  std::size_t param_sel_spelling_sites = 0;
+  std::size_t param_instancetype_spelling_sites = 0;
+  std::size_t param_object_pointer_type_sites = 0;
+  std::size_t return_type_sites = 0;
+  std::size_t return_id_spelling_sites = 0;
+  std::size_t return_class_spelling_sites = 0;
+  std::size_t return_sel_spelling_sites = 0;
+  std::size_t return_instancetype_spelling_sites = 0;
+  std::size_t return_object_pointer_type_sites = 0;
+  std::size_t property_type_sites = 0;
+  std::size_t property_id_spelling_sites = 0;
+  std::size_t property_class_spelling_sites = 0;
+  std::size_t property_sel_spelling_sites = 0;
+  std::size_t property_instancetype_spelling_sites = 0;
+  std::size_t property_object_pointer_type_sites = 0;
+  bool deterministic = true;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -363,6 +385,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
+  Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   bool built = false;
 };
 
@@ -520,6 +543,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
+  Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
 };
 
 struct Objc3SemanticValidationOptions {

@@ -173,6 +173,29 @@ bool IsEquivalentPropertySynthesisIvarBindingSummary(const Objc3PropertySynthesi
          lhs.ivar_binding_conflicts == rhs.ivar_binding_conflicts;
 }
 
+bool IsEquivalentIdClassSelObjectPointerTypeCheckingSummary(
+    const Objc3IdClassSelObjectPointerTypeCheckingSummary &lhs,
+    const Objc3IdClassSelObjectPointerTypeCheckingSummary &rhs) {
+  return lhs.param_type_sites == rhs.param_type_sites &&
+         lhs.param_id_spelling_sites == rhs.param_id_spelling_sites &&
+         lhs.param_class_spelling_sites == rhs.param_class_spelling_sites &&
+         lhs.param_sel_spelling_sites == rhs.param_sel_spelling_sites &&
+         lhs.param_instancetype_spelling_sites == rhs.param_instancetype_spelling_sites &&
+         lhs.param_object_pointer_type_sites == rhs.param_object_pointer_type_sites &&
+         lhs.return_type_sites == rhs.return_type_sites &&
+         lhs.return_id_spelling_sites == rhs.return_id_spelling_sites &&
+         lhs.return_class_spelling_sites == rhs.return_class_spelling_sites &&
+         lhs.return_sel_spelling_sites == rhs.return_sel_spelling_sites &&
+         lhs.return_instancetype_spelling_sites == rhs.return_instancetype_spelling_sites &&
+         lhs.return_object_pointer_type_sites == rhs.return_object_pointer_type_sites &&
+         lhs.property_type_sites == rhs.property_type_sites &&
+         lhs.property_id_spelling_sites == rhs.property_id_spelling_sites &&
+         lhs.property_class_spelling_sites == rhs.property_class_spelling_sites &&
+         lhs.property_sel_spelling_sites == rhs.property_sel_spelling_sites &&
+         lhs.property_instancetype_spelling_sites == rhs.property_instancetype_spelling_sites &&
+         lhs.property_object_pointer_type_sites == rhs.property_object_pointer_type_sites;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -364,6 +387,39 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_missing +
               result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
           result.type_metadata_handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites;
+  result.id_class_sel_object_pointer_type_checking_summary =
+      result.integration_surface.id_class_sel_object_pointer_type_checking_summary;
+  result.deterministic_id_class_sel_object_pointer_type_checking_handoff =
+      result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.deterministic &&
+      result.integration_surface.id_class_sel_object_pointer_type_checking_summary.deterministic &&
+      IsEquivalentIdClassSelObjectPointerTypeCheckingSummary(
+          result.integration_surface.id_class_sel_object_pointer_type_checking_summary,
+          result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary) &&
+      result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .param_instancetype_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .param_object_pointer_type_sites <=
+          result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
+      result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .return_instancetype_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .return_object_pointer_type_sites <=
+          result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.return_type_sites &&
+      result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .property_class_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .property_instancetype_spelling_sites +
+              result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary
+                  .property_object_pointer_type_sites <=
+          result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -536,6 +592,44 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_missing;
   result.parity_surface.property_synthesis_ivar_binding_ivar_binding_conflicts_total =
       result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts;
+  result.parity_surface.id_class_sel_object_pointer_type_checking_summary =
+      result.type_metadata_handoff.id_class_sel_object_pointer_type_checking_summary;
+  result.parity_surface.id_class_sel_object_pointer_param_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_type_sites;
+  result.parity_surface.id_class_sel_object_pointer_param_id_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_param_class_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_param_sel_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_param_instancetype_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_instancetype_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_param_object_pointer_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_type_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_id_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_class_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_sel_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_instancetype_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_instancetype_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_return_object_pointer_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_object_pointer_type_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_type_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_id_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_class_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_class_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_sel_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_instancetype_spelling_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites;
+  result.parity_surface.id_class_sel_object_pointer_property_object_pointer_type_sites_total =
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -794,6 +888,69 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
           result.parity_surface.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
       result.parity_surface.property_synthesis_ivar_binding_summary.deterministic;
+  result.parity_surface.deterministic_id_class_sel_object_pointer_type_checking_handoff =
+      result.deterministic_id_class_sel_object_pointer_type_checking_handoff &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_id_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_class_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_sel_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_instancetype_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_instancetype_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_param_object_pointer_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_id_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_class_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_sel_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_instancetype_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_instancetype_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_object_pointer_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_return_object_pointer_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_id_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_class_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_class_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_sel_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_instancetype_spelling_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites ==
+          result.parity_surface.id_class_sel_object_pointer_property_object_pointer_type_sites_total &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_class_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_sel_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .param_instancetype_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_object_pointer_type_sites <=
+          result.parity_surface.id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_id_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_class_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_sel_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .return_instancetype_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .return_object_pointer_type_sites <=
+          result.parity_surface.id_class_sel_object_pointer_type_checking_summary.return_type_sites &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_id_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .property_class_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .property_instancetype_spelling_sites +
+              result.parity_surface.id_class_sel_object_pointer_type_checking_summary
+                  .property_object_pointer_type_sites <=
+          result.parity_surface.id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -827,6 +984,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&
       result.parity_surface.deterministic_method_lookup_override_conflict_handoff &&
       result.parity_surface.property_synthesis_ivar_binding_summary.deterministic &&
-      result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff;
+      result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff &&
+      result.parity_surface.id_class_sel_object_pointer_type_checking_summary.deterministic &&
+      result.parity_surface.deterministic_id_class_sel_object_pointer_type_checking_handoff;
   return result;
 }
