@@ -105,6 +105,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t super_dispatch_method_family_returns_related_result_sites = 0;
   std::size_t super_dispatch_method_family_contract_violation_sites = 0;
   bool deterministic_super_dispatch_method_family_handoff = false;
+  std::string lowering_runtime_shim_host_link_replay_key;
+  std::size_t runtime_shim_host_link_message_send_sites = 0;
+  std::size_t runtime_shim_host_link_required_sites = 0;
+  std::size_t runtime_shim_host_link_elided_sites = 0;
+  std::size_t runtime_shim_host_link_runtime_dispatch_arg_slots = 0;
+  std::size_t runtime_shim_host_link_runtime_dispatch_declaration_parameter_count = 0;
+  std::size_t runtime_shim_host_link_contract_violation_sites = 0;
+  std::string runtime_shim_host_link_runtime_dispatch_symbol;
+  bool runtime_shim_host_link_default_runtime_dispatch_symbol_binding = true;
+  bool deterministic_runtime_shim_host_link_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

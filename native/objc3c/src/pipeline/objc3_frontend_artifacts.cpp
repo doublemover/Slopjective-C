@@ -568,6 +568,32 @@ Objc3SuperDispatchMethodFamilyContract BuildSuperDispatchMethodFamilyContract(
   return contract;
 }
 
+Objc3RuntimeShimHostLinkContract BuildRuntimeShimHostLinkContract(
+    const Objc3DispatchAbiMarshallingContract &dispatch_abi_marshalling_contract,
+    const Objc3NilReceiverSemanticsFoldabilityContract &nil_receiver_semantics_foldability_contract,
+    const Objc3FrontendOptions &options) {
+  Objc3RuntimeShimHostLinkContract contract;
+  contract.message_send_sites = dispatch_abi_marshalling_contract.message_send_sites;
+  contract.runtime_shim_required_sites =
+      nil_receiver_semantics_foldability_contract.nil_receiver_runtime_dispatch_required_sites;
+  if (contract.runtime_shim_required_sites <= contract.message_send_sites) {
+    contract.runtime_shim_elided_sites =
+        contract.message_send_sites - contract.runtime_shim_required_sites;
+  } else {
+    contract.runtime_shim_elided_sites = 0;
+    contract.contract_violation_sites = 1;
+  }
+  contract.runtime_dispatch_arg_slots = options.lowering.max_message_send_args;
+  contract.runtime_dispatch_declaration_parameter_count = contract.runtime_dispatch_arg_slots + 2u;
+  contract.runtime_dispatch_symbol = options.lowering.runtime_dispatch_symbol;
+  contract.default_runtime_dispatch_symbol_binding =
+      contract.runtime_dispatch_symbol == kObjc3RuntimeDispatchSymbol;
+  contract.deterministic =
+      dispatch_abi_marshalling_contract.deterministic &&
+      nil_receiver_semantics_foldability_contract.deterministic;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -758,6 +784,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string super_dispatch_method_family_replay_key =
       Objc3SuperDispatchMethodFamilyReplayKey(super_dispatch_method_family_contract);
+  const Objc3RuntimeShimHostLinkContract runtime_shim_host_link_contract =
+      BuildRuntimeShimHostLinkContract(
+          dispatch_abi_marshalling_contract,
+          nil_receiver_semantics_foldability_contract,
+          options);
+  if (!IsValidObjc3RuntimeShimHostLinkContract(runtime_shim_host_link_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid runtime shim/host-link contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string runtime_shim_host_link_replay_key =
+      Objc3RuntimeShimHostLinkReplayKey(runtime_shim_host_link_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1098,6 +1140,28 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_super_dispatch_method_family_replay_key\":\""
            << super_dispatch_method_family_replay_key
            << "\""
+           << ",\"deterministic_runtime_shim_host_link_handoff\":"
+           << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
+           << ",\"runtime_shim_host_link_message_send_sites\":"
+           << runtime_shim_host_link_contract.message_send_sites
+           << ",\"runtime_shim_host_link_required_runtime_shim_sites\":"
+           << runtime_shim_host_link_contract.runtime_shim_required_sites
+           << ",\"runtime_shim_host_link_elided_runtime_shim_sites\":"
+           << runtime_shim_host_link_contract.runtime_shim_elided_sites
+           << ",\"runtime_shim_host_link_runtime_dispatch_arg_slots\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_arg_slots
+           << ",\"runtime_shim_host_link_runtime_dispatch_declaration_parameter_count\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_declaration_parameter_count
+           << ",\"runtime_shim_host_link_runtime_dispatch_symbol\":\""
+           << runtime_shim_host_link_contract.runtime_dispatch_symbol
+           << "\""
+           << ",\"runtime_shim_host_link_default_runtime_dispatch_symbol_binding\":"
+           << (runtime_shim_host_link_contract.default_runtime_dispatch_symbol_binding ? "true" : "false")
+           << ",\"runtime_shim_host_link_contract_violation_sites\":"
+           << runtime_shim_host_link_contract.contract_violation_sites
+           << ",\"lowering_runtime_shim_host_link_replay_key\":\""
+           << runtime_shim_host_link_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1387,6 +1451,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_runtime_shim_host_link_surface\":{\"message_send_sites\":"
+           << runtime_shim_host_link_contract.message_send_sites
+           << ",\"runtime_shim_required_sites\":"
+           << runtime_shim_host_link_contract.runtime_shim_required_sites
+           << ",\"runtime_shim_elided_sites\":"
+           << runtime_shim_host_link_contract.runtime_shim_elided_sites
+           << ",\"runtime_dispatch_arg_slots\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_arg_slots
+           << ",\"runtime_dispatch_declaration_parameter_count\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_declaration_parameter_count
+           << ",\"runtime_dispatch_symbol\":\""
+           << runtime_shim_host_link_contract.runtime_dispatch_symbol
+           << "\",\"default_runtime_dispatch_symbol_binding\":"
+           << (runtime_shim_host_link_contract.default_runtime_dispatch_symbol_binding ? "true" : "false")
+           << ",\"contract_violation_sites\":"
+           << runtime_shim_host_link_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << runtime_shim_host_link_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1496,6 +1581,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3SuperDispatchMethodFamilyLaneContract
            << "\",\"deterministic_handoff\":"
            << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_runtime_shim_host_link\":{\"replay_key\":\""
+           << runtime_shim_host_link_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3RuntimeShimHostLinkLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1715,6 +1806,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       super_dispatch_method_family_contract.method_family_returns_related_result_sites;
   ir_frontend_metadata.super_dispatch_method_family_contract_violation_sites =
       super_dispatch_method_family_contract.contract_violation_sites;
+  ir_frontend_metadata.lowering_runtime_shim_host_link_replay_key = runtime_shim_host_link_replay_key;
+  ir_frontend_metadata.runtime_shim_host_link_message_send_sites =
+      runtime_shim_host_link_contract.message_send_sites;
+  ir_frontend_metadata.runtime_shim_host_link_required_sites =
+      runtime_shim_host_link_contract.runtime_shim_required_sites;
+  ir_frontend_metadata.runtime_shim_host_link_elided_sites =
+      runtime_shim_host_link_contract.runtime_shim_elided_sites;
+  ir_frontend_metadata.runtime_shim_host_link_runtime_dispatch_arg_slots =
+      runtime_shim_host_link_contract.runtime_dispatch_arg_slots;
+  ir_frontend_metadata.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count =
+      runtime_shim_host_link_contract.runtime_dispatch_declaration_parameter_count;
+  ir_frontend_metadata.runtime_shim_host_link_contract_violation_sites =
+      runtime_shim_host_link_contract.contract_violation_sites;
+  ir_frontend_metadata.runtime_shim_host_link_runtime_dispatch_symbol =
+      runtime_shim_host_link_contract.runtime_dispatch_symbol;
+  ir_frontend_metadata.runtime_shim_host_link_default_runtime_dispatch_symbol_binding =
+      runtime_shim_host_link_contract.default_runtime_dispatch_symbol_binding;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1774,6 +1882,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       nil_receiver_semantics_foldability_contract.deterministic;
   ir_frontend_metadata.deterministic_super_dispatch_method_family_handoff =
       super_dispatch_method_family_contract.deterministic;
+  ir_frontend_metadata.deterministic_runtime_shim_host_link_handoff =
+      runtime_shim_host_link_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

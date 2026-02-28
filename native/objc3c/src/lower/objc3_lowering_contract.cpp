@@ -493,3 +493,45 @@ std::string Objc3SuperDispatchMethodFamilyReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3SuperDispatchMethodFamilyLaneContract;
 }
+
+bool IsValidObjc3RuntimeShimHostLinkContract(
+    const Objc3RuntimeShimHostLinkContract &contract) {
+  if (!IsValidRuntimeDispatchSymbol(contract.runtime_dispatch_symbol)) {
+    return false;
+  }
+  if (contract.runtime_dispatch_arg_slots > kObjc3RuntimeDispatchMaxArgs) {
+    return false;
+  }
+  if (contract.runtime_shim_required_sites > contract.message_send_sites) {
+    return false;
+  }
+  if (contract.runtime_shim_required_sites + contract.runtime_shim_elided_sites !=
+      contract.message_send_sites) {
+    return false;
+  }
+  if (contract.runtime_dispatch_declaration_parameter_count !=
+      contract.runtime_dispatch_arg_slots + 2u) {
+    return false;
+  }
+  if (contract.default_runtime_dispatch_symbol_binding !=
+      (contract.runtime_dispatch_symbol == kObjc3RuntimeDispatchSymbol)) {
+    return false;
+  }
+  return contract.contract_violation_sites <= contract.message_send_sites;
+}
+
+std::string Objc3RuntimeShimHostLinkReplayKey(
+    const Objc3RuntimeShimHostLinkContract &contract) {
+  return std::string("message_send_sites=") + std::to_string(contract.message_send_sites) +
+         ";runtime_shim_required_sites=" + std::to_string(contract.runtime_shim_required_sites) +
+         ";runtime_shim_elided_sites=" + std::to_string(contract.runtime_shim_elided_sites) +
+         ";runtime_dispatch_arg_slots=" + std::to_string(contract.runtime_dispatch_arg_slots) +
+         ";runtime_dispatch_declaration_parameter_count=" +
+         std::to_string(contract.runtime_dispatch_declaration_parameter_count) +
+         ";runtime_dispatch_symbol=" + contract.runtime_dispatch_symbol +
+         ";default_runtime_dispatch_symbol_binding=" +
+         BoolToken(contract.default_runtime_dispatch_symbol_binding) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3RuntimeShimHostLinkLaneContract;
+}

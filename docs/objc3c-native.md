@@ -6871,6 +6871,64 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m159_lowering_super_dispatch_method_family_contract.py -q`
 
+## Runtime-shim host-link artifact contract (M160-C001)
+
+M160-C publishes replay-stable runtime-shim host-link invariants over message-send lowering.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m160/lowering-runtime-shim-host-link-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m160/lowering-runtime-shim-host-link-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m160/lowering-runtime-shim-host-link-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m160/lowering-runtime-shim-host-link-contract/runtime-shim-host-link-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3RuntimeShimHostLinkLaneContract`
+- `Objc3RuntimeShimHostLinkContract`
+- `IsValidObjc3RuntimeShimHostLinkContract(...)`
+- `Objc3RuntimeShimHostLinkReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `runtime_shim_required_sites=<N>`
+- `runtime_shim_elided_sites=<N>`
+- `runtime_dispatch_arg_slots=<N>`
+- `runtime_dispatch_declaration_parameter_count=<N>`
+- `runtime_dispatch_symbol=<symbol>`
+- `default_runtime_dispatch_symbol_binding=<bool>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m160-runtime-shim-host-link-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_runtime_shim_host_link_handoff`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_message_send_sites`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_required_runtime_shim_sites`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_elided_runtime_shim_sites`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_runtime_dispatch_arg_slots`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_runtime_dispatch_symbol`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_default_runtime_dispatch_symbol_binding`
+- `frontend.pipeline.sema_pass_manager.runtime_shim_host_link_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_runtime_shim_host_link_replay_key`
+- `frontend.pipeline.semantic_surface.objc_runtime_shim_host_link_surface`
+- `lowering_runtime_shim_host_link.replay_key`
+- `lowering_runtime_shim_host_link.lane_contract`
+
+IR publication markers:
+
+- `; runtime_shim_host_link_lowering = message_send_sites=<N>;runtime_shim_required_sites=<N>;runtime_shim_elided_sites=<N>;runtime_dispatch_arg_slots=<N>;runtime_dispatch_declaration_parameter_count=<N>;runtime_dispatch_symbol=<symbol>;default_runtime_dispatch_symbol_binding=<bool>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m160-runtime-shim-host-link-v1`
+- `; frontend_objc_runtime_shim_host_link_profile = message_send_sites=<N>, runtime_shim_required_sites=<N>, runtime_shim_elided_sites=<N>, runtime_dispatch_arg_slots=<N>, runtime_dispatch_declaration_parameter_count=<N>, runtime_dispatch_symbol=<symbol>, default_runtime_dispatch_symbol_binding=<bool>, contract_violation_sites=<N>, deterministic_runtime_shim_host_link_handoff=<bool>`
+- `!objc3.objc_runtime_shim_host_link = !{!13}`
+- `!13 = !{i64 <message_send_sites>, i64 <runtime_shim_required_sites>, i64 <runtime_shim_elided_sites>, i64 <runtime_dispatch_arg_slots>, i64 <runtime_dispatch_declaration_parameter_count>, !"runtime_dispatch_symbol", i1 <default_runtime_dispatch_symbol_binding>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m160_lowering_runtime_shim_host_link_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

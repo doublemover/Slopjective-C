@@ -30,6 +30,8 @@ inline constexpr const char *kObjc3NilReceiverSemanticsFoldabilityLaneContract =
     "m158-nil-receiver-semantics-foldability-v1";
 inline constexpr const char *kObjc3SuperDispatchMethodFamilyLaneContract =
     "m159-super-dispatch-method-family-v1";
+inline constexpr const char *kObjc3RuntimeShimHostLinkLaneContract =
+    "m160-runtime-shim-host-link-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -133,6 +135,18 @@ struct Objc3SuperDispatchMethodFamilyContract {
   bool deterministic = true;
 };
 
+struct Objc3RuntimeShimHostLinkContract {
+  std::size_t message_send_sites = 0;
+  std::size_t runtime_shim_required_sites = 0;
+  std::size_t runtime_shim_elided_sites = 0;
+  std::size_t runtime_dispatch_arg_slots = kObjc3RuntimeDispatchDefaultArgs;
+  std::size_t runtime_dispatch_declaration_parameter_count = 0;
+  std::size_t contract_violation_sites = 0;
+  std::string runtime_dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+  bool default_runtime_dispatch_symbol_binding = true;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -178,3 +192,7 @@ bool IsValidObjc3SuperDispatchMethodFamilyContract(
     const Objc3SuperDispatchMethodFamilyContract &contract);
 std::string Objc3SuperDispatchMethodFamilyReplayKey(
     const Objc3SuperDispatchMethodFamilyContract &contract);
+bool IsValidObjc3RuntimeShimHostLinkContract(
+    const Objc3RuntimeShimHostLinkContract &contract);
+std::string Objc3RuntimeShimHostLinkReplayKey(
+    const Objc3RuntimeShimHostLinkContract &contract);

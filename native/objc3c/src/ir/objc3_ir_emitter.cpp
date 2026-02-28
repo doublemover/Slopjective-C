@@ -118,6 +118,10 @@ class Objc3IREmitter {
       out << "; super_dispatch_method_family_lowering = "
           << frontend_metadata_.lowering_super_dispatch_method_family_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_runtime_shim_host_link_replay_key.empty()) {
+      out << "; runtime_shim_host_link_lowering = "
+          << frontend_metadata_.lowering_runtime_shim_host_link_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -249,6 +253,22 @@ class Objc3IREmitter {
         << frontend_metadata_.super_dispatch_method_family_contract_violation_sites
         << ", deterministic_super_dispatch_method_family_handoff="
         << (frontend_metadata_.deterministic_super_dispatch_method_family_handoff ? "true" : "false")
+        << "\n";
+    out << "; frontend_objc_runtime_shim_host_link_profile = message_send_sites="
+        << frontend_metadata_.runtime_shim_host_link_message_send_sites
+        << ", runtime_shim_required_sites=" << frontend_metadata_.runtime_shim_host_link_required_sites
+        << ", runtime_shim_elided_sites=" << frontend_metadata_.runtime_shim_host_link_elided_sites
+        << ", runtime_dispatch_arg_slots="
+        << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_arg_slots
+        << ", runtime_dispatch_declaration_parameter_count="
+        << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count
+        << ", runtime_dispatch_symbol=" << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol
+        << ", default_runtime_dispatch_symbol_binding="
+        << (frontend_metadata_.runtime_shim_host_link_default_runtime_dispatch_symbol_binding ? "true" : "false")
+        << ", contract_violation_sites="
+        << frontend_metadata_.runtime_shim_host_link_contract_violation_sites
+        << ", deterministic_runtime_shim_host_link_handoff="
+        << (frontend_metadata_.deterministic_runtime_shim_host_link_handoff ? "true" : "false")
         << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
@@ -421,6 +441,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
     out << "!objc3.objc_super_dispatch_method_family = !{!12}\n";
+    out << "!objc3.objc_runtime_shim_host_link = !{!13}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -585,6 +606,22 @@ class Objc3IREmitter {
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_contract_violation_sites)
         << ", i1 " << (frontend_metadata_.deterministic_super_dispatch_method_family_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!13 = !{i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_message_send_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_required_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_elided_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_runtime_dispatch_arg_slots)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count)
+        << ", !\"" << EscapeCStringLiteral(frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_shim_host_link_default_runtime_dispatch_symbol_binding ? 1 : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_contract_violation_sites)
+        << ", i1 " << (frontend_metadata_.deterministic_runtime_shim_host_link_handoff ? 1 : 0)
         << "}\n\n";
   }
 
