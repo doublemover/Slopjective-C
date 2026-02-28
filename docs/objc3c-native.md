@@ -329,6 +329,21 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
 
+## M214 frontend daemonized compiler packet
+
+Frontend daemon/watch mode requires deterministic parser/AST boundary evidence across incremental runs.
+
+- Required daemonized signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required daemonized commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1947,6 +1962,36 @@ Recommended SDK packaging contract commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
 
+## M214 sema/type daemonized compiler profile
+
+For persistent compiler/watch-mode execution on the sema/type lane, capture deterministic evidence packets per daemon cycle in stable order: `daemon-bootstrap`, `watch-incremental`, `watch-replay`.
+
+Daemonized packet map:
+
+- `daemon cycle 1.1 deterministic sema diagnostics` -> `m214_daemon_bootstrap_sema_diagnostics_packet`, `m214_watch_incremental_sema_diagnostics_packet`, `m214_watch_replay_sema_diagnostics_packet`
+- `daemon cycle 1.2 deterministic type-metadata handoff` -> `m214_daemon_bootstrap_type_metadata_handoff_packet`, `m214_watch_incremental_type_metadata_handoff_packet`, `m214_watch_replay_type_metadata_handoff_packet`
+
+### 1.1 Deterministic sema diagnostics daemonized packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Daemonized diagnostics packet keys: `m214_daemon_bootstrap_sema_diagnostics_packet`, `m214_watch_incremental_sema_diagnostics_packet`, and `m214_watch_replay_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata handoff daemonized packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Daemonized type-metadata packet keys: `m214_daemon_bootstrap_type_metadata_handoff_packet`, `m214_watch_incremental_type_metadata_handoff_packet`, and `m214_watch_replay_type_metadata_handoff_packet`.
+
+Recommended daemonized compiler commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m215_sema_sdk_packaging_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m214_sema_daemonized_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2116,6 +2161,54 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M214 lowering/runtime daemonized compiler profile
+
+Lowering/runtime daemon/watch mode evidence is captured as deterministic packet artifacts under `tmp/` for incremental replay validation.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.manifest.json`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in daemonized packet artifacts):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `incremental replay markers` (required in daemon/watch evidence extracts):
+  - `@@ cycle:cycle-001`
+  - `@@ cycle:cycle-002`
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `incremental_cycle_id`
+  - `run1_sha256`
+  - `run2_sha256`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - cycle-001 and cycle-002 captures from identical source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - ABI/IR anchor extracts and incremental replay marker extracts remain stable across daemon/watch reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, incremental replay marker, or source anchor is missing.
+
+Daemonized capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001 --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002 --emit-prefix module`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.manifest.json tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.manifest.json > tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/abi-ir-anchors.txt`
+4. `@("@@ cycle:cycle-001", "@@ cycle:cycle-002") | Set-Content tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "\"incremental_cycle_id\":|\"run1_sha256\":|\"run2_sha256\":" tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m214_lowering_daemonized_contract.py -q`
 
 ## M215 lowering/runtime SDK packaging profile
 
@@ -3581,6 +3674,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m215_validation_sdk_packaging_contract.py -q
 ```
 
+## M214 validation/perf daemonized compiler runbook
+
+Daemon/watch validation runbook verifies deterministic incremental behavior and replay evidence.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Daemonized evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `incremental_cycle_id`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `incremental_cycle_id`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `incremental_cycle_id`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `incremental_cycle_id`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m214_validation_daemonized_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3818,6 +3956,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain packaging anchors.
+
+## M214 integration daemonized compiler/watch mode
+
+- Gate intent: enforce deterministic daemon/watch mode evidence across all lanes.
+### 1.1 Daemonized integration chain
+- Deterministic daemonized gate:
+  - `npm run check:objc3c:m214-daemonized-watch`
+- Chain order:
+  - replays `check:objc3c:m215-sdk-packaging`.
+  - enforces all M214 lane contracts:
+    `tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_sema_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_lowering_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_validation_daemonized_contract.py`,
+    `tests/tooling/test_objc3c_m214_integration_daemonized_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through daemonized/watch validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain daemonized anchors.
 
 ## Current call contract
 
