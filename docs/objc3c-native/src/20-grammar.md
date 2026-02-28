@@ -285,3 +285,18 @@ Frontend debug-info fidelity requires deterministic parser/AST boundary evidence
   3. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
 
+## M212 frontend code-action packet
+
+Frontend code-action/refactor support requires deterministic parser/AST boundary evidence for safe rewrites.
+
+- Required code-action signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required code-action commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m212_frontend_code_action_contract.py -q`
+
