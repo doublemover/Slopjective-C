@@ -382,6 +382,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py`
   - `tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py`
   - `tests/tooling/test_objc3c_m149_integration_property_attribute_contract.py`
+
+## M150 integration object-pointer declarators, nullability, lightweight generics parse
+
+- Integration gate:
+  - `npm run check:objc3c:m150-object-pointer-nullability-generics`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_validation_object_pointer_nullability_generics_contract.py`
+  - `tests/tooling/test_objc3c_m150_integration_object_pointer_nullability_generics_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

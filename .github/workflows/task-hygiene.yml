@@ -147,6 +147,8 @@ jobs:
         run: npm run check:objc3c:m148-selector-normalization
       - name: 44d Run M149 @property grammar and attribute parsing gate
         run: npm run check:objc3c:m149-property-attributes
+      - name: 44e Run M150 object-pointer/nullability/generics grammar gate
+        run: npm run check:objc3c:m150-object-pointer-nullability-generics
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
