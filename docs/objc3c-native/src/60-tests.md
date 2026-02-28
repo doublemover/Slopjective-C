@@ -2110,6 +2110,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
 ```
 
+## M172 validation/conformance/perf nullability flow warning precision runbook
+
+Deterministic M172 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m172_validation_nullability_flow_warning_precision_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_nullability_flow_warning_precision_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_nullability_flow_warning_precision_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface.deterministic_handoff`
+  - `lowering_nullability_flow_warning_precision.replay_key`
+- `replay_run_1/module.ll`
+  - `nullability_flow_warning_precision_lowering`
+  - `frontend_objc_nullability_flow_warning_precision_lowering_profile`
+  - `!objc3.objc_nullability_flow_warning_precision_lowering = !{!25}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
