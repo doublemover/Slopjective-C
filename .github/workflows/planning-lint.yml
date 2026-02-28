@@ -16,5 +16,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+      - name: Enforce generated-only objc3c-native docs drift contract
+        run: python scripts/build_objc3c_native_docs.py --check
+      - name: Enforce generated-only site index drift contract
+        run: python scripts/build_site_index.py --check
       - name: Run planning-scope lint
         run: python scripts/planning_lint.py
