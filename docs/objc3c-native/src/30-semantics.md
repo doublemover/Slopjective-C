@@ -1848,3 +1848,33 @@ Recommended M207 sema/type dispatch-optimization validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py -q`
 
+## M206 sema/type canonical optimization pipeline stage-1
+
+For deterministic sema/type canonical optimization stage-1, capture replay-stable packet evidence from pass-level diagnostics canonicalization, canonical compatibility routing, and type-metadata handoff ordering.
+
+Canonical optimization stage-1 packet map:
+
+- `stage-1 packet 1.1 deterministic canonical sema diagnostics ordering hooks` -> `m206_canonical_sema_diagnostics_stage1_packet`
+- `stage-1 packet 1.2 deterministic canonical type-metadata handoff hooks` -> `m206_canonical_type_metadata_stage1_packet`
+
+### 1.1 Deterministic canonical sema diagnostics ordering packet
+
+- Source canonical-routing anchors: `Objc3SemaCompatibilityMode::Canonical`, `kObjc3SemaPassOrder`, and `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`.
+- Source canonical-diagnostics anchors: `CanonicalizePassDiagnostics(pass_diagnostics);`, `IsCanonicalPassDiagnostics(pass_diagnostics);`, `std::stable_sort(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);`, and `result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest canonical-stage anchors under `frontend`: `compatibility_mode`, `frontend.pipeline.sema_pass_manager`, `deterministic_semantic_diagnostics`, and `diagnostics_monotonic`.
+- Deterministic canonical sema diagnostics packet key: `m206_canonical_sema_diagnostics_stage1_packet`.
+
+### 1.2 Deterministic canonical type-metadata handoff packet
+
+- Source type-handoff anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());`, and `std::sort(function_names.begin(), function_names.end());`.
+- Source deterministic-validation anchors: `std::is_sorted(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end())`, `std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),`, and `result.deterministic_type_metadata_handoff =`.
+- Source parity/readiness anchors: `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest type-metadata anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface canonical-stage anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic canonical type-metadata packet key: `m206_canonical_type_metadata_stage1_packet`.
+
+Recommended M206 sema/type canonical optimization stage-1 validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py -q`
+
