@@ -140,6 +140,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t lightweight_generic_constraint_pointer_declarator_sites_total = 0;
   std::size_t lightweight_generic_constraint_normalized_sites_total = 0;
   std::size_t lightweight_generic_constraint_contract_violation_sites_total = 0;
+  std::size_t nullability_flow_sites_total = 0;
+  std::size_t nullability_flow_object_pointer_type_sites_total = 0;
+  std::size_t nullability_flow_nullability_suffix_sites_total = 0;
+  std::size_t nullability_flow_nullable_suffix_sites_total = 0;
+  std::size_t nullability_flow_nonnull_suffix_sites_total = 0;
+  std::size_t nullability_flow_normalized_sites_total = 0;
+  std::size_t nullability_flow_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -321,6 +328,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_property_attribute_handoff = false;
   bool deterministic_type_annotation_surface_handoff = false;
   bool deterministic_lightweight_generic_constraint_handoff = false;
+  bool deterministic_nullability_flow_warning_precision_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -346,6 +354,7 @@ struct Objc3SemaParityContractSurface {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -527,6 +536,29 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
          surface.lightweight_generic_constraint_summary.deterministic &&
          surface.deterministic_lightweight_generic_constraint_handoff &&
+         surface.nullability_flow_warning_precision_summary.nullability_flow_sites ==
+             surface.nullability_flow_sites_total &&
+         surface.nullability_flow_warning_precision_summary.object_pointer_type_sites ==
+             surface.nullability_flow_object_pointer_type_sites_total &&
+         surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+             surface.nullability_flow_nullability_suffix_sites_total &&
+         surface.nullability_flow_warning_precision_summary.nullable_suffix_sites ==
+             surface.nullability_flow_nullable_suffix_sites_total &&
+         surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites ==
+             surface.nullability_flow_nonnull_suffix_sites_total &&
+         surface.nullability_flow_warning_precision_summary.normalized_sites ==
+             surface.nullability_flow_normalized_sites_total &&
+         surface.nullability_flow_warning_precision_summary.contract_violation_sites ==
+             surface.nullability_flow_contract_violation_sites_total &&
+         surface.nullability_flow_warning_precision_summary.normalized_sites <=
+             surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         surface.nullability_flow_warning_precision_summary.contract_violation_sites <=
+             surface.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         surface.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+             surface.nullability_flow_warning_precision_summary.nullable_suffix_sites +
+                 surface.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
+         surface.nullability_flow_warning_precision_summary.deterministic &&
+         surface.deterministic_nullability_flow_warning_precision_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1166,6 +1198,8 @@ struct Objc3SemaPassManagerResult {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   bool deterministic_lightweight_generic_constraint_handoff = false;
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  bool deterministic_nullability_flow_warning_precision_handoff = false;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

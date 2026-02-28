@@ -152,6 +152,17 @@ struct Objc3LightweightGenericConstraintSummary {
   bool deterministic = true;
 };
 
+struct Objc3NullabilityFlowWarningPrecisionSummary {
+  std::size_t nullability_flow_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t nullability_suffix_sites = 0;
+  std::size_t nullable_suffix_sites = 0;
+  std::size_t nonnull_suffix_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3SymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -745,6 +756,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -987,6 +999,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
+  Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;

@@ -3376,3 +3376,29 @@ Deterministic sema intent:
 Recommended M171 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q`
+
+## M172 sema/type nullability flow and warning precision contract (M172-B001)
+
+M172-B defines deterministic sema summaries for nullability-flow precision and
+fail-closed warning packet consistency.
+
+M172 sema/type surface details:
+
+- `Objc3NullabilityFlowWarningPrecisionSummary`
+- `BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `nullability_flow_sites_total`
+  - `nullability_flow_normalized_sites_total`
+  - `nullability_flow_contract_violation_sites_total`
+  - `deterministic_nullability_flow_warning_precision_handoff`
+
+Deterministic sema intent:
+
+- nullability-flow packets are derived from deterministic type-annotation
+  counters.
+- invalid nullability suffix packets and non-object-pointer nullability suffix
+  usage are surfaced as contract violations.
+
+Recommended M172 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q`

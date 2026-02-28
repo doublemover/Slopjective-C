@@ -3090,6 +3090,31 @@ static Objc3LightweightGenericConstraintSummary BuildLightweightGenericConstrain
   return summary;
 }
 
+static Objc3NullabilityFlowWarningPrecisionSummary
+BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
+  Objc3NullabilityFlowWarningPrecisionSummary summary;
+  summary.nullability_flow_sites = type_annotation_summary.nullability_suffix_sites;
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.nullability_suffix_sites = type_annotation_summary.nullability_suffix_sites;
+  summary.nullable_suffix_sites = type_annotation_summary.nullability_suffix_sites;
+  summary.nonnull_suffix_sites = 0;
+  summary.normalized_sites =
+      summary.nullability_suffix_sites - type_annotation_summary.invalid_nullability_suffix_sites;
+  summary.contract_violation_sites =
+      type_annotation_summary.invalid_nullability_suffix_sites +
+      (summary.nullability_suffix_sites > summary.object_pointer_type_sites
+           ? summary.nullability_suffix_sites - summary.object_pointer_type_sites
+           : 0u);
+  summary.deterministic =
+      type_annotation_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.normalized_sites <= summary.nullability_flow_sites &&
+      summary.contract_violation_sites <= summary.nullability_flow_sites &&
+      summary.nullability_suffix_sites == summary.nullable_suffix_sites + summary.nonnull_suffix_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7203,6 +7228,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.lightweight_generic_constraint_summary =
       BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
           surface.type_annotation_surface_summary);
+  surface.nullability_flow_warning_precision_summary =
+      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
+          surface.type_annotation_surface_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8190,6 +8218,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.lightweight_generic_constraint_summary =
       BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  handoff.nullability_flow_warning_precision_summary =
+      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -8917,6 +8948,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary =
       BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  const Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary =
+      BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9055,6 +9089,28 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.lightweight_generic_constraint_summary.generic_constraint_sites &&
          handoff.lightweight_generic_constraint_summary.contract_violation_sites <=
              handoff.lightweight_generic_constraint_summary.generic_constraint_sites &&
+         handoff.nullability_flow_warning_precision_summary.deterministic &&
+         handoff.nullability_flow_warning_precision_summary.nullability_flow_sites ==
+             nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         handoff.nullability_flow_warning_precision_summary.object_pointer_type_sites ==
+             nullability_flow_warning_precision_summary.object_pointer_type_sites &&
+         handoff.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+             nullability_flow_warning_precision_summary.nullability_suffix_sites &&
+         handoff.nullability_flow_warning_precision_summary.nullable_suffix_sites ==
+             nullability_flow_warning_precision_summary.nullable_suffix_sites &&
+         handoff.nullability_flow_warning_precision_summary.nonnull_suffix_sites ==
+             nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
+         handoff.nullability_flow_warning_precision_summary.normalized_sites ==
+             nullability_flow_warning_precision_summary.normalized_sites &&
+         handoff.nullability_flow_warning_precision_summary.contract_violation_sites ==
+             nullability_flow_warning_precision_summary.contract_violation_sites &&
+         handoff.nullability_flow_warning_precision_summary.normalized_sites <=
+             handoff.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         handoff.nullability_flow_warning_precision_summary.contract_violation_sites <=
+             handoff.nullability_flow_warning_precision_summary.nullability_flow_sites &&
+         handoff.nullability_flow_warning_precision_summary.nullability_suffix_sites ==
+             handoff.nullability_flow_warning_precision_summary.nullable_suffix_sites +
+                 handoff.nullability_flow_warning_precision_summary.nonnull_suffix_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
