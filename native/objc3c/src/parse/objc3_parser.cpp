@@ -745,6 +745,70 @@ static bool IsPublicPrivateApiPartitionProfileNormalized(
   return generic_suffix_terminated && object_pointer_type_spelling;
 }
 
+static std::string BuildIncrementalModuleCacheInvalidationProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  const bool cache_key_ready =
+      object_pointer_type_spelling &&
+      (!has_generic_suffix ||
+       (generic_suffix_terminated && import_edge_candidates > 0));
+  const bool cache_partitioned = namespace_segments > 1;
+  const bool invalidation_on_shape_change =
+      has_generic_suffix || has_pointer_declarator || cache_partitioned;
+  const bool invalidation_ready =
+      !invalidation_on_shape_change || cache_key_ready;
+
+  std::ostringstream out;
+  out << "incremental-module-cache-invalidation:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";namespace-segments=" << namespace_segments
+      << ";import-edge-candidates=" << import_edge_candidates
+      << ";cache-key-ready=" << (cache_key_ready ? "true" : "false")
+      << ";cache-partitioned=" << (cache_partitioned ? "true" : "false")
+      << ";invalidation-on-shape-change="
+      << (invalidation_on_shape_change ? "true" : "false")
+      << ";invalidation-ready=" << (invalidation_ready ? "true" : "false");
+  return out.str();
+}
+
+static bool IsIncrementalModuleCacheInvalidationProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text)
+                         : 0;
+  const std::size_t namespace_segments =
+      CountNamespaceSegments(object_pointer_type_name);
+  if (namespace_segments > 1 && !object_pointer_type_spelling) {
+    return false;
+  }
+  if (has_pointer_declarator && !object_pointer_type_spelling) {
+    return false;
+  }
+  if (!has_generic_suffix) {
+    return true;
+  }
+  return generic_suffix_terminated &&
+         object_pointer_type_spelling &&
+         import_edge_candidates > 0;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1560,6 +1624,10 @@ class Objc3Parser {
         source.return_public_private_api_partition_profile_is_normalized;
     target.return_public_private_api_partition_profile =
         source.return_public_private_api_partition_profile;
+    target.return_incremental_module_cache_invalidation_profile_is_normalized =
+        source.return_incremental_module_cache_invalidation_profile_is_normalized;
+    target.return_incremental_module_cache_invalidation_profile =
+        source.return_incremental_module_cache_invalidation_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1632,6 +1700,10 @@ class Objc3Parser {
         source.public_private_api_partition_profile_is_normalized;
     target.public_private_api_partition_profile =
         source.public_private_api_partition_profile;
+    target.incremental_module_cache_invalidation_profile_is_normalized =
+        source.incremental_module_cache_invalidation_profile_is_normalized;
+    target.incremental_module_cache_invalidation_profile =
+        source.incremental_module_cache_invalidation_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2497,6 +2569,8 @@ class Objc3Parser {
     fn.return_namespace_collision_shadowing_profile.clear();
     fn.return_public_private_api_partition_profile_is_normalized = false;
     fn.return_public_private_api_partition_profile.clear();
+    fn.return_incremental_module_cache_invalidation_profile_is_normalized = false;
+    fn.return_incremental_module_cache_invalidation_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2783,6 +2857,22 @@ class Objc3Parser {
             fn.return_generic_suffix_terminated,
             fn.return_generic_suffix_text,
             fn.return_object_pointer_type_name);
+    fn.return_incremental_module_cache_invalidation_profile =
+        BuildIncrementalModuleCacheInvalidationProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
+    fn.return_incremental_module_cache_invalidation_profile_is_normalized =
+        IsIncrementalModuleCacheInvalidationProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
 
     return true;
   }
@@ -2819,6 +2909,8 @@ class Objc3Parser {
     param.namespace_collision_shadowing_profile.clear();
     param.public_private_api_partition_profile_is_normalized = false;
     param.public_private_api_partition_profile.clear();
+    param.incremental_module_cache_invalidation_profile_is_normalized = false;
+    param.incremental_module_cache_invalidation_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -3043,6 +3135,22 @@ class Objc3Parser {
             param.object_pointer_type_spelling,
             param.has_generic_suffix,
             param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.incremental_module_cache_invalidation_profile =
+        BuildIncrementalModuleCacheInvalidationProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.incremental_module_cache_invalidation_profile_is_normalized =
+        IsIncrementalModuleCacheInvalidationProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
             param.generic_suffix_text,
             param.object_pointer_type_name);
 

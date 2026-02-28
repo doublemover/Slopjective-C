@@ -1108,6 +1108,34 @@ Recommended M178 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py -q`
 
+## M179 frontend incremental module cache and invalidation parser/AST surface (M179-A001)
+
+Frontend parser/AST now emits deterministic incremental-module-cache/invalidation
+profiles for parameter/property/return type annotations.
+
+M179 parser/AST surface details:
+
+- incremental module-cache/invalidation anchors:
+  - `BuildIncrementalModuleCacheInvalidationProfile(...)`
+  - `IsIncrementalModuleCacheInvalidationProfileNormalized(...)`
+- parser assignment anchors:
+  - `incremental_module_cache_invalidation_profile`
+  - `incremental_module_cache_invalidation_profile_is_normalized`
+  - `return_incremental_module_cache_invalidation_profile`
+  - `return_incremental_module_cache_invalidation_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives cache-key readiness and invalidation-on-shape-change state from
+  object-pointer spelling, generic suffix packets, namespace-segment shape, and
+  pointer declarator participation.
+- profile normalization is fail-closed for malformed packets that would
+  destabilize incremental module-cache replay and invalidation handoff.
+
+Recommended M179 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
