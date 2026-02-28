@@ -832,10 +832,12 @@ int objc3c_frontend_startup_check(void) {
   - `.github/workflows/compiler-closeout.yml`
 - Gate coverage files:
   - `tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py`
+  - `tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py`
   - `tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py`
 - Assumptions:
-  - M180-A001, M180-C001, and M180-D001 outputs are not yet landed in this workspace.
-  - The integration gate fail-closes on the landed M180-B001 sema/type cross-module conformance surface and this M180-E001 wiring contract, while remaining forward-compatible for future M180-A001/M180-C001/M180-D001 additions.
+  - M180-A001 and M180-C001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M180-B001/M180-D001 surfaces plus this M180-E001 wiring contract, while remaining forward-compatible for future M180-A001/M180-C001 additions.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

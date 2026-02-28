@@ -22,9 +22,11 @@ def test_m180_integration_cross_module_conformance_is_documented() -> None:
         "check:compiler-closeout:m180",
         ".github/workflows/compiler-closeout.yml",
         "tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py",
+        "tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py",
+        "tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py",
         "tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py",
-        "M180-A001, M180-C001, and M180-D001 outputs are not yet landed in this workspace.",
-        "while remaining forward-compatible for future M180-A001/M180-C001/M180-D001 additions.",
+        "M180-A001 and M180-C001 outputs are not yet landed in this workspace.",
+        "while remaining forward-compatible for future M180-A001/M180-C001 additions.",
     ):
         assert text in library_api_doc
 
@@ -35,6 +37,8 @@ def test_m180_e001_integration_runbook_section_is_documented() -> None:
     for text in (
         "## M180 integration cross-module conformance contract runbook (M180-E001)",
         "python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q",
+        "python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py -q",
+        "python -m pytest tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q",
         "python -m pytest tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py -q",
         "npm run check:objc3c:m180-cross-module-conformance-contracts",
         "npm run check:compiler-closeout:m180",
@@ -52,6 +56,8 @@ def test_m180_integration_cross_module_conformance_gate_is_wired() -> None:
     assert "check:objc3c:m180-cross-module-conformance-contracts" in scripts
     assert scripts["check:objc3c:m180-cross-module-conformance-contracts"] == (
         "python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py "
+        "tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py "
+        "tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py "
         "tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py -q"
     )
 
