@@ -316,6 +316,38 @@ Recommended M151 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py -q`
 
+## M152 frontend class-protocol-category semantic-linking parser surface
+
+Frontend parser/AST now emits deterministic semantic-link packets connecting interfaces, implementations, categories,
+and protocol composition lists.
+
+M152 parser/AST surface details:
+
+- semantic-link helper anchors:
+  - `BuildProtocolSemanticLinkTargetsLexicographic(...)`
+  - `BuildObjcCategorySemanticLinkSymbol(...)`
+- protocol linking markers:
+  - `decl->semantic_link_symbol = "protocol:" + decl->name;`
+  - `decl->inherited_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(...)`
+- interface linking markers:
+  - `decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(...)`
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("interface", ...)`
+  - `decl->semantic_link_super_symbol = "interface:" + decl->super_name;`
+  - `decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(...)`
+- implementation linking markers:
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("implementation", ...)`
+  - `decl->semantic_link_interface_symbol = BuildObjcContainerScopeOwner("interface", ...)`
+  - `decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(...)`
+
+Deterministic grammar intent:
+
+- protocol link targets are normalized as sorted unique `protocol:<name>` packets.
+- class/category links remain explicit AST fields for sema handoff and deterministic replay.
+
+Recommended M152 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3344,6 +3376,39 @@ Sema/type metadata handoff contract:
 Recommended M151 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py -q`
+
+## M152 sema/type class-protocol-category semantic linking contract (M152-B001)
+
+M152-B adds a deterministic semantic-linking summary that binds Objective-C class linkage
+(`@interface`/`@implementation`) and protocol/category composition surfaces into one replay-stable packet
+across integration, handoff, and pass-manager parity checks.
+
+Sema/type contract markers:
+
+- `Objc3ClassProtocolCategoryLinkingSummary`
+- `class_protocol_category_linking_summary`
+- `BuildClassProtocolCategoryLinkingSummary`
+- `deterministic_class_protocol_category_linking_handoff`
+- `result.parity_surface.class_protocol_category_linking_summary`
+
+Deterministic semantic-linking invariants (fail-closed):
+
+- class linkage counts remain bounded (`resolved <= declared`, `linked <= method symbols`).
+- protocol/category composition counts remain bounded and ordered (`invalid <= total`, `category <= protocol`).
+- class-link and protocol/category counters remain parity-aligned with integration totals and replayed handoff summaries.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.class_protocol_category_linking_summary = BuildClassProtocolCategoryLinkingSummary(...)`
+- handoff summary packet:
+  `handoff.class_protocol_category_linking_summary = BuildClassProtocolCategoryLinkingSummary(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_class_protocol_category_linking_handoff`
+
+Recommended M152 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5858,6 +5923,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
 
+## Class/protocol/category linking lowering artifact contract (M152-C001)
+
+M152-C extends lowering/runtime ABI artifact publication with an aggregate class/protocol/category linking packet that ties class interface/implementation linkage to protocol/category composition linkage counters.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m152/lowering-class-protocol-category-linking-contract/class-protocol-category-linking-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_class_protocol_category_linking_handoff`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_declared_class_interfaces`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_linked_class_method_symbols`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_protocol_composition_sites`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_invalid_protocol_composition_sites`
+- `frontend.pipeline.semantic_surface.objc_class_protocol_category_linking_surface`
+
+IR publication markers:
+
+- `; frontend_objc_class_protocol_category_linking_profile = declared_class_interfaces=<N>, declared_class_implementations=<N>, resolved_class_interfaces=<N>, resolved_class_implementations=<N>, linked_class_method_symbols=<N>, linked_category_method_symbols=<N>, protocol_composition_sites=<N>, protocol_composition_symbols=<N>, category_composition_sites=<N>, category_composition_symbols=<N>, invalid_protocol_composition_sites=<N>, deterministic_class_protocol_category_linking_handoff=<bool>`
+- `!objc3.objc_class_protocol_category_linking = !{!7}`
+- `!7 = !{i64 <declared_class_interfaces>, i64 <declared_class_implementations>, i64 <resolved_class_interfaces>, i64 <resolved_class_implementations>, i64 <linked_class_method_symbols>, i64 <linked_category_method_symbols>, i64 <protocol_composition_sites>, i64 <protocol_composition_symbols>, i64 <category_composition_sites>, i64 <category_composition_symbols>, i64 <invalid_protocol_composition_sites>, i1 <deterministic_class_protocol_category_linking_handoff>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6271,6 +6366,16 @@ From repo root, execute deterministic M151 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py -q`
 - `npm run check:objc3c:m151-symbol-graph-scope-resolution`
+
+## M152 validation class-protocol-category semantic linking runbook
+
+From repo root, execute deterministic M152 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py -q`
+- `npm run check:objc3c:m152-class-protocol-category-linking`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -8042,6 +8147,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py`
   - `tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py`
   - `tests/tooling/test_objc3c_m151_integration_symbol_graph_scope_resolution_contract.py`
+
+## M152 integration class-protocol-category semantic linking
+
+- Integration gate:
+  - `npm run check:objc3c:m152-class-protocol-category-linking`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py`
+  - `tests/tooling/test_objc3c_m152_integration_class_protocol_category_linking_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
