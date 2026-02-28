@@ -1878,3 +1878,31 @@ Recommended M206 sema/type canonical optimization stage-1 validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py -q`
 
+## M205 sema/type macro security policy enforcement
+
+For deterministic sema/type macro-security policy enforcement, capture replay-stable packet evidence from migration-hint transport, canonical-only enforcement gating, fail-closed diagnostics, and manifest replay surfaces.
+
+Macro security policy packet map:
+
+- `macro policy packet 1.1 deterministic migration-hint transport hooks` -> `m205_macro_policy_migration_transport_packet`
+- `macro policy packet 1.2 deterministic canonical macro-policy/type-surface hooks` -> `m205_macro_policy_canonical_type_surface_packet`
+
+### 1.1 Deterministic migration-hint transport packet
+
+- Source macro-hint capture anchors: `if (options_.migration_assist) {`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline macro-hint transport anchors: `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`, `result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;`, `result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source sema-input contract anchors: `bool migration_assist = false;`, `Objc3SemaMigrationHints migration_hints;`, and `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`.
+- Deterministic migration-hint transport packet key: `m205_macro_policy_migration_transport_packet`.
+
+### 1.2 Deterministic canonical macro-policy/type-surface packet
+
+- Source canonical macro-policy anchors: `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");`, `append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");`, `append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");`, `"O3S216"`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source deterministic type-surface anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Manifest macro-policy anchors under `frontend`: `migration_assist`, `migration_hints`, `legacy_yes`, `legacy_no`, `legacy_null`, and `legacy_total`.
+- Manifest sema/type readiness anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Deterministic canonical macro-policy/type-surface packet key: `m205_macro_policy_canonical_type_surface_packet`.
+
+Recommended M205 sema/type macro-security validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m205_sema_macro_security_contract.py -q`
+
