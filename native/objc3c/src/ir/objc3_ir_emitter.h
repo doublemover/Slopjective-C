@@ -115,6 +115,11 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_shim_host_link_runtime_dispatch_symbol;
   bool runtime_shim_host_link_default_runtime_dispatch_symbol_binding = true;
   bool deterministic_runtime_shim_host_link_handoff = false;
+  std::string lowering_ownership_qualifier_replay_key;
+  std::size_t ownership_qualifier_lowering_ownership_qualifier_sites = 0;
+  std::size_t ownership_qualifier_lowering_invalid_ownership_qualifier_sites = 0;
+  std::size_t ownership_qualifier_lowering_object_pointer_type_annotation_sites = 0;
+  bool deterministic_ownership_qualifier_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

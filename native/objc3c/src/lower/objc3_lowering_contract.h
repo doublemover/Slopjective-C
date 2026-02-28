@@ -32,6 +32,8 @@ inline constexpr const char *kObjc3SuperDispatchMethodFamilyLaneContract =
     "m159-super-dispatch-method-family-v1";
 inline constexpr const char *kObjc3RuntimeShimHostLinkLaneContract =
     "m160-runtime-shim-host-link-v1";
+inline constexpr const char *kObjc3OwnershipQualifierLoweringLaneContract =
+    "m161-ownership-qualifier-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -147,6 +149,13 @@ struct Objc3RuntimeShimHostLinkContract {
   bool deterministic = true;
 };
 
+struct Objc3OwnershipQualifierLoweringContract {
+  std::size_t ownership_qualifier_sites = 0;
+  std::size_t invalid_ownership_qualifier_sites = 0;
+  std::size_t object_pointer_type_annotation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -196,3 +205,7 @@ bool IsValidObjc3RuntimeShimHostLinkContract(
     const Objc3RuntimeShimHostLinkContract &contract);
 std::string Objc3RuntimeShimHostLinkReplayKey(
     const Objc3RuntimeShimHostLinkContract &contract);
+bool IsValidObjc3OwnershipQualifierLoweringContract(
+    const Objc3OwnershipQualifierLoweringContract &contract);
+std::string Objc3OwnershipQualifierLoweringReplayKey(
+    const Objc3OwnershipQualifierLoweringContract &contract);

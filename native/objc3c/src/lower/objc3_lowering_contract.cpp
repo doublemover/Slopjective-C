@@ -535,3 +535,18 @@ std::string Objc3RuntimeShimHostLinkReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3RuntimeShimHostLinkLaneContract;
 }
+
+bool IsValidObjc3OwnershipQualifierLoweringContract(
+    const Objc3OwnershipQualifierLoweringContract &contract) {
+  return contract.invalid_ownership_qualifier_sites <= contract.ownership_qualifier_sites &&
+         contract.ownership_qualifier_sites <= contract.object_pointer_type_annotation_sites;
+}
+
+std::string Objc3OwnershipQualifierLoweringReplayKey(
+    const Objc3OwnershipQualifierLoweringContract &contract) {
+  return std::string("ownership_qualifier_sites=") + std::to_string(contract.ownership_qualifier_sites) +
+         ";invalid_ownership_qualifier_sites=" + std::to_string(contract.invalid_ownership_qualifier_sites) +
+         ";object_pointer_type_annotation_sites=" + std::to_string(contract.object_pointer_type_annotation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3OwnershipQualifierLoweringLaneContract;
+}

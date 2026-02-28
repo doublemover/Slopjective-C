@@ -594,6 +594,21 @@ Objc3RuntimeShimHostLinkContract BuildRuntimeShimHostLinkContract(
   return contract;
 }
 
+Objc3OwnershipQualifierLoweringContract BuildOwnershipQualifierLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3OwnershipQualifierLoweringContract contract;
+  contract.ownership_qualifier_sites =
+      sema_parity_surface.type_annotation_ownership_qualifier_sites_total;
+  contract.invalid_ownership_qualifier_sites =
+      sema_parity_surface.type_annotation_invalid_ownership_qualifier_sites_total;
+  contract.object_pointer_type_annotation_sites =
+      sema_parity_surface.type_annotation_object_pointer_type_sites_total;
+  contract.deterministic =
+      sema_parity_surface.type_annotation_surface_summary.deterministic &&
+      sema_parity_surface.deterministic_type_annotation_surface_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -800,6 +815,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string runtime_shim_host_link_replay_key =
       Objc3RuntimeShimHostLinkReplayKey(runtime_shim_host_link_contract);
+  const Objc3OwnershipQualifierLoweringContract ownership_qualifier_lowering_contract =
+      BuildOwnershipQualifierLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid ownership-qualifier lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string ownership_qualifier_lowering_replay_key =
+      Objc3OwnershipQualifierLoweringReplayKey(ownership_qualifier_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1162,6 +1190,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_runtime_shim_host_link_replay_key\":\""
            << runtime_shim_host_link_replay_key
            << "\""
+           << ",\"deterministic_ownership_qualifier_lowering_handoff\":"
+           << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
+           << ",\"ownership_qualifier_lowering_type_annotation_ownership_qualifier_sites\":"
+           << ownership_qualifier_lowering_contract.ownership_qualifier_sites
+           << ",\"ownership_qualifier_lowering_type_annotation_invalid_ownership_qualifier_sites\":"
+           << ownership_qualifier_lowering_contract.invalid_ownership_qualifier_sites
+           << ",\"ownership_qualifier_lowering_type_annotation_object_pointer_type_sites\":"
+           << ownership_qualifier_lowering_contract.object_pointer_type_annotation_sites
+           << ",\"lowering_ownership_qualifier_replay_key\":\""
+           << ownership_qualifier_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1472,6 +1511,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_ownership_qualifier_lowering_surface\":{\"ownership_qualifier_sites\":"
+           << ownership_qualifier_lowering_contract.ownership_qualifier_sites
+           << ",\"invalid_ownership_qualifier_sites\":"
+           << ownership_qualifier_lowering_contract.invalid_ownership_qualifier_sites
+           << ",\"object_pointer_type_annotation_sites\":"
+           << ownership_qualifier_lowering_contract.object_pointer_type_annotation_sites
+           << ",\"replay_key\":\""
+           << ownership_qualifier_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1587,6 +1637,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3RuntimeShimHostLinkLaneContract
            << "\",\"deterministic_handoff\":"
            << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_ownership_qualifier\":{\"replay_key\":\""
+           << ownership_qualifier_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3OwnershipQualifierLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (ownership_qualifier_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1823,6 +1879,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_shim_host_link_contract.runtime_dispatch_symbol;
   ir_frontend_metadata.runtime_shim_host_link_default_runtime_dispatch_symbol_binding =
       runtime_shim_host_link_contract.default_runtime_dispatch_symbol_binding;
+  ir_frontend_metadata.lowering_ownership_qualifier_replay_key =
+      ownership_qualifier_lowering_replay_key;
+  ir_frontend_metadata.ownership_qualifier_lowering_ownership_qualifier_sites =
+      ownership_qualifier_lowering_contract.ownership_qualifier_sites;
+  ir_frontend_metadata.ownership_qualifier_lowering_invalid_ownership_qualifier_sites =
+      ownership_qualifier_lowering_contract.invalid_ownership_qualifier_sites;
+  ir_frontend_metadata.ownership_qualifier_lowering_object_pointer_type_annotation_sites =
+      ownership_qualifier_lowering_contract.object_pointer_type_annotation_sites;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1884,6 +1948,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       super_dispatch_method_family_contract.deterministic;
   ir_frontend_metadata.deterministic_runtime_shim_host_link_handoff =
       runtime_shim_host_link_contract.deterministic;
+  ir_frontend_metadata.deterministic_ownership_qualifier_lowering_handoff =
+      ownership_qualifier_lowering_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

@@ -122,6 +122,10 @@ class Objc3IREmitter {
       out << "; runtime_shim_host_link_lowering = "
           << frontend_metadata_.lowering_runtime_shim_host_link_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_ownership_qualifier_replay_key.empty()) {
+      out << "; ownership_qualifier_lowering = "
+          << frontend_metadata_.lowering_ownership_qualifier_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -269,6 +273,15 @@ class Objc3IREmitter {
         << frontend_metadata_.runtime_shim_host_link_contract_violation_sites
         << ", deterministic_runtime_shim_host_link_handoff="
         << (frontend_metadata_.deterministic_runtime_shim_host_link_handoff ? "true" : "false")
+        << "\n";
+    out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
+        << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
+        << ", invalid_ownership_qualifier_sites="
+        << frontend_metadata_.ownership_qualifier_lowering_invalid_ownership_qualifier_sites
+        << ", object_pointer_type_annotation_sites="
+        << frontend_metadata_.ownership_qualifier_lowering_object_pointer_type_annotation_sites
+        << ", deterministic_ownership_qualifier_lowering_handoff="
+        << (frontend_metadata_.deterministic_ownership_qualifier_lowering_handoff ? "true" : "false")
         << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
@@ -442,6 +455,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
     out << "!objc3.objc_super_dispatch_method_family = !{!12}\n";
     out << "!objc3.objc_runtime_shim_host_link = !{!13}\n";
+    out << "!objc3.objc_ownership_qualifier_lowering = !{!14}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -622,6 +636,17 @@ class Objc3IREmitter {
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.runtime_shim_host_link_contract_violation_sites)
         << ", i1 " << (frontend_metadata_.deterministic_runtime_shim_host_link_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!14 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ownership_qualifier_lowering_invalid_ownership_qualifier_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ownership_qualifier_lowering_object_pointer_type_annotation_sites)
+        << ", i1 " << (frontend_metadata_.deterministic_ownership_qualifier_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

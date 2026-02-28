@@ -7092,6 +7092,54 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m160_lowering_runtime_shim_host_link_contract.py -q`
 
+## Ownership-qualifier lowering artifact contract (M161-C001)
+
+M161-C publishes replay-stable ownership-qualifier lowering invariants derived from sema type-annotation surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m161/lowering-ownership-qualifier-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m161/lowering-ownership-qualifier-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m161/lowering-ownership-qualifier-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m161/lowering-ownership-qualifier-contract/ownership-qualifier-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3OwnershipQualifierLoweringLaneContract`
+- `Objc3OwnershipQualifierLoweringContract`
+- `IsValidObjc3OwnershipQualifierLoweringContract(...)`
+- `Objc3OwnershipQualifierLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `ownership_qualifier_sites=<N>`
+- `invalid_ownership_qualifier_sites=<N>`
+- `object_pointer_type_annotation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m161-ownership-qualifier-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_ownership_qualifier_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.ownership_qualifier_lowering_type_annotation_ownership_qualifier_sites`
+- `frontend.pipeline.sema_pass_manager.ownership_qualifier_lowering_type_annotation_invalid_ownership_qualifier_sites`
+- `frontend.pipeline.sema_pass_manager.ownership_qualifier_lowering_type_annotation_object_pointer_type_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_ownership_qualifier_replay_key`
+- `frontend.pipeline.semantic_surface.objc_ownership_qualifier_lowering_surface`
+- `lowering_ownership_qualifier.replay_key`
+- `lowering_ownership_qualifier.lane_contract`
+
+IR publication markers:
+
+- `; ownership_qualifier_lowering = ownership_qualifier_sites=<N>;invalid_ownership_qualifier_sites=<N>;object_pointer_type_annotation_sites=<N>;deterministic=<bool>;lane_contract=m161-ownership-qualifier-lowering-v1`
+- `; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites=<N>, invalid_ownership_qualifier_sites=<N>, object_pointer_type_annotation_sites=<N>, deterministic_ownership_qualifier_lowering_handoff=<bool>`
+- `!objc3.objc_ownership_qualifier_lowering = !{!14}`
+- `!14 = !{i64 <ownership_qualifier_sites>, i64 <invalid_ownership_qualifier_sites>, i64 <object_pointer_type_annotation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m161_lowering_ownership_qualifier_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
