@@ -237,6 +237,22 @@ bool IsEquivalentNilReceiverSemanticsFoldabilitySummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentSuperDispatchMethodFamilySummary(const Objc3SuperDispatchMethodFamilySummary &lhs,
+                                                  const Objc3SuperDispatchMethodFamilySummary &rhs) {
+  return lhs.message_send_sites == rhs.message_send_sites &&
+         lhs.receiver_super_identifier_sites == rhs.receiver_super_identifier_sites &&
+         lhs.super_dispatch_enabled_sites == rhs.super_dispatch_enabled_sites &&
+         lhs.super_dispatch_requires_class_context_sites == rhs.super_dispatch_requires_class_context_sites &&
+         lhs.method_family_init_sites == rhs.method_family_init_sites &&
+         lhs.method_family_copy_sites == rhs.method_family_copy_sites &&
+         lhs.method_family_mutable_copy_sites == rhs.method_family_mutable_copy_sites &&
+         lhs.method_family_new_sites == rhs.method_family_new_sites &&
+         lhs.method_family_none_sites == rhs.method_family_none_sites &&
+         lhs.method_family_returns_retained_result_sites == rhs.method_family_returns_retained_result_sites &&
+         lhs.method_family_returns_related_result_sites == rhs.method_family_returns_related_result_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -536,6 +552,30 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
       result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
           result.type_metadata_handoff.nil_receiver_semantics_foldability_summary.message_send_sites;
+  result.super_dispatch_method_family_summary =
+      result.integration_surface.super_dispatch_method_family_summary;
+  result.deterministic_super_dispatch_method_family_handoff =
+      result.type_metadata_handoff.super_dispatch_method_family_summary.deterministic &&
+      result.integration_surface.super_dispatch_method_family_summary.deterministic &&
+      IsEquivalentSuperDispatchMethodFamilySummary(
+          result.integration_surface.super_dispatch_method_family_summary,
+          result.type_metadata_handoff.super_dispatch_method_family_summary) &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+          result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+          result.type_metadata_handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_init_sites +
+              result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_copy_sites +
+              result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
+              result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_new_sites +
+              result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_none_sites ==
+          result.type_metadata_handoff.super_dispatch_method_family_summary.message_send_sites &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_returns_related_result_sites <=
+          result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_init_sites &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
+          result.type_metadata_handoff.super_dispatch_method_family_summary.message_send_sites &&
+      result.type_metadata_handoff.super_dispatch_method_family_summary.contract_violation_sites <=
+          result.type_metadata_handoff.super_dispatch_method_family_summary.message_send_sites;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -808,6 +848,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites;
   result.parity_surface.nil_receiver_semantics_foldability_contract_violation_sites_total =
       result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites;
+  result.parity_surface.super_dispatch_method_family_summary =
+      result.type_metadata_handoff.super_dispatch_method_family_summary;
+  result.parity_surface.super_dispatch_method_family_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.message_send_sites;
+  result.parity_surface.super_dispatch_method_family_receiver_super_identifier_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.receiver_super_identifier_sites;
+  result.parity_surface.super_dispatch_method_family_enabled_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites;
+  result.parity_surface.super_dispatch_method_family_requires_class_context_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites;
+  result.parity_surface.super_dispatch_method_family_init_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites;
+  result.parity_surface.super_dispatch_method_family_copy_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_copy_sites;
+  result.parity_surface.super_dispatch_method_family_mutable_copy_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites;
+  result.parity_surface.super_dispatch_method_family_new_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_new_sites;
+  result.parity_surface.super_dispatch_method_family_none_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_none_sites;
+  result.parity_surface.super_dispatch_method_family_returns_retained_result_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites;
+  result.parity_surface.super_dispatch_method_family_returns_related_result_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites;
+  result.parity_surface.super_dispatch_method_family_contract_violation_sites_total =
+      result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -1245,6 +1311,49 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
           result.parity_surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
       result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic;
+  result.parity_surface.deterministic_super_dispatch_method_family_handoff =
+      result.deterministic_super_dispatch_method_family_handoff &&
+      result.parity_surface.super_dispatch_method_family_summary.message_send_sites ==
+          result.parity_surface.super_dispatch_method_family_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+          result.parity_surface.super_dispatch_method_family_receiver_super_identifier_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites ==
+          result.parity_surface.super_dispatch_method_family_enabled_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+          result.parity_surface.super_dispatch_method_family_requires_class_context_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites ==
+          result.parity_surface.super_dispatch_method_family_init_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_copy_sites ==
+          result.parity_surface.super_dispatch_method_family_copy_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites ==
+          result.parity_surface.super_dispatch_method_family_mutable_copy_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_new_sites ==
+          result.parity_surface.super_dispatch_method_family_new_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_none_sites ==
+          result.parity_surface.super_dispatch_method_family_none_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites ==
+          result.parity_surface.super_dispatch_method_family_returns_retained_result_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites ==
+          result.parity_surface.super_dispatch_method_family_returns_related_result_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites ==
+          result.parity_surface.super_dispatch_method_family_contract_violation_sites_total &&
+      result.parity_surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+          result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+          result.parity_surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites +
+              result.parity_surface.super_dispatch_method_family_summary.method_family_copy_sites +
+              result.parity_surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
+              result.parity_surface.super_dispatch_method_family_summary.method_family_new_sites +
+              result.parity_surface.super_dispatch_method_family_summary.method_family_none_sites ==
+          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites <=
+          result.parity_surface.super_dispatch_method_family_summary.method_family_init_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
+          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites <=
+          result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
+      result.parity_surface.super_dispatch_method_family_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -1286,6 +1395,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic &&
       result.parity_surface.deterministic_dispatch_abi_marshalling_handoff &&
       result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic &&
-      result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff;
+      result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff &&
+      result.parity_surface.super_dispatch_method_family_summary.deterministic &&
+      result.parity_surface.deterministic_super_dispatch_method_family_handoff;
   return result;
 }

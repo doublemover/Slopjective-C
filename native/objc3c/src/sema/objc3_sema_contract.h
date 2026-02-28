@@ -239,6 +239,14 @@ struct Objc3MessageSendSelectorLoweringSiteMetadata {
   bool nil_receiver_foldable = false;
   bool nil_receiver_requires_runtime_dispatch = true;
   bool nil_receiver_semantics_is_normalized = false;
+  bool receiver_is_super_identifier = false;
+  bool super_dispatch_enabled = false;
+  bool super_dispatch_requires_class_context = false;
+  bool super_dispatch_semantics_is_normalized = false;
+  std::string method_family_name;
+  bool method_family_returns_retained_result = false;
+  bool method_family_returns_related_result = false;
+  bool method_family_semantics_is_normalized = false;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -279,6 +287,22 @@ struct Objc3NilReceiverSemanticsFoldabilitySummary {
   std::size_t nil_receiver_foldable_sites = 0;
   std::size_t nil_receiver_runtime_dispatch_required_sites = 0;
   std::size_t non_nil_receiver_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3SuperDispatchMethodFamilySummary {
+  std::size_t message_send_sites = 0;
+  std::size_t receiver_super_identifier_sites = 0;
+  std::size_t super_dispatch_enabled_sites = 0;
+  std::size_t super_dispatch_requires_class_context_sites = 0;
+  std::size_t method_family_init_sites = 0;
+  std::size_t method_family_copy_sites = 0;
+  std::size_t method_family_mutable_copy_sites = 0;
+  std::size_t method_family_new_sites = 0;
+  std::size_t method_family_none_sites = 0;
+  std::size_t method_family_returns_retained_result_sites = 0;
+  std::size_t method_family_returns_related_result_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
 };
@@ -448,6 +472,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   bool built = false;
 };
 
@@ -610,6 +635,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
 };
 
 struct Objc3SemanticValidationOptions {

@@ -208,6 +208,18 @@ struct Objc3SemaParityContractSurface {
   std::size_t nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total = 0;
   std::size_t nil_receiver_semantics_foldability_non_nil_receiver_sites_total = 0;
   std::size_t nil_receiver_semantics_foldability_contract_violation_sites_total = 0;
+  std::size_t super_dispatch_method_family_sites_total = 0;
+  std::size_t super_dispatch_method_family_receiver_super_identifier_sites_total = 0;
+  std::size_t super_dispatch_method_family_enabled_sites_total = 0;
+  std::size_t super_dispatch_method_family_requires_class_context_sites_total = 0;
+  std::size_t super_dispatch_method_family_init_sites_total = 0;
+  std::size_t super_dispatch_method_family_copy_sites_total = 0;
+  std::size_t super_dispatch_method_family_mutable_copy_sites_total = 0;
+  std::size_t super_dispatch_method_family_new_sites_total = 0;
+  std::size_t super_dispatch_method_family_none_sites_total = 0;
+  std::size_t super_dispatch_method_family_returns_retained_result_sites_total = 0;
+  std::size_t super_dispatch_method_family_returns_related_result_sites_total = 0;
+  std::size_t super_dispatch_method_family_contract_violation_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -224,6 +236,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
+  bool deterministic_super_dispatch_method_family_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -237,6 +250,7 @@ struct Objc3SemaParityContractSurface {
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -648,7 +662,49 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
              surface.nil_receiver_semantics_foldability_summary.message_send_sites &&
          surface.nil_receiver_semantics_foldability_summary.deterministic &&
-         surface.deterministic_nil_receiver_semantics_foldability_handoff;
+         surface.deterministic_nil_receiver_semantics_foldability_handoff &&
+         surface.super_dispatch_method_family_summary.message_send_sites ==
+             surface.super_dispatch_method_family_sites_total &&
+         surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+             surface.super_dispatch_method_family_receiver_super_identifier_sites_total &&
+         surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites ==
+             surface.super_dispatch_method_family_enabled_sites_total &&
+         surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+             surface.super_dispatch_method_family_requires_class_context_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_init_sites ==
+             surface.super_dispatch_method_family_init_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_copy_sites ==
+             surface.super_dispatch_method_family_copy_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites ==
+             surface.super_dispatch_method_family_mutable_copy_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_new_sites ==
+             surface.super_dispatch_method_family_new_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_none_sites ==
+             surface.super_dispatch_method_family_none_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites ==
+             surface.super_dispatch_method_family_returns_retained_result_sites_total &&
+         surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites ==
+             surface.super_dispatch_method_family_returns_related_result_sites_total &&
+         surface.super_dispatch_method_family_summary.contract_violation_sites ==
+             surface.super_dispatch_method_family_contract_violation_sites_total &&
+         surface.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+             surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+         surface.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+             surface.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+         surface.super_dispatch_method_family_summary.method_family_init_sites +
+                 surface.super_dispatch_method_family_summary.method_family_copy_sites +
+                 surface.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
+                 surface.super_dispatch_method_family_summary.method_family_new_sites +
+                 surface.super_dispatch_method_family_summary.method_family_none_sites ==
+             surface.super_dispatch_method_family_summary.message_send_sites &&
+         surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites <=
+             surface.super_dispatch_method_family_summary.method_family_init_sites &&
+         surface.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
+             surface.super_dispatch_method_family_summary.message_send_sites &&
+         surface.super_dispatch_method_family_summary.contract_violation_sites <=
+             surface.super_dispatch_method_family_summary.message_send_sites &&
+         surface.super_dispatch_method_family_summary.deterministic &&
+         surface.deterministic_super_dispatch_method_family_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -683,6 +739,8 @@ struct Objc3SemaPassManagerResult {
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
+  bool deterministic_super_dispatch_method_family_handoff = false;
+  Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

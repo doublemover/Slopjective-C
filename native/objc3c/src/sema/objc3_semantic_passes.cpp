@@ -3322,6 +3322,22 @@ static Expr::MessageSendForm ResolveMessageSendForm(const Expr &expr) {
   return expr.args.empty() ? Expr::MessageSendForm::Unary : Expr::MessageSendForm::Keyword;
 }
 
+static std::string ClassifyMethodFamilyFromSelector(const std::string &selector) {
+  if (selector.rfind("mutableCopy", 0) == 0) {
+    return "mutableCopy";
+  }
+  if (selector.rfind("copy", 0) == 0) {
+    return "copy";
+  }
+  if (selector.rfind("init", 0) == 0) {
+    return "init";
+  }
+  if (selector.rfind("new", 0) == 0) {
+    return "new";
+  }
+  return "none";
+}
+
 static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLoweringSiteMetadata(const Expr &expr) {
   Objc3MessageSendSelectorLoweringSiteMetadata metadata;
   metadata.selector = expr.selector;
@@ -3365,6 +3381,34 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
       (metadata.nil_receiver_semantics_enabled == metadata.receiver_is_nil_literal &&
        metadata.nil_receiver_semantics_enabled == metadata.nil_receiver_foldable &&
        metadata.nil_receiver_requires_runtime_dispatch == !metadata.nil_receiver_foldable);
+  metadata.receiver_is_super_identifier =
+      expr.receiver != nullptr && expr.receiver->kind == Expr::Kind::Identifier && expr.receiver->ident == "super";
+  metadata.super_dispatch_enabled =
+      expr.super_dispatch_semantics_is_normalized ? expr.super_dispatch_enabled : metadata.receiver_is_super_identifier;
+  metadata.super_dispatch_requires_class_context =
+      expr.super_dispatch_semantics_is_normalized ? expr.super_dispatch_requires_class_context
+                                                  : metadata.super_dispatch_enabled;
+  metadata.super_dispatch_semantics_is_normalized =
+      expr.super_dispatch_semantics_is_normalized ||
+      (metadata.super_dispatch_enabled == metadata.receiver_is_super_identifier &&
+       metadata.super_dispatch_requires_class_context == metadata.super_dispatch_enabled);
+  metadata.method_family_name = expr.method_family_semantics_is_normalized && !expr.method_family_name.empty()
+                                    ? expr.method_family_name
+                                    : ClassifyMethodFamilyFromSelector(metadata.selector);
+  metadata.method_family_returns_retained_result =
+      expr.method_family_semantics_is_normalized
+          ? expr.method_family_returns_retained_result
+          : (metadata.method_family_name == "init" || metadata.method_family_name == "copy" ||
+             metadata.method_family_name == "mutableCopy" || metadata.method_family_name == "new");
+  metadata.method_family_returns_related_result =
+      expr.method_family_semantics_is_normalized ? expr.method_family_returns_related_result
+                                                 : metadata.method_family_name == "init";
+  metadata.method_family_semantics_is_normalized =
+      expr.method_family_semantics_is_normalized ||
+      ((metadata.method_family_name == "init" || metadata.method_family_name == "copy" ||
+        metadata.method_family_name == "mutableCopy" || metadata.method_family_name == "new" ||
+        metadata.method_family_name == "none") &&
+       (!metadata.method_family_returns_related_result || metadata.method_family_name == "init"));
   return metadata;
 }
 
@@ -3516,6 +3560,30 @@ static bool IsMessageSendSelectorLoweringSiteMetadataLess(
   }
   if (lhs.nil_receiver_semantics_is_normalized != rhs.nil_receiver_semantics_is_normalized) {
     return lhs.nil_receiver_semantics_is_normalized < rhs.nil_receiver_semantics_is_normalized;
+  }
+  if (lhs.receiver_is_super_identifier != rhs.receiver_is_super_identifier) {
+    return lhs.receiver_is_super_identifier < rhs.receiver_is_super_identifier;
+  }
+  if (lhs.super_dispatch_enabled != rhs.super_dispatch_enabled) {
+    return lhs.super_dispatch_enabled < rhs.super_dispatch_enabled;
+  }
+  if (lhs.super_dispatch_requires_class_context != rhs.super_dispatch_requires_class_context) {
+    return lhs.super_dispatch_requires_class_context < rhs.super_dispatch_requires_class_context;
+  }
+  if (lhs.super_dispatch_semantics_is_normalized != rhs.super_dispatch_semantics_is_normalized) {
+    return lhs.super_dispatch_semantics_is_normalized < rhs.super_dispatch_semantics_is_normalized;
+  }
+  if (lhs.method_family_name != rhs.method_family_name) {
+    return lhs.method_family_name < rhs.method_family_name;
+  }
+  if (lhs.method_family_returns_retained_result != rhs.method_family_returns_retained_result) {
+    return lhs.method_family_returns_retained_result < rhs.method_family_returns_retained_result;
+  }
+  if (lhs.method_family_returns_related_result != rhs.method_family_returns_related_result) {
+    return lhs.method_family_returns_related_result < rhs.method_family_returns_related_result;
+  }
+  if (lhs.method_family_semantics_is_normalized != rhs.method_family_semantics_is_normalized) {
+    return lhs.method_family_semantics_is_normalized < rhs.method_family_semantics_is_normalized;
   }
   if (lhs.line != rhs.line) {
     return lhs.line < rhs.line;
@@ -3768,6 +3836,87 @@ static Objc3NilReceiverSemanticsFoldabilitySummary
 BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
   return BuildNilReceiverSemanticsFoldabilitySummaryFromSites(
       handoff.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3SuperDispatchMethodFamilySummary BuildSuperDispatchMethodFamilySummaryFromSites(
+    const std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  Objc3SuperDispatchMethodFamilySummary summary;
+  for (const auto &site : sites) {
+    ++summary.message_send_sites;
+    if (site.receiver_is_super_identifier) {
+      ++summary.receiver_super_identifier_sites;
+    }
+    if (site.super_dispatch_enabled) {
+      ++summary.super_dispatch_enabled_sites;
+    }
+    if (site.super_dispatch_requires_class_context) {
+      ++summary.super_dispatch_requires_class_context_sites;
+    }
+    if (site.method_family_name == "init") {
+      ++summary.method_family_init_sites;
+    } else if (site.method_family_name == "copy") {
+      ++summary.method_family_copy_sites;
+    } else if (site.method_family_name == "mutableCopy") {
+      ++summary.method_family_mutable_copy_sites;
+    } else if (site.method_family_name == "new") {
+      ++summary.method_family_new_sites;
+    } else {
+      ++summary.method_family_none_sites;
+    }
+    if (site.method_family_returns_retained_result) {
+      ++summary.method_family_returns_retained_result_sites;
+    }
+    if (site.method_family_returns_related_result) {
+      ++summary.method_family_returns_related_result_sites;
+    }
+
+    bool contract_violation = false;
+    if (!site.super_dispatch_semantics_is_normalized || !site.method_family_semantics_is_normalized) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.receiver_is_super_identifier != site.super_dispatch_enabled) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.super_dispatch_enabled != site.super_dispatch_requires_class_context) {
+      contract_violation = true;
+    }
+    if (site.method_family_returns_related_result && site.method_family_name != "init") {
+      contract_violation = true;
+    }
+    const bool retained_family =
+        site.method_family_name == "init" || site.method_family_name == "copy" ||
+        site.method_family_name == "mutableCopy" || site.method_family_name == "new";
+    if (site.method_family_returns_retained_result != retained_family) {
+      contract_violation = true;
+    }
+    if (contract_violation) {
+      ++summary.contract_violation_sites;
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.receiver_super_identifier_sites == summary.super_dispatch_enabled_sites &&
+      summary.super_dispatch_requires_class_context_sites == summary.super_dispatch_enabled_sites &&
+      summary.method_family_init_sites + summary.method_family_copy_sites + summary.method_family_mutable_copy_sites +
+              summary.method_family_new_sites + summary.method_family_none_sites ==
+          summary.message_send_sites &&
+      summary.method_family_returns_related_result_sites <= summary.method_family_init_sites &&
+      summary.method_family_returns_retained_result_sites <= summary.message_send_sites &&
+      summary.contract_violation_sites <= summary.message_send_sites;
+  return summary;
+}
+
+static Objc3SuperDispatchMethodFamilySummary
+BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  return BuildSuperDispatchMethodFamilySummaryFromSites(surface.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3SuperDispatchMethodFamilySummary
+BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  return BuildSuperDispatchMethodFamilySummaryFromSites(handoff.message_send_selector_lowering_sites_lexicographic);
 }
 
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
@@ -4467,6 +4616,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromIntegrationSurface(surface);
   surface.nil_receiver_semantics_foldability_summary =
       BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface(surface);
+  surface.super_dispatch_method_family_summary =
+      BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -5239,6 +5390,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);
   handoff.nil_receiver_semantics_foldability_summary =
       BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
+  handoff.super_dispatch_method_family_summary =
+      BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -5768,6 +5921,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);
   const Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary =
       BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
+  const Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary =
+      BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -6105,7 +6260,48 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  handoff.nil_receiver_semantics_foldability_summary.non_nil_receiver_sites ==
              handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
          handoff.nil_receiver_semantics_foldability_summary.contract_violation_sites <=
-             handoff.nil_receiver_semantics_foldability_summary.message_send_sites;
+             handoff.nil_receiver_semantics_foldability_summary.message_send_sites &&
+         handoff.super_dispatch_method_family_summary.deterministic &&
+         handoff.super_dispatch_method_family_summary.message_send_sites ==
+             super_dispatch_method_family_summary.message_send_sites &&
+         handoff.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+             super_dispatch_method_family_summary.receiver_super_identifier_sites &&
+         handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites ==
+             super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+         handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+             super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_init_sites ==
+             super_dispatch_method_family_summary.method_family_init_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_copy_sites ==
+             super_dispatch_method_family_summary.method_family_copy_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_mutable_copy_sites ==
+             super_dispatch_method_family_summary.method_family_mutable_copy_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_new_sites ==
+             super_dispatch_method_family_summary.method_family_new_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_none_sites ==
+             super_dispatch_method_family_summary.method_family_none_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_returns_retained_result_sites ==
+             super_dispatch_method_family_summary.method_family_returns_retained_result_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_returns_related_result_sites ==
+             super_dispatch_method_family_summary.method_family_returns_related_result_sites &&
+         handoff.super_dispatch_method_family_summary.contract_violation_sites ==
+             super_dispatch_method_family_summary.contract_violation_sites &&
+         handoff.super_dispatch_method_family_summary.receiver_super_identifier_sites ==
+             handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+         handoff.super_dispatch_method_family_summary.super_dispatch_requires_class_context_sites ==
+             handoff.super_dispatch_method_family_summary.super_dispatch_enabled_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_init_sites +
+                 handoff.super_dispatch_method_family_summary.method_family_copy_sites +
+                 handoff.super_dispatch_method_family_summary.method_family_mutable_copy_sites +
+                 handoff.super_dispatch_method_family_summary.method_family_new_sites +
+                 handoff.super_dispatch_method_family_summary.method_family_none_sites ==
+             handoff.super_dispatch_method_family_summary.message_send_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_returns_related_result_sites <=
+             handoff.super_dispatch_method_family_summary.method_family_init_sites &&
+         handoff.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
+             handoff.super_dispatch_method_family_summary.message_send_sites &&
+         handoff.super_dispatch_method_family_summary.contract_violation_sites <=
+             handoff.super_dispatch_method_family_summary.message_send_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

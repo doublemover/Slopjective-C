@@ -2734,3 +2734,56 @@ Sema/type metadata handoff contract:
 Recommended M158 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m158_sema_nil_receiver_semantics_foldability_contract.py -q`
+
+## M159 sema/type super-dispatch and method-family contract (M159-B001)
+
+M159-B adds deterministic semantic summary carriers for super-dispatch receiver semantics and
+selector-derived method-family behavior across message-send sites.
+
+Sema/type contract markers:
+
+- `Objc3SuperDispatchMethodFamilySummary`
+- `super_dispatch_method_family_summary`
+- `BuildSuperDispatchMethodFamilySummaryFromSites`
+- `BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface`
+- `BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff`
+- `deterministic_super_dispatch_method_family_handoff`
+- `result.parity_surface.super_dispatch_method_family_summary`
+
+Deterministic super-dispatch/method-family invariants (fail-closed):
+
+- super receiver detection stays aligned with enabled dispatch semantics
+  (`receiver_super_identifier_sites == super_dispatch_enabled_sites`).
+- class-context requirements remain aligned with enabled super-dispatch sites
+  (`super_dispatch_requires_class_context_sites == super_dispatch_enabled_sites`).
+- method-family partition remains total across message-send sites
+  (`init + copy + mutableCopy + new + none == message_send_sites`).
+- related-result method-family sites remain a subset of `init` family sites.
+- retained-result method-family sites remain bounded by message-send sites.
+- contract-violation counters remain bounded by message-send sites.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.super_dispatch_method_family_summary = BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.super_dispatch_method_family_summary = BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `super_dispatch_method_family_sites_total`
+  - `super_dispatch_method_family_receiver_super_identifier_sites_total`
+  - `super_dispatch_method_family_enabled_sites_total`
+  - `super_dispatch_method_family_requires_class_context_sites_total`
+  - `super_dispatch_method_family_init_sites_total`
+  - `super_dispatch_method_family_copy_sites_total`
+  - `super_dispatch_method_family_mutable_copy_sites_total`
+  - `super_dispatch_method_family_new_sites_total`
+  - `super_dispatch_method_family_none_sites_total`
+  - `super_dispatch_method_family_returns_retained_result_sites_total`
+  - `super_dispatch_method_family_returns_related_result_sites_total`
+  - `super_dispatch_method_family_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_super_dispatch_method_family_handoff`
+
+Recommended M159 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_sema_super_dispatch_method_family_contract.py -q`
