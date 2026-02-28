@@ -1,0 +1,6 @@
+module DriverShellSplit;
+let seed = 40;
+
+fn main() -> bool {
+  return seed != 0;
+}
