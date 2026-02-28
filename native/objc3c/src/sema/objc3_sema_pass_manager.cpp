@@ -210,6 +210,22 @@ bool IsEquivalentBlockLiteralCaptureSemanticsSummary(const Objc3BlockLiteralCapt
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentBlockAbiInvokeTrampolineSemanticsSummary(
+    const Objc3BlockAbiInvokeTrampolineSemanticsSummary &lhs,
+    const Objc3BlockAbiInvokeTrampolineSemanticsSummary &rhs) {
+  return lhs.block_literal_sites == rhs.block_literal_sites &&
+         lhs.invoke_argument_slots_total == rhs.invoke_argument_slots_total &&
+         lhs.capture_word_count_total == rhs.capture_word_count_total &&
+         lhs.parameter_entries_total == rhs.parameter_entries_total &&
+         lhs.capture_entries_total == rhs.capture_entries_total &&
+         lhs.body_statement_entries_total == rhs.body_statement_entries_total &&
+         lhs.descriptor_symbolized_sites == rhs.descriptor_symbolized_sites &&
+         lhs.invoke_trampoline_symbolized_sites == rhs.invoke_trampoline_symbolized_sites &&
+         lhs.missing_invoke_trampoline_sites == rhs.missing_invoke_trampoline_sites &&
+         lhs.non_normalized_layout_sites == rhs.non_normalized_layout_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentMessageSendSelectorLoweringSummary(const Objc3MessageSendSelectorLoweringSummary &lhs,
                                                     const Objc3MessageSendSelectorLoweringSummary &rhs) {
   return lhs.message_send_sites == rhs.message_send_sites &&
@@ -559,6 +575,40 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_literal_capture_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_literal_capture_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_literal_capture_semantics_summary.block_literal_sites;
+  result.block_abi_invoke_trampoline_semantics_summary =
+      result.integration_surface.block_abi_invoke_trampoline_semantics_summary;
+  result.deterministic_block_abi_invoke_trampoline_handoff =
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.deterministic &&
+      result.integration_surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
+      IsEquivalentBlockAbiInvokeTrampolineSemanticsSummary(
+          result.integration_surface.block_abi_invoke_trampoline_semantics_summary,
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary) &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .descriptor_symbolized_sites <=
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .invoke_trampoline_symbolized_sites <=
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .missing_invoke_trampoline_sites <=
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .non_normalized_layout_sites <=
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites <=
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+                  .invoke_trampoline_symbolized_sites +
+              result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+                  .missing_invoke_trampoline_sites ==
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .invoke_argument_slots_total ==
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .parameter_entries_total &&
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary
+              .capture_word_count_total ==
+          result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary.capture_entries_total;
   result.message_send_selector_lowering_summary =
       result.integration_surface.message_send_selector_lowering_summary;
   result.deterministic_message_send_selector_lowering_handoff =
@@ -973,6 +1023,30 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_literal_capture_semantics_summary.block_non_normalized_sites;
   result.parity_surface.block_literal_capture_semantics_contract_violation_sites_total =
       result.parity_surface.block_literal_capture_semantics_summary.contract_violation_sites;
+  result.parity_surface.block_abi_invoke_trampoline_semantics_summary =
+      result.type_metadata_handoff.block_abi_invoke_trampoline_semantics_summary;
+  result.parity_surface.block_abi_invoke_trampoline_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites;
+  result.parity_surface.block_abi_invoke_trampoline_invoke_argument_slots_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_argument_slots_total;
+  result.parity_surface.block_abi_invoke_trampoline_capture_word_count_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_word_count_total;
+  result.parity_surface.block_abi_invoke_trampoline_parameter_entries_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.parameter_entries_total;
+  result.parity_surface.block_abi_invoke_trampoline_capture_entries_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total;
+  result.parity_surface.block_abi_invoke_trampoline_body_statement_entries_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.body_statement_entries_total;
+  result.parity_surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.descriptor_symbolized_sites;
+  result.parity_surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites;
+  result.parity_surface.block_abi_invoke_trampoline_missing_invoke_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites;
+  result.parity_surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.non_normalized_layout_sites;
+  result.parity_surface.block_abi_invoke_trampoline_contract_violation_sites_total =
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites;
   result.parity_surface.message_send_selector_lowering_summary =
       result.type_metadata_handoff.message_send_selector_lowering_summary;
   result.parity_surface.message_send_selector_lowering_sites_total =
@@ -1482,6 +1556,49 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.block_literal_capture_semantics_summary.contract_violation_sites <=
           result.parity_surface.block_literal_capture_semantics_summary.block_literal_sites &&
       result.parity_surface.block_literal_capture_semantics_summary.deterministic;
+  result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff =
+      result.deterministic_block_abi_invoke_trampoline_handoff &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_argument_slots_total ==
+          result.parity_surface.block_abi_invoke_trampoline_invoke_argument_slots_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_word_count_total ==
+          result.parity_surface.block_abi_invoke_trampoline_capture_word_count_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.parameter_entries_total ==
+          result.parity_surface.block_abi_invoke_trampoline_parameter_entries_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total ==
+          result.parity_surface.block_abi_invoke_trampoline_capture_entries_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.body_statement_entries_total ==
+          result.parity_surface.block_abi_invoke_trampoline_body_statement_entries_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.descriptor_symbolized_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_missing_invoke_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.non_normalized_layout_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_contract_violation_sites_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.descriptor_symbolized_sites <=
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites <=
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites <=
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.non_normalized_layout_sites <=
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites <=
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites +
+              result.parity_surface.block_abi_invoke_trampoline_semantics_summary
+                  .missing_invoke_trampoline_sites ==
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.invoke_argument_slots_total ==
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.parameter_entries_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_word_count_total ==
+          result.parity_surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.deterministic;
   result.parity_surface.deterministic_message_send_selector_lowering_handoff =
       result.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.message_send_sites ==
@@ -1799,6 +1916,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_id_class_sel_object_pointer_type_checking_handoff &&
       result.parity_surface.block_literal_capture_semantics_summary.deterministic &&
       result.parity_surface.deterministic_block_literal_capture_semantics_handoff &&
+      result.parity_surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
+      result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff &&
       result.parity_surface.message_send_selector_lowering_summary.deterministic &&
       result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
       result.parity_surface.dispatch_abi_marshalling_summary.deterministic &&

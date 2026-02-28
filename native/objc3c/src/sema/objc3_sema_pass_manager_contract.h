@@ -191,6 +191,17 @@ struct Objc3SemaParityContractSurface {
   std::size_t block_literal_capture_semantics_nondeterministic_capture_sites_total = 0;
   std::size_t block_literal_capture_semantics_non_normalized_sites_total = 0;
   std::size_t block_literal_capture_semantics_contract_violation_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_invoke_argument_slots_total = 0;
+  std::size_t block_abi_invoke_trampoline_capture_word_count_total = 0;
+  std::size_t block_abi_invoke_trampoline_parameter_entries_total = 0;
+  std::size_t block_abi_invoke_trampoline_capture_entries_total = 0;
+  std::size_t block_abi_invoke_trampoline_body_statement_entries_total = 0;
+  std::size_t block_abi_invoke_trampoline_descriptor_symbolized_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_invoke_symbolized_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_missing_invoke_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_non_normalized_layout_sites_total = 0;
+  std::size_t block_abi_invoke_trampoline_contract_violation_sites_total = 0;
   std::size_t message_send_selector_lowering_sites_total = 0;
   std::size_t message_send_selector_lowering_unary_form_sites_total = 0;
   std::size_t message_send_selector_lowering_keyword_form_sites_total = 0;
@@ -274,6 +285,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   bool deterministic_block_literal_capture_semantics_handoff = false;
+  bool deterministic_block_abi_invoke_trampoline_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
@@ -294,6 +306,7 @@ struct Objc3SemaParityContractSurface {
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
@@ -634,6 +647,47 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_literal_capture_semantics_summary.block_literal_sites &&
          surface.block_literal_capture_semantics_summary.deterministic &&
          surface.deterministic_block_literal_capture_semantics_handoff &&
+         surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites ==
+             surface.block_abi_invoke_trampoline_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.invoke_argument_slots_total ==
+             surface.block_abi_invoke_trampoline_invoke_argument_slots_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.capture_word_count_total ==
+             surface.block_abi_invoke_trampoline_capture_word_count_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.parameter_entries_total ==
+             surface.block_abi_invoke_trampoline_parameter_entries_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total ==
+             surface.block_abi_invoke_trampoline_capture_entries_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.body_statement_entries_total ==
+             surface.block_abi_invoke_trampoline_body_statement_entries_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.descriptor_symbolized_sites ==
+             surface.block_abi_invoke_trampoline_descriptor_symbolized_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites ==
+             surface.block_abi_invoke_trampoline_invoke_symbolized_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites ==
+             surface.block_abi_invoke_trampoline_missing_invoke_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.non_normalized_layout_sites ==
+             surface.block_abi_invoke_trampoline_non_normalized_layout_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites ==
+             surface.block_abi_invoke_trampoline_contract_violation_sites_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.descriptor_symbolized_sites <=
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites <=
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites <=
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.non_normalized_layout_sites <=
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.contract_violation_sites <=
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.invoke_trampoline_symbolized_sites +
+                 surface.block_abi_invoke_trampoline_semantics_summary.missing_invoke_trampoline_sites ==
+             surface.block_abi_invoke_trampoline_semantics_summary.block_literal_sites &&
+         surface.block_abi_invoke_trampoline_semantics_summary.invoke_argument_slots_total ==
+             surface.block_abi_invoke_trampoline_semantics_summary.parameter_entries_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.capture_word_count_total ==
+             surface.block_abi_invoke_trampoline_semantics_summary.capture_entries_total &&
+         surface.block_abi_invoke_trampoline_semantics_summary.deterministic &&
+         surface.deterministic_block_abi_invoke_trampoline_handoff &&
          surface.message_send_selector_lowering_summary.message_send_sites ==
              surface.message_send_selector_lowering_sites_total &&
          surface.message_send_selector_lowering_summary.unary_form_sites ==
@@ -932,6 +986,8 @@ struct Objc3SemaPassManagerResult {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   bool deterministic_block_literal_capture_semantics_handoff = false;
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  bool deterministic_block_abi_invoke_trampoline_handoff = false;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool deterministic_dispatch_abi_marshalling_handoff = false;

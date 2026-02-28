@@ -3146,3 +3146,60 @@ Sema/type metadata handoff contract:
 Recommended M166 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m166_sema_block_literal_capture_contract.py -q`
+
+## M167 sema/type block ABI invoke-trampoline semantics contract (M167-B001)
+
+M167-B extends block-literal semantic handoff with ABI invoke-trampoline metadata so
+lowering/runtime lanes can consume deterministic block descriptor + trampoline contracts
+without reparsing or recomputing block layout shape.
+
+Sema/type block-ABI invoke-trampoline contract markers:
+
+- `Objc3BlockAbiInvokeTrampolineSiteMetadata`
+- `Objc3BlockAbiInvokeTrampolineSemanticsSummary`
+- `BuildBlockAbiInvokeTrampolineSiteMetadataLexicographic`
+- `BuildBlockAbiInvokeTrampolineSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockAbiInvokeTrampolineSemanticsSummaryFromTypeMetadataHandoff`
+- `block_abi_invoke_trampoline_sites_total`
+- `block_abi_invoke_trampoline_invoke_argument_slots_total`
+- `block_abi_invoke_trampoline_capture_word_count_total`
+- `block_abi_invoke_trampoline_contract_violation_sites_total`
+- `deterministic_block_abi_invoke_trampoline_handoff`
+
+Deterministic block-ABI invoke-trampoline invariants (fail-closed):
+
+- block ABI invoke-trampoline site metadata must remain lexicographically sorted.
+- parser-authored invoke-slot and capture-word counts must match parameter/capture entries.
+- descriptor symbolized, invoke symbolized, missing invoke, and non-normalized layout counters
+  must remain bounded by `block_literal_sites`.
+- invoke symbolized + missing invoke counts must equal `block_literal_sites`.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_abi_invoke_trampoline_sites_lexicographic = BuildBlockAbiInvokeTrampolineSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_abi_invoke_trampoline_semantics_summary = BuildBlockAbiInvokeTrampolineSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_abi_invoke_trampoline_sites_lexicographic = surface.block_abi_invoke_trampoline_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_abi_invoke_trampoline_semantics_summary = BuildBlockAbiInvokeTrampolineSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_abi_invoke_trampoline_sites_total`
+  - `block_abi_invoke_trampoline_invoke_argument_slots_total`
+  - `block_abi_invoke_trampoline_capture_word_count_total`
+  - `block_abi_invoke_trampoline_parameter_entries_total`
+  - `block_abi_invoke_trampoline_capture_entries_total`
+  - `block_abi_invoke_trampoline_body_statement_entries_total`
+  - `block_abi_invoke_trampoline_descriptor_symbolized_sites_total`
+  - `block_abi_invoke_trampoline_invoke_symbolized_sites_total`
+  - `block_abi_invoke_trampoline_missing_invoke_sites_total`
+  - `block_abi_invoke_trampoline_non_normalized_layout_sites_total`
+  - `block_abi_invoke_trampoline_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff`
+
+Recommended M167 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`

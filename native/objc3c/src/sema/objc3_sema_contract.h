@@ -383,6 +383,37 @@ struct Objc3BlockLiteralCaptureSemanticsSummary {
   bool deterministic = true;
 };
 
+struct Objc3BlockAbiInvokeTrampolineSiteMetadata {
+  std::size_t invoke_argument_slots = 0;
+  std::size_t capture_word_count = 0;
+  std::size_t parameter_count = 0;
+  std::size_t capture_count = 0;
+  std::size_t body_statement_count = 0;
+  bool has_invoke_trampoline = false;
+  bool layout_is_normalized = false;
+  bool has_count_mismatch = false;
+  std::string layout_profile;
+  std::string descriptor_symbol;
+  std::string invoke_trampoline_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3BlockAbiInvokeTrampolineSemanticsSummary {
+  std::size_t block_literal_sites = 0;
+  std::size_t invoke_argument_slots_total = 0;
+  std::size_t capture_word_count_total = 0;
+  std::size_t parameter_entries_total = 0;
+  std::size_t capture_entries_total = 0;
+  std::size_t body_statement_entries_total = 0;
+  std::size_t descriptor_symbolized_sites = 0;
+  std::size_t invoke_trampoline_symbolized_sites = 0;
+  std::size_t missing_invoke_trampoline_sites = 0;
+  std::size_t non_normalized_layout_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
@@ -617,6 +648,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   std::vector<Objc3BlockLiteralCaptureSiteMetadata> block_literal_capture_sites_lexicographic;
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  std::vector<Objc3BlockAbiInvokeTrampolineSiteMetadata> block_abi_invoke_trampoline_sites_lexicographic;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
@@ -850,6 +883,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
   std::vector<Objc3BlockLiteralCaptureSiteMetadata> block_literal_capture_sites_lexicographic;
   Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
+  std::vector<Objc3BlockAbiInvokeTrampolineSiteMetadata> block_abi_invoke_trampoline_sites_lexicographic;
+  Objc3BlockAbiInvokeTrampolineSemanticsSummary block_abi_invoke_trampoline_semantics_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
