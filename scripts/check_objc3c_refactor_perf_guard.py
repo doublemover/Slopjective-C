@@ -5,13 +5,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
-from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 MODE = "objc3c-refactor-perf-guard-v1"
 SCHEMA_VERSION = "objc3c-refactor-perf-telemetry.v1"
+STRICT_MODE = "strict"
+DEFAULT_MODE = "default"
+
+DEFAULT_MAX_REGRESSION_PCT = 10.0
+DEFAULT_MAX_JITTER_MS = 8.0
+DEFAULT_MAX_MEMORY_REGRESSION_PCT = 10.0
+STRICT_MAX_REGRESSION_PCT = 5.0
+STRICT_MAX_JITTER_MS = 4.0
+STRICT_MAX_MEMORY_REGRESSION_PCT = 5.0
+
+DEFAULT_STRICT_TELEMETRY = ROOT / "tmp" / "objc3c_refactor_perf_guard_validation.json"
+DEFAULT_STRICT_EVIDENCE = (
+    ROOT / "tmp" / "artifacts" / "objc3c_refactor_perf_guard" / "strict_summary.json"
+)
 
 EXIT_OK = 0
 EXIT_GUARD_FAIL = 1
@@ -32,25 +46,62 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--telemetry",
         type=Path,
-        required=True,
-        help="Path to telemetry JSON payload.",
+        default=None,
+        help=(
+            "Path to telemetry JSON payload. In --strict mode this may be omitted "
+            "and defaults to OBJC3C_REFACTOR_PERF_TELEMETRY or "
+            "tmp/objc3c_refactor_perf_guard_validation.json."
+        ),
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "Enable strict extraction-stage guardrails. Tightens thresholds, "
+            "requires memory telemetry, enables contract JSON output, and emits "
+            "CI-friendly evidence by default."
+        ),
     )
     parser.add_argument(
         "--max-regression-pct",
         type=float,
-        default=10.0,
-        help="Allowed slowdown percentage for overall and per-fixture checks (default: 10.0).",
+        default=None,
+        help=(
+            "Allowed slowdown percentage for overall/per-fixture checks. "
+            "Defaults: 10.0 (default mode), 5.0 (strict mode)."
+        ),
     )
     parser.add_argument(
         "--max-jitter-ms",
         type=float,
-        default=8.0,
-        help="Allowed jitter between determinism run A/B elapsed timings (default: 8.0).",
+        default=None,
+        help=(
+            "Allowed jitter between determinism run A/B elapsed timings. "
+            "Defaults: 8.0 (default mode), 4.0 (strict mode)."
+        ),
+    )
+    parser.add_argument(
+        "--max-memory-regression-pct",
+        type=float,
+        default=None,
+        help=(
+            "Allowed candidate peak RSS increase percentage versus baseline. "
+            "Defaults: 10.0 (default mode), 5.0 (strict mode)."
+        ),
     )
     parser.add_argument(
         "--contract-mode",
         action="store_true",
         help="Emit deterministic JSON summary to stdout for CI/local contracts.",
+    )
+    parser.add_argument(
+        "--evidence-output",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to write deterministic JSON evidence summary. "
+            "In --strict mode this defaults to tmp/artifacts/objc3c_refactor_perf_guard/strict_summary.json."
+        ),
     )
     return parser
 
@@ -118,6 +169,64 @@ def require_object(
     return candidate
 
 
+def resolve_limit(
+    value: float | None,
+    *,
+    default_value: float,
+    strict_value: float,
+    strict_mode: bool,
+    option_name: str,
+) -> float:
+    resolved = strict_value if strict_mode else default_value
+    if value is not None:
+        resolved = float(value)
+    if resolved <= 0:
+        raise TelemetryInputError(f"{option_name} must be > 0")
+    if strict_mode and resolved > strict_value:
+        raise TelemetryInputError(
+            f"{option_name} must be <= {strict_value:.6f} in --strict mode"
+        )
+    return resolved
+
+
+def resolve_telemetry_path(
+    *,
+    telemetry_arg: Path | None,
+    strict_mode: bool,
+) -> Path:
+    if telemetry_arg is not None:
+        return telemetry_arg
+    if strict_mode:
+        telemetry_env = os.environ.get("OBJC3C_REFACTOR_PERF_TELEMETRY")
+        if telemetry_env and telemetry_env.strip():
+            return Path(telemetry_env.strip())
+        return DEFAULT_STRICT_TELEMETRY
+    raise TelemetryInputError("--telemetry is required unless --strict is set")
+
+
+def resolve_evidence_output_path(
+    *,
+    evidence_arg: Path | None,
+    strict_mode: bool,
+) -> Path | None:
+    if evidence_arg is not None:
+        return evidence_arg
+    if strict_mode:
+        return DEFAULT_STRICT_EVIDENCE
+    return None
+
+
+def write_evidence_summary(path: Path, summary: dict[str, object]) -> None:
+    resolved = path.resolve()
+    try:
+        resolved.parent.mkdir(parents=True, exist_ok=True)
+        resolved.write_text(canonical_json_text(summary), encoding="utf-8")
+    except OSError as exc:
+        raise TelemetryInputError(
+            f"unable to write evidence output {display_path(resolved)}: {exc}"
+        ) from exc
+
+
 def load_telemetry(path: Path) -> dict[str, object]:
     resolved = path.resolve()
     if not resolved.exists():
@@ -154,6 +263,8 @@ def evaluate_contract(
     *,
     max_regression_pct: float,
     max_jitter_ms: float,
+    max_memory_regression_pct: float,
+    strict_mode: bool,
 ) -> tuple[dict[str, object], list[dict[str, str]]]:
     violations: list[dict[str, str]] = []
     observed: dict[str, object] = {}
@@ -181,6 +292,8 @@ def evaluate_contract(
 
     baseline_elapsed_ms: float | None = None
     candidate_elapsed_ms: float | None = None
+    baseline_peak_rss_mb: float | None = None
+    candidate_peak_rss_mb: float | None = None
     if baseline is not None:
         baseline_elapsed_ms = parse_positive_number(baseline.get("elapsed_ms"))
         if baseline_elapsed_ms is None:
@@ -189,6 +302,13 @@ def evaluate_contract(
                 "TEL-005",
                 "telemetry.baseline.elapsed_ms must be a positive number",
             )
+        baseline_peak_rss_mb = parse_positive_number(baseline.get("peak_rss_mb"))
+        if strict_mode and baseline_peak_rss_mb is None:
+            add_violation(
+                violations,
+                "TEL-019",
+                "telemetry.baseline.peak_rss_mb must be a positive number in strict mode",
+            )
     if candidate is not None:
         candidate_elapsed_ms = parse_positive_number(candidate.get("elapsed_ms"))
         if candidate_elapsed_ms is None:
@@ -196,6 +316,13 @@ def evaluate_contract(
                 violations,
                 "TEL-006",
                 "telemetry.candidate.elapsed_ms must be a positive number",
+            )
+        candidate_peak_rss_mb = parse_positive_number(candidate.get("peak_rss_mb"))
+        if strict_mode and candidate_peak_rss_mb is None:
+            add_violation(
+                violations,
+                "TEL-020",
+                "telemetry.candidate.peak_rss_mb must be a positive number in strict mode",
             )
 
     max_allowed_elapsed_ms: float | None = None
@@ -212,6 +339,27 @@ def evaluate_contract(
                     f"candidate={candidate_elapsed_ms:.6f}ms "
                     f"allowed={max_allowed_elapsed_ms:.6f}ms "
                     f"limit_pct={max_regression_pct:.6f}"
+                ),
+            )
+
+    max_allowed_peak_rss_mb: float | None = None
+    if baseline_peak_rss_mb is not None and candidate_peak_rss_mb is not None:
+        max_allowed_peak_rss_mb = baseline_peak_rss_mb * (
+            1.0 + (max_memory_regression_pct / 100.0)
+        )
+        memory_regression_pct = (
+            (candidate_peak_rss_mb - baseline_peak_rss_mb) / baseline_peak_rss_mb
+        ) * 100.0
+        observed["memory_regression_pct"] = round(memory_regression_pct, 6)
+        if candidate_peak_rss_mb > max_allowed_peak_rss_mb:
+            add_violation(
+                violations,
+                "PERF-003",
+                (
+                    "candidate peak_rss regression exceeds limit: "
+                    f"candidate={candidate_peak_rss_mb:.6f}MB "
+                    f"allowed={max_allowed_peak_rss_mb:.6f}MB "
+                    f"limit_pct={max_memory_regression_pct:.6f}"
                 ),
             )
 
@@ -367,6 +515,12 @@ def evaluate_contract(
         observed["candidate_elapsed_ms"] = round(candidate_elapsed_ms, 6)
     if max_allowed_elapsed_ms is not None:
         observed["max_allowed_elapsed_ms"] = round(max_allowed_elapsed_ms, 6)
+    if baseline_peak_rss_mb is not None:
+        observed["baseline_peak_rss_mb"] = round(baseline_peak_rss_mb, 6)
+    if candidate_peak_rss_mb is not None:
+        observed["candidate_peak_rss_mb"] = round(candidate_peak_rss_mb, 6)
+    if max_allowed_peak_rss_mb is not None:
+        observed["max_allowed_peak_rss_mb"] = round(max_allowed_peak_rss_mb, 6)
     if worst_fixture_regression_pct is not None:
         observed["worst_fixture_regression_pct"] = round(worst_fixture_regression_pct, 6)
 
@@ -377,6 +531,7 @@ def evaluate_contract(
         "limits": {
             "max_regression_pct": max_regression_pct,
             "max_jitter_ms": max_jitter_ms,
+            "max_memory_regression_pct": max_memory_regression_pct,
         },
         "observed": observed,
         "status": status,
@@ -392,12 +547,16 @@ def render_human_fail(summary: dict[str, object]) -> str:
     lines = [
         "status: FAIL",
         f"mode: {summary['mode']}",
+        f"profile: {summary.get('profile', DEFAULT_MODE)}",
         f"violation_count: {summary['violation_count']}",
         "violations:",
     ]
     for item in violations:
         assert isinstance(item, dict)
         lines.append(f"- [{item['check_id']}] {item['detail']}")
+    evidence_output = summary.get("evidence_output")
+    if isinstance(evidence_output, str):
+        lines.append(f"evidence_output: {evidence_output}")
     return "\n".join(lines) + "\n"
 
 
@@ -407,48 +566,86 @@ def render_human_pass(summary: dict[str, object], telemetry_path: Path) -> str:
     return (
         "status: PASS\n"
         f"mode: {summary['mode']}\n"
+        f"profile: {summary.get('profile', DEFAULT_MODE)}\n"
         f"telemetry: {display_path(telemetry_path)}\n"
         f"overall_regression_pct: {observed.get('overall_regression_pct', 'n/a')}\n"
         f"worst_fixture_regression_pct: {observed.get('worst_fixture_regression_pct', 'n/a')}\n"
+        f"memory_regression_pct: {observed.get('memory_regression_pct', 'n/a')}\n"
         f"determinism_jitter_ms: {observed.get('determinism_jitter_ms', 'n/a')}\n"
+        f"evidence_output: {summary.get('evidence_output', 'n/a')}\n"
     )
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if args.max_regression_pct <= 0:
-        print(
-            "objc3c-refactor-perf-guard: error: --max-regression-pct must be > 0",
-            file=sys.stderr,
+    try:
+        max_regression_pct = resolve_limit(
+            args.max_regression_pct,
+            default_value=DEFAULT_MAX_REGRESSION_PCT,
+            strict_value=STRICT_MAX_REGRESSION_PCT,
+            strict_mode=bool(args.strict),
+            option_name="--max-regression-pct",
         )
-        return EXIT_INPUT_ERROR
-    if args.max_jitter_ms <= 0:
-        print(
-            "objc3c-refactor-perf-guard: error: --max-jitter-ms must be > 0",
-            file=sys.stderr,
+        max_jitter_ms = resolve_limit(
+            args.max_jitter_ms,
+            default_value=DEFAULT_MAX_JITTER_MS,
+            strict_value=STRICT_MAX_JITTER_MS,
+            strict_mode=bool(args.strict),
+            option_name="--max-jitter-ms",
         )
+        max_memory_regression_pct = resolve_limit(
+            args.max_memory_regression_pct,
+            default_value=DEFAULT_MAX_MEMORY_REGRESSION_PCT,
+            strict_value=STRICT_MAX_MEMORY_REGRESSION_PCT,
+            strict_mode=bool(args.strict),
+            option_name="--max-memory-regression-pct",
+        )
+        telemetry_path = resolve_telemetry_path(
+            telemetry_arg=args.telemetry,
+            strict_mode=bool(args.strict),
+        )
+        evidence_output_path = resolve_evidence_output_path(
+            evidence_arg=args.evidence_output,
+            strict_mode=bool(args.strict),
+        )
+        contract_mode = bool(args.contract_mode or args.strict)
+    except TelemetryInputError as exc:
+        print(f"objc3c-refactor-perf-guard: error: {exc}", file=sys.stderr)
         return EXIT_INPUT_ERROR
 
     try:
-        telemetry_payload = load_telemetry(args.telemetry)
+        telemetry_payload = load_telemetry(telemetry_path)
     except TelemetryInputError as exc:
         print(f"objc3c-refactor-perf-guard: error: {exc}", file=sys.stderr)
         return EXIT_INPUT_ERROR
 
     summary, violations = evaluate_contract(
         telemetry_payload,
-        max_regression_pct=float(args.max_regression_pct),
-        max_jitter_ms=float(args.max_jitter_ms),
+        max_regression_pct=max_regression_pct,
+        max_jitter_ms=max_jitter_ms,
+        max_memory_regression_pct=max_memory_regression_pct,
+        strict_mode=bool(args.strict),
     )
-    summary["telemetry"] = display_path(args.telemetry.resolve())
-    summary["contract_mode"] = bool(args.contract_mode)
+    summary["profile"] = STRICT_MODE if args.strict else DEFAULT_MODE
+    summary["strict_mode"] = bool(args.strict)
+    summary["telemetry"] = display_path(telemetry_path.resolve())
+    summary["contract_mode"] = contract_mode
+    if evidence_output_path is not None:
+        summary["evidence_output"] = display_path(evidence_output_path.resolve())
 
-    if args.contract_mode:
+    if evidence_output_path is not None:
+        try:
+            write_evidence_summary(evidence_output_path, summary)
+        except TelemetryInputError as exc:
+            print(f"objc3c-refactor-perf-guard: error: {exc}", file=sys.stderr)
+            return EXIT_INPUT_ERROR
+
+    if contract_mode:
         print(canonical_json_text(summary), end="")
     elif violations:
         print(render_human_fail(summary), file=sys.stderr, end="")
     else:
-        print(render_human_pass(summary, args.telemetry), end="")
+        print(render_human_pass(summary, telemetry_path), end="")
 
     return EXIT_OK if not violations else EXIT_GUARD_FAIL
 
