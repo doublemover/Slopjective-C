@@ -151,6 +151,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites = 0;
   std::size_t arc_diagnostics_fixit_lowering_contract_violation_sites = 0;
   bool deterministic_arc_diagnostics_fixit_lowering_handoff = false;
+  std::string lowering_block_literal_capture_replay_key;
+  std::size_t block_literal_capture_lowering_block_literal_sites = 0;
+  std::size_t block_literal_capture_lowering_block_parameter_entries = 0;
+  std::size_t block_literal_capture_lowering_block_capture_entries = 0;
+  std::size_t block_literal_capture_lowering_block_body_statement_entries = 0;
+  std::size_t block_literal_capture_lowering_block_empty_capture_sites = 0;
+  std::size_t block_literal_capture_lowering_block_nondeterministic_capture_sites = 0;
+  std::size_t block_literal_capture_lowering_block_non_normalized_sites = 0;
+  std::size_t block_literal_capture_lowering_contract_violation_sites = 0;
+  bool deterministic_block_literal_capture_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

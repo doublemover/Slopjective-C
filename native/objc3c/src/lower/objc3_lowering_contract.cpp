@@ -641,3 +641,36 @@ std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ArcDiagnosticsFixitLoweringLaneContract;
 }
+
+bool IsValidObjc3BlockLiteralCaptureLoweringContract(
+    const Objc3BlockLiteralCaptureLoweringContract &contract) {
+  if (contract.block_empty_capture_sites > contract.block_literal_sites ||
+      contract.block_nondeterministic_capture_sites > contract.block_literal_sites ||
+      contract.block_non_normalized_sites > contract.block_literal_sites ||
+      contract.contract_violation_sites > contract.block_literal_sites) {
+    return false;
+  }
+  if (contract.block_literal_sites == 0) {
+    return contract.block_parameter_entries == 0 && contract.block_capture_entries == 0 &&
+           contract.block_body_statement_entries == 0;
+  }
+  if (contract.block_nondeterministic_capture_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3BlockLiteralCaptureLoweringReplayKey(
+    const Objc3BlockLiteralCaptureLoweringContract &contract) {
+  return std::string("block_literal_sites=") + std::to_string(contract.block_literal_sites) +
+         ";block_parameter_entries=" + std::to_string(contract.block_parameter_entries) +
+         ";block_capture_entries=" + std::to_string(contract.block_capture_entries) +
+         ";block_body_statement_entries=" + std::to_string(contract.block_body_statement_entries) +
+         ";block_empty_capture_sites=" + std::to_string(contract.block_empty_capture_sites) +
+         ";block_nondeterministic_capture_sites=" +
+             std::to_string(contract.block_nondeterministic_capture_sites) +
+         ";block_non_normalized_sites=" + std::to_string(contract.block_non_normalized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3BlockLiteralCaptureLoweringLaneContract;
+}

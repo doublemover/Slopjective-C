@@ -142,6 +142,10 @@ class Objc3IREmitter {
       out << "; arc_diagnostics_fixit_lowering = "
           << frontend_metadata_.lowering_arc_diagnostics_fixit_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_block_literal_capture_replay_key.empty()) {
+      out << "; block_literal_capture_lowering = "
+          << frontend_metadata_.lowering_block_literal_capture_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -357,6 +361,25 @@ class Objc3IREmitter {
         << ", deterministic_arc_diagnostics_fixit_lowering_handoff="
         << (frontend_metadata_.deterministic_arc_diagnostics_fixit_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_block_literal_capture_lowering_profile = block_literal_sites="
+        << frontend_metadata_.block_literal_capture_lowering_block_literal_sites
+        << ", block_parameter_entries="
+        << frontend_metadata_.block_literal_capture_lowering_block_parameter_entries
+        << ", block_capture_entries="
+        << frontend_metadata_.block_literal_capture_lowering_block_capture_entries
+        << ", block_body_statement_entries="
+        << frontend_metadata_.block_literal_capture_lowering_block_body_statement_entries
+        << ", block_empty_capture_sites="
+        << frontend_metadata_.block_literal_capture_lowering_block_empty_capture_sites
+        << ", block_nondeterministic_capture_sites="
+        << frontend_metadata_.block_literal_capture_lowering_block_nondeterministic_capture_sites
+        << ", block_non_normalized_sites="
+        << frontend_metadata_.block_literal_capture_lowering_block_non_normalized_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.block_literal_capture_lowering_contract_violation_sites
+        << ", deterministic_block_literal_capture_lowering_handoff="
+        << (frontend_metadata_.deterministic_block_literal_capture_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -398,7 +421,11 @@ class Objc3IREmitter {
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
-      out << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n\n";
+      out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
+      for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
+        out << ", i32";
+      }
+      out << ")\n\n";
     }
     out << body.str();
     ir = out.str();
@@ -534,6 +561,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_autoreleasepool_scope_lowering = !{!16}\n";
     out << "!objc3.objc_weak_unowned_semantics_lowering = !{!17}\n";
     out << "!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}\n";
+    out << "!objc3.objc_block_literal_capture_lowering = !{!19}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -799,6 +827,28 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.arc_diagnostics_fixit_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_arc_diagnostics_fixit_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!19 = !{i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_block_literal_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_block_parameter_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_block_capture_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_literal_capture_lowering_block_body_statement_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_block_empty_capture_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_literal_capture_lowering_block_nondeterministic_capture_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_literal_capture_lowering_block_non_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_literal_capture_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_block_literal_capture_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

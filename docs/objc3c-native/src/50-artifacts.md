@@ -3134,6 +3134,65 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m165_lowering_arc_diagnostics_fixit_contract.py -q`
 
+## Block literal capture lowering artifact contract (M166-C001)
+
+M166-C publishes replay-stable block literal capture lowering invariants derived
+from sema block capture summary surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m166/lowering-block-literal-capture-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m166/lowering-block-literal-capture-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m166/lowering-block-literal-capture-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m166/lowering-block-literal-capture-contract/block-literal-capture-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3BlockLiteralCaptureLoweringLaneContract`
+- `Objc3BlockLiteralCaptureLoweringContract`
+- `IsValidObjc3BlockLiteralCaptureLoweringContract(...)`
+- `Objc3BlockLiteralCaptureLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `block_parameter_entries=<N>`
+- `block_capture_entries=<N>`
+- `block_body_statement_entries=<N>`
+- `block_empty_capture_sites=<N>`
+- `block_nondeterministic_capture_sites=<N>`
+- `block_non_normalized_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m166-block-literal-capture-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_literal_capture_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_literal_sites`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_empty_capture_sites`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_nondeterministic_capture_sites`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_block_non_normalized_sites`
+- `frontend.pipeline.sema_pass_manager.block_literal_capture_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_literal_capture_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_literal_capture_lowering_surface`
+- `lowering_block_literal_capture.replay_key`
+- `lowering_block_literal_capture.lane_contract`
+
+IR publication markers:
+
+- `; block_literal_capture_lowering = block_literal_sites=<N>;block_parameter_entries=<N>;block_capture_entries=<N>;block_body_statement_entries=<N>;block_empty_capture_sites=<N>;block_nondeterministic_capture_sites=<N>;block_non_normalized_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m166-block-literal-capture-lowering-v1`
+- `; frontend_objc_block_literal_capture_lowering_profile = block_literal_sites=<N>, block_parameter_entries=<N>, block_capture_entries=<N>, block_body_statement_entries=<N>, block_empty_capture_sites=<N>, block_nondeterministic_capture_sites=<N>, block_non_normalized_sites=<N>, contract_violation_sites=<N>, deterministic_block_literal_capture_lowering_handoff=<bool>`
+- `!objc3.objc_block_literal_capture_lowering = !{!19}`
+- `!19 = !{i64 <block_literal_sites>, i64 <block_parameter_entries>, i64 <block_capture_entries>, i64 <block_body_statement_entries>, i64 <block_empty_capture_sites>, i64 <block_nondeterministic_capture_sites>, i64 <block_non_normalized_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m166_lowering_block_literal_capture_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

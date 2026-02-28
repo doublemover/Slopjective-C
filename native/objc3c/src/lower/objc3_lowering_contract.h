@@ -42,6 +42,8 @@ inline constexpr const char *kObjc3WeakUnownedSemanticsLoweringLaneContract =
     "m164-weak-unowned-semantics-lowering-v1";
 inline constexpr const char *kObjc3ArcDiagnosticsFixitLoweringLaneContract =
     "m165-arc-diagnostics-fixit-lowering-v1";
+inline constexpr const char *kObjc3BlockLiteralCaptureLoweringLaneContract =
+    "m166-block-literal-capture-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -203,6 +205,18 @@ struct Objc3ArcDiagnosticsFixitLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3BlockLiteralCaptureLoweringContract {
+  std::size_t block_literal_sites = 0;
+  std::size_t block_parameter_entries = 0;
+  std::size_t block_capture_entries = 0;
+  std::size_t block_body_statement_entries = 0;
+  std::size_t block_empty_capture_sites = 0;
+  std::size_t block_nondeterministic_capture_sites = 0;
+  std::size_t block_non_normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -272,3 +286,7 @@ bool IsValidObjc3ArcDiagnosticsFixitLoweringContract(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
 std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
+bool IsValidObjc3BlockLiteralCaptureLoweringContract(
+    const Objc3BlockLiteralCaptureLoweringContract &contract);
+std::string Objc3BlockLiteralCaptureLoweringReplayKey(
+    const Objc3BlockLiteralCaptureLoweringContract &contract);

@@ -685,6 +685,31 @@ Objc3ArcDiagnosticsFixitLoweringContract BuildArcDiagnosticsFixitLoweringContrac
   return contract;
 }
 
+Objc3BlockLiteralCaptureLoweringContract BuildBlockLiteralCaptureLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3BlockLiteralCaptureLoweringContract contract;
+  contract.block_literal_sites =
+      sema_parity_surface.block_literal_capture_semantics_sites_total;
+  contract.block_parameter_entries =
+      sema_parity_surface.block_literal_capture_semantics_parameter_entries_total;
+  contract.block_capture_entries =
+      sema_parity_surface.block_literal_capture_semantics_capture_entries_total;
+  contract.block_body_statement_entries =
+      sema_parity_surface.block_literal_capture_semantics_body_statement_entries_total;
+  contract.block_empty_capture_sites =
+      sema_parity_surface.block_literal_capture_semantics_empty_capture_sites_total;
+  contract.block_nondeterministic_capture_sites =
+      sema_parity_surface.block_literal_capture_semantics_nondeterministic_capture_sites_total;
+  contract.block_non_normalized_sites =
+      sema_parity_surface.block_literal_capture_semantics_non_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.block_literal_capture_semantics_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.block_literal_capture_semantics_summary.deterministic &&
+      sema_parity_surface.deterministic_block_literal_capture_semantics_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -956,6 +981,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string arc_diagnostics_fixit_lowering_replay_key =
       Objc3ArcDiagnosticsFixitLoweringReplayKey(arc_diagnostics_fixit_lowering_contract);
+  const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
+      BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3BlockLiteralCaptureLoweringContract(block_literal_capture_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid block literal capture lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string block_literal_capture_lowering_replay_key =
+      Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1395,6 +1433,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_arc_diagnostics_fixit_replay_key\":\""
            << arc_diagnostics_fixit_lowering_replay_key
            << "\""
+           << ",\"deterministic_block_literal_capture_lowering_handoff\":"
+           << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
+           << ",\"block_literal_capture_lowering_block_literal_sites\":"
+           << block_literal_capture_lowering_contract.block_literal_sites
+           << ",\"block_literal_capture_lowering_block_parameter_entries\":"
+           << block_literal_capture_lowering_contract.block_parameter_entries
+           << ",\"block_literal_capture_lowering_block_capture_entries\":"
+           << block_literal_capture_lowering_contract.block_capture_entries
+           << ",\"block_literal_capture_lowering_block_body_statement_entries\":"
+           << block_literal_capture_lowering_contract.block_body_statement_entries
+           << ",\"block_literal_capture_lowering_block_empty_capture_sites\":"
+           << block_literal_capture_lowering_contract.block_empty_capture_sites
+           << ",\"block_literal_capture_lowering_block_nondeterministic_capture_sites\":"
+           << block_literal_capture_lowering_contract.block_nondeterministic_capture_sites
+           << ",\"block_literal_capture_lowering_block_non_normalized_sites\":"
+           << block_literal_capture_lowering_contract.block_non_normalized_sites
+           << ",\"block_literal_capture_lowering_contract_violation_sites\":"
+           << block_literal_capture_lowering_contract.contract_violation_sites
+           << ",\"lowering_block_literal_capture_replay_key\":\""
+           << block_literal_capture_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1782,6 +1841,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_block_literal_capture_lowering_surface\":{\"block_literal_sites\":"
+           << block_literal_capture_lowering_contract.block_literal_sites
+           << ",\"block_parameter_entries\":"
+           << block_literal_capture_lowering_contract.block_parameter_entries
+           << ",\"block_capture_entries\":"
+           << block_literal_capture_lowering_contract.block_capture_entries
+           << ",\"block_body_statement_entries\":"
+           << block_literal_capture_lowering_contract.block_body_statement_entries
+           << ",\"block_empty_capture_sites\":"
+           << block_literal_capture_lowering_contract.block_empty_capture_sites
+           << ",\"block_nondeterministic_capture_sites\":"
+           << block_literal_capture_lowering_contract.block_nondeterministic_capture_sites
+           << ",\"block_non_normalized_sites\":"
+           << block_literal_capture_lowering_contract.block_non_normalized_sites
+           << ",\"contract_violation_sites\":"
+           << block_literal_capture_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << block_literal_capture_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1927,6 +2007,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3ArcDiagnosticsFixitLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_block_literal_capture\":{\"replay_key\":\""
+           << block_literal_capture_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3BlockLiteralCaptureLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2230,6 +2316,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       arc_diagnostics_fixit_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_arc_diagnostics_fixit_lowering_handoff =
       arc_diagnostics_fixit_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_block_literal_capture_replay_key =
+      block_literal_capture_lowering_replay_key;
+  ir_frontend_metadata.block_literal_capture_lowering_block_literal_sites =
+      block_literal_capture_lowering_contract.block_literal_sites;
+  ir_frontend_metadata.block_literal_capture_lowering_block_parameter_entries =
+      block_literal_capture_lowering_contract.block_parameter_entries;
+  ir_frontend_metadata.block_literal_capture_lowering_block_capture_entries =
+      block_literal_capture_lowering_contract.block_capture_entries;
+  ir_frontend_metadata.block_literal_capture_lowering_block_body_statement_entries =
+      block_literal_capture_lowering_contract.block_body_statement_entries;
+  ir_frontend_metadata.block_literal_capture_lowering_block_empty_capture_sites =
+      block_literal_capture_lowering_contract.block_empty_capture_sites;
+  ir_frontend_metadata.block_literal_capture_lowering_block_nondeterministic_capture_sites =
+      block_literal_capture_lowering_contract.block_nondeterministic_capture_sites;
+  ir_frontend_metadata.block_literal_capture_lowering_block_non_normalized_sites =
+      block_literal_capture_lowering_contract.block_non_normalized_sites;
+  ir_frontend_metadata.block_literal_capture_lowering_contract_violation_sites =
+      block_literal_capture_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_block_literal_capture_lowering_handoff =
+      block_literal_capture_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
