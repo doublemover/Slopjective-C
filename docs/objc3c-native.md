@@ -12126,6 +12126,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m176_validation_module_import_graph_contract.py`
   - `tests/tooling/test_objc3c_m176_integration_module_import_graph_contract.py`
 
+## M177 integration namespace collision and shadowing diagnostics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m177-namespace-collision-shadowing-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m177`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m177_frontend_namespace_collision_shadowing_parser_contract.py`
+  - `tests/tooling/test_objc3c_m177_sema_namespace_collision_shadowing_contract.py`
+  - `tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py`
+  - `tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py`
+  - `tests/tooling/test_objc3c_m177_integration_namespace_collision_shadowing_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
