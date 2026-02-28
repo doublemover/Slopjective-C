@@ -214,6 +214,56 @@ LSP semantic profile capture commands (lowering/runtime lane):
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
 
+## M209 lowering/runtime profile-guided optimization hooks
+
+Lowering/runtime LLVM profile-guided optimization (PGO) hook evidence is captured as deterministic packet artifacts rooted under `tmp/` so profile surfaces remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.manifest.json`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/pgo-hook-source-anchors.txt`
+- `PGO hook ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `!0 = !{i32 <language_version>, !"compatibility_mode", i1 <migration_assist>, i64 <legacy_yes>, i64 <legacy_no>, i64 <legacy_null>, i64 <legacy_total>}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `source anchors`:
+  - `Objc3IRFrontendMetadata ir_frontend_metadata;`
+  - `ir_frontend_metadata.language_version = options.language_version;`
+  - `ir_frontend_metadata.compatibility_mode = CompatibilityModeName(options.compatibility_mode);`
+  - `ir_frontend_metadata.migration_assist = options.migration_assist;`
+  - `ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;`
+  - `ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;`
+  - `ir_frontend_metadata.migration_legacy_null = pipeline_result.migration_hints.legacy_null_count;`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)`
+  - `out << "!objc3.frontend = !{!0}\n";`
+  - `out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning identical source + lowering/runtime options preserves byte-identical `module.ll` and `module.manifest.json`.
+  - PGO hook ABI/IR anchors and source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, or source anchor is missing.
+
+PGO hook capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|!0 = !{|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.ll tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.manifest.json > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/abi-ir-anchors.txt`
+3. `rg -n "Objc3IRFrontendMetadata ir_frontend_metadata;|ir_frontend_metadata\\.language_version = options\\.language_version;|ir_frontend_metadata\\.compatibility_mode = CompatibilityModeName\\(options\\.compatibility_mode\\);|ir_frontend_metadata\\.migration_assist = options\\.migration_assist;|ir_frontend_metadata\\.migration_legacy_yes = pipeline_result\\.migration_hints\\.legacy_yes_count;|ir_frontend_metadata\\.migration_legacy_no = pipeline_result\\.migration_hints\\.legacy_no_count;|ir_frontend_metadata\\.migration_legacy_null = pipeline_result\\.migration_hints\\.legacy_null_count;|Objc3LoweringIRBoundaryReplayKey\\(|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|runtime_dispatch_arg_slots=|selector_global_ordering=lexicographic" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/pgo-hook-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m209_lowering_pgo_contract.py -q`
+
 ## M210 lowering/runtime performance budgets and regression gates
 
 Lowering/LLVM/runtime perf regression evidence is captured as a deterministic packet rooted under `tmp/` so throughput budget and cache-proof gates fail closed.
