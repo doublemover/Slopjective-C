@@ -2597,3 +2597,43 @@ Sema/type metadata handoff contract:
 Recommended M155 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
+
+## M156 sema/type message-send AST form and selector-lowering contract (M156-B001)
+
+M156-B adds a deterministic semantic summary for Objective-C message-send AST forms and selector-lowering
+metadata, then replays it through sema handoff and pass-manager parity carriers.
+
+Sema/type contract markers:
+
+- `Objc3MessageSendSelectorLoweringSiteMetadata`
+- `Objc3MessageSendSelectorLoweringSummary`
+- `message_send_selector_lowering_sites_lexicographic`
+- `message_send_selector_lowering_summary`
+- `BuildMessageSendSelectorLoweringSiteMetadataLexicographic`
+- `BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface`
+- `BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff`
+- `deterministic_message_send_selector_lowering_handoff`
+- `result.parity_surface.message_send_selector_lowering_summary`
+
+Deterministic message-send selector-lowering invariants (fail-closed):
+
+- message-send form partition remains complete (`unary_form_sites + keyword_form_sites == message_send_sites`).
+- selector-lowering piece accounting remains bounded (`selector_lowering_argument_piece_entries <= selector_lowering_piece_entries`).
+- normalized selector-lowering coverage remains bounded (`selector_lowering_normalized_sites <= selector_lowering_symbol_sites <= message_send_sites`).
+- mismatch and contract-violation counters remain bounded by message-send sites.
+- integration and handoff summaries remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.message_send_selector_lowering_sites_lexicographic = BuildMessageSendSelectorLoweringSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.message_send_selector_lowering_summary = BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.message_send_selector_lowering_summary = BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_message_send_selector_lowering_handoff`
+
+Recommended M156 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`

@@ -3310,6 +3310,296 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
   return summary;
 }
 
+static std::size_t CountSelectorKeywordPieces(const std::string &selector_symbol) {
+  return static_cast<std::size_t>(std::count(selector_symbol.begin(), selector_symbol.end(), ':'));
+}
+
+static Expr::MessageSendForm ResolveMessageSendForm(const Expr &expr) {
+  if (expr.message_send_form == Expr::MessageSendForm::Unary ||
+      expr.message_send_form == Expr::MessageSendForm::Keyword) {
+    return expr.message_send_form;
+  }
+  return expr.args.empty() ? Expr::MessageSendForm::Unary : Expr::MessageSendForm::Keyword;
+}
+
+static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLoweringSiteMetadata(const Expr &expr) {
+  Objc3MessageSendSelectorLoweringSiteMetadata metadata;
+  metadata.selector = expr.selector;
+  metadata.selector_lowering_symbol =
+      expr.selector_lowering_symbol.empty() ? expr.selector : expr.selector_lowering_symbol;
+  metadata.argument_count = expr.args.size();
+  const Expr::MessageSendForm resolved_form = ResolveMessageSendForm(expr);
+  metadata.unary_form = resolved_form == Expr::MessageSendForm::Unary;
+  metadata.keyword_form = resolved_form == Expr::MessageSendForm::Keyword;
+  metadata.line = expr.line;
+  metadata.column = expr.column;
+
+  if (!expr.selector_lowering_pieces.empty()) {
+    metadata.selector_piece_count = expr.selector_lowering_pieces.size();
+    for (const Expr::MessageSendSelectorPiece &piece : expr.selector_lowering_pieces) {
+      if (piece.has_argument) {
+        ++metadata.selector_argument_piece_count;
+      }
+    }
+  } else if (metadata.keyword_form) {
+    const std::string selector_symbol =
+        metadata.selector_lowering_symbol.empty() ? metadata.selector : metadata.selector_lowering_symbol;
+    metadata.selector_piece_count = CountSelectorKeywordPieces(selector_symbol);
+    metadata.selector_argument_piece_count = metadata.selector_piece_count;
+  }
+
+  metadata.selector_lowering_is_normalized =
+      expr.selector_lowering_is_normalized ||
+      (!metadata.selector.empty() && !metadata.selector_lowering_symbol.empty() &&
+       metadata.selector == metadata.selector_lowering_symbol);
+  return metadata;
+}
+
+static void CollectMessageSendSelectorLoweringSiteMetadataFromExpr(
+    const Expr *expr, std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::MessageSend) {
+    sites.push_back(BuildMessageSendSelectorLoweringSiteMetadata(*expr));
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->receiver.get(), sites);
+    for (const auto &arg : expr->args) {
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(arg.get(), sites);
+    }
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::Binary) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->left.get(), sites);
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->right.get(), sites);
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::Conditional) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->left.get(), sites);
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->right.get(), sites);
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(expr->third.get(), sites);
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::Call) {
+    for (const auto &arg : expr->args) {
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(arg.get(), sites);
+    }
+  }
+}
+
+static void CollectMessageSendSelectorLoweringSiteMetadataFromStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites);
+
+static void CollectMessageSendSelectorLoweringSiteMetadataFromForClause(
+    const ForClause &clause,
+    std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  CollectMessageSendSelectorLoweringSiteMetadataFromExpr(clause.value.get(), sites);
+}
+
+static void CollectMessageSendSelectorLoweringSiteMetadataFromStatement(
+    const Stmt *stmt, std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  if (stmt == nullptr) {
+    return;
+  }
+
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->let_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::Assign:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->assign_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::Return:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->return_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::If:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->if_stmt->condition.get(), sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->if_stmt->then_body, sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->if_stmt->else_body, sites);
+      return;
+    case Stmt::Kind::DoWhile:
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->do_while_stmt->body, sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->do_while_stmt->condition.get(), sites);
+      return;
+    case Stmt::Kind::For:
+      CollectMessageSendSelectorLoweringSiteMetadataFromForClause(stmt->for_stmt->init, sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->for_stmt->condition.get(), sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromForClause(stmt->for_stmt->step, sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->for_stmt->body, sites);
+      return;
+    case Stmt::Kind::Switch:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->switch_stmt->condition.get(), sites);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        CollectMessageSendSelectorLoweringSiteMetadataFromStatements(switch_case.body, sites);
+      }
+      return;
+    case Stmt::Kind::While:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->while_stmt->condition.get(), sites);
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->while_stmt->body, sites);
+      return;
+    case Stmt::Kind::Block:
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->block_stmt->body, sites);
+      return;
+    case Stmt::Kind::Expr:
+      CollectMessageSendSelectorLoweringSiteMetadataFromExpr(stmt->expr_stmt->value.get(), sites);
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void CollectMessageSendSelectorLoweringSiteMetadataFromStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  for (const auto &statement : statements) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromStatement(statement.get(), sites);
+  }
+}
+
+static bool IsMessageSendSelectorLoweringSiteMetadataLess(
+    const Objc3MessageSendSelectorLoweringSiteMetadata &lhs,
+    const Objc3MessageSendSelectorLoweringSiteMetadata &rhs) {
+  if (lhs.selector != rhs.selector) {
+    return lhs.selector < rhs.selector;
+  }
+  if (lhs.selector_lowering_symbol != rhs.selector_lowering_symbol) {
+    return lhs.selector_lowering_symbol < rhs.selector_lowering_symbol;
+  }
+  if (lhs.argument_count != rhs.argument_count) {
+    return lhs.argument_count < rhs.argument_count;
+  }
+  if (lhs.selector_piece_count != rhs.selector_piece_count) {
+    return lhs.selector_piece_count < rhs.selector_piece_count;
+  }
+  if (lhs.selector_argument_piece_count != rhs.selector_argument_piece_count) {
+    return lhs.selector_argument_piece_count < rhs.selector_argument_piece_count;
+  }
+  if (lhs.unary_form != rhs.unary_form) {
+    return lhs.unary_form < rhs.unary_form;
+  }
+  if (lhs.keyword_form != rhs.keyword_form) {
+    return lhs.keyword_form < rhs.keyword_form;
+  }
+  if (lhs.selector_lowering_is_normalized != rhs.selector_lowering_is_normalized) {
+    return lhs.selector_lowering_is_normalized < rhs.selector_lowering_is_normalized;
+  }
+  if (lhs.line != rhs.line) {
+    return lhs.line < rhs.line;
+  }
+  return lhs.column < rhs.column;
+}
+
+static std::vector<Objc3MessageSendSelectorLoweringSiteMetadata>
+BuildMessageSendSelectorLoweringSiteMetadataLexicographic(const Objc3Program &ast) {
+  std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> sites;
+  for (const auto &global : ast.globals) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromExpr(global.value.get(), sites);
+  }
+  for (const auto &fn : ast.functions) {
+    CollectMessageSendSelectorLoweringSiteMetadataFromStatements(fn.body, sites);
+  }
+  std::sort(sites.begin(), sites.end(), IsMessageSendSelectorLoweringSiteMetadataLess);
+  return sites;
+}
+
+static Objc3MessageSendSelectorLoweringSummary BuildMessageSendSelectorLoweringSummaryFromSites(
+    const std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  Objc3MessageSendSelectorLoweringSummary summary;
+  for (const auto &site : sites) {
+    ++summary.message_send_sites;
+    if (site.unary_form) {
+      ++summary.unary_form_sites;
+    }
+    if (site.keyword_form) {
+      ++summary.keyword_form_sites;
+    }
+    if (!site.selector_lowering_symbol.empty()) {
+      ++summary.selector_lowering_symbol_sites;
+    } else {
+      ++summary.selector_lowering_missing_symbol_sites;
+    }
+    summary.selector_lowering_piece_entries += site.selector_piece_count;
+    summary.selector_lowering_argument_piece_entries += site.selector_argument_piece_count;
+    if (site.selector_lowering_is_normalized) {
+      ++summary.selector_lowering_normalized_sites;
+    }
+
+    bool contract_violation = false;
+    if (site.unary_form == site.keyword_form) {
+      ++summary.selector_lowering_form_mismatch_sites;
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.unary_form && site.argument_count != 0) {
+      ++summary.selector_lowering_form_mismatch_sites;
+      contract_violation = true;
+    }
+    if (site.keyword_form && site.argument_count == 0) {
+      ++summary.selector_lowering_form_mismatch_sites;
+      contract_violation = true;
+    }
+    if (site.selector_argument_piece_count > site.selector_piece_count) {
+      ++summary.selector_lowering_arity_mismatch_sites;
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.unary_form && site.selector_argument_piece_count != 0) {
+      ++summary.selector_lowering_arity_mismatch_sites;
+      contract_violation = true;
+    }
+    if (site.keyword_form && site.selector_argument_piece_count != site.argument_count) {
+      ++summary.selector_lowering_arity_mismatch_sites;
+      contract_violation = true;
+    }
+    if (!site.selector.empty() && !site.selector_lowering_symbol.empty() &&
+        site.selector != site.selector_lowering_symbol) {
+      ++summary.selector_lowering_symbol_mismatch_sites;
+      contract_violation = true;
+    }
+    if (site.selector_lowering_symbol.empty()) {
+      contract_violation = true;
+    }
+    if (site.selector_lowering_is_normalized && site.selector_lowering_symbol.empty()) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (contract_violation) {
+      ++summary.selector_lowering_contract_violation_sites;
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.unary_form_sites + summary.keyword_form_sites == summary.message_send_sites &&
+      summary.selector_lowering_symbol_sites <= summary.message_send_sites &&
+      summary.selector_lowering_normalized_sites <= summary.selector_lowering_symbol_sites &&
+      summary.selector_lowering_argument_piece_entries <= summary.selector_lowering_piece_entries &&
+      summary.selector_lowering_form_mismatch_sites <= summary.message_send_sites &&
+      summary.selector_lowering_arity_mismatch_sites <= summary.message_send_sites &&
+      summary.selector_lowering_symbol_mismatch_sites <= summary.message_send_sites &&
+      summary.selector_lowering_missing_symbol_sites <= summary.message_send_sites &&
+      summary.selector_lowering_contract_violation_sites <= summary.message_send_sites;
+  return summary;
+}
+
+static Objc3MessageSendSelectorLoweringSummary BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  return BuildMessageSendSelectorLoweringSummaryFromSites(
+      surface.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3MessageSendSelectorLoweringSummary BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  return BuildMessageSendSelectorLoweringSummaryFromSites(
+      handoff.message_send_selector_lowering_sites_lexicographic);
+}
+
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
 BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
   Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
@@ -4000,6 +4290,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(surface);
   surface.id_class_sel_object_pointer_type_checking_summary =
       BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(surface);
+  surface.message_send_selector_lowering_sites_lexicographic =
+      BuildMessageSendSelectorLoweringSiteMetadataLexicographic(ast);
+  surface.message_send_selector_lowering_summary =
+      BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -4764,6 +5058,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);
   handoff.id_class_sel_object_pointer_type_checking_summary =
       BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);
+  handoff.message_send_selector_lowering_sites_lexicographic =
+      surface.message_send_selector_lowering_sites_lexicographic;
+  handoff.message_send_selector_lowering_summary =
+      BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -4789,6 +5087,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           [](const Objc3SemanticImplementationTypeMetadata &lhs, const Objc3SemanticImplementationTypeMetadata &rhs) {
             return lhs.name < rhs.name;
           })) {
+    return false;
+  }
+  if (!std::is_sorted(handoff.message_send_selector_lowering_sites_lexicographic.begin(),
+                      handoff.message_send_selector_lowering_sites_lexicographic.end(),
+                      IsMessageSendSelectorLoweringSiteMetadataLess)) {
     return false;
   }
 
@@ -5282,6 +5585,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);
   const Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary =
       BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary =
+      BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -5509,7 +5814,51 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  handoff.id_class_sel_object_pointer_type_checking_summary.property_sel_spelling_sites +
                  handoff.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites +
                  handoff.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites <=
-             handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites;
+             handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
+         handoff.message_send_selector_lowering_summary.deterministic &&
+         handoff.message_send_selector_lowering_summary.message_send_sites ==
+             message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.unary_form_sites ==
+             message_send_selector_lowering_summary.unary_form_sites &&
+         handoff.message_send_selector_lowering_summary.keyword_form_sites ==
+             message_send_selector_lowering_summary.keyword_form_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_symbol_sites ==
+             message_send_selector_lowering_summary.selector_lowering_symbol_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_piece_entries ==
+             message_send_selector_lowering_summary.selector_lowering_piece_entries &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_argument_piece_entries ==
+             message_send_selector_lowering_summary.selector_lowering_argument_piece_entries &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_normalized_sites ==
+             message_send_selector_lowering_summary.selector_lowering_normalized_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_form_mismatch_sites ==
+             message_send_selector_lowering_summary.selector_lowering_form_mismatch_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_arity_mismatch_sites ==
+             message_send_selector_lowering_summary.selector_lowering_arity_mismatch_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_symbol_mismatch_sites ==
+             message_send_selector_lowering_summary.selector_lowering_symbol_mismatch_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_missing_symbol_sites ==
+             message_send_selector_lowering_summary.selector_lowering_missing_symbol_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_contract_violation_sites ==
+             message_send_selector_lowering_summary.selector_lowering_contract_violation_sites &&
+         handoff.message_send_selector_lowering_summary.unary_form_sites +
+                 handoff.message_send_selector_lowering_summary.keyword_form_sites ==
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_symbol_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_argument_piece_entries <=
+             handoff.message_send_selector_lowering_summary.selector_lowering_piece_entries &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_normalized_sites <=
+             handoff.message_send_selector_lowering_summary.selector_lowering_symbol_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_form_mismatch_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_arity_mismatch_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_symbol_mismatch_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_missing_symbol_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites &&
+         handoff.message_send_selector_lowering_summary.selector_lowering_contract_violation_sites <=
+             handoff.message_send_selector_lowering_summary.message_send_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

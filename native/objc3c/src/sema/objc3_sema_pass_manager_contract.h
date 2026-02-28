@@ -180,6 +180,18 @@ struct Objc3SemaParityContractSurface {
   std::size_t id_class_sel_object_pointer_property_sel_spelling_sites_total = 0;
   std::size_t id_class_sel_object_pointer_property_instancetype_spelling_sites_total = 0;
   std::size_t id_class_sel_object_pointer_property_object_pointer_type_sites_total = 0;
+  std::size_t message_send_selector_lowering_sites_total = 0;
+  std::size_t message_send_selector_lowering_unary_form_sites_total = 0;
+  std::size_t message_send_selector_lowering_keyword_form_sites_total = 0;
+  std::size_t message_send_selector_lowering_symbol_sites_total = 0;
+  std::size_t message_send_selector_lowering_piece_entries_total = 0;
+  std::size_t message_send_selector_lowering_argument_piece_entries_total = 0;
+  std::size_t message_send_selector_lowering_normalized_sites_total = 0;
+  std::size_t message_send_selector_lowering_form_mismatch_sites_total = 0;
+  std::size_t message_send_selector_lowering_arity_mismatch_sites_total = 0;
+  std::size_t message_send_selector_lowering_symbol_mismatch_sites_total = 0;
+  std::size_t message_send_selector_lowering_missing_symbol_sites_total = 0;
+  std::size_t message_send_selector_lowering_contract_violation_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -193,6 +205,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
+  bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -203,6 +216,7 @@ struct Objc3SemaParityContractSurface {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -501,7 +515,52 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  surface.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites <=
              surface.id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
          surface.id_class_sel_object_pointer_type_checking_summary.deterministic &&
-         surface.deterministic_id_class_sel_object_pointer_type_checking_handoff;
+         surface.deterministic_id_class_sel_object_pointer_type_checking_handoff &&
+         surface.message_send_selector_lowering_summary.message_send_sites ==
+             surface.message_send_selector_lowering_sites_total &&
+         surface.message_send_selector_lowering_summary.unary_form_sites ==
+             surface.message_send_selector_lowering_unary_form_sites_total &&
+         surface.message_send_selector_lowering_summary.keyword_form_sites ==
+             surface.message_send_selector_lowering_keyword_form_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_symbol_sites ==
+             surface.message_send_selector_lowering_symbol_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_piece_entries ==
+             surface.message_send_selector_lowering_piece_entries_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_argument_piece_entries ==
+             surface.message_send_selector_lowering_argument_piece_entries_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_normalized_sites ==
+             surface.message_send_selector_lowering_normalized_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_form_mismatch_sites ==
+             surface.message_send_selector_lowering_form_mismatch_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_arity_mismatch_sites ==
+             surface.message_send_selector_lowering_arity_mismatch_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_symbol_mismatch_sites ==
+             surface.message_send_selector_lowering_symbol_mismatch_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_missing_symbol_sites ==
+             surface.message_send_selector_lowering_missing_symbol_sites_total &&
+         surface.message_send_selector_lowering_summary.selector_lowering_contract_violation_sites ==
+             surface.message_send_selector_lowering_contract_violation_sites_total &&
+         surface.message_send_selector_lowering_summary.unary_form_sites +
+                 surface.message_send_selector_lowering_summary.keyword_form_sites ==
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_symbol_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_piece_entries >=
+             surface.message_send_selector_lowering_summary.selector_lowering_argument_piece_entries &&
+         surface.message_send_selector_lowering_summary.selector_lowering_normalized_sites <=
+             surface.message_send_selector_lowering_summary.selector_lowering_symbol_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_form_mismatch_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_arity_mismatch_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_symbol_mismatch_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_missing_symbol_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.selector_lowering_contract_violation_sites <=
+             surface.message_send_selector_lowering_summary.message_send_sites &&
+         surface.message_send_selector_lowering_summary.deterministic &&
+         surface.deterministic_message_send_selector_lowering_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -530,6 +589,8 @@ struct Objc3SemaPassManagerResult {
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  bool deterministic_message_send_selector_lowering_handoff = false;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

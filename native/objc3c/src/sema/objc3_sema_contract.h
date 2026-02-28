@@ -225,6 +225,35 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   bool deterministic = true;
 };
 
+struct Objc3MessageSendSelectorLoweringSiteMetadata {
+  std::string selector;
+  std::string selector_lowering_symbol;
+  std::size_t argument_count = 0;
+  std::size_t selector_piece_count = 0;
+  std::size_t selector_argument_piece_count = 0;
+  bool unary_form = false;
+  bool keyword_form = false;
+  bool selector_lowering_is_normalized = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3MessageSendSelectorLoweringSummary {
+  std::size_t message_send_sites = 0;
+  std::size_t unary_form_sites = 0;
+  std::size_t keyword_form_sites = 0;
+  std::size_t selector_lowering_symbol_sites = 0;
+  std::size_t selector_lowering_piece_entries = 0;
+  std::size_t selector_lowering_argument_piece_entries = 0;
+  std::size_t selector_lowering_normalized_sites = 0;
+  std::size_t selector_lowering_form_mismatch_sites = 0;
+  std::size_t selector_lowering_arity_mismatch_sites = 0;
+  std::size_t selector_lowering_symbol_mismatch_sites = 0;
+  std::size_t selector_lowering_missing_symbol_sites = 0;
+  std::size_t selector_lowering_contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -386,6 +415,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool built = false;
 };
 
@@ -544,6 +575,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
+  Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
 };
 
 struct Objc3SemanticValidationOptions {
