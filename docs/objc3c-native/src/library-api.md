@@ -235,6 +235,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain daemonized anchors.
 
+## M213 integration debug-info fidelity
+
+- Gate intent: enforce deterministic debug-info fidelity evidence across all lanes.
+### 1.1 Debug-fidelity integration chain
+- Deterministic debug-fidelity gate:
+  - `npm run check:objc3c:m213-debug-fidelity`
+- Chain order:
+  - replays `check:objc3c:m214-daemonized-watch`.
+  - enforces all M213 lane contracts:
+    `tests/tooling/test_objc3c_m213_frontend_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_validation_debug_fidelity_contract.py`,
+    `tests/tooling/test_objc3c_m213_integration_debug_fidelity_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through debug-fidelity validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain debug-fidelity anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
