@@ -697,6 +697,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py`
   - `tests/tooling/test_objc3c_m171_integration_lightweight_generics_constraints_contract.py`
 
+## M172 integration nullability flow warning precision contract
+
+- Integration gate:
+  - `npm run check:objc3c:m172-nullability-flow-warning-precision-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m172`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py`
+  - `tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_integration_nullability_flow_warning_precision_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

@@ -992,6 +992,33 @@ Recommended M171 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q`
 
+## M172 frontend nullability-flow parser/AST surface (M172-A001)
+
+Frontend parser/AST now emits deterministic nullability-flow profiles for
+parameter and return type annotations.
+
+M172 parser/AST surface details:
+
+- nullability-flow anchors:
+  - `BuildNullabilityFlowProfile(...)`
+  - `IsNullabilityFlowProfileNormalized(...)`
+- parser assignment anchors:
+  - `nullability_flow_profile`
+  - `nullability_flow_profile_is_normalized`
+  - `return_nullability_flow_profile`
+  - `return_nullability_flow_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives flow precision from object-pointer spelling and nullability
+  suffix presence.
+- nullability-flow profile normalization is fail-closed when nullability
+  suffixes appear without object-pointer type spellings.
+
+Recommended M172 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4933,6 +4960,32 @@ Deterministic sema intent:
 Recommended M171 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q`
+
+## M172 sema/type nullability flow and warning precision contract (M172-B001)
+
+M172-B defines deterministic sema summaries for nullability-flow precision and
+fail-closed warning packet consistency.
+
+M172 sema/type surface details:
+
+- `Objc3NullabilityFlowWarningPrecisionSummary`
+- `BuildNullabilityFlowWarningPrecisionSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `nullability_flow_sites_total`
+  - `nullability_flow_normalized_sites_total`
+  - `nullability_flow_contract_violation_sites_total`
+  - `deterministic_nullability_flow_warning_precision_handoff`
+
+Deterministic sema intent:
+
+- nullability-flow packets are derived from deterministic type-annotation
+  counters.
+- invalid nullability suffix packets and non-object-pointer nullability suffix
+  usage are surfaced as contract violations.
+
+Recommended M172 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -8489,6 +8542,32 @@ Recommended M171 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q`
 
+## Nullability-flow warning-precision lowering artifact contract (M172-C001)
+
+M172-C lowers sema-authored nullability-flow warning-precision summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M172-C lowering contract anchors:
+
+- `kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract`
+- `Objc3NullabilityFlowWarningPrecisionLoweringContract`
+- `IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(...)`
+- `Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_nullability_flow_warning_precision_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.nullability_flow_warning_precision_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface`
+- `lowering_nullability_flow_warning_precision.replay_key`
+- `; nullability_flow_warning_precision_lowering = nullability_flow_sites=<N>...`
+- `; frontend_objc_nullability_flow_warning_precision_lowering_profile = nullability_flow_sites=<N>...`
+- `!objc3.objc_nullability_flow_warning_precision_lowering = !{!25}`
+
+Recommended M172 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -10615,6 +10694,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
 ```
 
+## M172 validation/conformance/perf nullability flow warning precision runbook
+
+Deterministic M172 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m172_validation_nullability_flow_warning_precision_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_nullability_flow_warning_precision_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_nullability_flow_warning_precision_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface.deterministic_handoff`
+  - `lowering_nullability_flow_warning_precision.replay_key`
+- `replay_run_1/module.ll`
+  - `nullability_flow_warning_precision_lowering`
+  - `frontend_objc_nullability_flow_warning_precision_lowering_profile`
+  - `!objc3.objc_nullability_flow_warning_precision_lowering = !{!25}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -11353,6 +11467,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py`
   - `tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py`
   - `tests/tooling/test_objc3c_m171_integration_lightweight_generics_constraints_contract.py`
+
+## M172 integration nullability flow warning precision contract
+
+- Integration gate:
+  - `npm run check:objc3c:m172-nullability-flow-warning-precision-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m172`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py`
+  - `tests/tooling/test_objc3c_m172_sema_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py`
+  - `tests/tooling/test_objc3c_m172_integration_nullability_flow_warning_precision_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
