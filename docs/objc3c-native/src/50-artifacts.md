@@ -443,6 +443,78 @@ Compile-time evaluation engine capture commands (lowering/runtime lane):
 3. `rg -n "TryGetCompileTimeI32ExprInContext|IsCompileTimeNilReceiverExprInContext|IsCompileTimeKnownNonNilExprInContext|has_assigned_const_value|has_assigned_nil_value|has_clause_const_value|has_let_const_value|const_value_ptrs|nil_bound_ptrs|nonzero_bound_ptrs|global_proofs_invalidated|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py -q`
 
+## M202 lowering/runtime derive/synthesis pipeline
+
+Lowering/runtime derive/synthesis pipeline evidence is captured as deterministic packet artifacts rooted under `tmp/` so semantic integration/type-metadata derivation and runtime-facing manifest synthesis remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `derive/synthesis markers` (required in source-anchor extracts):
+  - `BuildSemanticIntegrationSurface(...)`
+  - `BuildSemanticTypeMetadataHandoff(...)`
+  - `IsDeterministicSemanticTypeMetadataHandoff(...)`
+  - `global_names_lexicographic`
+  - `functions_lexicographic`
+  - `deterministic_type_metadata_handoff`
+  - `type_metadata_global_entries`
+  - `type_metadata_function_entries`
+  - `semantic_surface`
+  - `resolved_global_symbols`
+  - `resolved_function_symbols`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,`
+  - `Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface) {`
+  - `bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {`
+  - `result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`
+  - `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`
+  - `result.deterministic_type_metadata_handoff =`
+  - `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`
+  - `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`
+  - `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`
+  - `result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;`
+  - `<< ",\"deterministic_type_metadata_handoff\":"`
+  - `<< (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")`
+  - `<< ",\"type_metadata_global_entries\":"`
+  - `<< pipeline_result.sema_parity_surface.type_metadata_global_entries`
+  - `<< ",\"type_metadata_function_entries\":"`
+  - `<< pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `<< ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()`
+  - `<< ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and derive/synthesis source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, derive/synthesis marker, or source anchor is missing.
+
+Derive/synthesis pipeline capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
+3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
 ## M205 lowering/runtime macro security policy enforcement
 
 Lowering/runtime macro-security policy enforcement evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma-policy diagnostics and lowering replay boundaries remain auditable and stable across reruns.
