@@ -69,14 +69,27 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     objc3_path = _read(DRIVER_OBJC3_PATH_SOURCE)
 
     assert "enum class Objc3IrObjectBackend" in header
+    assert "enum class Objc3CompatMode" in header
     assert "Objc3IrObjectBackend::kLLVMDirect" in header
+    assert "Objc3CompatMode::kCanonical" in header
+    assert "std::uint32_t language_version = 3;" in header
+    assert "bool migration_assist = false;" in header
     assert "kLLVMDirect" in header
 
     assert "[--llc <path>]" in source
+    assert "[-fobjc-version=<N>] [--objc3-language-version <N>]" in source
+    assert "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist]" in source
     assert "--objc3-ir-object-backend <clang|llvm-direct>" in source
     assert "--llvm-capabilities-summary <path>" in source
     assert "--objc3-route-backend-from-capabilities" in source
     assert "ParseIrObjectBackend" in source
+    assert "ParseCompatMode" in source
+    assert "ParseLanguageVersion" in source
+    assert "if (flag.rfind(\"-fobjc-version=\", 0) == 0)" in source
+    assert "flag == \"-fobjc-version\" || flag == \"--objc3-language-version\"" in source
+    assert "options.language_version = parsed_version;" in source
+    assert "options.migration_assist = true;" in source
+    assert "unsupported Objective-C language version for native frontend (expected 3): " in source
     assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
     assert "options.route_backend_from_capabilities = true;" in source
     assert "options.llvm_capabilities_summary = argv[++i];" in source

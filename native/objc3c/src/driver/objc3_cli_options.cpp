@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <string>
 
 namespace {
@@ -40,6 +41,30 @@ bool ParseIrObjectBackend(const std::string &value, Objc3IrObjectBackend &backen
     return true;
   }
   return false;
+}
+
+bool ParseCompatMode(const std::string &value, Objc3CompatMode &mode) {
+  if (value == "canonical") {
+    mode = Objc3CompatMode::kCanonical;
+    return true;
+  }
+  if (value == "legacy") {
+    mode = Objc3CompatMode::kLegacy;
+    return true;
+  }
+  return false;
+}
+
+bool ParseLanguageVersion(const std::string &value, std::uint32_t &version) {
+  errno = 0;
+  char *end = nullptr;
+  const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
+  if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
+      parsed > std::numeric_limits<std::uint32_t>::max()) {
+    return false;
+  }
+  version = static_cast<std::uint32_t>(parsed);
+  return true;
 }
 
 std::string ReadEnvironmentVariable(const char *name) {
@@ -85,6 +110,8 @@ std::filesystem::path DefaultLlcPath() {
 std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
          "[--llc <path>] "
+         "[-fobjc-version=<N>] [--objc3-language-version <N>] "
+         "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--llvm-capabilities-summary <path>] [--objc3-route-backend-from-capabilities] "
          "[--objc3-max-message-args <0-" +
@@ -104,10 +131,37 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
 
   for (int i = 2; i < argc; ++i) {
     std::string flag = argv[i];
+    if (flag.rfind("-fobjc-version=", 0) == 0) {
+      const std::string version_value = flag.substr(std::string("-fobjc-version=").size());
+      std::uint32_t parsed_version = 0;
+      if (!ParseLanguageVersion(version_value, parsed_version)) {
+        error = "invalid -fobjc-version (expected unsigned integer): " + version_value;
+        return false;
+      }
+      options.language_version = parsed_version;
+      continue;
+    }
+
     if (flag == "--out-dir" && i + 1 < argc) {
       options.out_dir = argv[++i];
     } else if (flag == "--emit-prefix" && i + 1 < argc) {
       options.emit_prefix = argv[++i];
+    } else if ((flag == "-fobjc-version" || flag == "--objc3-language-version") && i + 1 < argc) {
+      const std::string version_value = argv[++i];
+      std::uint32_t parsed_version = 0;
+      if (!ParseLanguageVersion(version_value, parsed_version)) {
+        error = "invalid " + flag + " (expected unsigned integer): " + version_value;
+        return false;
+      }
+      options.language_version = parsed_version;
+    } else if (flag == "--objc3-compat-mode" && i + 1 < argc) {
+      const std::string mode_text = argv[++i];
+      if (!ParseCompatMode(mode_text, options.compat_mode)) {
+        error = "invalid --objc3-compat-mode (expected canonical|legacy): " + mode_text;
+        return false;
+      }
+    } else if (flag == "--objc3-migration-assist") {
+      options.migration_assist = true;
     } else if (flag == "--clang" && i + 1 < argc) {
       options.clang_path = argv[++i];
       options.clang_path_explicit = true;
@@ -147,6 +201,12 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       error = "unknown arg: " + flag;
       return false;
     }
+  }
+
+  if (options.language_version != 3) {
+    error = "unsupported Objective-C language version for native frontend (expected 3): " +
+            std::to_string(options.language_version);
+    return false;
   }
 
   return true;
