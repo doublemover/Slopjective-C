@@ -3313,6 +3313,42 @@ BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSumma
   return summary;
 }
 
+static Objc3CrossModuleConformanceSummary
+BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
+    const Objc3IncrementalModuleCacheInvalidationSummary
+        &incremental_module_cache_invalidation_summary) {
+  Objc3CrossModuleConformanceSummary summary;
+  summary.cross_module_conformance_sites =
+      incremental_module_cache_invalidation_summary
+          .incremental_module_cache_invalidation_sites;
+  summary.namespace_segment_sites =
+      incremental_module_cache_invalidation_summary.namespace_segment_sites;
+  summary.import_edge_candidate_sites =
+      incremental_module_cache_invalidation_summary.import_edge_candidate_sites;
+  summary.object_pointer_type_sites =
+      incremental_module_cache_invalidation_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      incremental_module_cache_invalidation_summary.pointer_declarator_sites;
+  summary.normalized_sites =
+      incremental_module_cache_invalidation_summary.normalized_sites;
+  summary.cache_invalidation_candidate_sites =
+      incremental_module_cache_invalidation_summary
+          .cache_invalidation_candidate_sites;
+  summary.contract_violation_sites =
+      incremental_module_cache_invalidation_summary.contract_violation_sites;
+  summary.deterministic =
+      incremental_module_cache_invalidation_summary.deterministic &&
+      summary.namespace_segment_sites <= summary.cross_module_conformance_sites &&
+      summary.import_edge_candidate_sites <= summary.cross_module_conformance_sites &&
+      summary.normalized_sites <= summary.cross_module_conformance_sites &&
+      summary.cache_invalidation_candidate_sites <=
+          summary.cross_module_conformance_sites &&
+      summary.normalized_sites + summary.cache_invalidation_candidate_sites ==
+          summary.cross_module_conformance_sites &&
+      summary.contract_violation_sites <= summary.cross_module_conformance_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7454,6 +7490,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.incremental_module_cache_invalidation_summary =
       BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
           surface.public_private_api_partition_summary);
+  surface.cross_module_conformance_summary =
+      BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
+          surface.incremental_module_cache_invalidation_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8469,6 +8508,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.incremental_module_cache_invalidation_summary =
       BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
           handoff.public_private_api_partition_summary);
+  handoff.cross_module_conformance_summary =
+      BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
+          handoff.incremental_module_cache_invalidation_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9226,6 +9268,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       incremental_module_cache_invalidation_summary =
           BuildIncrementalModuleCacheInvalidationSummaryFromPublicPrivateApiPartitionSummary(
               handoff.public_private_api_partition_summary);
+  const Objc3CrossModuleConformanceSummary cross_module_conformance_summary =
+      BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary(
+          handoff.incremental_module_cache_invalidation_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9574,6 +9619,36 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  .contract_violation_sites <=
              handoff.incremental_module_cache_invalidation_summary
                  .incremental_module_cache_invalidation_sites &&
+         handoff.cross_module_conformance_summary.deterministic &&
+         handoff.cross_module_conformance_summary.cross_module_conformance_sites ==
+             cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.namespace_segment_sites ==
+             cross_module_conformance_summary.namespace_segment_sites &&
+         handoff.cross_module_conformance_summary.import_edge_candidate_sites ==
+             cross_module_conformance_summary.import_edge_candidate_sites &&
+         handoff.cross_module_conformance_summary.object_pointer_type_sites ==
+             cross_module_conformance_summary.object_pointer_type_sites &&
+         handoff.cross_module_conformance_summary.pointer_declarator_sites ==
+             cross_module_conformance_summary.pointer_declarator_sites &&
+         handoff.cross_module_conformance_summary.normalized_sites ==
+             cross_module_conformance_summary.normalized_sites &&
+         handoff.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
+             cross_module_conformance_summary.cache_invalidation_candidate_sites &&
+         handoff.cross_module_conformance_summary.contract_violation_sites ==
+             cross_module_conformance_summary.contract_violation_sites &&
+         handoff.cross_module_conformance_summary.namespace_segment_sites <=
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.import_edge_candidate_sites <=
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.normalized_sites <=
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.cache_invalidation_candidate_sites <=
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.normalized_sites +
+                 handoff.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
+         handoff.cross_module_conformance_summary.contract_violation_sites <=
+             handoff.cross_module_conformance_summary.cross_module_conformance_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

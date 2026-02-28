@@ -198,6 +198,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t incremental_module_cache_invalidation_normalized_sites_total = 0;
   std::size_t incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total = 0;
   std::size_t incremental_module_cache_invalidation_contract_violation_sites_total = 0;
+  std::size_t cross_module_conformance_sites_total = 0;
+  std::size_t cross_module_conformance_namespace_segment_sites_total = 0;
+  std::size_t cross_module_conformance_import_edge_candidate_sites_total = 0;
+  std::size_t cross_module_conformance_object_pointer_type_sites_total = 0;
+  std::size_t cross_module_conformance_pointer_declarator_sites_total = 0;
+  std::size_t cross_module_conformance_normalized_sites_total = 0;
+  std::size_t cross_module_conformance_cache_invalidation_candidate_sites_total = 0;
+  std::size_t cross_module_conformance_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -387,6 +395,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_namespace_collision_shadowing_handoff = false;
   bool deterministic_public_private_api_partition_handoff = false;
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
+  bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -420,6 +429,7 @@ struct Objc3SemaParityContractSurface {
   Objc3NamespaceCollisionShadowingSummary namespace_collision_shadowing_summary;
   Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary;
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
+  Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -794,6 +804,37 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.incremental_module_cache_invalidation_summary.incremental_module_cache_invalidation_sites &&
          surface.incremental_module_cache_invalidation_summary.deterministic &&
          surface.deterministic_incremental_module_cache_invalidation_handoff &&
+         surface.cross_module_conformance_summary.cross_module_conformance_sites ==
+             surface.cross_module_conformance_sites_total &&
+         surface.cross_module_conformance_summary.namespace_segment_sites ==
+             surface.cross_module_conformance_namespace_segment_sites_total &&
+         surface.cross_module_conformance_summary.import_edge_candidate_sites ==
+             surface.cross_module_conformance_import_edge_candidate_sites_total &&
+         surface.cross_module_conformance_summary.object_pointer_type_sites ==
+             surface.cross_module_conformance_object_pointer_type_sites_total &&
+         surface.cross_module_conformance_summary.pointer_declarator_sites ==
+             surface.cross_module_conformance_pointer_declarator_sites_total &&
+         surface.cross_module_conformance_summary.normalized_sites ==
+             surface.cross_module_conformance_normalized_sites_total &&
+         surface.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
+             surface.cross_module_conformance_cache_invalidation_candidate_sites_total &&
+         surface.cross_module_conformance_summary.contract_violation_sites ==
+             surface.cross_module_conformance_contract_violation_sites_total &&
+         surface.cross_module_conformance_summary.namespace_segment_sites <=
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.import_edge_candidate_sites <=
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.normalized_sites <=
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.cache_invalidation_candidate_sites <=
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.normalized_sites +
+                 surface.cross_module_conformance_summary.cache_invalidation_candidate_sites ==
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.contract_violation_sites <=
+             surface.cross_module_conformance_summary.cross_module_conformance_sites &&
+         surface.cross_module_conformance_summary.deterministic &&
+         surface.deterministic_cross_module_conformance_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1449,6 +1490,8 @@ struct Objc3SemaPassManagerResult {
   Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary;
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
+  bool deterministic_cross_module_conformance_handoff = false;
+  Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

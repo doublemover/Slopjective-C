@@ -3614,3 +3614,37 @@ Deterministic sema intent:
 Recommended M179 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q`
+
+<a id="m180-sema-type-cross-module-conformance-contract-m180-b001"></a>
+## M180 sema/type cross-module conformance contract (M180-B001)
+
+M180-B defines deterministic sema summaries for cross-module conformance
+handoff safety over incremental module cache invalidation packets.
+
+M180 sema/type surface details:
+
+- `Objc3CrossModuleConformanceSummary`
+- `BuildCrossModuleConformanceSummaryFromIncrementalModuleCacheInvalidationSummary`
+- parity counters:
+  - `cross_module_conformance_sites_total`
+  - `cross_module_conformance_namespace_segment_sites_total`
+  - `cross_module_conformance_import_edge_candidate_sites_total`
+  - `cross_module_conformance_object_pointer_type_sites_total`
+  - `cross_module_conformance_pointer_declarator_sites_total`
+  - `cross_module_conformance_normalized_sites_total`
+  - `cross_module_conformance_cache_invalidation_candidate_sites_total`
+  - `cross_module_conformance_contract_violation_sites_total`
+  - `deterministic_cross_module_conformance_handoff`
+
+Deterministic sema intent:
+
+- cross-module conformance summaries are derived from deterministic incremental
+  module cache invalidation packets and preserve handoff parity constraints.
+- normalized and cache-invalidation-candidate counters remain partitioned:
+  `cross_module_conformance_normalized_sites_total + cross_module_conformance_cache_invalidation_candidate_sites_total == cross_module_conformance_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M180 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q`
