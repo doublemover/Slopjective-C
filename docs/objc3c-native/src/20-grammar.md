@@ -1210,6 +1210,53 @@ Recommended M181 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m181_frontend_throws_parser_contract.py -q`
 
+## M182 frontend result-like control-flow/lowering preparatory parser/AST surface (M182-A001)
+
+Frontend parser/AST now emits deterministic result-like control-flow profile
+packets on function and Objective-C method declarations so lowering can consume
+a stable preparatory lane-A handoff.
+
+M182 parser/AST surface details:
+
+- result-like profile anchors:
+  - `BuildResultLikeProfile(...)`
+  - `IsResultLikeProfileNormalized(...)`
+  - `CollectResultLikeExprProfile(...)`
+  - `CollectResultLikeStmtProfile(...)`
+  - `BuildResultLikeProfileFromBody(...)`
+  - `BuildResultLikeProfileFromOpaqueBody(...)`
+  - `FinalizeResultLikeProfile(FunctionDecl &fn)`
+  - `FinalizeResultLikeProfile(Objc3MethodDecl &method)`
+- parser assignment anchors:
+  - `result_like_profile`
+  - `result_like_profile_is_normalized`
+  - `deterministic_result_like_lowering_handoff`
+  - `result_like_sites`
+  - `result_success_sites`
+  - `result_failure_sites`
+  - `result_branch_sites`
+  - `result_payload_sites`
+  - `result_normalized_sites`
+  - `result_branch_merge_sites`
+  - `result_contract_violation_sites`
+- parser transfer/copy anchors:
+  - `CopyMethodReturnTypeFromFunctionDecl(...)`
+  - `target.result_like_profile = source.result_like_profile;`
+  - `target.deterministic_result_like_lowering_handoff = source.deterministic_result_like_lowering_handoff;`
+
+Deterministic grammar intent:
+
+- return and control-flow statement surfaces are reduced into stable
+  result-like site counters for lowering replay preparation.
+- parser profile normalization is fail-closed and invariant-checked for
+  `normalized_sites + branch_merge_sites == result_like_sites`.
+- Objective-C method declarations with opaque implementation bodies still
+  emit deterministic preparatory packets through explicit opaque-body anchors.
+
+Recommended M182 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m182_frontend_result_like_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
