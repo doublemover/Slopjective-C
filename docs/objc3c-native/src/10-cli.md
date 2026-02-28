@@ -28,12 +28,17 @@ objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] 
 ## C API parity runner usage (M142-E001)
 
 ```text
-objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
+objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
 ```
 
 - Binary path produced by native build scripts: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- Default `--clang`: `clang` (or explicit path)
+- Default `--llc`: `llc` (or explicit path)
+- Default `--objc3-compat-mode`: `canonical`
+- Default `--objc3-migration-assist`: `off`
+- Default `--objc3-ir-object-backend`: `clang`
 - Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
-- Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
+- Runner summary captures deterministic compatibility controls (`ir_object_backend`, `compatibility_mode`, `migration_assist`) and output paths (`diagnostics`, `manifest`, `ir`, `object`) for parity replay.
 - For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
 
 ## Artifact tmp-path governance (M143-D001)
