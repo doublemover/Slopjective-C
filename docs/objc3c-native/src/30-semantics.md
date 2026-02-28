@@ -1505,3 +1505,27 @@ Recommended burn-down commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py -q`
 
+## M218 sema/type RC provenance profile
+
+For release-candidate automation and provenance attestation on the sema/type lane, capture deterministic evidence packets from replay-stable sema/type execution.
+
+### 1.1 Deterministic semantic diagnostics RC evidence packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest RC diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic release-candidate packet key for automation/attestation: `rc_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata RC provenance packet
+
+- Sema handoff and parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest RC parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface provenance anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic release-candidate packet key for automation/attestation: `rc_type_metadata_handoff_packet`.
+
+Recommended RC provenance commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
+
