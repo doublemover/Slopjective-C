@@ -51,6 +51,44 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M219 lowering/runtime cross-platform parity profile
+
+Cross-platform lowering/runtime parity evidence is captured as deterministic packet artifacts under `tmp/` across windows/linux/macos.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/`
+- `platform packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/windows/`
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/linux/`
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/macos/`
+- `packet artifacts` (required for each platform root):
+  - `module.ll`
+  - `module.manifest.json`
+- `replay marker reports`:
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/windows-replay-markers.txt`
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/linux-replay-markers.txt`
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/macos-replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each platform packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors that must be present in packet notes across windows/linux/macos):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `cross-platform parity closure criteria`:
+  - rerunning the same source + lowering options on each platform produces byte-identical `module.ll` and `module.manifest.json` within that platform.
+  - replay marker token sets must match across windows/linux/macos (ordering may differ only by tool output line-number prefixes).
+  - closure remains open if any required platform packet artifact, ABI/IR anchor, or replay marker is missing.
+
+Cross-platform capture commands (run per platform worker):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform> --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.ll > tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.manifest.json >> tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m219_lowering_cross_platform_contract.py -q`
+
 ## M220 lowering/runtime public-beta triage profile
 
 Public-beta lowering/runtime triage must ship as deterministic packet evidence rooted under `tmp/`:
