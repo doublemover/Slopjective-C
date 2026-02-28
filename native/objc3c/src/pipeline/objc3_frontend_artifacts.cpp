@@ -36,7 +36,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                                         const Objc3FrontendPipelineResult &pipeline_result,
                                                         const Objc3FrontendOptions &options) {
   Objc3FrontendArtifactBundle bundle;
-  const Objc3Program &program = pipeline_result.program;
+  const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);
   bundle.diagnostics = program.diagnostics;
   if (!bundle.diagnostics.empty()) {
     return bundle;
@@ -143,7 +143,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.manifest_json = manifest.str();
 
   std::string ir_error;
-  if (!EmitObjc3IRText(program, options.lowering, bundle.ir_text, ir_error)) {
+  if (!EmitObjc3IRText(pipeline_result.program, options.lowering, bundle.ir_text, ir_error)) {
     bundle.diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
     bundle.manifest_json.clear();
     bundle.ir_text.clear();

@@ -20,6 +20,10 @@ def test_lowering_contract_module_is_wired() -> None:
     assert "TryGetCompoundAssignmentBinaryOpcode" in header
     assert '#include "lex/objc3_lexer.h"' not in header
     assert '#include "lex/objc3_lexer.h"' not in source
+    assert '#include "parse/objc3_parser.h"' not in header
+    assert '#include "parse/objc3_parser.h"' not in source
+    assert '#include "parse/objc3_parser_contract.h"' not in header
+    assert '#include "parse/objc3_parser_contract.h"' not in source
     assert '#include "token/objc3_token.h"' not in header
     assert '#include "token/objc3_token.h"' not in source
 

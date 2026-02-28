@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ast/objc3_ast.h"
 #include "lower/objc3_lowering_contract.h"
+#include "parse/objc3_parser_contract.h"
 #include "sema/objc3_semantic_passes.h"
 
 struct Objc3FrontendOptions {
@@ -20,7 +20,7 @@ struct Objc3FrontendStageDiagnostics {
 };
 
 struct Objc3FrontendPipelineResult {
-  Objc3Program program;
+  Objc3ParsedProgram program;
   Objc3FrontendStageDiagnostics stage_diagnostics;
   Objc3SemanticIntegrationSurface integration_surface;
 };

@@ -11,6 +11,10 @@ def _read(path: Path) -> str:
 
 def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert TYPES_HEADER.exists()
+    types_header = _read(TYPES_HEADER)
+    assert '#include "parse/objc3_parser_contract.h"' in types_header
+    assert '#include "ast/objc3_ast.h"' not in types_header
+    assert "Objc3ParsedProgram program;" in types_header
     artifacts_header = _read(ARTIFACTS_HEADER)
     assert '#include "pipeline/objc3_frontend_types.h"' in artifacts_header
     assert "struct FunctionInfo {" not in artifacts_header
