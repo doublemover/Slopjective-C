@@ -358,6 +358,16 @@ From repo root, execute deterministic M147 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py -q`
 - `npm run check:objc3c:m147-protocol-category`
 
+## M148 validation selector-normalized method declaration runbook
+
+From repo root, execute deterministic M148 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py -q`
+- `npm run check:objc3c:m148-selector-normalization`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
