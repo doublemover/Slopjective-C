@@ -575,6 +575,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C++ interop-shim anchors.
 
+## M196 integration C interop headers and ABI alignment
+
+- Gate intent: enforce deterministic C-interop header/ABI-alignment evidence across all lanes.
+### 1.1 C-interop header/ABI-alignment integration chain
+- Deterministic C-interop header/ABI-alignment gate:
+  - `npm run check:objc3c:m196-c-interop-headers-abi`
+- Chain order:
+  - replays `check:objc3c:m197-cpp-interop-shim`.
+  - enforces all M196 lane contracts:
+    `tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_lowering_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_validation_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_integration_c_interop_headers_abi_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through C-interop header/ABI-alignment validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C-interop header/ABI-alignment anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

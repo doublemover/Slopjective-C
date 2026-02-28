@@ -131,6 +131,8 @@ jobs:
         run: npm run check:objc3c:m198-swift-metadata-bridge
       - name: 40 Run M197 C++ interop shim gate
         run: npm run check:objc3c:m197-cpp-interop-shim
+      - name: 41 Run M196 C interop headers ABI gate
+        run: npm run check:objc3c:m196-c-interop-headers-abi
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
