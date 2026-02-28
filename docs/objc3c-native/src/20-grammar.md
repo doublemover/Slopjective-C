@@ -460,6 +460,21 @@ Frontend macro-expansion architecture/isolation contract relies on deterministic
   3. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
 
+## M200 frontend interop integration suite and packaging
+
+Frontend interop integration suite/packaging contract relies on deterministic message-send parse boundaries, stable selector/argument AST surfaces, and parser-to-pipeline handoff continuity.
+
+- Required frontend interop integration/packaging signals:
+  - message-send parse ingress remains `ParseMessageSendExpression()`.
+  - interop call-form AST surface remains `Expr::Kind::MessageSend` with `selector` and `args`.
+  - parser-to-frontend handoff remains `BuildObjc3AstFromTokens(tokens)` and `result.program = std::move(parse_result.program);`.
+  - lowering-facing boundary guard remains `max_message_send_args = options.lowering.max_message_send_args`.
+- Required frontend interop integration/packaging commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
