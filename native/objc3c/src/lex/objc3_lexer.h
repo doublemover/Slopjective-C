@@ -3,13 +3,13 @@
 #include <string>
 #include <vector>
 
-#include "token/objc3_token.h"
+#include "token/objc3_token_contract.h"
 
 class Objc3Lexer {
  public:
   explicit Objc3Lexer(const std::string &source);
 
-  std::vector<Token> Run(std::vector<std::string> &diagnostics);
+  std::vector<Objc3LexToken> Run(std::vector<std::string> &diagnostics);
 
  private:
   void SkipTrivia(std::vector<std::string> &diagnostics);

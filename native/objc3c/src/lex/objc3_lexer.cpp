@@ -6,6 +6,9 @@
 
 namespace {
 
+using Token = Objc3LexToken;
+using TokenKind = Objc3LexTokenKind;
+
 bool IsIdentStart(char c) {
   return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_';
 }
@@ -40,7 +43,7 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
 
 Objc3Lexer::Objc3Lexer(const std::string &source) : source_(source) {}
 
-std::vector<Token> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
+std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
   std::vector<Token> tokens;
   while (true) {
     SkipTrivia(diagnostics);
