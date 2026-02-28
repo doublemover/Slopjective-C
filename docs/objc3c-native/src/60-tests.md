@@ -348,6 +348,16 @@ From repo root, execute deterministic M146 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py -q`
 - `npm run check:objc3c:m146-interface-implementation`
 
+## M147 validation @protocol/@category runbook
+
+From repo root, execute deterministic M147 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py -q`
+- `npm run check:objc3c:m147-protocol-category`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
