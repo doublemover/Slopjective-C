@@ -1931,6 +1931,24 @@ Frontend task-runtime/cancellation contract relies on deterministic parser-owned
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m189_frontend_task_runtime_cancellation_parser_contract.py -q`
 
+## M188 frontend actor-isolation and sendability packetization
+
+Frontend actor-isolation/sendability contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for actor declarations, actor hops, sendable annotations, and non-sendable crossings.
+
+- Required frontend actor-isolation/sendability signals:
+  - parser symbol classifiers remain `IsActorIsolationDeclSymbol(...)`, `IsActorHopSymbol(...)`, `IsSendableAnnotationSymbol(...)`, and `IsNonSendableCrossingSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ActorIsolationSendabilityProfile`.
+  - parser profile serialization remains `BuildActorIsolationSendabilityProfile(...)`.
+  - parser profile invariant gate remains `IsActorIsolationSendabilityProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeActorIsolationSendabilityProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeActorIsolationSendabilityProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.actor_isolation_sendability_sites = profile.actor_isolation_sendability_sites;` and `method.actor_isolation_sendability_sites = profile.actor_isolation_sendability_sites;`.
+  - AST carrier anchors remain `bool actor_isolation_sendability_profile_is_normalized = false;`, `bool deterministic_actor_isolation_sendability_handoff = false;`, and `std::string actor_isolation_sendability_profile;` on function/method declarations.
+- Required frontend actor-isolation/sendability commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
