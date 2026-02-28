@@ -1692,6 +1692,29 @@ Exit codes:
 - `2`: CLI usage / missing input / invalid arg / missing explicit clang path
 - `3`: clang compile step failed
 
+## M223 lowering/IR metadata envelope
+
+Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:
+
+- Prologue comment:
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+- Named LLVM metadata payload:
+  - `!objc3.frontend = !{!0}`
+  - `!0 = !{i32 <language_version>, !"compatibility_mode", i1 <migration_assist>, i64 <legacy_yes>, i64 <legacy_no>, i64 <legacy_null>, i64 <legacy_total>}`
+
+Operator replay check (from repo root):
+
+```powershell
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata --emit-prefix module
+```
+
+Then inspect:
+
+- `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
+
+Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
 
 Current recovery fixtures are partitioned as:
