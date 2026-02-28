@@ -144,6 +144,7 @@ add_library(objc3c_driver STATIC
   src/driver/objc3_driver_main.cpp
   src/driver/objc3_driver_shell.cpp
   src/driver/objc3_frontend_options.cpp
+  src/driver/objc3_llvm_capability_routing.cpp
   src/driver/objc3_objc3_path.cpp
   src/driver/objc3_objectivec_path.cpp
   src/driver/objc3_compilation_driver.cpp

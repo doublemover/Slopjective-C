@@ -86,6 +86,7 @@ std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
          "[--llc <path>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
+         "[--llvm-capabilities-summary <path>] [--objc3-route-backend-from-capabilities] "
          "[--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
          ">] [--objc3-runtime-dispatch-symbol <symbol>]";
@@ -109,14 +110,20 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       options.emit_prefix = argv[++i];
     } else if (flag == "--clang" && i + 1 < argc) {
       options.clang_path = argv[++i];
+      options.clang_path_explicit = true;
     } else if (flag == "--llc" && i + 1 < argc) {
       options.llc_path = argv[++i];
+      options.llc_path_explicit = true;
     } else if (flag == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
       if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {
         error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " + backend;
         return false;
       }
+    } else if (flag == "--llvm-capabilities-summary" && i + 1 < argc) {
+      options.llvm_capabilities_summary = argv[++i];
+    } else if (flag == "--objc3-route-backend-from-capabilities") {
+      options.route_backend_from_capabilities = true;
     } else if (flag == "--objc3-max-message-args" && i + 1 < argc) {
       const std::string value = argv[++i];
       errno = 0;
