@@ -78,3 +78,19 @@ Not executed in this closeout packet due runtime scope and cross-lane cost:
 ## INT-RG Closeout Recommendation
 
 `M133-INT-RG-01` should remain open until all blockers above are resolved and full gate commands in [#4251](https://github.com/doublemover/Slopjective-C/issues/4251) are green.
+
+## Follow-up Addendum (2026-02-28, #4251)
+
+Post-packet follow-up revalidated the previously failing Lane C generated-content checks after
+OWNERSHIP handling fixes landed in `main`.
+
+| Command | Result | Evidence |
+| --- | --- | --- |
+| `python scripts/build_objc3c_native_docs.py --check` | PASS | `objc3c-native-docs-contract: OK (order=6, present=6, missing=0)`; `objc3c-native-docs-check: OK (fragments=6, sha256=76c896f0542c5a81)` |
+| `python scripts/build_site_index.py --check` | PASS | `site-index-check: OK (documents=23, output=C:\Users\sneak\Development\Slopjective-C\site\index.md, sha256=64841fc0d3f265f3)` |
+
+Adjusted blocker set for this packet:
+
+- Cleared: `M133-C001` and `M133-C002` post-closeout OWNERSHIP drift regressions.
+- Remaining pending blockers are unchanged from the prior list, excluding the two cleared Lane C
+  regressions above.
