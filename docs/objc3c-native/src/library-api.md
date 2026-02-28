@@ -155,6 +155,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain provenance anchors.
 
+## M217 integration differential testing matrix
+
+- Gate intent: enforce deterministic differential testing chain against baseline toolchains.
+### 1.1 Differential integration chain
+- Deterministic differential gate:
+  - `npm run check:objc3c:m217-differential-parity`
+- Chain order:
+  - replays `check:objc3c:m218-rc-provenance`.
+  - enforces all M217 lane contracts:
+    `tests/tooling/test_objc3c_m217_frontend_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_sema_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_lowering_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_validation_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_integration_differential_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through differential replay:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain differential anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
