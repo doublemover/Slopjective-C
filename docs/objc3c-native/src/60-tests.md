@@ -338,6 +338,16 @@ python -m pytest tests/tooling/test_objc3c_m224_validation_release_contract.py -
 
 From repo root, run this deterministic order and stop immediately on the first non-zero exit:
 
+## M146 validation @interface/@implementation runbook
+
+From repo root, execute deterministic M146 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py -q`
+- `npm run check:objc3c:m146-interface-implementation`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
