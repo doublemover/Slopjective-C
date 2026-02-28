@@ -1,0 +1,35 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_namespace_collision_shadowing_lowering_handoff": true,
+        "namespace_collision_shadowing_lowering_sites": 4,
+        "namespace_collision_shadowing_lowering_namespace_segment_sites": 3,
+        "namespace_collision_shadowing_lowering_import_edge_candidate_sites": 4,
+        "namespace_collision_shadowing_lowering_object_pointer_type_sites": 4,
+        "namespace_collision_shadowing_lowering_pointer_declarator_sites": 2,
+        "namespace_collision_shadowing_lowering_normalized_sites": 4,
+        "namespace_collision_shadowing_lowering_contract_violation_sites": 0,
+        "lowering_namespace_collision_shadowing_replay_key": "namespace_collision_shadowing_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m177-namespace-collision-shadowing-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_namespace_collision_shadowing_lowering_surface": {
+          "namespace_collision_shadowing_sites": 4,
+          "namespace_segment_sites": 3,
+          "import_edge_candidate_sites": 4,
+          "object_pointer_type_sites": 4,
+          "pointer_declarator_sites": 2,
+          "normalized_sites": 4,
+          "contract_violation_sites": 0,
+          "replay_key": "namespace_collision_shadowing_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m177-namespace-collision-shadowing-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_namespace_collision_shadowing": {
+    "replay_key": "namespace_collision_shadowing_sites=4;namespace_segment_sites=3;import_edge_candidate_sites=4;object_pointer_type_sites=4;pointer_declarator_sites=2;normalized_sites=4;contract_violation_sites=0;deterministic=true;lane_contract=m177-namespace-collision-shadowing-lowering-v1",
+    "lane_contract": "m177-namespace-collision-shadowing-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

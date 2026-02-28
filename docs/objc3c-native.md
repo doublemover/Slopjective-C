@@ -11277,6 +11277,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m176_validation_module_import_graph_contract.py -q
 ```
 
+## M177 validation/conformance/perf namespace collision and shadowing diagnostics runbook
+
+Deterministic M177 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m177_frontend_namespace_collision_shadowing_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m177_sema_namespace_collision_shadowing_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m177_validation_namespace_collision_shadowing_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_namespace_collision_shadowing_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_namespace_collision_shadowing_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_namespace_collision_shadowing_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_namespace_collision_shadowing_lowering_surface.deterministic_handoff`
+  - `lowering_namespace_collision_shadowing.replay_key`
+- `replay_run_1/module.ll`
+  - `namespace_collision_shadowing_lowering`
+  - `frontend_objc_namespace_collision_shadowing_lowering_profile`
+  - `!objc3.objc_namespace_collision_shadowing_lowering = !{!30}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

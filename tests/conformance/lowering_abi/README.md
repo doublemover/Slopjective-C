@@ -39,6 +39,9 @@ Minimum scope:
 - `M145-D001.json`: M145 Lane D direct LLVM object-emission fail-closed matrix
   fixture covering deterministic `llvm-direct` backend failure diagnostics
   (`O3E001`, `O3E002`) and integration coverage for issue `#4317`.
+- `M177-D001.json`: M177 Lane D namespace collision/shadowing lowering replay
+  fixture covering deterministic replay-key/profile/metadata parity anchors and
+  integration coverage for issue `#4477`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

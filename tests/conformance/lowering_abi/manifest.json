@@ -1072,6 +1072,14 @@
       "files": [
         "M145-D001.json"
       ]
+    },
+    {
+      "name": "m177_lane_d_issue_4477_namespace_collision_shadowing_lowering_replay_contract",
+      "feature": "M177 Lane D namespace collision/shadowing lowering replay contract conformance fixture and deterministic validation coverage",
+      "issue": 4477,
+      "files": [
+        "M177-D001.json"
+      ]
     }
   ]
 }

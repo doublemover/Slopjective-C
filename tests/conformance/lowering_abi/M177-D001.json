@@ -1,0 +1,24 @@
+{
+  "id": "M177-D001",
+  "title": "Namespace collision/shadowing lowering replay contract fixture (issue #4477 / task M177-D001)",
+  "feature": "m177 lane-d namespace collision and shadowing diagnostics lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M177",
+    "milestone_number": 262,
+    "lane": "D",
+    "issue": 4477,
+    "task": "M177-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native.md",
+    "tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: namespace_collision_shadowing_lowering\n// EXPECT: deterministic_namespace_collision_shadowing_lowering_handoff=true\n\nmodule m177_lane_d_namespace_collision_shadowing;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
