@@ -1820,3 +1820,31 @@ Recommended M209 sema/type PGO regression gate command:
 
 - `python -m pytest tests/tooling/test_objc3c_m209_sema_pgo_contract.py -q`
 
+## M207 sema/type dispatch-specific optimization passes
+
+For deterministic sema/type dispatch-specific optimization passes, capture replay-stable packet evidence from pass-manager dispatch ordering, message-send type/arity guard hooks, and manifest dispatch-control export surfaces.
+
+Dispatch optimization packet map:
+
+- `dispatch optimization packet 1.1 deterministic sema pass-manager dispatch hooks` -> `m207_sema_pass_dispatch_optimization_packet`
+- `dispatch optimization packet 1.2 deterministic message-send type/arity optimization hooks` -> `m207_message_send_type_arity_optimization_packet`
+
+### 1.1 Deterministic sema pass-manager dispatch optimization packet
+
+- Source pass-dispatch anchors: `kObjc3SemaPassOrder`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `if (pass == Objc3SemaPassId::BuildIntegrationSurface) {`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source pass diagnostics anchors: `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();` and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest pass-manager anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, and `diagnostics_emitted_by_validate_pure_contract`.
+- Deterministic sema pass-dispatch packet key: `m207_sema_pass_dispatch_optimization_packet`.
+
+### 1.2 Deterministic message-send type/arity optimization packet
+
+- Source dispatch-option anchors: `Objc3SemanticValidationOptions`, `std::size_t max_message_send_args = 4;`, and `semantic_options.max_message_send_args = options.lowering.max_message_send_args;`.
+- Source message-send hook anchors: `static ValueType ValidateMessageSendExpr(`, `if (receiver_type != ValueType::Unknown && !IsMessageI32CompatibleType(receiver_type)) {`, `if (expr->args.size() > max_message_send_args) {`, and `0, 0, options.max_message_send_args);`.
+- Manifest dispatch-control anchors: `max_message_send_args`, `runtime_dispatch_symbol`, and `runtime_dispatch_arg_slots`.
+- Deterministic message-send type/arity packet key: `m207_message_send_type_arity_optimization_packet`.
+
+Recommended M207 sema/type dispatch-optimization validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py -q`
+
