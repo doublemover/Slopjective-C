@@ -379,3 +379,19 @@ Frontend dispatch-specific optimization pass readiness requires deterministic me
   3. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
 
+## M206 frontend canonical optimization pipeline stage-1
+
+Frontend canonical optimization stage-1 relies on deterministic parser/module surfaces that feed stable optimization-control packets.
+
+- Required frontend canonical optimization signals:
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - module set construction remains deterministic via `manifest_function_names.insert(fn.name).second`.
+  - function signature surface remains emitted with `"function_signature_surface"`.
+  - scalar signature counters remain surfaced as `"scalar_return_i32"`, `"scalar_return_bool"`, `"scalar_return_void"`, `"scalar_param_i32"`, and `"scalar_param_bool"`.
+  - semantic surface counts remain emitted for `"declared_globals"`, `"declared_functions"`, `"resolved_global_symbols"`, and `"resolved_function_symbols"`.
+- Required frontend canonical optimization commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
+
