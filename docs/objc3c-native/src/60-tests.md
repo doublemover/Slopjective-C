@@ -2518,6 +2518,32 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m181_validation_throws_propagation_contract.py tests/tooling/test_objc3c_m181_conformance_throws_propagation_contract.py -q
 ```
 
+## M182 integration result-like lowering contract runbook (M182-E001)
+
+Deterministic M182 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m182-result-like-contracts`
+- `npm run check:compiler-closeout:m182`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M182 result-like lowering packet/docs contract`
+  - `Run M182 result-like lowering integration gate`
+
+Scope assumptions:
+
+- M182-A001, M182-B001, and M182-C001 surfaces are not yet landed in this workspace.
+- This runbook enforces the landed M182-D001 validation/conformance surface plus M182-E001 integration wiring.
+
 ## M182 validation/conformance/perf result-like lowering runbook (M182-D001)
 
 Deterministic M182 validation sequence:

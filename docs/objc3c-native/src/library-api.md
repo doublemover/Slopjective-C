@@ -858,6 +858,22 @@ int objc3c_frontend_startup_check(void) {
   - A standalone M181-B001 sema contract test is not present in this workspace.
   - The integration gate fail-closes on the landed parser/lowering/validation/conformance surfaces plus this M181-E001 wiring contract.
 
+## M182 integration result-like lowering contract
+
+- Integration gate:
+  - `npm run check:objc3c:m182-result-like-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m182`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m182_integration_result_like_lowering_contract.py`
+- Assumptions:
+  - M182-A001, M182-B001, and M182-C001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on the landed M182-D001 surfaces plus this M182-E001 wiring contract, while remaining forward-compatible for future M182-A001/M182-B001/M182-C001 additions.
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

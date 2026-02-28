@@ -32,3 +32,7 @@ jobs:
         run: npm run check:compiler-closeout:m181
       - name: Run M181 throws propagation integration gate
         run: npm run check:objc3c:m181-throws-propagation-contracts
+      - name: Enforce M182 result-like lowering packet/docs contract
+        run: npm run check:compiler-closeout:m182
+      - name: Run M182 result-like lowering integration gate
+        run: npm run check:objc3c:m182-result-like-contracts
