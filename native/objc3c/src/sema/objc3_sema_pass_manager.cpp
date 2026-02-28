@@ -150,6 +150,18 @@ bool IsEquivalentClassProtocolCategoryLinkingSummary(const Objc3ClassProtocolCat
          lhs.invalid_protocol_composition_sites == rhs.invalid_protocol_composition_sites;
 }
 
+bool IsEquivalentMethodLookupOverrideConflictSummary(const Objc3MethodLookupOverrideConflictSummary &lhs,
+                                                     const Objc3MethodLookupOverrideConflictSummary &rhs) {
+  return lhs.method_lookup_sites == rhs.method_lookup_sites &&
+         lhs.method_lookup_hits == rhs.method_lookup_hits &&
+         lhs.method_lookup_misses == rhs.method_lookup_misses &&
+         lhs.override_lookup_sites == rhs.override_lookup_sites &&
+         lhs.override_lookup_hits == rhs.override_lookup_hits &&
+         lhs.override_lookup_misses == rhs.override_lookup_misses &&
+         lhs.override_conflicts == rhs.override_conflicts &&
+         lhs.unresolved_base_interfaces == rhs.unresolved_base_interfaces;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -302,6 +314,26 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_hits_total() +
               result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
           result.type_metadata_handoff.symbol_graph_scope_resolution_summary.resolution_sites_total();
+  result.method_lookup_override_conflict_summary =
+      result.integration_surface.method_lookup_override_conflict_summary;
+  result.deterministic_method_lookup_override_conflict_handoff =
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.deterministic &&
+      result.integration_surface.method_lookup_override_conflict_summary.deterministic &&
+      IsEquivalentMethodLookupOverrideConflictSummary(
+          result.integration_surface.method_lookup_override_conflict_summary,
+          result.type_metadata_handoff.method_lookup_override_conflict_summary) &&
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.method_lookup_hits <=
+          result.type_metadata_handoff.method_lookup_override_conflict_summary.method_lookup_sites &&
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.method_lookup_hits +
+              result.type_metadata_handoff.method_lookup_override_conflict_summary.method_lookup_misses ==
+          result.type_metadata_handoff.method_lookup_override_conflict_summary.method_lookup_sites &&
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_hits <=
+          result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_sites &&
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_hits +
+              result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_misses ==
+          result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_sites &&
+      result.type_metadata_handoff.method_lookup_override_conflict_summary.override_conflicts <=
+          result.type_metadata_handoff.method_lookup_override_conflict_summary.override_lookup_hits;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -440,6 +472,24 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_hits;
   result.parity_surface.symbol_graph_method_resolution_misses_total =
       result.parity_surface.symbol_graph_scope_resolution_summary.method_resolution_misses;
+  result.parity_surface.method_lookup_override_conflict_summary =
+      result.type_metadata_handoff.method_lookup_override_conflict_summary;
+  result.parity_surface.method_lookup_override_conflict_lookup_sites_total =
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_sites;
+  result.parity_surface.method_lookup_override_conflict_lookup_hits_total =
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_hits;
+  result.parity_surface.method_lookup_override_conflict_lookup_misses_total =
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_misses;
+  result.parity_surface.method_lookup_override_conflict_override_sites_total =
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_sites;
+  result.parity_surface.method_lookup_override_conflict_override_hits_total =
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits;
+  result.parity_surface.method_lookup_override_conflict_override_misses_total =
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_misses;
+  result.parity_surface.method_lookup_override_conflict_override_conflicts_total =
+      result.parity_surface.method_lookup_override_conflict_summary.override_conflicts;
+  result.parity_surface.method_lookup_override_conflict_unresolved_base_interfaces_total =
+      result.parity_surface.method_lookup_override_conflict_summary.unresolved_base_interfaces;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -640,6 +690,37 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               result.parity_surface.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
           result.parity_surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic;
+  result.parity_surface.deterministic_method_lookup_override_conflict_handoff =
+      result.deterministic_method_lookup_override_conflict_handoff &&
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_sites ==
+          result.parity_surface.method_lookup_override_conflict_lookup_sites_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_hits ==
+          result.parity_surface.method_lookup_override_conflict_lookup_hits_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_misses ==
+          result.parity_surface.method_lookup_override_conflict_lookup_misses_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_sites ==
+          result.parity_surface.method_lookup_override_conflict_override_sites_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits ==
+          result.parity_surface.method_lookup_override_conflict_override_hits_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_misses ==
+          result.parity_surface.method_lookup_override_conflict_override_misses_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_conflicts ==
+          result.parity_surface.method_lookup_override_conflict_override_conflicts_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.unresolved_base_interfaces ==
+          result.parity_surface.method_lookup_override_conflict_unresolved_base_interfaces_total &&
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_hits <=
+          result.parity_surface.method_lookup_override_conflict_summary.method_lookup_sites &&
+      result.parity_surface.method_lookup_override_conflict_summary.method_lookup_hits +
+              result.parity_surface.method_lookup_override_conflict_summary.method_lookup_misses ==
+          result.parity_surface.method_lookup_override_conflict_summary.method_lookup_sites &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits <=
+          result.parity_surface.method_lookup_override_conflict_summary.override_lookup_sites &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits +
+              result.parity_surface.method_lookup_override_conflict_summary.override_lookup_misses ==
+          result.parity_surface.method_lookup_override_conflict_summary.override_lookup_sites &&
+      result.parity_surface.method_lookup_override_conflict_summary.override_conflicts <=
+          result.parity_surface.method_lookup_override_conflict_summary.override_lookup_hits &&
+      result.parity_surface.method_lookup_override_conflict_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -669,6 +750,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.deterministic &&
       result.parity_surface.deterministic_type_annotation_surface_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
-      result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff;
+      result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
+      result.parity_surface.method_lookup_override_conflict_summary.deterministic &&
+      result.parity_surface.deterministic_method_lookup_override_conflict_handoff;
   return result;
 }

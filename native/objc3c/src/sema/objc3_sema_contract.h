@@ -176,6 +176,22 @@ struct Objc3SymbolGraphScopeResolutionSummary {
   }
 };
 
+struct Objc3MethodLookupOverrideConflictSummary {
+  std::size_t method_lookup_sites = 0;
+  std::size_t method_lookup_hits = 0;
+  std::size_t method_lookup_misses = 0;
+  std::size_t override_lookup_sites = 0;
+  std::size_t override_lookup_hits = 0;
+  std::size_t override_lookup_misses = 0;
+  std::size_t override_conflicts = 0;
+  std::size_t unresolved_base_interfaces = 0;
+  bool deterministic = true;
+
+  std::size_t total_lookup_sites() const { return method_lookup_sites + override_lookup_sites; }
+  std::size_t total_lookup_hits() const { return method_lookup_hits + override_lookup_hits; }
+  std::size_t total_lookup_misses() const { return method_lookup_misses + override_lookup_misses; }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -334,6 +350,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   bool built = false;
 };
 
@@ -489,6 +506,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
 };
 
 struct Objc3SemanticValidationOptions {

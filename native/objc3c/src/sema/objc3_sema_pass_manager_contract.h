@@ -147,6 +147,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t symbol_graph_method_resolution_sites_total = 0;
   std::size_t symbol_graph_method_resolution_hits_total = 0;
   std::size_t symbol_graph_method_resolution_misses_total = 0;
+  std::size_t method_lookup_override_conflict_lookup_sites_total = 0;
+  std::size_t method_lookup_override_conflict_lookup_hits_total = 0;
+  std::size_t method_lookup_override_conflict_lookup_misses_total = 0;
+  std::size_t method_lookup_override_conflict_override_sites_total = 0;
+  std::size_t method_lookup_override_conflict_override_hits_total = 0;
+  std::size_t method_lookup_override_conflict_override_misses_total = 0;
+  std::size_t method_lookup_override_conflict_override_conflicts_total = 0;
+  std::size_t method_lookup_override_conflict_unresolved_base_interfaces_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -157,6 +165,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_property_attribute_handoff = false;
   bool deterministic_type_annotation_surface_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
+  bool deterministic_method_lookup_override_conflict_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -164,6 +173,7 @@ struct Objc3SemaParityContractSurface {
   Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -351,7 +361,37 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  surface.symbol_graph_scope_resolution_summary.resolution_misses_total() ==
              surface.symbol_graph_scope_resolution_summary.resolution_sites_total() &&
          surface.symbol_graph_scope_resolution_summary.deterministic &&
-         surface.deterministic_symbol_graph_scope_resolution_handoff;
+         surface.deterministic_symbol_graph_scope_resolution_handoff &&
+         surface.method_lookup_override_conflict_summary.method_lookup_sites ==
+             surface.method_lookup_override_conflict_lookup_sites_total &&
+         surface.method_lookup_override_conflict_summary.method_lookup_hits ==
+             surface.method_lookup_override_conflict_lookup_hits_total &&
+         surface.method_lookup_override_conflict_summary.method_lookup_misses ==
+             surface.method_lookup_override_conflict_lookup_misses_total &&
+         surface.method_lookup_override_conflict_summary.override_lookup_sites ==
+             surface.method_lookup_override_conflict_override_sites_total &&
+         surface.method_lookup_override_conflict_summary.override_lookup_hits ==
+             surface.method_lookup_override_conflict_override_hits_total &&
+         surface.method_lookup_override_conflict_summary.override_lookup_misses ==
+             surface.method_lookup_override_conflict_override_misses_total &&
+         surface.method_lookup_override_conflict_summary.override_conflicts ==
+             surface.method_lookup_override_conflict_override_conflicts_total &&
+         surface.method_lookup_override_conflict_summary.unresolved_base_interfaces ==
+             surface.method_lookup_override_conflict_unresolved_base_interfaces_total &&
+         surface.method_lookup_override_conflict_summary.method_lookup_hits <=
+             surface.method_lookup_override_conflict_summary.method_lookup_sites &&
+         surface.method_lookup_override_conflict_summary.method_lookup_hits +
+                 surface.method_lookup_override_conflict_summary.method_lookup_misses ==
+             surface.method_lookup_override_conflict_summary.method_lookup_sites &&
+         surface.method_lookup_override_conflict_summary.override_lookup_hits <=
+             surface.method_lookup_override_conflict_summary.override_lookup_sites &&
+         surface.method_lookup_override_conflict_summary.override_lookup_hits +
+                 surface.method_lookup_override_conflict_summary.override_lookup_misses ==
+             surface.method_lookup_override_conflict_summary.override_lookup_sites &&
+         surface.method_lookup_override_conflict_summary.override_conflicts <=
+             surface.method_lookup_override_conflict_summary.override_lookup_hits &&
+         surface.method_lookup_override_conflict_summary.deterministic &&
+         surface.deterministic_method_lookup_override_conflict_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -374,6 +414,8 @@ struct Objc3SemaPassManagerResult {
   Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  bool deterministic_method_lookup_override_conflict_handoff = false;
+  Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

@@ -2497,3 +2497,37 @@ Sema/type metadata handoff contract:
 Recommended M152 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`
+
+## M153 sema/type method lookup, override, and conflict semantics contract (M153-B001)
+
+M153-B adds a deterministic semantic summary that tracks method lookup linkage, superclass override lookup, and
+override-signature conflict counts across integration, handoff, and pass-manager parity surfaces.
+
+Sema/type contract markers:
+
+- `Objc3MethodLookupOverrideConflictSummary`
+- `method_lookup_override_conflict_summary`
+- `BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface`
+- `BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff`
+- `deterministic_method_lookup_override_conflict_handoff`
+- `result.parity_surface.method_lookup_override_conflict_summary`
+
+Deterministic lookup/override invariants (fail-closed):
+
+- lookup counts remain bounded and balanced (`hits <= sites`, `hits + misses == sites`).
+- override conflict counts remain bounded (`override_conflicts <= override_lookup_hits`).
+- unresolved superclass/interface references are surfaced deterministically through
+  `unresolved_base_interfaces`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.method_lookup_override_conflict_summary = BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.method_lookup_override_conflict_summary = BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_method_lookup_override_conflict_handoff`
+
+Recommended M153 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
