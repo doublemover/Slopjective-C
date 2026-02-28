@@ -595,6 +595,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C-interop header/ABI-alignment anchors.
 
+## M195 integration system-extension conformance and policy
+
+- Gate intent: enforce deterministic system-extension conformance/policy evidence across all lanes.
+### 1.1 System-extension conformance/policy integration chain
+- Deterministic system-extension conformance/policy gate:
+  - `npm run check:objc3c:m195-system-extension-policy`
+- Chain order:
+  - replays `check:objc3c:m196-c-interop-headers-abi`.
+  - enforces all M195 lane contracts:
+    `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_integration_system_extension_policy_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through system-extension conformance/policy validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain system-extension conformance/policy anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
