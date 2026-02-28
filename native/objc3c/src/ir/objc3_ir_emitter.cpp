@@ -114,6 +114,10 @@ class Objc3IREmitter {
       out << "; nil_receiver_semantics_foldability_lowering = "
           << frontend_metadata_.lowering_nil_receiver_semantics_foldability_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_super_dispatch_method_family_replay_key.empty()) {
+      out << "; super_dispatch_method_family_lowering = "
+          << frontend_metadata_.lowering_super_dispatch_method_family_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -223,6 +227,28 @@ class Objc3IREmitter {
         << frontend_metadata_.nil_receiver_semantics_foldability_contract_violation_sites
         << ", deterministic_nil_receiver_semantics_foldability_handoff="
         << (frontend_metadata_.deterministic_nil_receiver_semantics_foldability_handoff ? "true" : "false")
+        << "\n";
+    out << "; frontend_objc_super_dispatch_method_family_profile = message_send_sites="
+        << frontend_metadata_.super_dispatch_method_family_message_send_sites
+        << ", receiver_super_identifier_sites="
+        << frontend_metadata_.super_dispatch_method_family_receiver_super_identifier_sites
+        << ", super_dispatch_enabled_sites=" << frontend_metadata_.super_dispatch_method_family_enabled_sites
+        << ", super_dispatch_requires_class_context_sites="
+        << frontend_metadata_.super_dispatch_method_family_requires_class_context_sites
+        << ", method_family_init_sites=" << frontend_metadata_.super_dispatch_method_family_init_sites
+        << ", method_family_copy_sites=" << frontend_metadata_.super_dispatch_method_family_copy_sites
+        << ", method_family_mutable_copy_sites="
+        << frontend_metadata_.super_dispatch_method_family_mutable_copy_sites
+        << ", method_family_new_sites=" << frontend_metadata_.super_dispatch_method_family_new_sites
+        << ", method_family_none_sites=" << frontend_metadata_.super_dispatch_method_family_none_sites
+        << ", method_family_returns_retained_result_sites="
+        << frontend_metadata_.super_dispatch_method_family_returns_retained_result_sites
+        << ", method_family_returns_related_result_sites="
+        << frontend_metadata_.super_dispatch_method_family_returns_related_result_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.super_dispatch_method_family_contract_violation_sites
+        << ", deterministic_super_dispatch_method_family_handoff="
+        << (frontend_metadata_.deterministic_super_dispatch_method_family_handoff ? "true" : "false")
         << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
@@ -394,6 +420,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
+    out << "!objc3.objc_super_dispatch_method_family = !{!12}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -531,6 +558,33 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(
                frontend_metadata_.nil_receiver_semantics_foldability_contract_violation_sites)
         << ", i1 " << (frontend_metadata_.deterministic_nil_receiver_semantics_foldability_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!12 = !{i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_message_send_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.super_dispatch_method_family_receiver_super_identifier_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_enabled_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.super_dispatch_method_family_requires_class_context_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_init_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_copy_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_mutable_copy_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_new_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_none_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.super_dispatch_method_family_returns_retained_result_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.super_dispatch_method_family_returns_related_result_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.super_dispatch_method_family_contract_violation_sites)
+        << ", i1 " << (frontend_metadata_.deterministic_super_dispatch_method_family_handoff ? 1 : 0)
         << "}\n\n";
   }
 

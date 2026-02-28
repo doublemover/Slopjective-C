@@ -535,6 +535,39 @@ Objc3NilReceiverSemanticsFoldabilityContract BuildNilReceiverSemanticsFoldabilit
   return contract;
 }
 
+Objc3SuperDispatchMethodFamilyContract BuildSuperDispatchMethodFamilyContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3SuperDispatchMethodFamilyContract contract;
+  contract.message_send_sites =
+      sema_parity_surface.super_dispatch_method_family_sites_total;
+  contract.receiver_super_identifier_sites =
+      sema_parity_surface.super_dispatch_method_family_receiver_super_identifier_sites_total;
+  contract.super_dispatch_enabled_sites =
+      sema_parity_surface.super_dispatch_method_family_enabled_sites_total;
+  contract.super_dispatch_requires_class_context_sites =
+      sema_parity_surface.super_dispatch_method_family_requires_class_context_sites_total;
+  contract.method_family_init_sites =
+      sema_parity_surface.super_dispatch_method_family_init_sites_total;
+  contract.method_family_copy_sites =
+      sema_parity_surface.super_dispatch_method_family_copy_sites_total;
+  contract.method_family_mutable_copy_sites =
+      sema_parity_surface.super_dispatch_method_family_mutable_copy_sites_total;
+  contract.method_family_new_sites =
+      sema_parity_surface.super_dispatch_method_family_new_sites_total;
+  contract.method_family_none_sites =
+      sema_parity_surface.super_dispatch_method_family_none_sites_total;
+  contract.method_family_returns_retained_result_sites =
+      sema_parity_surface.super_dispatch_method_family_returns_retained_result_sites_total;
+  contract.method_family_returns_related_result_sites =
+      sema_parity_surface.super_dispatch_method_family_returns_related_result_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.super_dispatch_method_family_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.super_dispatch_method_family_summary.deterministic &&
+      sema_parity_surface.deterministic_super_dispatch_method_family_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -712,6 +745,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string nil_receiver_semantics_foldability_replay_key =
       Objc3NilReceiverSemanticsFoldabilityReplayKey(nil_receiver_semantics_foldability_contract);
+  const Objc3SuperDispatchMethodFamilyContract super_dispatch_method_family_contract =
+      BuildSuperDispatchMethodFamilyContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3SuperDispatchMethodFamilyContract(super_dispatch_method_family_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid super-dispatch/method-family contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string super_dispatch_method_family_replay_key =
+      Objc3SuperDispatchMethodFamilyReplayKey(super_dispatch_method_family_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1023,6 +1069,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_nil_receiver_semantics_foldability_replay_key\":\""
            << nil_receiver_semantics_foldability_replay_key
            << "\""
+           << ",\"deterministic_super_dispatch_method_family_handoff\":"
+           << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
+           << ",\"super_dispatch_method_family_message_send_sites\":"
+           << super_dispatch_method_family_contract.message_send_sites
+           << ",\"super_dispatch_method_family_receiver_super_identifier_sites\":"
+           << super_dispatch_method_family_contract.receiver_super_identifier_sites
+           << ",\"super_dispatch_method_family_enabled_sites\":"
+           << super_dispatch_method_family_contract.super_dispatch_enabled_sites
+           << ",\"super_dispatch_method_family_requires_class_context_sites\":"
+           << super_dispatch_method_family_contract.super_dispatch_requires_class_context_sites
+           << ",\"super_dispatch_method_family_init_sites\":"
+           << super_dispatch_method_family_contract.method_family_init_sites
+           << ",\"super_dispatch_method_family_copy_sites\":"
+           << super_dispatch_method_family_contract.method_family_copy_sites
+           << ",\"super_dispatch_method_family_mutable_copy_sites\":"
+           << super_dispatch_method_family_contract.method_family_mutable_copy_sites
+           << ",\"super_dispatch_method_family_new_sites\":"
+           << super_dispatch_method_family_contract.method_family_new_sites
+           << ",\"super_dispatch_method_family_none_sites\":"
+           << super_dispatch_method_family_contract.method_family_none_sites
+           << ",\"super_dispatch_method_family_returns_retained_result_sites\":"
+           << super_dispatch_method_family_contract.method_family_returns_retained_result_sites
+           << ",\"super_dispatch_method_family_returns_related_result_sites\":"
+           << super_dispatch_method_family_contract.method_family_returns_related_result_sites
+           << ",\"super_dispatch_method_family_contract_violation_sites\":"
+           << super_dispatch_method_family_contract.contract_violation_sites
+           << ",\"lowering_super_dispatch_method_family_replay_key\":\""
+           << super_dispatch_method_family_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1283,6 +1358,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_super_dispatch_method_family_surface\":{\"message_send_sites\":"
+           << super_dispatch_method_family_contract.message_send_sites
+           << ",\"receiver_super_identifier_sites\":"
+           << super_dispatch_method_family_contract.receiver_super_identifier_sites
+           << ",\"super_dispatch_enabled_sites\":"
+           << super_dispatch_method_family_contract.super_dispatch_enabled_sites
+           << ",\"super_dispatch_requires_class_context_sites\":"
+           << super_dispatch_method_family_contract.super_dispatch_requires_class_context_sites
+           << ",\"method_family_init_sites\":"
+           << super_dispatch_method_family_contract.method_family_init_sites
+           << ",\"method_family_copy_sites\":"
+           << super_dispatch_method_family_contract.method_family_copy_sites
+           << ",\"method_family_mutable_copy_sites\":"
+           << super_dispatch_method_family_contract.method_family_mutable_copy_sites
+           << ",\"method_family_new_sites\":"
+           << super_dispatch_method_family_contract.method_family_new_sites
+           << ",\"method_family_none_sites\":"
+           << super_dispatch_method_family_contract.method_family_none_sites
+           << ",\"method_family_returns_retained_result_sites\":"
+           << super_dispatch_method_family_contract.method_family_returns_retained_result_sites
+           << ",\"method_family_returns_related_result_sites\":"
+           << super_dispatch_method_family_contract.method_family_returns_related_result_sites
+           << ",\"contract_violation_sites\":"
+           << super_dispatch_method_family_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << super_dispatch_method_family_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1386,6 +1490,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3NilReceiverSemanticsFoldabilityLaneContract
            << "\",\"deterministic_handoff\":"
            << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_super_dispatch_method_family\":{\"replay_key\":\""
+           << super_dispatch_method_family_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3SuperDispatchMethodFamilyLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (super_dispatch_method_family_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1579,6 +1689,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       nil_receiver_semantics_foldability_contract.non_nil_receiver_sites;
   ir_frontend_metadata.nil_receiver_semantics_foldability_contract_violation_sites =
       nil_receiver_semantics_foldability_contract.contract_violation_sites;
+  ir_frontend_metadata.lowering_super_dispatch_method_family_replay_key =
+      super_dispatch_method_family_replay_key;
+  ir_frontend_metadata.super_dispatch_method_family_message_send_sites =
+      super_dispatch_method_family_contract.message_send_sites;
+  ir_frontend_metadata.super_dispatch_method_family_receiver_super_identifier_sites =
+      super_dispatch_method_family_contract.receiver_super_identifier_sites;
+  ir_frontend_metadata.super_dispatch_method_family_enabled_sites =
+      super_dispatch_method_family_contract.super_dispatch_enabled_sites;
+  ir_frontend_metadata.super_dispatch_method_family_requires_class_context_sites =
+      super_dispatch_method_family_contract.super_dispatch_requires_class_context_sites;
+  ir_frontend_metadata.super_dispatch_method_family_init_sites =
+      super_dispatch_method_family_contract.method_family_init_sites;
+  ir_frontend_metadata.super_dispatch_method_family_copy_sites =
+      super_dispatch_method_family_contract.method_family_copy_sites;
+  ir_frontend_metadata.super_dispatch_method_family_mutable_copy_sites =
+      super_dispatch_method_family_contract.method_family_mutable_copy_sites;
+  ir_frontend_metadata.super_dispatch_method_family_new_sites =
+      super_dispatch_method_family_contract.method_family_new_sites;
+  ir_frontend_metadata.super_dispatch_method_family_none_sites =
+      super_dispatch_method_family_contract.method_family_none_sites;
+  ir_frontend_metadata.super_dispatch_method_family_returns_retained_result_sites =
+      super_dispatch_method_family_contract.method_family_returns_retained_result_sites;
+  ir_frontend_metadata.super_dispatch_method_family_returns_related_result_sites =
+      super_dispatch_method_family_contract.method_family_returns_related_result_sites;
+  ir_frontend_metadata.super_dispatch_method_family_contract_violation_sites =
+      super_dispatch_method_family_contract.contract_violation_sites;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1636,6 +1772,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       dispatch_abi_marshalling_contract.deterministic;
   ir_frontend_metadata.deterministic_nil_receiver_semantics_foldability_handoff =
       nil_receiver_semantics_foldability_contract.deterministic;
+  ir_frontend_metadata.deterministic_super_dispatch_method_family_handoff =
+      super_dispatch_method_family_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

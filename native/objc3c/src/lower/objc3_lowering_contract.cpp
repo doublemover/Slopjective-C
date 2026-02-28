@@ -449,3 +449,47 @@ std::string Objc3NilReceiverSemanticsFoldabilityReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3NilReceiverSemanticsFoldabilityLaneContract;
 }
+
+bool IsValidObjc3SuperDispatchMethodFamilyContract(
+    const Objc3SuperDispatchMethodFamilyContract &contract) {
+  if (contract.receiver_super_identifier_sites != contract.super_dispatch_enabled_sites) {
+    return false;
+  }
+  if (contract.super_dispatch_requires_class_context_sites != contract.super_dispatch_enabled_sites) {
+    return false;
+  }
+  if (contract.method_family_init_sites + contract.method_family_copy_sites +
+              contract.method_family_mutable_copy_sites + contract.method_family_new_sites +
+              contract.method_family_none_sites !=
+          contract.message_send_sites) {
+    return false;
+  }
+  if (contract.method_family_returns_related_result_sites > contract.method_family_init_sites) {
+    return false;
+  }
+  if (contract.method_family_returns_retained_result_sites > contract.message_send_sites) {
+    return false;
+  }
+  return contract.contract_violation_sites <= contract.message_send_sites;
+}
+
+std::string Objc3SuperDispatchMethodFamilyReplayKey(
+    const Objc3SuperDispatchMethodFamilyContract &contract) {
+  return std::string("message_send_sites=") + std::to_string(contract.message_send_sites) +
+         ";receiver_super_identifier_sites=" + std::to_string(contract.receiver_super_identifier_sites) +
+         ";super_dispatch_enabled_sites=" + std::to_string(contract.super_dispatch_enabled_sites) +
+         ";super_dispatch_requires_class_context_sites=" +
+         std::to_string(contract.super_dispatch_requires_class_context_sites) +
+         ";method_family_init_sites=" + std::to_string(contract.method_family_init_sites) +
+         ";method_family_copy_sites=" + std::to_string(contract.method_family_copy_sites) +
+         ";method_family_mutable_copy_sites=" + std::to_string(contract.method_family_mutable_copy_sites) +
+         ";method_family_new_sites=" + std::to_string(contract.method_family_new_sites) +
+         ";method_family_none_sites=" + std::to_string(contract.method_family_none_sites) +
+         ";method_family_returns_retained_result_sites=" +
+         std::to_string(contract.method_family_returns_retained_result_sites) +
+         ";method_family_returns_related_result_sites=" +
+         std::to_string(contract.method_family_returns_related_result_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3SuperDispatchMethodFamilyLaneContract;
+}

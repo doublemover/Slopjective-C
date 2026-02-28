@@ -547,6 +547,50 @@ Recommended M158 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m158_frontend_nil_receiver_semantics_foldability_contract.py -q`
 
+## M159 frontend super-dispatch and method-family parser/AST surface
+
+Frontend parser/AST now emits deterministic super-dispatch and method-family packets for
+message-send expressions.
+
+M159 parser/AST surface details:
+
+- super-dispatch helper anchors:
+  - `IsSuperDispatchReceiver(...)`
+  - `BuildSuperDispatchSymbol(...)`
+- method-family helper anchors:
+  - `ClassifyMethodFamilyFromSelector(...)`
+  - `BuildMethodFamilySemanticsSymbol(...)`
+- parser assignment anchors:
+  - `message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);`
+  - `message->super_dispatch_requires_class_context = message->super_dispatch_enabled;`
+  - `message->super_dispatch_symbol = BuildSuperDispatchSymbol(...)`
+  - `message->super_dispatch_semantics_is_normalized = true;`
+  - `message->method_family_name = ClassifyMethodFamilyFromSelector(message->selector);`
+  - `message->method_family_returns_retained_result = ...`
+  - `message->method_family_returns_related_result = message->method_family_name == "init";`
+  - `message->method_family_semantics_symbol = BuildMethodFamilySemanticsSymbol(...)`
+  - `message->method_family_semantics_is_normalized = true;`
+- AST super-dispatch carriers:
+  - `super_dispatch_enabled`
+  - `super_dispatch_requires_class_context`
+  - `super_dispatch_symbol`
+  - `super_dispatch_semantics_is_normalized`
+- AST method-family carriers:
+  - `method_family_name`
+  - `method_family_returns_retained_result`
+  - `method_family_returns_related_result`
+  - `method_family_semantics_symbol`
+  - `method_family_semantics_is_normalized`
+
+Deterministic grammar intent:
+
+- super dispatch detection is derived from receiver spelling (`Identifier == "super"`).
+- method-family classification is selector-prefix normalized (`init`, `copy`, `mutableCopy`, `new`, `none`).
+
+Recommended M159 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_frontend_super_dispatch_method_family_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3845,6 +3889,59 @@ Sema/type metadata handoff contract:
 Recommended M158 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m158_sema_nil_receiver_semantics_foldability_contract.py -q`
+
+## M159 sema/type super-dispatch and method-family contract (M159-B001)
+
+M159-B adds deterministic semantic summary carriers for super-dispatch receiver semantics and
+selector-derived method-family behavior across message-send sites.
+
+Sema/type contract markers:
+
+- `Objc3SuperDispatchMethodFamilySummary`
+- `super_dispatch_method_family_summary`
+- `BuildSuperDispatchMethodFamilySummaryFromSites`
+- `BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface`
+- `BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff`
+- `deterministic_super_dispatch_method_family_handoff`
+- `result.parity_surface.super_dispatch_method_family_summary`
+
+Deterministic super-dispatch/method-family invariants (fail-closed):
+
+- super receiver detection stays aligned with enabled dispatch semantics
+  (`receiver_super_identifier_sites == super_dispatch_enabled_sites`).
+- class-context requirements remain aligned with enabled super-dispatch sites
+  (`super_dispatch_requires_class_context_sites == super_dispatch_enabled_sites`).
+- method-family partition remains total across message-send sites
+  (`init + copy + mutableCopy + new + none == message_send_sites`).
+- related-result method-family sites remain a subset of `init` family sites.
+- retained-result method-family sites remain bounded by message-send sites.
+- contract-violation counters remain bounded by message-send sites.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.super_dispatch_method_family_summary = BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.super_dispatch_method_family_summary = BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `super_dispatch_method_family_sites_total`
+  - `super_dispatch_method_family_receiver_super_identifier_sites_total`
+  - `super_dispatch_method_family_enabled_sites_total`
+  - `super_dispatch_method_family_requires_class_context_sites_total`
+  - `super_dispatch_method_family_init_sites_total`
+  - `super_dispatch_method_family_copy_sites_total`
+  - `super_dispatch_method_family_mutable_copy_sites_total`
+  - `super_dispatch_method_family_new_sites_total`
+  - `super_dispatch_method_family_none_sites_total`
+  - `super_dispatch_method_family_returns_retained_result_sites_total`
+  - `super_dispatch_method_family_returns_related_result_sites_total`
+  - `super_dispatch_method_family_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_super_dispatch_method_family_handoff`
+
+Recommended M159 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_sema_super_dispatch_method_family_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6707,6 +6804,72 @@ IR publication markers:
 Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m158_lowering_nil_receiver_semantics_foldability_contract.py -q`
+
+## Super-dispatch/method-family artifact contract (M159-C001)
+
+M159-C publishes a replay-stable lowering packet for super-dispatch and method-family semantics.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m159/lowering-super-dispatch-method-family-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m159/lowering-super-dispatch-method-family-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m159/lowering-super-dispatch-method-family-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m159/lowering-super-dispatch-method-family-contract/super-dispatch-method-family-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3SuperDispatchMethodFamilyLaneContract`
+- `Objc3SuperDispatchMethodFamilyContract`
+- `IsValidObjc3SuperDispatchMethodFamilyContract(...)`
+- `Objc3SuperDispatchMethodFamilyReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `receiver_super_identifier_sites=<N>`
+- `super_dispatch_enabled_sites=<N>`
+- `super_dispatch_requires_class_context_sites=<N>`
+- `method_family_init_sites=<N>`
+- `method_family_copy_sites=<N>`
+- `method_family_mutable_copy_sites=<N>`
+- `method_family_new_sites=<N>`
+- `method_family_none_sites=<N>`
+- `method_family_returns_retained_result_sites=<N>`
+- `method_family_returns_related_result_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m159-super-dispatch-method-family-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_super_dispatch_method_family_handoff`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_message_send_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_receiver_super_identifier_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_enabled_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_requires_class_context_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_init_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_copy_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_mutable_copy_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_new_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_none_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_returns_retained_result_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_returns_related_result_sites`
+- `frontend.pipeline.sema_pass_manager.super_dispatch_method_family_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_super_dispatch_method_family_replay_key`
+- `frontend.pipeline.semantic_surface.objc_super_dispatch_method_family_surface`
+- `lowering_super_dispatch_method_family.replay_key`
+- `lowering_super_dispatch_method_family.lane_contract`
+
+IR publication markers:
+
+- `; super_dispatch_method_family_lowering = message_send_sites=<N>;receiver_super_identifier_sites=<N>;super_dispatch_enabled_sites=<N>;super_dispatch_requires_class_context_sites=<N>;method_family_init_sites=<N>;method_family_copy_sites=<N>;method_family_mutable_copy_sites=<N>;method_family_new_sites=<N>;method_family_none_sites=<N>;method_family_returns_retained_result_sites=<N>;method_family_returns_related_result_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m159-super-dispatch-method-family-v1`
+- `; frontend_objc_super_dispatch_method_family_profile = message_send_sites=<N>, receiver_super_identifier_sites=<N>, super_dispatch_enabled_sites=<N>, super_dispatch_requires_class_context_sites=<N>, method_family_init_sites=<N>, method_family_copy_sites=<N>, method_family_mutable_copy_sites=<N>, method_family_new_sites=<N>, method_family_none_sites=<N>, method_family_returns_retained_result_sites=<N>, method_family_returns_related_result_sites=<N>, contract_violation_sites=<N>, deterministic_super_dispatch_method_family_handoff=<bool>`
+- `!objc3.objc_super_dispatch_method_family = !{!12}`
+- `!12 = !{i64 <message_send_sites>, i64 <receiver_super_identifier_sites>, i64 <super_dispatch_enabled_sites>, i64 <super_dispatch_requires_class_context_sites>, i64 <method_family_init_sites>, i64 <method_family_copy_sites>, i64 <method_family_mutable_copy_sites>, i64 <method_family_new_sites>, i64 <method_family_none_sites>, i64 <method_family_returns_retained_result_sites>, i64 <method_family_returns_related_result_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m159_lowering_super_dispatch_method_family_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 
