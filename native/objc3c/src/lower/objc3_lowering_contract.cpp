@@ -269,3 +269,55 @@ std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOv
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3MethodLookupOverrideConflictLaneContract;
 }
+
+Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindingContract(
+    std::size_t property_synthesis_sites,
+    bool deterministic) {
+  Objc3PropertySynthesisIvarBindingContract contract;
+  contract.property_synthesis_sites = property_synthesis_sites;
+  contract.property_synthesis_explicit_ivar_bindings = 0;
+  contract.property_synthesis_default_ivar_bindings = property_synthesis_sites;
+  contract.ivar_binding_sites = property_synthesis_sites;
+  contract.ivar_binding_resolved = property_synthesis_sites;
+  contract.ivar_binding_missing = 0;
+  contract.ivar_binding_conflicts = 0;
+  contract.deterministic = deterministic;
+  return contract;
+}
+
+bool IsValidObjc3PropertySynthesisIvarBindingContract(
+    const Objc3PropertySynthesisIvarBindingContract &contract) {
+  if (contract.property_synthesis_explicit_ivar_bindings +
+              contract.property_synthesis_default_ivar_bindings !=
+          contract.property_synthesis_sites ||
+      contract.property_synthesis_explicit_ivar_bindings > contract.property_synthesis_sites ||
+      contract.property_synthesis_default_ivar_bindings > contract.property_synthesis_sites) {
+    return false;
+  }
+  if (contract.ivar_binding_sites != contract.property_synthesis_sites) {
+    return false;
+  }
+  if (contract.ivar_binding_resolved > contract.ivar_binding_sites ||
+      contract.ivar_binding_missing > contract.ivar_binding_sites ||
+      contract.ivar_binding_conflicts > contract.ivar_binding_sites ||
+      contract.ivar_binding_resolved + contract.ivar_binding_missing + contract.ivar_binding_conflicts !=
+          contract.ivar_binding_sites) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3PropertySynthesisIvarBindingReplayKey(
+    const Objc3PropertySynthesisIvarBindingContract &contract) {
+  return std::string("property_synthesis_sites=") + std::to_string(contract.property_synthesis_sites) +
+         ";property_synthesis_explicit_ivar_bindings=" +
+         std::to_string(contract.property_synthesis_explicit_ivar_bindings) +
+         ";property_synthesis_default_ivar_bindings=" +
+         std::to_string(contract.property_synthesis_default_ivar_bindings) +
+         ";ivar_binding_sites=" + std::to_string(contract.ivar_binding_sites) +
+         ";ivar_binding_resolved=" + std::to_string(contract.ivar_binding_resolved) +
+         ";ivar_binding_missing=" + std::to_string(contract.ivar_binding_missing) +
+         ";ivar_binding_conflicts=" + std::to_string(contract.ivar_binding_conflicts) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3PropertySynthesisIvarBindingLaneContract;
+}

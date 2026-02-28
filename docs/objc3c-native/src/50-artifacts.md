@@ -2461,6 +2461,63 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
 
+## Property synthesis/ivar binding lowering artifact contract (M154-C001)
+
+M154-C extends lowering contract publication with a replay-stable packet for property synthesis and ivar binding
+semantics consumed from deterministic frontend sema summaries. Until dedicated ivar-binding counters land in sema
+handoffs, lane-C derives the packet from deterministic property declaration cardinality using default ivar binding
+semantics.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/property-synthesis-ivar-binding-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3PropertySynthesisIvarBindingLaneContract`
+- `Objc3PropertySynthesisIvarBindingContract`
+- `Objc3DefaultPropertySynthesisIvarBindingContract(...)`
+- `IsValidObjc3PropertySynthesisIvarBindingContract(...)`
+- `Objc3PropertySynthesisIvarBindingReplayKey(...)`
+
+Replay key publication markers:
+
+- `property_synthesis_sites=<N>`
+- `property_synthesis_explicit_ivar_bindings=<N>`
+- `property_synthesis_default_ivar_bindings=<N>`
+- `ivar_binding_sites=<N>`
+- `ivar_binding_resolved=<N>`
+- `ivar_binding_missing=<N>`
+- `ivar_binding_conflicts=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m154-property-synthesis-ivar-binding-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_property_synthesis_ivar_binding_handoff`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_sites`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_explicit_ivar_bindings`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_default_ivar_bindings`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_sites`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_resolved`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_missing`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_conflicts`
+- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface`
+- `lowering_property_synthesis_ivar_binding.replay_key`
+- `lowering_property_synthesis_ivar_binding.lane_contract`
+
+IR publication marker:
+
+- `; property_synthesis_ivar_binding_lowering = property_synthesis_sites=<N>;property_synthesis_explicit_ivar_bindings=<N>;property_synthesis_default_ivar_bindings=<N>;ivar_binding_sites=<N>;ivar_binding_resolved=<N>;ivar_binding_missing=<N>;ivar_binding_conflicts=<N>;deterministic=<bool>;lane_contract=m154-property-synthesis-ivar-binding-v1`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

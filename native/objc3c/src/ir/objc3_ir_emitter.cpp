@@ -94,6 +94,10 @@ class Objc3IREmitter {
     out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
     out << "; runtime_dispatch_decl = " << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n";
     out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";
+    if (!frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key.empty()) {
+      out << "; property_synthesis_ivar_binding_lowering = "
+          << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode

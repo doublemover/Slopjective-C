@@ -383,6 +383,37 @@ Recommended M153 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py -q`
 
+## M154 frontend property-synthesis-ivar-binding parser surface
+
+Frontend parser/AST now emits deterministic property synthesis and ivar binding packets for Objective-C
+`@implementation` property declarations.
+
+M154 parser/AST surface details:
+
+- property synthesis/ivar binding helper anchors:
+  - `BuildObjcPropertySynthesisSymbol(...)`
+  - `BuildObjcIvarBindingSymbol(...)`
+  - `BuildObjcPropertySynthesisSymbolsLexicographic(...)`
+  - `BuildObjcIvarBindingSymbolsLexicographic(...)`
+- parser assignment anchors:
+  - `AssignObjcPropertySynthesisIvarBindingSymbols(...)`
+  - `FinalizeObjcPropertySynthesisIvarBindingPackets(...)`
+  - `property.property_synthesis_symbol = synthesis_owner_symbol + "::" + BuildObjcPropertySynthesisSymbol(property);`
+  - `property.ivar_binding_symbol = synthesis_owner_symbol + "::" + BuildObjcIvarBindingSymbol(property);`
+- implementation packet anchors:
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("implementation", ...)`
+  - `decl->property_synthesis_symbols_lexicographic`
+  - `decl->ivar_binding_symbols_lexicographic`
+
+Deterministic grammar intent:
+
+- property synthesis and default ivar binding packets are attached per `@implementation` property declaration.
+- implementation packet vectors are normalized as sorted unique symbols for sema handoff/replay.
+
+Recommended M154 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3478,6 +3509,39 @@ Sema/type metadata handoff contract:
 Recommended M153 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
+
+## M154 sema/type property synthesis and ivar binding semantics contract (M154-B001)
+
+M154-B adds a deterministic semantic summary that tracks implementation-property synthesis sites and ivar-binding
+resolution outcomes across integration, handoff, and pass-manager parity surfaces.
+
+Sema/type contract markers:
+
+- `Objc3PropertySynthesisIvarBindingSummary`
+- `property_synthesis_ivar_binding_summary`
+- `BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface`
+- `BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff`
+- `deterministic_property_synthesis_ivar_binding_handoff`
+- `result.parity_surface.property_synthesis_ivar_binding_summary`
+
+Deterministic synthesis/ivar invariants (fail-closed):
+
+- synthesis split remains bounded and balanced (`explicit + default == synthesis_sites`).
+- ivar binding accounting remains balanced (`resolved + missing + conflicts == ivar_binding_sites`).
+- ivar binding coverage remains aligned with synthesis coverage (`ivar_binding_sites == property_synthesis_sites`).
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.property_synthesis_ivar_binding_summary = BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.property_synthesis_ivar_binding_summary = BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_property_synthesis_ivar_binding_handoff`
+
+Recommended M154 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6057,6 +6121,63 @@ Replay key publication markers:
 Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
+
+## Property synthesis/ivar binding lowering artifact contract (M154-C001)
+
+M154-C extends lowering contract publication with a replay-stable packet for property synthesis and ivar binding
+semantics consumed from deterministic frontend sema summaries. Until dedicated ivar-binding counters land in sema
+handoffs, lane-C derives the packet from deterministic property declaration cardinality using default ivar binding
+semantics.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m154/lowering-property-synthesis-ivar-binding-contract/property-synthesis-ivar-binding-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3PropertySynthesisIvarBindingLaneContract`
+- `Objc3PropertySynthesisIvarBindingContract`
+- `Objc3DefaultPropertySynthesisIvarBindingContract(...)`
+- `IsValidObjc3PropertySynthesisIvarBindingContract(...)`
+- `Objc3PropertySynthesisIvarBindingReplayKey(...)`
+
+Replay key publication markers:
+
+- `property_synthesis_sites=<N>`
+- `property_synthesis_explicit_ivar_bindings=<N>`
+- `property_synthesis_default_ivar_bindings=<N>`
+- `ivar_binding_sites=<N>`
+- `ivar_binding_resolved=<N>`
+- `ivar_binding_missing=<N>`
+- `ivar_binding_conflicts=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m154-property-synthesis-ivar-binding-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_property_synthesis_ivar_binding_handoff`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_sites`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_explicit_ivar_bindings`
+- `frontend.pipeline.sema_pass_manager.property_synthesis_default_ivar_bindings`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_sites`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_resolved`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_missing`
+- `frontend.pipeline.sema_pass_manager.ivar_binding_conflicts`
+- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface`
+- `lowering_property_synthesis_ivar_binding.replay_key`
+- `lowering_property_synthesis_ivar_binding.lane_contract`
+
+IR publication marker:
+
+- `; property_synthesis_ivar_binding_lowering = property_synthesis_sites=<N>;property_synthesis_explicit_ivar_bindings=<N>;property_synthesis_default_ivar_bindings=<N>;ivar_binding_sites=<N>;ivar_binding_resolved=<N>;ivar_binding_missing=<N>;ivar_binding_conflicts=<N>;deterministic=<bool>;lane_contract=m154-property-synthesis-ivar-binding-v1`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 

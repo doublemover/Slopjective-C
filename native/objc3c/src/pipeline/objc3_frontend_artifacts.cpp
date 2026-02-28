@@ -49,6 +49,13 @@ std::vector<std::string> FlattenStageDiagnostics(const Objc3FrontendDiagnosticsB
   return diagnostics;
 }
 
+Objc3PropertySynthesisIvarBindingContract BuildPropertySynthesisIvarBindingContract(
+    const Objc3FrontendPropertyAttributeSummary &summary) {
+  return Objc3DefaultPropertySynthesisIvarBindingContract(
+      summary.property_declaration_entries,
+      summary.deterministic_property_attribute_handoff);
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -161,6 +168,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.object_pointer_nullability_generics_summary;
   const Objc3FrontendSymbolGraphScopeResolutionSummary &symbol_graph_scope_resolution_summary =
       pipeline_result.symbol_graph_scope_resolution_summary;
+  const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
+      BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
+  if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid property synthesis/ivar binding lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string property_synthesis_ivar_binding_replay_key =
+      Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -377,6 +397,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_attribute_summary.property_getter_selector_entries
            << ",\"property_setter_selector_entries\":"
            << property_attribute_summary.property_setter_selector_entries
+           << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
+           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << ",\"property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_sites
+           << ",\"property_synthesis_explicit_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
+           << ",\"property_synthesis_default_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << ",\"ivar_binding_sites\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_sites
+           << ",\"ivar_binding_resolved\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << ",\"ivar_binding_missing\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_missing
+           << ",\"ivar_binding_conflicts\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_conflicts
+           << ",\"lowering_property_synthesis_ivar_binding_replay_key\":\""
+           << property_synthesis_ivar_binding_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -542,6 +581,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"deterministic_handoff\":"
            << (property_attribute_summary.deterministic_property_attribute_handoff ? "true" : "false")
            << "}"
+           << ",\"objc_property_synthesis_ivar_binding_surface\":{\"property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_sites
+           << ",\"property_synthesis_explicit_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
+           << ",\"property_synthesis_default_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << ",\"ivar_binding_sites\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_sites
+           << ",\"ivar_binding_resolved\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << ",\"ivar_binding_missing\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_missing
+           << ",\"ivar_binding_conflicts\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_conflicts
+           << ",\"replay_key\":\""
+           << property_synthesis_ivar_binding_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -616,6 +674,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  \"lowering_vector_abi\":{\"replay_key\":\"" << Objc3SimdVectorTypeLoweringReplayKey()
            << "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract
            << "\",\"vector_signature_functions\":" << vector_signature_functions << "},\n";
+  manifest << "  \"lowering_property_synthesis_ivar_binding\":{\"replay_key\":\""
+           << property_synthesis_ivar_binding_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3PropertySynthesisIvarBindingLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
     manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]
@@ -746,6 +810,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.property_accessor_modifier_entries = property_attribute_summary.property_accessor_modifier_entries;
   ir_frontend_metadata.property_getter_selector_entries = property_attribute_summary.property_getter_selector_entries;
   ir_frontend_metadata.property_setter_selector_entries = property_attribute_summary.property_setter_selector_entries;
+  ir_frontend_metadata.lowering_property_synthesis_ivar_binding_replay_key =
+      property_synthesis_ivar_binding_replay_key;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

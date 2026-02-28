@@ -54,6 +54,7 @@ struct Objc3IRFrontendMetadata {
   std::size_t property_getter_selector_entries = 0;
   std::size_t property_setter_selector_entries = 0;
   bool deterministic_property_attribute_handoff = false;
+  std::string lowering_property_synthesis_ivar_binding_replay_key;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

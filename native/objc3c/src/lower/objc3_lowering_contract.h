@@ -18,6 +18,8 @@ inline constexpr const char *kObjc3SimdVectorBaseI32 = "i32";
 inline constexpr const char *kObjc3SimdVectorBaseBool = "bool";
 inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
     "m153-method-lookup-override-conflict-v1";
+inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
+    "m154-property-synthesis-ivar-binding-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -50,6 +52,17 @@ struct Objc3MethodLookupOverrideConflictContract {
   bool deterministic = true;
 };
 
+struct Objc3PropertySynthesisIvarBindingContract {
+  std::size_t property_synthesis_sites = 0;
+  std::size_t property_synthesis_explicit_ivar_bindings = 0;
+  std::size_t property_synthesis_default_ivar_bindings = 0;
+  std::size_t ivar_binding_sites = 0;
+  std::size_t ivar_binding_resolved = 0;
+  std::size_t ivar_binding_missing = 0;
+  std::size_t ivar_binding_conflicts = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -68,3 +81,10 @@ bool TryBuildObjc3SimdVectorLLVMType(const std::string &base_spelling, unsigned 
 std::string Objc3SimdVectorTypeLoweringReplayKey();
 bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract);
 std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract);
+Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindingContract(
+    std::size_t property_synthesis_sites,
+    bool deterministic = true);
+bool IsValidObjc3PropertySynthesisIvarBindingContract(
+    const Objc3PropertySynthesisIvarBindingContract &contract);
+std::string Objc3PropertySynthesisIvarBindingReplayKey(
+    const Objc3PropertySynthesisIvarBindingContract &contract);
