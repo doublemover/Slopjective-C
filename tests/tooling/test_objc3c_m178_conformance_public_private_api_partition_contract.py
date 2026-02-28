@@ -41,5 +41,8 @@ def test_m178_conformance_fixture_fields_are_canonical() -> None:
     assert fixture["bucket"] == "lowering_abi"
     assert fixture["profile"] == "core"
     assert fixture["tracking"]["milestone"] == "M178"
+    assert fixture["tracking"]["milestone_number"] == 263
+    assert fixture["tracking"]["lane"] == "D"
     assert fixture["tracking"]["issue"] == 4482
     assert fixture["tracking"]["task"] == "M178-D001"
+    assert fixture["tracking"]["sequence"] == 1
