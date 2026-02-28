@@ -2029,6 +2029,36 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
 ```
 
+## M169 validation/conformance/perf block copy-dispose runbook
+
+Block copy-dispose helper validation runbook verifies deterministic parser/sema/lowering packet replay for block helper generation metadata.
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
+```
+
+Block copy-dispose evidence packet fields:
+
+- `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_copy_dispose_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_copy_dispose_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface.deterministic_handoff`
+  - `lowering_block_copy_dispose.replay_key`
+- `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.ll`
+  - `block_copy_dispose_lowering`
+  - `frontend_objc_block_copy_dispose_lowering_profile`
+  - `!objc3.objc_block_copy_dispose_lowering = !{!22}`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
