@@ -150,6 +150,10 @@ class Objc3IREmitter {
       out << "; block_abi_invoke_trampoline_lowering = "
           << frontend_metadata_.lowering_block_abi_invoke_trampoline_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_block_storage_escape_replay_key.empty()) {
+      out << "; block_storage_escape_lowering = "
+          << frontend_metadata_.lowering_block_storage_escape_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -409,6 +413,33 @@ class Objc3IREmitter {
         << ", deterministic_block_abi_invoke_trampoline_lowering_handoff="
         << (frontend_metadata_.deterministic_block_abi_invoke_trampoline_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_block_storage_escape_lowering_profile = block_literal_sites="
+        << frontend_metadata_.block_storage_escape_lowering_block_literal_sites
+        << ", mutable_capture_count_total="
+        << frontend_metadata_.block_storage_escape_lowering_mutable_capture_count_total
+        << ", byref_slot_count_total="
+        << frontend_metadata_.block_storage_escape_lowering_byref_slot_count_total
+        << ", parameter_entries_total="
+        << frontend_metadata_.block_storage_escape_lowering_parameter_entries_total
+        << ", capture_entries_total="
+        << frontend_metadata_.block_storage_escape_lowering_capture_entries_total
+        << ", body_statement_entries_total="
+        << frontend_metadata_.block_storage_escape_lowering_body_statement_entries_total
+        << ", requires_byref_cells_sites="
+        << frontend_metadata_.block_storage_escape_lowering_requires_byref_cells_sites
+        << ", escape_analysis_enabled_sites="
+        << frontend_metadata_.block_storage_escape_lowering_escape_analysis_enabled_sites
+        << ", escape_to_heap_sites="
+        << frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites
+        << ", escape_profile_normalized_sites="
+        << frontend_metadata_.block_storage_escape_lowering_escape_profile_normalized_sites
+        << ", byref_layout_symbolized_sites="
+        << frontend_metadata_.block_storage_escape_lowering_byref_layout_symbolized_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.block_storage_escape_lowering_contract_violation_sites
+        << ", deterministic_block_storage_escape_lowering_handoff="
+        << (frontend_metadata_.deterministic_block_storage_escape_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -592,6 +623,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}\n";
     out << "!objc3.objc_block_literal_capture_lowering = !{!19}\n";
     out << "!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}\n";
+    out << "!objc3.objc_block_storage_escape_lowering = !{!21}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -915,6 +947,44 @@ class Objc3IREmitter {
                frontend_metadata_.block_abi_invoke_trampoline_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_block_abi_invoke_trampoline_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!21 = !{i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.block_storage_escape_lowering_block_literal_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_mutable_capture_count_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_byref_slot_count_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_parameter_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_capture_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_body_statement_entries_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_requires_byref_cells_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_escape_analysis_enabled_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_escape_profile_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_byref_layout_symbolized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.block_storage_escape_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_block_storage_escape_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

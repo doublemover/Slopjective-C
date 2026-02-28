@@ -3258,6 +3258,73 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
 
+## Block storage escape lowering artifact contract (M168-C001)
+
+M168-C publishes replay-stable block storage escape lowering invariants derived
+from M168 sema `__block` storage/escape parity surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m168/lowering-block-storage-escape-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m168/lowering-block-storage-escape-contract/block-storage-escape-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3BlockStorageEscapeLoweringLaneContract`
+- `Objc3BlockStorageEscapeLoweringContract`
+- `IsValidObjc3BlockStorageEscapeLoweringContract(...)`
+- `Objc3BlockStorageEscapeLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `mutable_capture_count_total=<N>`
+- `byref_slot_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `requires_byref_cells_sites=<N>`
+- `escape_analysis_enabled_sites=<N>`
+- `escape_to_heap_sites=<N>`
+- `escape_profile_normalized_sites=<N>`
+- `byref_layout_symbolized_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m168-block-storage-escape-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_storage_escape_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_mutable_capture_count`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_byref_slot_count`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_requires_byref_cells_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_analysis_enabled_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_to_heap_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_escape_profile_normalized_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_byref_layout_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_storage_escape_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_storage_escape_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface`
+- `lowering_block_storage_escape.replay_key`
+- `lowering_block_storage_escape.lane_contract`
+
+IR publication markers:
+
+- `; block_storage_escape_lowering = block_literal_sites=<N>;mutable_capture_count_total=<N>;byref_slot_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;requires_byref_cells_sites=<N>;escape_analysis_enabled_sites=<N>;escape_to_heap_sites=<N>;escape_profile_normalized_sites=<N>;byref_layout_symbolized_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m168-block-storage-escape-lowering-v1`
+- `; frontend_objc_block_storage_escape_lowering_profile = block_literal_sites=<N>, mutable_capture_count_total=<N>, byref_slot_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, requires_byref_cells_sites=<N>, escape_analysis_enabled_sites=<N>, escape_to_heap_sites=<N>, escape_profile_normalized_sites=<N>, byref_layout_symbolized_sites=<N>, contract_violation_sites=<N>, deterministic_block_storage_escape_lowering_handoff=<bool>`
+- `!objc3.objc_block_storage_escape_lowering = !{!21}`
+- `!21 = !{i64 <block_literal_sites>, i64 <mutable_capture_count_total>, i64 <byref_slot_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <requires_byref_cells_sites>, i64 <escape_analysis_enabled_sites>, i64 <escape_to_heap_sites>, i64 <escape_profile_normalized_sites>, i64 <byref_layout_symbolized_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
