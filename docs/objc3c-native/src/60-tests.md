@@ -38,6 +38,8 @@ npm run test:objc3c:m144-llvm-capability-discovery
 npm run check:objc3c:llvm-capabilities
 npm run check:objc3c:library-cli-parity:source:m144
 npm run check:compiler-closeout:m144
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run check:compiler-closeout:m145
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -141,6 +143,21 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m144_llvm_capability_discovery_contract.py`.
   - Runs `npm run test:objc3c:m144-llvm-capability-discovery`.
   - Enforces fail-closed M144 capability discovery wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m145-direct-llvm-matrix`
+  - Runs `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`.
+  - Runs `python -m pytest tests/tooling/test_check_m145_direct_llvm_matrix_contract.py -q`.
+  - Verifies lane-B sema/type-system direct LLVM object-emission matrix coverage, including forced missing-llc fail-closed behavior.
+  - Verifies matrix checks such as `runtime.positive.matrix.llvm_direct_forced_missing_llc.exit_codes` and backend-invariant negative diagnostics.
+- `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+  - Runs `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_conformance_suite.ps1`.
+  - Runs `npm run test:objc3c:perf-budget`.
+  - Verifies lane-D conformance/perf anchors for `M145-D001` and fail-closed matrix coverage.
+- `npm run check:compiler-closeout:m145`
+  - Runs `python scripts/check_m145_direct_llvm_matrix_contract.py`.
+  - Runs `npm run test:objc3c:m145-direct-llvm-matrix`.
+  - Runs `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`.
+  - Runs `python scripts/spec_lint.py --glob "docs/contracts/direct_llvm_emission_expectations.md"`.
+  - Enforces fail-closed M145 direct LLVM object-emission matrix wiring across lane-B sema/type-system, lane-C runtime-ABI, and lane-D validation/conformance/perf surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -228,6 +245,7 @@ python scripts/check_m139_sema_pass_manager_contract.py
 python scripts/check_m142_frontend_lowering_parity_contract.py
 python scripts/check_m143_artifact_tmp_governance_contract.py
 python scripts/check_m144_llvm_capability_discovery_contract.py
+python scripts/check_m145_direct_llvm_matrix_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

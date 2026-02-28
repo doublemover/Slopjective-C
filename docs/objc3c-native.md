@@ -32,13 +32,19 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
 - For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
 
-## Artifact tmp-path governance (M143-E001)
+## Artifact tmp-path governance (M143-D001)
 
 - Source-mode parity workflows are tmp-governed by default:
-  - `--work-dir` defaults to `tmp/objc3c_library_cli_parity_work`.
+  - `--work-dir` defaults to `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work`.
   - Derived outputs are rooted under `<work-dir>/<work_key>/{library,cli}`.
 - `--work-key` is deterministic by default (derived from source + emit controls) and can be pinned explicitly for reproducible path contracts.
 - Non-tmp source-mode work directories are rejected unless `--allow-non-tmp-work-dir` is set.
+
+## LLVM capability discovery and backend routing (M144-E001)
+
+- `--llvm-capabilities-summary <path>` points CLI routing to a deterministic capability summary packet.
+- `--objc3-route-backend-from-capabilities` derives `--objc3-ir-object-backend` from summary capabilities (uses `llvm-direct` only when `llc --filetype=obj` is available).
+- Capability probes are captured with `npm run check:objc3c:llvm-capabilities` into `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`.
 
 ## Driver shell split boundaries (M136-E001)
 
@@ -1452,17 +1458,70 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m142_frontend_lowering_parity_contract.py`
   - `npm run check:compiler-closeout:m142`
 
-## Artifact tmp-path replay semantics (M143-E001)
+## Artifact tmp-path governance contract (M143-D001)
 
-- Source-mode parity replay is partitioned by deterministic `work_key`:
-  - Default `work_key` derives from source path + emit controls + lowering/runtime-affecting options.
-  - Source-mode output roots are `<work-dir>/<work_key>/library` and `<work-dir>/<work_key>/cli`.
+- Source-mode parity replay is partitioned by deterministic `--work-key`:
+  - Default `--work-key` derives from source path + emit controls + lowering/runtime-affecting options.
+  - Source-mode output roots are `<work-dir>/<work-key>/library` and `<work-dir>/<work-key>/cli`.
 - Tmp-path governance defaults are fail-closed:
   - `--work-dir` and derived output roots must remain under `tmp/`.
   - Explicit override requires `--allow-non-tmp-work-dir`.
 - Replay safety contract for source mode:
   - Fails when expected generated artifacts for `<emit-prefix>` are missing after command execution.
   - Fails when stale `<emit-prefix>` artifacts are already present in target output roots prior to command execution.
+- Lane-B sema/type-system replay artifacts are also tmp-governed:
+  - `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1` writes `summary.json` under `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/`.
+  - Default run id is deterministic (`m143-sema-type-system-default`); explicit override remains available via `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID`.
+- Parser/AST-facing lane-A closeout coverage:
+  - `test:objc3c:m143-artifact-governance` includes `tests/tooling/test_objc3c_parser_extraction.py` and `tests/tooling/test_objc3c_parser_ast_builder_extraction.py`.
+- Lowering/LLVM IR/runtime-ABI lane-C closeout coverage:
+  - `scripts/run_objc3c_lowering_regression_suite.ps1` uses deterministic default run id `m143-lane-c-lowering-regression-default` (override: `OBJC3C_NATIVE_LOWERING_RUN_ID`).
+  - `scripts/check_objc3c_typed_abi_replay_proof.ps1` uses deterministic default run id `m143-lane-c-typed-abi-default` (override: `OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID`).
+  - `scripts/check_objc3c_lowering_replay_proof.ps1` uses deterministic default proof run id `m143-lane-c-lowering-replay-proof-default` (override: `OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID`).
+
+## LLVM capability discovery contract (M144-E001)
+
+- Capability probe packet mode is pinned to `objc3c-llvm-capabilities-v2`:
+  - `scripts/probe_objc3c_llvm_capabilities.py` publishes deterministic `clang`, `llc`, `llc_features`, and `sema_type_system_parity` capability fields.
+- Driver capability summary routing is fail-closed:
+  - `native/objc3c/src/driver/objc3_llvm_capability_routing.cpp` rejects missing/invalid summaries and blocks backend routing when parity readiness is unavailable.
+  - `native/objc3c/src/driver/objc3_cli_options.cpp` exposes `--llvm-capabilities-summary` and `--objc3-route-backend-from-capabilities`.
+- Source-mode CLI/C API parity can route backend from probe output:
+  - `scripts/check_objc3c_library_cli_parity.py` consumes `--llvm-capabilities-summary` and enforces fail-closed routing prerequisites before executing CLI/C API runs.
+- Contract validation commands:
+  - `python scripts/check_m144_llvm_capability_discovery_contract.py`
+  - `npm run check:compiler-closeout:m144`
+
+## Direct LLVM object-emission matrix lane-B contract (M145-B001)
+
+- Lane-B sema/type-system contract runner now includes explicit backend matrix coverage in:
+  - `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
+- Matrix behavior for semantic positive replay (`typed_i32_bool.objc3`):
+  - `clang` replay remains required and deterministic.
+  - `llvm-direct` replay is executed explicitly; when backend capability is unavailable, it must fail closed with deterministic backend diagnostics and absent object/backend artifacts.
+  - forced missing-llc replay uses `--objc3-ir-object-backend llvm-direct --llc <missing-path>` and must fail closed with deterministic `llc executable not found` diagnostics.
+- Matrix behavior for semantic negative replay:
+  - Backend-invariant diagnostics are asserted across `clang` and `llvm-direct` runs for a deterministic negative fixture sample.
+- Contract validation commands:
+  - `python scripts/check_m145_direct_llvm_matrix_contract.py`
+  - `npm run test:objc3c:m145-direct-llvm-matrix`
+  - `npm run check:compiler-closeout:m145`
+
+## Direct LLVM object-emission matrix lane-D contract (M145-D001)
+
+- Lane-D validation extends M145 with fixture, determinism, conformance, and perf coverage:
+  - Conformance fixture: `tests/conformance/lowering_abi/M145-D001.json`
+  - Coverage map binding: `tests/conformance/COVERAGE_MAP.md` row `M145-D001 -> #4317 -> lowering_abi`
+  - Lowering ABI manifest registration:
+    `tests/conformance/lowering_abi/manifest.json`
+- Fixture-level expectations:
+  - Pins `--objc3-ir-object-backend llvm-direct` fail-closed behavior and diagnostic
+    anchors `O3E001` / `O3E002`.
+  - Ensures fail-closed object-emission contract coverage stays traceable from
+    issue metadata through conformance fixture inventory.
+- Lane-D validation commands:
+  - `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+  - `npm run check:compiler-closeout:m145`
 
 ## M25 Message-Send Contract Matrix
 
@@ -1886,7 +1945,12 @@ npm run check:compiler-closeout:m139
 
 `npm run test:objc3c:sema-pass-manager-diagnostics-bus` writes deterministic pass-manager diagnostics-bus proof artifacts under:
 
-- `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+Deterministic run-id behavior:
+
+- Default run id is fixed to `m143-sema-type-system-default`.
+- Optional override remains `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID` (validated token syntax).
 
 `npm run check:compiler-closeout:m139` fail-closes on sema pass-manager and diagnostics-bus wiring drift via:
 
@@ -1960,7 +2024,7 @@ Object backend note for harness replay:
 - `python scripts/check_m142_frontend_lowering_parity_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`
 
-## Deterministic tmp-path governance artifacts (M143-E001)
+## Artifact tmp-path governance artifacts (M143-D001)
 
 Tmp-governed parity governance commands:
 
@@ -1971,21 +2035,97 @@ npm run check:compiler-closeout:m143
 
 `npm run check:objc3c:library-cli-parity:source:m143` writes replay-governed outputs under:
 
-- `tmp/artifacts/objc3c-native/m143/library-cli-parity/work/hello-default/library/`
-- `tmp/artifacts/objc3c-native/m143/library-cli-parity/work/hello-default/cli/`
-- `tmp/artifacts/objc3c-native/m143/library-cli-parity/summary.json`
+- `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work/<work-key>/library/`
+- `tmp/artifacts/compilation/objc3c-native/library-cli-parity/work/<work-key>/cli/`
+- `tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json`
 
 Governance contract notes:
 
-- Work roots are deterministic via `--work-key hello-default` (or default-derived deterministic key when omitted).
+- Work roots are deterministic via `--work-key` (or default-derived deterministic key when omitted).
 - Source mode fail-closes when stale `<emit-prefix>` outputs are detected in target work roots.
 - Source mode fail-closes when expected generated parity artifacts are missing after command execution.
 - Tmp-path policy is default-enforced; non-tmp work roots require explicit opt-in.
+- Lane-C lowering/runtime artifact roots remain under `tmp/artifacts/objc3c-native/`:
+  - `tmp/artifacts/objc3c-native/lowering-regression/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/typed-abi-replay-proof/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/lowering-replay-proof/<proof_run_id>/summary.json`
+- Lane-C deterministic default run ids:
+  - `m143-lane-c-lowering-regression-default` (`OBJC3C_NATIVE_LOWERING_RUN_ID`)
+  - `m143-lane-c-typed-abi-default` (`OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID`)
+  - `m143-lane-c-lowering-replay-proof-default` (`OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID`)
 
 `npm run check:compiler-closeout:m143` fail-closes on tmp-governance source/docs/package drift via:
 
 - `python scripts/check_m143_artifact_tmp_governance_contract.py`
-- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
+
+## LLVM capability discovery artifacts (M144-E001)
+
+Capability discovery and routing validation commands:
+
+```powershell
+npm run check:objc3c:llvm-capabilities
+npm run check:objc3c:library-cli-parity:source:m144
+npm run check:compiler-closeout:m144
+```
+
+Capability probe summary output:
+
+- `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`
+
+Capability-routed source-mode parity output:
+
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work/<work-key>/library/`
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work/<work-key>/cli/`
+- `tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/summary.json`
+
+`npm run check:compiler-closeout:m144` fail-closes on capability discovery source/docs/package drift via:
+
+- `python scripts/check_m144_llvm_capability_discovery_contract.py`
+- `python -m pytest tests/tooling/test_probe_objc3c_llvm_capabilities.py tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_m144_llvm_capability_discovery_contract.py tests/tooling/test_check_m144_llvm_capability_discovery_contract.py -q`
+
+## Direct LLVM object-emission lane-B matrix artifacts (M145-B001)
+
+Lane-B sema/type-system direct-LLVM matrix validation commands:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run check:compiler-closeout:m145
+```
+
+`npm run test:objc3c:m145-direct-llvm-matrix` writes matrix artifacts under:
+
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke_llvm_direct/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke_llvm_direct_forced_missing_llc/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/negative_backend_matrix/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+Fail-closed matrix markers captured in `summary.json` checks:
+
+- `runtime.positive.matrix.llvm_direct_forced_missing_llc.exit_codes`
+- `runtime.positive.matrix.llvm_direct_forced_missing_llc.fail_closed_marker`
+- `runtime.negative.matrix.backend.exit_codes.<fixture>`
+
+## Direct LLVM object-emission lane-D validation artifacts (M145-D001)
+
+Lane-D conformance/perf validation commands:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run check:compiler-closeout:m145
+```
+
+Lane-D artifact roots:
+
+- Conformance aggregation output:
+  - `tmp/artifacts/conformance_suite/summary.json`
+- Perf-budget summary output:
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+- Coverage sources tied to lane-D fixture:
+  - `tests/conformance/COVERAGE_MAP.md`
+  - `tests/conformance/lowering_abi/manifest.json`
+  - `tests/conformance/lowering_abi/M145-D001.json`
 
 ## Execution smoke commands (M26 lane-E)
 
@@ -2037,6 +2177,12 @@ npm run check:compiler-closeout:m142
 npm run test:objc3c:m143-artifact-governance
 npm run check:objc3c:library-cli-parity:source:m143
 npm run check:compiler-closeout:m143
+npm run test:objc3c:m144-llvm-capability-discovery
+npm run check:objc3c:llvm-capabilities
+npm run check:objc3c:library-cli-parity:source:m144
+npm run check:compiler-closeout:m144
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run check:compiler-closeout:m145
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -2121,15 +2267,40 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
 - `npm run test:objc3c:m143-artifact-governance`
-  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py -q`.
-  - Verifies tmp-governed default output paths, source-mode work-root governance, and M143 docs/package wiring.
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
+  - Verifies tmp-governed default output paths, parser/AST lane-A coverage wiring, sema/type-system lane-B governance, lowering/LLVM IR/runtime-ABI lane-C governance, source-mode work-root governance, and M143 docs/package wiring.
 - `npm run check:objc3c:library-cli-parity:source:m143`
-  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --work-dir tmp/artifacts/objc3c-native/m143/library-cli-parity/work --work-key hello-default ...`.
+  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --summary-out tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json ...`.
   - Enforces deterministic replay roots and fail-closed stale/missing artifact checks under tmp-governed paths.
 - `npm run check:compiler-closeout:m143`
   - Runs `python scripts/check_m143_artifact_tmp_governance_contract.py`.
   - Runs `npm run test:objc3c:m143-artifact-governance`.
   - Enforces fail-closed M143 tmp-governance wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m144-llvm-capability-discovery`
+  - Runs `python -m pytest tests/tooling/test_probe_objc3c_llvm_capabilities.py tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_m144_llvm_capability_discovery_contract.py tests/tooling/test_check_m144_llvm_capability_discovery_contract.py -q`.
+  - Verifies capability probe packet behavior, fail-closed backend routing extraction, and M144 docs/package wiring.
+- `npm run check:objc3c:llvm-capabilities`
+  - Runs `python scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`.
+  - Produces deterministic capability summary packet used by M144 routed parity workflows.
+- `npm run check:compiler-closeout:m144`
+  - Runs `python scripts/check_m144_llvm_capability_discovery_contract.py`.
+  - Runs `npm run test:objc3c:m144-llvm-capability-discovery`.
+  - Enforces fail-closed M144 capability discovery wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m145-direct-llvm-matrix`
+  - Runs `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`.
+  - Runs `python -m pytest tests/tooling/test_check_m145_direct_llvm_matrix_contract.py -q`.
+  - Verifies lane-B sema/type-system direct LLVM object-emission matrix coverage, including forced missing-llc fail-closed behavior.
+  - Verifies matrix checks such as `runtime.positive.matrix.llvm_direct_forced_missing_llc.exit_codes` and backend-invariant negative diagnostics.
+- `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+  - Runs `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_conformance_suite.ps1`.
+  - Runs `npm run test:objc3c:perf-budget`.
+  - Verifies lane-D conformance/perf anchors for `M145-D001` and fail-closed matrix coverage.
+- `npm run check:compiler-closeout:m145`
+  - Runs `python scripts/check_m145_direct_llvm_matrix_contract.py`.
+  - Runs `npm run test:objc3c:m145-direct-llvm-matrix`.
+  - Runs `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`.
+  - Runs `python scripts/spec_lint.py --glob "docs/contracts/direct_llvm_emission_expectations.md"`.
+  - Enforces fail-closed M145 direct LLVM object-emission matrix wiring across lane-B sema/type-system, lane-C runtime-ABI, and lane-D validation/conformance/perf surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -2171,7 +2342,8 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`.
   - Verifies sema module extraction boundaries, parser-contract integration, pure-contract extraction boundary, and pipeline diagnostics-bus type surfaces.
   - Replays positive/negative sema fixtures and enforces deterministic diagnostics/artifact contracts for pass-manager + diagnostics-bus extraction.
-  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
+  - Writes per-run summary JSON under `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
+  - Uses deterministic default run id `m143-sema-type-system-default` unless `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID` is explicitly provided.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
   - Replays all recovery fixtures (positive and negative) twice per fixture.
   - Includes optional Objective-C dispatch fixture roots when present (`recovery/positive/lowering_dispatch`, then `dispatch/positive`).
@@ -2179,9 +2351,11 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - For fixtures with `<fixture>.dispatch-ir.expect.txt`, emits replay IR via `clang -S -emit-llvm` and enforces deterministic dispatch IR marker matches across replay.
   - For fixtures with `<fixture>.objc3-ir.expect.txt`, enforces deterministic native-lowered IR marker matches across replay for emitted `module.ll`.
   - Optional clang override: `OBJC3C_NATIVE_LOWERING_CLANG_PATH=<clang executable>`.
+  - Uses deterministic default run id `m143-lane-c-lowering-regression-default` unless `OBJC3C_NATIVE_LOWERING_RUN_ID` is explicitly provided.
   - Writes per-run summary under `tmp/artifacts/objc3c-native/lowering-regression/<run_id>/summary.json` plus stable latest summary at `tmp/artifacts/objc3c-native/lowering-regression/latest-summary.json`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1`
   - Replays typed-signature `.objc3` fixtures twice and enforces deterministic `module.ll` plus required typed ABI marker token presence from adjacent `.objc3-ir.expect.txt` files.
+  - Uses deterministic default run id `m143-lane-c-typed-abi-default` unless `OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID` is explicitly provided.
   - Writes proof summary under `tmp/artifacts/objc3c-native/typed-abi-replay-proof/<run_id>/summary.json`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1`
   - Runs execution smoke twice with distinct run IDs.
@@ -2190,6 +2364,7 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lowering_replay_proof.ps1`
   - Runs lowering regression twice with distinct run IDs.
   - Captures each run's deterministic summary and asserts SHA256 equality across replay.
+  - Uses deterministic default proof run id `m143-lane-c-lowering-replay-proof-default` unless `OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID` is explicitly provided.
   - Writes proof summary under `tmp/artifacts/objc3c-native/lowering-replay-proof/<proof_run_id>/summary.json`.
 
 Direct script equivalents:
@@ -2212,6 +2387,8 @@ python scripts/check_m137_lexer_contract.py
 python scripts/check_m139_sema_pass_manager_contract.py
 python scripts/check_m142_frontend_lowering_parity_contract.py
 python scripts/check_m143_artifact_tmp_governance_contract.py
+python scripts/check_m144_llvm_capability_discovery_contract.py
+python scripts/check_m145_direct_llvm_matrix_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

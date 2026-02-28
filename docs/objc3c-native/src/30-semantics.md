@@ -1331,6 +1331,37 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m144_llvm_capability_discovery_contract.py`
   - `npm run check:compiler-closeout:m144`
 
+## Direct LLVM object-emission matrix lane-B contract (M145-B001)
+
+- Lane-B sema/type-system contract runner now includes explicit backend matrix coverage in:
+  - `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
+- Matrix behavior for semantic positive replay (`typed_i32_bool.objc3`):
+  - `clang` replay remains required and deterministic.
+  - `llvm-direct` replay is executed explicitly; when backend capability is unavailable, it must fail closed with deterministic backend diagnostics and absent object/backend artifacts.
+  - forced missing-llc replay uses `--objc3-ir-object-backend llvm-direct --llc <missing-path>` and must fail closed with deterministic `llc executable not found` diagnostics.
+- Matrix behavior for semantic negative replay:
+  - Backend-invariant diagnostics are asserted across `clang` and `llvm-direct` runs for a deterministic negative fixture sample.
+- Contract validation commands:
+  - `python scripts/check_m145_direct_llvm_matrix_contract.py`
+  - `npm run test:objc3c:m145-direct-llvm-matrix`
+  - `npm run check:compiler-closeout:m145`
+
+## Direct LLVM object-emission matrix lane-D contract (M145-D001)
+
+- Lane-D validation extends M145 with fixture, determinism, conformance, and perf coverage:
+  - Conformance fixture: `tests/conformance/lowering_abi/M145-D001.json`
+  - Coverage map binding: `tests/conformance/COVERAGE_MAP.md` row `M145-D001 -> #4317 -> lowering_abi`
+  - Lowering ABI manifest registration:
+    `tests/conformance/lowering_abi/manifest.json`
+- Fixture-level expectations:
+  - Pins `--objc3-ir-object-backend llvm-direct` fail-closed behavior and diagnostic
+    anchors `O3E001` / `O3E002`.
+  - Ensures fail-closed object-emission contract coverage stays traceable from
+    issue metadata through conformance fixture inventory.
+- Lane-D validation commands:
+  - `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+  - `npm run check:compiler-closeout:m145`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:

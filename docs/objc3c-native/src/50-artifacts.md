@@ -433,6 +433,49 @@ Capability-routed source-mode parity output:
 - `python scripts/check_m144_llvm_capability_discovery_contract.py`
 - `python -m pytest tests/tooling/test_probe_objc3c_llvm_capabilities.py tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_m144_llvm_capability_discovery_contract.py tests/tooling/test_check_m144_llvm_capability_discovery_contract.py -q`
 
+## Direct LLVM object-emission lane-B matrix artifacts (M145-B001)
+
+Lane-B sema/type-system direct-LLVM matrix validation commands:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run check:compiler-closeout:m145
+```
+
+`npm run test:objc3c:m145-direct-llvm-matrix` writes matrix artifacts under:
+
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke_llvm_direct/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/positive_smoke_llvm_direct_forced_missing_llc/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/negative_backend_matrix/`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+Fail-closed matrix markers captured in `summary.json` checks:
+
+- `runtime.positive.matrix.llvm_direct_forced_missing_llc.exit_codes`
+- `runtime.positive.matrix.llvm_direct_forced_missing_llc.fail_closed_marker`
+- `runtime.negative.matrix.backend.exit_codes.<fixture>`
+
+## Direct LLVM object-emission lane-D validation artifacts (M145-D001)
+
+Lane-D conformance/perf validation commands:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run check:compiler-closeout:m145
+```
+
+Lane-D artifact roots:
+
+- Conformance aggregation output:
+  - `tmp/artifacts/conformance_suite/summary.json`
+- Perf-budget summary output:
+  - `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+- Coverage sources tied to lane-D fixture:
+  - `tests/conformance/COVERAGE_MAP.md`
+  - `tests/conformance/lowering_abi/manifest.json`
+  - `tests/conformance/lowering_abi/M145-D001.json`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
