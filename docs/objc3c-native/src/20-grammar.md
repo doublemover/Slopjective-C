@@ -195,3 +195,18 @@ Cross-platform frontend parity (Windows/Linux/macOS) is tracked via deterministi
   3. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
 
+## M218 frontend RC provenance packet
+
+Release-candidate automation for frontend/parser requires deterministic boundary evidence and provenance-ready replay markers.
+
+- Required RC provenance signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required RC commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
+
