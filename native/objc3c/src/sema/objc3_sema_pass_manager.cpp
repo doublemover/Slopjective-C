@@ -201,6 +201,19 @@ bool IsEquivalentNamespaceCollisionShadowingSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentPublicPrivateApiPartitionSummary(
+    const Objc3PublicPrivateApiPartitionSummary &lhs,
+    const Objc3PublicPrivateApiPartitionSummary &rhs) {
+  return lhs.public_private_api_partition_sites ==
+             rhs.public_private_api_partition_sites &&
+         lhs.namespace_segment_sites == rhs.namespace_segment_sites &&
+         lhs.import_edge_candidate_sites == rhs.import_edge_candidate_sites &&
+         lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
+         lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
                                                    const Objc3SymbolGraphScopeResolutionSummary &rhs) {
   return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
@@ -703,6 +716,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               .contract_violation_sites <=
           result.type_metadata_handoff.namespace_collision_shadowing_summary
               .namespace_collision_shadowing_sites;
+  result.public_private_api_partition_summary =
+      result.integration_surface.public_private_api_partition_summary;
+  result.deterministic_public_private_api_partition_handoff =
+      result.type_metadata_handoff.public_private_api_partition_summary
+              .deterministic &&
+      result.integration_surface.public_private_api_partition_summary
+              .deterministic &&
+      IsEquivalentPublicPrivateApiPartitionSummary(
+          result.integration_surface.public_private_api_partition_summary,
+          result.type_metadata_handoff.public_private_api_partition_summary) &&
+      result.type_metadata_handoff.public_private_api_partition_summary
+              .namespace_segment_sites <=
+          result.type_metadata_handoff.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.type_metadata_handoff.public_private_api_partition_summary
+              .import_edge_candidate_sites <=
+          result.type_metadata_handoff.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.type_metadata_handoff.public_private_api_partition_summary
+              .normalized_sites <=
+          result.type_metadata_handoff.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.type_metadata_handoff.public_private_api_partition_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.public_private_api_partition_summary
+              .public_private_api_partition_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1326,6 +1365,29 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface
       .namespace_collision_shadowing_contract_violation_sites_total =
       result.parity_surface.namespace_collision_shadowing_summary
+          .contract_violation_sites;
+  result.parity_surface.public_private_api_partition_summary =
+      result.type_metadata_handoff.public_private_api_partition_summary;
+  result.parity_surface.public_private_api_partition_sites_total =
+      result.parity_surface.public_private_api_partition_summary
+          .public_private_api_partition_sites;
+  result.parity_surface.public_private_api_partition_namespace_segment_sites_total =
+      result.parity_surface.public_private_api_partition_summary
+          .namespace_segment_sites;
+  result.parity_surface
+      .public_private_api_partition_import_edge_candidate_sites_total =
+      result.parity_surface.public_private_api_partition_summary
+          .import_edge_candidate_sites;
+  result.parity_surface.public_private_api_partition_object_pointer_type_sites_total =
+      result.parity_surface.public_private_api_partition_summary
+          .object_pointer_type_sites;
+  result.parity_surface.public_private_api_partition_pointer_declarator_sites_total =
+      result.parity_surface.public_private_api_partition_summary
+          .pointer_declarator_sites;
+  result.parity_surface.public_private_api_partition_normalized_sites_total =
+      result.parity_surface.public_private_api_partition_summary.normalized_sites;
+  result.parity_surface.public_private_api_partition_contract_violation_sites_total =
+      result.parity_surface.public_private_api_partition_summary
           .contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
@@ -2042,6 +2104,49 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.namespace_collision_shadowing_summary
               .namespace_collision_shadowing_sites &&
       result.parity_surface.namespace_collision_shadowing_summary.deterministic;
+  result.parity_surface.deterministic_public_private_api_partition_handoff =
+      result.deterministic_public_private_api_partition_handoff &&
+      result.parity_surface.public_private_api_partition_summary
+              .public_private_api_partition_sites ==
+          result.parity_surface.public_private_api_partition_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .namespace_segment_sites ==
+          result.parity_surface
+              .public_private_api_partition_namespace_segment_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .import_edge_candidate_sites ==
+          result.parity_surface
+              .public_private_api_partition_import_edge_candidate_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .object_pointer_type_sites ==
+          result.parity_surface
+              .public_private_api_partition_object_pointer_type_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .pointer_declarator_sites ==
+          result.parity_surface
+              .public_private_api_partition_pointer_declarator_sites_total &&
+      result.parity_surface.public_private_api_partition_summary.normalized_sites ==
+          result.parity_surface.public_private_api_partition_normalized_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .public_private_api_partition_contract_violation_sites_total &&
+      result.parity_surface.public_private_api_partition_summary
+              .namespace_segment_sites <=
+          result.parity_surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.parity_surface.public_private_api_partition_summary
+              .import_edge_candidate_sites <=
+          result.parity_surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.parity_surface.public_private_api_partition_summary.normalized_sites <=
+          result.parity_surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.parity_surface.public_private_api_partition_summary
+              .contract_violation_sites <=
+          result.parity_surface.public_private_api_partition_summary
+              .public_private_api_partition_sites &&
+      result.parity_surface.public_private_api_partition_summary.deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -2731,6 +2836,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_module_import_graph_handoff &&
       result.parity_surface.namespace_collision_shadowing_summary.deterministic &&
       result.parity_surface.deterministic_namespace_collision_shadowing_handoff &&
+      result.parity_surface.public_private_api_partition_summary.deterministic &&
+      result.parity_surface.deterministic_public_private_api_partition_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&

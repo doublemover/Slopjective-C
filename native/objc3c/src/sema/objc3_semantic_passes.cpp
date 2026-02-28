@@ -3247,6 +3247,34 @@ BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
   return summary;
 }
 
+static Objc3PublicPrivateApiPartitionSummary
+BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
+    const Objc3NamespaceCollisionShadowingSummary
+        &namespace_collision_shadowing_summary) {
+  Objc3PublicPrivateApiPartitionSummary summary;
+  summary.public_private_api_partition_sites =
+      namespace_collision_shadowing_summary
+          .namespace_collision_shadowing_sites;
+  summary.namespace_segment_sites =
+      namespace_collision_shadowing_summary.namespace_segment_sites;
+  summary.import_edge_candidate_sites =
+      namespace_collision_shadowing_summary.import_edge_candidate_sites;
+  summary.object_pointer_type_sites =
+      namespace_collision_shadowing_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      namespace_collision_shadowing_summary.pointer_declarator_sites;
+  summary.normalized_sites = namespace_collision_shadowing_summary.normalized_sites;
+  summary.contract_violation_sites =
+      namespace_collision_shadowing_summary.contract_violation_sites;
+  summary.deterministic =
+      namespace_collision_shadowing_summary.deterministic &&
+      summary.namespace_segment_sites <= summary.public_private_api_partition_sites &&
+      summary.import_edge_candidate_sites <= summary.public_private_api_partition_sites &&
+      summary.normalized_sites <= summary.public_private_api_partition_sites &&
+      summary.contract_violation_sites <= summary.public_private_api_partition_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7382,6 +7410,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.namespace_collision_shadowing_summary =
       BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
           surface.module_import_graph_summary);
+  surface.public_private_api_partition_summary =
+      BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
+          surface.namespace_collision_shadowing_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8391,6 +8422,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.namespace_collision_shadowing_summary =
       BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
           handoff.module_import_graph_summary);
+  handoff.public_private_api_partition_summary =
+      BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
+          handoff.namespace_collision_shadowing_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9141,6 +9175,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       namespace_collision_shadowing_summary =
           BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
               handoff.module_import_graph_summary);
+  const Objc3PublicPrivateApiPartitionSummary public_private_api_partition_summary =
+      BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary(
+          handoff.namespace_collision_shadowing_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9418,6 +9455,29 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.namespace_collision_shadowing_summary.contract_violation_sites <=
              handoff.namespace_collision_shadowing_summary
                  .namespace_collision_shadowing_sites &&
+         handoff.public_private_api_partition_summary.deterministic &&
+         handoff.public_private_api_partition_summary.public_private_api_partition_sites ==
+             public_private_api_partition_summary.public_private_api_partition_sites &&
+         handoff.public_private_api_partition_summary.namespace_segment_sites ==
+             public_private_api_partition_summary.namespace_segment_sites &&
+         handoff.public_private_api_partition_summary.import_edge_candidate_sites ==
+             public_private_api_partition_summary.import_edge_candidate_sites &&
+         handoff.public_private_api_partition_summary.object_pointer_type_sites ==
+             public_private_api_partition_summary.object_pointer_type_sites &&
+         handoff.public_private_api_partition_summary.pointer_declarator_sites ==
+             public_private_api_partition_summary.pointer_declarator_sites &&
+         handoff.public_private_api_partition_summary.normalized_sites ==
+             public_private_api_partition_summary.normalized_sites &&
+         handoff.public_private_api_partition_summary.contract_violation_sites ==
+             public_private_api_partition_summary.contract_violation_sites &&
+         handoff.public_private_api_partition_summary.namespace_segment_sites <=
+             handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
+         handoff.public_private_api_partition_summary.import_edge_candidate_sites <=
+             handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
+         handoff.public_private_api_partition_summary.normalized_sites <=
+             handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
+         handoff.public_private_api_partition_summary.contract_violation_sites <=
+             handoff.public_private_api_partition_summary.public_private_api_partition_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

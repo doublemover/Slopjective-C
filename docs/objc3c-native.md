@@ -5300,6 +5300,36 @@ Deterministic sema intent:
 Recommended M177 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m177_sema_namespace_collision_shadowing_contract.py -q`
+
+## M178 sema/type public-private API partition contract (M178-B001)
+
+M178-B defines deterministic sema summaries for public/private API partition
+handoff safety over namespace-collision/shadowing packets.
+
+M178 sema/type surface details:
+
+- `Objc3PublicPrivateApiPartitionSummary`
+- `BuildPublicPrivateApiPartitionSummaryFromNamespaceCollisionShadowingSummary`
+- parity counters:
+  - `public_private_api_partition_sites_total`
+  - `public_private_api_partition_namespace_segment_sites_total`
+  - `public_private_api_partition_import_edge_candidate_sites_total`
+  - `public_private_api_partition_object_pointer_type_sites_total`
+  - `public_private_api_partition_pointer_declarator_sites_total`
+  - `public_private_api_partition_normalized_sites_total`
+  - `public_private_api_partition_contract_violation_sites_total`
+  - `deterministic_public_private_api_partition_handoff`
+
+Deterministic sema intent:
+
+- public/private API partition summaries are derived from deterministic
+  namespace-collision/shadowing packets and preserve handoff parity constraints.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M178 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
