@@ -584,6 +584,62 @@ static bool IsGenericMetadataAbiProfileNormalized(
   return true;
 }
 
+static std::size_t CountNamespaceSegments(const std::string &name) {
+  if (name.empty()) {
+    return 0;
+  }
+  std::size_t segments = 1;
+  for (char c : name) {
+    if (c == '.') {
+      ++segments;
+    }
+  }
+  return segments;
+}
+
+static std::string BuildModuleImportGraphProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text) : 0;
+  const std::size_t module_segments = CountNamespaceSegments(object_pointer_type_name);
+  const bool graph_well_formed =
+      !has_generic_suffix ||
+      (generic_suffix_terminated && object_pointer_type_spelling && import_edge_candidates > 0);
+  const bool namespace_stable = module_segments <= 1 || object_pointer_type_spelling;
+
+  std::ostringstream out;
+  out << "module-import-graph:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";module-segments=" << module_segments
+      << ";import-edge-candidates=" << import_edge_candidates
+      << ";graph-well-formed=" << (graph_well_formed ? "true" : "false")
+      << ";namespace-stable=" << (namespace_stable ? "true" : "false");
+  return out.str();
+}
+
+static bool IsModuleImportGraphProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    const std::string &generic_suffix_text) {
+  if (!has_generic_suffix) {
+    return true;
+  }
+  const std::size_t import_edge_candidates =
+      CountTopLevelGenericArgumentSlots(generic_suffix_text);
+  return generic_suffix_terminated &&
+         object_pointer_type_spelling &&
+         import_edge_candidates > 0;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1387,6 +1443,10 @@ class Objc3Parser {
         source.return_generic_metadata_abi_profile_is_normalized;
     target.return_generic_metadata_abi_profile =
         source.return_generic_metadata_abi_profile;
+    target.return_module_import_graph_profile_is_normalized =
+        source.return_module_import_graph_profile_is_normalized;
+    target.return_module_import_graph_profile =
+        source.return_module_import_graph_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1447,6 +1507,10 @@ class Objc3Parser {
         source.generic_metadata_abi_profile_is_normalized;
     target.generic_metadata_abi_profile =
         source.generic_metadata_abi_profile;
+    target.module_import_graph_profile_is_normalized =
+        source.module_import_graph_profile_is_normalized;
+    target.module_import_graph_profile =
+        source.module_import_graph_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2306,6 +2370,8 @@ class Objc3Parser {
     fn.return_variance_bridge_cast_profile.clear();
     fn.return_generic_metadata_abi_profile_is_normalized = false;
     fn.return_generic_metadata_abi_profile.clear();
+    fn.return_module_import_graph_profile_is_normalized = false;
+    fn.return_module_import_graph_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2548,6 +2614,20 @@ class Objc3Parser {
             fn.return_generic_suffix_terminated,
             fn.has_return_pointer_declarator,
             fn.return_generic_suffix_text);
+    fn.return_module_import_graph_profile =
+        BuildModuleImportGraphProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
+    fn.return_module_import_graph_profile_is_normalized =
+        IsModuleImportGraphProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.return_generic_suffix_text);
 
     return true;
   }
@@ -2578,6 +2658,8 @@ class Objc3Parser {
     param.variance_bridge_cast_profile.clear();
     param.generic_metadata_abi_profile_is_normalized = false;
     param.generic_metadata_abi_profile.clear();
+    param.module_import_graph_profile_is_normalized = false;
+    param.module_import_graph_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2759,6 +2841,20 @@ class Objc3Parser {
             param.has_generic_suffix,
             param.generic_suffix_terminated,
             param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.module_import_graph_profile =
+        BuildModuleImportGraphProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.module_import_graph_profile_is_normalized =
+        IsModuleImportGraphProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
             param.generic_suffix_text);
 
     return true;

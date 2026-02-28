@@ -1027,6 +1027,33 @@ Recommended M175 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m175_frontend_generic_metadata_abi_parser_contract.py -q`
 
+## M176 frontend module map ingestion and import graph parser/AST surface (M176-A001)
+
+Frontend parser/AST now emits deterministic module-import-graph profiles for
+parameter/property/return type annotations.
+
+M176 parser/AST surface details:
+
+- module import-graph anchors:
+  - `BuildModuleImportGraphProfile(...)`
+  - `IsModuleImportGraphProfileNormalized(...)`
+- parser assignment anchors:
+  - `module_import_graph_profile`
+  - `module_import_graph_profile_is_normalized`
+  - `return_module_import_graph_profile`
+  - `return_module_import_graph_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives import-edge candidates from generic suffix packets and module
+  namespace segments from object-pointer spellings.
+- profile normalization is fail-closed for malformed generic packets that would
+  destabilize deterministic import-graph handoff.
+
+Recommended M176 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m176_frontend_module_import_graph_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
