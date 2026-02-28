@@ -629,6 +629,28 @@ Frontend system-extension conformance/policy contract relies on deterministic co
   3. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
 
+## M194 frontend atomics and memory-order mapping
+
+Frontend atomics and memory-order mapping contract relies on deterministic compound-assignment token capture, replay-stable opcode lowering mapping, and fail-closed pipeline behavior.
+
+- Required frontend atomics/memory-order signals:
+  - assignment-token classification remains `IsAssignmentOperatorToken(TokenKind kind)`.
+  - assignment-token decode remains `MatchAssignmentOperator(std::string &op)`.
+  - bitwise/shift assignment forms remain explicit parser anchors:
+    `if (Match(TokenKind::AmpersandEqual)) {`,
+    `if (Match(TokenKind::PipeEqual)) {`,
+    `if (Match(TokenKind::CaretEqual)) {`,
+    `if (Match(TokenKind::LessLessEqual)) {`,
+    and `if (Match(TokenKind::GreaterGreaterEqual)) {`.
+  - compound assignment lowering mapping remains `TryGetCompoundAssignmentBinaryOpcode(...)` for `and`/`or`/`xor`/`shl`/`ashr`.
+  - fail-closed pipeline posture remains `NoThrowFailClosed`.
+  - lowering defaults remain `kRuntimeDispatchDefaultArgs = 4` and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+- Required frontend atomics/memory-order commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2822,6 +2844,33 @@ System-extension conformance + policy packet map:
 Recommended M195 sema/type system-extension conformance and policy validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q`
+
+## M194 sema/type atomics and memory-order mapping
+
+For deterministic sema/type atomics and memory-order mapping behavior, capture replay-stable packet evidence from assignment-operator memory-order classification, sema pass-manager parity transport, and manifest isolation surfaces.
+
+Atomics memory-order packet map:
+
+- `atomics packet 1.1 deterministic sema/type memory-order architecture anchors` -> `m194_sema_type_atomic_memory_order_architecture_packet`
+- `atomics packet 1.2 deterministic sema/type memory-order isolation anchors` -> `m194_sema_type_atomic_memory_order_isolation_packet`
+
+### 1.1 Deterministic sema/type memory-order architecture packet
+
+- Source sema contract anchors: `enum class Objc3SemaAtomicMemoryOrder : std::uint8_t {` and `struct Objc3AtomicMemoryOrderMappingSummary {`.
+- Source sema mapping anchors: `MapAssignmentOperatorToAtomicMemoryOrder(...)`, `FormatAtomicMemoryOrderMappingHint(...)`, and `BuildAtomicMemoryOrderMappingSummary(...)`.
+- Source sema pass-manager architecture anchors: `result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);` and `result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;`.
+- Deterministic sema/type atomics architecture packet key: `m194_sema_type_atomic_memory_order_architecture_packet`.
+
+### 1.2 Deterministic sema/type memory-order isolation packet
+
+- Source sema pass-manager isolation anchors: `result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;`, `result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;`, and `result.parity_surface.ready =`.
+- Source sema parity contract anchors: `Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;` and `bool deterministic_atomic_memory_order_mapping = false;`.
+- Manifest isolation anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_atomic_memory_order_mapping`, `atomic_memory_order_mapping_total`, `atomic_relaxed_ops`, `atomic_acquire_ops`, `atomic_release_ops`, `atomic_acq_rel_ops`, `atomic_seq_cst_ops`, and `atomic_unmapped_ops`.
+- Deterministic sema/type atomics isolation packet key: `m194_sema_type_atomic_memory_order_isolation_packet`.
+
+Recommended M194 sema/type atomics and memory-order mapping validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3455,6 +3504,76 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M194 lowering/runtime atomics and memory-order mapping
+
+Lowering/runtime atomics memory-order mapping evidence is captured as deterministic packet artifacts rooted under `tmp/` so language atomic-order normalization and LLVM memory-order lowering mappings remain replay-stable and auditable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/atomic-memory-order-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `atomic memory-order architecture/isolation anchors` (required in source-anchor extracts):
+  - `kObjc3AtomicMemoryOrderRelaxed = "relaxed"`
+  - `kObjc3AtomicMemoryOrderAcquire = "acquire"`
+  - `kObjc3AtomicMemoryOrderRelease = "release"`
+  - `kObjc3AtomicMemoryOrderAcqRel = "acq_rel"`
+  - `kObjc3AtomicMemoryOrderSeqCst = "seq_cst"`
+  - `enum class Objc3AtomicMemoryOrder`
+  - `TryParseObjc3AtomicMemoryOrder(...)`
+  - `Objc3AtomicMemoryOrderToLLVMOrdering(...)`
+  - `Objc3AtomicMemoryOrderMappingReplayKey()`
+  - `acquire_release`
+  - `monotonic`
+  - `acquire`
+  - `release`
+  - `acq_rel`
+  - `seq_cst`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `source anchors`:
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderAcqRel = "acq_rel";`
+  - `inline constexpr const char *kObjc3AtomicMemoryOrderSeqCst = "seq_cst";`
+  - `enum class Objc3AtomicMemoryOrder : std::uint8_t {`
+  - `bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order) {`
+  - `if (token == kObjc3AtomicMemoryOrderAcqRel || token == "acquire_release") {`
+  - `const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order) {`
+  - `return "monotonic";`
+  - `return "acquire";`
+  - `return "release";`
+  - `return "acq_rel";`
+  - `return "seq_cst";`
+  - `std::string Objc3AtomicMemoryOrderMappingReplayKey() {`
+  - `std::string(AtomicMemoryOrderToken(Objc3AtomicMemoryOrder::Relaxed)) + "=" +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and atomic memory-order source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, atomic memory-order marker, or source anchor is missing.
+
+Atomics memory-order capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.ll tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.manifest.json > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/abi-ir-anchors.txt`
+3. `rg -n "kObjc3AtomicMemoryOrderRelaxed|kObjc3AtomicMemoryOrderAcquire|kObjc3AtomicMemoryOrderRelease|kObjc3AtomicMemoryOrderAcqRel|kObjc3AtomicMemoryOrderSeqCst|enum class Objc3AtomicMemoryOrder|TryParseObjc3AtomicMemoryOrder|Objc3AtomicMemoryOrderToLLVMOrdering|Objc3AtomicMemoryOrderMappingReplayKey|acquire_release|monotonic|acq_rel|seq_cst|Objc3LoweringIRBoundaryReplayKey\\(|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/atomic-memory-order-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m194_lowering_atomics_memory_order_contract.py -q`
 
 ## M195 lowering/runtime system-extension conformance and policy
 
@@ -6589,6 +6708,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py -q
 ```
 
+## M194 validation/perf atomics and memory-order mapping runbook
+
+Atomics and memory-order mapping validation runbook verifies deterministic bitwise/shift assignment mapping evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Atomics and memory-order mapping evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m194_validation_atomics_memory_order_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -7226,6 +7390,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain system-extension conformance/policy anchors.
+
+## M194 integration atomics and memory-order mapping
+
+- Gate intent: enforce deterministic atomics/memory-order mapping evidence across all lanes.
+### 1.1 Atomics/memory-order integration chain
+- Deterministic atomics/memory-order gate:
+  - `npm run check:objc3c:m194-atomics-memory-order`
+- Chain order:
+  - replays `check:objc3c:m195-system-extension-policy`.
+  - enforces all M194 lane contracts:
+    `tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_lowering_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_validation_atomics_memory_order_contract.py`,
+    `tests/tooling/test_objc3c_m194_integration_atomics_memory_order_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through atomics/memory-order validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain atomics/memory-order mapping anchors.
 
 ## Current call contract
 
