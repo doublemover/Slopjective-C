@@ -253,7 +253,26 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   1. `npm run test:objc3c:parser-ast-extraction`
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
-  4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+
+## M142 frontend CLI and C API parity harness
+
+For deterministic frontend parity between CLI and the embeddable C API surface, the frontend compile anchor must validate language/compatibility and normalize lowering contract inputs before pipeline execution.
+
+Frontend packet map:
+
+- `frontend parity packet 1.1 deterministic compile option prevalidation` -> `m142_frontend_cli_c_api_prevalidation_packet`
+
+### 1.1 Deterministic compile option prevalidation packet
+
+- Source frontend anchor markers: `ValidateSupportedLanguageVersion(options->language_version, language_version_error)`, `ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)`, and `SetUsageError(context, result, ...)`.
+- Source lowering normalization markers: `Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);`, `TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)`, `frontend_options.lowering = normalized_lowering;`, and `CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options)`.
+- Usage-error/fail-closed markers: `result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;`, `result->process_exit_code = 2;`, and `objc3c_frontend_set_error(context, lowering_error.c_str());`.
+- Deterministic packet key: `m142_frontend_cli_c_api_prevalidation_packet`.
+
+Recommended M142 frontend parity validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_frontend_cli_c_api_parity_contract.py -q`
 
 ## M214 frontend daemonized compiler packet
 
