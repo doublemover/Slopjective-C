@@ -359,6 +359,30 @@ struct Objc3ArcDiagnosticsFixitSummary {
   bool deterministic = true;
 };
 
+struct Objc3BlockLiteralCaptureSiteMetadata {
+  std::size_t parameter_count = 0;
+  std::size_t capture_count = 0;
+  std::size_t body_statement_count = 0;
+  bool capture_set_deterministic = false;
+  bool literal_is_normalized = false;
+  bool has_count_mismatch = false;
+  std::string capture_profile;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3BlockLiteralCaptureSemanticsSummary {
+  std::size_t block_literal_sites = 0;
+  std::size_t block_parameter_entries = 0;
+  std::size_t block_capture_entries = 0;
+  std::size_t block_body_statement_entries = 0;
+  std::size_t block_empty_capture_sites = 0;
+  std::size_t block_nondeterministic_capture_sites = 0;
+  std::size_t block_non_normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AutoreleasePoolScopeSiteMetadata {
   std::string scope_symbol;
   unsigned scope_depth = 0;
@@ -591,6 +615,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  std::vector<Objc3BlockLiteralCaptureSiteMetadata> block_literal_capture_sites_lexicographic;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
@@ -822,6 +848,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  std::vector<Objc3BlockLiteralCaptureSiteMetadata> block_literal_capture_sites_lexicographic;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> message_send_selector_lowering_sites_lexicographic;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;

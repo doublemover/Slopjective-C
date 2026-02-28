@@ -183,6 +183,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t id_class_sel_object_pointer_property_sel_spelling_sites_total = 0;
   std::size_t id_class_sel_object_pointer_property_instancetype_spelling_sites_total = 0;
   std::size_t id_class_sel_object_pointer_property_object_pointer_type_sites_total = 0;
+  std::size_t block_literal_capture_semantics_sites_total = 0;
+  std::size_t block_literal_capture_semantics_parameter_entries_total = 0;
+  std::size_t block_literal_capture_semantics_capture_entries_total = 0;
+  std::size_t block_literal_capture_semantics_body_statement_entries_total = 0;
+  std::size_t block_literal_capture_semantics_empty_capture_sites_total = 0;
+  std::size_t block_literal_capture_semantics_nondeterministic_capture_sites_total = 0;
+  std::size_t block_literal_capture_semantics_non_normalized_sites_total = 0;
+  std::size_t block_literal_capture_semantics_contract_violation_sites_total = 0;
   std::size_t message_send_selector_lowering_sites_total = 0;
   std::size_t message_send_selector_lowering_unary_form_sites_total = 0;
   std::size_t message_send_selector_lowering_keyword_form_sites_total = 0;
@@ -265,6 +273,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
+  bool deterministic_block_literal_capture_semantics_handoff = false;
   bool deterministic_message_send_selector_lowering_handoff = false;
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
@@ -284,6 +293,7 @@ struct Objc3SemaParityContractSurface {
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
@@ -598,6 +608,32 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
          surface.id_class_sel_object_pointer_type_checking_summary.deterministic &&
          surface.deterministic_id_class_sel_object_pointer_type_checking_handoff &&
+         surface.block_literal_capture_semantics_summary.block_literal_sites ==
+             surface.block_literal_capture_semantics_sites_total &&
+         surface.block_literal_capture_semantics_summary.block_parameter_entries ==
+             surface.block_literal_capture_semantics_parameter_entries_total &&
+         surface.block_literal_capture_semantics_summary.block_capture_entries ==
+             surface.block_literal_capture_semantics_capture_entries_total &&
+         surface.block_literal_capture_semantics_summary.block_body_statement_entries ==
+             surface.block_literal_capture_semantics_body_statement_entries_total &&
+         surface.block_literal_capture_semantics_summary.block_empty_capture_sites ==
+             surface.block_literal_capture_semantics_empty_capture_sites_total &&
+         surface.block_literal_capture_semantics_summary.block_nondeterministic_capture_sites ==
+             surface.block_literal_capture_semantics_nondeterministic_capture_sites_total &&
+         surface.block_literal_capture_semantics_summary.block_non_normalized_sites ==
+             surface.block_literal_capture_semantics_non_normalized_sites_total &&
+         surface.block_literal_capture_semantics_summary.contract_violation_sites ==
+             surface.block_literal_capture_semantics_contract_violation_sites_total &&
+         surface.block_literal_capture_semantics_summary.block_empty_capture_sites <=
+             surface.block_literal_capture_semantics_summary.block_literal_sites &&
+         surface.block_literal_capture_semantics_summary.block_nondeterministic_capture_sites <=
+             surface.block_literal_capture_semantics_summary.block_literal_sites &&
+         surface.block_literal_capture_semantics_summary.block_non_normalized_sites <=
+             surface.block_literal_capture_semantics_summary.block_literal_sites &&
+         surface.block_literal_capture_semantics_summary.contract_violation_sites <=
+             surface.block_literal_capture_semantics_summary.block_literal_sites &&
+         surface.block_literal_capture_semantics_summary.deterministic &&
+         surface.deterministic_block_literal_capture_semantics_handoff &&
          surface.message_send_selector_lowering_summary.message_send_sites ==
              surface.message_send_selector_lowering_sites_total &&
          surface.message_send_selector_lowering_summary.unary_form_sites ==
@@ -894,6 +930,8 @@ struct Objc3SemaPassManagerResult {
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
   bool deterministic_id_class_sel_object_pointer_type_checking_handoff = false;
   Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary;
+  bool deterministic_block_literal_capture_semantics_handoff = false;
+  Objc3BlockLiteralCaptureSemanticsSummary block_literal_capture_semantics_summary;
   bool deterministic_message_send_selector_lowering_handoff = false;
   Objc3MessageSendSelectorLoweringSummary message_send_selector_lowering_summary;
   bool deterministic_dispatch_abi_marshalling_handoff = false;

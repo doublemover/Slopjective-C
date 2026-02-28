@@ -3094,3 +3094,55 @@ Sema/type metadata handoff contract:
 Recommended M165 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m165_sema_arc_diagnostics_fixit_contract.py -q`
+
+## M166 sema/type block literal capture semantics contract (M166-B001)
+
+M166-B lifts parser-authored block literal capture metadata into sema integration,
+type-metadata handoff, and pass-manager parity packets so downstream lowering lanes can
+consume deterministic capture/closure contracts without reparsing block bodies.
+
+Sema/type block-literal capture contract markers:
+
+- `Objc3BlockLiteralCaptureSiteMetadata`
+- `Objc3BlockLiteralCaptureSemanticsSummary`
+- `BuildBlockLiteralCaptureSiteMetadataLexicographic`
+- `BuildBlockLiteralCaptureSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockLiteralCaptureSemanticsSummaryFromTypeMetadataHandoff`
+- `block_literal_capture_semantics_sites_total`
+- `block_literal_capture_semantics_capture_entries_total`
+- `block_literal_capture_semantics_contract_violation_sites_total`
+- `deterministic_block_literal_capture_semantics_handoff`
+
+Deterministic block-literal capture invariants (fail-closed):
+
+- block literal capture site metadata must remain lexicographically sorted.
+- parser-provided parameter/capture count metadata must match normalized vector cardinality.
+- nondeterministic capture-set and non-normalized literal counters must remain bounded by
+  `block_literal_sites`.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_literal_capture_sites_lexicographic = BuildBlockLiteralCaptureSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_literal_capture_semantics_summary = BuildBlockLiteralCaptureSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_literal_capture_sites_lexicographic = surface.block_literal_capture_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_literal_capture_semantics_summary = BuildBlockLiteralCaptureSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_literal_capture_semantics_sites_total`
+  - `block_literal_capture_semantics_parameter_entries_total`
+  - `block_literal_capture_semantics_capture_entries_total`
+  - `block_literal_capture_semantics_body_statement_entries_total`
+  - `block_literal_capture_semantics_empty_capture_sites_total`
+  - `block_literal_capture_semantics_nondeterministic_capture_sites_total`
+  - `block_literal_capture_semantics_non_normalized_sites_total`
+  - `block_literal_capture_semantics_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_literal_capture_semantics_handoff`
+
+Recommended M166 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m166_sema_block_literal_capture_contract.py -q`
