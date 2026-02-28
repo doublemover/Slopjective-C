@@ -10,6 +10,8 @@ npm run test:objc3c:matrix
 npm run test:objc3c:perf-budget
 npm run test:objc3c:diagnostics-replay-proof
 npm run test:objc3c:parser-replay-proof
+npm run test:objc3c:parser-extraction-ast-builder-contract
+npm run test:objc3c:parser-ast-extraction
 npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
@@ -19,6 +21,7 @@ npm run test:objc3c:lexer-parity
 npm run proof:objc3c
 npm run test:objc3c:lane-e
 npm run check:compiler-closeout:m137
+npm run check:compiler-closeout:m138
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -69,6 +72,10 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m137_lexer_contract.py`.
   - Runs `npm run test:objc3c:lexer-extraction-token-contract` and `npm run test:objc3c:lexer-parity`.
   - Enforces fail-closed M137 lexer/token contract wiring across build/docs/CI/release surfaces.
+- `npm run check:compiler-closeout:m138`
+  - Runs `python scripts/check_m138_parser_ast_contract.py`.
+  - Runs `npm run test:objc3c:parser-extraction-ast-builder-contract` and `npm run test:objc3c:parser-ast-extraction`.
+  - Enforces fail-closed M138 parser extraction + AST builder contract wiring across build/docs/CI/release surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -99,6 +106,11 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Enforces deterministic non-zero exit codes and deterministic `module.diagnostics.txt` / `module.diagnostics.json` hashes and code sets across replay.
   - Enforces expected fixture diagnostic headers and parser-only expected codes (`O3P*`).
   - Writes proof summary under `tmp/artifacts/objc3c-native/parser-replay-proof/<proof_run_id>/summary.json`.
+- `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  - Runs `scripts/check_objc3c_parser_extraction_ast_builder_contract.ps1`.
+  - Verifies parser extraction boundaries and AST builder scaffold markers in `parse/*`, `ast/*`, pipeline wiring, and CMake parser target registration.
+  - Replays one positive parser scaffold fixture and selected negative parser fixtures with deterministic diagnostics/artifact assertions.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/parser-extraction-ast-builder-contract/<run_id>/summary.json`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
   - Replays all recovery fixtures (positive and negative) twice per fixture.
   - Includes optional Objective-C dispatch fixture roots when present (`recovery/positive/lowering_dispatch`, then `dispatch/positive`).
@@ -127,6 +139,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_native_fi
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_perf_budget.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_native_compile_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_parser_replay_proof.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_parser_extraction_ast_builder_contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1

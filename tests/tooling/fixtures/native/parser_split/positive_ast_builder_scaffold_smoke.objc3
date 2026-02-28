@@ -1,0 +1,22 @@
+module ParserAstBuilderSmoke;
+
+let seed = 3;
+
+fn choose(flag: bool, lhs: i32, rhs: i32) -> i32 {
+  if (flag) {
+    return lhs;
+  } else {
+    return rhs;
+  }
+}
+
+fn main() -> i32 {
+  let left = seed + 1;
+  let right = seed + 2;
+  let picked = choose(true, left, right);
+  if (picked > 0) {
+    return picked;
+  } else {
+    return 0;
+  }
+}
