@@ -99,6 +99,57 @@ Debug-info fidelity capture commands (lowering/runtime lane):
 3. `rg -n "source_filename =|\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.diagnostics.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/debug-metadata-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py -q`
 
+## M212 lowering/runtime code-action profile
+
+Lowering/runtime evidence for the refactor/code-action engine is captured as a deterministic packet rooted under `tmp/` so rewrite application is replay-stable and auditable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `rewrite markers` (required in rewrite marker extracts):
+  - `@@ rewrite_scope:module`
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `"source":`
+  - `"line":`
+  - `"column":`
+  - `"code":`
+  - `"message":`
+  - `"raw":`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"source\": \"" << input_path.generic_string() << "\",\n";`
+  - `manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]`
+  - `<< ",\"line\":" << program.globals[i].line << ",\"column\":" << program.globals[i].column << "}";`
+  - `<< ",\"line\":" << fn.line << ",\"column\":" << fn.column << "}";`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and rewrite marker extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, rewrite marker, or source anchor is missing.
+
+Code-action capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json > tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
+3. `@("@@ rewrite_scope:module") | Set-Content tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m212_lowering_code_action_contract.py -q`
+
 ## M214 lowering/runtime daemonized compiler profile
 
 Lowering/runtime daemon/watch mode evidence is captured as deterministic packet artifacts under `tmp/` for incremental replay validation.
