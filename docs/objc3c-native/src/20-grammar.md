@@ -255,3 +255,18 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
 
+## M214 frontend daemonized compiler packet
+
+Frontend daemon/watch mode requires deterministic parser/AST boundary evidence across incremental runs.
+
+- Required daemonized signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required daemonized commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m214_frontend_daemonized_contract.py -q`
+
