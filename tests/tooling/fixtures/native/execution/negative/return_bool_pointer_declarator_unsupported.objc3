@@ -1,0 +1,12 @@
+module ReturnBoolPointerDeclaratorUnsupported;
+
+fn pick(flag: bool) -> bool* {
+  return flag;
+}
+
+fn main() -> i32 {
+  if (pick(true)) {
+    return 1;
+  }
+  return 0;
+}

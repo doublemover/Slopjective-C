@@ -82,6 +82,7 @@ Field notes:
 
 - `parameter_bool_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic parameter-suffix diagnostics (`O3S206`).
 - `parameter_bool_generic_suffix_unsupported.objc3` is a compile-stage negative expecting semantic parameter generic-suffix diagnostics (`O3S206`).
+- `parameter_bool_pointer_declarator_unsupported.objc3` is a compile-stage negative expecting semantic parameter pointer-declarator diagnostics (`O3S206`).
 
 ## Return fixture notes
 
@@ -89,6 +90,7 @@ Field notes:
 - `return_nonvoid_missing_value.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S211`).
 - `return_bool_generic_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `return_bool_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
+- `return_bool_pointer_declarator_unsupported.objc3` is a compile-stage negative expecting semantic return pointer-declarator diagnostics (`O3S206`).
 - `sel_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `instancetype_return_nullability_suffix_unsupported.objc3` is a legacy-name compile-stage negative that still asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes.

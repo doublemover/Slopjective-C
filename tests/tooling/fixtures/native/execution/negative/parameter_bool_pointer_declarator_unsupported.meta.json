@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "fixture": "parameter_bool_pointer_declarator_unsupported.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "O3S206",
+      "pointer parameter type declarator '*' is unsupported for non-id/Class/instancetype parameter annotation 'flag'"
+    ]
+  },
+  "execution": {
+    "requires_runtime_shim": false
+  }
+}

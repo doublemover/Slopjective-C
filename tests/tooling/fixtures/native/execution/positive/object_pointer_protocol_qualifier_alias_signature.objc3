@@ -1,0 +1,29 @@
+module ObjectPointerProtocolQualifierAliasSignature;
+
+fn chooseId(flag: bool, when_true: id<NSObject>*?, when_false: id<NSObject>*!) -> id<NSObject>*? {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn chooseClass(flag: bool, when_true: Class<NSObject>*, when_false: Class<NSObject>*) -> Class<NSObject>* {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn chooseInstancetype(flag: bool, when_true: instancetype<NSObject>*, when_false: instancetype<NSObject>*) -> instancetype<NSObject>* {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main() -> i32 {
+  let id_value = chooseId(true, 40, 2);
+  let class_value = chooseClass(false, 100, 8);
+  let instance_value = chooseInstancetype(true, 3, 6);
+  return id_value + class_value + instance_value;
+}
