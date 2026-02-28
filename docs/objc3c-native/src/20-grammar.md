@@ -427,3 +427,19 @@ Frontend macro diagnostics/provenance requires deterministic directive source-lo
   3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
 
+## M203 frontend compile-time evaluation engine
+
+Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
+
+- Required frontend compile-time-eval signals:
+  - constant-expression evaluator entry remains `EvalConstExpr(...)`.
+  - global initializer folding surface remains `ResolveGlobalInitializerValues(...)`.
+  - non-constant global initializer diagnostics remain fail-closed as `O3S210`.
+  - artifact-level fail-closed lowering diagnostic remains `O3L300` for const-evaluation failure.
+  - manifest semantic surface remains deterministic for evaluated globals/functions packets.
+- Required frontend compile-time-eval commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
+
