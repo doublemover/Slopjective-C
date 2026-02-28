@@ -1112,6 +1112,14 @@
       "files": [
         "M181-D001.json"
       ]
+    },
+    {
+      "name": "m182_lane_d_issue_4502_result_like_lowering_replay_contract",
+      "feature": "M182 Lane D result-like lowering replay contract conformance fixture and deterministic validation coverage",
+      "issue": 4502,
+      "files": [
+        "M182-D001.json"
+      ]
     }
   ]
 }

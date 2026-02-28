@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_result_like_lowering_handoff": true,
+        "result_like_lowering_sites": 6,
+        "result_like_lowering_result_success_sites": 3,
+        "result_like_lowering_result_failure_sites": 1,
+        "result_like_lowering_result_branch_sites": 2,
+        "result_like_lowering_result_payload_sites": 4,
+        "result_like_lowering_normalized_sites": 5,
+        "result_like_lowering_branch_merge_sites": 1,
+        "result_like_lowering_contract_violation_sites": 0,
+        "lowering_result_like_replay_key": "result_like_sites=6;result_success_sites=3;result_failure_sites=1;result_branch_sites=2;result_payload_sites=4;normalized_sites=5;branch_merge_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m182-result-like-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_result_like_lowering_surface": {
+          "result_like_sites": 6,
+          "result_success_sites": 3,
+          "result_failure_sites": 1,
+          "result_branch_sites": 2,
+          "result_payload_sites": 4,
+          "normalized_sites": 5,
+          "branch_merge_sites": 1,
+          "contract_violation_sites": 0,
+          "replay_key": "result_like_sites=6;result_success_sites=3;result_failure_sites=1;result_branch_sites=2;result_payload_sites=4;normalized_sites=5;branch_merge_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m182-result-like-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_result_like": {
+    "replay_key": "result_like_sites=6;result_success_sites=3;result_failure_sites=1;result_branch_sites=2;result_payload_sites=4;normalized_sites=5;branch_merge_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m182-result-like-lowering-v1",
+    "lane_contract": "m182-result-like-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

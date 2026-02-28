@@ -1,0 +1,24 @@
+{
+  "id": "M182-D001",
+  "title": "Result-like lowering replay contract fixture (issue #4502 / task M182-D001)",
+  "feature": "m182 lane-d result-like lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M182",
+    "milestone_number": 267,
+    "lane": "D",
+    "issue": 4502,
+    "task": "M182-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native.md",
+    "tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: result_like_lowering\n// EXPECT: deterministic_result_like_lowering_handoff=true\n\nmodule m182_lane_d_result_like;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

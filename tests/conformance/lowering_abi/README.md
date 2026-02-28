@@ -54,6 +54,9 @@ Minimum scope:
 - `M181-D001.json`: M181 Lane D throws-propagation lowering replay fixture
   covering deterministic replay-key/profile/metadata parity anchors and
   integration coverage for issue `#4497`.
+- `M182-D001.json`: M182 Lane D result-like lowering replay fixture covering
+  deterministic replay-key/profile/metadata parity anchors and integration
+  coverage for issue `#4502`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.
