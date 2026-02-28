@@ -1429,3 +1429,26 @@ Recommended seeding commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
 
+## M221 sema/type GA blocker burn-down profile
+
+To burn down sema/type GA blockers with deterministic, replay-stable evidence, capture two explicit packets before closing blocker state.
+
+### 1.1 Deterministic semantic diagnostics blocker packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest blocker counters under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+
+### 1.2 Deterministic type-metadata parity blocker packet
+
+- Sema handoff/parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface blocker sizing anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+
+Recommended burn-down commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py -q`
+
