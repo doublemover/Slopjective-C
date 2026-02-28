@@ -2236,6 +2236,39 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
 
+## Protocol/category lowering artifact contract (M147-C001)
+
+M147-C extends lowering/runtime ABI artifact publication for `@protocol` + `@category` metadata envelopes while preserving deterministic lane-C replay behavior.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m147/lowering-protocol-category-contract/protocol-category-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_protocol_category_handoff`
+- `frontend.pipeline.sema_pass_manager.type_metadata_protocol_entries`
+- `frontend.pipeline.sema_pass_manager.type_metadata_category_entries`
+- `frontend.pipeline.semantic_surface.declared_protocols`
+- `frontend.pipeline.semantic_surface.declared_categories`
+- `frontend.pipeline.semantic_surface.resolved_protocol_symbols`
+- `frontend.pipeline.semantic_surface.resolved_category_symbols`
+- `frontend.pipeline.semantic_surface.objc_protocol_category_surface`
+- top-level `"protocols"` and `"categories"` arrays carried by the lowering envelope.
+
+IR publication markers:
+
+- `; frontend_objc_protocol_category_profile = declared_protocols=<N>, declared_categories=<N>, resolved_protocol_symbols=<N>, resolved_category_symbols=<N>, protocol_method_symbols=<N>, category_method_symbols=<N>, linked_category_symbols=<N>, deterministic_protocol_category_handoff=<bool>`
+- `!objc3.objc_protocol_category = !{!2}`
+- `!2 = !{i64 <declared_protocols>, i64 <declared_categories>, i64 <resolved_protocol_symbols>, i64 <resolved_category_symbols>, i64 <protocol_method_symbols>, i64 <category_method_symbols>, i64 <linked_category_symbols>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
