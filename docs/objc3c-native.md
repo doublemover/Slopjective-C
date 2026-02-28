@@ -284,6 +284,21 @@ Release-candidate automation for frontend/parser requires deterministic boundary
   3. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
 
+## M217 frontend differential parity packet
+
+Frontend differential testing against baseline toolchains requires deterministic parser/AST evidence and replay-stable diagnostics.
+
+- Required differential signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required differential commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1813,6 +1828,37 @@ Recommended RC provenance commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
 
+## M217 sema/type differential parity profile
+
+To validate sema/type differential parity against baseline toolchains, capture deterministic evidence packets in stable tuple order: `native`, `baseline-clang`, `baseline-llvm-direct`.
+
+### 1.1 Deterministic semantic diagnostics differential packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Differential packet keys (deterministic tuple order):
+  - `native_sema_diagnostics_packet`
+  - `baseline_clang_sema_diagnostics_packet`
+  - `baseline_llvm_direct_sema_diagnostics_packet`
+
+### 1.2 Deterministic type-metadata handoff differential packet
+
+- Sema handoff and parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface differential anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Differential packet keys (deterministic tuple order):
+  - `native_type_metadata_handoff_packet`
+  - `baseline_clang_type_metadata_handoff_packet`
+  - `baseline_llvm_direct_type_metadata_handoff_packet`
+
+Recommended differential parity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m217_sema_differential_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -1982,6 +2028,51 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M217 lowering/runtime differential parity profile
+
+Lowering/runtime differential parity is captured as a deterministic packet versus baseline toolchains under `tmp/`.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/`
+- `packet toolchain roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/`
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang/`
+  - `tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct/`
+- `packet artifacts` (required in each toolchain root):
+  - `module.ll`
+  - `module.manifest.json`
+- `diff marker reports`:
+  - `tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/ir-diff-markers.txt`
+  - `tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/manifest-diff-markers.txt`
+- `ABI/IR anchors` (persist verbatim in native and baseline packets):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `differential source markers` (source anchors to include in parity packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `diff markers` (required deterministic parity rows):
+  - `@@ anchor:lowering_ir_boundary`
+  - `@@ anchor:frontend_profile`
+  - `@@ anchor:objc3.frontend`
+  - `@@ anchor:runtime_dispatch_declare`
+  - `@@ anchor:manifest.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical packet artifacts inside each toolchain root.
+  - native and baseline toolchains may differ in non-anchor payloads, but ABI/IR anchors and diff marker rows must remain stable across reruns.
+  - closure remains open if any required toolchain packet artifact, ABI/IR anchor, differential source marker, or diff marker report is missing.
+
+Differential parity capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang --emit-prefix module --cli-ir-object-backend clang`
+3. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct --emit-prefix module --cli-ir-object-backend llvm-direct`
+4. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.ll > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/ir-diff-markers.txt`
+5. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.manifest.json > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/manifest-diff-markers.txt`
+6. `python -m pytest tests/tooling/test_objc3c_m217_lowering_differential_contract.py -q`
 
 ## M218 lowering/runtime RC provenance profile
 
@@ -3169,6 +3260,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m218_validation_rc_provenance_contract.py -q
 ```
 
+## M217 validation/perf differential runbook
+
+Differential testing runbook compares deterministic execution evidence against baseline toolchains.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Differential evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `baseline_delta_ms`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `baseline_diff_count`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `baseline_diff_count`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `baseline_diff_count`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m217_validation_differential_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3346,6 +3482,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain provenance anchors.
+
+## M217 integration differential testing matrix
+
+- Gate intent: enforce deterministic differential testing chain against baseline toolchains.
+### 1.1 Differential integration chain
+- Deterministic differential gate:
+  - `npm run check:objc3c:m217-differential-parity`
+- Chain order:
+  - replays `check:objc3c:m218-rc-provenance`.
+  - enforces all M217 lane contracts:
+    `tests/tooling/test_objc3c_m217_frontend_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_sema_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_lowering_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_validation_differential_contract.py`,
+    `tests/tooling/test_objc3c_m217_integration_differential_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through differential replay:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain differential anchors.
 
 ## Current call contract
 
