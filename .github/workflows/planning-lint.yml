@@ -26,5 +26,7 @@ jobs:
         run: python scripts/check_m137_lexer_contract.py
       - name: Enforce M138 parser and AST packet/docs contract
         run: python scripts/check_m138_parser_ast_contract.py
+      - name: Enforce M139 sema pass-manager and diagnostics bus packet/docs contract
+        run: python scripts/check_m139_sema_pass_manager_contract.py
       - name: Run planning-scope lint
         run: python scripts/planning_lint.py

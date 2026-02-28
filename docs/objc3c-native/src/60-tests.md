@@ -12,6 +12,7 @@ npm run test:objc3c:diagnostics-replay-proof
 npm run test:objc3c:parser-replay-proof
 npm run test:objc3c:parser-extraction-ast-builder-contract
 npm run test:objc3c:parser-ast-extraction
+npm run test:objc3c:sema-pass-manager-diagnostics-bus
 npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
@@ -22,6 +23,7 @@ npm run proof:objc3c
 npm run test:objc3c:lane-e
 npm run check:compiler-closeout:m137
 npm run check:compiler-closeout:m138
+npm run check:compiler-closeout:m139
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -76,6 +78,10 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m138_parser_ast_contract.py`.
   - Runs `npm run test:objc3c:parser-extraction-ast-builder-contract` and `npm run test:objc3c:parser-ast-extraction`.
   - Enforces fail-closed M138 parser extraction + AST builder contract wiring across build/docs/CI/release surfaces.
+- `npm run check:compiler-closeout:m139`
+  - Runs `python scripts/check_m139_sema_pass_manager_contract.py`.
+  - Runs `npm run test:objc3c:sema-pass-manager-diagnostics-bus`.
+  - Enforces fail-closed M139 sema pass-manager + diagnostics-bus contract wiring across build/docs/CI/release surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -84,6 +90,7 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
     - `npm run test:objc3c`
     - `npm run test:objc3c:diagnostics-replay-proof`
     - `npm run test:objc3c:parser-replay-proof`
+    - `npm run test:objc3c:sema-pass-manager-diagnostics-bus`
     - `npm run test:objc3c:driver-shell-split`
     - `npm run test:objc3c:lexer-extraction-token-contract`
     - `npm run test:objc3c:lexer-parity`
@@ -111,6 +118,12 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Verifies parser extraction boundaries and AST builder scaffold markers in `parse/*`, `ast/*`, pipeline wiring, and CMake parser target registration.
   - Replays one positive parser scaffold fixture and selected negative parser fixtures with deterministic diagnostics/artifact assertions.
   - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/parser-extraction-ast-builder-contract/<run_id>/summary.json`.
+- `npm run test:objc3c:sema-pass-manager-diagnostics-bus`
+  - Runs `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`.
+  - Runs `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`.
+  - Verifies sema module extraction boundaries, parser-contract integration, pure-contract extraction boundary, and pipeline diagnostics-bus type surfaces.
+  - Replays positive/negative sema fixtures and enforces deterministic diagnostics/artifact contracts for pass-manager + diagnostics-bus extraction.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
   - Replays all recovery fixtures (positive and negative) twice per fixture.
   - Includes optional Objective-C dispatch fixture roots when present (`recovery/positive/lowering_dispatch`, then `dispatch/positive`).
@@ -146,7 +159,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_driver_shell_split_contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1
 python scripts/check_m137_lexer_contract.py
+python scripts/check_m139_sema_pass_manager_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

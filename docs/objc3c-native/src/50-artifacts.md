@@ -283,6 +283,25 @@ npm run check:compiler-closeout:m138
 - `python scripts/check_m138_parser_ast_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py -q`
 
+## Sema pass-manager + diagnostics bus validation artifacts (M139-E001)
+
+Sema extraction and diagnostics-bus validation commands:
+
+```powershell
+npm run test:objc3c:sema-pass-manager-diagnostics-bus
+npm run check:compiler-closeout:m139
+```
+
+`npm run test:objc3c:sema-pass-manager-diagnostics-bus` writes deterministic pass-manager diagnostics-bus proof artifacts under:
+
+- `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+`npm run check:compiler-closeout:m139` fail-closes on sema pass-manager and diagnostics-bus wiring drift via:
+
+- `python scripts/check_m139_sema_pass_manager_contract.py`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
+- `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

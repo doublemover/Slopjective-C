@@ -1221,6 +1221,24 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Lowering options/metadata map `lowering.{runtime_dispatch_symbol,runtime_dispatch_arg_slots,selector_global_ordering}`.
 - Emit stage result captures diagnostics/manifest/object artifact write status and object compile exit status.
 
+## Sema pass manager + diagnostics bus contract (M139-E001)
+
+- Canonical sema contract types are defined in:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+- Sema pass manager orchestration boundary:
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `RunObjc3SemaPassManager(...)` executes deterministic pass order (`BuildIntegrationSurface`, `ValidateBodies`, `ValidatePureContract`) and publishes pass diagnostics into the sema diagnostics bus.
+- Semantic pass implementations remain extracted in:
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_pure_contract.cpp`
+  - `ValidatePureContractSemanticDiagnostics(...)` remains owned by `objc3_pure_contract.cpp` (fail-closed against regressions back into `objc3_semantic_passes.cpp`).
+- Frontend diagnostics bus boundary:
+  - `native/objc3c/src/parse/objc3_diagnostics_bus.h` owns `Objc3FrontendDiagnosticsBus` (`lexer`, `parser`, `semantic`) and deterministic transport into parsed-program diagnostics.
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp` wires sema pass manager diagnostics via `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic` and finalizes with `TransportObjc3DiagnosticsToParsedProgram(...)`.
+- Stage-contract packet remains anchored by `native/objc3c/src/pipeline/frontend_pipeline_contract.h` (`DiagnosticsEnvelope`, `SemaStageOutput`, and `kStageOrder` containing `StageId::Sema`).
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:

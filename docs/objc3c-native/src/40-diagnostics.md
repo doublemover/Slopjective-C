@@ -87,3 +87,15 @@ Parser/lexer diagnostics currently emitted include:
   - Also accepts `instancetype`.
   - Also used for unterminated generic function return type suffix.
 
+## Sema diagnostics bus contract (M139-E001)
+
+- The frontend diagnostics bus is defined at:
+  - `native/objc3c/src/parse/objc3_diagnostics_bus.h`
+  - `Objc3FrontendDiagnosticsBus.{lexer,parser,semantic}` is the canonical deterministic diagnostics transport packet.
+- Pipeline sema pass manager flow remains deterministic and fail-closed:
+  - `RunObjc3SemaPassManager(...)` publishes each pass batch into `result.stage_diagnostics.semantic`.
+  - `BuildIntegrationSurface`, `ValidateBodies`, and `ValidatePureContract` pass IDs run in deterministic order.
+- Stage-local diagnostics are folded into final parsed-program diagnostics through:
+  - `TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program)`
+  - deterministic insert order: `lexer`, then `parser`, then `semantic`.
+
