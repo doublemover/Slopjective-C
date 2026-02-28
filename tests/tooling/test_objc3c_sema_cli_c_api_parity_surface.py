@@ -40,6 +40,7 @@ def test_manifest_emits_sema_parity_contract_fields() -> None:
     assert "diagnostics_emitted_by_validate_bodies" in artifacts
     assert "diagnostics_emitted_by_validate_pure_contract" in artifacts
     assert "diagnostics_monotonic" in artifacts
+    assert "deterministic_semantic_diagnostics" in artifacts
     assert "deterministic_type_metadata_handoff" in artifacts
     assert "parity_ready" in artifacts
     assert "type_metadata_global_entries" in artifacts

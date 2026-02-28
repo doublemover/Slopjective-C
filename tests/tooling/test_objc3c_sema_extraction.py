@@ -89,6 +89,7 @@ def test_cmake_registers_sema_target() -> None:
     assert "src/sema/objc3_semantic_passes.cpp" in cmake
     assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
     assert "objc3c_parse" in cmake
+    assert "objc3c_diag" in cmake
     assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
     assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
     assert "target_link_libraries(objc3c_lower PUBLIC" in cmake

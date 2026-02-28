@@ -18,7 +18,7 @@ constexpr std::size_t kMaxMessageSendArgs = 16;
 
 struct RunnerOptions {
   fs::path input_path;
-  fs::path out_dir = fs::path(".");
+  fs::path out_dir = fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
   std::string emit_prefix = "module";
   fs::path clang_path = fs::path("clang");
   std::uint32_t max_message_send_args = 0;

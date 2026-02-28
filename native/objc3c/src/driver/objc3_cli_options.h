@@ -11,7 +11,7 @@ enum class Objc3IrObjectBackend {
 
 struct Objc3CliOptions {
   std::filesystem::path input;
-  std::filesystem::path out_dir = std::filesystem::path("artifacts") / "compilation" / "objc3c-native";
+  std::filesystem::path out_dir = std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
   std::string emit_prefix = "module";
   std::filesystem::path clang_path = std::filesystem::path("clang");
   std::filesystem::path llc_path = std::filesystem::path("llc");

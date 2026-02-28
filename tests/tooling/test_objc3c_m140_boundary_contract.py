@@ -31,9 +31,11 @@ def test_sema_pass_manager_exposes_deterministic_type_metadata_handoff() -> None
     source = _read(SEMA_PASS_MANAGER_CPP)
 
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
+    assert "bool deterministic_semantic_diagnostics = false;" in contract
     assert "bool deterministic_type_metadata_handoff = false;" in contract
     assert "IsMonotonicObjc3SemaDiagnosticsAfterPass(" in contract
 
+    assert "result.deterministic_semantic_diagnostics =" in source
     assert "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);" in source
     assert "result.deterministic_type_metadata_handoff =" in source
 

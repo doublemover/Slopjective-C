@@ -1,8 +1,43 @@
 #include "sema/objc3_sema_pass_manager.h"
 
+#include <algorithm>
 #include <vector>
 
+#include "diag/objc3_diag_utils.h"
 #include "sema/objc3_semantic_passes.h"
+
+namespace {
+
+bool IsDiagnosticLess(const std::string &lhs, const std::string &rhs) {
+  const DiagSortKey lhs_key = ParseDiagSortKey(lhs);
+  const DiagSortKey rhs_key = ParseDiagSortKey(rhs);
+  if (lhs_key.line != rhs_key.line) {
+    return lhs_key.line < rhs_key.line;
+  }
+  if (lhs_key.column != rhs_key.column) {
+    return lhs_key.column < rhs_key.column;
+  }
+  if (lhs_key.severity_rank != rhs_key.severity_rank) {
+    return lhs_key.severity_rank < rhs_key.severity_rank;
+  }
+  if (lhs_key.code != rhs_key.code) {
+    return lhs_key.code < rhs_key.code;
+  }
+  if (lhs_key.message != rhs_key.message) {
+    return lhs_key.message < rhs_key.message;
+  }
+  return lhs_key.raw < rhs_key.raw;
+}
+
+void CanonicalizePassDiagnostics(std::vector<std::string> &diagnostics) {
+  std::stable_sort(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);
+}
+
+bool IsCanonicalPassDiagnostics(const std::vector<std::string> &diagnostics) {
+  return std::is_sorted(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);
+}
+
+}  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
   Objc3SemaPassManagerResult result;
@@ -11,6 +46,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   }
 
   result.executed = true;
+  bool deterministic_semantic_diagnostics = true;
   for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
@@ -20,12 +56,15 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     } else {
       ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);
     }
+    CanonicalizePassDiagnostics(pass_diagnostics);
+    deterministic_semantic_diagnostics = deterministic_semantic_diagnostics && IsCanonicalPassDiagnostics(pass_diagnostics);
 
     result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());
     input.diagnostics_bus.PublishBatch(pass_diagnostics);
     result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();
     result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();
   }
+  result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;
   result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);
   result.deterministic_type_metadata_handoff =
       IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);
@@ -38,9 +77,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
   result.parity_surface.ready =
       result.executed && result.parity_surface.diagnostics_after_pass_monotonic &&
+      result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
       result.parity_surface.globals_total == result.parity_surface.type_metadata_global_entries &&
       result.parity_surface.functions_total == result.parity_surface.type_metadata_function_entries;

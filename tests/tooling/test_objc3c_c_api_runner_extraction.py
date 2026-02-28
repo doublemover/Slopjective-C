@@ -24,6 +24,7 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
     source = _read(RUNNER_CPP)
 
     assert '\\"mode\\": \\"objc3c-frontend-c-api-runner-v1\\"' in source
+    assert 'fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native"' in source
     assert "wrote summary: " in source
     assert "--objc3-max-message-args" in source
     assert "--objc3-runtime-dispatch-symbol" in source

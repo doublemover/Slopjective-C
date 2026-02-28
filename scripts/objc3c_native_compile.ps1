@@ -4,7 +4,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
   $PSNativeCommandUseErrorActionPreference = $false
 }
 
-$defaultOutDir = "artifacts/compilation/objc3c-native"
+$defaultOutDir = "tmp/artifacts/compilation/objc3c-native"
 
 function Show-UsageAndExit {
   Write-Error "usage: objc3c_native_compile.ps1 <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--use-cache]"

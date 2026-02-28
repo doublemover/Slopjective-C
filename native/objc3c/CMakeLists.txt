@@ -66,6 +66,7 @@ target_include_directories(objc3c_sema PUBLIC
 )
 target_link_libraries(objc3c_sema PUBLIC
   objc3c_parse
+  objc3c_diag
 )
 # M141-B001 sema/type-system surface target for downstream topology hardening.
 add_library(objc3c_sema_type_system INTERFACE)

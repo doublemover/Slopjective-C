@@ -76,3 +76,9 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     assert "RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error)" in objc3_path
     assert ".object-backend.txt" in objc3_path
     assert "RunObjc3LanguagePath(cli_options)" in runtime
+
+
+def test_cli_default_out_dir_is_tmp_governed() -> None:
+    header = _read(DRIVER_HEADER)
+
+    assert 'std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native"' in header

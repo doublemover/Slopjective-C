@@ -71,6 +71,7 @@ def test_parser_to_sema_type_metadata_handoff_contract_is_explicit() -> None:
     assert "IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);" in sema_header
 
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in pass_manager_contract
+    assert "bool deterministic_semantic_diagnostics = false;" in pass_manager_contract
     assert "bool deterministic_type_metadata_handoff = false;" in pass_manager_contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in pass_manager_contract
 
@@ -129,6 +130,7 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "diagnostics_after_build" in artifacts_source
     assert "diagnostics_emitted_by_build" in artifacts_source
     assert "diagnostics_monotonic" in artifacts_source
+    assert "deterministic_semantic_diagnostics" in artifacts_source
     assert "deterministic_type_metadata_handoff" in artifacts_source
     assert "parity_ready" in artifacts_source
 

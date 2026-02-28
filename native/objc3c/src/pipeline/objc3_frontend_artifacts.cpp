@@ -118,6 +118,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"diagnostics_emitted_by_validate_pure_contract\":"
            << pipeline_result.sema_parity_surface.diagnostics_emitted_by_pass[2] << ",\"diagnostics_monotonic\":"
            << (pipeline_result.sema_parity_surface.diagnostics_after_pass_monotonic ? "true" : "false")
+           << ",\"deterministic_semantic_diagnostics\":"
+           << (pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
            << ",\"parity_ready\":"

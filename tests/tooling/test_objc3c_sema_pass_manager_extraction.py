@@ -37,6 +37,7 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "std::vector<std::string> diagnostics;" in contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
+    assert "bool deterministic_semantic_diagnostics = false;" in contract
     assert "bool deterministic_type_metadata_handoff = false;" in contract
     assert "struct Objc3SemaParityContractSurface {" in contract
     assert "bool IsReadyObjc3SemaParityContractSurface(" in contract
@@ -56,7 +57,7 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
         [
             "std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};",
             "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};",
-            "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;",
+            "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;\n  bool deterministic_semantic_diagnostics = false;",
             "Objc3SemaParityContractSurface parity_surface;",
         ],
     )
@@ -74,11 +75,14 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "input.diagnostics_bus.PublishBatch(pass_diagnostics);" in source
     assert "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();" in source
     assert "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();" in source
+    assert "CanonicalizePassDiagnostics(pass_diagnostics);" in source
+    assert "result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;" in source
     assert "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);" in source
     assert "result.deterministic_type_metadata_handoff =" in source
     assert "result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;" in source
     assert "result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;" in source
     assert "result.parity_surface.diagnostics_after_pass_monotonic =" in source
+    assert "result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;" in source
     assert "result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;" in source
     assert "result.parity_surface.ready =" in source
 
@@ -86,10 +90,12 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
         source,
         [
             "for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {",
+            "CanonicalizePassDiagnostics(pass_diagnostics);",
             "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());",
             "input.diagnostics_bus.PublishBatch(pass_diagnostics);",
             "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();",
             "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();",
+            "result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;",
             "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);",
             "result.deterministic_type_metadata_handoff =",
             "result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;",
@@ -114,6 +120,7 @@ def test_build_surfaces_register_pass_manager_source() -> None:
     cmake = _read(CMAKE_FILE)
     build_script = _read(BUILD_SCRIPT)
     assert "src/sema/objc3_sema_pass_manager.cpp" in cmake
+    assert "objc3c_diag" in cmake
     assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
     assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
     assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
