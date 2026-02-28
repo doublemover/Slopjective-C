@@ -1046,6 +1046,34 @@ Recommended M173 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m173_frontend_protocol_qualified_object_type_parser_contract.py -q`
 
+## M174 frontend variance and bridged-cast parser/AST surface (M174-A001)
+
+Frontend parser/AST now emits deterministic variance/bridged-cast profiles for
+parameter/property/return type annotations.
+
+M174 parser/AST surface details:
+
+- variance/bridge-cast anchors:
+  - `BuildVarianceBridgeCastProfile(...)`
+  - `IsVarianceBridgeCastProfileNormalized(...)`
+- parser assignment anchors:
+  - `variance_bridge_cast_profile`
+  - `variance_bridge_cast_profile_is_normalized`
+  - `return_variance_bridge_cast_profile`
+  - `return_variance_bridge_cast_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives variance marker safety (`__covariant/__contravariant`) and
+  bridged-cast marker consistency from deterministic suffix/qualifier packets.
+- profile normalization is fail-closed when marked variance/bridge packets are
+  emitted without object-pointer type spellings or with conflicting marker
+  combinations.
+
+Recommended M174 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m174_frontend_variance_bridge_cast_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

@@ -389,6 +389,102 @@ static bool IsNullabilityFlowProfileNormalized(
   return object_pointer_type_spelling;
 }
 
+static std::size_t CountMarkerOccurrences(const std::string &text, const std::string &marker) {
+  if (marker.empty() || text.empty()) {
+    return 0;
+  }
+  std::size_t count = 0;
+  std::size_t offset = 0;
+  while (true) {
+    const std::size_t found = text.find(marker, offset);
+    if (found == std::string::npos) {
+      break;
+    }
+    ++count;
+    offset = found + marker.size();
+  }
+  return count;
+}
+
+static std::string BuildVarianceBridgeCastProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &ownership_qualifier_spelling) {
+  const std::size_t covariant_markers = CountMarkerOccurrences(generic_suffix_text, "__covariant");
+  const std::size_t contravariant_markers = CountMarkerOccurrences(generic_suffix_text, "__contravariant");
+  const std::size_t invariant_markers = CountMarkerOccurrences(generic_suffix_text, "__invariant");
+  const std::size_t bridge_transfer_markers = CountMarkerOccurrences(generic_suffix_text, "__bridge_transfer");
+  const std::size_t bridge_retained_markers = CountMarkerOccurrences(generic_suffix_text, "__bridge_retained");
+  const std::size_t bridge_markers = CountMarkerOccurrences(generic_suffix_text, "__bridge") +
+                                     CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge");
+  const std::size_t bridge_transfer_total =
+      bridge_transfer_markers + CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge_transfer");
+  const std::size_t bridge_retained_total =
+      bridge_retained_markers + CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge_retained");
+  const bool variance_marked =
+      covariant_markers + contravariant_markers + invariant_markers > 0;
+  const bool bridge_marked = bridge_markers + bridge_transfer_total + bridge_retained_total > 0;
+  const bool variance_safe = (covariant_markers == 0 || contravariant_markers == 0) &&
+                             (covariant_markers + contravariant_markers <= 1);
+  const bool bridge_cast_valid = bridge_transfer_total <= 1 && bridge_retained_total <= 1;
+  const bool object_pointer_required_for_markers =
+      !variance_marked && !bridge_marked ? true : object_pointer_type_spelling;
+
+  std::ostringstream out;
+  out << "variance-bridge-cast:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";covariant-markers=" << covariant_markers
+      << ";contravariant-markers=" << contravariant_markers
+      << ";invariant-markers=" << invariant_markers
+      << ";bridge-markers=" << bridge_markers
+      << ";bridge-transfer-markers=" << bridge_transfer_total
+      << ";bridge-retained-markers=" << bridge_retained_total
+      << ";variance-safe=" << (variance_safe ? "true" : "false")
+      << ";bridge-cast-valid=" << (bridge_cast_valid ? "true" : "false")
+      << ";marker-object-pointer-valid=" << (object_pointer_required_for_markers ? "true" : "false");
+  return out.str();
+}
+
+static bool IsVarianceBridgeCastProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    const std::string &generic_suffix_text,
+    const std::string &ownership_qualifier_spelling) {
+  const std::size_t covariant_markers = CountMarkerOccurrences(generic_suffix_text, "__covariant");
+  const std::size_t contravariant_markers = CountMarkerOccurrences(generic_suffix_text, "__contravariant");
+  const std::size_t invariant_markers = CountMarkerOccurrences(generic_suffix_text, "__invariant");
+  const std::size_t bridge_transfer_markers =
+      CountMarkerOccurrences(generic_suffix_text, "__bridge_transfer") +
+      CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge_transfer");
+  const std::size_t bridge_retained_markers =
+      CountMarkerOccurrences(generic_suffix_text, "__bridge_retained") +
+      CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge_retained");
+  const bool variance_marked =
+      covariant_markers + contravariant_markers + invariant_markers > 0;
+  const bool bridge_marked =
+      CountMarkerOccurrences(generic_suffix_text, "__bridge") +
+          CountMarkerOccurrences(ownership_qualifier_spelling, "__bridge") +
+          bridge_transfer_markers + bridge_retained_markers >
+      0;
+  const bool variance_safe = (covariant_markers == 0 || contravariant_markers == 0) &&
+                             (covariant_markers + contravariant_markers <= 1);
+  const bool bridge_cast_valid = bridge_transfer_markers <= 1 && bridge_retained_markers <= 1;
+  if (variance_marked && (!has_generic_suffix || !generic_suffix_terminated)) {
+    return false;
+  }
+  if ((variance_marked || bridge_marked) && !object_pointer_type_spelling) {
+    return false;
+  }
+  return variance_safe && bridge_cast_valid;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1184,6 +1280,10 @@ class Objc3Parser {
         source.return_protocol_qualified_object_type_profile_is_normalized;
     target.return_protocol_qualified_object_type_profile =
         source.return_protocol_qualified_object_type_profile;
+    target.return_variance_bridge_cast_profile_is_normalized =
+        source.return_variance_bridge_cast_profile_is_normalized;
+    target.return_variance_bridge_cast_profile =
+        source.return_variance_bridge_cast_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1236,6 +1336,10 @@ class Objc3Parser {
         source.protocol_qualified_object_type_profile_is_normalized;
     target.protocol_qualified_object_type_profile =
         source.protocol_qualified_object_type_profile;
+    target.variance_bridge_cast_profile_is_normalized =
+        source.variance_bridge_cast_profile_is_normalized;
+    target.variance_bridge_cast_profile =
+        source.variance_bridge_cast_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2091,6 +2195,8 @@ class Objc3Parser {
     fn.return_nullability_flow_profile.clear();
     fn.return_protocol_qualified_object_type_profile_is_normalized = false;
     fn.return_protocol_qualified_object_type_profile.clear();
+    fn.return_variance_bridge_cast_profile_is_normalized = false;
+    fn.return_variance_bridge_cast_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2303,6 +2409,21 @@ class Objc3Parser {
             fn.return_object_pointer_type_spelling,
             fn.has_return_generic_suffix,
             fn.return_generic_suffix_terminated);
+    fn.return_variance_bridge_cast_profile =
+        BuildVarianceBridgeCastProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_ownership_qualifier_spelling);
+    fn.return_variance_bridge_cast_profile_is_normalized =
+        IsVarianceBridgeCastProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.return_generic_suffix_text,
+            fn.return_ownership_qualifier_spelling);
 
     return true;
   }
@@ -2329,6 +2450,8 @@ class Objc3Parser {
     param.nullability_flow_profile.clear();
     param.protocol_qualified_object_type_profile_is_normalized = false;
     param.protocol_qualified_object_type_profile.clear();
+    param.variance_bridge_cast_profile_is_normalized = false;
+    param.variance_bridge_cast_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2481,6 +2604,21 @@ class Objc3Parser {
             param.object_pointer_type_spelling,
             param.has_generic_suffix,
             param.generic_suffix_terminated);
+    param.variance_bridge_cast_profile =
+        BuildVarianceBridgeCastProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
+    param.variance_bridge_cast_profile_is_normalized =
+        IsVarianceBridgeCastProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
 
     return true;
   }
