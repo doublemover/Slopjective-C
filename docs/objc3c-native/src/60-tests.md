@@ -2646,6 +2646,44 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 ```
 
+## M191 validation/conformance/perf unsafe-pointer extension gating runbook (M191-D001)
+
+Deterministic M191 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m191_validation_unsafe_pointer_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_unsafe_pointer_extension_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_unsafe_pointer_extension_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_unsafe_pointer_extension_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_unsafe_pointer_extension_lowering_surface.deterministic_handoff`
+  - `lowering_unsafe_pointer_extension.replay_key`
+- `replay_run_1/module.ll`
+  - `unsafe_pointer_extension_lowering`
+  - `frontend_objc_unsafe_pointer_extension_lowering_profile`
+  - `!objc3.objc_unsafe_pointer_extension_lowering = !{!37}`
+- `M191-D001.json`
+  - `tracking.issue = 4547`
+  - `tracking.task = M191-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

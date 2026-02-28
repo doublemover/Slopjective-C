@@ -1,0 +1,25 @@
+{
+  "id": "M191-D001",
+  "title": "Unsafe-pointer extension gating lowering replay contract fixture (issue #4547 / task M191-D001)",
+  "feature": "m191 lane-d unsafe-pointer extension gating lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M191",
+    "milestone_number": 276,
+    "lane": "D",
+    "issue": 4547,
+    "task": "M191-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py",
+    "tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: unsafe_pointer_extension_lowering\n// EXPECT: deterministic_unsafe_pointer_extension_lowering_handoff=true\n\nmodule m191_lane_d_unsafe_pointer_extension;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

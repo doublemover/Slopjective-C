@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_unsafe_pointer_extension_lowering_handoff": true,
+        "unsafe_pointer_extension_lowering_sites": 6,
+        "unsafe_pointer_extension_lowering_unsafe_keyword_sites": 4,
+        "unsafe_pointer_extension_lowering_pointer_arithmetic_sites": 3,
+        "unsafe_pointer_extension_lowering_raw_pointer_type_sites": 5,
+        "unsafe_pointer_extension_lowering_unsafe_operation_sites": 2,
+        "unsafe_pointer_extension_lowering_normalized_sites": 4,
+        "unsafe_pointer_extension_lowering_gate_blocked_sites": 2,
+        "unsafe_pointer_extension_lowering_contract_violation_sites": 0,
+        "lowering_unsafe_pointer_extension_replay_key": "unsafe_pointer_extension_sites=6;unsafe_keyword_sites=4;pointer_arithmetic_sites=3;raw_pointer_type_sites=5;unsafe_operation_sites=2;normalized_sites=4;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m191-unsafe-pointer-extension-gating-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_unsafe_pointer_extension_lowering_surface": {
+          "unsafe_pointer_extension_sites": 6,
+          "unsafe_keyword_sites": 4,
+          "pointer_arithmetic_sites": 3,
+          "raw_pointer_type_sites": 5,
+          "unsafe_operation_sites": 2,
+          "normalized_sites": 4,
+          "gate_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "unsafe_pointer_extension_sites=6;unsafe_keyword_sites=4;pointer_arithmetic_sites=3;raw_pointer_type_sites=5;unsafe_operation_sites=2;normalized_sites=4;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m191-unsafe-pointer-extension-gating-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_unsafe_pointer_extension": {
+    "replay_key": "unsafe_pointer_extension_sites=6;unsafe_keyword_sites=4;pointer_arithmetic_sites=3;raw_pointer_type_sites=5;unsafe_operation_sites=2;normalized_sites=4;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m191-unsafe-pointer-extension-gating-lowering-v1",
+    "lane_contract": "m191-unsafe-pointer-extension-gating-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
