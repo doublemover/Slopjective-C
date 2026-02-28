@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DRIVER_HEADER = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.h"
 DRIVER_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.cpp"
 DRIVER_RUNTIME_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_compilation_driver.cpp"
+DRIVER_OBJC3_PATH_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
 CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
@@ -38,6 +39,7 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     header = _read(DRIVER_HEADER)
     source = _read(DRIVER_SOURCE)
     runtime = _read(DRIVER_RUNTIME_SOURCE)
+    objc3_path = _read(DRIVER_OBJC3_PATH_SOURCE)
 
     assert "enum class Objc3IrObjectBackend" in header
     assert "Objc3IrObjectBackend::kLLVMDirect" in header
@@ -48,6 +50,7 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     assert "ParseIrObjectBackend" in source
     assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
 
-    assert "RunIRCompileLLVMDirect" in runtime
-    assert "RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error)" in runtime
-    assert ".object-backend.txt" in runtime
+    assert "RunIRCompileLLVMDirect" in objc3_path
+    assert "RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error)" in objc3_path
+    assert ".object-backend.txt" in objc3_path
+    assert "RunObjc3LanguagePath(cli_options)" in runtime

@@ -11,6 +11,8 @@ MANIFEST_HEADER = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_manifest_ar
 MANIFEST_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_manifest_artifacts.cpp"
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
 DRIVER_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_compilation_driver.cpp"
+DRIVER_OBJC3_PATH_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
+DRIVER_OBJC_PATH_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objectivec_path.cpp"
 CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
 
@@ -37,10 +39,16 @@ def test_io_process_module_exists_and_main_uses_it() -> None:
     assert "static void WriteDiagnosticsArtifacts(" not in main_cpp
 
     driver_cpp = _read(DRIVER_CPP)
-    assert '#include "io/objc3_diagnostics_artifacts.h"' in driver_cpp
-    assert '#include "io/objc3_file_io.h"' in driver_cpp
-    assert '#include "io/objc3_process.h"' in driver_cpp
-    assert '#include "io/objc3_manifest_artifacts.h"' in driver_cpp
+    objc3_path_cpp = _read(DRIVER_OBJC3_PATH_CPP)
+    objc_path_cpp = _read(DRIVER_OBJC_PATH_CPP)
+    assert '#include "io/objc3_diagnostics_artifacts.h"' in objc3_path_cpp
+    assert '#include "io/objc3_file_io.h"' in objc3_path_cpp
+    assert '#include "io/objc3_process.h"' in objc3_path_cpp
+    assert '#include "io/objc3_manifest_artifacts.h"' in objc3_path_cpp
+    assert '#include "io/objc3_diagnostics_artifacts.h"' in objc_path_cpp
+    assert '#include "io/objc3_process.h"' in objc_path_cpp
+    assert '#include "io/objc3_manifest_artifacts.h"' in objc_path_cpp
+    assert '#include "io/objc3_diagnostics_artifacts.h"' not in driver_cpp
 
 
 def test_cmake_registers_io_target() -> None:
