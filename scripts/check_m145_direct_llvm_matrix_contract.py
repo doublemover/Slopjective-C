@@ -16,6 +16,7 @@ MODE = "m145-direct-llvm-matrix-contract-v1"
 DEFAULT_PROCESS_CPP = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_process.cpp"
 DEFAULT_DRIVER_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
 DEFAULT_CLI_OPTIONS_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.cpp"
+DEFAULT_ROUTING_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_llvm_capability_routing.cpp"
 
 
 def display_path(path: Path) -> str:
@@ -35,6 +36,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--process-cpp", type=Path, default=DEFAULT_PROCESS_CPP)
     parser.add_argument("--driver-cpp", type=Path, default=DEFAULT_DRIVER_CPP)
     parser.add_argument("--cli-options-cpp", type=Path, default=DEFAULT_CLI_OPTIONS_CPP)
+    parser.add_argument("--routing-cpp", type=Path, default=DEFAULT_ROUTING_CPP)
     parser.add_argument(
         "--summary-out",
         type=Path,
@@ -73,10 +75,12 @@ def run(argv: Sequence[str]) -> int:
     require_file(args.process_cpp, label="process-cpp")
     require_file(args.driver_cpp, label="driver-cpp")
     require_file(args.cli_options_cpp, label="cli-options-cpp")
+    require_file(args.routing_cpp, label="routing-cpp")
 
     process_cpp = args.process_cpp.read_text(encoding="utf-8")
     driver_cpp = args.driver_cpp.read_text(encoding="utf-8")
     cli_options_cpp = args.cli_options_cpp.read_text(encoding="utf-8")
+    routing_cpp = args.routing_cpp.read_text(encoding="utf-8")
 
     checks: list[tuple[str, bool, str]] = []
 
@@ -163,12 +167,49 @@ def run(argv: Sequence[str]) -> int:
         )
     )
 
+    # Capability routing layer: explicit fail-closed behavior and no hidden object compile fallback.
+    checks.append(
+        (
+            "routing-m145-01",
+            "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary" in routing_cpp,
+            "capability routing must fail-closed when routing is requested without a summary",
+        )
+    )
+    checks.append(
+        (
+            "routing-m145-02",
+            "llvm-direct backend selected but llc --filetype=obj capability is unavailable" in routing_cpp,
+            "capability routing must fail-closed when llvm-direct is selected without llc object support",
+        )
+    )
+    checks.append(
+        (
+            "routing-m145-03",
+            "summary.llc_supports_filetype_obj ? Objc3IrObjectBackend::kLLVMDirect : Objc3IrObjectBackend::kClang"
+            in routing_cpp,
+            "capability routing must use explicit backend matrix selection (llvm-direct vs clang)",
+        )
+    )
+
+    routing_body = extract_function_body(
+        routing_cpp,
+        "bool ApplyObjc3LLVMCabilityRouting(",
+    )
+    checks.append(
+        (
+            "routing-m145-04",
+            "RunIRCompile(" not in routing_body and "RunIRCompileLLVMDirect(" not in routing_body,
+            "capability routing must not invoke hidden object-compilation fallback paths",
+        )
+    )
+
     failed = [check for check in checks if not check[1]]
     summary = {
         "mode": MODE,
         "process_cpp": display_path(args.process_cpp),
         "driver_cpp": display_path(args.driver_cpp),
         "cli_options_cpp": display_path(args.cli_options_cpp),
+        "routing_cpp": display_path(args.routing_cpp),
         "checks_passed": len(checks) - len(failed),
         "checks_total": len(checks),
         "failures": [{"id": check_id, "message": message} for check_id, _, message in failed],
