@@ -2040,6 +2040,41 @@ python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_cont
 python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
 ```
 
+## M170 validation/conformance/perf block determinism baseline runbook
+
+Deterministic M170 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_lowering_block_determinism_perf_baseline_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m170_validation_block_determinism_perf_baseline_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_determinism_perf_baseline_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_determinism_perf_baseline_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_determinism_perf_baseline_lowering_surface.deterministic_handoff`
+  - `lowering_block_determinism_perf_baseline.replay_key`
+- `replay_run_1/module.ll`
+  - `block_determinism_perf_baseline_lowering`
+  - `frontend_objc_block_determinism_perf_baseline_lowering_profile`
+  - `!objc3.objc_block_determinism_perf_baseline_lowering = !{!23}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

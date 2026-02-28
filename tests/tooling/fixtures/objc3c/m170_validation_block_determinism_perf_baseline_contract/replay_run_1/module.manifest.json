@@ -1,0 +1,39 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_block_determinism_perf_baseline_lowering_handoff": true,
+        "block_determinism_perf_baseline_lowering_sites": 2,
+        "block_determinism_perf_baseline_lowering_weight_total": 52,
+        "block_determinism_perf_baseline_lowering_parameter_entries": 2,
+        "block_determinism_perf_baseline_lowering_capture_entries": 4,
+        "block_determinism_perf_baseline_lowering_body_statement_entries": 6,
+        "block_determinism_perf_baseline_lowering_deterministic_capture_sites": 2,
+        "block_determinism_perf_baseline_lowering_heavy_tier_sites": 1,
+        "block_determinism_perf_baseline_lowering_normalized_profile_sites": 2,
+        "block_determinism_perf_baseline_lowering_contract_violation_sites": 0,
+        "lowering_block_determinism_perf_baseline_replay_key": "block_literal_sites=2;baseline_weight_total=52;parameter_entries_total=2;capture_entries_total=4;body_statement_entries_total=6;deterministic_capture_sites=2;heavy_tier_sites=1;normalized_profile_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m170-block-determinism-perf-baseline-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_block_determinism_perf_baseline_lowering_surface": {
+          "block_literal_sites": 2,
+          "baseline_weight_total": 52,
+          "parameter_entries_total": 2,
+          "capture_entries_total": 4,
+          "body_statement_entries_total": 6,
+          "deterministic_capture_sites": 2,
+          "heavy_tier_sites": 1,
+          "normalized_profile_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "block_literal_sites=2;baseline_weight_total=52;parameter_entries_total=2;capture_entries_total=4;body_statement_entries_total=6;deterministic_capture_sites=2;heavy_tier_sites=1;normalized_profile_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m170-block-determinism-perf-baseline-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_block_determinism_perf_baseline": {
+    "replay_key": "block_literal_sites=2;baseline_weight_total=52;parameter_entries_total=2;capture_entries_total=4;body_statement_entries_total=6;deterministic_capture_sites=2;heavy_tier_sites=1;normalized_profile_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m170-block-determinism-perf-baseline-lowering-v1",
+    "lane_contract": "m170-block-determinism-perf-baseline-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
