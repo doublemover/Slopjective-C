@@ -13,9 +13,24 @@ npm run test:objc3c:parser-replay-proof
 npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:driver-shell-split
+npm run test:objc3c:lexer-extraction-token-contract
+npm run test:objc3c:lexer-parity
 npm run proof:objc3c
 npm run test:objc3c:lane-e
+npm run check:compiler-closeout:m137
 ```
+
+Driver shell split regression spot-check (M136-E001):
+
+```powershell
+npm run build:objc3c-native
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/tests-objc3 --emit-prefix module_objc3
+npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/tests-objectivec --emit-prefix module_objc
+```
+
+- Validates both shell branches (`.objc3` frontend path and non-`.objc3` Objective-C path) using deterministic fixture inputs.
+- Keeps lane-E proof artifacts isolated under `tmp/artifacts/objc3c-native/m136-driver-shell/`.
 
 - `npm run test:objc3c`
   - Runs `scripts/check_objc3c_native_recovery_contract.ps1`.
@@ -34,6 +49,26 @@ npm run test:objc3c:lane-e
     - Run 2 (same key): requires exactly one `cache_hit=true` marker.
     - Hashes for emitted artifacts (`.obj`, `.manifest.json`, `.diagnostics.txt`, `.ll` for `.objc3`) must match between miss/hit runs.
   - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json` with `cache_proof` evidence.
+- `npm run test:objc3c:driver-shell-split`
+  - Runs `scripts/check_objc3c_driver_shell_split_contract.ps1`.
+  - Verifies `main.cpp` shell boundary: parse + exit-code mapping + delegation-only contract into `driver/*`.
+  - Runs a deterministic two-pass smoke compile over `tests/tooling/fixtures/native/driver_split/smoke_compile_driver_shell_split.objc3`.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/driver-shell-split/<run_id>/summary.json`.
+- `npm run test:objc3c:lexer-extraction-token-contract`
+  - Runs `scripts/check_objc3c_lexer_extraction_token_contract.ps1`.
+  - Verifies lexer subsystem extraction surfaces (`lex/*`, pipeline wiring, `TokenKind` contract markers).
+  - Replays positive/negative lexer fixtures and enforces deterministic diagnostics/artifact contracts.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/lexer-extraction-token-contract/<run_id>/summary.json`.
+- `npm run test:objc3c:lexer-parity`
+  - Runs `python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q`.
+  - Verifies lexer extraction parity contract surfaces:
+    - lexer module files exist,
+    - pipeline consumes lexer header boundary,
+    - CMake registers lexer target/source wiring.
+- `npm run check:compiler-closeout:m137`
+  - Runs `python scripts/check_m137_lexer_contract.py`.
+  - Runs `npm run test:objc3c:lexer-extraction-token-contract` and `npm run test:objc3c:lexer-parity`.
+  - Enforces fail-closed M137 lexer/token contract wiring across build/docs/CI/release surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -42,6 +77,9 @@ npm run test:objc3c:lane-e
     - `npm run test:objc3c`
     - `npm run test:objc3c:diagnostics-replay-proof`
     - `npm run test:objc3c:parser-replay-proof`
+    - `npm run test:objc3c:driver-shell-split`
+    - `npm run test:objc3c:lexer-extraction-token-contract`
+    - `npm run test:objc3c:lexer-parity`
     - `npm run test:objc3c:perf-budget`
     - `npm run test:objc3c:lowering-regression`
     - `npm run test:objc3c:lowering-replay-proof`
@@ -93,6 +131,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_driver_shell_split_contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1
+python scripts/check_m137_lexer_contract.py
+python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py
 ```

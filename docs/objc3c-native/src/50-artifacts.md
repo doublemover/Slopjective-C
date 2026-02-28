@@ -233,6 +233,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/hello.objc3
 ```
 
+## Driver shell split validation commands (M136-E001)
+
+Use one `.objc3` input and one non-`.objc3` Objective-C input to validate both shell branches:
+
+```powershell
+npm run build:objc3c-native
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objc3 --emit-prefix module_objc3
+npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objectivec --emit-prefix module_objc
+```
+
+Expected success surface:
+
+- `.objc3` compile writes diagnostics + manifest + `module_objc3.ll` + `module_objc3.obj`.
+- Objective-C compile writes diagnostics + manifest + `module_objc.obj`.
+- Both invocations exit `0` on success.
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

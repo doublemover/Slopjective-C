@@ -108,6 +108,10 @@ target_link_libraries(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver STATIC
   src/driver/objc3_cli_options.cpp
+  src/driver/objc3_driver_shell.cpp
+  src/driver/objc3_frontend_options.cpp
+  src/driver/objc3_objc3_path.cpp
+  src/driver/objc3_objectivec_path.cpp
   src/driver/objc3_compilation_driver.cpp
 )
 target_include_directories(objc3c_driver PUBLIC

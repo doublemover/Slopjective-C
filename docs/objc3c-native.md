@@ -19,6 +19,24 @@ objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] 
 - Default `--objc3-max-message-args`: `4`
 - Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
 
+## Driver shell split boundaries (M136-E001)
+
+- Driver source wiring order is deterministic:
+  - `src/driver/objc3_cli_options.cpp`
+  - `src/driver/objc3_driver_shell.cpp`
+  - `src/driver/objc3_frontend_options.cpp`
+  - `src/driver/objc3_objc3_path.cpp`
+  - `src/driver/objc3_objectivec_path.cpp`
+  - `src/driver/objc3_compilation_driver.cpp`
+- `objc3_driver_shell` owns shell-only responsibilities:
+  - classify input kind (`.objc3` vs non-`.objc3`),
+  - validate required tool paths (`clang` / `llc`) and input file presence.
+- `objc3_frontend_options` owns CLI-to-frontend option mapping for `.objc3` lowering controls.
+- `objc3_objc3_path` defines extracted `.objc3` path execution helpers during shell split rollout.
+- `objc3_compilation_driver` owns top-level shell dispatch/orchestration and routes non-`.objc3` inputs to Objective-C path execution.
+- `objc3_objectivec_path` owns Objective-C translation-unit parse, diagnostics normalization, symbol-manifest emission, and object compilation.
+- CLI flags, defaults, and exit code semantics remain unchanged by the split.
+
 ## Supported `.objc3` grammar (implemented today)
 
 ```ebnf
@@ -1653,6 +1671,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/hello.objc3
 ```
 
+## Driver shell split validation commands (M136-E001)
+
+Use one `.objc3` input and one non-`.objc3` Objective-C input to validate both shell branches:
+
+```powershell
+npm run build:objc3c-native
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objc3 --emit-prefix module_objc3
+npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objectivec --emit-prefix module_objc
+```
+
+Expected success surface:
+
+- `.objc3` compile writes diagnostics + manifest + `module_objc3.ll` + `module_objc3.obj`.
+- Objective-C compile writes diagnostics + manifest + `module_objc.obj`.
+- Both invocations exit `0` on success.
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -1682,9 +1716,21 @@ npm run test:objc3c:parser-replay-proof
 npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:driver-shell-split
 npm run proof:objc3c
 npm run test:objc3c:lane-e
 ```
+
+Driver shell split regression spot-check (M136-E001):
+
+```powershell
+npm run build:objc3c-native
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/tests-objc3 --emit-prefix module_objc3
+npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/tests-objectivec --emit-prefix module_objc
+```
+
+- Validates both shell branches (`.objc3` frontend path and non-`.objc3` Objective-C path) using deterministic fixture inputs.
+- Keeps lane-E proof artifacts isolated under `tmp/artifacts/objc3c-native/m136-driver-shell/`.
 
 - `npm run test:objc3c`
   - Runs `scripts/check_objc3c_native_recovery_contract.ps1`.
@@ -1703,6 +1749,11 @@ npm run test:objc3c:lane-e
     - Run 2 (same key): requires exactly one `cache_hit=true` marker.
     - Hashes for emitted artifacts (`.obj`, `.manifest.json`, `.diagnostics.txt`, `.ll` for `.objc3`) must match between miss/hit runs.
   - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json` with `cache_proof` evidence.
+- `npm run test:objc3c:driver-shell-split`
+  - Runs `scripts/check_objc3c_driver_shell_split_contract.ps1`.
+  - Verifies `main.cpp` shell boundary: parse + exit-code mapping + delegation-only contract into `driver/*`.
+  - Runs a deterministic two-pass smoke compile over `tests/tooling/fixtures/native/driver_split/smoke_compile_driver_shell_split.objc3`.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/driver-shell-split/<run_id>/summary.json`.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -1762,6 +1813,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_driver_shell_split_contract.ps1
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py
 ```
@@ -1787,3 +1839,94 @@ python scripts/check_m24_execution_readiness.py
 - `if` conditions are lowered as non-zero truthiness checks; there is no dedicated condition-type diagnostic.
 - Lexer comment support is limited to `// ...` and non-nested `/* ... */`.
 - Duplicate `module` declarations are rejected with deterministic `O3S200` diagnostics.
+# libobjc3c_frontend Library API (Embedding Contract)
+
+This document defines the current public embedding API exposed by `native/objc3c/src/libobjc3c_frontend/api.h`.
+
+## Public Surface
+
+- Primary header: `native/objc3c/src/libobjc3c_frontend/api.h`
+- Version header: `native/objc3c/src/libobjc3c_frontend/version.h`
+- Optional C shim header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+
+`api.h` exposes a C ABI usable from C and C++ with an opaque context type (`objc3c_frontend_context_t`).
+
+## Stability
+
+- stability boundary: exported symbols, enums, and struct layouts in `api.h`.
+- ABI growth rule: append-only struct evolution; reserved fields remain reserved.
+- Embedding rule: zero-initialize option/result structs to keep reserved fields deterministic.
+- Current compile behavior is stable and intentional for now: compile entrypoints are scaffolded and return `OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR` after argument validation.
+
+## Compatibility and versioning
+
+- Semantic version source: `OBJC3C_FRONTEND_VERSION_{MAJOR,MINOR,PATCH}`.
+- Current version string macro: `OBJC3C_FRONTEND_VERSION_STRING` (`"0.1.0"` in this workspace).
+- ABI version source: `OBJC3C_FRONTEND_ABI_VERSION` (`1u` in this workspace).
+- Compatibility window (inclusive): `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+- Startup check: call `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` before invoking compile entrypoints.
+
+```c
+#include "libobjc3c_frontend/api.h"
+
+int objc3c_frontend_startup_check(void) {
+  if (!objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)) {
+    return 0;
+  }
+
+  const objc3c_frontend_version_t v = objc3c_frontend_version();
+  return v.abi_version == objc3c_frontend_abi_version();
+}
+```
+
+## Current call contract
+
+- `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
+- `objc3c_frontend_context_destroy(ctx)` releases context resources.
+- `objc3c_frontend_compile_file(...)` and `objc3c_frontend_compile_source(...)`:
+  - Return `OBJC3C_FRONTEND_STATUS_USAGE_ERROR` when `context`, `options`, or `result` is `NULL`.
+  - For non-null pointers, currently return `OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR` and set context error text to a scaffolded-entrypoint message.
+- `objc3c_frontend_copy_last_error(ctx, buffer, buffer_size)`:
+  - Returns required byte count including the trailing NUL.
+  - Supports size probing with `buffer == NULL` or `buffer_size == 0`.
+  - NUL-terminates written buffers when `buffer_size > 0`.
+
+## Minimal embedding example (current API reality)
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+#include "libobjc3c_frontend/api.h"
+
+int main(void) {
+  if (!objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)) {
+    return 2;
+  }
+
+  objc3c_frontend_context_t *ctx = objc3c_frontend_context_create();
+  if (ctx == NULL) {
+    return 3;
+  }
+
+  objc3c_frontend_compile_options_t opts;
+  memset(&opts, 0, sizeof(opts));
+  opts.input_path = "example.objc3";
+  opts.out_dir = "artifacts/compilation/objc3c-native";
+
+  objc3c_frontend_compile_result_t result;
+  memset(&result, 0, sizeof(result));
+
+  const objc3c_frontend_status_t status = objc3c_frontend_compile_file(ctx, &opts, &result);
+  if (status == OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR) {
+    char err[512];
+    (void)objc3c_frontend_copy_last_error(ctx, err, sizeof(err));
+    fprintf(stderr, "frontend unavailable yet: %s\n", err);
+  }
+
+  objc3c_frontend_context_destroy(ctx);
+  return status == OBJC3C_FRONTEND_STATUS_OK ? 0 : 1;
+}
+```
+
+For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.

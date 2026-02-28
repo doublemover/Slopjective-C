@@ -18,6 +18,7 @@ This directory defines the canonical source fragments for building `docs/objc3c-
 | 40 | `40-diagnostics.md` | Diagnostic code and failure-surface contracts | compiler/diagnostics |
 | 50 | `50-artifacts.md` | Artifact paths, runtime contracts, determinism output surfaces | compiler/release |
 | 60 | `60-tests.md` | Validation commands, replay proofs, and fixture contracts | compiler/qa |
+| 70 | `library-api.md` | Embedding/library ABI and API stability contract | compiler/tooling |
 
 ## Deterministic Stitch Order
 
@@ -29,6 +30,7 @@ The stitch order is fixed and must not depend on filesystem iteration order.
 4. `40-diagnostics.md`
 5. `50-artifacts.md`
 6. `60-tests.md`
+7. `library-api.md`
 
 ## Include Rules
 

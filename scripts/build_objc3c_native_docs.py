@@ -22,6 +22,7 @@ FRAGMENT_ORDER: tuple[str, ...] = (
     "40-diagnostics.md",
     "50-artifacts.md",
     "60-tests.md",
+    "library-api.md",
 )
 REQUIRED_HEADINGS: tuple[str, ...] = (
     "## Ownership Policy",
