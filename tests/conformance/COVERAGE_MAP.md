@@ -38,6 +38,7 @@ CI enforcement:
 | `M180-D001` | `#4492` cross-module conformance lowering replay contract | `lowering_abi` |
 | `M181-D001` | `#4497` throws propagation lowering replay contract | `lowering_abi` |
 | `M182-D001` | `#4502` result-like lowering replay contract | `lowering_abi` |
+| `M183-D001` | `#4507` NSError bridging lowering replay contract | `lowering_abi` |
 | `SCM-01..06` | `#52/#44` strictness/sub-mode matrix | `diagnostics` |
 | `EXE-01..05` | `#83` executor affinity | `semantic`, `lowering_abi`, `module_roundtrip` |
 | `CAN-01..07` | `#82` cancellation propagation | `semantic`, `lowering_abi` |

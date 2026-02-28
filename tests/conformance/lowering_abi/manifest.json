@@ -1120,6 +1120,14 @@
       "files": [
         "M182-D001.json"
       ]
+    },
+    {
+      "name": "m183_lane_d_issue_4507_ns_error_bridging_lowering_replay_contract",
+      "feature": "M183 Lane D NSError bridging lowering replay contract conformance fixture and deterministic validation coverage",
+      "issue": 4507,
+      "files": [
+        "M183-D001.json"
+      ]
     }
   ]
 }

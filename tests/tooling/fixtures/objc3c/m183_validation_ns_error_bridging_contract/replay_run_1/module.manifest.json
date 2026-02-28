@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_ns_error_bridging_lowering_handoff": true,
+        "ns_error_bridging_lowering_sites": 5,
+        "ns_error_bridging_lowering_ns_error_parameter_sites": 2,
+        "ns_error_bridging_lowering_ns_error_out_parameter_sites": 2,
+        "ns_error_bridging_lowering_ns_error_bridge_path_sites": 1,
+        "ns_error_bridging_lowering_failable_call_sites": 3,
+        "ns_error_bridging_lowering_normalized_sites": 4,
+        "ns_error_bridging_lowering_bridge_boundary_sites": 1,
+        "ns_error_bridging_lowering_contract_violation_sites": 0,
+        "lowering_ns_error_bridging_replay_key": "ns_error_bridging_sites=5;ns_error_parameter_sites=2;ns_error_out_parameter_sites=2;ns_error_bridge_path_sites=1;failable_call_sites=3;normalized_sites=4;bridge_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m183-ns-error-bridging-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_ns_error_bridging_lowering_surface": {
+          "ns_error_bridging_sites": 5,
+          "ns_error_parameter_sites": 2,
+          "ns_error_out_parameter_sites": 2,
+          "ns_error_bridge_path_sites": 1,
+          "failable_call_sites": 3,
+          "normalized_sites": 4,
+          "bridge_boundary_sites": 1,
+          "contract_violation_sites": 0,
+          "replay_key": "ns_error_bridging_sites=5;ns_error_parameter_sites=2;ns_error_out_parameter_sites=2;ns_error_bridge_path_sites=1;failable_call_sites=3;normalized_sites=4;bridge_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m183-ns-error-bridging-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_ns_error_bridging": {
+    "replay_key": "ns_error_bridging_sites=5;ns_error_parameter_sites=2;ns_error_out_parameter_sites=2;ns_error_bridge_path_sites=1;failable_call_sites=3;normalized_sites=4;bridge_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m183-ns-error-bridging-lowering-v1",
+    "lane_contract": "m183-ns-error-bridging-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

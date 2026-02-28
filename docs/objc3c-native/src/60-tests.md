@@ -2578,6 +2578,40 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m182_validation_result_like_lowering_contract.py tests/tooling/test_objc3c_m182_conformance_result_like_lowering_contract.py -q
 ```
 
+## M183 validation/conformance/perf NSError bridging runbook (M183-D001)
+
+Deterministic M183 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m183_validation_ns_error_bridging_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_ns_error_bridging_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_ns_error_bridging_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_ns_error_bridging_lowering_surface.deterministic_handoff`
+  - `lowering_ns_error_bridging.replay_key`
+- `replay_run_1/module.ll`
+  - `ns_error_bridging_lowering`
+  - `frontend_objc_ns_error_bridging_lowering_profile`
+  - `!objc3.objc_ns_error_bridging_lowering = !{!36}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + bridge_boundary_sites == ns_error_bridging_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

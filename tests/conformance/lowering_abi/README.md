@@ -57,6 +57,9 @@ Minimum scope:
 - `M182-D001.json`: M182 Lane D result-like lowering replay fixture covering
   deterministic replay-key/profile/metadata parity anchors and integration
   coverage for issue `#4502`.
+- `M183-D001.json`: M183 Lane D NSError-bridging lowering replay fixture
+  covering deterministic replay-key/profile/metadata parity anchors and
+  integration coverage for issue `#4507`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.
