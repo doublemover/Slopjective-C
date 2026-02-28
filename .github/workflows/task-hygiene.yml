@@ -141,6 +141,8 @@ jobs:
         run: npm run check:objc3c:m193-simd-vector-lowering
       - name: 44a Run M146 @interface/@implementation grammar gate
         run: npm run check:objc3c:m146-interface-implementation
+      - name: 44b Run M147 @protocol/@category grammar gate
+        run: npm run check:objc3c:m147-protocol-category
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
