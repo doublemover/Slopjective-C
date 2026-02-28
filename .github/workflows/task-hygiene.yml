@@ -58,6 +58,8 @@ jobs:
         run: npm run check:compiler-closeout:m158
       - name: 00o Enforce M159 super-dispatch and method-family packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m159
+      - name: 00p Enforce M160 runtime-shim host-link packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m160
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -181,6 +183,8 @@ jobs:
         run: npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts
       - name: 44o Run M159 super-dispatch and method-family integration gate
         run: npm run check:objc3c:m159-super-dispatch-method-family-contracts
+      - name: 44p Run M160 runtime-shim host-link integration gate
+        run: npm run check:objc3c:m160-runtime-shim-host-link-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 

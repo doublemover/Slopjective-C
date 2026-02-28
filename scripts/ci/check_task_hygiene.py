@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed task-hygiene wiring checks for M155/M156/M157/M158/M159 lane-E closeout."""
+"""Fail-closed task-hygiene wiring checks for M155/M156/M157/M158/M159/M160 lane-E closeout."""
 
 from __future__ import annotations
 
@@ -43,6 +43,10 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
     if "check:compiler-closeout:m159" not in task_hygiene:
         errors.append(
             "package.json scripts.check:task-hygiene must include check:compiler-closeout:m159",
+        )
+    if "check:compiler-closeout:m160" not in task_hygiene:
+        errors.append(
+            "package.json scripts.check:task-hygiene must include check:compiler-closeout:m160",
         )
 
     m155_closeout = scripts.get("check:compiler-closeout:m155", "")
@@ -170,6 +174,31 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
                 f"must include {required_test}",
             )
 
+    m160_closeout = scripts.get("check:compiler-closeout:m160", "")
+    if "npm run check:objc3c:m160-runtime-shim-host-link-contracts" not in m160_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m160 must run check:objc3c:m160-runtime-shim-host-link-contracts",
+        )
+    if "python scripts/ci/check_task_hygiene.py" not in m160_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m160 must run python scripts/ci/check_task_hygiene.py",
+        )
+
+    m160_gate = scripts.get("check:objc3c:m160-runtime-shim-host-link-contracts", "")
+    required_m160_gate_tests = (
+        "test_objc3c_m160_frontend_runtime_shim_host_link_contract.py",
+        "test_objc3c_m160_sema_runtime_shim_host_link_contract.py",
+        "test_objc3c_m160_lowering_runtime_shim_host_link_contract.py",
+        "test_objc3c_m160_validation_runtime_shim_host_link_contract.py",
+        "test_objc3c_m160_integration_runtime_shim_host_link_contract.py",
+    )
+    for required_test in required_m160_gate_tests:
+        if required_test not in m160_gate:
+            errors.append(
+                "package.json scripts.check:objc3c:m160-runtime-shim-host-link-contracts "
+                f"must include {required_test}",
+            )
+
     return errors
 
 
@@ -186,6 +215,8 @@ def _check_workflow_contracts(workflow_text: str) -> list[str]:
         "run: npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts",
         "run: npm run check:compiler-closeout:m159",
         "run: npm run check:objc3c:m159-super-dispatch-method-family-contracts",
+        "run: npm run check:compiler-closeout:m160",
+        "run: npm run check:objc3c:m160-runtime-shim-host-link-contracts",
     )
     for required in required_runs:
         if required not in workflow_text:
@@ -203,12 +234,12 @@ def main() -> int:
     errors.extend(_check_workflow_contracts(workflow_text))
 
     if errors:
-        print("M155/M156/M157/M158/M159 task-hygiene contract check failed:")
+        print("M155/M156/M157/M158/M159/M160 task-hygiene contract check failed:")
         for error in errors:
             print(f"- {error}")
         return 1
 
-    print("M155/M156/M157/M158/M159 task-hygiene contract check passed.")
+    print("M155/M156/M157/M158/M159/M160 task-hygiene contract check passed.")
     return 0
 
 
