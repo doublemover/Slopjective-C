@@ -416,3 +416,36 @@ std::string Objc3DispatchAbiMarshallingReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3DispatchAbiMarshallingLaneContract;
 }
+
+bool IsValidObjc3NilReceiverSemanticsFoldabilityContract(
+    const Objc3NilReceiverSemanticsFoldabilityContract &contract) {
+  if (contract.receiver_nil_literal_sites != contract.nil_receiver_semantics_enabled_sites) {
+    return false;
+  }
+  if (contract.nil_receiver_foldable_sites > contract.nil_receiver_semantics_enabled_sites) {
+    return false;
+  }
+  if (contract.nil_receiver_runtime_dispatch_required_sites + contract.nil_receiver_foldable_sites !=
+      contract.message_send_sites) {
+    return false;
+  }
+  if (contract.nil_receiver_semantics_enabled_sites + contract.non_nil_receiver_sites !=
+      contract.message_send_sites) {
+    return false;
+  }
+  return contract.contract_violation_sites <= contract.message_send_sites;
+}
+
+std::string Objc3NilReceiverSemanticsFoldabilityReplayKey(
+    const Objc3NilReceiverSemanticsFoldabilityContract &contract) {
+  return std::string("message_send_sites=") + std::to_string(contract.message_send_sites) +
+         ";receiver_nil_literal_sites=" + std::to_string(contract.receiver_nil_literal_sites) +
+         ";nil_receiver_semantics_enabled_sites=" + std::to_string(contract.nil_receiver_semantics_enabled_sites) +
+         ";nil_receiver_foldable_sites=" + std::to_string(contract.nil_receiver_foldable_sites) +
+         ";nil_receiver_runtime_dispatch_required_sites=" +
+         std::to_string(contract.nil_receiver_runtime_dispatch_required_sites) +
+         ";non_nil_receiver_sites=" + std::to_string(contract.non_nil_receiver_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3NilReceiverSemanticsFoldabilityLaneContract;
+}

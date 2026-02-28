@@ -110,6 +110,10 @@ class Objc3IREmitter {
       out << "; dispatch_abi_marshalling_lowering = "
           << frontend_metadata_.lowering_dispatch_abi_marshalling_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_nil_receiver_semantics_foldability_replay_key.empty()) {
+      out << "; nil_receiver_semantics_foldability_lowering = "
+          << frontend_metadata_.lowering_nil_receiver_semantics_foldability_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -203,6 +207,23 @@ class Objc3IREmitter {
         << frontend_metadata_.dispatch_abi_marshalling_runtime_dispatch_arg_slots
         << ", deterministic_dispatch_abi_marshalling_handoff="
         << (frontend_metadata_.deterministic_dispatch_abi_marshalling_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_nil_receiver_semantics_foldability_profile = message_send_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_message_send_sites
+        << ", receiver_nil_literal_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_receiver_nil_literal_sites
+        << ", nil_receiver_semantics_enabled_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_enabled_sites
+        << ", nil_receiver_foldable_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_foldable_sites
+        << ", nil_receiver_runtime_dispatch_required_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_runtime_dispatch_required_sites
+        << ", non_nil_receiver_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_non_nil_receiver_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.nil_receiver_semantics_foldability_contract_violation_sites
+        << ", deterministic_nil_receiver_semantics_foldability_handoff="
+        << (frontend_metadata_.deterministic_nil_receiver_semantics_foldability_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -372,6 +393,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
+    out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -489,7 +511,27 @@ class Objc3IREmitter {
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_total_marshaled_slots)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_runtime_dispatch_arg_slots)
-        << ", i1 " << (frontend_metadata_.deterministic_dispatch_abi_marshalling_handoff ? 1 : 0) << "}\n\n";
+        << ", i1 " << (frontend_metadata_.deterministic_dispatch_abi_marshalling_handoff ? 1 : 0) << "}\n";
+    out << "!11 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.nil_receiver_semantics_foldability_message_send_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.nil_receiver_semantics_foldability_receiver_nil_literal_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.nil_receiver_semantics_foldability_enabled_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.nil_receiver_semantics_foldability_foldable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.nil_receiver_semantics_foldability_runtime_dispatch_required_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.nil_receiver_semantics_foldability_non_nil_receiver_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.nil_receiver_semantics_foldability_contract_violation_sites)
+        << ", i1 " << (frontend_metadata_.deterministic_nil_receiver_semantics_foldability_handoff ? 1 : 0)
+        << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

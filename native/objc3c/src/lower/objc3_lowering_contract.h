@@ -26,6 +26,8 @@ inline constexpr const char *kObjc3MessageSendSelectorLoweringLaneContract =
     "m156-message-send-selector-lowering-v1";
 inline constexpr const char *kObjc3DispatchAbiMarshallingLaneContract =
     "m157-dispatch-abi-marshalling-v1";
+inline constexpr const char *kObjc3NilReceiverSemanticsFoldabilityLaneContract =
+    "m158-nil-receiver-semantics-foldability-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -102,6 +104,17 @@ struct Objc3DispatchAbiMarshallingContract {
   bool deterministic = true;
 };
 
+struct Objc3NilReceiverSemanticsFoldabilityContract {
+  std::size_t message_send_sites = 0;
+  std::size_t receiver_nil_literal_sites = 0;
+  std::size_t nil_receiver_semantics_enabled_sites = 0;
+  std::size_t nil_receiver_foldable_sites = 0;
+  std::size_t nil_receiver_runtime_dispatch_required_sites = 0;
+  std::size_t non_nil_receiver_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -139,3 +152,7 @@ bool IsValidObjc3DispatchAbiMarshallingContract(
     const Objc3DispatchAbiMarshallingContract &contract);
 std::string Objc3DispatchAbiMarshallingReplayKey(
     const Objc3DispatchAbiMarshallingContract &contract);
+bool IsValidObjc3NilReceiverSemanticsFoldabilityContract(
+    const Objc3NilReceiverSemanticsFoldabilityContract &contract);
+std::string Objc3NilReceiverSemanticsFoldabilityReplayKey(
+    const Objc3NilReceiverSemanticsFoldabilityContract &contract);

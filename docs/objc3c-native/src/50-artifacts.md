@@ -2688,6 +2688,62 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py -q`
 
+## Nil-receiver semantics/foldability artifact contract (M158-C001)
+
+M158-C publishes a replay-stable lowering packet for nil-receiver semantics and foldability.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m158/lowering-nil-receiver-semantics-foldability-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m158/lowering-nil-receiver-semantics-foldability-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m158/lowering-nil-receiver-semantics-foldability-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m158/lowering-nil-receiver-semantics-foldability-contract/nil-receiver-foldability-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3NilReceiverSemanticsFoldabilityLaneContract`
+- `Objc3NilReceiverSemanticsFoldabilityContract`
+- `IsValidObjc3NilReceiverSemanticsFoldabilityContract(...)`
+- `Objc3NilReceiverSemanticsFoldabilityReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `receiver_nil_literal_sites=<N>`
+- `nil_receiver_semantics_enabled_sites=<N>`
+- `nil_receiver_foldable_sites=<N>`
+- `nil_receiver_runtime_dispatch_required_sites=<N>`
+- `non_nil_receiver_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m158-nil-receiver-semantics-foldability-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_nil_receiver_semantics_foldability_handoff`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_message_send_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_receiver_nil_literal_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_enabled_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_foldable_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_runtime_dispatch_required_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_non_nil_receiver_sites`
+- `frontend.pipeline.sema_pass_manager.nil_receiver_semantics_foldability_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_nil_receiver_semantics_foldability_replay_key`
+- `frontend.pipeline.semantic_surface.objc_nil_receiver_semantics_foldability_surface`
+- `lowering_nil_receiver_semantics_foldability.replay_key`
+- `lowering_nil_receiver_semantics_foldability.lane_contract`
+
+IR publication markers:
+
+- `; nil_receiver_semantics_foldability_lowering = message_send_sites=<N>;receiver_nil_literal_sites=<N>;nil_receiver_semantics_enabled_sites=<N>;nil_receiver_foldable_sites=<N>;nil_receiver_runtime_dispatch_required_sites=<N>;non_nil_receiver_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m158-nil-receiver-semantics-foldability-v1`
+- `; frontend_objc_nil_receiver_semantics_foldability_profile = message_send_sites=<N>, receiver_nil_literal_sites=<N>, nil_receiver_semantics_enabled_sites=<N>, nil_receiver_foldable_sites=<N>, nil_receiver_runtime_dispatch_required_sites=<N>, non_nil_receiver_sites=<N>, contract_violation_sites=<N>, deterministic_nil_receiver_semantics_foldability_handoff=<bool>`
+- `!objc3.objc_nil_receiver_semantics_foldability = !{!11}`
+- `!11 = !{i64 <message_send_sites>, i64 <receiver_nil_literal_sites>, i64 <nil_receiver_semantics_enabled_sites>, i64 <nil_receiver_foldable_sites>, i64 <nil_receiver_runtime_dispatch_required_sites>, i64 <non_nil_receiver_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m158_lowering_nil_receiver_semantics_foldability_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

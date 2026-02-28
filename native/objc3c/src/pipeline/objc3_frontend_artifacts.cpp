@@ -512,6 +512,29 @@ Objc3DispatchAbiMarshallingContract BuildDispatchAbiMarshallingContract(
   return contract;
 }
 
+Objc3NilReceiverSemanticsFoldabilityContract BuildNilReceiverSemanticsFoldabilityContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3NilReceiverSemanticsFoldabilityContract contract;
+  contract.message_send_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_sites_total;
+  contract.receiver_nil_literal_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_receiver_nil_literal_sites_total;
+  contract.nil_receiver_semantics_enabled_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_enabled_sites_total;
+  contract.nil_receiver_foldable_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_foldable_sites_total;
+  contract.nil_receiver_runtime_dispatch_required_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_runtime_dispatch_required_sites_total;
+  contract.non_nil_receiver_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_non_nil_receiver_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.nil_receiver_semantics_foldability_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.nil_receiver_semantics_foldability_summary.deterministic &&
+      sema_parity_surface.deterministic_nil_receiver_semantics_foldability_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -676,6 +699,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string dispatch_abi_marshalling_replay_key =
       Objc3DispatchAbiMarshallingReplayKey(dispatch_abi_marshalling_contract);
+  const Objc3NilReceiverSemanticsFoldabilityContract nil_receiver_semantics_foldability_contract =
+      BuildNilReceiverSemanticsFoldabilityContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3NilReceiverSemanticsFoldabilityContract(nil_receiver_semantics_foldability_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid nil-receiver semantics/foldability contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string nil_receiver_semantics_foldability_replay_key =
+      Objc3NilReceiverSemanticsFoldabilityReplayKey(nil_receiver_semantics_foldability_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -968,6 +1004,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_dispatch_abi_marshalling_replay_key\":\""
            << dispatch_abi_marshalling_replay_key
            << "\""
+           << ",\"deterministic_nil_receiver_semantics_foldability_handoff\":"
+           << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
+           << ",\"nil_receiver_semantics_foldability_message_send_sites\":"
+           << nil_receiver_semantics_foldability_contract.message_send_sites
+           << ",\"nil_receiver_semantics_foldability_receiver_nil_literal_sites\":"
+           << nil_receiver_semantics_foldability_contract.receiver_nil_literal_sites
+           << ",\"nil_receiver_semantics_foldability_enabled_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_semantics_enabled_sites
+           << ",\"nil_receiver_semantics_foldability_foldable_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_foldable_sites
+           << ",\"nil_receiver_semantics_foldability_runtime_dispatch_required_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_runtime_dispatch_required_sites
+           << ",\"nil_receiver_semantics_foldability_non_nil_receiver_sites\":"
+           << nil_receiver_semantics_foldability_contract.non_nil_receiver_sites
+           << ",\"nil_receiver_semantics_foldability_contract_violation_sites\":"
+           << nil_receiver_semantics_foldability_contract.contract_violation_sites
+           << ",\"lowering_nil_receiver_semantics_foldability_replay_key\":\""
+           << nil_receiver_semantics_foldability_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1209,6 +1264,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_nil_receiver_semantics_foldability_surface\":{\"message_send_sites\":"
+           << nil_receiver_semantics_foldability_contract.message_send_sites
+           << ",\"receiver_nil_literal_sites\":"
+           << nil_receiver_semantics_foldability_contract.receiver_nil_literal_sites
+           << ",\"nil_receiver_semantics_enabled_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_semantics_enabled_sites
+           << ",\"nil_receiver_foldable_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_foldable_sites
+           << ",\"nil_receiver_runtime_dispatch_required_sites\":"
+           << nil_receiver_semantics_foldability_contract.nil_receiver_runtime_dispatch_required_sites
+           << ",\"non_nil_receiver_sites\":"
+           << nil_receiver_semantics_foldability_contract.non_nil_receiver_sites
+           << ",\"contract_violation_sites\":"
+           << nil_receiver_semantics_foldability_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << nil_receiver_semantics_foldability_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1306,6 +1380,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3DispatchAbiMarshallingLaneContract
            << "\",\"deterministic_handoff\":"
            << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_nil_receiver_semantics_foldability\":{\"replay_key\":\""
+           << nil_receiver_semantics_foldability_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3NilReceiverSemanticsFoldabilityLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1483,6 +1563,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       dispatch_abi_marshalling_contract.total_marshaled_slots;
   ir_frontend_metadata.dispatch_abi_marshalling_runtime_dispatch_arg_slots =
       dispatch_abi_marshalling_contract.runtime_dispatch_arg_slots;
+  ir_frontend_metadata.lowering_nil_receiver_semantics_foldability_replay_key =
+      nil_receiver_semantics_foldability_replay_key;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_message_send_sites =
+      nil_receiver_semantics_foldability_contract.message_send_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_receiver_nil_literal_sites =
+      nil_receiver_semantics_foldability_contract.receiver_nil_literal_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_enabled_sites =
+      nil_receiver_semantics_foldability_contract.nil_receiver_semantics_enabled_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_foldable_sites =
+      nil_receiver_semantics_foldability_contract.nil_receiver_foldable_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_runtime_dispatch_required_sites =
+      nil_receiver_semantics_foldability_contract.nil_receiver_runtime_dispatch_required_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_non_nil_receiver_sites =
+      nil_receiver_semantics_foldability_contract.non_nil_receiver_sites;
+  ir_frontend_metadata.nil_receiver_semantics_foldability_contract_violation_sites =
+      nil_receiver_semantics_foldability_contract.contract_violation_sites;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1538,6 +1634,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       message_send_selector_lowering_contract.deterministic;
   ir_frontend_metadata.deterministic_dispatch_abi_marshalling_handoff =
       dispatch_abi_marshalling_contract.deterministic;
+  ir_frontend_metadata.deterministic_nil_receiver_semantics_foldability_handoff =
+      nil_receiver_semantics_foldability_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =
