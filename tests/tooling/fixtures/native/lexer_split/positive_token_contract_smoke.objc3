@@ -1,0 +1,17 @@
+module LexerTokenContractSmoke;
+
+/* Lexer contract smoke: comments and numeric prefixes/separators. */
+let decimal = 12_3;
+let binary = 0b10_10;
+let octal = 0o7_1;
+let hex = 0x1f_F;
+
+fn main() -> i32 {
+  let value = decimal + binary + octal + hex;
+  let shifted = value << 1;
+  if ((shifted > 0) && true || false) {
+    return shifted;
+  } else {
+    return 0;
+  }
+}
