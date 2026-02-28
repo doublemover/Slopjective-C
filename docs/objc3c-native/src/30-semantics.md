@@ -2278,3 +2278,40 @@ Sema/type metadata handoff contract:
 Recommended M146 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`
+
+## M147 sema/type @protocol/@category composition contract (M147-B001)
+
+M147-B extends sema/type metadata and deterministic parity surfaces for protocol-composition suffixes and
+Objective-C category-context method composition tracking.
+
+Sema/type contract markers:
+
+- `Objc3ProtocolCategoryCompositionSummary`
+- `param_has_protocol_composition`
+- `param_protocol_composition_lexicographic`
+- `param_has_invalid_protocol_composition`
+- `return_has_protocol_composition`
+- `return_protocol_composition_lexicographic`
+- `return_has_invalid_protocol_composition`
+- `protocol_composition_sites_total`
+- `category_composition_sites_total`
+- `deterministic_protocol_category_composition_handoff`
+
+Semantic coherence diagnostics (fail-closed):
+
+- malformed protocol composition suffix
+- empty protocol composition suffix
+- invalid protocol identifier
+- duplicate protocol identifier
+- incompatible function signature for composition drift
+- incompatible method signature for selector composition drift
+
+Sema/type metadata handoff contract:
+
+- protocol/category summary packet: `protocol_category_composition_summary`
+- function packet composition fields: `param_protocol_composition_lexicographic`
+- method packet composition fields: `return_protocol_composition_lexicographic`
+
+Recommended M147 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
