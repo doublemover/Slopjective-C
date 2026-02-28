@@ -435,6 +435,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-diagnostics anchors.
 
+## M203 integration compile-time evaluation engine
+
+- Gate intent: enforce deterministic compile-time-eval evidence across all lanes.
+### 1.1 Compile-time-eval integration chain
+- Deterministic compile-time-eval gate:
+  - `npm run check:objc3c:m203-compile-time-eval`
+- Chain order:
+  - replays `check:objc3c:m204-macro-diagnostics`.
+  - enforces all M203 lane contracts:
+    `tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_validation_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_integration_compile_time_eval_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through compile-time-eval validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain compile-time-eval anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
