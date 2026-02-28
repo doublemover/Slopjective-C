@@ -444,6 +444,22 @@ Frontend derive/synthesis pipeline contract relies on deterministic semantic-sur
   3. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
 
+## M201 frontend macro expansion architecture and isolation
+
+Frontend macro-expansion architecture/isolation contract relies on deterministic literal-hint capture, strict prelude pragma boundaries, and isolated transport into sema passes.
+
+- Required frontend macro-expansion/isolation signals:
+  - lexer literal-hint capture remains `migration_hints_.legacy_yes_count`, `legacy_no_count`, and `legacy_null_count`.
+  - prelude isolation contract remains `language_version_pragma_contract_` with prelude-only enforcement.
+  - pipeline transport isolation remains `result.migration_hints.*` and `result.language_version_pragma_contract.*`.
+  - sema ingestion remains isolated through `sema_input.migration_hints.*`.
+  - literal-classification bridge remains `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true")` and peers.
+- Required frontend macro-expansion/isolation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
