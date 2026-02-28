@@ -253,6 +253,18 @@ bool IsEquivalentSuperDispatchMethodFamilySummary(const Objc3SuperDispatchMethod
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentRuntimeShimHostLinkSummary(const Objc3RuntimeShimHostLinkSummary &lhs,
+                                            const Objc3RuntimeShimHostLinkSummary &rhs) {
+  return lhs.message_send_sites == rhs.message_send_sites &&
+         lhs.runtime_shim_required_sites == rhs.runtime_shim_required_sites &&
+         lhs.runtime_shim_elided_sites == rhs.runtime_shim_elided_sites &&
+         lhs.runtime_dispatch_arg_slots == rhs.runtime_dispatch_arg_slots &&
+         lhs.runtime_dispatch_declaration_parameter_count == rhs.runtime_dispatch_declaration_parameter_count &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites &&
+         lhs.runtime_dispatch_symbol == rhs.runtime_dispatch_symbol &&
+         lhs.default_runtime_dispatch_symbol_binding == rhs.default_runtime_dispatch_symbol_binding;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -576,6 +588,24 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.super_dispatch_method_family_summary.message_send_sites &&
       result.type_metadata_handoff.super_dispatch_method_family_summary.contract_violation_sites <=
           result.type_metadata_handoff.super_dispatch_method_family_summary.message_send_sites;
+  result.runtime_shim_host_link_summary = result.integration_surface.runtime_shim_host_link_summary;
+  result.deterministic_runtime_shim_host_link_handoff =
+      result.type_metadata_handoff.runtime_shim_host_link_summary.deterministic &&
+      result.integration_surface.runtime_shim_host_link_summary.deterministic &&
+      IsEquivalentRuntimeShimHostLinkSummary(
+          result.integration_surface.runtime_shim_host_link_summary,
+          result.type_metadata_handoff.runtime_shim_host_link_summary) &&
+      result.type_metadata_handoff.runtime_shim_host_link_summary.runtime_shim_required_sites +
+              result.type_metadata_handoff.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+          result.type_metadata_handoff.runtime_shim_host_link_summary.message_send_sites &&
+      result.type_metadata_handoff.runtime_shim_host_link_summary.contract_violation_sites <=
+          result.type_metadata_handoff.runtime_shim_host_link_summary.message_send_sites &&
+      (result.type_metadata_handoff.runtime_shim_host_link_summary.message_send_sites == 0 ||
+       result.type_metadata_handoff.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+           result.type_metadata_handoff.runtime_shim_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
+      (result.type_metadata_handoff.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+       (result.type_metadata_handoff.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+        kObjc3RuntimeShimHostLinkDefaultDispatchSymbol));
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -874,6 +904,24 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.super_dispatch_method_family_summary.method_family_returns_related_result_sites;
   result.parity_surface.super_dispatch_method_family_contract_violation_sites_total =
       result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites;
+  result.parity_surface.runtime_shim_host_link_summary =
+      result.type_metadata_handoff.runtime_shim_host_link_summary;
+  result.parity_surface.runtime_shim_host_link_message_send_sites_total =
+      result.parity_surface.runtime_shim_host_link_summary.message_send_sites;
+  result.parity_surface.runtime_shim_host_link_required_sites_total =
+      result.parity_surface.runtime_shim_host_link_summary.runtime_shim_required_sites;
+  result.parity_surface.runtime_shim_host_link_elided_sites_total =
+      result.parity_surface.runtime_shim_host_link_summary.runtime_shim_elided_sites;
+  result.parity_surface.runtime_shim_host_link_runtime_dispatch_arg_slots_total =
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_arg_slots;
+  result.parity_surface.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count_total =
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count;
+  result.parity_surface.runtime_shim_host_link_contract_violation_sites_total =
+      result.parity_surface.runtime_shim_host_link_summary.contract_violation_sites;
+  result.parity_surface.runtime_shim_host_link_runtime_dispatch_symbol =
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_symbol;
+  result.parity_surface.runtime_shim_host_link_default_runtime_dispatch_symbol_binding =
+      result.parity_surface.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -1354,6 +1402,36 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.super_dispatch_method_family_summary.contract_violation_sites <=
           result.parity_surface.super_dispatch_method_family_summary.message_send_sites &&
       result.parity_surface.super_dispatch_method_family_summary.deterministic;
+  result.parity_surface.deterministic_runtime_shim_host_link_handoff =
+      result.deterministic_runtime_shim_host_link_handoff &&
+      result.parity_surface.runtime_shim_host_link_summary.message_send_sites ==
+          result.parity_surface.runtime_shim_host_link_message_send_sites_total &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_shim_required_sites ==
+          result.parity_surface.runtime_shim_host_link_required_sites_total &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+          result.parity_surface.runtime_shim_host_link_elided_sites_total &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_arg_slots ==
+          result.parity_surface.runtime_shim_host_link_runtime_dispatch_arg_slots_total &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+          result.parity_surface.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count_total &&
+      result.parity_surface.runtime_shim_host_link_summary.contract_violation_sites ==
+          result.parity_surface.runtime_shim_host_link_contract_violation_sites_total &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+          result.parity_surface.runtime_shim_host_link_runtime_dispatch_symbol &&
+      result.parity_surface.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+          result.parity_surface.runtime_shim_host_link_default_runtime_dispatch_symbol_binding &&
+      result.parity_surface.runtime_shim_host_link_summary.runtime_shim_required_sites +
+              result.parity_surface.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+          result.parity_surface.runtime_shim_host_link_summary.message_send_sites &&
+      result.parity_surface.runtime_shim_host_link_summary.contract_violation_sites <=
+          result.parity_surface.runtime_shim_host_link_summary.message_send_sites &&
+      (result.parity_surface.runtime_shim_host_link_summary.message_send_sites == 0 ||
+       result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+           result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
+      (result.parity_surface.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+       (result.parity_surface.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+        kObjc3RuntimeShimHostLinkDefaultDispatchSymbol)) &&
+      result.parity_surface.runtime_shim_host_link_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -1397,6 +1475,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.nil_receiver_semantics_foldability_summary.deterministic &&
       result.parity_surface.deterministic_nil_receiver_semantics_foldability_handoff &&
       result.parity_surface.super_dispatch_method_family_summary.deterministic &&
-      result.parity_surface.deterministic_super_dispatch_method_family_handoff;
+      result.parity_surface.deterministic_super_dispatch_method_family_handoff &&
+      result.parity_surface.runtime_shim_host_link_summary.deterministic &&
+      result.parity_surface.deterministic_runtime_shim_host_link_handoff;
   return result;
 }

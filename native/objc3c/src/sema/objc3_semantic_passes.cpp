@@ -3381,6 +3381,28 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
       (metadata.nil_receiver_semantics_enabled == metadata.receiver_is_nil_literal &&
        metadata.nil_receiver_semantics_enabled == metadata.nil_receiver_foldable &&
        metadata.nil_receiver_requires_runtime_dispatch == !metadata.nil_receiver_foldable);
+  metadata.runtime_shim_host_link_required =
+      expr.runtime_shim_host_link_is_normalized ? expr.runtime_shim_host_link_required
+                                                : metadata.nil_receiver_requires_runtime_dispatch;
+  metadata.runtime_shim_host_link_elided =
+      expr.runtime_shim_host_link_is_normalized ? expr.runtime_shim_host_link_elided
+                                                : !metadata.runtime_shim_host_link_required;
+  metadata.runtime_shim_host_link_runtime_dispatch_arg_slots = expr.dispatch_abi_runtime_arg_slots;
+  metadata.runtime_shim_host_link_declaration_parameter_count =
+      expr.runtime_shim_host_link_is_normalized
+          ? static_cast<std::size_t>(expr.runtime_shim_host_link_declaration_parameter_count)
+          : metadata.runtime_shim_host_link_runtime_dispatch_arg_slots + 2u;
+  metadata.runtime_dispatch_bridge_symbol = expr.runtime_dispatch_bridge_symbol.empty()
+                                                ? kObjc3RuntimeShimHostLinkDefaultDispatchSymbol
+                                                : expr.runtime_dispatch_bridge_symbol;
+  metadata.runtime_shim_host_link_symbol = expr.runtime_shim_host_link_symbol;
+  metadata.runtime_shim_host_link_is_normalized =
+      expr.runtime_shim_host_link_is_normalized ||
+      (metadata.runtime_shim_host_link_required == metadata.nil_receiver_requires_runtime_dispatch &&
+       metadata.runtime_shim_host_link_elided == !metadata.runtime_shim_host_link_required &&
+       metadata.runtime_shim_host_link_declaration_parameter_count ==
+           metadata.runtime_shim_host_link_runtime_dispatch_arg_slots + 2u &&
+       !metadata.runtime_dispatch_bridge_symbol.empty());
   metadata.receiver_is_super_identifier =
       expr.receiver != nullptr && expr.receiver->kind == Expr::Kind::Identifier && expr.receiver->ident == "super";
   metadata.super_dispatch_enabled =
@@ -3560,6 +3582,30 @@ static bool IsMessageSendSelectorLoweringSiteMetadataLess(
   }
   if (lhs.nil_receiver_semantics_is_normalized != rhs.nil_receiver_semantics_is_normalized) {
     return lhs.nil_receiver_semantics_is_normalized < rhs.nil_receiver_semantics_is_normalized;
+  }
+  if (lhs.runtime_shim_host_link_required != rhs.runtime_shim_host_link_required) {
+    return lhs.runtime_shim_host_link_required < rhs.runtime_shim_host_link_required;
+  }
+  if (lhs.runtime_shim_host_link_elided != rhs.runtime_shim_host_link_elided) {
+    return lhs.runtime_shim_host_link_elided < rhs.runtime_shim_host_link_elided;
+  }
+  if (lhs.runtime_shim_host_link_runtime_dispatch_arg_slots != rhs.runtime_shim_host_link_runtime_dispatch_arg_slots) {
+    return lhs.runtime_shim_host_link_runtime_dispatch_arg_slots <
+           rhs.runtime_shim_host_link_runtime_dispatch_arg_slots;
+  }
+  if (lhs.runtime_shim_host_link_declaration_parameter_count !=
+      rhs.runtime_shim_host_link_declaration_parameter_count) {
+    return lhs.runtime_shim_host_link_declaration_parameter_count <
+           rhs.runtime_shim_host_link_declaration_parameter_count;
+  }
+  if (lhs.runtime_dispatch_bridge_symbol != rhs.runtime_dispatch_bridge_symbol) {
+    return lhs.runtime_dispatch_bridge_symbol < rhs.runtime_dispatch_bridge_symbol;
+  }
+  if (lhs.runtime_shim_host_link_symbol != rhs.runtime_shim_host_link_symbol) {
+    return lhs.runtime_shim_host_link_symbol < rhs.runtime_shim_host_link_symbol;
+  }
+  if (lhs.runtime_shim_host_link_is_normalized != rhs.runtime_shim_host_link_is_normalized) {
+    return lhs.runtime_shim_host_link_is_normalized < rhs.runtime_shim_host_link_is_normalized;
   }
   if (lhs.receiver_is_super_identifier != rhs.receiver_is_super_identifier) {
     return lhs.receiver_is_super_identifier < rhs.receiver_is_super_identifier;
@@ -3917,6 +3963,96 @@ BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(const Objc3SemanticI
 static Objc3SuperDispatchMethodFamilySummary
 BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
   return BuildSuperDispatchMethodFamilySummaryFromSites(handoff.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3RuntimeShimHostLinkSummary BuildRuntimeShimHostLinkSummaryFromSites(
+    const std::vector<Objc3MessageSendSelectorLoweringSiteMetadata> &sites) {
+  Objc3RuntimeShimHostLinkSummary summary;
+  bool baseline_initialized = false;
+  for (const auto &site : sites) {
+    ++summary.message_send_sites;
+    if (site.runtime_shim_host_link_required) {
+      ++summary.runtime_shim_required_sites;
+    }
+    if (site.runtime_shim_host_link_elided) {
+      ++summary.runtime_shim_elided_sites;
+    }
+
+    bool contract_violation = false;
+    if (!site.runtime_shim_host_link_is_normalized) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.runtime_shim_host_link_required == site.runtime_shim_host_link_elided) {
+      contract_violation = true;
+    }
+    if (site.runtime_shim_host_link_required != site.nil_receiver_requires_runtime_dispatch) {
+      contract_violation = true;
+    }
+    if (site.runtime_shim_host_link_declaration_parameter_count !=
+        site.runtime_shim_host_link_runtime_dispatch_arg_slots + 2u) {
+      contract_violation = true;
+    }
+    if (site.runtime_dispatch_bridge_symbol.empty()) {
+      summary.deterministic = false;
+      contract_violation = true;
+    }
+    if (site.runtime_shim_host_link_symbol.empty()) {
+      contract_violation = true;
+    }
+
+    const std::string site_dispatch_symbol = site.runtime_dispatch_bridge_symbol.empty()
+                                                 ? std::string(kObjc3RuntimeShimHostLinkDefaultDispatchSymbol)
+                                                 : site.runtime_dispatch_bridge_symbol;
+    if (!baseline_initialized) {
+      baseline_initialized = true;
+      summary.runtime_dispatch_arg_slots = site.runtime_shim_host_link_runtime_dispatch_arg_slots;
+      summary.runtime_dispatch_declaration_parameter_count =
+          site.runtime_shim_host_link_declaration_parameter_count;
+      summary.runtime_dispatch_symbol = site_dispatch_symbol;
+      summary.default_runtime_dispatch_symbol_binding =
+          summary.runtime_dispatch_symbol == kObjc3RuntimeShimHostLinkDefaultDispatchSymbol;
+    } else if (summary.runtime_dispatch_arg_slots != site.runtime_shim_host_link_runtime_dispatch_arg_slots ||
+               summary.runtime_dispatch_declaration_parameter_count !=
+                   site.runtime_shim_host_link_declaration_parameter_count ||
+               summary.runtime_dispatch_symbol != site_dispatch_symbol) {
+      contract_violation = true;
+    }
+
+    if (contract_violation) {
+      ++summary.contract_violation_sites;
+    }
+  }
+
+  if (!baseline_initialized) {
+    summary.runtime_dispatch_symbol = kObjc3RuntimeShimHostLinkDefaultDispatchSymbol;
+    summary.default_runtime_dispatch_symbol_binding = true;
+  } else {
+    summary.default_runtime_dispatch_symbol_binding =
+        summary.runtime_dispatch_symbol == kObjc3RuntimeShimHostLinkDefaultDispatchSymbol;
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.runtime_shim_required_sites + summary.runtime_shim_elided_sites == summary.message_send_sites &&
+      summary.runtime_shim_required_sites <= summary.message_send_sites &&
+      summary.runtime_shim_elided_sites <= summary.message_send_sites &&
+      summary.contract_violation_sites <= summary.message_send_sites &&
+      (summary.message_send_sites == 0 ||
+       summary.runtime_dispatch_declaration_parameter_count == summary.runtime_dispatch_arg_slots + 2u) &&
+      (summary.default_runtime_dispatch_symbol_binding ==
+       (summary.runtime_dispatch_symbol == kObjc3RuntimeShimHostLinkDefaultDispatchSymbol));
+  return summary;
+}
+
+static Objc3RuntimeShimHostLinkSummary
+BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  return BuildRuntimeShimHostLinkSummaryFromSites(surface.message_send_selector_lowering_sites_lexicographic);
+}
+
+static Objc3RuntimeShimHostLinkSummary
+BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  return BuildRuntimeShimHostLinkSummaryFromSites(handoff.message_send_selector_lowering_sites_lexicographic);
 }
 
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
@@ -4618,6 +4754,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildNilReceiverSemanticsFoldabilitySummaryFromIntegrationSurface(surface);
   surface.super_dispatch_method_family_summary =
       BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(surface);
+  surface.runtime_shim_host_link_summary =
+      BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -5392,6 +5530,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
   handoff.super_dispatch_method_family_summary =
       BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
+  handoff.runtime_shim_host_link_summary =
+      BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -5923,6 +6063,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildNilReceiverSemanticsFoldabilitySummaryFromTypeMetadataHandoff(handoff);
   const Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary =
       BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
+  const Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary =
+      BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -6301,7 +6443,35 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.super_dispatch_method_family_summary.method_family_returns_retained_result_sites <=
              handoff.super_dispatch_method_family_summary.message_send_sites &&
          handoff.super_dispatch_method_family_summary.contract_violation_sites <=
-             handoff.super_dispatch_method_family_summary.message_send_sites;
+             handoff.super_dispatch_method_family_summary.message_send_sites &&
+         handoff.runtime_shim_host_link_summary.deterministic &&
+         handoff.runtime_shim_host_link_summary.message_send_sites ==
+             runtime_shim_host_link_summary.message_send_sites &&
+         handoff.runtime_shim_host_link_summary.runtime_shim_required_sites ==
+             runtime_shim_host_link_summary.runtime_shim_required_sites &&
+         handoff.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+             runtime_shim_host_link_summary.runtime_shim_elided_sites &&
+         handoff.runtime_shim_host_link_summary.runtime_dispatch_arg_slots ==
+             runtime_shim_host_link_summary.runtime_dispatch_arg_slots &&
+         handoff.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+             runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count &&
+         handoff.runtime_shim_host_link_summary.contract_violation_sites ==
+             runtime_shim_host_link_summary.contract_violation_sites &&
+         handoff.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+             runtime_shim_host_link_summary.runtime_dispatch_symbol &&
+         handoff.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+             runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding &&
+         handoff.runtime_shim_host_link_summary.runtime_shim_required_sites +
+                 handoff.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+             handoff.runtime_shim_host_link_summary.message_send_sites &&
+         handoff.runtime_shim_host_link_summary.contract_violation_sites <=
+             handoff.runtime_shim_host_link_summary.message_send_sites &&
+         (handoff.runtime_shim_host_link_summary.message_send_sites == 0 ||
+          handoff.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+              handoff.runtime_shim_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
+         (handoff.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+          (handoff.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+           kObjc3RuntimeShimHostLinkDefaultDispatchSymbol));
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

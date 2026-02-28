@@ -2787,3 +2787,49 @@ Sema/type metadata handoff contract:
 Recommended M159 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m159_sema_super_dispatch_method_family_contract.py -q`
+
+## M160 sema/type runtime-shim host-link contract (M160-B001)
+
+M160-B adds deterministic semantic summary carriers for runtime-shim host-link invariants
+across Objective-C message-send lowering sites.
+
+Sema/type contract markers:
+
+- `Objc3RuntimeShimHostLinkSummary`
+- `runtime_shim_host_link_summary`
+- `BuildRuntimeShimHostLinkSummaryFromSites`
+- `BuildRuntimeShimHostLinkSummaryFromIntegrationSurface`
+- `BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff`
+- `deterministic_runtime_shim_host_link_handoff`
+- `result.parity_surface.runtime_shim_host_link_summary`
+
+Deterministic runtime-shim host-link invariants (fail-closed):
+
+- required/elided partition remains total
+  (`runtime_shim_required_sites + runtime_shim_elided_sites == message_send_sites`).
+- contract-violation counters remain bounded by message-send sites.
+- runtime dispatch declaration parameter count remains normalized
+  (`runtime_dispatch_declaration_parameter_count == runtime_dispatch_arg_slots + 2`) when message-send sites exist.
+- default runtime dispatch symbol binding remains aligned with canonical dispatch symbol identity.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.runtime_shim_host_link_summary = BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.runtime_shim_host_link_summary = BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `runtime_shim_host_link_message_send_sites_total`
+  - `runtime_shim_host_link_required_sites_total`
+  - `runtime_shim_host_link_elided_sites_total`
+  - `runtime_shim_host_link_runtime_dispatch_arg_slots_total`
+  - `runtime_shim_host_link_runtime_dispatch_declaration_parameter_count_total`
+  - `runtime_shim_host_link_contract_violation_sites_total`
+  - `runtime_shim_host_link_runtime_dispatch_symbol`
+  - `runtime_shim_host_link_default_runtime_dispatch_symbol_binding`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_runtime_shim_host_link_handoff`
+
+Recommended M160 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m160_sema_runtime_shim_host_link_contract.py -q`

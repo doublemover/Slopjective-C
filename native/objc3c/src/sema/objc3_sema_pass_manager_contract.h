@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "sema/objc3_sema_contract.h"
@@ -220,6 +221,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t super_dispatch_method_family_returns_retained_result_sites_total = 0;
   std::size_t super_dispatch_method_family_returns_related_result_sites_total = 0;
   std::size_t super_dispatch_method_family_contract_violation_sites_total = 0;
+  std::size_t runtime_shim_host_link_message_send_sites_total = 0;
+  std::size_t runtime_shim_host_link_required_sites_total = 0;
+  std::size_t runtime_shim_host_link_elided_sites_total = 0;
+  std::size_t runtime_shim_host_link_runtime_dispatch_arg_slots_total = 0;
+  std::size_t runtime_shim_host_link_runtime_dispatch_declaration_parameter_count_total = 0;
+  std::size_t runtime_shim_host_link_contract_violation_sites_total = 0;
+  std::string runtime_shim_host_link_runtime_dispatch_symbol;
+  bool runtime_shim_host_link_default_runtime_dispatch_symbol_binding = true;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -237,6 +246,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_dispatch_abi_marshalling_handoff = false;
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
   bool deterministic_super_dispatch_method_family_handoff = false;
+  bool deterministic_runtime_shim_host_link_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -251,6 +261,7 @@ struct Objc3SemaParityContractSurface {
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -704,7 +715,36 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.super_dispatch_method_family_summary.contract_violation_sites <=
              surface.super_dispatch_method_family_summary.message_send_sites &&
          surface.super_dispatch_method_family_summary.deterministic &&
-         surface.deterministic_super_dispatch_method_family_handoff;
+         surface.deterministic_super_dispatch_method_family_handoff &&
+         surface.runtime_shim_host_link_summary.message_send_sites ==
+             surface.runtime_shim_host_link_message_send_sites_total &&
+         surface.runtime_shim_host_link_summary.runtime_shim_required_sites ==
+             surface.runtime_shim_host_link_required_sites_total &&
+         surface.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+             surface.runtime_shim_host_link_elided_sites_total &&
+         surface.runtime_shim_host_link_summary.runtime_dispatch_arg_slots ==
+             surface.runtime_shim_host_link_runtime_dispatch_arg_slots_total &&
+         surface.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+             surface.runtime_shim_host_link_runtime_dispatch_declaration_parameter_count_total &&
+         surface.runtime_shim_host_link_summary.contract_violation_sites ==
+             surface.runtime_shim_host_link_contract_violation_sites_total &&
+         surface.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+             surface.runtime_shim_host_link_runtime_dispatch_symbol &&
+         surface.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+             surface.runtime_shim_host_link_default_runtime_dispatch_symbol_binding &&
+         surface.runtime_shim_host_link_summary.runtime_shim_required_sites +
+                 surface.runtime_shim_host_link_summary.runtime_shim_elided_sites ==
+             surface.runtime_shim_host_link_summary.message_send_sites &&
+         surface.runtime_shim_host_link_summary.contract_violation_sites <=
+             surface.runtime_shim_host_link_summary.message_send_sites &&
+         (surface.runtime_shim_host_link_summary.message_send_sites == 0 ||
+          surface.runtime_shim_host_link_summary.runtime_dispatch_declaration_parameter_count ==
+              surface.runtime_shim_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
+         (surface.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
+          (surface.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
+           kObjc3RuntimeShimHostLinkDefaultDispatchSymbol)) &&
+         surface.runtime_shim_host_link_summary.deterministic &&
+         surface.deterministic_runtime_shim_host_link_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -741,6 +781,8 @@ struct Objc3SemaPassManagerResult {
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   bool deterministic_super_dispatch_method_family_handoff = false;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  bool deterministic_runtime_shim_host_link_handoff = false;
+  Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

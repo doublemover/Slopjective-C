@@ -11,6 +11,7 @@
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMinor = 0;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionPatch = 0;
+inline constexpr const char *kObjc3RuntimeShimHostLinkDefaultDispatchSymbol = "objc3_msgsend_i32";
 
 enum class Objc3SemaAtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -239,6 +240,13 @@ struct Objc3MessageSendSelectorLoweringSiteMetadata {
   bool nil_receiver_foldable = false;
   bool nil_receiver_requires_runtime_dispatch = true;
   bool nil_receiver_semantics_is_normalized = false;
+  bool runtime_shim_host_link_required = true;
+  bool runtime_shim_host_link_elided = false;
+  std::size_t runtime_shim_host_link_runtime_dispatch_arg_slots = 0;
+  std::size_t runtime_shim_host_link_declaration_parameter_count = 0;
+  std::string runtime_dispatch_bridge_symbol;
+  std::string runtime_shim_host_link_symbol;
+  bool runtime_shim_host_link_is_normalized = false;
   bool receiver_is_super_identifier = false;
   bool super_dispatch_enabled = false;
   bool super_dispatch_requires_class_context = false;
@@ -304,6 +312,18 @@ struct Objc3SuperDispatchMethodFamilySummary {
   std::size_t method_family_returns_retained_result_sites = 0;
   std::size_t method_family_returns_related_result_sites = 0;
   std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3RuntimeShimHostLinkSummary {
+  std::size_t message_send_sites = 0;
+  std::size_t runtime_shim_required_sites = 0;
+  std::size_t runtime_shim_elided_sites = 0;
+  std::size_t runtime_dispatch_arg_slots = 0;
+  std::size_t runtime_dispatch_declaration_parameter_count = 0;
+  std::size_t contract_violation_sites = 0;
+  std::string runtime_dispatch_symbol = kObjc3RuntimeShimHostLinkDefaultDispatchSymbol;
+  bool default_runtime_dispatch_symbol_binding = true;
   bool deterministic = true;
 };
 
@@ -473,6 +493,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
   bool built = false;
 };
 
@@ -636,6 +657,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3DispatchAbiMarshallingSummary dispatch_abi_marshalling_summary;
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
+  Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
 };
 
 struct Objc3SemanticValidationOptions {
