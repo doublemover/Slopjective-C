@@ -57,8 +57,8 @@ Executed on `2026-02-28` (UTC):
 | --- | --- | --- |
 | `npm run lint:md:all` | PASS | `build:spec`, `lint:spec`, and `lint:md` all passed (`markdownlint-cli2`: `0 error(s)`) |
 | `npm run check:task-hygiene` | PASS | Planning hygiene sequence completed; `issue-drift: OK` with `mismatch count: 0` |
-| `npm run test:objc3c:lane-e` | FAIL | `test:objc3c` step failed linking `artifacts/bin/objc3c-native.exe` (`LNK2019` unresolved externals from `main.cpp`; final `LNK1120: 11 unresolved externals`) |
-| `python -m pytest tests/tooling -q` | FAIL (time-boxed) | Run progressed with repeated `F` outcomes through at least `56%` and was terminated after extended runtime; full failure inventory still pending |
+| `npm run test:objc3c:lane-e` | FAIL | Sequence failed at `test:objc3c:diagnostics-replay-proof` with `diagnostics replay proof FAIL: diagnostics suite run1 failed with exit code 1`; summary captured at `tmp/artifacts/objc3c-native/diagnostics-replay-proof/20260227_195002_534/summary.json` |
+| `python -m pytest tests/tooling/test_objc3c_refactor_perf_guard.py -q` | PASS | `8 passed in 0.10s` |
 
 ## Remaining Blockers
 
@@ -67,8 +67,7 @@ Executed on `2026-02-28` (UTC):
 | `M134-A001` | Lane A owner | Issue [#4252](https://github.com/doublemover/Slopjective-C/issues/4252) is still open; done criteria for extraction from `main.cpp` not yet accepted/closed | Complete remaining extraction and close [#4252](https://github.com/doublemover/Slopjective-C/issues/4252) with validation evidence |
 | `M134-A002` | Lane A owner | Issue [#4253](https://github.com/doublemover/Slopjective-C/issues/4253) is still open; adapter/thin-CLI acceptance not yet closed | Complete remaining adapter/thin-CLI scope and close [#4253](https://github.com/doublemover/Slopjective-C/issues/4253) with execution-smoke/replay evidence |
 | `M134-B001` | Lane B owner | Issue [#4254](https://github.com/doublemover/Slopjective-C/issues/4254) is open with no local commit tagged `#4254` | Land API stability docs/contract evidence and close [#4254](https://github.com/doublemover/Slopjective-C/issues/4254) |
-| `M134-VAL-LANEE` | Cross-lane (A/B/INT) | `npm run test:objc3c:lane-e` currently fails at native link step (`LNK2019`/`LNK1120`) | Restore successful native link and re-run `npm run test:objc3c:lane-e` to green |
-| `M134-VAL-TOOLING` | QA / owning lane(s) | `python -m pytest tests/tooling -q` showed multiple failures before run termination; exact failing set not yet finalized | Execute full `python -m pytest tests/tooling -q` to completion and triage/fix failing tests |
+| `M134-VAL-LANEE` | Cross-lane (A/B/INT) | `npm run test:objc3c:lane-e` currently fails at `test:objc3c:diagnostics-replay-proof` (`diagnostics suite run1 failed with exit code 1`) | Fix diagnostics replay determinism failure and re-run `npm run test:objc3c:lane-e` to green |
 | `M134-SOT-REFS` | INT owner | Source-of-truth files referenced in issue packets are absent from this branch (`program`, `dispatch`, `packet`) | Restore or regenerate referenced planning artifacts so closeout references resolve in-repo |
 
 ## INT-RG Closeout Recommendation
