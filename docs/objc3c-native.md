@@ -565,6 +565,22 @@ Frontend foreign-type import diagnostics contract relies on deterministic parser
   3. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
 
+## M198 frontend swift metadata bridge
+
+Frontend Swift metadata-bridge contract relies on deterministic parser token-metadata capture, explicit AST carrier fields, and stable frontend-to-sema transport boundaries.
+
+- Required frontend Swift metadata-bridge signals:
+  - parser token metadata remains `MakeSemaTokenMetadata(...)`.
+  - pointer/nullability metadata kinds remain `Objc3SemaTokenKind::PointerDeclarator` and `Objc3SemaTokenKind::NullabilitySuffix`.
+  - AST metadata carriers remain `std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens`, `std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens`, `std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens`, and `std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens`.
+  - frontend handoff bridge remains `BuildObjc3AstFromTokens(tokens)` and `sema_input.program = &result.program;`.
+  - metadata bridge parity anchors remain `result.type_metadata_handoff` and `result.deterministic_type_metadata_handoff`.
+- Required frontend Swift metadata-bridge commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2647,6 +2663,34 @@ Foreign type import diagnostics packet map:
 Recommended M199 sema/type foreign type import diagnostics command:
 
 - `python -m pytest tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py -q`
+
+## M198 sema/type swift metadata bridge
+
+For deterministic sema/type Swift metadata-bridge behavior, capture replay-stable packet evidence from parser token-metadata capture, semantic suffix validation hooks, and pass-manager isolation handoff surfaces.
+
+Swift metadata bridge packet map:
+
+- `swift metadata packet 1.1 deterministic sema/type bridge architecture anchors` -> `m198_sema_type_swift_metadata_architecture_packet`
+- `swift metadata packet 1.2 deterministic sema/type bridge isolation anchors` -> `m198_sema_type_swift_metadata_isolation_packet`
+
+### 1.1 Deterministic sema/type swift metadata bridge architecture packet
+
+- Source parser metadata-capture anchors: `static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, const Token &token) {`, `return MakeObjc3SemaTokenMetadata(kind, token.text, token.line, token.column);`, `MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator, Previous()));`, and `MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));`.
+- Source AST metadata-carrier anchors: `std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;`, `std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;`, `std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;`, and `std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;`.
+- Source sema validation anchors: `ValidateReturnTypeSuffixes(fn, diagnostics);`, `ValidateParameterTypeSuffixes(fn, diagnostics);`, `for (const auto &token : param.pointer_declarator_tokens) {`, `for (const auto &token : param.nullability_suffix_tokens) {`, `for (const auto &token : fn.return_pointer_declarator_tokens) {`, and `for (const auto &token : fn.return_nullability_suffix_tokens) {`.
+- Source type-metadata bridge anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`, `metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;`, and `metadata.param_has_invalid_type_suffix.size() == metadata.arity;`.
+- Deterministic sema/type Swift metadata bridge architecture packet key: `m198_sema_type_swift_metadata_architecture_packet`.
+
+### 1.2 Deterministic sema/type swift metadata bridge isolation packet
+
+- Source pass-manager isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Pipeline bridge transport anchors: `sema_input.program = &result.program;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Manifest sema/type parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Deterministic sema/type Swift metadata bridge isolation packet key: `m198_sema_type_swift_metadata_isolation_packet`.
+
+Recommended M198 sema/type Swift metadata bridge validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3280,6 +3324,70 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M198 lowering/runtime swift metadata bridge
+
+Lowering/runtime Swift metadata-bridge evidence is captured as deterministic packet artifacts rooted under `tmp/` so frontend-to-sema type metadata handoff and lowering/runtime boundary replay remain isolated and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/`
+  - `tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/swift-metadata-bridge-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `swift metadata bridge architecture/isolation markers` (required in source-anchor extracts):
+  - `BuildSemanticTypeMetadataHandoff(...)`
+  - `param_has_invalid_type_suffix`
+  - `deterministic_type_metadata_handoff`
+  - `type_metadata_global_entries`
+  - `type_metadata_function_entries`
+  - `Objc3IRFrontendMetadata`
+  - `frontend_profile`
+  - `!objc3.frontend`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));`
+  - `metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;`
+  - `metadata.param_has_invalid_type_suffix.size() == metadata.arity;`
+  - `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`
+  - `result.deterministic_type_metadata_handoff =`
+  - `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`
+  - `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`
+  - `<< ",\"deterministic_type_metadata_handoff\":"`
+  - `<< ",\"type_metadata_global_entries\":"`
+  - `<< ",\"type_metadata_function_entries\":"`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+  - `Objc3IRFrontendMetadata ir_frontend_metadata;`
+  - `if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {`
+  - `out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)`
+  - `out << "!objc3.frontend = !{!0}\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and Swift metadata bridge source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, Swift metadata bridge marker, or source anchor is missing.
+
+Swift metadata bridge capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.ll tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.manifest.json > tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/abi-ir-anchors.txt`
+3. `rg -n "BuildSemanticTypeMetadataHandoff|param_has_invalid_type_suffix|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|Objc3IRFrontendMetadata|EmitObjc3IRText|frontend_profile|!objc3.frontend|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/swift-metadata-bridge-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m198_lowering_swift_metadata_bridge_contract.py -q`
 
 ## M199 lowering/runtime foreign type import diagnostics
 
@@ -5983,6 +6091,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m199_validation_foreign_type_diagnostics_contract.py -q
 ```
 
+## M198 validation/perf swift metadata bridge runbook
+
+Swift metadata-bridge validation runbook verifies deterministic metadata evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Swift metadata-bridge evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m198_validation_swift_metadata_bridge_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6540,6 +6693,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain foreign type import diagnostics anchors.
+
+## M198 integration swift metadata bridge
+
+- Gate intent: enforce deterministic Swift metadata-bridge evidence across all lanes.
+### 1.1 Swift metadata-bridge integration chain
+- Deterministic Swift metadata-bridge gate:
+  - `npm run check:objc3c:m198-swift-metadata-bridge`
+- Chain order:
+  - replays `check:objc3c:m199-foreign-type-diagnostics`.
+  - enforces all M198 lane contracts:
+    `tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_lowering_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_validation_swift_metadata_bridge_contract.py`,
+    `tests/tooling/test_objc3c_m198_integration_swift_metadata_bridge_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through Swift metadata-bridge validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain Swift metadata-bridge anchors.
 
 ## Current call contract
 
