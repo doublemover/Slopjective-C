@@ -288,6 +288,90 @@ Canonical optimization stage-1 capture commands (lowering/runtime lane):
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
 
+## M204 lowering/runtime macro diagnostics and provenance
+
+Lowering/runtime macro diagnostics and provenance evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma diagnostics metadata and lowering replay boundaries remain auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `macro diagnostics/provenance markers` (required in source-anchor extracts):
+  - `MakeDiag(...)`
+  - `error:<line>:<column>: <message> [<code>]`
+  - `ConsumeLanguageVersionPragmas(diagnostics)`
+  - `ConsumeLanguageVersionPragmaDirective(...)`
+  - `O3L005`
+  - `O3L006`
+  - `O3L007`
+  - `O3L008`
+  - `first_line`
+  - `first_column`
+  - `last_line`
+  - `last_column`
+  - `ParseDiagSortKey(...)`
+  - `"severity"`
+  - `"line"`
+  - `"column"`
+  - `"code"`
+  - `"message"`
+  - `"raw"`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";`
+  - `ConsumeLanguageVersionPragmas(diagnostics);`
+  - `ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false))`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L007", kDuplicatePragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L008", kNonLeadingPragmaMessage));`
+  - `language_version_pragma_contract_.first_line = line;`
+  - `language_version_pragma_contract_.first_column = column;`
+  - `language_version_pragma_contract_.last_line = line;`
+  - `language_version_pragma_contract_.last_column = column;`
+  - `result.language_version_pragma_contract.first_line = pragma_contract.first_line;`
+  - `result.language_version_pragma_contract.first_column = pragma_contract.first_column;`
+  - `result.language_version_pragma_contract.last_line = pragma_contract.last_line;`
+  - `result.language_version_pragma_contract.last_column = pragma_contract.last_column;`
+  - `manifest << "    \"language_version_pragma_contract\":{\"seen\":"`
+  - `<< ",\"first_line\":" << pipeline_result.language_version_pragma_contract.first_line`
+  - `<< ",\"first_column\":" << pipeline_result.language_version_pragma_contract.first_column`
+  - `<< ",\"last_line\":" << pipeline_result.language_version_pragma_contract.last_line`
+  - `<< ",\"last_column\":" << pipeline_result.language_version_pragma_contract.last_column << "},\n";`
+  - `const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `<< ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""`
+  - `<< EscapeJsonString(key.message) << "\",\"raw\":\"" << EscapeJsonString(diagnostics[i]) << "\"}";`
+  - `WriteText(out_dir / (emit_prefix + ".diagnostics.json"), out.str());`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and macro diagnostics/provenance source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, macro diagnostics/provenance marker, or source anchor is missing.
+
+Macro diagnostics/provenance capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
+3. `rg -n "MakeDiag\(|error:|ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|O3L005|O3L006|O3L007|O3L008|first_line|first_column|last_line|last_column|ParseDiagSortKey\(|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py -q`
+
 ## M205 lowering/runtime macro security policy enforcement
 
 Lowering/runtime macro-security policy enforcement evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma-policy diagnostics and lowering replay boundaries remain auditable and stable across reruns.
