@@ -15,6 +15,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_sema_module_exists_and_pipeline_uses_api() -> None:
     assert SEMA_CONTRACT.exists()
     assert SEMA_HEADER.exists()
@@ -56,6 +65,20 @@ def test_sema_contract_exports_explicit_type_metadata_handoff_surface() -> None:
     assert "std::sort(function_names.begin(), function_names.end());" in sema_source
     assert "metadata.param_types.size() == metadata.arity" in sema_source
     assert "metadata.param_has_invalid_type_suffix.size() == metadata.arity" in sema_source
+    assert "std::is_sorted(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end())" in sema_source
+    assert "std::is_sorted(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end()," in sema_source
+
+    _assert_in_order(
+        sema_source,
+        [
+            "handoff.global_names_lexicographic.reserve(surface.globals.size());",
+            "std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());",
+            "function_names.reserve(surface.functions.size());",
+            "std::sort(function_names.begin(), function_names.end());",
+            "handoff.functions_lexicographic.reserve(function_names.size());",
+            "return handoff;",
+        ],
+    )
 
 
 def test_cmake_registers_sema_target() -> None:

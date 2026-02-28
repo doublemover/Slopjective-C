@@ -11,6 +11,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_lowering_contract_module_is_wired() -> None:
     assert HEADER.exists()
     assert SOURCE.exists()
@@ -37,6 +46,32 @@ def test_lowering_contract_module_is_wired() -> None:
     assert '#include "parse/objc3_parser_contract.h"' not in source
     assert '#include "token/objc3_token.h"' not in header
     assert '#include "token/objc3_token.h"' not in source
+
+
+def test_lowering_ir_boundary_replay_key_is_canonical_and_replay_safe() -> None:
+    source = _read(SOURCE)
+
+    _assert_in_order(
+        source,
+        [
+            "if (!TryNormalizeObjc3LoweringContract(input, normalized, error)) {",
+            "boundary.runtime_dispatch_arg_slots = normalized.max_message_send_args;",
+            "boundary.runtime_dispatch_symbol = normalized.runtime_dispatch_symbol;",
+            "boundary.selector_global_ordering = kObjc3SelectorGlobalOrdering;",
+        ],
+    )
+
+    _assert_in_order(
+        source,
+        [
+            '"runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol',
+            '";runtime_dispatch_arg_slots=" + std::to_string(boundary.runtime_dispatch_arg_slots)',
+            '";selector_global_ordering=" + boundary.selector_global_ordering;',
+        ],
+    )
+
+    assert "invalid lowering contract max_message_send_args:" in source
+    assert "invalid lowering contract runtime_dispatch_symbol" in source
 
 
 def test_cmake_links_lowering_contract_target() -> None:

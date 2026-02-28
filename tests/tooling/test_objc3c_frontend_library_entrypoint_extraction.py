@@ -13,6 +13,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     source = _read(ANCHOR_CPP)
 
@@ -21,6 +30,21 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     assert "libobjc3c_frontend compile entrypoints are scaffolded only" not in source
     assert "OBJC3C_FRONTEND_STATUS_DIAGNOSTICS" in source
     assert "OBJC3C_FRONTEND_STATUS_EMIT_ERROR" in source
+    assert "const Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
+    assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);" in source
+    assert "std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;" in source
+    assert "product.pipeline_result.stage_diagnostics" in source
+
+    _assert_in_order(
+        source,
+        [
+            "result->lex = BuildStageSummary(",
+            "result->parse =",
+            "result->sema = BuildStageSummary(",
+            "result->lower = BuildStageSummary(",
+            "result->emit = BuildStageSummary(",
+        ],
+    )
 
 
 def test_cli_frontend_exports_reusable_pipeline_compile_product() -> None:
@@ -35,6 +59,8 @@ def test_cli_frontend_exports_reusable_pipeline_compile_product() -> None:
     assert "Objc3FrontendCompileProduct CompileObjc3SourceWithPipeline(" in source
     assert "product.pipeline_result = RunObjc3FrontendPipeline(source, options);" in source
     assert "product.artifact_bundle = BuildObjc3FrontendArtifacts(input_path, product.pipeline_result, options);" in source
+    assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source, options);" in source
+    assert "return std::move(product.artifact_bundle);" in source
 
 
 def test_public_api_documents_pipeline_backed_compile_behavior() -> None:

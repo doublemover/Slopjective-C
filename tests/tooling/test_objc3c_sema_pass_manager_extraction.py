@@ -13,6 +13,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     contract = _read(PASS_MANAGER_CONTRACT)
     assert "kObjc3SemaPassManagerContractVersionMajor" in contract
@@ -30,6 +39,25 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
     assert "bool deterministic_type_metadata_handoff = false;" in contract
 
+    _assert_in_order(
+        contract,
+        [
+            "Objc3SemaPassId::BuildIntegrationSurface,",
+            "Objc3SemaPassId::ValidateBodies,",
+            "Objc3SemaPassId::ValidatePureContract,",
+        ],
+    )
+
+    _assert_in_order(
+        contract,
+        [
+            "std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};",
+            "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};",
+            "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;",
+            "bool deterministic_type_metadata_handoff = false;",
+        ],
+    )
+
 
 def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     header = _read(PASS_MANAGER_HEADER)
@@ -45,6 +73,19 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();" in source
     assert "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);" in source
     assert "result.deterministic_type_metadata_handoff =" in source
+
+    _assert_in_order(
+        source,
+        [
+            "for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {",
+            "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());",
+            "input.diagnostics_bus.PublishBatch(pass_diagnostics);",
+            "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();",
+            "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();",
+            "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);",
+            "result.deterministic_type_metadata_handoff =",
+        ],
+    )
 
 
 def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:
