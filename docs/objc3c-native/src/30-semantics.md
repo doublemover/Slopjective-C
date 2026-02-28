@@ -1906,3 +1906,32 @@ Recommended M205 sema/type macro-security validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m205_sema_macro_security_contract.py -q`
 
+## M204 sema/type macro diagnostics and provenance
+
+For deterministic sema/type macro diagnostics and provenance, capture replay-stable packet evidence from macro-hint intake, canonical sema diagnostics emission, and manifest provenance surfaces.
+
+Macro diagnostics/provenance packet map:
+
+- `macro diagnostics packet 1.1 deterministic canonical sema diagnostics hooks` -> `m204_macro_diagnostics_packet`
+- `macro provenance packet 1.2 deterministic sema/type provenance hooks` -> `m204_macro_provenance_packet`
+
+### 1.1 Deterministic canonical sema diagnostics packet
+
+- Source macro-diagnostics anchors: `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`, `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, `"O3S216"`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source macro-hint intake anchors: `if (options_.migration_assist) {`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Source deterministic sema diagnostics anchors: `result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;` and `result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;`.
+- Deterministic canonical sema diagnostics packet key: `m204_macro_diagnostics_packet`.
+
+### 1.2 Deterministic sema/type provenance packet
+
+- Source sema-input provenance anchors: `bool migration_assist = false;`, `Objc3SemaMigrationHints migration_hints;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source type/provenance determinism anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Manifest macro provenance anchors under `frontend`: `migration_assist`, `migration_hints`, `legacy_yes`, `legacy_no`, `legacy_null`, and `legacy_total`.
+- Manifest sema/type provenance anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Deterministic sema/type provenance packet key: `m204_macro_provenance_packet`.
+
+Recommended M204 sema/type macro diagnostics/provenance validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py -q`
+
