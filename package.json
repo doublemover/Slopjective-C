@@ -155,7 +155,7 @@
     "check:compiler-closeout:m143": "python scripts/check_m143_artifact_tmp_governance_contract.py && npm run test:objc3c:m143-artifact-governance && python scripts/spec_lint.py --glob \"docs/contracts/artifact_tmp_governance_expectations.md\"",
     "check:compiler-closeout:m144": "python scripts/check_m144_llvm_capability_discovery_contract.py && npm run test:objc3c:m144-llvm-capability-discovery && python scripts/spec_lint.py --glob \"docs/contracts/llvm_capability_discovery_expectations.md\"",
     "check:compiler-closeout:m145": "python scripts/check_m145_direct_llvm_matrix_contract.py && npm run test:objc3c:m145-direct-llvm-matrix && npm run test:objc3c:m145-direct-llvm-matrix:lane-d && python scripts/spec_lint.py --glob \"docs/contracts/direct_llvm_emission_expectations.md\"",
-    "check:compiler-closeout:m153": "npm run check:objc3c:m153-method-lookup-override-conflicts && python scripts/spec_lint.py --glob \"docs/objc3c-native/src/20-frontend.md\" --glob \"docs/objc3c-native/src/30-semantics.md\" --glob \"docs/objc3c-native/src/60-tests.md\" --glob \"docs/objc3c-native/src/library-api.md\"",
+    "check:compiler-closeout:m153": "npm run check:objc3c:m153-method-lookup-override-conflicts && python scripts/build_objc3c_native_docs.py --check",
     "check:compiler-execution:m02": "python scripts/check_m02_execution_readiness.py",
     "check:compiler-execution:m03": "python scripts/check_m03_execution_readiness.py",
     "check:compiler-execution:m04": "python scripts/check_m04_execution_readiness.py",

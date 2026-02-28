@@ -44,11 +44,7 @@ def test_m153_integration_method_lookup_override_conflict_gate_is_wired() -> Non
 
     assert "check:compiler-closeout:m153" in scripts
     assert scripts["check:compiler-closeout:m153"] == (
-        "npm run check:objc3c:m153-method-lookup-override-conflicts && python scripts/spec_lint.py "
-        '--glob "docs/objc3c-native/src/20-frontend.md" '
-        '--glob "docs/objc3c-native/src/30-semantics.md" '
-        '--glob "docs/objc3c-native/src/60-tests.md" '
-        '--glob "docs/objc3c-native/src/library-api.md"'
+        "npm run check:objc3c:m153-method-lookup-override-conflicts && python scripts/build_objc3c_native_docs.py --check"
     )
     assert "check:compiler-closeout:m153" in scripts["check:task-hygiene"]
 
