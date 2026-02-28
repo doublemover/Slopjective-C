@@ -442,6 +442,52 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m220_validation_public_beta_contract.py -q
 ```
 
+## M219 validation/perf cross-platform parity runbook
+
+Cross-platform parity validation runs the same deterministic command sequence on Windows, Linux, and macOS.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Cross-platform parity evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `platform`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m219_validation_cross_platform_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
