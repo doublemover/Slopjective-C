@@ -46,7 +46,7 @@ def test_main_returns_0_when_all_checks_pass(monkeypatch) -> None:
     )
     monkeypatch.setattr(planning_lint, "run_structural_lint", lambda _paths: 0)
     monkeypatch.setattr(planning_lint, "run_placeholders_lint", lambda: 0)
-    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda: 0)
+    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda *_: 0)
 
     code, stdout, stderr = run_main([])
 
@@ -63,7 +63,7 @@ def test_main_returns_1_when_any_check_reports_findings(monkeypatch) -> None:
     )
     monkeypatch.setattr(planning_lint, "run_structural_lint", lambda _paths: 0)
     monkeypatch.setattr(planning_lint, "run_placeholders_lint", lambda: 1)
-    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda: 0)
+    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda *_: 0)
 
     code, stdout, stderr = run_main([])
 
@@ -80,12 +80,40 @@ def test_main_returns_2_when_any_check_returns_runtime_failure(monkeypatch) -> N
     )
     monkeypatch.setattr(planning_lint, "run_structural_lint", lambda _paths: 0)
     monkeypatch.setattr(planning_lint, "run_placeholders_lint", lambda: 0)
-    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda: 2)
+    monkeypatch.setattr(planning_lint, "run_unchecked_checkboxes_lint", lambda *_: 2)
 
     code, stdout, stderr = run_main([])
 
     assert code == 2
     assert stderr == ""
+    assert "planning-lint summary: structural=0 placeholders=0 unchecked_checkboxes=2" in stdout
+
+
+def test_main_returns_2_when_any_check_raises_runtime_failure(monkeypatch) -> None:
+    monkeypatch.setattr(
+        planning_lint,
+        "resolve_scope",
+        lambda *_: [Path("spec/planning/example.md")],
+    )
+    monkeypatch.setattr(planning_lint, "run_structural_lint", lambda _paths: 0)
+    monkeypatch.setattr(planning_lint, "run_placeholders_lint", lambda: 0)
+
+    def raise_runtime_failure(*_args) -> int:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(
+        planning_lint,
+        "run_unchecked_checkboxes_lint",
+        raise_runtime_failure,
+    )
+
+    code, stdout, stderr = run_main([])
+
+    assert code == 2
+    assert (
+        "planning-lint: planning unchecked checkbox lint raised an unexpected exception: boom"
+        in stderr
+    )
     assert "planning-lint summary: structural=0 placeholders=0 unchecked_checkboxes=2" in stdout
 
 
@@ -117,7 +145,21 @@ def test_run_unchecked_checkboxes_lint_uses_json_mode(monkeypatch) -> None:
         fake_main,
     )
 
-    code = planning_lint.run_unchecked_checkboxes_lint()
+    code = planning_lint.run_unchecked_checkboxes_lint(
+        ("spec/planning/custom/**/*.md",),
+        ("spec/planning/archive/**", "spec/planning/generated/**"),
+    )
 
     assert code == 0
-    assert captured == [["--format", "json"]]
+    assert captured == [
+        [
+            "--format",
+            "json",
+            "--glob",
+            "spec/planning/custom/**/*.md",
+            "--exclude",
+            "spec/planning/archive/**",
+            "--exclude",
+            "spec/planning/generated/**",
+        ]
+    ]
