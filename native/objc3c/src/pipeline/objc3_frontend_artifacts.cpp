@@ -24,6 +24,16 @@ const char *TypeName(ValueType type) {
   }
 }
 
+const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
+  switch (mode) {
+    case Objc3FrontendCompatibilityMode::kLegacy:
+      return "legacy";
+    case Objc3FrontendCompatibilityMode::kCanonical:
+    default:
+      return "canonical";
+  }
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -99,6 +109,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  \"module\": \"" << program.module_name << "\",\n";
   manifest << "  \"frontend\": {\n";
   manifest << "    \"language_version\":" << static_cast<unsigned>(options.language_version) << ",\n";
+  manifest << "    \"compatibility_mode\":\"" << CompatibilityModeName(options.compatibility_mode) << "\",\n";
+  manifest << "    \"migration_assist\":" << (options.migration_assist ? "true" : "false") << ",\n";
   manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";
   manifest << "    \"pipeline\": {\n";
   manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")

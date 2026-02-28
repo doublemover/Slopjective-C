@@ -16,7 +16,10 @@ def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert '#include "parse/objc3_parser_contract.h"' in types_header
     assert '#include "ast/objc3_ast.h"' not in types_header
     assert "inline constexpr std::uint8_t kObjc3DefaultLanguageVersion = 3u;" in types_header
+    assert "enum class Objc3FrontendCompatibilityMode : std::uint8_t" in types_header
     assert "std::uint8_t language_version = kObjc3DefaultLanguageVersion;" in types_header
+    assert "Objc3FrontendCompatibilityMode compatibility_mode = Objc3FrontendCompatibilityMode::kCanonical;" in types_header
+    assert "bool migration_assist = false;" in types_header
     assert "Objc3ParsedProgram program;" in types_header
     assert "Objc3FrontendDiagnosticsBus stage_diagnostics;" in types_header
     artifacts_header = _read(ARTIFACTS_HEADER)

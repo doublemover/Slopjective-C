@@ -15,8 +15,15 @@
 
 inline constexpr std::uint8_t kObjc3DefaultLanguageVersion = 3u;
 
+enum class Objc3FrontendCompatibilityMode : std::uint8_t {
+  kCanonical = 0u,
+  kLegacy = 1u,
+};
+
 struct Objc3FrontendOptions {
   std::uint8_t language_version = kObjc3DefaultLanguageVersion;
+  Objc3FrontendCompatibilityMode compatibility_mode = Objc3FrontendCompatibilityMode::kCanonical;
+  bool migration_assist = false;
   Objc3LoweringContract lowering;
 };
 
