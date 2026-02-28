@@ -32,6 +32,8 @@ jobs:
         if: failure()
         run: |
           echo "::error title=ObjC3C dependency boundary gate failed::Run 'python scripts/check_objc3c_dependency_boundaries.py --strict' locally and follow docs/refactor/objc3c_dependency_violation_playbook.md."
+      - name: 00b Enforce M135 direct-LLVM packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m135
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip

@@ -20,5 +20,7 @@ jobs:
         run: python scripts/build_objc3c_native_docs.py --check
       - name: Enforce generated-only site index drift contract
         run: python scripts/build_site_index.py --check
+      - name: Enforce M135 direct-LLVM packet/docs contract
+        run: python scripts/check_m135_direct_llvm_contract.py
       - name: Run planning-scope lint
         run: python scripts/planning_lint.py
