@@ -1,0 +1,28 @@
+{
+  "id": "M145-D001",
+  "title": "Direct LLVM object emission fail-closed matrix conformance fixture (issue #4317 / task M145-D001)",
+  "feature": "m145 lane-d direct llvm object emission fail-closed matrix diagnostics and backend determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M145",
+    "milestone_number": 230,
+    "lane": "D",
+    "issue": 4317,
+    "task": "M145-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/contracts/direct_llvm_emission_expectations.md#m145-matrix-extension-lane-d",
+    "docs/objc3c-native.md#direct-llvm-object-emission-matrix-lane-d-contract-m145-d001",
+    "scripts/check_m145_direct_llvm_matrix_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-obj --objc3-ir-object-backend llvm-direct --llc /tmp/missing-llc-executable.exe %s\n// RUN: not objc3c --emit-obj --objc3-ir-object-backend llvm-direct --llc /tmp/missing-llc-executable.exe %s\n// EXPECT: O3E001 llvm-direct object emission failed: llc executable not found\n// EXPECT: O3E002 LLVM object emission failed\n\nmodule m145_lane_d_fail_closed;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      "O3E001",
+      "O3E002"
+    ]
+  }
+}

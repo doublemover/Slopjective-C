@@ -36,6 +36,9 @@ Minimum scope:
   ownership boundaries, throws mapping, and async thunk ABI shape consistency.
 - `M26-C001.json`..`M26-C010.json`: M26 Lane C lowering scope-freeze fixtures
   mapped to issues `#2856`..`#2865`.
+- `M145-D001.json`: M145 Lane D direct LLVM object-emission fail-closed matrix
+  fixture covering deterministic `llvm-direct` backend failure diagnostics
+  (`O3E001`, `O3E002`) and integration coverage for issue `#4317`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

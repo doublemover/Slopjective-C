@@ -1064,6 +1064,14 @@
         "M26-C009.json",
         "M26-C010.json"
       ]
+    },
+    {
+      "name": "m145_lane_d_issue_4317_direct_llvm_object_emission_fail_closed_matrix",
+      "feature": "M145 Lane D direct LLVM object-emission fail-closed matrix conformance fixture and perf/validation gate coverage",
+      "issue": 4317,
+      "files": [
+        "M145-D001.json"
+      ]
     }
   ]
 }

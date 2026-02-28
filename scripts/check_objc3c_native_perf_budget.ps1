@@ -374,9 +374,15 @@ try {
     $compileLog = Join-Path $caseDir "compile.log"
     New-Item -ItemType Directory -Force -Path $caseDir | Out-Null
 
+    $compileArgs = @($fixture.FullName, "--out-dir", $caseDir, "--emit-prefix", "module")
+    if ($fixture.Extension -eq ".objc3") {
+      # Perf-budget is a throughput regression gate, not a backend-availability gate.
+      # Force .objc3 perf samples onto clang object backend to avoid llc availability skew.
+      $compileArgs += @("--objc3-ir-object-backend", "clang")
+    }
     $run = Invoke-TimedNativeCommand `
       -Command $exe `
-      -Arguments @($fixture.FullName, "--out-dir", $caseDir, "--emit-prefix", "module") `
+      -Arguments $compileArgs `
       -LogPath $compileLog
 
     $objPath = Join-Path $caseDir "module.obj"
@@ -424,9 +430,13 @@ try {
 
   $run1Log = Join-Path $cacheDir "run1.log"
   $run2Log = Join-Path $cacheDir "run2.log"
+  $cacheScriptArgs = @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $missDir)
+  if ($cacheFixture.Extension -eq ".objc3") {
+    $cacheScriptArgs += @("--objc3-ir-object-backend", "clang")
+  }
   $run1 = Invoke-TimedWrapperCommand `
     -ScriptPath $compileScript `
-    -ScriptArguments @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $missDir) `
+    -ScriptArguments $cacheScriptArgs `
     -LogPath $run1Log
   if ($run1.exit_code -ne 0) {
     throw "perf-budget FAIL: cache-proof run1 failed with exit code $($run1.exit_code)"
@@ -436,9 +446,13 @@ try {
     throw "perf-budget FAIL: cache-proof run1 expected cache_hit=false, observed true"
   }
 
+  $cacheScriptArgsHit = @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $hitDir)
+  if ($cacheFixture.Extension -eq ".objc3") {
+    $cacheScriptArgsHit += @("--objc3-ir-object-backend", "clang")
+  }
   $run2 = Invoke-TimedWrapperCommand `
     -ScriptPath $compileScript `
-    -ScriptArguments @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $hitDir) `
+    -ScriptArguments $cacheScriptArgsHit `
     -LogPath $run2Log
   if ($run2.exit_code -ne 0) {
     throw "perf-budget FAIL: cache-proof run2 failed with exit code $($run2.exit_code)"
