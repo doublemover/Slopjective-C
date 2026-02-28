@@ -2149,3 +2149,31 @@ C interop headers + ABI alignment packet map:
 Recommended M196 sema/type C interop headers and ABI alignment validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py -q`
+
+## M195 sema/type system-extension conformance and policy
+
+For deterministic sema/type system-extension conformance and policy behavior, capture replay-stable packet evidence from compile-option policy gates, sema pass-manager architecture contracts, and manifest isolation surfaces.
+
+System-extension conformance + policy packet map:
+
+- `system-extension packet 1.1 deterministic sema/type conformance architecture anchors` -> `m195_sema_type_system_extension_conformance_architecture_packet`
+- `system-extension packet 1.2 deterministic sema/type policy isolation anchors` -> `m195_sema_type_system_extension_policy_isolation_packet`
+
+### 1.1 Deterministic sema/type conformance architecture packet
+
+- Source compile-option policy anchors: `static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {`, `static bool ValidateSupportedCompatibilityMode(uint8_t requested_compatibility_mode, std::string &error) {`, and `if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {`.
+- Source sema input-contract anchors: `Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;`, `bool migration_assist = false;`, `Objc3SemaDiagnosticsBus diagnostics_bus;`, and `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`.
+- Pipeline sema transport anchors: `if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {`, `sema_input.validation_options = semantic_options;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, and `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`.
+- Source sema/type architecture anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Deterministic sema/type conformance architecture packet key: `m195_sema_type_system_extension_conformance_architecture_packet`.
+
+### 1.2 Deterministic sema/type policy isolation packet
+
+- Source sema pass-isolation anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.ready =`.
+- Manifest policy-isolation anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Manifest policy-isolation anchors under `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface`.
+- Deterministic sema/type policy isolation packet key: `m195_sema_type_system_extension_policy_isolation_packet`.
+
+Recommended M195 sema/type system-extension conformance and policy validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q`
