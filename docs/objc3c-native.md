@@ -194,6 +194,21 @@ Pipeline/manifest replay contract includes a `language_version_pragma_contract` 
   - `FunctionDecl`
   - `Objc3Program`
 
+## M224 frontend release-readiness compliance profile
+
+Frontend/parser GA-readiness expectations (current enforced behavior):
+
+- parser/AST entry contract remains deterministic through `BuildObjc3AstFromTokens(...)` boundary wiring.
+- pragma prelude enforcement remains fail-closed (`O3L005`, `O3L006`, `O3L007`, `O3L008`) with manifest-visible pragma contract metadata.
+- token/AST bridge remains contract-driven (`Objc3SemaTokenMetadata` evidence captured for parser-to-sema handoff).
+- no direct parser implementation header leakage across pipeline boundary (`parse/objc3_parser.h` remains out of pipeline public surface).
+
+Operator evidence sequence for frontend readiness:
+
+1. run parser/AST extraction checks (`npm run test:objc3c:parser-ast-extraction`).
+2. run parser extraction contract gate (`npm run test:objc3c:parser-extraction-ast-builder-contract`).
+3. run M224 frontend docs contract test (`python -m pytest tests/tooling/test_objc3c_m224_frontend_release_contract.py -q`).
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1586,6 +1601,21 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Tooling/CI contract:
   - `npm run test:objc3c:lane-e` is the aggregate gate for recovery, parser/diagnostics replay proof, perf/cache proof, lowering replay, execution smoke/replay proof, and M23/M24/M25 readiness checks.
 
+## M224 sema/type-system release readiness
+
+Sema/type-system GA readiness expectations (current enforced behavior):
+
+- pass-manager execution order remains deterministic through `kObjc3SemaPassOrder` (`BuildIntegrationSurface`, `ValidateBodies`, `ValidatePureContract`).
+- per-pass diagnostics remain deterministic and replay-stable: `CanonicalizePassDiagnostics(...)` is applied and parity asserts monotonic counters via `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- parity readiness remains fail-closed through `IsReadyObjc3SemaParityContractSurface(...)`, including deterministic diagnostics/type-metadata flags and symbol-count parity checks.
+- pipeline-to-artifact evidence remains deterministic: semantic diagnostics are wired through `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;` and emitted in manifest `frontend.pipeline.sema_pass_manager` with `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+
+Operator evidence sequence for sema/type-system readiness:
+
+1. run sema extraction contract checks (`python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`).
+2. run parser/sema integration contract checks (`python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`).
+3. run M224 sema release contract test (`python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`).
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -1755,6 +1785,37 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M224 lowering/LLVM IR/runtime ABI release readiness
+
+GA readiness evidence for native `.objc3` lowering remains deterministic and fail-closed:
+
+- IR replay markers must remain present and aligned:
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+- Manifest lowering packet must mirror the runtime boundary contract:
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- Runtime ABI declaration remains symbol-aligned with the lowering contract when dispatch calls are emitted:
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+- Boundary normalization remains fail-closed for invalid symbols:
+  - `invalid lowering contract runtime_dispatch_symbol`
+- Determinism expectation for GA:
+  - identical source + lowering options produce byte-identical `module.ll` and `module.manifest.json`.
+
+Operator evidence sequence:
+
+1. Generate artifacts in a deterministic tmp root:
+
+```powershell
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
+```
+
+2. Validate marker alignment in:
+  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`
+3. Run contract guard:
+  - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
 
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
 
@@ -2512,6 +2573,29 @@ Fail-closed operator guidance:
 2. inspect failing summary JSON first, then per-case logs under the same run root.
 3. do not interpret replay/perf regressions without comparing both run1/run2 evidence packets.
 
+## M224 validation/conformance/perf release readiness
+
+For M224 release-readiness operators, run this fail-closed order from repo root:
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Fail-closed release criteria:
+
+1. any non-zero exit code in sequence is a hard stop; do not execute later commands.
+2. `test:objc3c:m145-direct-llvm-matrix:lane-d` must execute both `scripts/check_conformance_suite.ps1` and `npm run test:objc3c:perf-budget`; treat either missing as release-blocking.
+3. release-ready evidence requires both `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json` and `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`; missing summary evidence is a failure.
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m224_validation_release_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -2572,6 +2656,20 @@ int objc3c_frontend_startup_check(void) {
   return v.abi_version == objc3c_frontend_abi_version();
 }
 ```
+
+## M224 integration/release-readiness (1.0 ABI/version gates)
+
+- Gate intent: fail closed on ABI/version drift before a 1.0 cut.
+- Required startup/version invariants:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)` must pass before compile entrypoints are used.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()` must remain true.
+  - `OBJC3C_FRONTEND_ABI_VERSION` must stay inside the inclusive compatibility window
+    `OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION` through
+    `OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION`.
+- Deterministic M224 integration gate:
+  - `npm run check:objc3c:m224-integration-release-readiness`
+  - This gate chains existing deterministic checks for M222 compatibility migration,
+    library/CLI parity golden replay, and M224 tooling wiring.
 
 ## Current call contract
 
