@@ -10133,6 +10133,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m163_validation_autoreleasepool_scope_contract.py`
   - `tests/tooling/test_objc3c_m163_integration_autoreleasepool_scope_contract.py`
 
+## M164 integration weak/unowned semantics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m164-weak-unowned-semantics-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m164`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m164_frontend_weak_unowned_parser_contract.py`
+  - `tests/tooling/test_objc3c_m164_sema_weak_unowned_contract.py`
+  - `tests/tooling/test_objc3c_m164_lowering_weak_unowned_contract.py`
+  - `tests/tooling/test_objc3c_m164_validation_weak_unowned_semantics_contract.py`
+  - `tests/tooling/test_objc3c_m164_integration_weak_unowned_semantics_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
