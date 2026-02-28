@@ -40,6 +40,24 @@
 - `O3S216`:
   - migration assist requires canonical literal replacement for legacy Objective-C aliases (`YES`, `NO`, `NULL`) in canonical compatibility mode.
 
+## M223 semantic migration operator guide
+
+Compatibility/migration diagnostic behavior (implemented now):
+
+- `compatibility_mode=canonical` + `migration_assist=false`
+  - legacy aliases are still token-normalized for execution compatibility.
+  - no migration-assist diagnostics are emitted.
+- `compatibility_mode=canonical` + `migration_assist=true`
+  - deterministic `O3S216` diagnostics are emitted for each encountered legacy alias family (`YES`, `NO`, `NULL`), including occurrence counts.
+- `compatibility_mode=legacy` + `migration_assist=true`
+  - migration-assist diagnostics are suppressed to preserve legacy-compatible operator flow while still recording migration hints in artifacts.
+
+Operator triage workflow:
+
+1. inspect `module.manifest.json` `frontend.migration_hints` counts.
+2. inspect `module.diagnostics.txt` for `O3S216` rows (canonical + assist mode).
+3. replace legacy aliases (`YES`->`true`, `NO`->`false`, `NULL`->`nil`) and replay.
+
 Parser/lexer diagnostics currently emitted include:
 
 - `O3L001` unexpected character
