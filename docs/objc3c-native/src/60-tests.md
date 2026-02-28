@@ -398,6 +398,16 @@ From repo root, execute deterministic M151 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py -q`
 - `npm run check:objc3c:m151-symbol-graph-scope-resolution`
 
+## M152 validation class-protocol-category semantic linking runbook
+
+From repo root, execute deterministic M152 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py -q`
+- `npm run check:objc3c:m152-class-protocol-category-linking`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
