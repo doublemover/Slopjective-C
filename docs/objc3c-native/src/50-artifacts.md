@@ -2299,6 +2299,38 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
 
+## Property-attribute lowering artifact contract (M149-C001)
+
+M149-C extends lowering/runtime ABI artifact publication with `@property` grammar envelopes covering attribute and accessor-modifier summaries.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m149/lowering-property-attribute-contract/property-attribute-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_property_attribute_handoff`
+- `frontend.pipeline.sema_pass_manager.property_declaration_entries`
+- `frontend.pipeline.sema_pass_manager.property_attribute_entries`
+- `frontend.pipeline.sema_pass_manager.property_attribute_value_entries`
+- `frontend.pipeline.sema_pass_manager.property_accessor_modifier_entries`
+- `frontend.pipeline.sema_pass_manager.property_getter_selector_entries`
+- `frontend.pipeline.sema_pass_manager.property_setter_selector_entries`
+- `frontend.pipeline.semantic_surface.objc_property_attribute_surface`
+
+IR publication markers:
+
+- `; frontend_objc_property_attribute_profile = property_declaration_entries=<N>, property_attribute_entries=<N>, property_attribute_value_entries=<N>, property_accessor_modifier_entries=<N>, property_getter_selector_entries=<N>, property_setter_selector_entries=<N>, deterministic_property_attribute_handoff=<bool>`
+- `!objc3.objc_property_attribute = !{!4}`
+- `!4 = !{i64 <property_declaration_entries>, i64 <property_attribute_entries>, i64 <property_attribute_value_entries>, i64 <property_accessor_modifier_entries>, i64 <property_getter_selector_entries>, i64 <property_setter_selector_entries>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
