@@ -212,6 +212,9 @@ struct Objc3MethodDecl {
   std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
+  std::string method_lookup_symbol;
+  std::string override_lookup_symbol;
+  std::string conflict_lookup_symbol;
   bool is_class_method = false;
   bool has_body = false;
   unsigned line = 1;
@@ -272,6 +275,9 @@ struct Objc3ProtocolDecl {
   std::vector<std::string> inherited_protocols;
   std::vector<std::string> inherited_protocols_lexicographic;
   std::string semantic_link_symbol;
+  std::vector<std::string> method_lookup_symbols_lexicographic;
+  std::vector<std::string> override_lookup_symbols_lexicographic;
+  std::vector<std::string> conflict_lookup_symbols_lexicographic;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   bool is_forward_declaration = false;
@@ -291,6 +297,9 @@ struct Objc3InterfaceDecl {
   std::string semantic_link_symbol;
   std::string semantic_link_super_symbol;
   std::string semantic_link_category_symbol;
+  std::vector<std::string> method_lookup_symbols_lexicographic;
+  std::vector<std::string> override_lookup_symbols_lexicographic;
+  std::vector<std::string> conflict_lookup_symbols_lexicographic;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
@@ -306,6 +315,9 @@ struct Objc3ImplementationDecl {
   std::string semantic_link_symbol;
   std::string semantic_link_interface_symbol;
   std::string semantic_link_category_symbol;
+  std::vector<std::string> method_lookup_symbols_lexicographic;
+  std::vector<std::string> override_lookup_symbols_lexicographic;
+  std::vector<std::string> conflict_lookup_symbols_lexicographic;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;

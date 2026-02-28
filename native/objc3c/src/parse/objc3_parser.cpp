@@ -225,6 +225,54 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   return "category:" + owner_name + "(" + category_name + ")";
 }
 
+static std::string BuildObjcMethodLookupSymbol(const Objc3MethodDecl &method) {
+  return (method.is_class_method ? "class_lookup:" : "instance_lookup:") + method.selector;
+}
+
+static std::string BuildObjcMethodOverrideLookupSymbol(const Objc3MethodDecl &method) {
+  return (method.is_class_method ? "class_override:" : "instance_override:") + method.selector;
+}
+
+static std::string BuildObjcMethodConflictLookupSymbol(const Objc3MethodDecl &method) {
+  return (method.is_class_method ? "class_conflict:" : "instance_conflict:") + method.selector;
+}
+
+static std::vector<std::string> BuildObjcMethodLookupSymbolsLexicographic(
+    const std::vector<Objc3MethodDecl> &methods) {
+  std::vector<std::string> symbols;
+  symbols.reserve(methods.size());
+  for (const auto &method : methods) {
+    if (!method.method_lookup_symbol.empty()) {
+      symbols.push_back(method.method_lookup_symbol);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(symbols));
+}
+
+static std::vector<std::string> BuildObjcMethodOverrideLookupSymbolsLexicographic(
+    const std::vector<Objc3MethodDecl> &methods) {
+  std::vector<std::string> symbols;
+  symbols.reserve(methods.size());
+  for (const auto &method : methods) {
+    if (!method.override_lookup_symbol.empty()) {
+      symbols.push_back(method.override_lookup_symbol);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(symbols));
+}
+
+static std::vector<std::string> BuildObjcMethodConflictLookupSymbolsLexicographic(
+    const std::vector<Objc3MethodDecl> &methods) {
+  std::vector<std::string> symbols;
+  symbols.reserve(methods.size());
+  for (const auto &method : methods) {
+    if (!method.conflict_lookup_symbol.empty()) {
+      symbols.push_back(method.conflict_lookup_symbol);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(symbols));
+}
+
 class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
@@ -541,6 +589,24 @@ class Objc3Parser {
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
     target.nullability_suffix_tokens = source.nullability_suffix_tokens;
+  }
+
+  void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
+                                                     const std::string &lookup_owner_symbol,
+                                                     const std::string &override_owner_symbol) {
+    method.method_lookup_symbol = lookup_owner_symbol + "::" + BuildObjcMethodLookupSymbol(method);
+    method.override_lookup_symbol = override_owner_symbol + "::" + BuildObjcMethodOverrideLookupSymbol(method);
+    method.conflict_lookup_symbol = BuildObjcMethodConflictLookupSymbol(method);
+  }
+
+  void FinalizeObjcMethodLookupOverrideConflictPackets(
+      const std::vector<Objc3MethodDecl> &methods,
+      std::vector<std::string> &method_lookup_symbols_lexicographic,
+      std::vector<std::string> &override_lookup_symbols_lexicographic,
+      std::vector<std::string> &conflict_lookup_symbols_lexicographic) {
+    method_lookup_symbols_lexicographic = BuildObjcMethodLookupSymbolsLexicographic(methods);
+    override_lookup_symbols_lexicographic = BuildObjcMethodOverrideLookupSymbolsLexicographic(methods);
+    conflict_lookup_symbols_lexicographic = BuildObjcMethodConflictLookupSymbolsLexicographic(methods);
   }
 
   void ConsumeBracedBodyTail() {
@@ -888,6 +954,10 @@ class Objc3Parser {
     }
     decl->inherited_protocols_lexicographic =
         BuildProtocolSemanticLinkTargetsLexicographic(decl->inherited_protocols);
+    decl->semantic_link_symbol = "protocol:" + decl->name;
+    decl->scope_owner_symbol = BuildObjcContainerScopeOwner("protocol", decl->name, false, "");
+    decl->scope_path_lexicographic =
+        BuildScopePathLexicographic(decl->scope_owner_symbol, decl->semantic_link_symbol);
 
     if (Match(TokenKind::Semicolon)) {
       decl->is_forward_declaration = true;
@@ -918,11 +988,17 @@ class Objc3Parser {
       if (ParseObjcMethodDecl(method, false)) {
         method.scope_owner_symbol = decl->scope_owner_symbol;
         method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
+        AssignObjcMethodLookupOverrideConflictSymbols(method, decl->semantic_link_symbol, decl->semantic_link_symbol);
         decl->methods.push_back(std::move(method));
         continue;
       }
       SynchronizeObjcContainer();
     }
+
+    FinalizeObjcMethodLookupOverrideConflictPackets(decl->methods,
+                                                    decl->method_lookup_symbols_lexicographic,
+                                                    decl->override_lookup_symbols_lexicographic,
+                                                    decl->conflict_lookup_symbols_lexicographic);
 
     if (!Match(TokenKind::KwAtEnd)) {
       const Token &token = Peek();
@@ -1010,11 +1086,19 @@ class Objc3Parser {
       if (ParseObjcMethodDecl(method, false)) {
         method.scope_owner_symbol = decl->scope_owner_symbol;
         method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
+        const std::string override_owner_symbol =
+            decl->semantic_link_super_symbol.empty() ? decl->semantic_link_symbol : decl->semantic_link_super_symbol;
+        AssignObjcMethodLookupOverrideConflictSymbols(method, decl->semantic_link_symbol, override_owner_symbol);
         decl->methods.push_back(std::move(method));
         continue;
       }
       SynchronizeObjcContainer();
     }
+
+    FinalizeObjcMethodLookupOverrideConflictPackets(decl->methods,
+                                                    decl->method_lookup_symbols_lexicographic,
+                                                    decl->override_lookup_symbols_lexicographic,
+                                                    decl->conflict_lookup_symbols_lexicographic);
 
     if (!Match(TokenKind::KwAtEnd)) {
       const Token &token = Peek();
@@ -1077,11 +1161,18 @@ class Objc3Parser {
       if (ParseObjcMethodDecl(method, true)) {
         method.scope_owner_symbol = decl->scope_owner_symbol;
         method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
+        AssignObjcMethodLookupOverrideConflictSymbols(
+            method, decl->semantic_link_symbol, decl->semantic_link_interface_symbol);
         decl->methods.push_back(std::move(method));
         continue;
       }
       SynchronizeObjcContainer();
     }
+
+    FinalizeObjcMethodLookupOverrideConflictPackets(decl->methods,
+                                                    decl->method_lookup_symbols_lexicographic,
+                                                    decl->override_lookup_symbols_lexicographic,
+                                                    decl->conflict_lookup_symbols_lexicographic);
 
     if (!Match(TokenKind::KwAtEnd)) {
       const Token &token = Peek();
