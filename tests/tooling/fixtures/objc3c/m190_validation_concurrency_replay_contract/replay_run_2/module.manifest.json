@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_concurrency_replay_race_guard_lowering_handoff": true,
+        "concurrency_replay_race_guard_lowering_sites": 8,
+        "concurrency_replay_race_guard_lowering_replay_proof_sites": 5,
+        "concurrency_replay_race_guard_lowering_race_guard_sites": 4,
+        "concurrency_replay_race_guard_lowering_task_handoff_sites": 3,
+        "concurrency_replay_race_guard_lowering_actor_isolation_sites": 4,
+        "concurrency_replay_race_guard_lowering_deterministic_schedule_sites": 6,
+        "concurrency_replay_race_guard_lowering_guard_blocked_sites": 2,
+        "concurrency_replay_race_guard_lowering_contract_violation_sites": 0,
+        "lowering_concurrency_replay_race_guard_replay_key": "concurrency_replay_sites=8;replay_proof_sites=5;race_guard_sites=4;task_handoff_sites=3;actor_isolation_sites=4;deterministic_schedule_sites=6;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m190-concurrency-replay-race-guard-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_concurrency_replay_race_guard_lowering_surface": {
+          "concurrency_replay_sites": 8,
+          "replay_proof_sites": 5,
+          "race_guard_sites": 4,
+          "task_handoff_sites": 3,
+          "actor_isolation_sites": 4,
+          "deterministic_schedule_sites": 6,
+          "guard_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "concurrency_replay_sites=8;replay_proof_sites=5;race_guard_sites=4;task_handoff_sites=3;actor_isolation_sites=4;deterministic_schedule_sites=6;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m190-concurrency-replay-race-guard-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_concurrency_replay_race_guard": {
+    "replay_key": "concurrency_replay_sites=8;replay_proof_sites=5;race_guard_sites=4;task_handoff_sites=3;actor_isolation_sites=4;deterministic_schedule_sites=6;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m190-concurrency-replay-race-guard-lowering-v1",
+    "lane_contract": "m190-concurrency-replay-race-guard-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

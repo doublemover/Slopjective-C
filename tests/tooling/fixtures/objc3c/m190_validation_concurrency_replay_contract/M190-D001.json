@@ -1,0 +1,25 @@
+{
+  "id": "M190-D001",
+  "title": "Concurrency replay-proof and race-guard lowering replay contract fixture (issue #4542 / task M190-D001)",
+  "feature": "m190 lane-d concurrency replay-proof and race-guard lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M190",
+    "milestone_number": 275,
+    "lane": "D",
+    "issue": 4542,
+    "task": "M190-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py",
+    "tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: concurrency_replay_race_guard_lowering\n// EXPECT: deterministic_concurrency_replay_race_guard_lowering_handoff=true\n\nmodule m190_lane_d_concurrency_replay_race_guard;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

@@ -2646,6 +2646,44 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 ```
 
+## M190 validation/conformance/perf concurrency replay-proof and race-guard runbook (M190-D001)
+
+Deterministic M190 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m190_validation_concurrency_replay_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_concurrency_replay_race_guard_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_concurrency_replay_race_guard_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_concurrency_replay_race_guard_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_concurrency_replay_race_guard_lowering_surface.deterministic_handoff`
+  - `lowering_concurrency_replay_race_guard.replay_key`
+- `replay_run_1/module.ll`
+  - `concurrency_replay_race_guard_lowering`
+  - `frontend_objc_concurrency_replay_race_guard_lowering_profile`
+  - `!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}`
+- `M190-D001.json`
+  - `tracking.issue = 4542`
+  - `tracking.task = M190-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `deterministic_schedule_sites + guard_blocked_sites == concurrency_replay_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+```
+
 ## M191 validation/conformance/perf unsafe-pointer extension gating runbook (M191-D001)
 
 Deterministic M191 validation sequence:
