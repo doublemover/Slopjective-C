@@ -70,6 +70,8 @@ jobs:
         run: npm run check:compiler-closeout:m164
       - name: 00u Enforce M165 ARC diagnostics/fix-it packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m165
+      - name: 00v Enforce M166 block-literal-capture packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m166
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -205,6 +207,8 @@ jobs:
         run: npm run check:objc3c:m164-weak-unowned-semantics-contracts
       - name: 44u Run M165 ARC diagnostics/fix-it integration gate
         run: npm run check:objc3c:m165-arc-diagnostics-fixit-contracts
+      - name: 44v Run M166 block literal capture integration gate
+        run: npm run check:objc3c:m166-block-literal-capture-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
