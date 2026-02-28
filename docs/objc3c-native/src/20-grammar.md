@@ -120,3 +120,18 @@ Pipeline/manifest replay contract includes a `language_version_pragma_contract` 
   - `FunctionDecl`
   - `Objc3Program`
 
+## M224 frontend release-readiness compliance profile
+
+Frontend/parser GA-readiness expectations (current enforced behavior):
+
+- parser/AST entry contract remains deterministic through `BuildObjc3AstFromTokens(...)` boundary wiring.
+- pragma prelude enforcement remains fail-closed (`O3L005`, `O3L006`, `O3L007`, `O3L008`) with manifest-visible pragma contract metadata.
+- token/AST bridge remains contract-driven (`Objc3SemaTokenMetadata` evidence captured for parser-to-sema handoff).
+- no direct parser implementation header leakage across pipeline boundary (`parse/objc3_parser.h` remains out of pipeline public surface).
+
+Operator evidence sequence for frontend readiness:
+
+1. run parser/AST extraction checks (`npm run test:objc3c:parser-ast-extraction`).
+2. run parser extraction contract gate (`npm run test:objc3c:parser-extraction-ast-builder-contract`).
+3. run M224 frontend docs contract test (`python -m pytest tests/tooling/test_objc3c_m224_frontend_release_contract.py -q`).
+
