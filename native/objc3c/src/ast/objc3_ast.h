@@ -263,6 +263,8 @@ struct FuncParam {
   std::string lightweight_generic_constraint_profile;
   bool nullability_flow_profile_is_normalized = false;
   std::string nullability_flow_profile;
+  bool protocol_qualified_object_type_profile_is_normalized = false;
+  std::string protocol_qualified_object_type_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -321,6 +323,8 @@ struct Objc3MethodDecl {
   std::string return_lightweight_generic_constraint_profile;
   bool return_nullability_flow_profile_is_normalized = false;
   std::string return_nullability_flow_profile;
+  bool return_protocol_qualified_object_type_profile_is_normalized = false;
+  std::string return_protocol_qualified_object_type_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
@@ -383,6 +387,8 @@ struct Objc3PropertyDecl {
   std::string lightweight_generic_constraint_profile;
   bool nullability_flow_profile_is_normalized = false;
   std::string nullability_flow_profile;
+  bool protocol_qualified_object_type_profile_is_normalized = false;
+  std::string protocol_qualified_object_type_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -510,6 +516,8 @@ struct FunctionDecl {
   std::string return_lightweight_generic_constraint_profile;
   bool return_nullability_flow_profile_is_normalized = false;
   std::string return_nullability_flow_profile;
+  bool return_protocol_qualified_object_type_profile_is_normalized = false;
+  std::string return_protocol_qualified_object_type_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;

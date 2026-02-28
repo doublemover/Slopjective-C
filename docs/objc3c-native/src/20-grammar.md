@@ -945,6 +945,33 @@ Recommended M172 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q`
 
+## M173 frontend protocol-qualified object type parser/AST surface (M173-A001)
+
+Frontend parser/AST now emits deterministic protocol-qualified object type
+profiles for parameter and return type annotations.
+
+M173 parser/AST surface details:
+
+- protocol-qualified object type anchors:
+  - `BuildProtocolQualifiedObjectTypeProfile(...)`
+  - `IsProtocolQualifiedObjectTypeProfileNormalized(...)`
+- parser assignment anchors:
+  - `protocol_qualified_object_type_profile`
+  - `protocol_qualified_object_type_profile_is_normalized`
+  - `return_protocol_qualified_object_type_profile`
+  - `return_protocol_qualified_object_type_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser computes protocol-composition validity from object-pointer spelling,
+  suffix termination, and pointer declarator participation.
+- profile normalization is fail-closed for malformed/unterminated protocol
+  composition suffixes.
+
+Recommended M173 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m173_frontend_protocol_qualified_object_type_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

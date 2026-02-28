@@ -389,6 +389,35 @@ static bool IsNullabilityFlowProfileNormalized(
   return object_pointer_type_spelling;
 }
 
+static std::string BuildProtocolQualifiedObjectTypeProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text) {
+  const bool protocol_composition_valid =
+      !has_generic_suffix || (generic_suffix_terminated && object_pointer_type_spelling);
+  std::ostringstream out;
+  out << "protocol-qualified-object-type:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-protocol-composition=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";composition-bytes=" << generic_suffix_text.size()
+      << ";composition-valid=" << (protocol_composition_valid ? "true" : "false");
+  return out.str();
+}
+
+static bool IsProtocolQualifiedObjectTypeProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated) {
+  if (!has_generic_suffix) {
+    return true;
+  }
+  return generic_suffix_terminated && object_pointer_type_spelling;
+}
+
 static std::string BuildBlockLiteralCaptureProfile(const std::vector<std::string> &capture_names_lexicographic) {
   if (capture_names_lexicographic.empty()) {
     return "block-captures:none";
@@ -1151,6 +1180,10 @@ class Objc3Parser {
         source.return_nullability_flow_profile_is_normalized;
     target.return_nullability_flow_profile =
         source.return_nullability_flow_profile;
+    target.return_protocol_qualified_object_type_profile_is_normalized =
+        source.return_protocol_qualified_object_type_profile_is_normalized;
+    target.return_protocol_qualified_object_type_profile =
+        source.return_protocol_qualified_object_type_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1199,6 +1232,10 @@ class Objc3Parser {
         source.nullability_flow_profile_is_normalized;
     target.nullability_flow_profile =
         source.nullability_flow_profile;
+    target.protocol_qualified_object_type_profile_is_normalized =
+        source.protocol_qualified_object_type_profile_is_normalized;
+    target.protocol_qualified_object_type_profile =
+        source.protocol_qualified_object_type_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2052,6 +2089,8 @@ class Objc3Parser {
     fn.return_lightweight_generic_constraint_profile.clear();
     fn.return_nullability_flow_profile_is_normalized = false;
     fn.return_nullability_flow_profile.clear();
+    fn.return_protocol_qualified_object_type_profile_is_normalized = false;
+    fn.return_protocol_qualified_object_type_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2252,6 +2291,18 @@ class Objc3Parser {
         IsNullabilityFlowProfileNormalized(
             fn.return_object_pointer_type_spelling,
             fn.return_nullability_suffix_tokens.size());
+    fn.return_protocol_qualified_object_type_profile =
+        BuildProtocolQualifiedObjectTypeProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text);
+    fn.return_protocol_qualified_object_type_profile_is_normalized =
+        IsProtocolQualifiedObjectTypeProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated);
 
     return true;
   }
@@ -2276,6 +2327,8 @@ class Objc3Parser {
     param.lightweight_generic_constraint_profile.clear();
     param.nullability_flow_profile_is_normalized = false;
     param.nullability_flow_profile.clear();
+    param.protocol_qualified_object_type_profile_is_normalized = false;
+    param.protocol_qualified_object_type_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2416,6 +2469,18 @@ class Objc3Parser {
         IsNullabilityFlowProfileNormalized(
             param.object_pointer_type_spelling,
             param.nullability_suffix_tokens.size());
+    param.protocol_qualified_object_type_profile =
+        BuildProtocolQualifiedObjectTypeProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.protocol_qualified_object_type_profile_is_normalized =
+        IsProtocolQualifiedObjectTypeProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated);
 
     return true;
   }
