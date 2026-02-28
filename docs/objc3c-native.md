@@ -501,6 +501,22 @@ Frontend macro diagnostics/provenance requires deterministic directive source-lo
   3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
 
+## M203 frontend compile-time evaluation engine
+
+Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
+
+- Required frontend compile-time-eval signals:
+  - constant-expression evaluator entry remains `EvalConstExpr(...)`.
+  - global initializer folding surface remains `ResolveGlobalInitializerValues(...)`.
+  - non-constant global initializer diagnostics remain fail-closed as `O3S210`.
+  - artifact-level fail-closed lowering diagnostic remains `O3L300` for const-evaluation failure.
+  - manifest semantic surface remains deterministic for evaluated globals/functions packets.
+- Required frontend compile-time-eval commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2436,6 +2452,31 @@ Recommended M204 sema/type macro diagnostics/provenance validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py -q`
 
+## M203 sema/type compile-time evaluation engine
+
+For deterministic sema/type compile-time evaluation engine behavior, capture replay-stable packet evidence from sema global constant-expression resolution, static type-flow scalar evaluation, and lowering compile-time proof propagation.
+
+Compile-time evaluation packet map:
+
+- `compile-time eval packet 1.1 deterministic sema global const-expression hooks` -> `m203_sema_global_const_eval_packet`
+- `compile-time eval packet 1.2 deterministic type/static-flow compile-time hooks` -> `m203_type_static_flow_compile_time_packet`
+
+### 1.1 Deterministic sema global const-expression packet
+
+- Source const-eval engine anchors: `static bool EvalConstExpr(const Expr *expr, int &value,`, `bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &globals, std::vector<int> &values)`, `if (!EvalConstExpr(global.value.get(), value, &resolved_global_values)) {`, and `MakeDiag(global.line, global.column, "O3S210", "global initializer must be constant expression")`.
+- Artifact const-eval failure anchor: `MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: global initializer failed const evaluation")`.
+- Deterministic sema global const-eval packet key: `m203_sema_global_const_eval_packet`.
+
+### 1.2 Deterministic type/static-flow compile-time packet
+
+- Static analysis compile-time engine anchors: `using StaticScalarBindings = std::unordered_map<std::string, int>;`, `bool TryEvalStaticScalarValue(const Expr *expr, int &value, const StaticScalarBindings *bindings);`, `return TryEvalStaticArithmeticBinary(expr->op, lhs, rhs, value);`, `return TryEvalStaticBitwiseShiftBinary(expr->op, lhs, rhs, value);`, and `if (TryEvalStaticScalarValue(stmt->switch_stmt->condition.get(), static_switch_value, bindings)) {`.
+- Lowering compile-time proof anchors: `bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {`, `bool TryGetCompileTimeI32ExprInContext(const Expr *expr, const FunctionContext &ctx, int &value) const {`, `ctx.const_value_ptrs[ptr] = assigned_const_value;`, and `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`.
+- Deterministic type/static-flow compile-time packet key: `m203_type_static_flow_compile_time_packet`.
+
+Recommended M203 sema/type compile-time evaluation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2926,6 +2967,77 @@ Macro diagnostics/provenance capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
 3. `rg -n "MakeDiag\(|error:|ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|O3L005|O3L006|O3L007|O3L008|first_line|first_column|last_line|last_column|ParseDiagSortKey\(|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py -q`
+
+## M203 lowering/runtime compile-time evaluation engine
+
+Lowering/runtime compile-time evaluation engine evidence is captured as deterministic packet artifacts rooted under `tmp/` so constant-evaluation lowering and runtime dispatch fast-path replay remains auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `compile-time evaluation markers` (required in source-anchor extracts):
+  - `TryGetCompileTimeI32ExprInContext`
+  - `IsCompileTimeNilReceiverExprInContext`
+  - `IsCompileTimeKnownNonNilExprInContext`
+  - `has_assigned_const_value`
+  - `has_assigned_nil_value`
+  - `has_clause_const_value`
+  - `has_let_const_value`
+  - `const_value_ptrs`
+  - `nil_bound_ptrs`
+  - `nonzero_bound_ptrs`
+  - `global_proofs_invalidated`
+  - `receiver_is_compile_time_zero`
+  - `receiver_is_compile_time_nonzero`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `const bool has_assigned_const_value =`
+  - `op == "=" && value_expr != nullptr && TryGetCompileTimeI32ExprInContext(value_expr, ctx, assigned_const_value);`
+  - `const bool has_assigned_nil_value = op == "=" && value_expr != nullptr && IsCompileTimeNilReceiverExprInContext(value_expr, ctx);`
+  - `ctx.const_value_ptrs.erase(ptr);`
+  - `const bool has_clause_const_value = TryGetCompileTimeI32ExprInContext(clause.value.get(), ctx, clause_const_value);`
+  - `const bool has_let_const_value = TryGetCompileTimeI32ExprInContext(let->value.get(), ctx, let_const_value);`
+  - `bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {`
+  - `bool TryGetCompileTimeI32ExprInContext(const Expr *expr, const FunctionContext &ctx, int &value) const {`
+  - `if (expr->op == "&&" || expr->op == "||") {`
+  - `if (expr->op == "<<" || expr->op == ">>") {`
+  - `bool IsCompileTimeKnownNonNilExprInContext(const Expr *expr, const FunctionContext &ctx) const {`
+  - `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`
+  - `lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);`
+  - `if (lowered.receiver_is_compile_time_zero) {`
+  - `if (lowered.receiver_is_compile_time_nonzero) {`
+  - `ctx.global_proofs_invalidated = true;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and compile-time-evaluation source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, compile-time evaluation marker, or source anchor is missing.
+
+Compile-time evaluation engine capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
+3. `rg -n "TryGetCompileTimeI32ExprInContext|IsCompileTimeNilReceiverExprInContext|IsCompileTimeKnownNonNilExprInContext|has_assigned_const_value|has_assigned_nil_value|has_clause_const_value|has_let_const_value|const_value_ptrs|nil_bound_ptrs|nonzero_bound_ptrs|global_proofs_invalidated|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py -q`
 
 ## M205 lowering/runtime macro security policy enforcement
 
@@ -5223,6 +5335,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m204_validation_macro_diagnostics_contract.py -q
 ```
 
+## M203 validation/perf compile-time evaluation runbook
+
+Compile-time evaluation validation runbook verifies deterministic constant-evaluation evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Compile-time-eval evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m203_validation_compile_time_eval_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -5680,6 +5837,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-diagnostics anchors.
+
+## M203 integration compile-time evaluation engine
+
+- Gate intent: enforce deterministic compile-time-eval evidence across all lanes.
+### 1.1 Compile-time-eval integration chain
+- Deterministic compile-time-eval gate:
+  - `npm run check:objc3c:m203-compile-time-eval`
+- Chain order:
+  - replays `check:objc3c:m204-macro-diagnostics`.
+  - enforces all M203 lane contracts:
+    `tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_validation_compile_time_eval_contract.py`,
+    `tests/tooling/test_objc3c_m203_integration_compile_time_eval_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through compile-time-eval validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain compile-time-eval anchors.
 
 ## Current call contract
 
