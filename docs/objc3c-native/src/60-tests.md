@@ -2075,6 +2075,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m170_validation_block_determinism_perf_baseline_contract.py -q
 ```
 
+## M171 validation/conformance/perf lightweight generics constraints runbook
+
+Deterministic M171 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m171_validation_lightweight_generics_constraints_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_lightweight_generic_constraint_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_lightweight_generic_constraint_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_lightweight_generic_constraint_lowering_surface.deterministic_handoff`
+  - `lowering_lightweight_generic_constraint.replay_key`
+- `replay_run_1/module.ll`
+  - `lightweight_generic_constraint_lowering`
+  - `frontend_objc_lightweight_generic_constraint_lowering_profile`
+  - `!objc3.objc_lightweight_generic_constraint_lowering = !{!24}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m171_validation_lightweight_generics_constraints_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
