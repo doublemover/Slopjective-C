@@ -2630,6 +2630,64 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
 
+## Dispatch ABI marshalling artifact contract (M157-C001)
+
+M157-C publishes a replay-stable lowering packet for dispatch-path ABI argument/result marshalling.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/dispatch-abi-marshalling-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3DispatchAbiMarshallingLaneContract`
+- `Objc3DispatchAbiMarshallingContract`
+- `IsValidObjc3DispatchAbiMarshallingContract(...)`
+- `Objc3DispatchAbiMarshallingReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `receiver_slots_marshaled=<N>`
+- `selector_slots_marshaled=<N>`
+- `argument_value_slots_marshaled=<N>`
+- `argument_padding_slots_marshaled=<N>`
+- `argument_total_slots_marshaled=<N>`
+- `total_marshaled_slots=<N>`
+- `runtime_dispatch_arg_slots=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m157-dispatch-abi-marshalling-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_dispatch_abi_marshalling_handoff`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_message_send_sites`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_receiver_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_selector_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_value_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_padding_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_total_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_total_marshaled_slots`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_runtime_dispatch_arg_slots`
+- `frontend.pipeline.sema_pass_manager.lowering_dispatch_abi_marshalling_replay_key`
+- `frontend.pipeline.semantic_surface.objc_dispatch_abi_marshalling_surface`
+- `lowering_dispatch_abi_marshalling.replay_key`
+- `lowering_dispatch_abi_marshalling.lane_contract`
+
+IR publication markers:
+
+- `; dispatch_abi_marshalling_lowering = message_send_sites=<N>;receiver_slots_marshaled=<N>;selector_slots_marshaled=<N>;argument_value_slots_marshaled=<N>;argument_padding_slots_marshaled=<N>;argument_total_slots_marshaled=<N>;total_marshaled_slots=<N>;runtime_dispatch_arg_slots=<N>;deterministic=<bool>;lane_contract=m157-dispatch-abi-marshalling-v1`
+- `; frontend_objc_dispatch_abi_marshalling_profile = message_send_sites=<N>, receiver_slots_marshaled=<N>, selector_slots_marshaled=<N>, argument_value_slots_marshaled=<N>, argument_padding_slots_marshaled=<N>, argument_total_slots_marshaled=<N>, total_marshaled_slots=<N>, runtime_dispatch_arg_slots=<N>, deterministic_dispatch_abi_marshalling_handoff=<bool>`
+- `!objc3.objc_dispatch_abi_marshalling = !{!10}`
+- `!10 = !{i64 <message_send_sites>, i64 <receiver_slots_marshaled>, i64 <selector_slots_marshaled>, i64 <argument_value_slots_marshaled>, i64 <argument_padding_slots_marshaled>, i64 <argument_total_slots_marshaled>, i64 <total_marshaled_slots>, i64 <runtime_dispatch_arg_slots>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

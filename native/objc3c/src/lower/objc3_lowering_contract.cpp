@@ -378,3 +378,41 @@ std::string Objc3MessageSendSelectorLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3MessageSendSelectorLoweringLaneContract;
 }
+
+bool IsValidObjc3DispatchAbiMarshallingContract(
+    const Objc3DispatchAbiMarshallingContract &contract) {
+  const std::size_t expected_argument_total =
+      contract.message_send_sites * contract.runtime_dispatch_arg_slots;
+  if (contract.receiver_slots_marshaled != contract.message_send_sites ||
+      contract.selector_slots_marshaled != contract.message_send_sites) {
+    return false;
+  }
+  if (contract.argument_total_slots_marshaled != expected_argument_total) {
+    return false;
+  }
+  if (contract.argument_value_slots_marshaled > contract.argument_total_slots_marshaled) {
+    return false;
+  }
+  if (contract.argument_padding_slots_marshaled + contract.argument_value_slots_marshaled !=
+      contract.argument_total_slots_marshaled) {
+    return false;
+  }
+  const std::size_t expected_total = contract.receiver_slots_marshaled +
+                                     contract.selector_slots_marshaled +
+                                     contract.argument_total_slots_marshaled;
+  return contract.total_marshaled_slots == expected_total;
+}
+
+std::string Objc3DispatchAbiMarshallingReplayKey(
+    const Objc3DispatchAbiMarshallingContract &contract) {
+  return std::string("message_send_sites=") + std::to_string(contract.message_send_sites) +
+         ";receiver_slots_marshaled=" + std::to_string(contract.receiver_slots_marshaled) +
+         ";selector_slots_marshaled=" + std::to_string(contract.selector_slots_marshaled) +
+         ";argument_value_slots_marshaled=" + std::to_string(contract.argument_value_slots_marshaled) +
+         ";argument_padding_slots_marshaled=" + std::to_string(contract.argument_padding_slots_marshaled) +
+         ";argument_total_slots_marshaled=" + std::to_string(contract.argument_total_slots_marshaled) +
+         ";total_marshaled_slots=" + std::to_string(contract.total_marshaled_slots) +
+         ";runtime_dispatch_arg_slots=" + std::to_string(contract.runtime_dispatch_arg_slots) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3DispatchAbiMarshallingLaneContract;
+}

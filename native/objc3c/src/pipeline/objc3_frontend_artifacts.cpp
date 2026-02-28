@@ -342,6 +342,176 @@ Objc3MessageSendSelectorLoweringContract BuildMessageSendSelectorLoweringContrac
   return contract;
 }
 
+void AccumulateDispatchAbiMarshallingExpr(
+    const Expr *expr,
+    std::size_t runtime_dispatch_arg_slots,
+    Objc3DispatchAbiMarshallingContract &contract) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::MessageSend: {
+      ++contract.message_send_sites;
+      ++contract.receiver_slots_marshaled;
+      ++contract.selector_slots_marshaled;
+      const std::size_t actual_args = expr->args.size();
+      const std::size_t marshalled_args = std::min(actual_args, runtime_dispatch_arg_slots);
+      contract.argument_value_slots_marshaled += marshalled_args;
+      if (actual_args > runtime_dispatch_arg_slots) {
+        contract.deterministic = false;
+      }
+      contract.argument_padding_slots_marshaled += (runtime_dispatch_arg_slots - marshalled_args);
+      contract.argument_total_slots_marshaled += runtime_dispatch_arg_slots;
+      AccumulateDispatchAbiMarshallingExpr(expr->receiver.get(), runtime_dispatch_arg_slots, contract);
+      for (const auto &arg : expr->args) {
+        AccumulateDispatchAbiMarshallingExpr(arg.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    }
+    case Expr::Kind::Binary:
+      AccumulateDispatchAbiMarshallingExpr(expr->left.get(), runtime_dispatch_arg_slots, contract);
+      AccumulateDispatchAbiMarshallingExpr(expr->right.get(), runtime_dispatch_arg_slots, contract);
+      return;
+    case Expr::Kind::Conditional:
+      AccumulateDispatchAbiMarshallingExpr(expr->left.get(), runtime_dispatch_arg_slots, contract);
+      AccumulateDispatchAbiMarshallingExpr(expr->right.get(), runtime_dispatch_arg_slots, contract);
+      AccumulateDispatchAbiMarshallingExpr(expr->third.get(), runtime_dispatch_arg_slots, contract);
+      return;
+    case Expr::Kind::Call:
+      for (const auto &arg : expr->args) {
+        AccumulateDispatchAbiMarshallingExpr(arg.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    default:
+      return;
+  }
+}
+
+void AccumulateDispatchAbiMarshallingForClause(
+    const ForClause &clause,
+    std::size_t runtime_dispatch_arg_slots,
+    Objc3DispatchAbiMarshallingContract &contract) {
+  if (clause.value != nullptr) {
+    AccumulateDispatchAbiMarshallingExpr(clause.value.get(), runtime_dispatch_arg_slots, contract);
+  }
+}
+
+void AccumulateDispatchAbiMarshallingStmt(
+    const Stmt *stmt,
+    std::size_t runtime_dispatch_arg_slots,
+    Objc3DispatchAbiMarshallingContract &contract) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        AccumulateDispatchAbiMarshallingExpr(stmt->let_stmt->value.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        AccumulateDispatchAbiMarshallingExpr(stmt->assign_stmt->value.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        AccumulateDispatchAbiMarshallingExpr(stmt->return_stmt->value.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        AccumulateDispatchAbiMarshallingExpr(stmt->expr_stmt->value.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt == nullptr) {
+        return;
+      }
+      AccumulateDispatchAbiMarshallingExpr(stmt->if_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        AccumulateDispatchAbiMarshallingStmt(then_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        AccumulateDispatchAbiMarshallingStmt(else_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt == nullptr) {
+        return;
+      }
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        AccumulateDispatchAbiMarshallingStmt(body_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      AccumulateDispatchAbiMarshallingExpr(stmt->do_while_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt == nullptr) {
+        return;
+      }
+      AccumulateDispatchAbiMarshallingForClause(stmt->for_stmt->init, runtime_dispatch_arg_slots, contract);
+      AccumulateDispatchAbiMarshallingExpr(stmt->for_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
+      AccumulateDispatchAbiMarshallingForClause(stmt->for_stmt->step, runtime_dispatch_arg_slots, contract);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        AccumulateDispatchAbiMarshallingStmt(body_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt == nullptr) {
+        return;
+      }
+      AccumulateDispatchAbiMarshallingExpr(stmt->switch_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          AccumulateDispatchAbiMarshallingStmt(case_stmt.get(), runtime_dispatch_arg_slots, contract);
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt == nullptr) {
+        return;
+      }
+      AccumulateDispatchAbiMarshallingExpr(stmt->while_stmt->condition.get(), runtime_dispatch_arg_slots, contract);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        AccumulateDispatchAbiMarshallingStmt(body_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt == nullptr) {
+        return;
+      }
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        AccumulateDispatchAbiMarshallingStmt(body_stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+Objc3DispatchAbiMarshallingContract BuildDispatchAbiMarshallingContract(
+    const Objc3Program &program,
+    std::size_t runtime_dispatch_arg_slots) {
+  Objc3DispatchAbiMarshallingContract contract;
+  contract.runtime_dispatch_arg_slots = runtime_dispatch_arg_slots;
+
+  for (const auto &global : program.globals) {
+    AccumulateDispatchAbiMarshallingExpr(global.value.get(), runtime_dispatch_arg_slots, contract);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      AccumulateDispatchAbiMarshallingStmt(stmt.get(), runtime_dispatch_arg_slots, contract);
+    }
+  }
+
+  contract.total_marshaled_slots = contract.receiver_slots_marshaled +
+                                   contract.selector_slots_marshaled +
+                                   contract.argument_total_slots_marshaled;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -493,6 +663,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string message_send_selector_lowering_replay_key =
       Objc3MessageSendSelectorLoweringReplayKey(message_send_selector_lowering_contract);
+  const Objc3DispatchAbiMarshallingContract dispatch_abi_marshalling_contract =
+      BuildDispatchAbiMarshallingContract(program, options.lowering.max_message_send_args);
+  if (!IsValidObjc3DispatchAbiMarshallingContract(dispatch_abi_marshalling_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid dispatch ABI marshalling contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string dispatch_abi_marshalling_replay_key =
+      Objc3DispatchAbiMarshallingReplayKey(dispatch_abi_marshalling_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -764,6 +947,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_message_send_selector_lowering_replay_key\":\""
            << message_send_selector_lowering_replay_key
            << "\""
+           << ",\"deterministic_dispatch_abi_marshalling_handoff\":"
+           << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
+           << ",\"dispatch_abi_marshalling_message_send_sites\":"
+           << dispatch_abi_marshalling_contract.message_send_sites
+           << ",\"dispatch_abi_marshalling_receiver_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.receiver_slots_marshaled
+           << ",\"dispatch_abi_marshalling_selector_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.selector_slots_marshaled
+           << ",\"dispatch_abi_marshalling_argument_value_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_value_slots_marshaled
+           << ",\"dispatch_abi_marshalling_argument_padding_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_padding_slots_marshaled
+           << ",\"dispatch_abi_marshalling_argument_total_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_total_slots_marshaled
+           << ",\"dispatch_abi_marshalling_total_marshaled_slots\":"
+           << dispatch_abi_marshalling_contract.total_marshaled_slots
+           << ",\"dispatch_abi_marshalling_runtime_dispatch_arg_slots\":"
+           << dispatch_abi_marshalling_contract.runtime_dispatch_arg_slots
+           << ",\"lowering_dispatch_abi_marshalling_replay_key\":\""
+           << dispatch_abi_marshalling_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -984,6 +1188,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_dispatch_abi_marshalling_surface\":{\"message_send_sites\":"
+           << dispatch_abi_marshalling_contract.message_send_sites
+           << ",\"receiver_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.receiver_slots_marshaled
+           << ",\"selector_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.selector_slots_marshaled
+           << ",\"argument_value_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_value_slots_marshaled
+           << ",\"argument_padding_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_padding_slots_marshaled
+           << ",\"argument_total_slots_marshaled\":"
+           << dispatch_abi_marshalling_contract.argument_total_slots_marshaled
+           << ",\"total_marshaled_slots\":"
+           << dispatch_abi_marshalling_contract.total_marshaled_slots
+           << ",\"runtime_dispatch_arg_slots\":"
+           << dispatch_abi_marshalling_contract.runtime_dispatch_arg_slots
+           << ",\"replay_key\":\""
+           << dispatch_abi_marshalling_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1075,6 +1300,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3MessageSendSelectorLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_dispatch_abi_marshalling\":{\"replay_key\":\""
+           << dispatch_abi_marshalling_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3DispatchAbiMarshallingLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (dispatch_abi_marshalling_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -1235,6 +1466,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       message_send_selector_lowering_contract.selector_literal_entries;
   ir_frontend_metadata.message_send_selector_lowering_selector_literal_characters =
       message_send_selector_lowering_contract.selector_literal_characters;
+  ir_frontend_metadata.lowering_dispatch_abi_marshalling_replay_key = dispatch_abi_marshalling_replay_key;
+  ir_frontend_metadata.dispatch_abi_marshalling_message_send_sites =
+      dispatch_abi_marshalling_contract.message_send_sites;
+  ir_frontend_metadata.dispatch_abi_marshalling_receiver_slots_marshaled =
+      dispatch_abi_marshalling_contract.receiver_slots_marshaled;
+  ir_frontend_metadata.dispatch_abi_marshalling_selector_slots_marshaled =
+      dispatch_abi_marshalling_contract.selector_slots_marshaled;
+  ir_frontend_metadata.dispatch_abi_marshalling_argument_value_slots_marshaled =
+      dispatch_abi_marshalling_contract.argument_value_slots_marshaled;
+  ir_frontend_metadata.dispatch_abi_marshalling_argument_padding_slots_marshaled =
+      dispatch_abi_marshalling_contract.argument_padding_slots_marshaled;
+  ir_frontend_metadata.dispatch_abi_marshalling_argument_total_slots_marshaled =
+      dispatch_abi_marshalling_contract.argument_total_slots_marshaled;
+  ir_frontend_metadata.dispatch_abi_marshalling_total_marshaled_slots =
+      dispatch_abi_marshalling_contract.total_marshaled_slots;
+  ir_frontend_metadata.dispatch_abi_marshalling_runtime_dispatch_arg_slots =
+      dispatch_abi_marshalling_contract.runtime_dispatch_arg_slots;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1288,6 +1536,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =
       message_send_selector_lowering_contract.deterministic;
+  ir_frontend_metadata.deterministic_dispatch_abi_marshalling_handoff =
+      dispatch_abi_marshalling_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

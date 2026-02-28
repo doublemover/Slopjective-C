@@ -72,6 +72,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t message_send_selector_lowering_selector_literal_entries = 0;
   std::size_t message_send_selector_lowering_selector_literal_characters = 0;
   bool deterministic_message_send_selector_lowering_handoff = false;
+  std::string lowering_dispatch_abi_marshalling_replay_key;
+  std::size_t dispatch_abi_marshalling_message_send_sites = 0;
+  std::size_t dispatch_abi_marshalling_receiver_slots_marshaled = 0;
+  std::size_t dispatch_abi_marshalling_selector_slots_marshaled = 0;
+  std::size_t dispatch_abi_marshalling_argument_value_slots_marshaled = 0;
+  std::size_t dispatch_abi_marshalling_argument_padding_slots_marshaled = 0;
+  std::size_t dispatch_abi_marshalling_argument_total_slots_marshaled = 0;
+  std::size_t dispatch_abi_marshalling_total_marshaled_slots = 0;
+  std::size_t dispatch_abi_marshalling_runtime_dispatch_arg_slots = 0;
+  bool deterministic_dispatch_abi_marshalling_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

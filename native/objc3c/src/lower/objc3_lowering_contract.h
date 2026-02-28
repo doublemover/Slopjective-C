@@ -24,6 +24,8 @@ inline constexpr const char *kObjc3IdClassSelObjectPointerTypecheckLaneContract 
     "m155-id-class-sel-object-pointer-typecheck-v1";
 inline constexpr const char *kObjc3MessageSendSelectorLoweringLaneContract =
     "m156-message-send-selector-lowering-v1";
+inline constexpr const char *kObjc3DispatchAbiMarshallingLaneContract =
+    "m157-dispatch-abi-marshalling-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -88,6 +90,18 @@ struct Objc3MessageSendSelectorLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3DispatchAbiMarshallingContract {
+  std::size_t message_send_sites = 0;
+  std::size_t receiver_slots_marshaled = 0;
+  std::size_t selector_slots_marshaled = 0;
+  std::size_t argument_value_slots_marshaled = 0;
+  std::size_t argument_padding_slots_marshaled = 0;
+  std::size_t argument_total_slots_marshaled = 0;
+  std::size_t total_marshaled_slots = 0;
+  std::size_t runtime_dispatch_arg_slots = kObjc3RuntimeDispatchDefaultArgs;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -121,3 +135,7 @@ bool IsValidObjc3MessageSendSelectorLoweringContract(
     const Objc3MessageSendSelectorLoweringContract &contract);
 std::string Objc3MessageSendSelectorLoweringReplayKey(
     const Objc3MessageSendSelectorLoweringContract &contract);
+bool IsValidObjc3DispatchAbiMarshallingContract(
+    const Objc3DispatchAbiMarshallingContract &contract);
+std::string Objc3DispatchAbiMarshallingReplayKey(
+    const Objc3DispatchAbiMarshallingContract &contract);

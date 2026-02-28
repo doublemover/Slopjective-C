@@ -106,6 +106,10 @@ class Objc3IREmitter {
       out << "; message_send_selector_lowering = "
           << frontend_metadata_.lowering_message_send_selector_lowering_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_dispatch_abi_marshalling_replay_key.empty()) {
+      out << "; dispatch_abi_marshalling_lowering = "
+          << frontend_metadata_.lowering_dispatch_abi_marshalling_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -184,6 +188,21 @@ class Objc3IREmitter {
         << frontend_metadata_.message_send_selector_lowering_selector_literal_characters
         << ", deterministic_message_send_selector_lowering_handoff="
         << (frontend_metadata_.deterministic_message_send_selector_lowering_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_dispatch_abi_marshalling_profile = message_send_sites="
+        << frontend_metadata_.dispatch_abi_marshalling_message_send_sites
+        << ", receiver_slots_marshaled=" << frontend_metadata_.dispatch_abi_marshalling_receiver_slots_marshaled
+        << ", selector_slots_marshaled=" << frontend_metadata_.dispatch_abi_marshalling_selector_slots_marshaled
+        << ", argument_value_slots_marshaled="
+        << frontend_metadata_.dispatch_abi_marshalling_argument_value_slots_marshaled
+        << ", argument_padding_slots_marshaled="
+        << frontend_metadata_.dispatch_abi_marshalling_argument_padding_slots_marshaled
+        << ", argument_total_slots_marshaled="
+        << frontend_metadata_.dispatch_abi_marshalling_argument_total_slots_marshaled
+        << ", total_marshaled_slots=" << frontend_metadata_.dispatch_abi_marshalling_total_marshaled_slots
+        << ", runtime_dispatch_arg_slots="
+        << frontend_metadata_.dispatch_abi_marshalling_runtime_dispatch_arg_slots
+        << ", deterministic_dispatch_abi_marshalling_handoff="
+        << (frontend_metadata_.deterministic_dispatch_abi_marshalling_handoff ? "true" : "false") << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -352,6 +371,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
+    out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -451,7 +471,25 @@ class Objc3IREmitter {
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_.message_send_selector_lowering_selector_literal_characters)
-        << ", i1 " << (frontend_metadata_.deterministic_message_send_selector_lowering_handoff ? 1 : 0) << "}\n\n";
+        << ", i1 " << (frontend_metadata_.deterministic_message_send_selector_lowering_handoff ? 1 : 0) << "}\n";
+    out << "!10 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_message_send_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_receiver_slots_marshaled)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_selector_slots_marshaled)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_abi_marshalling_argument_value_slots_marshaled)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_abi_marshalling_argument_padding_slots_marshaled)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_abi_marshalling_argument_total_slots_marshaled)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_total_marshaled_slots)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.dispatch_abi_marshalling_runtime_dispatch_arg_slots)
+        << ", i1 " << (frontend_metadata_.deterministic_dispatch_abi_marshalling_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
