@@ -54,9 +54,9 @@ def test_m197_lowering_cpp_interop_shim_source_anchor_mapping() -> None:
 
     mapped_source_anchors = (
         (
-            "/* Optional C ABI shim for non-C++ embedding environments. */",
+            "Optional C ABI shim for non-C++ embedding environments.",
             c_api_header,
-            "/* Optional C ABI shim for non-C++ embedding environments. */",
+            "* Optional C ABI shim for non-C++ embedding environments.",
         ),
         (
             "OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u",
