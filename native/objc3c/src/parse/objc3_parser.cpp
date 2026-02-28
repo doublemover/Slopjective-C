@@ -404,6 +404,44 @@ static std::string BuildBlockStorageByrefLayoutSymbol(unsigned line,
   return out.str();
 }
 
+static std::string BuildBlockCopyDisposeProfile(std::size_t mutable_capture_count,
+                                                std::size_t byref_slot_count,
+                                                bool escape_to_heap,
+                                                std::size_t body_statement_count) {
+  std::ostringstream out;
+  out << "block-copy-dispose:copy-helper=" << (mutable_capture_count > 0u ? "enabled" : "elided")
+      << ";dispose-helper=" << (byref_slot_count > 0u ? "enabled" : "elided")
+      << ";escape=" << (escape_to_heap ? "heap" : "stack")
+      << ";body-statements=" << body_statement_count;
+  return out.str();
+}
+
+static std::string BuildBlockCopyHelperSymbol(unsigned line,
+                                              unsigned column,
+                                              std::size_t mutable_capture_count,
+                                              std::size_t byref_slot_count,
+                                              bool escape_to_heap) {
+  std::ostringstream out;
+  out << "__objc3_block_copy_helper_" << line << "_" << column
+      << "_m" << mutable_capture_count
+      << "_b" << byref_slot_count
+      << "_" << (escape_to_heap ? "heap" : "stack");
+  return out.str();
+}
+
+static std::string BuildBlockDisposeHelperSymbol(unsigned line,
+                                                 unsigned column,
+                                                 std::size_t mutable_capture_count,
+                                                 std::size_t byref_slot_count,
+                                                 bool escape_to_heap) {
+  std::ostringstream out;
+  out << "__objc3_block_dispose_helper_" << line << "_" << column
+      << "_m" << mutable_capture_count
+      << "_b" << byref_slot_count
+      << "_" << (escape_to_heap ? "heap" : "stack");
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3647,6 +3685,31 @@ class Objc3Parser {
             block->block_storage_escape_to_heap);
     block->block_storage_escape_profile_is_normalized =
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
+    block->block_copy_helper_required = block->block_storage_mutable_capture_count > 0u;
+    block->block_dispose_helper_required = block->block_storage_byref_slot_count > 0u;
+    block->block_copy_dispose_profile =
+        BuildBlockCopyDisposeProfile(
+            block->block_storage_mutable_capture_count,
+            block->block_storage_byref_slot_count,
+            block->block_storage_escape_to_heap,
+            block->block_body_statement_count);
+    block->block_copy_helper_symbol =
+        BuildBlockCopyHelperSymbol(
+            block->line,
+            block->column,
+            block->block_storage_mutable_capture_count,
+            block->block_storage_byref_slot_count,
+            block->block_storage_escape_to_heap);
+    block->block_dispose_helper_symbol =
+        BuildBlockDisposeHelperSymbol(
+            block->line,
+            block->column,
+            block->block_storage_mutable_capture_count,
+            block->block_storage_byref_slot_count,
+            block->block_storage_escape_to_heap);
+    block->block_copy_dispose_profile_is_normalized =
+        block->block_storage_escape_profile_is_normalized &&
+        block->block_copy_helper_required == block->block_dispose_helper_required;
     return block;
   }
 

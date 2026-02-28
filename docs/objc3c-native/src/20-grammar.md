@@ -831,6 +831,37 @@ Recommended M168 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q`
 
+## M169 frontend block copy/dispose helper parser/AST surface (M169-A001)
+
+Frontend parser/AST now emits deterministic block copy/dispose helper carrier
+metadata derived from block capture/storage shape.
+
+M169 parser/AST surface details:
+
+- copy/dispose helper anchors:
+  - `BuildBlockCopyDisposeProfile(...)`
+  - `BuildBlockCopyHelperSymbol(...)`
+  - `BuildBlockDisposeHelperSymbol(...)`
+- parser assignment anchors:
+  - `block_copy_helper_required`
+  - `block_dispose_helper_required`
+  - `block_copy_dispose_profile`
+  - `block_copy_helper_symbol`
+  - `block_dispose_helper_symbol`
+  - `block_copy_dispose_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable helper metadata from block literal shape:
+  - copy/dispose helper enablement follows deterministic capture/byref counts.
+  - helper symbol names remain stable from source coordinates and capture shape.
+  - copy/dispose profile normalization remains tied to normalized storage/escape
+    metadata and stable helper enablement parity.
+
+Recommended M169 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

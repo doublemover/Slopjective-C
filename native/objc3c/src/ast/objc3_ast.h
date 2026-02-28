@@ -100,6 +100,12 @@ struct Expr {
   bool block_storage_escape_profile_is_normalized = false;
   std::string block_storage_escape_profile;
   std::string block_storage_byref_layout_symbol;
+  bool block_copy_helper_required = false;
+  bool block_dispose_helper_required = false;
+  bool block_copy_dispose_profile_is_normalized = false;
+  std::string block_copy_dispose_profile;
+  std::string block_copy_helper_symbol;
+  std::string block_dispose_helper_symbol;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;
