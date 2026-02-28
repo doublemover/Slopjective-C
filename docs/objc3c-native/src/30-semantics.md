@@ -1960,3 +1960,32 @@ Recommended M203 sema/type compile-time evaluation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py -q`
 
+## M202 sema/type derive/synthesis pipeline
+
+For deterministic sema/type derive/synthesis pipeline behavior, capture replay-stable packet evidence from sema pass-manager derive hooks, type-metadata synthesis ordering, and manifest parity/readiness surfaces.
+
+Derive/synthesis packet map:
+
+- `derive packet 1.1 deterministic sema integration-surface derive hooks` -> `m202_sema_integration_surface_derive_packet`
+- `synthesis packet 1.2 deterministic type-metadata synthesis hooks` -> `m202_type_metadata_synthesis_packet`
+
+### 1.1 Deterministic sema integration-surface derive packet
+
+- Source pass-manager derive anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`.
+- Source integration-surface derive anchors: `Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,`, and `surface.built = true;`.
+- Pipeline derive transport anchors: `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, `result.integration_surface = std::move(sema_result.integration_surface);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Deterministic integration-surface derive packet key: `m202_sema_integration_surface_derive_packet`.
+
+### 1.2 Deterministic type-metadata synthesis packet
+
+- Source type-synthesis anchors: `Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface) {`, `handoff.global_names_lexicographic.reserve(surface.globals.size());`, `std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());`, `std::sort(function_names.begin(), function_names.end());`, and `handoff.functions_lexicographic.reserve(function_names.size());`.
+- Source synthesis determinism anchors: `bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {`, `return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),`, `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Source parity/readiness synthesis anchors: `IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface)`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`, and `result.parity_surface.ready =`.
+- Manifest synthesis anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface synthesis anchors under `frontend.pipeline.semantic_surface`: `resolved_global_symbols` and `resolved_function_symbols`.
+- Deterministic type-metadata synthesis packet key: `m202_type_metadata_synthesis_packet`.
+
+Recommended M202 sema/type derive/synthesis validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py -q`
+
