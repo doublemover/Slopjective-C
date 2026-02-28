@@ -331,3 +331,19 @@ Frontend performance-budget and regression gating requires deterministic lexer/p
   3. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
 
+## M209 frontend profile-guided optimization hooks
+
+Frontend profile-guided optimization (PGO) hook readiness uses deterministic lexer/parser profile surfaces that can seed cross-run optimization decisions.
+
+- Required frontend PGO hook signals:
+  - lexer hint counters remain deterministic: `result.migration_hints.legacy_yes_count`, `legacy_no_count`, `legacy_null_count`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - parser diagnostics handoff remains `result.stage_diagnostics.parser = std::move(parse_result.diagnostics);`.
+  - pragma contract counters remain exported: `directive_count`, `duplicate`, `non_leading`.
+  - manifest frontend profile surface remains emitted with `"migration_hints":{"legacy_yes":...,"legacy_no":...,"legacy_null":...,"legacy_total":...}`.
+- Required frontend PGO hook commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
+
