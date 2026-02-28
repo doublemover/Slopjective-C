@@ -184,6 +184,31 @@ Recommended M149 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
 
+## M150 frontend object pointer declarators, nullability, lightweight generics parse
+
+Frontend parser/AST type parsing now accepts nominal object-pointer spellings for parameter, return, and property type
+annotations while preserving pointer/nullability/generic suffix contracts.
+
+M150 parser/AST surface details:
+
+- function return type parse (`ParseFunctionReturnType(...)`) accepts identifier-based object pointer base spellings.
+- parameter type parse (`ParseParameterType(...)`) accepts identifier-based object pointer base spellings.
+- object-pointer AST markers:
+  - `object_pointer_type_spelling`
+  - `object_pointer_type_name`
+  - `return_object_pointer_type_spelling`
+  - `return_object_pointer_type_name`
+- property type handoff preserves object pointer markers through `CopyPropertyTypeFromParam(...)`.
+
+Deterministic grammar intent:
+
+- object pointer spellings may carry generic suffix text, pointer declarators, and nullability suffix tokens.
+- vector-type spellings remain parsed through the existing vector branch.
+
+Recommended M150 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
