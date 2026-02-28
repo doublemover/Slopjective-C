@@ -240,3 +240,18 @@ Frontend conformance suite v1 maps parser/AST behavior to deterministic spec-sec
   3. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
 
+## M215 frontend SDK packaging packet
+
+Frontend SDK/toolchain packaging for IDE workflows depends on deterministic parser/AST boundary evidence.
+
+- Required SDK packaging signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required SDK packaging commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+
