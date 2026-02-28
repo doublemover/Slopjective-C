@@ -1786,6 +1786,328 @@ static Objc3UnsafePointerExtensionProfile BuildUnsafePointerExtensionProfileFrom
       unsafe_keyword_sites, pointer_arithmetic_sites, raw_pointer_type_sites);
 }
 
+static bool IsInlineAsmCallSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered == "asm" || lowered == "__asm" || lowered == "__asm__" ||
+         lowered.rfind("asm_", 0) == 0 || lowered.rfind("__asm_", 0) == 0 ||
+         lowered.find("inline_asm") != std::string::npos;
+}
+
+static bool IsIntrinsicCallSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.rfind("__builtin_", 0) == 0 || lowered.rfind("llvm.", 0) == 0 ||
+         lowered.rfind("llvm_", 0) == 0 || lowered.find("intrinsic") != std::string::npos;
+}
+
+static bool IsPrivilegedIntrinsicCallSymbol(const std::string &symbol) {
+  if (!IsIntrinsicCallSymbol(symbol)) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("privileged") != std::string::npos ||
+         lowered.find("unsafe") != std::string::npos ||
+         lowered.find("syscall") != std::string::npos ||
+         lowered.rfind("__builtin_ia32_", 0) == 0 ||
+         lowered.rfind("__builtin_arm_", 0) == 0;
+}
+
+struct Objc3InlineAsmIntrinsicSiteCounts {
+  std::size_t inline_asm_sites = 0;
+  std::size_t intrinsic_sites = 0;
+  std::size_t governed_intrinsic_sites = 0;
+  std::size_t privileged_intrinsic_sites = 0;
+};
+
+static void CollectInlineAsmIntrinsicSitesFromSymbol(
+    const std::string &symbol,
+    Objc3InlineAsmIntrinsicSiteCounts &counts) {
+  if (IsInlineAsmCallSymbol(symbol)) {
+    counts.inline_asm_sites += 1u;
+  }
+  if (IsIntrinsicCallSymbol(symbol)) {
+    counts.intrinsic_sites += 1u;
+    counts.governed_intrinsic_sites += 1u;
+    if (IsPrivilegedIntrinsicCallSymbol(symbol)) {
+      counts.privileged_intrinsic_sites += 1u;
+    }
+  }
+}
+
+static void CollectInlineAsmIntrinsicExprSites(
+    const Expr *expr,
+    Objc3InlineAsmIntrinsicSiteCounts &counts) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+  case Expr::Kind::Call:
+    CollectInlineAsmIntrinsicSitesFromSymbol(expr->ident, counts);
+    for (const auto &arg : expr->args) {
+      CollectInlineAsmIntrinsicExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::MessageSend:
+    CollectInlineAsmIntrinsicSitesFromSymbol(expr->selector, counts);
+    CollectInlineAsmIntrinsicExprSites(expr->receiver.get(), counts);
+    for (const auto &arg : expr->args) {
+      CollectInlineAsmIntrinsicExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::Binary:
+    CollectInlineAsmIntrinsicExprSites(expr->left.get(), counts);
+    CollectInlineAsmIntrinsicExprSites(expr->right.get(), counts);
+    return;
+  case Expr::Kind::Conditional:
+    CollectInlineAsmIntrinsicExprSites(expr->left.get(), counts);
+    CollectInlineAsmIntrinsicExprSites(expr->right.get(), counts);
+    CollectInlineAsmIntrinsicExprSites(expr->third.get(), counts);
+    return;
+  case Expr::Kind::BlockLiteral:
+  case Expr::Kind::BoolLiteral:
+  case Expr::Kind::Identifier:
+  case Expr::Kind::NilLiteral:
+  case Expr::Kind::Number:
+  default:
+    return;
+  }
+}
+
+static void CollectInlineAsmIntrinsicForClauseSites(
+    const ForClause &clause,
+    Objc3InlineAsmIntrinsicSiteCounts &counts) {
+  CollectInlineAsmIntrinsicExprSites(clause.value.get(), counts);
+}
+
+static void CollectInlineAsmIntrinsicStmtSites(
+    const Stmt *stmt,
+    Objc3InlineAsmIntrinsicSiteCounts &counts) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectInlineAsmIntrinsicExprSites(stmt->let_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectInlineAsmIntrinsicExprSites(stmt->assign_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectInlineAsmIntrinsicExprSites(stmt->return_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return;
+    }
+    CollectInlineAsmIntrinsicExprSites(stmt->if_stmt->condition.get(), counts);
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      CollectInlineAsmIntrinsicStmtSites(then_stmt.get(), counts);
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      CollectInlineAsmIntrinsicStmtSites(else_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
+    }
+    CollectInlineAsmIntrinsicExprSites(stmt->do_while_stmt->condition.get(), counts);
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return;
+    }
+    CollectInlineAsmIntrinsicForClauseSites(stmt->for_stmt->init, counts);
+    CollectInlineAsmIntrinsicExprSites(stmt->for_stmt->condition.get(), counts);
+    CollectInlineAsmIntrinsicForClauseSites(stmt->for_stmt->step, counts);
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return;
+    }
+    CollectInlineAsmIntrinsicExprSites(stmt->switch_stmt->condition.get(), counts);
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &case_stmt : switch_case.body) {
+        CollectInlineAsmIntrinsicStmtSites(case_stmt.get(), counts);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return;
+    }
+    CollectInlineAsmIntrinsicExprSites(stmt->while_stmt->condition.get(), counts);
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      CollectInlineAsmIntrinsicStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectInlineAsmIntrinsicExprSites(stmt->expr_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static Objc3InlineAsmIntrinsicSiteCounts CountInlineAsmIntrinsicSitesInBody(
+    const std::vector<std::unique_ptr<Stmt>> &body) {
+  Objc3InlineAsmIntrinsicSiteCounts counts;
+  for (const auto &stmt : body) {
+    CollectInlineAsmIntrinsicStmtSites(stmt.get(), counts);
+  }
+  return counts;
+}
+
+struct Objc3InlineAsmIntrinsicGovernanceProfile {
+  std::size_t inline_asm_intrinsic_sites = 0;
+  std::size_t inline_asm_sites = 0;
+  std::size_t intrinsic_sites = 0;
+  std::size_t governed_intrinsic_sites = 0;
+  std::size_t privileged_intrinsic_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic_inline_asm_intrinsic_governance_handoff = false;
+};
+
+static std::string BuildInlineAsmIntrinsicGovernanceProfile(
+    std::size_t inline_asm_intrinsic_sites,
+    std::size_t inline_asm_sites,
+    std::size_t intrinsic_sites,
+    std::size_t governed_intrinsic_sites,
+    std::size_t privileged_intrinsic_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites,
+    bool deterministic_inline_asm_intrinsic_governance_handoff) {
+  std::ostringstream out;
+  out << "inline-asm-intrinsic-governance:inline_asm_intrinsic_sites="
+      << inline_asm_intrinsic_sites
+      << ";inline_asm_sites=" << inline_asm_sites
+      << ";intrinsic_sites=" << intrinsic_sites
+      << ";governed_intrinsic_sites=" << governed_intrinsic_sites
+      << ";privileged_intrinsic_sites=" << privileged_intrinsic_sites
+      << ";normalized_sites=" << normalized_sites
+      << ";gate_blocked_sites=" << gate_blocked_sites
+      << ";contract_violation_sites=" << contract_violation_sites
+      << ";deterministic_inline_asm_intrinsic_governance_handoff="
+      << (deterministic_inline_asm_intrinsic_governance_handoff ? "true" : "false");
+  return out.str();
+}
+
+static bool IsInlineAsmIntrinsicGovernanceProfileNormalized(
+    std::size_t inline_asm_intrinsic_sites,
+    std::size_t inline_asm_sites,
+    std::size_t intrinsic_sites,
+    std::size_t governed_intrinsic_sites,
+    std::size_t privileged_intrinsic_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites) {
+  if (inline_asm_sites > inline_asm_intrinsic_sites ||
+      intrinsic_sites > inline_asm_intrinsic_sites ||
+      governed_intrinsic_sites > intrinsic_sites ||
+      privileged_intrinsic_sites > governed_intrinsic_sites ||
+      normalized_sites > inline_asm_intrinsic_sites ||
+      gate_blocked_sites > inline_asm_intrinsic_sites ||
+      contract_violation_sites > inline_asm_intrinsic_sites) {
+    return false;
+  }
+  if (normalized_sites + gate_blocked_sites != inline_asm_intrinsic_sites) {
+    return false;
+  }
+  return contract_violation_sites == 0u;
+}
+
+static Objc3InlineAsmIntrinsicGovernanceProfile BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
+    std::size_t inline_asm_sites,
+    std::size_t intrinsic_sites,
+    std::size_t governed_intrinsic_sites,
+    std::size_t privileged_intrinsic_sites) {
+  Objc3InlineAsmIntrinsicGovernanceProfile profile;
+  profile.inline_asm_sites = inline_asm_sites;
+  profile.intrinsic_sites = intrinsic_sites;
+  profile.governed_intrinsic_sites = governed_intrinsic_sites;
+  profile.privileged_intrinsic_sites = privileged_intrinsic_sites;
+  profile.inline_asm_intrinsic_sites = profile.inline_asm_sites + profile.intrinsic_sites;
+  profile.gate_blocked_sites = profile.privileged_intrinsic_sites;
+  if (profile.gate_blocked_sites > profile.inline_asm_intrinsic_sites) {
+    profile.normalized_sites = 0u;
+  } else {
+    profile.normalized_sites =
+        profile.inline_asm_intrinsic_sites - profile.gate_blocked_sites;
+  }
+
+  if (profile.inline_asm_sites > profile.inline_asm_intrinsic_sites ||
+      profile.intrinsic_sites > profile.inline_asm_intrinsic_sites ||
+      profile.governed_intrinsic_sites > profile.intrinsic_sites ||
+      profile.privileged_intrinsic_sites > profile.governed_intrinsic_sites ||
+      profile.normalized_sites > profile.inline_asm_intrinsic_sites ||
+      profile.gate_blocked_sites > profile.inline_asm_intrinsic_sites ||
+      profile.contract_violation_sites > profile.inline_asm_intrinsic_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.normalized_sites + profile.gate_blocked_sites != profile.inline_asm_intrinsic_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+
+  profile.deterministic_inline_asm_intrinsic_governance_handoff =
+      profile.contract_violation_sites == 0u;
+  return profile;
+}
+
+static Objc3InlineAsmIntrinsicGovernanceProfile BuildInlineAsmIntrinsicGovernanceProfileFromFunction(
+    const FunctionDecl &fn) {
+  const Objc3InlineAsmIntrinsicSiteCounts counts = CountInlineAsmIntrinsicSitesInBody(fn.body);
+  return BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
+      counts.inline_asm_sites,
+      counts.intrinsic_sites,
+      counts.governed_intrinsic_sites,
+      counts.privileged_intrinsic_sites);
+}
+
+static Objc3InlineAsmIntrinsicGovernanceProfile BuildInlineAsmIntrinsicGovernanceProfileFromOpaqueBody(
+    const Objc3MethodDecl &method) {
+  Objc3InlineAsmIntrinsicSiteCounts counts;
+  if (method.has_body) {
+    CollectInlineAsmIntrinsicSitesFromSymbol(method.selector, counts);
+  }
+  return BuildInlineAsmIntrinsicGovernanceProfileFromCounts(
+      counts.inline_asm_sites,
+      counts.intrinsic_sites,
+      counts.governed_intrinsic_sites,
+      counts.privileged_intrinsic_sites);
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -2674,6 +2996,23 @@ class Objc3Parser {
     target.unsafe_pointer_extension_contract_violation_sites =
         source.unsafe_pointer_extension_contract_violation_sites;
     target.unsafe_pointer_extension_profile = source.unsafe_pointer_extension_profile;
+    target.inline_asm_intrinsic_governance_profile_is_normalized =
+        source.inline_asm_intrinsic_governance_profile_is_normalized;
+    target.deterministic_inline_asm_intrinsic_governance_handoff =
+        source.deterministic_inline_asm_intrinsic_governance_handoff;
+    target.inline_asm_intrinsic_sites = source.inline_asm_intrinsic_sites;
+    target.inline_asm_sites = source.inline_asm_sites;
+    target.intrinsic_sites = source.intrinsic_sites;
+    target.governed_intrinsic_sites = source.governed_intrinsic_sites;
+    target.privileged_intrinsic_sites = source.privileged_intrinsic_sites;
+    target.inline_asm_intrinsic_normalized_sites =
+        source.inline_asm_intrinsic_normalized_sites;
+    target.inline_asm_intrinsic_gate_blocked_sites =
+        source.inline_asm_intrinsic_gate_blocked_sites;
+    target.inline_asm_intrinsic_contract_violation_sites =
+        source.inline_asm_intrinsic_contract_violation_sites;
+    target.inline_asm_intrinsic_governance_profile =
+        source.inline_asm_intrinsic_governance_profile;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -3026,6 +3365,80 @@ class Objc3Parser {
             method.unsafe_pointer_extension_contract_violation_sites);
   }
 
+  void FinalizeInlineAsmIntrinsicGovernanceProfile(FunctionDecl &fn) {
+    const Objc3InlineAsmIntrinsicGovernanceProfile profile =
+        BuildInlineAsmIntrinsicGovernanceProfileFromFunction(fn);
+    fn.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;
+    fn.inline_asm_sites = profile.inline_asm_sites;
+    fn.intrinsic_sites = profile.intrinsic_sites;
+    fn.governed_intrinsic_sites = profile.governed_intrinsic_sites;
+    fn.privileged_intrinsic_sites = profile.privileged_intrinsic_sites;
+    fn.inline_asm_intrinsic_normalized_sites = profile.normalized_sites;
+    fn.inline_asm_intrinsic_gate_blocked_sites = profile.gate_blocked_sites;
+    fn.inline_asm_intrinsic_contract_violation_sites =
+        profile.contract_violation_sites;
+    fn.deterministic_inline_asm_intrinsic_governance_handoff =
+        profile.deterministic_inline_asm_intrinsic_governance_handoff;
+    fn.inline_asm_intrinsic_governance_profile =
+        BuildInlineAsmIntrinsicGovernanceProfile(
+            fn.inline_asm_intrinsic_sites,
+            fn.inline_asm_sites,
+            fn.intrinsic_sites,
+            fn.governed_intrinsic_sites,
+            fn.privileged_intrinsic_sites,
+            fn.inline_asm_intrinsic_normalized_sites,
+            fn.inline_asm_intrinsic_gate_blocked_sites,
+            fn.inline_asm_intrinsic_contract_violation_sites,
+            fn.deterministic_inline_asm_intrinsic_governance_handoff);
+    fn.inline_asm_intrinsic_governance_profile_is_normalized =
+        IsInlineAsmIntrinsicGovernanceProfileNormalized(
+            fn.inline_asm_intrinsic_sites,
+            fn.inline_asm_sites,
+            fn.intrinsic_sites,
+            fn.governed_intrinsic_sites,
+            fn.privileged_intrinsic_sites,
+            fn.inline_asm_intrinsic_normalized_sites,
+            fn.inline_asm_intrinsic_gate_blocked_sites,
+            fn.inline_asm_intrinsic_contract_violation_sites);
+  }
+
+  void FinalizeInlineAsmIntrinsicGovernanceProfile(Objc3MethodDecl &method) {
+    const Objc3InlineAsmIntrinsicGovernanceProfile profile =
+        BuildInlineAsmIntrinsicGovernanceProfileFromOpaqueBody(method);
+    method.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;
+    method.inline_asm_sites = profile.inline_asm_sites;
+    method.intrinsic_sites = profile.intrinsic_sites;
+    method.governed_intrinsic_sites = profile.governed_intrinsic_sites;
+    method.privileged_intrinsic_sites = profile.privileged_intrinsic_sites;
+    method.inline_asm_intrinsic_normalized_sites = profile.normalized_sites;
+    method.inline_asm_intrinsic_gate_blocked_sites = profile.gate_blocked_sites;
+    method.inline_asm_intrinsic_contract_violation_sites =
+        profile.contract_violation_sites;
+    method.deterministic_inline_asm_intrinsic_governance_handoff =
+        profile.deterministic_inline_asm_intrinsic_governance_handoff;
+    method.inline_asm_intrinsic_governance_profile =
+        BuildInlineAsmIntrinsicGovernanceProfile(
+            method.inline_asm_intrinsic_sites,
+            method.inline_asm_sites,
+            method.intrinsic_sites,
+            method.governed_intrinsic_sites,
+            method.privileged_intrinsic_sites,
+            method.inline_asm_intrinsic_normalized_sites,
+            method.inline_asm_intrinsic_gate_blocked_sites,
+            method.inline_asm_intrinsic_contract_violation_sites,
+            method.deterministic_inline_asm_intrinsic_governance_handoff);
+    method.inline_asm_intrinsic_governance_profile_is_normalized =
+        IsInlineAsmIntrinsicGovernanceProfileNormalized(
+            method.inline_asm_intrinsic_sites,
+            method.inline_asm_sites,
+            method.intrinsic_sites,
+            method.governed_intrinsic_sites,
+            method.privileged_intrinsic_sites,
+            method.inline_asm_intrinsic_normalized_sites,
+            method.inline_asm_intrinsic_gate_blocked_sites,
+            method.inline_asm_intrinsic_contract_violation_sites);
+  }
+
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
                                                      const std::string &lookup_owner_symbol,
                                                      const std::string &override_owner_symbol) {
@@ -3188,6 +3601,7 @@ class Objc3Parser {
       FinalizeResultLikeProfile(method);
       FinalizeNSErrorBridgingProfile(method);
       FinalizeUnsafePointerExtensionProfile(method);
+      FinalizeInlineAsmIntrinsicGovernanceProfile(method);
       return true;
     }
 
@@ -3210,6 +3624,7 @@ class Objc3Parser {
     FinalizeResultLikeProfile(method);
     FinalizeNSErrorBridgingProfile(method);
     FinalizeUnsafePointerExtensionProfile(method);
+    FinalizeInlineAsmIntrinsicGovernanceProfile(method);
     return true;
   }
 
@@ -3775,6 +4190,7 @@ class Objc3Parser {
       FinalizeResultLikeProfile(*fn);
       FinalizeNSErrorBridgingProfile(*fn);
       FinalizeUnsafePointerExtensionProfile(*fn);
+      FinalizeInlineAsmIntrinsicGovernanceProfile(*fn);
       return fn;
     }
 
@@ -3803,6 +4219,7 @@ class Objc3Parser {
     FinalizeResultLikeProfile(*fn);
     FinalizeNSErrorBridgingProfile(*fn);
     FinalizeUnsafePointerExtensionProfile(*fn);
+    FinalizeInlineAsmIntrinsicGovernanceProfile(*fn);
     return fn;
   }
 

@@ -1859,6 +1859,24 @@ Frontend SIMD/vector type lowering contract relies on deterministic parser accep
   3. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
 
+## M192 frontend inline asm + intrinsic governance packetization
+
+Frontend inline-asm/intrinsic governance contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for inline asm and privileged intrinsic gating.
+
+- Required frontend inline-asm/intrinsic governance signals:
+  - parser symbol classifiers remain `IsInlineAsmCallSymbol(...)`, `IsIntrinsicCallSymbol(...)`, and `IsPrivilegedIntrinsicCallSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3InlineAsmIntrinsicGovernanceProfile`.
+  - parser profile serialization remains `BuildInlineAsmIntrinsicGovernanceProfile(...)`.
+  - parser profile invariant gate remains `IsInlineAsmIntrinsicGovernanceProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeInlineAsmIntrinsicGovernanceProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeInlineAsmIntrinsicGovernanceProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;` and `method.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;`.
+  - AST carrier anchors remain `bool inline_asm_intrinsic_governance_profile_is_normalized = false;`, `bool deterministic_inline_asm_intrinsic_governance_handoff = false;`, and `std::string inline_asm_intrinsic_governance_profile;` on function/method declarations.
+- Required frontend inline-asm/intrinsic governance commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m192_frontend_inline_asm_intrinsic_parser_contract.py -q`
+
 ## M191 frontend unsafe pointer-arithmetic extension gating
 
 Frontend unsafe pointer-extension gating relies on deterministic parser-owned profile synthesis for unsafe ownership qualifiers, raw pointer type spellings, and pointer-arithmetic operation sites.
