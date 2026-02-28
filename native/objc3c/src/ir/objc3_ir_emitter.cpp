@@ -193,6 +193,13 @@ class Objc3IREmitter {
                  .lowering_namespace_collision_shadowing_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_public_private_api_partition_replay_key.empty()) {
+      out << "; public_private_api_partition_lowering = "
+          << frontend_metadata_
+                 .lowering_public_private_api_partition_replay_key
+          << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -657,6 +664,32 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_public_private_api_partition_lowering_profile = public_private_api_partition_sites="
+        << frontend_metadata_.public_private_api_partition_lowering_sites
+        << ", namespace_segment_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_namespace_segment_sites
+        << ", import_edge_candidate_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_import_edge_candidate_sites
+        << ", object_pointer_type_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_object_pointer_type_sites
+        << ", pointer_declarator_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_pointer_declarator_sites
+        << ", normalized_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_normalized_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .public_private_api_partition_lowering_contract_violation_sites
+        << ", deterministic_public_private_api_partition_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_public_private_api_partition_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -850,6 +883,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_generic_metadata_abi_lowering = !{!28}\n";
     out << "!objc3.objc_module_import_graph_lowering = !{!29}\n";
     out << "!objc3.objc_namespace_collision_shadowing_lowering = !{!30}\n";
+    out << "!objc3.objc_public_private_api_partition_lowering = !{!31}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1457,6 +1491,39 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_namespace_collision_shadowing_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!31 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.public_private_api_partition_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_namespace_segment_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_import_edge_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_object_pointer_type_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_pointer_declarator_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .public_private_api_partition_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_public_private_api_partition_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

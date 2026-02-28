@@ -1088,3 +1088,46 @@ std::string Objc3NamespaceCollisionShadowingLoweringReplayKey(
          ";lane_contract=" +
          kObjc3NamespaceCollisionShadowingLoweringLaneContract;
 }
+
+bool IsValidObjc3PublicPrivateApiPartitionLoweringContract(
+    const Objc3PublicPrivateApiPartitionLoweringContract &contract) {
+  if (contract.namespace_segment_sites >
+          contract.public_private_api_partition_sites ||
+      contract.import_edge_candidate_sites >
+          contract.public_private_api_partition_sites ||
+      contract.object_pointer_type_sites <
+          contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites >
+          contract.public_private_api_partition_sites ||
+      contract.normalized_sites > contract.public_private_api_partition_sites ||
+      contract.contract_violation_sites >
+          contract.public_private_api_partition_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.public_private_api_partition_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3PublicPrivateApiPartitionLoweringReplayKey(
+    const Objc3PublicPrivateApiPartitionLoweringContract &contract) {
+  return std::string("public_private_api_partition_sites=") +
+             std::to_string(contract.public_private_api_partition_sites) +
+         ";namespace_segment_sites=" +
+         std::to_string(contract.namespace_segment_sites) +
+         ";import_edge_candidate_sites=" +
+         std::to_string(contract.import_edge_candidate_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3PublicPrivateApiPartitionLoweringLaneContract;
+}

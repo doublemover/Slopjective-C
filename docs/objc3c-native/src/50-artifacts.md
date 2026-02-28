@@ -3584,6 +3584,29 @@ Recommended M177 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py -q`
 
+## Public-private API partition semantics lowering artifact contract (M178-C001)
+
+M178-C lowers sema-authored public/private API partition summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M178-C lowering contract anchors:
+
+- `kObjc3PublicPrivateApiPartitionLoweringLaneContract`
+- `Objc3PublicPrivateApiPartitionLoweringContract`
+- `IsValidObjc3PublicPrivateApiPartitionLoweringContract(...)`
+- `Objc3PublicPrivateApiPartitionLoweringReplayKey(...)`
+- `BuildPublicPrivateApiPartitionLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_public_private_api_partition_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface`
+- `lowering_public_private_api_partition.replay_key`
+- `; public_private_api_partition_lowering = public_private_api_partition_sites=<N>...`
+- `; frontend_objc_public_private_api_partition_lowering_profile = public_private_api_partition_sites=<N>...`
+- `!objc3.objc_public_private_api_partition_lowering = !{!31}`
+
+Recommended M178 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m178_lowering_public_private_api_partition_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
