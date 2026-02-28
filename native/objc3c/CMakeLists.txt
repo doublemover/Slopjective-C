@@ -40,7 +40,12 @@ add_library(objc3c_lower STATIC
 target_include_directories(objc3c_lower PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-add_library(objc3c_ir INTERFACE)
+add_library(objc3c_ir STATIC
+  src/ir/objc3_ir_emitter.cpp
+)
+target_include_directories(objc3c_ir PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 add_library(objc3c_pipeline INTERFACE)
 add_library(objc3c_frontend STATIC
   src/libobjc3c_frontend/frontend_anchor.cpp
@@ -50,4 +55,4 @@ target_include_directories(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver INTERFACE)
 
-target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_lower objc3c_frontend)
+target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_lower objc3c_ir objc3c_frontend)
