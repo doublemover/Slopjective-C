@@ -375,6 +375,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain dispatch-optimization anchors.
 
+## M206 integration canonical optimization pipeline stage-1
+
+- Gate intent: enforce deterministic canonical-optimization stage-1 evidence across all lanes.
+### 1.1 Canonical-optimization stage-1 chain
+- Deterministic canonical-optimization stage-1 gate:
+  - `npm run check:objc3c:m206-canonical-optimization-stage1`
+- Chain order:
+  - replays `check:objc3c:m207-dispatch-optimizations`.
+  - enforces all M206 lane contracts:
+    `tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_validation_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_integration_canonical_optimization_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through canonical-optimization validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain canonical-optimization anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
