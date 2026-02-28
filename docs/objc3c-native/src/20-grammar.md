@@ -427,6 +427,23 @@ Frontend macro diagnostics/provenance requires deterministic directive source-lo
   3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
 
+
+## M202 frontend derive/synthesis pipeline
+
+Frontend derive/synthesis pipeline contract relies on deterministic semantic-surface synthesis from parser AST into sorted metadata handoff packets.
+
+- Required frontend derive/synthesis signals:
+  - synthesis ingress remains `BuildSemanticIntegrationSurface(...)`.
+  - metadata handoff synthesis remains `BuildSemanticTypeMetadataHandoff(...)`.
+  - deterministic ordering guard remains `IsDeterministicSemanticTypeMetadataHandoff(...)`.
+  - synthesized global ordering packet remains `global_names_lexicographic`.
+  - synthesized function packet remains `functions_lexicographic` with arity/param consistency checks.
+- Required frontend derive/synthesis commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
