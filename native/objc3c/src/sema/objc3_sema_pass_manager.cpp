@@ -1,6 +1,7 @@
 #include "sema/objc3_sema_pass_manager.h"
 
 #include <algorithm>
+#include <sstream>
 #include <vector>
 
 #include "diag/objc3_diag_utils.h"
@@ -29,6 +30,38 @@ bool IsDiagnosticLess(const std::string &lhs, const std::string &rhs) {
   return lhs_key.raw < rhs_key.raw;
 }
 
+std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
+  std::ostringstream out;
+  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
+  return out.str();
+}
+
+void AppendMigrationAssistDiagnostics(const Objc3SemaPassManagerInput &input, std::vector<std::string> &diagnostics) {
+  if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {
+    return;
+  }
+
+  const auto append_for_literal = [&diagnostics](std::size_t count,
+                                                 unsigned column,
+                                                 const char *legacy_literal,
+                                                 const char *canonical_literal) {
+    if (count == 0) {
+      return;
+    }
+    diagnostics.push_back(
+        MakeDiag(1u,
+                 column,
+                 "O3S216",
+                 "migration assist requires canonical literal '" + std::string(canonical_literal) +
+                     "' instead of legacy '" + legacy_literal + "' (" + std::to_string(count) +
+                     " occurrence(s))"));
+  };
+
+  append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");
+  append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");
+  append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");
+}
+
 void CanonicalizePassDiagnostics(std::vector<std::string> &diagnostics) {
   std::stable_sort(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);
 }
@@ -55,6 +88,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);
     } else {
       ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);
+      AppendMigrationAssistDiagnostics(input, pass_diagnostics);
     }
     CanonicalizePassDiagnostics(pass_diagnostics);
     deterministic_semantic_diagnostics = deterministic_semantic_diagnostics && IsCanonicalPassDiagnostics(pass_diagnostics);

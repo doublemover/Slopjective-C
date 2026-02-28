@@ -28,12 +28,17 @@ objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] 
 ## C API parity runner usage (M142-E001)
 
 ```text
-objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
+objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
 ```
 
 - Binary path produced by native build scripts: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- Default `--clang`: `clang` (or explicit path)
+- Default `--llc`: `llc` (or explicit path)
+- Default `--objc3-compat-mode`: `canonical`
+- Default `--objc3-migration-assist`: `off`
+- Default `--objc3-ir-object-backend`: `clang`
 - Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
-- Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
+- Runner summary captures deterministic compatibility controls (`ir_object_backend`, `compatibility_mode`, `migration_assist`) and output paths (`diagnostics`, `manifest`, `ir`, `object`) for parity replay.
 - For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
 
 ## Artifact tmp-path governance (M143-D001)
@@ -132,6 +137,17 @@ Lexical support:
 - Tokens: `(` `)` `[` `]` `{` `}` `,` `:` `;` `=` `+=` `-=` `*=` `/=` `%=` `&=` `|=` `^=` `<<=` `>>=` `++` `--` `==` `!` `!=` `<` `<=` `>` `>=` `<<` `>>` `&` `|` `^` `&&` `||` `~` `+` `-` `*` `/` `%`
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
+
+## M222-A001 language-version pragma contract (`#pragma objc_language_version`)
+
+- `#pragma objc_language_version(<N>)` is accepted only in the file-scope prelude before declarations/tokens.
+- Duplicate pragma directives emit deterministic lexer diagnostic `O3L007`.
+- Non-leading pragma directives emit deterministic lexer diagnostic `O3L008`.
+- Existing malformed/unsupported diagnostics are preserved:
+  - `O3L005`: malformed directive shape.
+  - `O3L006`: unsupported version value.
+- Frontend manifest metadata includes `frontend.language_version_pragma_contract` with deterministic fields:
+  - `seen`, `directive_count`, `duplicate`, `non_leading`, `first_line`, `first_column`, `last_line`, `last_column`.
 
 ## Lexer token metadata contract (M137-E001)
 
@@ -1351,6 +1367,7 @@ Lowering/runtime status (implemented):
 - `break` outside loop is rejected: `O3S212`
 - `continue` outside loop is rejected: `O3S213`
 - assignment target must be mutable local or global symbol: `O3S214`
+- migration assist in canonical compatibility mode rejects legacy Objective-C aliases (`YES`, `NO`, `NULL`): `O3S216`
 
 ## Semantic pipeline boundaries (M25-B007/B008)
 
@@ -1557,7 +1574,7 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Tooling/CI contract:
   - `npm run test:objc3c:lane-e` is the aggregate gate for recovery, parser/diagnostics replay proof, perf/cache proof, lowering replay, execution smoke/replay proof, and M23/M24/M25 readiness checks.
 
-## O3S201..O3S213 behavior (implemented now)
+## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
   - Duplicate parameter names within a single function parameter list.
@@ -1594,6 +1611,8 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `continue` used outside an active loop context.
 - `O3S214`:
   - Assignment target must be an existing mutable local or global symbol.
+- `O3S216`:
+  - migration assist requires canonical literal replacement for legacy Objective-C aliases (`YES`, `NO`, `NULL`) in canonical compatibility mode.
 
 Parser/lexer diagnostics currently emitted include:
 

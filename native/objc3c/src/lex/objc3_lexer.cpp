@@ -52,6 +52,10 @@ const Objc3LexerMigrationHints &Objc3Lexer::MigrationHints() const {
   return migration_hints_;
 }
 
+const Objc3LexerLanguageVersionPragmaContract &Objc3Lexer::LanguageVersionPragmaContract() const {
+  return language_version_pragma_contract_;
+}
+
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
   ConsumeLanguageVersionPragmas(diagnostics);
   std::vector<Token> tokens;
@@ -65,6 +69,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
     const unsigned token_line = line_;
     const unsigned token_column = column_;
     const char c = source_[index_];
+    if (c == '#' &&
+        ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false)) {
+      continue;
+    }
     if (IsIdentStart(c)) {
       std::string ident = ConsumeIdentifier();
       TokenKind kind = TokenKind::Identifier;
@@ -304,92 +312,136 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
 }
 
 void Objc3Lexer::ConsumeLanguageVersionPragmas(std::vector<std::string> &diagnostics) {
-  static constexpr char kMalformedPragmaMessage[] =
-      "malformed '#pragma objc_language_version' directive; expected '#pragma objc_language_version(3)'";
-
   while (true) {
     SkipTrivia(diagnostics);
-    if (index_ >= source_.size() || source_[index_] != '#') {
+    if (!ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kPrelude, true)) {
       return;
     }
+  }
+}
 
-    std::size_t cursor = index_ + 1;
-    while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
-      ++cursor;
-    }
-    static constexpr char kPragmaToken[] = "pragma";
-    bool matches_pragma = true;
-    for (const char expected : kPragmaToken) {
-      if (expected == '\0') {
-        break;
-      }
-      if (cursor >= source_.size() || source_[cursor] != expected) {
-        matches_pragma = false;
-        break;
-      }
-      ++cursor;
-    }
-    if (!matches_pragma) {
-      return;
-    }
+bool Objc3Lexer::ConsumeLanguageVersionPragmaDirective(std::vector<std::string> &diagnostics,
+                                                       LanguageVersionPragmaPlacement placement,
+                                                       bool strict_pragma_matching) {
+  static constexpr char kMalformedPragmaMessage[] =
+      "malformed '#pragma objc_language_version' directive; expected '#pragma objc_language_version(3)'";
+  static constexpr char kDuplicatePragmaMessage[] =
+      "duplicate '#pragma objc_language_version' directive; only one file-scope prelude pragma is allowed";
+  static constexpr char kNonLeadingPragmaMessage[] =
+      "language-version pragma must stay in the file-scope prelude before declarations or tokens";
 
-    const unsigned directive_line = line_;
-    const unsigned directive_column = column_;
+  if (index_ >= source_.size() || source_[index_] != '#') {
+    return false;
+  }
+
+  std::size_t cursor = index_ + 1;
+  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+    ++cursor;
+  }
+  if (!MatchLiteralAt(cursor, "pragma")) {
+    return false;
+  }
+  cursor += 6;
+  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+    ++cursor;
+  }
+  if (!strict_pragma_matching && !MatchLiteralAt(cursor, "objc_language_version")) {
+    return false;
+  }
+
+  const unsigned directive_line = line_;
+  const unsigned directive_column = column_;
+  Advance();
+  SkipHorizontalWhitespace();
+  MatchLiteral("pragma");
+  SkipHorizontalWhitespace();
+  if (!MatchLiteral("objc_language_version")) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  SkipHorizontalWhitespace();
+  if (!MatchChar('(')) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  SkipHorizontalWhitespace();
+  const unsigned version_line = line_;
+  const unsigned version_column = column_;
+  if (index_ >= source_.size() || std::isdigit(static_cast<unsigned char>(source_[index_])) == 0) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  std::string version;
+  while (index_ < source_.size() && std::isdigit(static_cast<unsigned char>(source_[index_])) != 0) {
+    version.push_back(source_[index_]);
     Advance();
-    SkipHorizontalWhitespace();
-    MatchLiteral("pragma");
-    SkipHorizontalWhitespace();
-    if (!MatchLiteral("objc_language_version")) {
-      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
-      ConsumeToEndOfLine();
-      continue;
-    }
+  }
 
-    SkipHorizontalWhitespace();
-    if (!MatchChar('(')) {
-      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
-      ConsumeToEndOfLine();
-      continue;
-    }
+  SkipHorizontalWhitespace();
+  if (!MatchChar(')')) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+    ConsumeToEndOfLine();
+    return true;
+  }
 
-    SkipHorizontalWhitespace();
-    const unsigned version_line = line_;
-    const unsigned version_column = column_;
-    if (index_ >= source_.size() || std::isdigit(static_cast<unsigned char>(source_[index_])) == 0) {
-      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
-      ConsumeToEndOfLine();
-      continue;
-    }
+  SkipHorizontalWhitespace();
+  if (index_ < source_.size() && source_[index_] != '\n') {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
+    ConsumeToEndOfLine();
+    return true;
+  }
 
-    std::string version;
-    while (index_ < source_.size() && std::isdigit(static_cast<unsigned char>(source_[index_])) != 0) {
-      version.push_back(source_[index_]);
-      Advance();
-    }
+  if (version != std::to_string(options_.language_version)) {
+    diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",
+                                   "unsupported objc language version '" + version + "'; expected " +
+                                       std::to_string(options_.language_version)));
+  }
 
-    SkipHorizontalWhitespace();
-    if (!MatchChar(')')) {
-      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
-      ConsumeToEndOfLine();
-      continue;
-    }
+  RecordLanguageVersionPragmaObservation(directive_line, directive_column, placement);
+  if (placement == LanguageVersionPragmaPlacement::kNonLeading) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L008", kNonLeadingPragmaMessage));
+  }
+  if (language_version_pragma_contract_.directive_count > 1) {
+    diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L007", kDuplicatePragmaMessage));
+  }
 
-    SkipHorizontalWhitespace();
-    if (index_ < source_.size() && source_[index_] != '\n') {
-      diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L005", kMalformedPragmaMessage));
-      ConsumeToEndOfLine();
-      continue;
-    }
+  if (index_ < source_.size() && source_[index_] == '\n') {
+    Advance();
+  }
+  return true;
+}
 
-    if (version != std::to_string(options_.language_version)) {
-      diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",
-                                     "unsupported objc language version '" + version + "'; expected " +
-                                         std::to_string(options_.language_version)));
+bool Objc3Lexer::MatchLiteralAt(std::size_t cursor, const char *literal) const {
+  for (const char *it = literal; *it != '\0'; ++it) {
+    if (cursor >= source_.size() || source_[cursor] != *it) {
+      return false;
     }
+    ++cursor;
+  }
+  return true;
+}
 
-    if (index_ < source_.size() && source_[index_] == '\n') {
-      Advance();
-    }
+void Objc3Lexer::RecordLanguageVersionPragmaObservation(unsigned line, unsigned column,
+                                                        LanguageVersionPragmaPlacement placement) {
+  if (!language_version_pragma_contract_.seen) {
+    language_version_pragma_contract_.seen = true;
+    language_version_pragma_contract_.first_line = line;
+    language_version_pragma_contract_.first_column = column;
+  }
+  ++language_version_pragma_contract_.directive_count;
+  language_version_pragma_contract_.last_line = line;
+  language_version_pragma_contract_.last_column = column;
+  if (language_version_pragma_contract_.directive_count > 1) {
+    language_version_pragma_contract_.duplicate = true;
+  }
+  if (placement == LanguageVersionPragmaPlacement::kNonLeading) {
+    language_version_pragma_contract_.non_leading = true;
   }
 }
 

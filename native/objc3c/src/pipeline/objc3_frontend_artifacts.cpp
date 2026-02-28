@@ -115,6 +115,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"legacy_no\":" << pipeline_result.migration_hints.legacy_no_count << ",\"legacy_null\":"
            << pipeline_result.migration_hints.legacy_null_count
            << ",\"legacy_total\":" << pipeline_result.migration_hints.legacy_total() << "},\n";
+  manifest << "    \"language_version_pragma_contract\":{\"seen\":"
+           << (pipeline_result.language_version_pragma_contract.seen ? "true" : "false")
+           << ",\"directive_count\":" << pipeline_result.language_version_pragma_contract.directive_count
+           << ",\"duplicate\":" << (pipeline_result.language_version_pragma_contract.duplicate ? "true" : "false")
+           << ",\"non_leading\":"
+           << (pipeline_result.language_version_pragma_contract.non_leading ? "true" : "false")
+           << ",\"first_line\":" << pipeline_result.language_version_pragma_contract.first_line
+           << ",\"first_column\":" << pipeline_result.language_version_pragma_contract.first_column
+           << ",\"last_line\":" << pipeline_result.language_version_pragma_contract.last_line
+           << ",\"last_column\":" << pipeline_result.language_version_pragma_contract.last_column << "},\n";
   manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";
   manifest << "    \"pipeline\": {\n";
   manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")

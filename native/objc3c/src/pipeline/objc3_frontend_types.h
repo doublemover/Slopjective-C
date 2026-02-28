@@ -35,10 +35,22 @@ struct Objc3FrontendMigrationHints {
   std::size_t legacy_total() const { return legacy_yes_count + legacy_no_count + legacy_null_count; }
 };
 
+struct Objc3FrontendLanguageVersionPragmaContract {
+  bool seen = false;
+  std::size_t directive_count = 0;
+  bool duplicate = false;
+  bool non_leading = false;
+  unsigned first_line = 0;
+  unsigned first_column = 0;
+  unsigned last_line = 0;
+  unsigned last_column = 0;
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
   Objc3FrontendMigrationHints migration_hints;
+  Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;

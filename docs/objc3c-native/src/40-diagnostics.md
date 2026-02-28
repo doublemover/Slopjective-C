@@ -1,6 +1,6 @@
 <!-- markdownlint-disable-file MD041 -->
 
-## O3S201..O3S213 behavior (implemented now)
+## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
   - Duplicate parameter names within a single function parameter list.
@@ -37,6 +37,8 @@
   - `continue` used outside an active loop context.
 - `O3S214`:
   - Assignment target must be an existing mutable local or global symbol.
+- `O3S216`:
+  - migration assist requires canonical literal replacement for legacy Objective-C aliases (`YES`, `NO`, `NULL`) in canonical compatibility mode.
 
 Parser/lexer diagnostics currently emitted include:
 

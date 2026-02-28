@@ -17,6 +17,19 @@ enum class Objc3SemaPassId {
   ValidatePureContract = 2,
 };
 
+enum class Objc3SemaCompatibilityMode : std::uint8_t {
+  Canonical = 0,
+  Legacy = 1,
+};
+
+struct Objc3SemaMigrationHints {
+  std::size_t legacy_yes_count = 0;
+  std::size_t legacy_no_count = 0;
+  std::size_t legacy_null_count = 0;
+
+  std::size_t legacy_total() const { return legacy_yes_count + legacy_no_count + legacy_null_count; }
+};
+
 inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder = {
     Objc3SemaPassId::BuildIntegrationSurface,
     Objc3SemaPassId::ValidateBodies,
@@ -60,6 +73,9 @@ struct Objc3SemaDiagnosticsBus {
 struct Objc3SemaPassManagerInput {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
+  Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;
+  bool migration_assist = false;
+  Objc3SemaMigrationHints migration_hints;
   Objc3SemaDiagnosticsBus diagnostics_bus;
 };
 

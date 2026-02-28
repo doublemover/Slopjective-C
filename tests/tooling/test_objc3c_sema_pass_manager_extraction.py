@@ -26,6 +26,8 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     contract = _read(PASS_MANAGER_CONTRACT)
     assert "kObjc3SemaPassManagerContractVersionMajor" in contract
     assert "enum class Objc3SemaPassId {" in contract
+    assert "enum class Objc3SemaCompatibilityMode : std::uint8_t {" in contract
+    assert "struct Objc3SemaMigrationHints {" in contract
     assert "BuildIntegrationSurface" in contract
     assert "ValidateBodies" in contract
     assert "ValidatePureContract" in contract
@@ -34,6 +36,9 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "struct Objc3SemaDiagnosticsBus {" in contract
     assert "PublishBatch(const std::vector<std::string> &batch) const" in contract
     assert "std::size_t Count() const" in contract
+    assert "Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;" in contract
+    assert "bool migration_assist = false;" in contract
+    assert "Objc3SemaMigrationHints migration_hints;" in contract
     assert "std::vector<std::string> diagnostics;" in contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
     assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
@@ -71,6 +76,8 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);" in source
     assert "ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);" in source
     assert "ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);" in source
+    assert "AppendMigrationAssistDiagnostics(input, pass_diagnostics);" in source
+    assert "O3S216" in source
     assert "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());" in source
     assert "input.diagnostics_bus.PublishBatch(pass_diagnostics);" in source
     assert "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();" in source
@@ -90,6 +97,8 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
         source,
         [
             "for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {",
+            "ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);",
+            "AppendMigrationAssistDiagnostics(input, pass_diagnostics);",
             "CanonicalizePassDiagnostics(pass_diagnostics);",
             "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());",
             "input.diagnostics_bus.PublishBatch(pass_diagnostics);",
@@ -104,11 +113,23 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
         ],
     )
 
+    _assert_in_order(
+        source,
+        [
+            "append_for_literal(input.migration_hints.legacy_yes_count, 1u, \"YES\", \"true\");",
+            "append_for_literal(input.migration_hints.legacy_no_count, 2u, \"NO\", \"false\");",
+            "append_for_literal(input.migration_hints.legacy_null_count, 3u, \"NULL\", \"nil\");",
+        ],
+    )
+
 
 def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:
     pipeline = _read(PIPELINE_SOURCE)
     assert '#include "sema/objc3_sema_pass_manager.h"' in pipeline
     assert "Objc3SemaPassManagerInput sema_input;" in pipeline
+    assert "sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy" in pipeline
+    assert "sema_input.migration_assist = options.migration_assist;" in pipeline
+    assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline
     assert "sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;" in pipeline
     assert "RunObjc3SemaPassManager(sema_input)" in pipeline
     assert "BuildSemanticIntegrationSurface(result.program, result.stage_diagnostics.semantic);" not in pipeline

@@ -31,13 +31,21 @@ def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics(
     lexer_source = read_text(LEX_SOURCE)
     assert "struct Objc3LexerOptions" in lexer_header
     assert "struct Objc3LexerMigrationHints" in lexer_header
+    assert "struct Objc3LexerLanguageVersionPragmaContract" in lexer_header
     assert "const Objc3LexerMigrationHints &MigrationHints() const;" in lexer_header
+    assert (
+        "const Objc3LexerLanguageVersionPragmaContract &LanguageVersionPragmaContract() const;"
+        in lexer_header
+    )
     assert "ConsumeLanguageVersionPragmas(diagnostics);" in lexer_source
+    assert "ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false)" in lexer_source
     assert "MatchLiteral(\"objc_language_version\")" in lexer_source
     assert "if (options_.migration_assist) {" in lexer_source
     assert "migration_hints_.legacy_yes_count" in lexer_source
     assert "migration_hints_.legacy_no_count" in lexer_source
     assert "migration_hints_.legacy_null_count" in lexer_source
+    assert "directive_count > 1" in lexer_source
+    assert "language_version_pragma_contract_.non_leading = true;" in lexer_source
     assert "version != std::to_string(options_.language_version)" in lexer_source
     assert (
         "malformed '#pragma objc_language_version' directive; expected '#pragma objc_language_version(3)'"
@@ -46,6 +54,16 @@ def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics(
     assert "MakeDiag(directive_line, directive_column, \"O3L005\"" in lexer_source
     assert "unsupported objc language version '" in lexer_source
     assert "MakeDiag(version_line, version_column, \"O3L006\"" in lexer_source
+    assert (
+        "duplicate '#pragma objc_language_version' directive; only one file-scope prelude pragma is allowed"
+        in lexer_source
+    )
+    assert "MakeDiag(directive_line, directive_column, \"O3L007\"" in lexer_source
+    assert (
+        "language-version pragma must stay in the file-scope prelude before declarations or tokens"
+        in lexer_source
+    )
+    assert "MakeDiag(directive_line, directive_column, \"O3L008\"" in lexer_source
 
 
 def test_pipeline_consumes_lexer_migration_hints_surface() -> None:
@@ -53,3 +71,5 @@ def test_pipeline_consumes_lexer_migration_hints_surface() -> None:
     assert "Objc3LexerOptions lexer_options;" in pipeline_cpp
     assert "lexer_options.migration_assist = options.migration_assist;" in pipeline_cpp
     assert "result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;" in pipeline_cpp
+    assert "lexer.LanguageVersionPragmaContract()" in pipeline_cpp
+    assert "result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;" in pipeline_cpp

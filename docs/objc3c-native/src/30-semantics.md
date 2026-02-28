@@ -1185,6 +1185,7 @@ Lowering/runtime status (implemented):
 - `break` outside loop is rejected: `O3S212`
 - `continue` outside loop is rejected: `O3S213`
 - assignment target must be mutable local or global symbol: `O3S214`
+- migration assist in canonical compatibility mode rejects legacy Objective-C aliases (`YES`, `NO`, `NULL`): `O3S216`
 
 ## Semantic pipeline boundaries (M25-B007/B008)
 
