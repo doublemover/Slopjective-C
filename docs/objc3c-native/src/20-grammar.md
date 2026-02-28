@@ -309,6 +309,37 @@ Recommended M153 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py -q`
 
+## M154 frontend property-synthesis-ivar-binding parser surface
+
+Frontend parser/AST now emits deterministic property synthesis and ivar binding packets for Objective-C
+`@implementation` property declarations.
+
+M154 parser/AST surface details:
+
+- property synthesis/ivar binding helper anchors:
+  - `BuildObjcPropertySynthesisSymbol(...)`
+  - `BuildObjcIvarBindingSymbol(...)`
+  - `BuildObjcPropertySynthesisSymbolsLexicographic(...)`
+  - `BuildObjcIvarBindingSymbolsLexicographic(...)`
+- parser assignment anchors:
+  - `AssignObjcPropertySynthesisIvarBindingSymbols(...)`
+  - `FinalizeObjcPropertySynthesisIvarBindingPackets(...)`
+  - `property.property_synthesis_symbol = synthesis_owner_symbol + "::" + BuildObjcPropertySynthesisSymbol(property);`
+  - `property.ivar_binding_symbol = synthesis_owner_symbol + "::" + BuildObjcIvarBindingSymbol(property);`
+- implementation packet anchors:
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("implementation", ...)`
+  - `decl->property_synthesis_symbols_lexicographic`
+  - `decl->ivar_binding_symbols_lexicographic`
+
+Deterministic grammar intent:
+
+- property synthesis and default ivar binding packets are attached per `@implementation` property declaration.
+- implementation packet vectors are normalized as sorted unique symbols for sema handoff/replay.
+
+Recommended M154 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

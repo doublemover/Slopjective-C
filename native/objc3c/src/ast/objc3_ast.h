@@ -264,6 +264,8 @@ struct Objc3PropertyDecl {
   std::string setter_selector;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
+  std::string property_synthesis_symbol;
+  std::string ivar_binding_symbol;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -315,6 +317,8 @@ struct Objc3ImplementationDecl {
   std::string semantic_link_symbol;
   std::string semantic_link_interface_symbol;
   std::string semantic_link_category_symbol;
+  std::vector<std::string> property_synthesis_symbols_lexicographic;
+  std::vector<std::string> ivar_binding_symbols_lexicographic;
   std::vector<std::string> method_lookup_symbols_lexicographic;
   std::vector<std::string> override_lookup_symbols_lexicographic;
   std::vector<std::string> conflict_lookup_symbols_lexicographic;

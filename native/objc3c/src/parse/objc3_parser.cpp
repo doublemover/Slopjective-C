@@ -202,6 +202,14 @@ static std::string BuildObjcPropertyScopePathSymbol(const Objc3PropertyDecl &pro
   return "property:" + property.name;
 }
 
+static std::string BuildObjcPropertySynthesisSymbol(const Objc3PropertyDecl &property) {
+  return "property_synthesis:" + property.name;
+}
+
+static std::string BuildObjcIvarBindingSymbol(const Objc3PropertyDecl &property) {
+  return "ivar_binding:_" + property.name;
+}
+
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
   std::sort(values.begin(), values.end());
   values.erase(std::unique(values.begin(), values.end()), values.end());
@@ -268,6 +276,30 @@ static std::vector<std::string> BuildObjcMethodConflictLookupSymbolsLexicographi
   for (const auto &method : methods) {
     if (!method.conflict_lookup_symbol.empty()) {
       symbols.push_back(method.conflict_lookup_symbol);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(symbols));
+}
+
+static std::vector<std::string> BuildObjcPropertySynthesisSymbolsLexicographic(
+    const std::vector<Objc3PropertyDecl> &properties) {
+  std::vector<std::string> symbols;
+  symbols.reserve(properties.size());
+  for (const auto &property : properties) {
+    if (!property.property_synthesis_symbol.empty()) {
+      symbols.push_back(property.property_synthesis_symbol);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(symbols));
+}
+
+static std::vector<std::string> BuildObjcIvarBindingSymbolsLexicographic(
+    const std::vector<Objc3PropertyDecl> &properties) {
+  std::vector<std::string> symbols;
+  symbols.reserve(properties.size());
+  for (const auto &property : properties) {
+    if (!property.ivar_binding_symbol.empty()) {
+      symbols.push_back(property.ivar_binding_symbol);
     }
   }
   return BuildSortedUniqueStrings(std::move(symbols));
@@ -607,6 +639,20 @@ class Objc3Parser {
     method_lookup_symbols_lexicographic = BuildObjcMethodLookupSymbolsLexicographic(methods);
     override_lookup_symbols_lexicographic = BuildObjcMethodOverrideLookupSymbolsLexicographic(methods);
     conflict_lookup_symbols_lexicographic = BuildObjcMethodConflictLookupSymbolsLexicographic(methods);
+  }
+
+  void AssignObjcPropertySynthesisIvarBindingSymbols(Objc3PropertyDecl &property,
+                                                     const std::string &synthesis_owner_symbol) {
+    property.property_synthesis_symbol = synthesis_owner_symbol + "::" + BuildObjcPropertySynthesisSymbol(property);
+    property.ivar_binding_symbol = synthesis_owner_symbol + "::" + BuildObjcIvarBindingSymbol(property);
+  }
+
+  void FinalizeObjcPropertySynthesisIvarBindingPackets(
+      const std::vector<Objc3PropertyDecl> &properties,
+      std::vector<std::string> &property_synthesis_symbols_lexicographic,
+      std::vector<std::string> &ivar_binding_symbols_lexicographic) {
+    property_synthesis_symbols_lexicographic = BuildObjcPropertySynthesisSymbolsLexicographic(properties);
+    ivar_binding_symbols_lexicographic = BuildObjcIvarBindingSymbolsLexicographic(properties);
   }
 
   void ConsumeBracedBodyTail() {
@@ -1068,6 +1114,7 @@ class Objc3Parser {
         if (ParseObjcPropertyDecl(property)) {
           property.scope_owner_symbol = decl->scope_owner_symbol;
           property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
+          AssignObjcPropertySynthesisIvarBindingSymbols(property, decl->semantic_link_symbol);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -1095,6 +1142,9 @@ class Objc3Parser {
       SynchronizeObjcContainer();
     }
 
+    FinalizeObjcPropertySynthesisIvarBindingPackets(decl->properties,
+                                                    decl->property_synthesis_symbols_lexicographic,
+                                                    decl->ivar_binding_symbols_lexicographic);
     FinalizeObjcMethodLookupOverrideConflictPackets(decl->methods,
                                                     decl->method_lookup_symbols_lexicographic,
                                                     decl->override_lookup_symbols_lexicographic,
