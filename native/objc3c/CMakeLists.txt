@@ -38,7 +38,12 @@ add_library(objc3c_diag STATIC
 target_include_directories(objc3c_diag PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-add_library(objc3c_parse INTERFACE)
+add_library(objc3c_parse STATIC
+  src/parse/objc3_parser.cpp
+)
+target_include_directories(objc3c_parse PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 add_library(objc3c_sema INTERFACE)
 add_library(objc3c_lower STATIC
   src/lower/objc3_lowering_contract.cpp
@@ -78,6 +83,7 @@ target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
   objc3c_lex
   objc3c_diag
+  objc3c_parse
   objc3c_lower
   objc3c_ir
   objc3c_io
