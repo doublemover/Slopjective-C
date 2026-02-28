@@ -239,6 +239,21 @@ GA blocker closure for frontend/parser requires deterministic parser/AST boundar
   3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
 
+## M220 frontend public-beta triage packet
+
+Public-beta triage for frontend/parser uses deterministic intake signals and patch-loop replay evidence.
+
+- Required beta triage signals:
+  - pragma-prelude diagnostics remain stable for `O3L005`/`O3L006`/`O3L007`/`O3L008`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` stays present and deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required triage commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1668,6 +1683,29 @@ Recommended seeding commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
 
+## M220 sema/type public-beta triage profile
+
+For sema/type public-beta intake, triage, and patch loops, capture deterministic evidence in two replay-stable packets before promoting fixes to GA-bound lanes.
+
+### 1.1 Deterministic semantic diagnostics intake packet
+
+- Pass-order and diagnostics determinism anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics intake anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest intake counters under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+
+### 1.2 Deterministic type-metadata triage/patch packet
+
+- Sema handoff/parity anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest triage parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface patch-loop sizing anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+
+Recommended public-beta triage loop commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m224_sema_release_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m220_sema_public_beta_contract.py -q`
+
 ## M221 sema/type GA blocker burn-down profile
 
 To burn down sema/type GA blockers with deterministic, replay-stable evidence, capture two explicit packets before closing blocker state.
@@ -1860,6 +1898,37 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M220 lowering/runtime public-beta triage profile
+
+Public-beta lowering/runtime triage must ship as deterministic packet evidence rooted under `tmp/`:
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.manifest.json`
+  - `tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each beta triage packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors to include in packet notes):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `patch-loop closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - replay markers stay stable across reruns (no added/removed lines, no reordered anchors).
+  - closure remains open if any ABI/IR anchor or replay marker is missing.
+
+Public-beta triage capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.ll > tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.manifest.json >> tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m220_lowering_public_beta_contract.py -q`
 
 ## M221 lowering/runtime GA blocker burn-down profile
 
@@ -2805,6 +2874,50 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m221_validation_ga_blocker_contract.py -q
 ```
 
+## M220 validation/perf public-beta triage runbook
+
+Public-beta triage loop requires deterministic validation/perf replay packets and strict command ordering.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Public-beta evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m220_validation_public_beta_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -2922,6 +3035,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain release anchors.
+
+## M220 integration public-beta triage loop
+
+- Gate intent: formalize public-beta intake/triage/patch loop with deterministic lane-contract replay.
+### 1.1 Public-beta integration chain
+- Deterministic triage gate:
+  - `npm run check:objc3c:m220-public-beta-triage`
+- Chain order:
+  - replays `check:objc3c:m221-ga-blocker-burndown`.
+  - enforces all M220 lane contracts:
+    `tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_sema_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_lowering_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_validation_public_beta_contract.py`,
+    `tests/tooling/test_objc3c_m220_integration_public_beta_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve release guard invariants through beta loop execution:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain integration anchors.
 
 ## Current call contract
 
