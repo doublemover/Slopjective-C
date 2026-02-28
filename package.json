@@ -23,6 +23,7 @@
     "test:objc3c:perf-budget": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_perf_budget.ps1",
     "check:objc3c:boundaries": "python scripts/check_objc3c_dependency_boundaries.py --strict",
     "check:objc3c:library-cli-parity": "python scripts/check_objc3c_library_cli_parity.py --library-dir tmp/objc3c-library --cli-dir tmp/objc3c-cli",
+    "check:objc3c:library-cli-parity:golden": "python scripts/check_objc3c_library_cli_parity.py --library-dir tests/tooling/fixtures/native/library_cli_parity/library --cli-dir tests/tooling/fixtures/native/library_cli_parity/cli --summary-out tmp/objc3c_library_cli_parity_summary.json --golden-summary tests/tooling/fixtures/native/library_cli_parity/golden_summary.json --check-golden",
     "dev:objc3c:lex": "node scripts/node/run_objc3c_modular_workflow.js lex",
     "dev:objc3c:parse": "node scripts/node/run_objc3c_modular_workflow.js parse",
     "dev:objc3c:sema": "node scripts/node/run_objc3c_modular_workflow.js sema",

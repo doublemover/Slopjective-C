@@ -1,0 +1,78 @@
+{
+  "mode": "objc3c-library-cli-parity-v2",
+  "library_dir": "tests/tooling/fixtures/native/library_cli_parity/library",
+  "cli_dir": "tests/tooling/fixtures/native/library_cli_parity/cli",
+  "artifacts": [
+    "module.diagnostics.json",
+    "module.ll",
+    "module.manifest.json",
+    "module.o"
+  ],
+  "dimensions": [
+    {
+      "dimension": "diagnostics",
+      "artifact": "module.diagnostics.json",
+      "status": "compared"
+    },
+    {
+      "dimension": "manifest",
+      "artifact": "module.manifest.json",
+      "status": "compared"
+    },
+    {
+      "dimension": "ir",
+      "artifact": "module.ll",
+      "status": "compared"
+    },
+    {
+      "dimension": "object",
+      "artifact": "module.o",
+      "status": "compared"
+    }
+  ],
+  "comparisons": [
+    {
+      "artifact": "module.diagnostics.json",
+      "dimension": "diagnostics",
+      "source_kind": "artifact-bytes",
+      "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.diagnostics.json",
+      "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.diagnostics.json",
+      "library_sha256": "96393d1b36e3e20ffb5f8623f2a0df4d43a48685502b140f0e02f5de1eccdb61",
+      "cli_sha256": "96393d1b36e3e20ffb5f8623f2a0df4d43a48685502b140f0e02f5de1eccdb61",
+      "matches": true
+    },
+    {
+      "artifact": "module.ll",
+      "dimension": "ir",
+      "source_kind": "artifact-bytes",
+      "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.ll",
+      "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll",
+      "library_sha256": "3333fc3d5412ec3224d7e6ac03db48a2da083d79095f8ff6654c7061e1188670",
+      "cli_sha256": "3333fc3d5412ec3224d7e6ac03db48a2da083d79095f8ff6654c7061e1188670",
+      "matches": true
+    },
+    {
+      "artifact": "module.manifest.json",
+      "dimension": "manifest",
+      "source_kind": "artifact-bytes",
+      "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+      "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+      "library_sha256": "b40da60c6f5cce53f29cb887194a7379d1a8a6a90a77276fe8710e69b2f07fe4",
+      "cli_sha256": "b40da60c6f5cce53f29cb887194a7379d1a8a6a90a77276fe8710e69b2f07fe4",
+      "matches": true
+    },
+    {
+      "artifact": "module.o",
+      "dimension": "object",
+      "source_kind": "artifact-bytes",
+      "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.o",
+      "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.o",
+      "library_sha256": "199d3071426809fa53df114bdce88615e7a1ed4a6a1c7540767a80c45de85e96",
+      "cli_sha256": "199d3071426809fa53df114bdce88615e7a1ed4a6a1c7540767a80c45de85e96",
+      "matches": true
+    }
+  ],
+  "failures": [],
+  "ok": true,
+  "golden_summary": "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json"
+}

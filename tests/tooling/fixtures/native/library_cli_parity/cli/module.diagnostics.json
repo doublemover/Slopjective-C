@@ -1,0 +1,9 @@
+{
+  "diagnostics": [
+    {
+      "code": "O3S200",
+      "message": "duplicate module declaration",
+      "severity": "error"
+    }
+  ]
+}

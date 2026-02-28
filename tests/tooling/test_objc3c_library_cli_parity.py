@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,6 +10,7 @@ SCRIPT_PATH = ROOT / "scripts" / "check_objc3c_library_cli_parity.py"
 SPEC = importlib.util.spec_from_file_location("check_objc3c_library_cli_parity", SCRIPT_PATH)
 assert SPEC is not None and SPEC.loader is not None
 parity = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = parity
 SPEC.loader.exec_module(parity)
 
 
@@ -43,8 +45,15 @@ def test_parity_pass(tmp_path: Path) -> None:
 
     assert exit_code == 0
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["mode"] == "objc3c-library-cli-parity-v2"
     assert payload["ok"] is True
     assert payload["failures"] == []
+    assert [item["dimension"] for item in payload["dimensions"]] == [
+        "diagnostics",
+        "manifest",
+        "ir",
+        "object",
+    ]
 
 
 def test_parity_fail_on_digest_mismatch(tmp_path: Path) -> None:
@@ -72,3 +81,81 @@ def test_parity_fail_on_digest_mismatch(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any("digest mismatch" in failure for failure in payload["failures"])
+
+
+def test_parity_supports_sha256_proxy_for_missing_object_artifact(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    cli_dir = tmp_path / "cli"
+
+    digest = "3" * 64
+    _write(library_dir / "module.o.sha256", digest + "\n")
+    _write(cli_dir / "module.o.sha256", digest + "\n")
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--library-dir",
+            str(library_dir),
+            "--cli-dir",
+            str(cli_dir),
+            "--artifacts",
+            "module.o",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is True
+    assert payload["comparisons"][0]["source_kind"] == "sha256-proxy"
+
+
+def test_parity_check_golden_detects_drift(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    cli_dir = tmp_path / "cli"
+
+    _write(library_dir / "module.manifest.json", '{"module":"m"}\n')
+    _write(cli_dir / "module.manifest.json", '{"module":"m"}\n')
+
+    summary_out = tmp_path / "summary.json"
+    golden = tmp_path / "golden.json"
+    write_code = parity.run(
+        [
+            "--library-dir",
+            str(library_dir),
+            "--cli-dir",
+            str(cli_dir),
+            "--artifacts",
+            "module.manifest.json",
+            "--summary-out",
+            str(summary_out),
+            "--golden-summary",
+            str(golden),
+            "--write-golden",
+        ]
+    )
+    assert write_code == 0
+    assert golden.is_file()
+
+    _write(cli_dir / "module.manifest.json", '{"module":"m2"}\n')
+    check_code = parity.run(
+        [
+            "--library-dir",
+            str(library_dir),
+            "--cli-dir",
+            str(cli_dir),
+            "--artifacts",
+            "module.manifest.json",
+            "--summary-out",
+            str(summary_out),
+            "--golden-summary",
+            str(golden),
+            "--check-golden",
+        ]
+    )
+
+    assert check_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any("golden summary drift detected" in failure for failure in payload["failures"])

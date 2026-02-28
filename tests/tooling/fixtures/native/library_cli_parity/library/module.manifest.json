@@ -1,0 +1,5 @@
+{
+  "entrypoint": "main",
+  "module": "fixture_library_cli_parity",
+  "source": "fixtures/native/library_cli_parity"
+}

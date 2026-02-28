@@ -56,7 +56,9 @@ jobs:
         run: npm run check:bootstrap-readiness:strict
       - name: 09 Run repo-root open-blocker audit contract strict gate (runner + checker + evidence artifacts)
         run: npm run check:open-blocker-audit:contract:strict
-      - name: 10 Run native lane-E perf/cache/repro gate (windows only)
+      - name: 10 Run ObjC3C library-vs-cli parity golden gate (strict deterministic gate)
+        run: npm run check:objc3c:library-cli-parity:golden
+      - name: 11 Run native lane-E perf/cache/repro gate (windows only)
         if: matrix.os == 'windows-latest'
         run: npm run test:objc3c:lane-e
 
