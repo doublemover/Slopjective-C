@@ -1949,6 +1949,24 @@ Frontend actor-isolation/sendability contract relies on deterministic parser-own
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py -q`
 
+## M187 frontend await lowering and suspension packetization
+
+Frontend await-lowering/suspension contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for await keywords, suspension points, resume surfaces, state-machine hooks, and continuation surfaces.
+
+- Required frontend await-lowering/suspension signals:
+  - parser symbol classifiers remain `IsAwaitKeywordSymbol(...)`, `IsAwaitSuspensionPointSymbol(...)`, `IsAwaitResumeSymbol(...)`, `IsAwaitStateMachineSymbol(...)`, and `IsAwaitContinuationSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3AwaitSuspensionProfile`.
+  - parser profile serialization remains `BuildAwaitSuspensionProfile(...)`.
+  - parser profile invariant gate remains `IsAwaitSuspensionProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeAwaitSuspensionProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeAwaitSuspensionProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.await_suspension_sites = profile.await_suspension_sites;` and `method.await_suspension_sites = profile.await_suspension_sites;`.
+  - AST carrier anchors remain `bool await_suspension_profile_is_normalized = false;`, `bool deterministic_await_suspension_handoff = false;`, and `std::string await_suspension_profile;` on function/method declarations.
+- Required frontend await-lowering/suspension commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.

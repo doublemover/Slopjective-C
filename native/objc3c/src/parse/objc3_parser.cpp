@@ -2108,6 +2108,370 @@ static Objc3InlineAsmIntrinsicGovernanceProfile BuildInlineAsmIntrinsicGovernanc
       counts.privileged_intrinsic_sites);
 }
 
+static bool IsAwaitKeywordSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered == "await" || lowered.find("await_") != std::string::npos;
+}
+
+static bool IsAwaitSuspensionPointSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("suspend") != std::string::npos ||
+         lowered.find("yield") != std::string::npos;
+}
+
+static bool IsAwaitResumeSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("resume") != std::string::npos ||
+         lowered.find("wakeup") != std::string::npos;
+}
+
+static bool IsAwaitStateMachineSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("state") != std::string::npos ||
+         lowered.find("continuation") != std::string::npos ||
+         lowered.find("poll") != std::string::npos;
+}
+
+static bool IsAwaitContinuationSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("continuation") != std::string::npos ||
+         lowered.find("future") != std::string::npos ||
+         lowered.find("promise") != std::string::npos;
+}
+
+struct Objc3AwaitSuspensionSiteCounts {
+  std::size_t await_keyword_sites = 0;
+  std::size_t await_suspension_point_sites = 0;
+  std::size_t await_resume_sites = 0;
+  std::size_t await_state_machine_sites = 0;
+  std::size_t await_continuation_sites = 0;
+};
+
+static void CollectAwaitSuspensionSitesFromSymbol(
+    const std::string &symbol,
+    Objc3AwaitSuspensionSiteCounts &counts) {
+  if (IsAwaitKeywordSymbol(symbol)) {
+    counts.await_keyword_sites += 1u;
+  }
+  if (IsAwaitSuspensionPointSymbol(symbol)) {
+    counts.await_suspension_point_sites += 1u;
+  }
+  if (IsAwaitResumeSymbol(symbol)) {
+    counts.await_resume_sites += 1u;
+  }
+  if (IsAwaitStateMachineSymbol(symbol)) {
+    counts.await_state_machine_sites += 1u;
+  }
+  if (IsAwaitContinuationSymbol(symbol)) {
+    counts.await_continuation_sites += 1u;
+  }
+}
+
+static void CollectAwaitSuspensionExprSites(
+    const Expr *expr,
+    Objc3AwaitSuspensionSiteCounts &counts) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+  case Expr::Kind::Call:
+    CollectAwaitSuspensionSitesFromSymbol(expr->ident, counts);
+    for (const auto &arg : expr->args) {
+      CollectAwaitSuspensionExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::MessageSend:
+    CollectAwaitSuspensionSitesFromSymbol(expr->selector, counts);
+    CollectAwaitSuspensionExprSites(expr->receiver.get(), counts);
+    for (const auto &arg : expr->args) {
+      CollectAwaitSuspensionExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::Binary:
+    CollectAwaitSuspensionExprSites(expr->left.get(), counts);
+    CollectAwaitSuspensionExprSites(expr->right.get(), counts);
+    return;
+  case Expr::Kind::Conditional:
+    CollectAwaitSuspensionExprSites(expr->left.get(), counts);
+    CollectAwaitSuspensionExprSites(expr->right.get(), counts);
+    CollectAwaitSuspensionExprSites(expr->third.get(), counts);
+    return;
+  case Expr::Kind::BlockLiteral:
+  case Expr::Kind::BoolLiteral:
+  case Expr::Kind::Identifier:
+  case Expr::Kind::NilLiteral:
+  case Expr::Kind::Number:
+  default:
+    return;
+  }
+}
+
+static void CollectAwaitSuspensionForClauseSites(
+    const ForClause &clause,
+    Objc3AwaitSuspensionSiteCounts &counts) {
+  CollectAwaitSuspensionExprSites(clause.value.get(), counts);
+}
+
+static void CollectAwaitSuspensionStmtSites(
+    const Stmt *stmt,
+    Objc3AwaitSuspensionSiteCounts &counts) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(stmt->let_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(stmt->assign_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(stmt->return_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return;
+    }
+    CollectAwaitSuspensionExprSites(stmt->if_stmt->condition.get(), counts);
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      CollectAwaitSuspensionStmtSites(then_stmt.get(), counts);
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      CollectAwaitSuspensionStmtSites(else_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      CollectAwaitSuspensionStmtSites(body_stmt.get(), counts);
+    }
+    CollectAwaitSuspensionExprSites(stmt->do_while_stmt->condition.get(), counts);
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return;
+    }
+    CollectAwaitSuspensionForClauseSites(stmt->for_stmt->init, counts);
+    CollectAwaitSuspensionExprSites(stmt->for_stmt->condition.get(), counts);
+    CollectAwaitSuspensionForClauseSites(stmt->for_stmt->step, counts);
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      CollectAwaitSuspensionStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return;
+    }
+    CollectAwaitSuspensionExprSites(stmt->switch_stmt->condition.get(), counts);
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &case_stmt : switch_case.body) {
+        CollectAwaitSuspensionStmtSites(case_stmt.get(), counts);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return;
+    }
+    CollectAwaitSuspensionExprSites(stmt->while_stmt->condition.get(), counts);
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      CollectAwaitSuspensionStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      CollectAwaitSuspensionStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectAwaitSuspensionExprSites(stmt->expr_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static Objc3AwaitSuspensionSiteCounts CountAwaitSuspensionSitesInBody(
+    const std::vector<std::unique_ptr<Stmt>> &body) {
+  Objc3AwaitSuspensionSiteCounts counts;
+  for (const auto &stmt : body) {
+    CollectAwaitSuspensionStmtSites(stmt.get(), counts);
+  }
+  return counts;
+}
+
+struct Objc3AwaitSuspensionProfile {
+  std::size_t await_suspension_sites = 0;
+  std::size_t await_keyword_sites = 0;
+  std::size_t await_suspension_point_sites = 0;
+  std::size_t await_resume_sites = 0;
+  std::size_t await_state_machine_sites = 0;
+  std::size_t await_continuation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic_await_suspension_handoff = false;
+};
+
+static std::string BuildAwaitSuspensionProfile(
+    std::size_t await_suspension_sites,
+    std::size_t await_keyword_sites,
+    std::size_t await_suspension_point_sites,
+    std::size_t await_resume_sites,
+    std::size_t await_state_machine_sites,
+    std::size_t await_continuation_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites,
+    bool deterministic_await_suspension_handoff) {
+  std::ostringstream out;
+  out << "await-suspension:await_suspension_sites=" << await_suspension_sites
+      << ";await_keyword_sites=" << await_keyword_sites
+      << ";await_suspension_point_sites=" << await_suspension_point_sites
+      << ";await_resume_sites=" << await_resume_sites
+      << ";await_state_machine_sites=" << await_state_machine_sites
+      << ";await_continuation_sites=" << await_continuation_sites
+      << ";normalized_sites=" << normalized_sites
+      << ";gate_blocked_sites=" << gate_blocked_sites
+      << ";contract_violation_sites=" << contract_violation_sites
+      << ";deterministic_await_suspension_handoff="
+      << (deterministic_await_suspension_handoff ? "true" : "false");
+  return out.str();
+}
+
+static bool IsAwaitSuspensionProfileNormalized(
+    std::size_t await_suspension_sites,
+    std::size_t await_keyword_sites,
+    std::size_t await_suspension_point_sites,
+    std::size_t await_resume_sites,
+    std::size_t await_state_machine_sites,
+    std::size_t await_continuation_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites) {
+  if (await_keyword_sites > await_suspension_sites ||
+      await_suspension_point_sites > await_suspension_sites ||
+      await_resume_sites > await_suspension_sites ||
+      await_state_machine_sites > await_suspension_sites ||
+      await_continuation_sites > await_suspension_sites ||
+      normalized_sites > await_suspension_sites ||
+      gate_blocked_sites > await_suspension_sites ||
+      contract_violation_sites > await_suspension_sites) {
+    return false;
+  }
+  if (normalized_sites + gate_blocked_sites != await_suspension_sites) {
+    return false;
+  }
+  return contract_violation_sites == 0u;
+}
+
+static Objc3AwaitSuspensionProfile BuildAwaitSuspensionProfileFromCounts(
+    std::size_t await_keyword_sites,
+    std::size_t await_suspension_point_sites,
+    std::size_t await_resume_sites,
+    std::size_t await_state_machine_sites,
+    std::size_t await_continuation_sites) {
+  Objc3AwaitSuspensionProfile profile;
+  profile.await_keyword_sites = await_keyword_sites;
+  profile.await_suspension_point_sites = await_suspension_point_sites;
+  profile.await_resume_sites = await_resume_sites;
+  profile.await_state_machine_sites = await_state_machine_sites;
+  profile.await_continuation_sites = await_continuation_sites;
+  profile.await_suspension_sites = profile.await_keyword_sites;
+  if (profile.await_suspension_sites >
+      std::numeric_limits<std::size_t>::max() - profile.await_suspension_point_sites) {
+    profile.await_suspension_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.await_suspension_sites += profile.await_suspension_point_sites;
+  }
+  if (profile.await_suspension_sites >
+      std::numeric_limits<std::size_t>::max() - profile.await_continuation_sites) {
+    profile.await_suspension_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.await_suspension_sites += profile.await_continuation_sites;
+  }
+  profile.gate_blocked_sites =
+      std::min(profile.await_suspension_sites,
+               std::min(profile.await_resume_sites, profile.await_state_machine_sites));
+  profile.normalized_sites = profile.await_suspension_sites - profile.gate_blocked_sites;
+  if (profile.await_keyword_sites > profile.await_suspension_sites ||
+      profile.await_suspension_point_sites > profile.await_suspension_sites ||
+      profile.await_resume_sites > profile.await_suspension_sites ||
+      profile.await_state_machine_sites > profile.await_suspension_sites ||
+      profile.await_continuation_sites > profile.await_suspension_sites ||
+      profile.normalized_sites > profile.await_suspension_sites ||
+      profile.gate_blocked_sites > profile.await_suspension_sites ||
+      profile.contract_violation_sites > profile.await_suspension_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.normalized_sites + profile.gate_blocked_sites != profile.await_suspension_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.contract_violation_sites > profile.await_suspension_sites) {
+    profile.contract_violation_sites = profile.await_suspension_sites;
+  }
+  profile.deterministic_await_suspension_handoff =
+      profile.contract_violation_sites == 0u;
+  return profile;
+}
+
+static Objc3AwaitSuspensionProfile BuildAwaitSuspensionProfileFromFunction(
+    const FunctionDecl &fn) {
+  const Objc3AwaitSuspensionSiteCounts counts = CountAwaitSuspensionSitesInBody(fn.body);
+  return BuildAwaitSuspensionProfileFromCounts(
+      counts.await_keyword_sites,
+      counts.await_suspension_point_sites,
+      counts.await_resume_sites,
+      counts.await_state_machine_sites,
+      counts.await_continuation_sites);
+}
+
+static Objc3AwaitSuspensionProfile BuildAwaitSuspensionProfileFromOpaqueBody(
+    const Objc3MethodDecl &method) {
+  Objc3AwaitSuspensionSiteCounts counts;
+  if (method.has_body) {
+    CollectAwaitSuspensionSitesFromSymbol(method.selector, counts);
+  }
+  return BuildAwaitSuspensionProfileFromCounts(
+      counts.await_keyword_sites,
+      counts.await_suspension_point_sites,
+      counts.await_resume_sites,
+      counts.await_state_machine_sites,
+      counts.await_continuation_sites);
+}
+
 static bool IsActorIsolationDeclSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
@@ -4058,6 +4422,23 @@ class Objc3Parser {
     target.ns_error_bridge_boundary_sites = source.ns_error_bridge_boundary_sites;
     target.ns_error_bridging_contract_violation_sites = source.ns_error_bridging_contract_violation_sites;
     target.ns_error_bridging_profile = source.ns_error_bridging_profile;
+    target.await_suspension_profile_is_normalized =
+        source.await_suspension_profile_is_normalized;
+    target.deterministic_await_suspension_handoff =
+        source.deterministic_await_suspension_handoff;
+    target.await_suspension_sites = source.await_suspension_sites;
+    target.await_keyword_sites = source.await_keyword_sites;
+    target.await_suspension_point_sites = source.await_suspension_point_sites;
+    target.await_resume_sites = source.await_resume_sites;
+    target.await_state_machine_sites = source.await_state_machine_sites;
+    target.await_continuation_sites = source.await_continuation_sites;
+    target.await_suspension_normalized_sites =
+        source.await_suspension_normalized_sites;
+    target.await_suspension_gate_blocked_sites =
+        source.await_suspension_gate_blocked_sites;
+    target.await_suspension_contract_violation_sites =
+        source.await_suspension_contract_violation_sites;
+    target.await_suspension_profile = source.await_suspension_profile;
     target.actor_isolation_sendability_profile_is_normalized =
         source.actor_isolation_sendability_profile_is_normalized;
     target.deterministic_actor_isolation_sendability_handoff =
@@ -4423,6 +4804,80 @@ class Objc3Parser {
         method.ns_error_bridging_normalized_sites,
         method.ns_error_bridge_boundary_sites,
         method.ns_error_bridging_contract_violation_sites);
+  }
+
+  void FinalizeAwaitSuspensionProfile(FunctionDecl &fn) {
+    const Objc3AwaitSuspensionProfile profile =
+        BuildAwaitSuspensionProfileFromFunction(fn);
+    fn.await_suspension_sites = profile.await_suspension_sites;
+    fn.await_keyword_sites = profile.await_keyword_sites;
+    fn.await_suspension_point_sites = profile.await_suspension_point_sites;
+    fn.await_resume_sites = profile.await_resume_sites;
+    fn.await_state_machine_sites = profile.await_state_machine_sites;
+    fn.await_continuation_sites = profile.await_continuation_sites;
+    fn.await_suspension_normalized_sites = profile.normalized_sites;
+    fn.await_suspension_gate_blocked_sites = profile.gate_blocked_sites;
+    fn.await_suspension_contract_violation_sites = profile.contract_violation_sites;
+    fn.deterministic_await_suspension_handoff =
+        profile.deterministic_await_suspension_handoff;
+    fn.await_suspension_profile = BuildAwaitSuspensionProfile(
+        fn.await_suspension_sites,
+        fn.await_keyword_sites,
+        fn.await_suspension_point_sites,
+        fn.await_resume_sites,
+        fn.await_state_machine_sites,
+        fn.await_continuation_sites,
+        fn.await_suspension_normalized_sites,
+        fn.await_suspension_gate_blocked_sites,
+        fn.await_suspension_contract_violation_sites,
+        fn.deterministic_await_suspension_handoff);
+    fn.await_suspension_profile_is_normalized = IsAwaitSuspensionProfileNormalized(
+        fn.await_suspension_sites,
+        fn.await_keyword_sites,
+        fn.await_suspension_point_sites,
+        fn.await_resume_sites,
+        fn.await_state_machine_sites,
+        fn.await_continuation_sites,
+        fn.await_suspension_normalized_sites,
+        fn.await_suspension_gate_blocked_sites,
+        fn.await_suspension_contract_violation_sites);
+  }
+
+  void FinalizeAwaitSuspensionProfile(Objc3MethodDecl &method) {
+    const Objc3AwaitSuspensionProfile profile =
+        BuildAwaitSuspensionProfileFromOpaqueBody(method);
+    method.await_suspension_sites = profile.await_suspension_sites;
+    method.await_keyword_sites = profile.await_keyword_sites;
+    method.await_suspension_point_sites = profile.await_suspension_point_sites;
+    method.await_resume_sites = profile.await_resume_sites;
+    method.await_state_machine_sites = profile.await_state_machine_sites;
+    method.await_continuation_sites = profile.await_continuation_sites;
+    method.await_suspension_normalized_sites = profile.normalized_sites;
+    method.await_suspension_gate_blocked_sites = profile.gate_blocked_sites;
+    method.await_suspension_contract_violation_sites = profile.contract_violation_sites;
+    method.deterministic_await_suspension_handoff =
+        profile.deterministic_await_suspension_handoff;
+    method.await_suspension_profile = BuildAwaitSuspensionProfile(
+        method.await_suspension_sites,
+        method.await_keyword_sites,
+        method.await_suspension_point_sites,
+        method.await_resume_sites,
+        method.await_state_machine_sites,
+        method.await_continuation_sites,
+        method.await_suspension_normalized_sites,
+        method.await_suspension_gate_blocked_sites,
+        method.await_suspension_contract_violation_sites,
+        method.deterministic_await_suspension_handoff);
+    method.await_suspension_profile_is_normalized = IsAwaitSuspensionProfileNormalized(
+        method.await_suspension_sites,
+        method.await_keyword_sites,
+        method.await_suspension_point_sites,
+        method.await_resume_sites,
+        method.await_state_machine_sites,
+        method.await_continuation_sites,
+        method.await_suspension_normalized_sites,
+        method.await_suspension_gate_blocked_sites,
+        method.await_suspension_contract_violation_sites);
   }
 
   void FinalizeActorIsolationSendabilityProfile(FunctionDecl &fn) {
@@ -4967,6 +5422,7 @@ class Objc3Parser {
       FinalizeThrowsDeclarationProfile(method);
       FinalizeResultLikeProfile(method);
       FinalizeNSErrorBridgingProfile(method);
+      FinalizeAwaitSuspensionProfile(method);
       FinalizeActorIsolationSendabilityProfile(method);
       FinalizeTaskRuntimeCancellationProfile(method);
       FinalizeConcurrencyReplayRaceGuardProfile(method);
@@ -4993,6 +5449,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(method);
     FinalizeResultLikeProfile(method);
     FinalizeNSErrorBridgingProfile(method);
+    FinalizeAwaitSuspensionProfile(method);
     FinalizeActorIsolationSendabilityProfile(method);
     FinalizeTaskRuntimeCancellationProfile(method);
     FinalizeConcurrencyReplayRaceGuardProfile(method);
@@ -5562,6 +6019,7 @@ class Objc3Parser {
       FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
       FinalizeResultLikeProfile(*fn);
       FinalizeNSErrorBridgingProfile(*fn);
+      FinalizeAwaitSuspensionProfile(*fn);
       FinalizeActorIsolationSendabilityProfile(*fn);
       FinalizeTaskRuntimeCancellationProfile(*fn);
       FinalizeConcurrencyReplayRaceGuardProfile(*fn);
@@ -5594,6 +6052,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
     FinalizeResultLikeProfile(*fn);
     FinalizeNSErrorBridgingProfile(*fn);
+    FinalizeAwaitSuspensionProfile(*fn);
     FinalizeActorIsolationSendabilityProfile(*fn);
     FinalizeTaskRuntimeCancellationProfile(*fn);
     FinalizeConcurrencyReplayRaceGuardProfile(*fn);
