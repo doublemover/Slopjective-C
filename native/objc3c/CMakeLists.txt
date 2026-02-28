@@ -67,6 +67,11 @@ target_include_directories(objc3c_sema PUBLIC
 target_link_libraries(objc3c_sema PUBLIC
   objc3c_parse
 )
+# M141-B001 sema/type-system surface target for downstream topology hardening.
+add_library(objc3c_sema_type_system INTERFACE)
+target_link_libraries(objc3c_sema_type_system INTERFACE
+  objc3c_sema
+)
 add_library(objc3c_lower STATIC
   src/lower/objc3_lowering_contract.cpp
 )
@@ -74,7 +79,7 @@ target_include_directories(objc3c_lower PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(objc3c_lower PUBLIC
-  objc3c_sema
+  objc3c_sema_type_system
 )
 add_library(objc3c_ir STATIC
   src/ir/objc3_ir_emitter.cpp
@@ -84,6 +89,7 @@ target_include_directories(objc3c_ir PUBLIC
 )
 target_link_libraries(objc3c_ir PUBLIC
   objc3c_lower
+  objc3c_sema_type_system
 )
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
@@ -102,16 +108,24 @@ add_library(objc3c_io STATIC
   src/io/objc3_diagnostics_artifacts.cpp
   src/io/objc3_file_io.cpp
   src/io/objc3_manifest_artifacts.cpp
-  src/io/objc3_process.cpp
 )
 target_include_directories(objc3c_io PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+add_library(objc3c_runtime_abi STATIC
+  src/io/objc3_process.cpp
+)
+target_include_directories(objc3c_runtime_abi PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 if (OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
-  target_compile_definitions(objc3c_io PUBLIC
+  target_compile_definitions(objc3c_runtime_abi PUBLIC
     OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1
   )
 endif()
+target_link_libraries(objc3c_io PUBLIC
+  objc3c_runtime_abi
+)
 add_library(objc3c_frontend STATIC
   src/libobjc3c_frontend/frontend_anchor.cpp
   src/libobjc3c_frontend/objc3_cli_frontend.cpp

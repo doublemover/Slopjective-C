@@ -86,5 +86,26 @@ def test_cmake_registers_sema_target() -> None:
     assert "add_library(objc3c_sema STATIC" in cmake
     assert "src/sema/objc3_sema_pass_manager.cpp" in cmake
     assert "src/sema/objc3_semantic_passes.cpp" in cmake
+    assert "target_link_libraries(objc3c_sema PUBLIC" in cmake
+    assert "objc3c_parse" in cmake
+    assert "add_library(objc3c_sema_type_system INTERFACE)" in cmake
+    assert "target_link_libraries(objc3c_sema_type_system INTERFACE" in cmake
+    assert "target_link_libraries(objc3c_lower PUBLIC" in cmake
+    assert "target_link_libraries(objc3c_ir PUBLIC" in cmake
+    assert "objc3c_sema_type_system" in cmake
+
+    _assert_in_order(
+        cmake,
+        [
+            "target_link_libraries(objc3c_parse PUBLIC",
+            "target_link_libraries(objc3c_sema PUBLIC",
+            "add_library(objc3c_sema_type_system INTERFACE)",
+            "target_link_libraries(objc3c_sema_type_system INTERFACE",
+            "target_link_libraries(objc3c_lower PUBLIC",
+            "target_link_libraries(objc3c_ir PUBLIC",
+            "target_link_libraries(objc3c_pipeline PUBLIC",
+        ],
+    )
+
     assert "target_link_libraries(objc3c-native PRIVATE" in cmake
-    assert "objc3c_sema" in cmake
+    assert "objc3c_driver" in cmake
