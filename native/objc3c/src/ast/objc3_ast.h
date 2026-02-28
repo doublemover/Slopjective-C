@@ -178,7 +178,17 @@ struct FuncParam {
 };
 
 struct Objc3MethodDecl {
+  struct SelectorPiece {
+    std::string keyword;
+    std::string parameter_name;
+    bool has_parameter = false;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
   std::string selector;
+  std::vector<SelectorPiece> selector_pieces;
+  bool selector_is_normalized = false;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
   bool return_vector_spelling = false;

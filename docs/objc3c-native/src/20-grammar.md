@@ -129,6 +129,30 @@ Recommended M147 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
 
+## M148 frontend selector-normalized method declaration grammar
+
+Frontend parser/AST method-declaration support now captures selector pieces and emits a canonical selector spelling for
+both declarations and definitions.
+
+M148 parser surface details:
+
+- Selector canonicalization helper:
+  - `BuildNormalizedObjcSelector(...)`
+- Method parser behavior (`ParseObjcMethodDecl(...)`):
+  - captures each selector piece in `selector_pieces`
+  - records parameter linkage per piece (`parameter_name`)
+  - emits deterministic canonical selector text in `selector`
+  - marks canonicalization completion with `selector_is_normalized`
+
+Deterministic grammar intent:
+
+- method declarations and definitions share the same selector-piece normalization path
+- canonical selector text is derived from parsed pieces instead of ad-hoc string concatenation
+
+Recommended M148 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

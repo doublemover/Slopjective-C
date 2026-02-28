@@ -157,6 +157,17 @@ static bool TryParseVectorTypeSpelling(const Token &type_token,
   return true;
 }
 
+static std::string BuildNormalizedObjcSelector(const std::vector<Objc3MethodDecl::SelectorPiece> &pieces) {
+  std::string normalized;
+  for (const auto &piece : pieces) {
+    normalized += piece.keyword;
+    if (piece.has_parameter) {
+      normalized += ":";
+    }
+  }
+  return normalized;
+}
+
 class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
@@ -531,28 +542,43 @@ class Objc3Parser {
       return false;
     }
 
-    method.selector = Previous().text;
+    Objc3MethodDecl::SelectorPiece head_piece;
+    head_piece.keyword = Previous().text;
+    head_piece.line = Previous().line;
+    head_piece.column = Previous().column;
     if (Match(TokenKind::Colon)) {
-      method.selector += ":";
+      head_piece.has_parameter = true;
       FuncParam first_param;
       if (!ParseObjcMethodParameterClause(first_param)) {
         return false;
       }
+      head_piece.parameter_name = first_param.name;
       method.params.push_back(std::move(first_param));
+      method.selector_pieces.push_back(std::move(head_piece));
 
       while (At(TokenKind::Identifier) && (index_ + 1 < tokens_.size()) && tokens_[index_ + 1].kind == TokenKind::Colon) {
         const Token keyword = Advance();
-        method.selector += keyword.text;
         (void)Match(TokenKind::Colon);
-        method.selector += ":";
+        Objc3MethodDecl::SelectorPiece keyword_piece;
+        keyword_piece.keyword = keyword.text;
+        keyword_piece.has_parameter = true;
+        keyword_piece.line = keyword.line;
+        keyword_piece.column = keyword.column;
 
         FuncParam keyword_param;
         if (!ParseObjcMethodParameterClause(keyword_param)) {
           return false;
         }
+        keyword_piece.parameter_name = keyword_param.name;
         method.params.push_back(std::move(keyword_param));
+        method.selector_pieces.push_back(std::move(keyword_piece));
       }
+    } else {
+      method.selector_pieces.push_back(std::move(head_piece));
     }
+
+    method.selector = BuildNormalizedObjcSelector(method.selector_pieces);
+    method.selector_is_normalized = true;
 
     if (Match(TokenKind::Semicolon)) {
       method.has_body = false;
