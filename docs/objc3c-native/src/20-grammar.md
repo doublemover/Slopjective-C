@@ -64,6 +64,29 @@ Lexical support:
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
 
+## Language-version pragma prelude contract
+
+Implemented lexer contract for `#pragma objc_language_version(...)`:
+
+- Accepted prelude form:
+  - `#pragma objc_language_version(3)`
+- Enforced placement:
+  - pragma directives are consumed in the file-scope prelude before declarations/tokens.
+  - non-leading directives emit deterministic `O3L008`.
+- Enforced multiplicity:
+  - at most one language-version pragma is accepted as canonical prelude contract.
+  - duplicates emit deterministic `O3L007`.
+- Malformed directives emit deterministic `O3L005`.
+- Unsupported version payloads emit deterministic `O3L006`.
+
+Pipeline/manifest replay contract includes a `language_version_pragma_contract` packet with:
+
+- `directive_count`
+- `duplicate`
+- `non_leading`
+- `first_line`/`first_column`
+- `last_line`/`last_column`
+
 ## Lexer token metadata contract (M137-E001)
 
 - Canonical metadata type lives in `native/objc3c/src/token/objc3_token_contract.h` and is consumed by parser/AST boundaries.
