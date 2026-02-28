@@ -2417,6 +2417,41 @@ Scope assumptions:
 - M180-A001, M180-C001, and M180-D001 surfaces are not yet landed in this workspace.
 - This runbook enforces the landed M180-B001 sema/type surface plus M180-E001 integration wiring.
 
+## M180 validation/conformance/perf cross-module conformance runbook (M180-D001)
+
+Deterministic M180 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m180_validation_cross_module_conformance_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_cross_module_conformance_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_cross_module_conformance_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_cross_module_conformance_lowering_surface.deterministic_handoff`
+  - `lowering_cross_module_conformance.replay_key`
+- `replay_run_1/module.ll`
+  - `cross_module_conformance_lowering`
+  - `frontend_objc_cross_module_conformance_lowering_profile`
+  - `!objc3.objc_cross_module_conformance_lowering = !{!33}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + cache_invalidation_candidate_sites == cross_module_conformance_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

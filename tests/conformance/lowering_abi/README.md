@@ -48,6 +48,9 @@ Minimum scope:
 - `M179-D001.json`: M179 Lane D incremental module cache/invalidation lowering
   replay fixture covering deterministic replay-key/profile/metadata parity
   anchors and integration coverage for issue `#4487`.
+- `M180-D001.json`: M180 Lane D cross-module conformance lowering replay
+  fixture covering deterministic replay-key/profile/metadata parity anchors and
+  integration coverage for issue `#4492`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.
