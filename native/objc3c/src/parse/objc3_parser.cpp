@@ -10,6 +10,10 @@
 #include <vector>
 
 namespace {
+
+using Token = Objc3LexToken;
+using TokenKind = Objc3LexTokenKind;
+
 static bool IsHexDigit(char c) {
   return std::isxdigit(static_cast<unsigned char>(c)) != 0;
 }
@@ -108,6 +112,10 @@ static std::string MakeDiag(unsigned line, unsigned column, const std::string &c
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
   return out.str();
+}
+
+static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, const Token &token) {
+  return MakeObjc3SemaTokenMetadata(kind, token.text, token.line, token.column);
 }
 
 class Objc3Parser {
@@ -646,12 +654,14 @@ class Objc3Parser {
       if (Match(TokenKind::Star)) {
         fn.has_return_pointer_declarator = true;
         fn.return_pointer_declarator_depth += 1;
-        fn.return_pointer_declarator_tokens.push_back(Previous());
+        fn.return_pointer_declarator_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator, Previous()));
         continue;
       }
 
       if (At(TokenKind::Question) || At(TokenKind::Bang)) {
-        fn.return_nullability_suffix_tokens.push_back(Advance());
+        fn.return_nullability_suffix_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));
         continue;
       }
 
@@ -772,12 +782,14 @@ class Objc3Parser {
       if (Match(TokenKind::Star)) {
         param.has_pointer_declarator = true;
         param.pointer_declarator_depth += 1;
-        param.pointer_declarator_tokens.push_back(Previous());
+        param.pointer_declarator_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator, Previous()));
         continue;
       }
 
       if (At(TokenKind::Question) || At(TokenKind::Bang)) {
-        param.nullability_suffix_tokens.push_back(Advance());
+        param.nullability_suffix_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));
         continue;
       }
 
@@ -2007,7 +2019,7 @@ class Objc3Parser {
 
 }  // namespace
 
-Objc3ParseResult ParseObjc3Program(const std::vector<Token> &tokens) {
+Objc3ParseResult ParseObjc3Program(const std::vector<Objc3LexToken> &tokens) {
   Objc3Parser parser(tokens);
   Objc3ParseResult result;
   result.program = parser.Parse();

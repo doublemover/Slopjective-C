@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "token/objc3_token.h"
+#include "token/objc3_token_contract.h"
 
 struct SymbolRow {
   std::string kind;
@@ -168,8 +168,8 @@ struct FuncParam {
   unsigned generic_column = 1;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
-  std::vector<Token> pointer_declarator_tokens;
-  std::vector<Token> nullability_suffix_tokens;
+  std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
+  std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -188,8 +188,8 @@ struct FunctionDecl {
   unsigned return_generic_column = 1;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
-  std::vector<Token> return_pointer_declarator_tokens;
-  std::vector<Token> return_nullability_suffix_tokens;
+  std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
+  std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
   bool is_prototype = false;
   bool is_pure = false;
   std::vector<std::unique_ptr<Stmt>> body;
