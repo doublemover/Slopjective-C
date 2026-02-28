@@ -547,6 +547,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m161_validation_ownership_qualifier_contract.py`
   - `tests/tooling/test_objc3c_m161_integration_ownership_qualifier_contract.py`
 
+## M162 integration retain-release operation semantics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m162-retain-release-operation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m162`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m162_frontend_retain_release_parser_contract.py`
+  - `tests/tooling/test_objc3c_m162_sema_retain_release_contract.py`
+  - `tests/tooling/test_objc3c_m162_lowering_retain_release_operation_contract.py`
+  - `tests/tooling/test_objc3c_m162_validation_retain_release_operation_contract.py`
+  - `tests/tooling/test_objc3c_m162_integration_retain_release_operation_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
