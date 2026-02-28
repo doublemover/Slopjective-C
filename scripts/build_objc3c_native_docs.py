@@ -69,7 +69,7 @@ def validate_readme_contract(text: str) -> list[str]:
 
 
 def find_unknown_fragments() -> list[str]:
-    known = set(FRAGMENT_ORDER) | {"README.md"}
+    known = set(FRAGMENT_ORDER) | {"README.md", "OWNERSHIP.md"}
     unknown = [
         path.name
         for path in sorted(SRC_DIR.glob("*.md"))

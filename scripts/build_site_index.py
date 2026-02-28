@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "site" / "src"
 CONFIG_PATH = SRC_DIR / "index.contract.json"
 POLICY_README_PATH = ROOT / "site" / "src" / "README.md"
-ALLOWED_SRC_FILES: set[str] = {"README.md", "index.contract.json"}
+ALLOWED_SRC_FILES: set[str] = {"README.md", "index.contract.json", "OWNERSHIP.md"}
 
 REQUIRED_POLICY_TOKENS: tuple[str, ...] = (
     "`site/index.md` is generated output",
