@@ -171,6 +171,16 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddGlobalDecl(program, std::move(*decl));
         }
+      } else if (Match(TokenKind::KwAtInterface)) {
+        auto decl = ParseObjcInterfaceDecl();
+        if (decl != nullptr) {
+          ast_builder_.AddInterfaceDecl(program, std::move(*decl));
+        }
+      } else if (Match(TokenKind::KwAtImplementation)) {
+        auto decl = ParseObjcImplementationDecl();
+        if (decl != nullptr) {
+          ast_builder_.AddImplementationDecl(program, std::move(*decl));
+        }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
       } else {
@@ -415,6 +425,260 @@ class Objc3Parser {
     return decl;
   }
 
+  void CopyMethodReturnTypeFromFunctionDecl(const FunctionDecl &source, Objc3MethodDecl &target) {
+    target.return_type = source.return_type;
+    target.return_vector_spelling = source.return_vector_spelling;
+    target.return_vector_base_spelling = source.return_vector_base_spelling;
+    target.return_vector_lane_count = source.return_vector_lane_count;
+    target.return_id_spelling = source.return_id_spelling;
+    target.return_class_spelling = source.return_class_spelling;
+    target.return_instancetype_spelling = source.return_instancetype_spelling;
+    target.has_return_generic_suffix = source.has_return_generic_suffix;
+    target.return_generic_suffix_terminated = source.return_generic_suffix_terminated;
+    target.return_generic_suffix_text = source.return_generic_suffix_text;
+    target.return_generic_line = source.return_generic_line;
+    target.return_generic_column = source.return_generic_column;
+    target.has_return_pointer_declarator = source.has_return_pointer_declarator;
+    target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
+    target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
+    target.return_nullability_suffix_tokens = source.return_nullability_suffix_tokens;
+  }
+
+  void ConsumeBracedBodyTail() {
+    int depth = 1;
+    while (depth > 0 && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::LBrace)) {
+        ++depth;
+        continue;
+      }
+      if (Match(TokenKind::RBrace)) {
+        --depth;
+        continue;
+      }
+      Advance();
+    }
+  }
+
+  bool ParseObjcMethodParameterClause(FuncParam &param) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P106", "missing '(' before Objective-C method parameter type"));
+      return false;
+    }
+    if (!ParseParameterType(param)) {
+      return false;
+    }
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P109", "missing ')' after Objective-C method parameter type"));
+      return false;
+    }
+    const Token &name = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name.line, name.column, "O3P101", "invalid Objective-C method parameter identifier"));
+      return false;
+    }
+    param.name = Previous().text;
+    param.line = Previous().line;
+    param.column = Previous().column;
+    return true;
+  }
+
+  bool ParseObjcMethodDecl(Objc3MethodDecl &method, bool allow_body) {
+    if (Match(TokenKind::Minus)) {
+      method.is_class_method = false;
+    } else if (Match(TokenKind::Plus)) {
+      method.is_class_method = true;
+    } else {
+      return false;
+    }
+    const Token method_marker = Previous();
+    method.line = method_marker.line;
+    method.column = method_marker.column;
+
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P106", "missing '(' after Objective-C method marker"));
+      return false;
+    }
+
+    FunctionDecl synthetic_fn;
+    if (!ParseFunctionReturnType(synthetic_fn)) {
+      return false;
+    }
+    CopyMethodReturnTypeFromFunctionDecl(synthetic_fn, method);
+
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P109", "missing ')' after Objective-C method return type"));
+      return false;
+    }
+
+    const Token &selector_head = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(selector_head.line, selector_head.column, "O3P101", "invalid Objective-C selector identifier"));
+      return false;
+    }
+
+    method.selector = Previous().text;
+    if (Match(TokenKind::Colon)) {
+      method.selector += ":";
+      FuncParam first_param;
+      if (!ParseObjcMethodParameterClause(first_param)) {
+        return false;
+      }
+      method.params.push_back(std::move(first_param));
+
+      while (At(TokenKind::Identifier) && (index_ + 1 < tokens_.size()) && tokens_[index_ + 1].kind == TokenKind::Colon) {
+        const Token keyword = Advance();
+        method.selector += keyword.text;
+        (void)Match(TokenKind::Colon);
+        method.selector += ":";
+
+        FuncParam keyword_param;
+        if (!ParseObjcMethodParameterClause(keyword_param)) {
+          return false;
+        }
+        method.params.push_back(std::move(keyword_param));
+      }
+    }
+
+    if (Match(TokenKind::Semicolon)) {
+      method.has_body = false;
+      return true;
+    }
+
+    if (!allow_body) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104",
+                                      "missing ';' after Objective-C interface method declaration"));
+      return false;
+    }
+
+    if (!Match(TokenKind::LBrace)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110",
+                                      "missing '{' or ';' after Objective-C implementation method declaration"));
+      return false;
+    }
+    method.has_body = true;
+    ConsumeBracedBodyTail();
+    return true;
+  }
+
+  void SynchronizeObjcContainer() {
+    while (!At(TokenKind::Eof)) {
+      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus)) {
+        return;
+      }
+      if (Match(TokenKind::Semicolon)) {
+        return;
+      }
+      if (Match(TokenKind::LBrace)) {
+        ConsumeBracedBodyTail();
+        continue;
+      }
+      Advance();
+    }
+  }
+
+  std::unique_ptr<Objc3InterfaceDecl> ParseObjcInterfaceDecl() {
+    auto decl = std::make_unique<Objc3InterfaceDecl>();
+    decl->line = Previous().line;
+    decl->column = Previous().column;
+
+    const Token &name_token = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name_token.line, name_token.column, "O3P101", "invalid Objective-C interface identifier"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    decl->name = Previous().text;
+
+    if (Match(TokenKind::Colon)) {
+      const Token &super_token = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(
+            MakeDiag(super_token.line, super_token.column, "O3P101", "invalid Objective-C superclass identifier"));
+        SynchronizeObjcContainer();
+      } else {
+        decl->super_name = Previous().text;
+      }
+    }
+
+    while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P100", "unsupported token inside @interface declaration"));
+        SynchronizeObjcContainer();
+        continue;
+      }
+
+      Objc3MethodDecl method;
+      if (ParseObjcMethodDecl(method, false)) {
+        decl->methods.push_back(std::move(method));
+        continue;
+      }
+      SynchronizeObjcContainer();
+    }
+
+    if (!Match(TokenKind::KwAtEnd)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '@end' after @interface"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    return decl;
+  }
+
+  std::unique_ptr<Objc3ImplementationDecl> ParseObjcImplementationDecl() {
+    auto decl = std::make_unique<Objc3ImplementationDecl>();
+    decl->line = Previous().line;
+    decl->column = Previous().column;
+
+    const Token &name_token = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name_token.line, name_token.column, "O3P101", "invalid Objective-C implementation identifier"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    decl->name = Previous().text;
+
+    while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P100", "unsupported token inside @implementation declaration"));
+        SynchronizeObjcContainer();
+        continue;
+      }
+
+      Objc3MethodDecl method;
+      if (ParseObjcMethodDecl(method, true)) {
+        decl->methods.push_back(std::move(method));
+        continue;
+      }
+      SynchronizeObjcContainer();
+    }
+
+    if (!Match(TokenKind::KwAtEnd)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '@end' after @implementation"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    return decl;
+  }
+
   std::unique_ptr<FunctionDecl> ParseFunction() {
     auto fn = std::make_unique<FunctionDecl>();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
@@ -509,7 +773,8 @@ class Objc3Parser {
     if (!At(TokenKind::LBrace)) {
       const Token &token = Peek();
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern) || At(TokenKind::Eof)) {
+          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::Eof)) {
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P104", "missing ';' after function prototype declaration"));
       } else {
@@ -920,7 +1185,7 @@ class Objc3Parser {
         return;
       }
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern)) {
+          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation)) {
         return;
       }
       Advance();

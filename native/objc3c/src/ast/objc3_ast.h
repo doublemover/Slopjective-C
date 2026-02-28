@@ -177,6 +177,46 @@ struct FuncParam {
   unsigned column = 1;
 };
 
+struct Objc3MethodDecl {
+  std::string selector;
+  std::vector<FuncParam> params;
+  ValueType return_type = ValueType::I32;
+  bool return_vector_spelling = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
+  bool has_return_generic_suffix = false;
+  bool return_generic_suffix_terminated = true;
+  std::string return_generic_suffix_text;
+  unsigned return_generic_line = 1;
+  unsigned return_generic_column = 1;
+  bool has_return_pointer_declarator = false;
+  unsigned return_pointer_declarator_depth = 0;
+  std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
+  std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
+  bool is_class_method = false;
+  bool has_body = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3InterfaceDecl {
+  std::string name;
+  std::string super_name;
+  std::vector<Objc3MethodDecl> methods;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ImplementationDecl {
+  std::string name;
+  std::vector<Objc3MethodDecl> methods;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct FunctionDecl {
   std::string name;
   std::vector<FuncParam> params;
@@ -213,6 +253,8 @@ struct GlobalDecl {
 struct Objc3Program {
   std::string module_name = "objc3_module";
   std::vector<GlobalDecl> globals;
+  std::vector<Objc3InterfaceDecl> interfaces;
+  std::vector<Objc3ImplementationDecl> implementations;
   std::vector<FunctionDecl> functions;
   std::vector<std::string> diagnostics;
 };

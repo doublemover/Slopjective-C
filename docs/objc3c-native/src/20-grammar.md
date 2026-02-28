@@ -64,6 +64,39 @@ Lexical support:
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
 
+## M146 frontend @interface/@implementation grammar
+
+Frontend parser/AST support now accepts Objective-C container declarations:
+
+- `@interface <Name> [: <Super>] ... @end`
+- `@implementation <Name> ... @end`
+- `@end`
+
+M146 parser surface details:
+
+- Lexer contract emits dedicated tokens:
+  - `KwAtInterface`
+  - `KwAtImplementation`
+  - `KwAtEnd`
+- Parser top-level routes:
+  - `ParseObjcInterfaceDecl()`
+  - `ParseObjcImplementationDecl()`
+- Parser class-method surface:
+  - `ParseObjcMethodDecl(...)` supports `-` and `+` method markers.
+  - `@interface` requires `;` method declarations.
+  - `@implementation` accepts `;` declarations and braced method bodies (balanced-brace recovery).
+
+Deterministic recovery/diagnostic anchors:
+
+- unsupported `@` directives fail closed (`unsupported '@' directive '@<name>'`).
+- missing container terminators fail closed:
+  - `missing '@end' after @interface`
+  - `missing '@end' after @implementation`
+
+Recommended M146 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

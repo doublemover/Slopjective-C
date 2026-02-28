@@ -9,6 +9,8 @@ struct Objc3ParsedProgram {
 };
 
 using Objc3ParsedGlobalDecl = GlobalDecl;
+using Objc3ParsedInterfaceDecl = Objc3InterfaceDecl;
+using Objc3ParsedImplementationDecl = Objc3ImplementationDecl;
 using Objc3ParsedFunctionDecl = FunctionDecl;
 
 inline Objc3Program &MutableObjc3ParsedProgramAst(Objc3ParsedProgram &program) {

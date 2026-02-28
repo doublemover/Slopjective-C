@@ -73,6 +73,30 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false)) {
       continue;
     }
+    if (c == '@') {
+      Advance();
+      if (index_ < source_.size() && IsIdentStart(source_[index_])) {
+        const std::string directive = ConsumeIdentifier();
+        if (directive == "interface") {
+          tokens.push_back(Token{TokenKind::KwAtInterface, "@interface", token_line, token_column});
+          continue;
+        }
+        if (directive == "implementation") {
+          tokens.push_back(Token{TokenKind::KwAtImplementation, "@implementation", token_line, token_column});
+          continue;
+        }
+        if (directive == "end") {
+          tokens.push_back(Token{TokenKind::KwAtEnd, "@end", token_line, token_column});
+          continue;
+        }
+        diagnostics.push_back(MakeDiag(token_line, token_column, "O3L001",
+                                       "unsupported '@' directive '@" + directive + "'"));
+        continue;
+      }
+      diagnostics.push_back(
+          MakeDiag(token_line, token_column, "O3L001", "unexpected character '@'"));
+      continue;
+    }
     if (IsIdentStart(c)) {
       std::string ident = ConsumeIdentifier();
       TokenKind kind = TokenKind::Identifier;
