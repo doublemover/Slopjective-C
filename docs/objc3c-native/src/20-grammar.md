@@ -891,6 +891,33 @@ Recommended M170 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q`
 
+## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
+
+Frontend parser/AST now emits deterministic lightweight-generic constraint
+profiles for parameter and return type annotations.
+
+M171 parser/AST surface details:
+
+- lightweight-generic anchors:
+  - `BuildLightweightGenericConstraintProfile(...)`
+  - `IsLightweightGenericConstraintProfileNormalized(...)`
+- parser assignment anchors:
+  - `lightweight_generic_constraint_profile`
+  - `lightweight_generic_constraint_profile_is_normalized`
+  - `return_lightweight_generic_constraint_profile`
+  - `return_lightweight_generic_constraint_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser computes generic-instantiation validity from object-pointer spelling,
+  suffix termination, and pointer declarator participation.
+- profile normalization is fail-closed for malformed/unterminated generic
+  suffixes.
+
+Recommended M171 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

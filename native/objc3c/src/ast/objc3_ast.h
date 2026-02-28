@@ -259,6 +259,8 @@ struct FuncParam {
   std::string generic_suffix_text;
   unsigned generic_line = 1;
   unsigned generic_column = 1;
+  bool lightweight_generic_constraint_profile_is_normalized = false;
+  std::string lightweight_generic_constraint_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -313,6 +315,8 @@ struct Objc3MethodDecl {
   std::string return_generic_suffix_text;
   unsigned return_generic_line = 1;
   unsigned return_generic_column = 1;
+  bool return_lightweight_generic_constraint_profile_is_normalized = false;
+  std::string return_lightweight_generic_constraint_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
@@ -371,6 +375,8 @@ struct Objc3PropertyDecl {
   std::string generic_suffix_text;
   unsigned generic_line = 1;
   unsigned generic_column = 1;
+  bool lightweight_generic_constraint_profile_is_normalized = false;
+  std::string lightweight_generic_constraint_profile;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
@@ -494,6 +500,8 @@ struct FunctionDecl {
   std::string return_generic_suffix_text;
   unsigned return_generic_line = 1;
   unsigned return_generic_column = 1;
+  bool return_lightweight_generic_constraint_profile_is_normalized = false;
+  std::string return_lightweight_generic_constraint_profile;
   bool has_return_pointer_declarator = false;
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;

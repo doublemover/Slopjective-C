@@ -332,6 +332,35 @@ static std::string BuildRuntimeShimHostLinkSymbol(bool runtime_shim_required,
   return out.str();
 }
 
+static std::string BuildLightweightGenericConstraintProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text) {
+  const bool generic_instantiation_valid =
+      !has_generic_suffix || (generic_suffix_terminated && object_pointer_type_spelling);
+  std::ostringstream out;
+  out << "lightweight-generics:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";suffix-bytes=" << generic_suffix_text.size()
+      << ";instantiation-valid=" << (generic_instantiation_valid ? "true" : "false");
+  return out.str();
+}
+
+static bool IsLightweightGenericConstraintProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated) {
+  if (!has_generic_suffix) {
+    return true;
+  }
+  return generic_suffix_terminated && object_pointer_type_spelling;
+}
+
 static std::string BuildBlockLiteralCaptureProfile(const std::vector<std::string> &capture_names_lexicographic) {
   if (capture_names_lexicographic.empty()) {
     return "block-captures:none";
@@ -1086,6 +1115,10 @@ class Objc3Parser {
     target.return_generic_suffix_text = source.return_generic_suffix_text;
     target.return_generic_line = source.return_generic_line;
     target.return_generic_column = source.return_generic_column;
+    target.return_lightweight_generic_constraint_profile_is_normalized =
+        source.return_lightweight_generic_constraint_profile_is_normalized;
+    target.return_lightweight_generic_constraint_profile =
+        source.return_lightweight_generic_constraint_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1126,6 +1159,10 @@ class Objc3Parser {
     target.generic_suffix_text = source.generic_suffix_text;
     target.generic_line = source.generic_line;
     target.generic_column = source.generic_column;
+    target.lightweight_generic_constraint_profile_is_normalized =
+        source.lightweight_generic_constraint_profile_is_normalized;
+    target.lightweight_generic_constraint_profile =
+        source.lightweight_generic_constraint_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -1975,6 +2012,8 @@ class Objc3Parser {
     fn.return_generic_suffix_text.clear();
     fn.return_generic_line = 1;
     fn.return_generic_column = 1;
+    fn.return_lightweight_generic_constraint_profile_is_normalized = false;
+    fn.return_lightweight_generic_constraint_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2152,6 +2191,18 @@ class Objc3Parser {
     fn.return_ownership_arc_fixit_available = return_arc_diagnostic_profile.fixit_available;
     fn.return_ownership_arc_diagnostic_profile = return_arc_diagnostic_profile.diagnostic_profile;
     fn.return_ownership_arc_fixit_hint = return_arc_diagnostic_profile.fixit_hint;
+    fn.return_lightweight_generic_constraint_profile =
+        BuildLightweightGenericConstraintProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text);
+    fn.return_lightweight_generic_constraint_profile_is_normalized =
+        IsLightweightGenericConstraintProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated);
 
     return true;
   }
@@ -2172,6 +2223,8 @@ class Objc3Parser {
     param.generic_suffix_text.clear();
     param.generic_line = 1;
     param.generic_column = 1;
+    param.lightweight_generic_constraint_profile_is_normalized = false;
+    param.lightweight_generic_constraint_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2289,6 +2342,18 @@ class Objc3Parser {
     param.ownership_arc_fixit_available = param_arc_diagnostic_profile.fixit_available;
     param.ownership_arc_diagnostic_profile = param_arc_diagnostic_profile.diagnostic_profile;
     param.ownership_arc_fixit_hint = param_arc_diagnostic_profile.fixit_hint;
+    param.lightweight_generic_constraint_profile =
+        BuildLightweightGenericConstraintProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.lightweight_generic_constraint_profile_is_normalized =
+        IsLightweightGenericConstraintProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated);
 
     return true;
   }
