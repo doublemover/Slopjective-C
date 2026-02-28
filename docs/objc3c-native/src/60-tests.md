@@ -368,6 +368,16 @@ From repo root, execute deterministic M148 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py -q`
 - `npm run check:objc3c:m148-selector-normalization`
 
+## M149 validation @property grammar and attribute parsing runbook
+
+From repo root, execute deterministic M149 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py -q`
+- `npm run check:objc3c:m149-property-attributes`
+
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
 npm run test:objc3c:m145-direct-llvm-matrix:lane-d
