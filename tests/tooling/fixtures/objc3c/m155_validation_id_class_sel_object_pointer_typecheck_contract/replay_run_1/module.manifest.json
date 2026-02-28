@@ -1,0 +1,32 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_id_class_sel_object_pointer_typecheck_handoff": true,
+        "id_typecheck_sites": 4,
+        "class_typecheck_sites": 2,
+        "sel_typecheck_sites": 3,
+        "object_pointer_typecheck_sites": 5,
+        "id_class_sel_object_pointer_typecheck_sites_total": 14,
+        "lowering_id_class_sel_object_pointer_typecheck_replay_key": "id_typecheck_sites=4;class_typecheck_sites=2;sel_typecheck_sites=3;object_pointer_typecheck_sites=5;total_typecheck_sites=14;lane_contract=m155-id-class-sel-object-pointer-typecheck-v1"
+      },
+      "semantic_surface": {
+        "objc_id_class_sel_object_pointer_typecheck_surface": {
+          "id_typecheck_sites": 4,
+          "class_typecheck_sites": 2,
+          "sel_typecheck_sites": 3,
+          "object_pointer_typecheck_sites": 5,
+          "total_typecheck_sites": 14,
+          "replay_key": "id_typecheck_sites=4;class_typecheck_sites=2;sel_typecheck_sites=3;object_pointer_typecheck_sites=5;total_typecheck_sites=14;lane_contract=m155-id-class-sel-object-pointer-typecheck-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_id_class_sel_object_pointer_typecheck": {
+    "replay_key": "id_typecheck_sites=4;class_typecheck_sites=2;sel_typecheck_sites=3;object_pointer_typecheck_sites=5;total_typecheck_sites=14;lane_contract=m155-id-class-sel-object-pointer-typecheck-v1",
+    "lane_contract": "m155-id-class-sel-object-pointer-typecheck-v1",
+    "deterministic_handoff": true
+  }
+}

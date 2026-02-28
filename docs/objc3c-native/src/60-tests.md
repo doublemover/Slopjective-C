@@ -465,15 +465,22 @@ From repo root, execute deterministic M154 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py -q`
 - `npm run check:objc3c:m154-property-synthesis-ivar-bindings`
 
-## M155 validation id/class/SEL/object-pointer typecheck semantics runbook
+## M155 validation/conformance/perf id/Class/SEL/object-pointer typecheck runbook
 
 From repo root, execute deterministic M155 contract checks in lane order:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
-- `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
-- `npm run check:compiler-closeout:m155`
+- `python -m pytest tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_id_class_sel_object_pointer_typecheck.replay_key`
+- `deterministic_id_class_sel_object_pointer_typecheck_handoff`
+- `id_class_sel_object_pointer_typecheck_lowering`
+- `frontend_objc_id_class_sel_object_pointer_typecheck_profile`
+- `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
 
 ## M221 validation/perf GA blocker burn-down runbook
 
