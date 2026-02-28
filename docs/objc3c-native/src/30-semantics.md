@@ -2350,3 +2350,37 @@ Sema/type metadata handoff contract:
 Recommended M148 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`
+
+## M149 sema/type @property attribute and accessor modifier contract (M149-B001)
+
+M149-B extends sema/type metadata and pass-manager parity surfaces for Objective-C `@property` declarations,
+attribute packs, and accessor selector modifiers.
+
+Sema/type contract markers:
+
+- `Objc3PropertyAttributeSummary`
+- `Objc3PropertyInfo`
+- `property_attribute_summary`
+- `property_attribute_entries_total`
+- `property_attribute_contract_violations_total`
+- `has_accessor_selector_contract_violation`
+- `has_invalid_attribute_contract`
+- `deterministic_property_attribute_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- unknown `@property` attribute
+- duplicate `@property` attribute
+- invalid `getter` / `setter` selector contracts
+- conflicting attribute families (`readonly/readwrite`, `atomic/nonatomic`, ownership modifiers)
+- incompatible property signature between interface and implementation
+
+Sema/type metadata handoff contract:
+
+- property summary packet: `handoff.property_attribute_summary`
+- interface/implementation property packets: `properties_lexicographic`
+- parity packet gate: `result.parity_surface.deterministic_property_attribute_handoff`
+
+Recommended M149 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`

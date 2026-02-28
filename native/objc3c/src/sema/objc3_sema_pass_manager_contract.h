@@ -109,15 +109,31 @@ struct Objc3SemaParityContractSurface {
   std::size_t selector_normalization_parameter_linkage_mismatches_total = 0;
   std::size_t selector_normalization_flag_mismatches_total = 0;
   std::size_t selector_normalization_missing_keyword_pieces_total = 0;
+  std::size_t property_attribute_properties_total = 0;
+  std::size_t property_attribute_entries_total = 0;
+  std::size_t property_attribute_readonly_modifiers_total = 0;
+  std::size_t property_attribute_readwrite_modifiers_total = 0;
+  std::size_t property_attribute_atomic_modifiers_total = 0;
+  std::size_t property_attribute_nonatomic_modifiers_total = 0;
+  std::size_t property_attribute_copy_modifiers_total = 0;
+  std::size_t property_attribute_strong_modifiers_total = 0;
+  std::size_t property_attribute_weak_modifiers_total = 0;
+  std::size_t property_attribute_assign_modifiers_total = 0;
+  std::size_t property_attribute_getter_modifiers_total = 0;
+  std::size_t property_attribute_setter_modifiers_total = 0;
+  std::size_t property_attribute_invalid_attribute_entries_total = 0;
+  std::size_t property_attribute_contract_violations_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
   bool deterministic_protocol_category_composition_handoff = false;
   bool deterministic_selector_normalization_handoff = false;
+  bool deterministic_property_attribute_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
+  Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -181,7 +197,27 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.selector_normalization_summary.contract_violations() <=
              surface.selector_normalization_summary.methods_total &&
          surface.selector_normalization_summary.deterministic &&
-         surface.deterministic_selector_normalization_handoff;
+         surface.deterministic_selector_normalization_handoff &&
+         surface.property_attribute_summary.properties_total == surface.property_attribute_properties_total &&
+         surface.property_attribute_summary.attribute_entries == surface.property_attribute_entries_total &&
+         surface.property_attribute_summary.readonly_modifiers == surface.property_attribute_readonly_modifiers_total &&
+         surface.property_attribute_summary.readwrite_modifiers == surface.property_attribute_readwrite_modifiers_total &&
+         surface.property_attribute_summary.atomic_modifiers == surface.property_attribute_atomic_modifiers_total &&
+         surface.property_attribute_summary.nonatomic_modifiers == surface.property_attribute_nonatomic_modifiers_total &&
+         surface.property_attribute_summary.copy_modifiers == surface.property_attribute_copy_modifiers_total &&
+         surface.property_attribute_summary.strong_modifiers == surface.property_attribute_strong_modifiers_total &&
+         surface.property_attribute_summary.weak_modifiers == surface.property_attribute_weak_modifiers_total &&
+         surface.property_attribute_summary.assign_modifiers == surface.property_attribute_assign_modifiers_total &&
+         surface.property_attribute_summary.getter_modifiers == surface.property_attribute_getter_modifiers_total &&
+         surface.property_attribute_summary.setter_modifiers == surface.property_attribute_setter_modifiers_total &&
+         surface.property_attribute_summary.invalid_attribute_entries ==
+             surface.property_attribute_invalid_attribute_entries_total &&
+         surface.property_attribute_summary.property_contract_violations ==
+             surface.property_attribute_contract_violations_total &&
+         surface.property_attribute_summary.getter_modifiers <= surface.property_attribute_summary.properties_total &&
+         surface.property_attribute_summary.setter_modifiers <= surface.property_attribute_summary.properties_total &&
+         surface.property_attribute_summary.deterministic &&
+         surface.deterministic_property_attribute_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -196,6 +232,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_protocol_category_composition_handoff = false;
   bool deterministic_selector_normalization_handoff = false;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
+  bool deterministic_property_attribute_handoff = false;
+  Objc3PropertyAttributeSummary property_attribute_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

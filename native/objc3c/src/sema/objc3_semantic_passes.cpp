@@ -552,6 +552,44 @@ static bool SupportsPointerReturnTypeDeclarator(const Objc3MethodDecl &method) {
   return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
 }
 
+static bool SupportsGenericPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+}
+
+static bool SupportsNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+}
+
+static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
+  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+}
+
+static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  const bool has_unsupported_generic_suffix =
+      property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property);
+  const bool has_unsupported_pointer_declarator =
+      property.has_pointer_declarator && !SupportsPointerPropertyTypeDeclarator(property);
+  const bool has_unsupported_nullability_suffix =
+      !property.nullability_suffix_tokens.empty() && !SupportsNullabilityPropertyTypeSuffix(property);
+  return has_unsupported_generic_suffix || has_unsupported_pointer_declarator || has_unsupported_nullability_suffix;
+}
+
+static bool IsKnownPropertyAttributeName(const std::string &name) {
+  return name == "readonly" || name == "readwrite" || name == "atomic" || name == "nonatomic" || name == "copy" ||
+         name == "strong" || name == "weak" || name == "assign" || name == "getter" || name == "setter";
+}
+
+static bool IsValidPropertyGetterSelector(const std::string &selector) {
+  return !selector.empty() && selector.find(':') == std::string::npos;
+}
+
+static bool IsValidPropertySetterSelector(const std::string &selector) {
+  if (selector.empty() || selector.back() != ':') {
+    return false;
+  }
+  return std::count(selector.begin(), selector.end(), ':') == 1u;
+}
+
 static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
   const bool has_unsupported_generic_suffix = param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param);
   const bool has_unsupported_pointer_declarator =
@@ -953,6 +991,207 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                          "'"));
     }
   }
+}
+
+static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
+                                         const std::string &owner_name,
+                                         const std::string &owner_kind,
+                                         std::vector<std::string> &diagnostics) {
+  if (property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property)) {
+    std::string suffix = property.generic_suffix_text;
+    if (suffix.empty()) {
+      suffix = "<...>";
+    }
+    diagnostics.push_back(MakeDiag(property.generic_line,
+                                   property.generic_column,
+                                   "O3S206",
+                                   "type mismatch: generic property type suffix '" + suffix +
+                                       "' is unsupported for property '" + property.name + "' in " + owner_kind +
+                                       " '" + owner_name + "'"));
+  } else if (property.has_generic_suffix) {
+    ValidateProtocolCompositionSuffix(property.generic_suffix_text,
+                                     property.generic_line,
+                                     property.generic_column,
+                                     "property '" + property.name + "' in " + owner_kind + " '" + owner_name +
+                                         "' type annotation",
+                                     diagnostics);
+  }
+  if (!SupportsPointerPropertyTypeDeclarator(property)) {
+    for (const auto &token : property.pointer_declarator_tokens) {
+      diagnostics.push_back(MakeDiag(token.line,
+                                     token.column,
+                                     "O3S206",
+                                     "type mismatch: unsupported property type declarator '" + token.text +
+                                         "' for property '" + property.name + "' in " + owner_kind + " '" +
+                                         owner_name + "'"));
+    }
+  }
+  if (!SupportsNullabilityPropertyTypeSuffix(property)) {
+    for (const auto &token : property.nullability_suffix_tokens) {
+      diagnostics.push_back(MakeDiag(token.line,
+                                     token.column,
+                                     "O3S206",
+                                     "type mismatch: unsupported property type suffix '" + token.text +
+                                         "' for property '" + property.name + "' in " + owner_kind + " '" +
+                                         owner_name + "'"));
+    }
+  }
+}
+
+static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
+                                           const std::string &owner_name,
+                                           const std::string &owner_kind,
+                                           std::vector<std::string> &diagnostics) {
+  Objc3PropertyInfo info;
+  info.type = property.type;
+  info.is_vector = property.vector_spelling;
+  info.vector_base_spelling = property.vector_base_spelling;
+  info.vector_lane_count = property.vector_lane_count;
+  info.id_spelling = property.id_spelling;
+  info.class_spelling = property.class_spelling;
+  info.instancetype_spelling = property.instancetype_spelling;
+  info.has_invalid_type_suffix = HasInvalidPropertyTypeSuffix(property);
+  info.attribute_entries = property.attributes.size();
+  info.is_readonly = property.is_readonly;
+  info.is_readwrite = property.is_readwrite;
+  info.is_atomic = property.is_atomic;
+  info.is_nonatomic = property.is_nonatomic;
+  info.is_copy = property.is_copy;
+  info.is_strong = property.is_strong;
+  info.is_weak = property.is_weak;
+  info.is_assign = property.is_assign;
+  info.has_getter = property.has_getter;
+  info.has_setter = property.has_setter;
+  info.getter_selector = TrimAsciiWhitespace(property.getter_selector);
+  info.setter_selector = TrimAsciiWhitespace(property.setter_selector);
+
+  std::unordered_map<std::string, std::size_t> attribute_name_counts;
+  for (const auto &attribute : property.attributes) {
+    info.attribute_names_lexicographic.push_back(attribute.name);
+    const std::size_t count = ++attribute_name_counts[attribute.name];
+    bool invalid_attribute = false;
+    const auto emit_invalid_attribute = [&](const std::string &message) {
+      diagnostics.push_back(MakeDiag(attribute.line, attribute.column, "O3S206", message));
+      invalid_attribute = true;
+    };
+
+    if (!IsKnownPropertyAttributeName(attribute.name)) {
+      info.has_unknown_attribute = true;
+      emit_invalid_attribute("type mismatch: unknown @property attribute '" + attribute.name + "' for property '" +
+                             property.name + "' in " + owner_kind + " '" + owner_name + "'");
+    }
+    if (count > 1u) {
+      info.has_duplicate_attribute = true;
+      emit_invalid_attribute("type mismatch: duplicate @property attribute '" + attribute.name +
+                             "' for property '" + property.name + "' in " + owner_kind + " '" + owner_name + "'");
+    }
+    if ((attribute.name != "getter" && attribute.name != "setter") && attribute.has_value) {
+      emit_invalid_attribute("type mismatch: @property attribute '" + attribute.name +
+                             "' must not specify a value for property '" + property.name + "' in " + owner_kind +
+                             " '" + owner_name + "'");
+    }
+    if ((attribute.name == "getter" || attribute.name == "setter") &&
+        (!attribute.has_value || TrimAsciiWhitespace(attribute.value).empty())) {
+      emit_invalid_attribute("type mismatch: @property accessor attribute '" + attribute.name +
+                             "' requires a selector value for property '" + property.name + "' in " + owner_kind +
+                             " '" + owner_name + "'");
+    }
+
+    if (invalid_attribute) {
+      ++info.invalid_attribute_entries;
+    }
+  }
+  std::sort(info.attribute_names_lexicographic.begin(), info.attribute_names_lexicographic.end());
+
+  const auto emit_property_contract_violation = [&](unsigned line, unsigned column, const std::string &message) {
+    diagnostics.push_back(MakeDiag(line, column, "O3S206", message));
+    ++info.property_contract_violations;
+  };
+
+  if (info.has_getter) {
+    if (info.getter_selector.empty() || !IsValidPropertyGetterSelector(info.getter_selector)) {
+      info.has_accessor_selector_contract_violation = true;
+      emit_property_contract_violation(
+          property.line,
+          property.column,
+          "type mismatch: invalid @property getter selector '" +
+              (info.getter_selector.empty() ? std::string("<empty>") : info.getter_selector) + "' for property '" +
+              property.name + "' in " + owner_kind + " '" + owner_name + "'");
+    }
+  }
+  if (info.has_setter) {
+    if (info.setter_selector.empty() || !IsValidPropertySetterSelector(info.setter_selector)) {
+      info.has_accessor_selector_contract_violation = true;
+      emit_property_contract_violation(
+          property.line,
+          property.column,
+          "type mismatch: invalid @property setter selector '" +
+              (info.setter_selector.empty() ? std::string("<empty>") : info.setter_selector) + "' for property '" +
+              property.name + "' in " + owner_kind + " '" + owner_name + "'");
+    }
+  }
+  if (info.is_readonly && info.is_readwrite) {
+    info.has_readwrite_conflict = true;
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property modifiers 'readonly' and 'readwrite' conflict for property '" + property.name +
+            "' in " + owner_kind + " '" + owner_name + "'");
+  }
+  if (info.is_atomic && info.is_nonatomic) {
+    info.has_atomicity_conflict = true;
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property modifiers 'atomic' and 'nonatomic' conflict for property '" + property.name +
+            "' in " + owner_kind + " '" + owner_name + "'");
+  }
+  const std::size_t ownership_modifiers = (info.is_copy ? 1u : 0u) + (info.is_strong ? 1u : 0u) +
+                                          (info.is_weak ? 1u : 0u) + (info.is_assign ? 1u : 0u);
+  if (ownership_modifiers > 1u) {
+    info.has_ownership_conflict = true;
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property ownership modifiers conflict for property '" + property.name + "' in " + owner_kind +
+            " '" + owner_name + "'");
+  }
+  if (info.is_readonly && info.has_setter) {
+    info.has_accessor_selector_contract_violation = true;
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: readonly property '" + property.name + "' in " + owner_kind + " '" + owner_name +
+            "' must not declare a setter modifier");
+  }
+
+  info.has_invalid_attribute_contract =
+      info.has_unknown_attribute || info.has_duplicate_attribute || info.has_readwrite_conflict ||
+      info.has_atomicity_conflict || info.has_ownership_conflict || info.has_accessor_selector_contract_violation ||
+      info.invalid_attribute_entries > 0 || info.property_contract_violations > 0;
+  return info;
+}
+
+static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Objc3PropertyInfo &rhs) {
+  return lhs.type == rhs.type &&
+         lhs.is_vector == rhs.is_vector &&
+         lhs.vector_base_spelling == rhs.vector_base_spelling &&
+         lhs.vector_lane_count == rhs.vector_lane_count &&
+         lhs.id_spelling == rhs.id_spelling &&
+         lhs.class_spelling == rhs.class_spelling &&
+         lhs.instancetype_spelling == rhs.instancetype_spelling &&
+         lhs.is_readonly == rhs.is_readonly &&
+         lhs.is_readwrite == rhs.is_readwrite &&
+         lhs.is_atomic == rhs.is_atomic &&
+         lhs.is_nonatomic == rhs.is_nonatomic &&
+         lhs.is_copy == rhs.is_copy &&
+         lhs.is_strong == rhs.is_strong &&
+         lhs.is_weak == rhs.is_weak &&
+         lhs.is_assign == rhs.is_assign &&
+         lhs.has_getter == rhs.has_getter &&
+         lhs.has_setter == rhs.has_setter &&
+         lhs.getter_selector == rhs.getter_selector &&
+         lhs.setter_selector == rhs.setter_selector;
 }
 
 static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
@@ -2161,6 +2400,95 @@ static Objc3SelectorNormalizationSummary BuildSelectorNormalizationSummaryFromSu
   return summary;
 }
 
+static void AccumulatePropertyAttributeSummaryFromPropertyInfo(const Objc3PropertyInfo &property,
+                                                               Objc3PropertyAttributeSummary &summary) {
+  ++summary.properties_total;
+  summary.attribute_entries += property.attribute_entries;
+  if (property.is_readonly) {
+    ++summary.readonly_modifiers;
+  }
+  if (property.is_readwrite) {
+    ++summary.readwrite_modifiers;
+  }
+  if (property.is_atomic) {
+    ++summary.atomic_modifiers;
+  }
+  if (property.is_nonatomic) {
+    ++summary.nonatomic_modifiers;
+  }
+  if (property.is_copy) {
+    ++summary.copy_modifiers;
+  }
+  if (property.is_strong) {
+    ++summary.strong_modifiers;
+  }
+  if (property.is_weak) {
+    ++summary.weak_modifiers;
+  }
+  if (property.is_assign) {
+    ++summary.assign_modifiers;
+  }
+  if (property.has_getter) {
+    ++summary.getter_modifiers;
+  }
+  if (property.has_setter) {
+    ++summary.setter_modifiers;
+  }
+  summary.invalid_attribute_entries += property.invalid_attribute_entries;
+  summary.property_contract_violations += property.property_contract_violations;
+
+  if (property.attribute_entries != property.attribute_names_lexicographic.size() ||
+      !std::is_sorted(property.attribute_names_lexicographic.begin(), property.attribute_names_lexicographic.end())) {
+    summary.deterministic = false;
+  }
+  if (property.has_readwrite_conflict != (property.is_readonly && property.is_readwrite)) {
+    summary.deterministic = false;
+  }
+  if (property.has_atomicity_conflict != (property.is_atomic && property.is_nonatomic)) {
+    summary.deterministic = false;
+  }
+  const std::size_t ownership_modifiers = (property.is_copy ? 1u : 0u) + (property.is_strong ? 1u : 0u) +
+                                          (property.is_weak ? 1u : 0u) + (property.is_assign ? 1u : 0u);
+  if (property.has_ownership_conflict != (ownership_modifiers > 1u)) {
+    summary.deterministic = false;
+  }
+  if (property.has_setter && property.setter_selector.empty()) {
+    summary.deterministic = false;
+  }
+  if (property.has_getter && property.getter_selector.empty()) {
+    summary.deterministic = false;
+  }
+  const bool expected_invalid_contract =
+      property.has_unknown_attribute || property.has_duplicate_attribute || property.has_readwrite_conflict ||
+      property.has_atomicity_conflict || property.has_ownership_conflict ||
+      property.has_accessor_selector_contract_violation || property.invalid_attribute_entries > 0 ||
+      property.property_contract_violations > 0;
+  if (property.has_invalid_attribute_contract != expected_invalid_contract) {
+    summary.deterministic = false;
+  }
+}
+
+static Objc3PropertyAttributeSummary BuildPropertyAttributeSummaryFromSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3PropertyAttributeSummary summary;
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &property_entry : interface_entry.second.properties) {
+      AccumulatePropertyAttributeSummaryFromPropertyInfo(property_entry.second, summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &property_entry : implementation_entry.second.properties) {
+      AccumulatePropertyAttributeSummaryFromPropertyInfo(property_entry.second, summary);
+    }
+  }
+
+  summary.deterministic = summary.deterministic &&
+                          summary.invalid_attribute_entries <= summary.attribute_entries &&
+                          summary.getter_modifiers <= summary.properties_total &&
+                          summary.setter_modifiers <= summary.properties_total;
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -2308,6 +2636,20 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
 
     Objc3InterfaceInfo interface_info;
     interface_info.super_name = interface_decl.super_name;
+    for (const auto &property_decl : interface_decl.properties) {
+      ValidatePropertyTypeSuffixes(property_decl, interface_decl.name, "interface", diagnostics);
+      Objc3PropertyInfo property_info =
+          BuildPropertyInfo(property_decl, interface_decl.name, "interface", diagnostics);
+      const auto property_insert = interface_info.properties.emplace(property_decl.name, std::move(property_info));
+      if (!property_insert.second) {
+        diagnostics.push_back(
+            MakeDiag(property_decl.line,
+                     property_decl.column,
+                     "O3S200",
+                     "duplicate interface property '" + property_decl.name + "' in interface '" + interface_decl.name + "'"));
+      }
+    }
+
     for (const auto &method_decl : interface_decl.methods) {
       const MethodSelectorNormalizationContractInfo selector_contract =
           BuildMethodSelectorNormalizationContractInfo(method_decl);
@@ -2354,6 +2696,43 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                          implementation_decl.name + "'"));
     } else {
       implementation_info.has_matching_interface = true;
+    }
+
+    for (const auto &property_decl : implementation_decl.properties) {
+      ValidatePropertyTypeSuffixes(property_decl, implementation_decl.name, "implementation", diagnostics);
+      Objc3PropertyInfo property_info =
+          BuildPropertyInfo(property_decl, implementation_decl.name, "implementation", diagnostics);
+      const auto property_insert = implementation_info.properties.emplace(property_decl.name, std::move(property_info));
+      if (!property_insert.second) {
+        diagnostics.push_back(
+            MakeDiag(property_decl.line,
+                     property_decl.column,
+                     "O3S200",
+                     "duplicate implementation property '" + property_decl.name + "' in implementation '" +
+                         implementation_decl.name + "'"));
+        continue;
+      }
+
+      if (interface_it == surface.interfaces.end()) {
+        continue;
+      }
+
+      const auto interface_property_it = interface_it->second.properties.find(property_decl.name);
+      if (interface_property_it == interface_it->second.properties.end()) {
+        diagnostics.push_back(MakeDiag(property_decl.line,
+                                       property_decl.column,
+                                       "O3S206",
+                                       "type mismatch: implementation property '" + property_decl.name + "' in '" +
+                                           implementation_decl.name + "' is not declared in interface"));
+        continue;
+      }
+      if (!IsCompatiblePropertySignature(interface_property_it->second, property_insert.first->second)) {
+        diagnostics.push_back(MakeDiag(property_decl.line,
+                                       property_decl.column,
+                                       "O3S206",
+                                       "type mismatch: incompatible property signature for '" + property_decl.name +
+                                           "' in implementation '" + implementation_decl.name + "'"));
+      }
     }
 
     for (const auto &method_decl : implementation_decl.methods) {
@@ -2417,6 +2796,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.interface_implementation_summary = interface_implementation_summary;
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
+  surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -2483,6 +2863,56 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     Objc3SemanticInterfaceTypeMetadata metadata;
     metadata.name = name;
     metadata.super_name = interface_it->second.super_name;
+
+    std::vector<std::string> property_names;
+    property_names.reserve(interface_it->second.properties.size());
+    for (const auto &property_entry : interface_it->second.properties) {
+      property_names.push_back(property_entry.first);
+    }
+    std::sort(property_names.begin(), property_names.end());
+
+    metadata.properties_lexicographic.reserve(property_names.size());
+    for (const std::string &property_name : property_names) {
+      const auto property_it = interface_it->second.properties.find(property_name);
+      if (property_it == interface_it->second.properties.end()) {
+        continue;
+      }
+      const Objc3PropertyInfo &source = property_it->second;
+      Objc3SemanticPropertyTypeMetadata property_metadata;
+      property_metadata.name = property_name;
+      property_metadata.type = source.type;
+      property_metadata.is_vector = source.is_vector;
+      property_metadata.vector_base_spelling = source.vector_base_spelling;
+      property_metadata.vector_lane_count = source.vector_lane_count;
+      property_metadata.id_spelling = source.id_spelling;
+      property_metadata.class_spelling = source.class_spelling;
+      property_metadata.instancetype_spelling = source.instancetype_spelling;
+      property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
+      property_metadata.attribute_entries = source.attribute_entries;
+      property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
+      property_metadata.is_readonly = source.is_readonly;
+      property_metadata.is_readwrite = source.is_readwrite;
+      property_metadata.is_atomic = source.is_atomic;
+      property_metadata.is_nonatomic = source.is_nonatomic;
+      property_metadata.is_copy = source.is_copy;
+      property_metadata.is_strong = source.is_strong;
+      property_metadata.is_weak = source.is_weak;
+      property_metadata.is_assign = source.is_assign;
+      property_metadata.has_getter = source.has_getter;
+      property_metadata.has_setter = source.has_setter;
+      property_metadata.getter_selector = source.getter_selector;
+      property_metadata.setter_selector = source.setter_selector;
+      property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
+      property_metadata.property_contract_violations = source.property_contract_violations;
+      property_metadata.has_unknown_attribute = source.has_unknown_attribute;
+      property_metadata.has_duplicate_attribute = source.has_duplicate_attribute;
+      property_metadata.has_readwrite_conflict = source.has_readwrite_conflict;
+      property_metadata.has_atomicity_conflict = source.has_atomicity_conflict;
+      property_metadata.has_ownership_conflict = source.has_ownership_conflict;
+      property_metadata.has_accessor_selector_contract_violation = source.has_accessor_selector_contract_violation;
+      property_metadata.has_invalid_attribute_contract = source.has_invalid_attribute_contract;
+      metadata.properties_lexicographic.push_back(std::move(property_metadata));
+    }
 
     std::vector<std::string> selectors;
     selectors.reserve(interface_it->second.methods.size());
@@ -2551,6 +2981,56 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     Objc3SemanticImplementationTypeMetadata metadata;
     metadata.name = name;
     metadata.has_matching_interface = implementation_it->second.has_matching_interface;
+
+    std::vector<std::string> property_names;
+    property_names.reserve(implementation_it->second.properties.size());
+    for (const auto &property_entry : implementation_it->second.properties) {
+      property_names.push_back(property_entry.first);
+    }
+    std::sort(property_names.begin(), property_names.end());
+
+    metadata.properties_lexicographic.reserve(property_names.size());
+    for (const std::string &property_name : property_names) {
+      const auto property_it = implementation_it->second.properties.find(property_name);
+      if (property_it == implementation_it->second.properties.end()) {
+        continue;
+      }
+      const Objc3PropertyInfo &source = property_it->second;
+      Objc3SemanticPropertyTypeMetadata property_metadata;
+      property_metadata.name = property_name;
+      property_metadata.type = source.type;
+      property_metadata.is_vector = source.is_vector;
+      property_metadata.vector_base_spelling = source.vector_base_spelling;
+      property_metadata.vector_lane_count = source.vector_lane_count;
+      property_metadata.id_spelling = source.id_spelling;
+      property_metadata.class_spelling = source.class_spelling;
+      property_metadata.instancetype_spelling = source.instancetype_spelling;
+      property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
+      property_metadata.attribute_entries = source.attribute_entries;
+      property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
+      property_metadata.is_readonly = source.is_readonly;
+      property_metadata.is_readwrite = source.is_readwrite;
+      property_metadata.is_atomic = source.is_atomic;
+      property_metadata.is_nonatomic = source.is_nonatomic;
+      property_metadata.is_copy = source.is_copy;
+      property_metadata.is_strong = source.is_strong;
+      property_metadata.is_weak = source.is_weak;
+      property_metadata.is_assign = source.is_assign;
+      property_metadata.has_getter = source.has_getter;
+      property_metadata.has_setter = source.has_setter;
+      property_metadata.getter_selector = source.getter_selector;
+      property_metadata.setter_selector = source.setter_selector;
+      property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
+      property_metadata.property_contract_violations = source.property_contract_violations;
+      property_metadata.has_unknown_attribute = source.has_unknown_attribute;
+      property_metadata.has_duplicate_attribute = source.has_duplicate_attribute;
+      property_metadata.has_readwrite_conflict = source.has_readwrite_conflict;
+      property_metadata.has_atomicity_conflict = source.has_atomicity_conflict;
+      property_metadata.has_ownership_conflict = source.has_ownership_conflict;
+      property_metadata.has_accessor_selector_contract_violation = source.has_accessor_selector_contract_violation;
+      property_metadata.has_invalid_attribute_contract = source.has_invalid_attribute_contract;
+      metadata.properties_lexicographic.push_back(std::move(property_metadata));
+    }
 
     std::vector<std::string> selectors;
     selectors.reserve(implementation_it->second.methods.size());

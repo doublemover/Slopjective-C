@@ -84,6 +84,24 @@ bool IsEquivalentSelectorNormalizationSummary(const Objc3SelectorNormalizationSu
          lhs.selector_missing_keyword_pieces == rhs.selector_missing_keyword_pieces;
 }
 
+bool IsEquivalentPropertyAttributeSummary(const Objc3PropertyAttributeSummary &lhs,
+                                          const Objc3PropertyAttributeSummary &rhs) {
+  return lhs.properties_total == rhs.properties_total &&
+         lhs.attribute_entries == rhs.attribute_entries &&
+         lhs.readonly_modifiers == rhs.readonly_modifiers &&
+         lhs.readwrite_modifiers == rhs.readwrite_modifiers &&
+         lhs.atomic_modifiers == rhs.atomic_modifiers &&
+         lhs.nonatomic_modifiers == rhs.nonatomic_modifiers &&
+         lhs.copy_modifiers == rhs.copy_modifiers &&
+         lhs.strong_modifiers == rhs.strong_modifiers &&
+         lhs.weak_modifiers == rhs.weak_modifiers &&
+         lhs.assign_modifiers == rhs.assign_modifiers &&
+         lhs.getter_modifiers == rhs.getter_modifiers &&
+         lhs.setter_modifiers == rhs.setter_modifiers &&
+         lhs.invalid_attribute_entries == rhs.invalid_attribute_entries &&
+         lhs.property_contract_violations == rhs.property_contract_violations;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -158,6 +176,16 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.selector_normalization_summary.selector_piece_entries &&
       result.type_metadata_handoff.selector_normalization_summary.contract_violations() <=
           result.type_metadata_handoff.selector_normalization_summary.methods_total;
+  result.property_attribute_summary = result.integration_surface.property_attribute_summary;
+  result.deterministic_property_attribute_handoff =
+      result.type_metadata_handoff.property_attribute_summary.deterministic &&
+      result.integration_surface.property_attribute_summary.deterministic &&
+      IsEquivalentPropertyAttributeSummary(result.integration_surface.property_attribute_summary,
+                                           result.type_metadata_handoff.property_attribute_summary) &&
+      result.type_metadata_handoff.property_attribute_summary.getter_modifiers <=
+          result.type_metadata_handoff.property_attribute_summary.properties_total &&
+      result.type_metadata_handoff.property_attribute_summary.setter_modifiers <=
+          result.type_metadata_handoff.property_attribute_summary.properties_total;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -214,6 +242,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.selector_normalization_summary.selector_normalization_flag_mismatches;
   result.parity_surface.selector_normalization_missing_keyword_pieces_total =
       result.parity_surface.selector_normalization_summary.selector_missing_keyword_pieces;
+  result.parity_surface.property_attribute_summary = result.type_metadata_handoff.property_attribute_summary;
+  result.parity_surface.property_attribute_properties_total =
+      result.parity_surface.property_attribute_summary.properties_total;
+  result.parity_surface.property_attribute_entries_total =
+      result.parity_surface.property_attribute_summary.attribute_entries;
+  result.parity_surface.property_attribute_readonly_modifiers_total =
+      result.parity_surface.property_attribute_summary.readonly_modifiers;
+  result.parity_surface.property_attribute_readwrite_modifiers_total =
+      result.parity_surface.property_attribute_summary.readwrite_modifiers;
+  result.parity_surface.property_attribute_atomic_modifiers_total =
+      result.parity_surface.property_attribute_summary.atomic_modifiers;
+  result.parity_surface.property_attribute_nonatomic_modifiers_total =
+      result.parity_surface.property_attribute_summary.nonatomic_modifiers;
+  result.parity_surface.property_attribute_copy_modifiers_total =
+      result.parity_surface.property_attribute_summary.copy_modifiers;
+  result.parity_surface.property_attribute_strong_modifiers_total =
+      result.parity_surface.property_attribute_summary.strong_modifiers;
+  result.parity_surface.property_attribute_weak_modifiers_total =
+      result.parity_surface.property_attribute_summary.weak_modifiers;
+  result.parity_surface.property_attribute_assign_modifiers_total =
+      result.parity_surface.property_attribute_summary.assign_modifiers;
+  result.parity_surface.property_attribute_getter_modifiers_total =
+      result.parity_surface.property_attribute_summary.getter_modifiers;
+  result.parity_surface.property_attribute_setter_modifiers_total =
+      result.parity_surface.property_attribute_summary.setter_modifiers;
+  result.parity_surface.property_attribute_invalid_attribute_entries_total =
+      result.parity_surface.property_attribute_summary.invalid_attribute_entries;
+  result.parity_surface.property_attribute_contract_violations_total =
+      result.parity_surface.property_attribute_summary.property_contract_violations;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -269,6 +326,41 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.selector_normalization_summary.contract_violations() <=
           result.parity_surface.selector_normalization_summary.methods_total &&
       result.parity_surface.selector_normalization_summary.deterministic;
+  result.parity_surface.deterministic_property_attribute_handoff =
+      result.deterministic_property_attribute_handoff &&
+      result.parity_surface.property_attribute_summary.properties_total ==
+          result.parity_surface.property_attribute_properties_total &&
+      result.parity_surface.property_attribute_summary.attribute_entries ==
+          result.parity_surface.property_attribute_entries_total &&
+      result.parity_surface.property_attribute_summary.readonly_modifiers ==
+          result.parity_surface.property_attribute_readonly_modifiers_total &&
+      result.parity_surface.property_attribute_summary.readwrite_modifiers ==
+          result.parity_surface.property_attribute_readwrite_modifiers_total &&
+      result.parity_surface.property_attribute_summary.atomic_modifiers ==
+          result.parity_surface.property_attribute_atomic_modifiers_total &&
+      result.parity_surface.property_attribute_summary.nonatomic_modifiers ==
+          result.parity_surface.property_attribute_nonatomic_modifiers_total &&
+      result.parity_surface.property_attribute_summary.copy_modifiers ==
+          result.parity_surface.property_attribute_copy_modifiers_total &&
+      result.parity_surface.property_attribute_summary.strong_modifiers ==
+          result.parity_surface.property_attribute_strong_modifiers_total &&
+      result.parity_surface.property_attribute_summary.weak_modifiers ==
+          result.parity_surface.property_attribute_weak_modifiers_total &&
+      result.parity_surface.property_attribute_summary.assign_modifiers ==
+          result.parity_surface.property_attribute_assign_modifiers_total &&
+      result.parity_surface.property_attribute_summary.getter_modifiers ==
+          result.parity_surface.property_attribute_getter_modifiers_total &&
+      result.parity_surface.property_attribute_summary.setter_modifiers ==
+          result.parity_surface.property_attribute_setter_modifiers_total &&
+      result.parity_surface.property_attribute_summary.invalid_attribute_entries ==
+          result.parity_surface.property_attribute_invalid_attribute_entries_total &&
+      result.parity_surface.property_attribute_summary.property_contract_violations ==
+          result.parity_surface.property_attribute_contract_violations_total &&
+      result.parity_surface.property_attribute_summary.getter_modifiers <=
+          result.parity_surface.property_attribute_summary.properties_total &&
+      result.parity_surface.property_attribute_summary.setter_modifiers <=
+          result.parity_surface.property_attribute_summary.properties_total &&
+      result.parity_surface.property_attribute_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -290,6 +382,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.protocol_category_composition_summary.deterministic &&
       result.parity_surface.deterministic_protocol_category_composition_handoff &&
       result.parity_surface.selector_normalization_summary.deterministic &&
-      result.parity_surface.deterministic_selector_normalization_handoff;
+      result.parity_surface.deterministic_selector_normalization_handoff &&
+      result.parity_surface.property_attribute_summary.deterministic &&
+      result.parity_surface.deterministic_property_attribute_handoff;
   return result;
 }

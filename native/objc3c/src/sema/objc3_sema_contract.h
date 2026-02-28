@@ -79,6 +79,27 @@ struct Objc3SelectorNormalizationSummary {
   }
 };
 
+struct Objc3PropertyAttributeSummary {
+  std::size_t properties_total = 0;
+  std::size_t attribute_entries = 0;
+  std::size_t readonly_modifiers = 0;
+  std::size_t readwrite_modifiers = 0;
+  std::size_t atomic_modifiers = 0;
+  std::size_t nonatomic_modifiers = 0;
+  std::size_t copy_modifiers = 0;
+  std::size_t strong_modifiers = 0;
+  std::size_t weak_modifiers = 0;
+  std::size_t assign_modifiers = 0;
+  std::size_t getter_modifiers = 0;
+  std::size_t setter_modifiers = 0;
+  std::size_t invalid_attribute_entries = 0;
+  std::size_t property_contract_violations = 0;
+  bool deterministic = true;
+
+  std::size_t ownership_modifiers() const { return copy_modifiers + strong_modifiers + weak_modifiers + assign_modifiers; }
+  std::size_t contract_violations() const { return invalid_attribute_entries + property_contract_violations; }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -131,13 +152,49 @@ struct Objc3MethodInfo {
   bool has_definition = false;
 };
 
+struct Objc3PropertyInfo {
+  ValueType type = ValueType::Unknown;
+  bool is_vector = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+  bool id_spelling = false;
+  bool class_spelling = false;
+  bool instancetype_spelling = false;
+  bool has_invalid_type_suffix = false;
+  std::size_t attribute_entries = 0;
+  std::vector<std::string> attribute_names_lexicographic;
+  bool is_readonly = false;
+  bool is_readwrite = false;
+  bool is_atomic = false;
+  bool is_nonatomic = false;
+  bool is_copy = false;
+  bool is_strong = false;
+  bool is_weak = false;
+  bool is_assign = false;
+  bool has_getter = false;
+  bool has_setter = false;
+  std::string getter_selector;
+  std::string setter_selector;
+  std::size_t invalid_attribute_entries = 0;
+  std::size_t property_contract_violations = 0;
+  bool has_unknown_attribute = false;
+  bool has_duplicate_attribute = false;
+  bool has_readwrite_conflict = false;
+  bool has_atomicity_conflict = false;
+  bool has_ownership_conflict = false;
+  bool has_accessor_selector_contract_violation = false;
+  bool has_invalid_attribute_contract = false;
+};
+
 struct Objc3InterfaceInfo {
   std::string super_name;
+  std::unordered_map<std::string, Objc3PropertyInfo> properties;
   std::unordered_map<std::string, Objc3MethodInfo> methods;
 };
 
 struct Objc3ImplementationInfo {
   bool has_matching_interface = false;
+  std::unordered_map<std::string, Objc3PropertyInfo> properties;
   std::unordered_map<std::string, Objc3MethodInfo> methods;
 };
 
@@ -160,6 +217,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
+  Objc3PropertyAttributeSummary property_attribute_summary;
   bool built = false;
 };
 
@@ -217,15 +275,52 @@ struct Objc3SemanticMethodTypeMetadata {
   bool has_definition = false;
 };
 
+struct Objc3SemanticPropertyTypeMetadata {
+  std::string name;
+  ValueType type = ValueType::Unknown;
+  bool is_vector = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+  bool id_spelling = false;
+  bool class_spelling = false;
+  bool instancetype_spelling = false;
+  bool has_invalid_type_suffix = false;
+  std::size_t attribute_entries = 0;
+  std::vector<std::string> attribute_names_lexicographic;
+  bool is_readonly = false;
+  bool is_readwrite = false;
+  bool is_atomic = false;
+  bool is_nonatomic = false;
+  bool is_copy = false;
+  bool is_strong = false;
+  bool is_weak = false;
+  bool is_assign = false;
+  bool has_getter = false;
+  bool has_setter = false;
+  std::string getter_selector;
+  std::string setter_selector;
+  std::size_t invalid_attribute_entries = 0;
+  std::size_t property_contract_violations = 0;
+  bool has_unknown_attribute = false;
+  bool has_duplicate_attribute = false;
+  bool has_readwrite_conflict = false;
+  bool has_atomicity_conflict = false;
+  bool has_ownership_conflict = false;
+  bool has_accessor_selector_contract_violation = false;
+  bool has_invalid_attribute_contract = false;
+};
+
 struct Objc3SemanticInterfaceTypeMetadata {
   std::string name;
   std::string super_name;
+  std::vector<Objc3SemanticPropertyTypeMetadata> properties_lexicographic;
   std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
 struct Objc3SemanticImplementationTypeMetadata {
   std::string name;
   bool has_matching_interface = false;
+  std::vector<Objc3SemanticPropertyTypeMetadata> properties_lexicographic;
   std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
@@ -237,6 +332,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
+  Objc3PropertyAttributeSummary property_attribute_summary;
 };
 
 struct Objc3SemanticValidationOptions {
