@@ -197,6 +197,76 @@ Objc3FrontendProtocolCategorySummary BuildProtocolCategorySummary(
   return summary;
 }
 
+Objc3FrontendClassProtocolCategoryLinkingSummary BuildClassProtocolCategoryLinkingSummary(
+    const Objc3InterfaceImplementationSummary &interface_implementation_summary,
+    const Objc3FrontendProtocolCategorySummary &protocol_category_summary,
+    const Objc3SemanticIntegrationSurface &integration_surface,
+    const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff) {
+  Objc3FrontendClassProtocolCategoryLinkingSummary summary;
+  summary.declared_class_interfaces = interface_implementation_summary.declared_interfaces;
+  summary.declared_class_implementations = interface_implementation_summary.declared_implementations;
+  summary.resolved_class_interfaces = interface_implementation_summary.resolved_interfaces;
+  summary.resolved_class_implementations = interface_implementation_summary.resolved_implementations;
+  summary.linked_class_method_symbols = interface_implementation_summary.linked_implementation_symbols;
+  summary.linked_category_method_symbols = protocol_category_summary.linked_category_symbols;
+
+  const Objc3ProtocolCategoryCompositionSummary &integration_composition_summary =
+      integration_surface.protocol_category_composition_summary;
+  const Objc3ProtocolCategoryCompositionSummary &type_metadata_composition_summary =
+      type_metadata_handoff.protocol_category_composition_summary;
+  const auto select_composition_value = [&](std::size_t integration_value, std::size_t type_metadata_value) {
+    if (integration_surface.built) {
+      return integration_value;
+    }
+    return type_metadata_value;
+  };
+
+  summary.protocol_composition_sites =
+      select_composition_value(integration_composition_summary.protocol_composition_sites,
+                               type_metadata_composition_summary.protocol_composition_sites);
+  summary.protocol_composition_symbols =
+      select_composition_value(integration_composition_summary.protocol_composition_symbols,
+                               type_metadata_composition_summary.protocol_composition_symbols);
+  summary.category_composition_sites =
+      select_composition_value(integration_composition_summary.category_composition_sites,
+                               type_metadata_composition_summary.category_composition_sites);
+  summary.category_composition_symbols =
+      select_composition_value(integration_composition_summary.category_composition_symbols,
+                               type_metadata_composition_summary.category_composition_symbols);
+  summary.invalid_protocol_composition_sites =
+      select_composition_value(integration_composition_summary.invalid_protocol_composition_sites,
+                               type_metadata_composition_summary.invalid_protocol_composition_sites);
+
+  const bool composition_fields_match =
+      integration_composition_summary.protocol_composition_sites ==
+          type_metadata_composition_summary.protocol_composition_sites &&
+      integration_composition_summary.protocol_composition_symbols ==
+          type_metadata_composition_summary.protocol_composition_symbols &&
+      integration_composition_summary.category_composition_sites ==
+          type_metadata_composition_summary.category_composition_sites &&
+      integration_composition_summary.category_composition_symbols ==
+          type_metadata_composition_summary.category_composition_symbols &&
+      integration_composition_summary.invalid_protocol_composition_sites ==
+          type_metadata_composition_summary.invalid_protocol_composition_sites;
+
+  summary.deterministic_class_protocol_category_linking_handoff =
+      interface_implementation_summary.deterministic &&
+      protocol_category_summary.deterministic_protocol_category_handoff &&
+      integration_composition_summary.deterministic &&
+      type_metadata_composition_summary.deterministic &&
+      composition_fields_match &&
+      summary.resolved_class_interfaces <= summary.declared_class_interfaces &&
+      summary.resolved_class_implementations <= summary.declared_class_implementations &&
+      summary.linked_class_method_symbols <= interface_implementation_summary.interface_method_symbols &&
+      summary.linked_class_method_symbols <= interface_implementation_summary.implementation_method_symbols &&
+      summary.linked_category_method_symbols <= protocol_category_summary.category_method_symbols &&
+      summary.category_composition_sites <= summary.protocol_composition_sites &&
+      summary.category_composition_symbols <= summary.protocol_composition_symbols &&
+      summary.invalid_protocol_composition_sites <=
+          summary.protocol_composition_sites + summary.category_composition_sites;
+  return summary;
+}
+
 template <typename Container>
 void AccumulateSelectorNormalizationSummary(const Container &declarations,
                                            Objc3FrontendSelectorNormalizationSummary &summary) {
@@ -638,6 +708,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,
                                    result.sema_type_metadata_handoff);
+  result.class_protocol_category_linking_summary =
+      BuildClassProtocolCategoryLinkingSummary(result.sema_type_metadata_handoff.interface_implementation_summary,
+                                               result.protocol_category_summary,
+                                               result.integration_surface,
+                                               result.sema_type_metadata_handoff);
   result.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                              result.sema_type_metadata_handoff);
@@ -665,6 +740,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
         BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                      result.integration_surface,
                                      result.sema_type_metadata_handoff);
+    result.class_protocol_category_linking_summary =
+        BuildClassProtocolCategoryLinkingSummary(result.sema_type_metadata_handoff.interface_implementation_summary,
+                                                 result.protocol_category_summary,
+                                                 result.integration_surface,
+                                                 result.sema_type_metadata_handoff);
     result.symbol_graph_scope_resolution_summary =
         BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                                result.sema_type_metadata_handoff);

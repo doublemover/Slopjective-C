@@ -2395,6 +2395,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py -q`
 
+## Class/protocol/category linking lowering artifact contract (M152-C001)
+
+M152-C extends lowering/runtime ABI artifact publication with an aggregate class/protocol/category linking packet that ties class interface/implementation linkage to protocol/category composition linkage counters.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m152/lowering-class-protocol-category-linking-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m152/lowering-class-protocol-category-linking-contract/class-protocol-category-linking-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_class_protocol_category_linking_handoff`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_declared_class_interfaces`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_linked_class_method_symbols`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_protocol_composition_sites`
+- `frontend.pipeline.sema_pass_manager.class_protocol_category_invalid_protocol_composition_sites`
+- `frontend.pipeline.semantic_surface.objc_class_protocol_category_linking_surface`
+
+IR publication markers:
+
+- `; frontend_objc_class_protocol_category_linking_profile = declared_class_interfaces=<N>, declared_class_implementations=<N>, resolved_class_interfaces=<N>, resolved_class_implementations=<N>, linked_class_method_symbols=<N>, linked_category_method_symbols=<N>, protocol_composition_sites=<N>, protocol_composition_symbols=<N>, category_composition_sites=<N>, category_composition_symbols=<N>, invalid_protocol_composition_sites=<N>, deterministic_class_protocol_category_linking_handoff=<bool>`
+- `!objc3.objc_class_protocol_category_linking = !{!7}`
+- `!7 = !{i64 <declared_class_interfaces>, i64 <declared_class_implementations>, i64 <resolved_class_interfaces>, i64 <resolved_class_implementations>, i64 <linked_class_method_symbols>, i64 <linked_category_method_symbols>, i64 <protocol_composition_sites>, i64 <protocol_composition_symbols>, i64 <category_composition_sites>, i64 <category_composition_symbols>, i64 <invalid_protocol_composition_sites>, i1 <deterministic_class_protocol_category_linking_handoff>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

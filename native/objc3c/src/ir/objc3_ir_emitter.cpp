@@ -119,6 +119,20 @@ class Objc3IREmitter {
         << ", linked_category_symbols=" << frontend_metadata_.linked_category_symbols
         << ", deterministic_protocol_category_handoff="
         << (frontend_metadata_.deterministic_protocol_category_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_class_protocol_category_linking_profile = declared_class_interfaces="
+        << frontend_metadata_.declared_class_interfaces
+        << ", declared_class_implementations=" << frontend_metadata_.declared_class_implementations
+        << ", resolved_class_interfaces=" << frontend_metadata_.resolved_class_interfaces
+        << ", resolved_class_implementations=" << frontend_metadata_.resolved_class_implementations
+        << ", linked_class_method_symbols=" << frontend_metadata_.linked_class_method_symbols
+        << ", linked_category_method_symbols=" << frontend_metadata_.linked_category_method_symbols
+        << ", protocol_composition_sites=" << frontend_metadata_.protocol_composition_sites
+        << ", protocol_composition_symbols=" << frontend_metadata_.protocol_composition_symbols
+        << ", category_composition_sites=" << frontend_metadata_.category_composition_sites
+        << ", category_composition_symbols=" << frontend_metadata_.category_composition_symbols
+        << ", invalid_protocol_composition_sites=" << frontend_metadata_.invalid_protocol_composition_sites
+        << ", deterministic_class_protocol_category_linking_handoff="
+        << (frontend_metadata_.deterministic_class_protocol_category_linking_handoff ? "true" : "false") << "\n";
     out << "; frontend_objc_selector_normalization_profile = method_declaration_entries="
         << frontend_metadata_.selector_method_declaration_entries
         << ", normalized_method_declarations=" << frontend_metadata_.selector_normalized_method_declarations
@@ -296,6 +310,7 @@ class Objc3IREmitter {
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";
+    out << "!objc3.objc_class_protocol_category_linking = !{!7}\n";
     out << "!objc3.objc_selector_normalization = !{!3}\n";
     out << "!objc3.objc_property_attribute = !{!4}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
@@ -364,7 +379,19 @@ class Objc3IREmitter {
         << (frontend_metadata_.deterministic_symbol_graph_handoff ? 1 : 0) << ", i1 "
         << (frontend_metadata_.deterministic_scope_resolution_handoff ? 1 : 0) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.deterministic_symbol_graph_scope_resolution_handoff_key)
-        << "\"}\n\n";
+        << "\"}\n";
+    out << "!7 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.declared_class_interfaces) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.declared_class_implementations) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.resolved_class_interfaces) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.resolved_class_implementations) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.linked_class_method_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.linked_category_method_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.protocol_composition_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.protocol_composition_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.category_composition_sites) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.category_composition_symbols) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.invalid_protocol_composition_sites) << ", i1 "
+        << (frontend_metadata_.deterministic_class_protocol_category_linking_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {

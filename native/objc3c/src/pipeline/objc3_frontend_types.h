@@ -57,6 +57,21 @@ struct Objc3FrontendProtocolCategorySummary {
   bool deterministic_protocol_category_handoff = true;
 };
 
+struct Objc3FrontendClassProtocolCategoryLinkingSummary {
+  std::size_t declared_class_interfaces = 0;
+  std::size_t declared_class_implementations = 0;
+  std::size_t resolved_class_interfaces = 0;
+  std::size_t resolved_class_implementations = 0;
+  std::size_t linked_class_method_symbols = 0;
+  std::size_t linked_category_method_symbols = 0;
+  std::size_t protocol_composition_sites = 0;
+  std::size_t protocol_composition_symbols = 0;
+  std::size_t category_composition_sites = 0;
+  std::size_t category_composition_symbols = 0;
+  std::size_t invalid_protocol_composition_sites = 0;
+  bool deterministic_class_protocol_category_linking_handoff = true;
+};
+
 struct Objc3FrontendSelectorNormalizationSummary {
   std::size_t method_declaration_entries = 0;
   std::size_t normalized_method_declarations = 0;
@@ -136,6 +151,7 @@ struct Objc3FrontendPipelineResult {
   Objc3SemanticIntegrationSurface integration_surface;
   Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
   Objc3FrontendProtocolCategorySummary protocol_category_summary;
+  Objc3FrontendClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
