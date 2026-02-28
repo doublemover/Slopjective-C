@@ -125,6 +125,8 @@ jobs:
         run: npm run check:objc3c:m201-macro-expansion-arch
       - name: 37 Run M200 interop integration suite packaging gate
         run: npm run check:objc3c:m200-interop-packaging
+      - name: 38 Run M199 foreign type import diagnostics gate
+        run: npm run check:objc3c:m199-foreign-type-diagnostics
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

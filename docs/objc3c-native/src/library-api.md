@@ -515,6 +515,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain interop integration suite packaging anchors.
 
+## M199 integration foreign type import diagnostics
+
+- Gate intent: enforce deterministic foreign type import diagnostics evidence across all lanes.
+### 1.1 Foreign type import diagnostics integration chain
+- Deterministic foreign type import diagnostics gate:
+  - `npm run check:objc3c:m199-foreign-type-diagnostics`
+- Chain order:
+  - replays `check:objc3c:m200-interop-packaging`.
+  - enforces all M199 lane contracts:
+    `tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_lowering_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_validation_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_integration_foreign_type_diagnostics_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through foreign type import diagnostics validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain foreign type import diagnostics anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
