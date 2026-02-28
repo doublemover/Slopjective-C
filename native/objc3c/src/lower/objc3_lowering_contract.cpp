@@ -1020,3 +1020,34 @@ std::string Objc3GenericMetadataAbiLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3GenericMetadataAbiLoweringLaneContract;
 }
+
+bool IsValidObjc3ModuleImportGraphLoweringContract(
+    const Objc3ModuleImportGraphLoweringContract &contract) {
+  if (contract.import_edge_candidate_sites > contract.module_import_graph_sites ||
+      contract.namespace_segment_sites > contract.module_import_graph_sites ||
+      contract.object_pointer_type_sites < contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites > contract.module_import_graph_sites ||
+      contract.normalized_sites > contract.module_import_graph_sites ||
+      contract.contract_violation_sites > contract.module_import_graph_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.module_import_graph_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ModuleImportGraphLoweringReplayKey(
+    const Objc3ModuleImportGraphLoweringContract &contract) {
+  return std::string("module_import_graph_sites=") + std::to_string(contract.module_import_graph_sites) +
+         ";import_edge_candidate_sites=" + std::to_string(contract.import_edge_candidate_sites) +
+         ";namespace_segment_sites=" + std::to_string(contract.namespace_segment_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" + std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ModuleImportGraphLoweringLaneContract;
+}

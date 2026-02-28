@@ -949,6 +949,29 @@ Objc3GenericMetadataAbiLoweringContract BuildGenericMetadataAbiLoweringContract(
   return contract;
 }
 
+Objc3ModuleImportGraphLoweringContract BuildModuleImportGraphLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3ModuleImportGraphLoweringContract contract;
+  contract.module_import_graph_sites =
+      sema_parity_surface.module_import_graph_sites_total;
+  contract.import_edge_candidate_sites =
+      sema_parity_surface.module_import_graph_import_edge_candidate_sites_total;
+  contract.namespace_segment_sites =
+      sema_parity_surface.module_import_graph_namespace_segment_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface.module_import_graph_object_pointer_type_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface.module_import_graph_pointer_declarator_sites_total;
+  contract.normalized_sites =
+      sema_parity_surface.module_import_graph_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.module_import_graph_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.module_import_graph_summary.deterministic &&
+      sema_parity_surface.deterministic_module_import_graph_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1366,6 +1389,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string generic_metadata_abi_lowering_replay_key =
       Objc3GenericMetadataAbiLoweringReplayKey(
           generic_metadata_abi_lowering_contract);
+  const Objc3ModuleImportGraphLoweringContract module_import_graph_lowering_contract =
+      BuildModuleImportGraphLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3ModuleImportGraphLoweringContract(
+          module_import_graph_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid module import graph lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string module_import_graph_lowering_replay_key =
+      Objc3ModuleImportGraphLoweringReplayKey(
+          module_import_graph_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -2031,6 +2069,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_generic_metadata_abi_replay_key\":\""
            << generic_metadata_abi_lowering_replay_key
            << "\""
+           << ",\"deterministic_module_import_graph_lowering_handoff\":"
+           << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
+           << ",\"module_import_graph_lowering_sites\":"
+           << module_import_graph_lowering_contract.module_import_graph_sites
+           << ",\"module_import_graph_lowering_import_edge_candidate_sites\":"
+           << module_import_graph_lowering_contract.import_edge_candidate_sites
+           << ",\"module_import_graph_lowering_namespace_segment_sites\":"
+           << module_import_graph_lowering_contract.namespace_segment_sites
+           << ",\"module_import_graph_lowering_object_pointer_type_sites\":"
+           << module_import_graph_lowering_contract.object_pointer_type_sites
+           << ",\"module_import_graph_lowering_pointer_declarator_sites\":"
+           << module_import_graph_lowering_contract.pointer_declarator_sites
+           << ",\"module_import_graph_lowering_normalized_sites\":"
+           << module_import_graph_lowering_contract.normalized_sites
+           << ",\"module_import_graph_lowering_contract_violation_sites\":"
+           << module_import_graph_lowering_contract.contract_violation_sites
+           << ",\"lowering_module_import_graph_replay_key\":\""
+           << module_import_graph_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2644,6 +2701,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_module_import_graph_lowering_surface\":{\"module_import_graph_sites\":"
+           << module_import_graph_lowering_contract.module_import_graph_sites
+           << ",\"import_edge_candidate_sites\":"
+           << module_import_graph_lowering_contract.import_edge_candidate_sites
+           << ",\"namespace_segment_sites\":"
+           << module_import_graph_lowering_contract.namespace_segment_sites
+           << ",\"object_pointer_type_sites\":"
+           << module_import_graph_lowering_contract.object_pointer_type_sites
+           << ",\"pointer_declarator_sites\":"
+           << module_import_graph_lowering_contract.pointer_declarator_sites
+           << ",\"normalized_sites\":"
+           << module_import_graph_lowering_contract.normalized_sites
+           << ",\"contract_violation_sites\":"
+           << module_import_graph_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << module_import_graph_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2849,6 +2925,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3GenericMetadataAbiLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_module_import_graph\":{\"replay_key\":\""
+           << module_import_graph_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3ModuleImportGraphLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -3368,6 +3450,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       generic_metadata_abi_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_generic_metadata_abi_lowering_handoff =
       generic_metadata_abi_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_module_import_graph_replay_key =
+      module_import_graph_lowering_replay_key;
+  ir_frontend_metadata.module_import_graph_lowering_sites =
+      module_import_graph_lowering_contract.module_import_graph_sites;
+  ir_frontend_metadata.module_import_graph_lowering_import_edge_candidate_sites =
+      module_import_graph_lowering_contract.import_edge_candidate_sites;
+  ir_frontend_metadata.module_import_graph_lowering_namespace_segment_sites =
+      module_import_graph_lowering_contract.namespace_segment_sites;
+  ir_frontend_metadata.module_import_graph_lowering_object_pointer_type_sites =
+      module_import_graph_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata.module_import_graph_lowering_pointer_declarator_sites =
+      module_import_graph_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.module_import_graph_lowering_normalized_sites =
+      module_import_graph_lowering_contract.normalized_sites;
+  ir_frontend_metadata.module_import_graph_lowering_contract_violation_sites =
+      module_import_graph_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_module_import_graph_lowering_handoff =
+      module_import_graph_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

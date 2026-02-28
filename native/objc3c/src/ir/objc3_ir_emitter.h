@@ -259,6 +259,15 @@ struct Objc3IRFrontendMetadata {
   std::size_t generic_metadata_abi_lowering_normalized_sites = 0;
   std::size_t generic_metadata_abi_lowering_contract_violation_sites = 0;
   bool deterministic_generic_metadata_abi_lowering_handoff = false;
+  std::string lowering_module_import_graph_replay_key;
+  std::size_t module_import_graph_lowering_sites = 0;
+  std::size_t module_import_graph_lowering_import_edge_candidate_sites = 0;
+  std::size_t module_import_graph_lowering_namespace_segment_sites = 0;
+  std::size_t module_import_graph_lowering_object_pointer_type_sites = 0;
+  std::size_t module_import_graph_lowering_pointer_declarator_sites = 0;
+  std::size_t module_import_graph_lowering_normalized_sites = 0;
+  std::size_t module_import_graph_lowering_contract_violation_sites = 0;
+  bool deterministic_module_import_graph_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

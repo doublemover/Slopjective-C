@@ -182,6 +182,10 @@ class Objc3IREmitter {
       out << "; generic_metadata_abi_lowering = "
           << frontend_metadata_.lowering_generic_metadata_abi_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_module_import_graph_replay_key.empty()) {
+      out << "; module_import_graph_lowering = "
+          << frontend_metadata_.lowering_module_import_graph_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -603,6 +607,23 @@ class Objc3IREmitter {
         << ", deterministic_generic_metadata_abi_lowering_handoff="
         << (frontend_metadata_.deterministic_generic_metadata_abi_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_module_import_graph_lowering_profile = module_import_graph_sites="
+        << frontend_metadata_.module_import_graph_lowering_sites
+        << ", import_edge_candidate_sites="
+        << frontend_metadata_.module_import_graph_lowering_import_edge_candidate_sites
+        << ", namespace_segment_sites="
+        << frontend_metadata_.module_import_graph_lowering_namespace_segment_sites
+        << ", object_pointer_type_sites="
+        << frontend_metadata_.module_import_graph_lowering_object_pointer_type_sites
+        << ", pointer_declarator_sites="
+        << frontend_metadata_.module_import_graph_lowering_pointer_declarator_sites
+        << ", normalized_sites="
+        << frontend_metadata_.module_import_graph_lowering_normalized_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.module_import_graph_lowering_contract_violation_sites
+        << ", deterministic_module_import_graph_lowering_handoff="
+        << (frontend_metadata_.deterministic_module_import_graph_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -794,6 +815,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_protocol_qualified_object_type_lowering = !{!26}\n";
     out << "!objc3.objc_variance_bridge_cast_lowering = !{!27}\n";
     out << "!objc3.objc_generic_metadata_abi_lowering = !{!28}\n";
+    out << "!objc3.objc_module_import_graph_lowering = !{!29}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -1346,6 +1368,30 @@ class Objc3IREmitter {
                frontend_metadata_.generic_metadata_abi_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_generic_metadata_abi_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!29 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_import_edge_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_namespace_segment_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_object_pointer_type_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_pointer_declarator_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.module_import_graph_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_module_import_graph_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

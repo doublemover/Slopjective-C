@@ -3538,6 +3538,29 @@ Recommended M175 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m175_lowering_generic_metadata_abi_contract.py -q`
 
+## Module map ingestion and import graph lowering artifact contract (M176-C001)
+
+M176-C lowers sema-authored module-import-graph summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M176-C lowering contract anchors:
+
+- `kObjc3ModuleImportGraphLoweringLaneContract`
+- `Objc3ModuleImportGraphLoweringContract`
+- `IsValidObjc3ModuleImportGraphLoweringContract(...)`
+- `Objc3ModuleImportGraphLoweringReplayKey(...)`
+- `BuildModuleImportGraphLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_module_import_graph_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_module_import_graph_lowering_surface`
+- `lowering_module_import_graph.replay_key`
+- `; module_import_graph_lowering = module_import_graph_sites=<N>...`
+- `; frontend_objc_module_import_graph_lowering_profile = module_import_graph_sites=<N>...`
+- `!objc3.objc_module_import_graph_lowering = !{!29}`
+
+Recommended M176 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m176_lowering_module_import_graph_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
