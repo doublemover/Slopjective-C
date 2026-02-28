@@ -30,6 +30,8 @@ $sourceFiles = @(
   "native/objc3c/src/lex/objc3_lexer.cpp"
   "native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp"
   "native/objc3c/src/lower/objc3_lowering_contract.cpp"
+  "native/objc3c/src/parse/objc3_ast_builder.cpp"
+  "native/objc3c/src/parse/objc3_ast_builder_contract.cpp"
   "native/objc3c/src/parse/objc3_parser.cpp"
   "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
   "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"

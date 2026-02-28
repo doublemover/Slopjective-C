@@ -1,4 +1,5 @@
 #include "parse/objc3_parser.h"
+#include "parse/objc3_ast_builder.h"
 
 #include <cerrno>
 #include <cctype>
@@ -122,15 +123,15 @@ class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
 
-  Objc3Program Parse() {
-    Objc3Program program;
+  Objc3ParsedProgram Parse() {
+    Objc3ParsedProgram program = ast_builder_.BeginProgram();
     while (!At(TokenKind::Eof)) {
       if (Match(TokenKind::KwModule)) {
         ParseModule(program);
       } else if (Match(TokenKind::KwLet)) {
         auto decl = ParseGlobalLet();
         if (decl != nullptr) {
-          program.globals.push_back(std::move(*decl));
+          ast_builder_.AddGlobalDecl(program, std::move(*decl));
         }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
@@ -168,7 +169,7 @@ class Objc3Parser {
     return false;
   }
 
-  void ParseTopLevelFunctionDecl(Objc3Program &program) {
+  void ParseTopLevelFunctionDecl(Objc3ParsedProgram &program) {
     bool is_pure = false;
     bool is_extern = false;
     std::optional<TokenKind> trailing_qualifier = std::nullopt;
@@ -221,7 +222,7 @@ class Objc3Parser {
       return;
     }
 
-    program.functions.push_back(std::move(*fn));
+    ast_builder_.AddFunctionDecl(program, std::move(*fn));
   }
 
   bool AtIdentifierColon() const {
@@ -315,7 +316,7 @@ class Objc3Parser {
     return false;
   }
 
-  void ParseModule(Objc3Program &program) {
+  void ParseModule(Objc3ParsedProgram &program) {
     const Token &name_token = Peek();
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
@@ -337,7 +338,7 @@ class Objc3Parser {
       return;
     }
     saw_module_declaration_ = true;
-    program.module_name = module_name;
+    ast_builder_.SetModuleName(program, module_name);
   }
 
   std::unique_ptr<GlobalDecl> ParseGlobalLet() {
@@ -2015,11 +2016,12 @@ class Objc3Parser {
   std::vector<std::string> diagnostics_;
   bool saw_module_declaration_ = false;
   bool block_failed_ = false;
+  Objc3AstBuilder ast_builder_;
 };
 
 }  // namespace
 
-Objc3ParseResult ParseObjc3Program(const std::vector<Objc3LexToken> &tokens) {
+Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3Parser parser(tokens);
   Objc3ParseResult result;
   result.program = parser.Parse();

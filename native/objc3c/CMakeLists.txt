@@ -44,6 +44,8 @@ target_include_directories(objc3c_diag PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 add_library(objc3c_parse STATIC
+  src/parse/objc3_ast_builder.cpp
+  src/parse/objc3_ast_builder_contract.cpp
   src/parse/objc3_parser.cpp
 )
 target_include_directories(objc3c_parse PUBLIC

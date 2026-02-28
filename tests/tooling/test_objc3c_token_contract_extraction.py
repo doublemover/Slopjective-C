@@ -34,7 +34,7 @@ def test_lexer_and_parser_depend_on_explicit_token_contract() -> None:
     assert "std::vector<Objc3LexToken> Run(" in lexer
     assert '#include "token/objc3_token_contract.h"' in parser
     assert '#include "token/objc3_token.h"' not in parser
-    assert "ParseObjc3Program(const std::vector<Objc3LexToken> &tokens)" in parser
+    assert "ParseObjc3Program(const Objc3LexTokenStream &tokens)" in parser
 
 
 def test_ast_uses_sema_token_contract_metadata() -> None:
