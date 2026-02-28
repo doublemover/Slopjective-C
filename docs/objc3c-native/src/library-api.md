@@ -742,6 +742,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m174_validation_variance_bridge_cast_contract.py`
   - `tests/tooling/test_objc3c_m174_integration_variance_bridge_cast_contract.py`
 
+## M175 integration generic metadata emission and ABI checks contract
+
+- Integration gate:
+  - `npm run check:objc3c:m175-generic-metadata-abi-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m175`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m175_frontend_generic_metadata_abi_parser_contract.py`
+  - `tests/tooling/test_objc3c_m175_sema_generic_metadata_abi_contract.py`
+  - `tests/tooling/test_objc3c_m175_lowering_generic_metadata_abi_contract.py`
+  - `tests/tooling/test_objc3c_m175_validation_generic_metadata_abi_contract.py`
+  - `tests/tooling/test_objc3c_m175_integration_generic_metadata_abi_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

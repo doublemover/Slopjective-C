@@ -88,6 +88,8 @@ jobs:
         run: npm run check:compiler-closeout:m173
       - name: 00zd Enforce M174 variance/bridged-cast packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m174
+      - name: 00ze Enforce M175 generic metadata ABI packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m175
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -241,6 +243,8 @@ jobs:
         run: npm run check:objc3c:m173-protocol-qualified-object-type-contracts
       - name: 44zd Run M174 variance/bridged-cast integration gate
         run: npm run check:objc3c:m174-variance-bridged-cast-contracts
+      - name: 44ze Run M175 generic metadata ABI integration gate
+        run: npm run check:objc3c:m175-generic-metadata-abi-contracts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
