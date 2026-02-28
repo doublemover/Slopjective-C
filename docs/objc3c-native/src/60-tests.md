@@ -473,6 +473,8 @@ From repo root, execute deterministic M155 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
 
 Validation evidence markers must remain deterministic across replay runs:
 

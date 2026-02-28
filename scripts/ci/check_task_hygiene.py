@@ -39,6 +39,21 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
             "package.json scripts.check:compiler-closeout:m155 must run python scripts/ci/check_task_hygiene.py",
         )
 
+    m155_gate = scripts.get("check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts", "")
+    required_gate_tests = (
+        "test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py",
+        "test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py",
+        "test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py",
+        "test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py",
+        "test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py",
+    )
+    for required_test in required_gate_tests:
+        if required_test not in m155_gate:
+            errors.append(
+                "package.json scripts.check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts "
+                f"must include {required_test}",
+            )
+
     return errors
 
 

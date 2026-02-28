@@ -414,6 +414,37 @@ Recommended M154 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py -q`
 
+## M155 frontend id/Class/SEL/object-pointer typecheck parser surface
+
+Frontend parser/AST now emits deterministic typecheck-family symbols for `id`, `Class`, `SEL`, and named object-pointer
+spellings across function returns, method returns, parameters, and properties.
+
+M155 parser/AST surface details:
+
+- typecheck family helper anchors:
+  - `BuildObjcTypecheckParamFamilySymbol(...)`
+  - `BuildObjcTypecheckReturnFamilySymbol(...)`
+- parser assignment anchors:
+  - `fn.return_typecheck_family_symbol = BuildObjcTypecheckReturnFamilySymbol(fn);`
+  - `param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);`
+  - `target.return_typecheck_family_symbol = source.return_typecheck_family_symbol;`
+  - `target.typecheck_family_symbol = source.typecheck_family_symbol;`
+- AST typecheck-family carriers:
+  - `typecheck_family_symbol`
+  - `return_typecheck_family_symbol`
+  - `sel_spelling`
+  - `return_sel_spelling`
+
+Deterministic grammar intent:
+
+- typecheck-family packets normalize parser spellings into stable symbols (`id`, `Class`, `SEL`, `object-pointer:<name>`).
+- property/method type handoff preserves these packets through `CopyPropertyTypeFromParam(...)` and
+  `CopyMethodReturnTypeFromFunctionDecl(...)`.
+
+Recommended M155 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3542,6 +3573,39 @@ Sema/type metadata handoff contract:
 Recommended M154 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_sema_property_synthesis_ivar_binding_contract.py -q`
+
+## M155 sema/type id/class/SEL/object-pointer type-checking contract (M155-B001)
+
+M155-B adds a deterministic semantic summary for object-centric type spellings across parameter, return, and property
+surfaces and replays it through sema handoff and pass-manager parity packets.
+
+Sema/type contract markers:
+
+- `Objc3IdClassSelObjectPointerTypeCheckingSummary`
+- `id_class_sel_object_pointer_type_checking_summary`
+- `BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface`
+- `BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff`
+- `deterministic_id_class_sel_object_pointer_type_checking_handoff`
+- `result.parity_surface.id_class_sel_object_pointer_type_checking_summary`
+
+Deterministic type-check invariants (fail-closed):
+
+- each object-centric spelling counter remains bounded by its owning site class (`*_sites <= *_type_sites`).
+- aggregated spelling counters remain bounded (`id + class + sel + instancetype + object_pointer <= type_sites`).
+- integration and handoff summaries must remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.id_class_sel_object_pointer_type_checking_summary = BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.id_class_sel_object_pointer_type_checking_summary = BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_id_class_sel_object_pointer_type_checking_handoff`
+
+Recommended M155 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6179,6 +6243,59 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py -q`
 
+## id/Class/SEL/object-pointer typecheck lowering artifact contract (M155-C001)
+
+M155-C extends lowering contract publication with a replay-stable packet that tracks Objective-C `id`, `Class`,
+`SEL`, and nominal object-pointer typecheck spellings across function/method/property type surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m155/lowering-id-class-sel-object-pointer-typecheck-contract/id-class-sel-object-pointer-typecheck-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3IdClassSelObjectPointerTypecheckLaneContract`
+- `Objc3IdClassSelObjectPointerTypecheckContract`
+- `IsValidObjc3IdClassSelObjectPointerTypecheckContract(...)`
+- `Objc3IdClassSelObjectPointerTypecheckReplayKey(...)`
+
+Replay key publication markers:
+
+- `id_typecheck_sites=<N>`
+- `class_typecheck_sites=<N>`
+- `sel_typecheck_sites=<N>`
+- `object_pointer_typecheck_sites=<N>`
+- `total_typecheck_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m155-id-class-sel-object-pointer-typecheck-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_id_class_sel_object_pointer_typecheck_handoff`
+- `frontend.pipeline.sema_pass_manager.id_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.class_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.sel_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.object_pointer_typecheck_sites`
+- `frontend.pipeline.sema_pass_manager.id_class_sel_object_pointer_typecheck_sites_total`
+- `frontend.pipeline.sema_pass_manager.lowering_id_class_sel_object_pointer_typecheck_replay_key`
+- `frontend.pipeline.semantic_surface.objc_id_class_sel_object_pointer_typecheck_surface`
+- `lowering_id_class_sel_object_pointer_typecheck.replay_key`
+- `lowering_id_class_sel_object_pointer_typecheck.lane_contract`
+
+IR publication markers:
+
+- `; id_class_sel_object_pointer_typecheck_lowering = id_typecheck_sites=<N>;class_typecheck_sites=<N>;sel_typecheck_sites=<N>;object_pointer_typecheck_sites=<N>;total_typecheck_sites=<N>;deterministic=<bool>;lane_contract=m155-id-class-sel-object-pointer-typecheck-v1`
+- `; frontend_objc_id_class_sel_object_pointer_typecheck_profile = id_typecheck_sites=<N>, class_typecheck_sites=<N>, sel_typecheck_sites=<N>, object_pointer_typecheck_sites=<N>, total_typecheck_sites=<N>, deterministic_id_class_sel_object_pointer_typecheck_handoff=<bool>`
+- `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
+- `!8 = !{i64 <id_typecheck_sites>, i64 <class_typecheck_sites>, i64 <sel_typecheck_sites>, i64 <object_pointer_typecheck_sites>, i64 <total_typecheck_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6659,6 +6776,25 @@ From repo root, execute deterministic M154 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m154_validation_property_synthesis_ivar_binding_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py -q`
 - `npm run check:objc3c:m154-property-synthesis-ivar-bindings`
+
+## M155 validation/conformance/perf id/Class/SEL/object-pointer typecheck runbook
+
+From repo root, execute deterministic M155 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py -q`
+- `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_id_class_sel_object_pointer_typecheck.replay_key`
+- `deterministic_id_class_sel_object_pointer_typecheck_handoff`
+- `id_class_sel_object_pointer_typecheck_lowering`
+- `frontend_objc_id_class_sel_object_pointer_typecheck_profile`
+- `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
 
 ## M221 validation/perf GA blocker burn-down runbook
 
@@ -8432,6 +8568,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m154_lowering_property_synthesis_ivar_binding_contract.py`
   - `tests/tooling/test_objc3c_m154_validation_property_synthesis_ivar_binding_contract.py`
   - `tests/tooling/test_objc3c_m154_integration_property_synthesis_ivar_binding_contract.py`
+
+## M155 integration id/class/SEL/object-pointer typecheck contract
+
+- Integration gate:
+  - `npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m155`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

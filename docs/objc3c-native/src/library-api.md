@@ -454,6 +454,8 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py`
   - `tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py`
   - `tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py`
+  - `tests/tooling/test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
