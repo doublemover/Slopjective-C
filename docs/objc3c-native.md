@@ -8208,6 +8208,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_autoreleasepool_scope_lowering_profile`
 - `!objc3.objc_autoreleasepool_scope_lowering = !{!16}`
 
+## M164 validation/conformance/perf weak/unowned semantics runbook
+
+From repo root, execute deterministic M164 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m164_frontend_weak_unowned_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m164_sema_weak_unowned_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m164_lowering_weak_unowned_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m164_validation_weak_unowned_semantics_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_weak_unowned_semantics.replay_key`
+- `deterministic_weak_unowned_semantics_lowering_handoff`
+- `weak_unowned_semantics_lowering`
+- `frontend_objc_weak_unowned_semantics_lowering_profile`
+- `!objc3.objc_weak_unowned_semantics_lowering = !{!17}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:

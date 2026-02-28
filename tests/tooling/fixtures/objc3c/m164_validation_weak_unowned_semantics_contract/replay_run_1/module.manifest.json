@@ -1,0 +1,33 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_weak_unowned_semantics_lowering_handoff": true,
+        "weak_unowned_semantics_lowering_ownership_candidate_sites": 8,
+        "weak_unowned_semantics_lowering_weak_reference_sites": 3,
+        "weak_unowned_semantics_lowering_unowned_reference_sites": 2,
+        "weak_unowned_semantics_lowering_unowned_safe_reference_sites": 1,
+        "weak_unowned_semantics_lowering_conflict_sites": 1,
+        "weak_unowned_semantics_lowering_contract_violation_sites": 0,
+        "lowering_weak_unowned_semantics_replay_key": "ownership_candidate_sites=8;weak_reference_sites=3;unowned_reference_sites=2;unowned_safe_reference_sites=1;weak_unowned_conflict_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m164-weak-unowned-semantics-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_weak_unowned_semantics_lowering_surface": {
+          "ownership_candidate_sites": 8,
+          "weak_reference_sites": 3,
+          "unowned_reference_sites": 2,
+          "unowned_safe_reference_sites": 1,
+          "weak_unowned_conflict_sites": 1,
+          "contract_violation_sites": 0,
+          "replay_key": "ownership_candidate_sites=8;weak_reference_sites=3;unowned_reference_sites=2;unowned_safe_reference_sites=1;weak_unowned_conflict_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m164-weak-unowned-semantics-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_weak_unowned_semantics": {
+    "replay_key": "ownership_candidate_sites=8;weak_reference_sites=3;unowned_reference_sites=2;unowned_safe_reference_sites=1;weak_unowned_conflict_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m164-weak-unowned-semantics-lowering-v1",
+    "lane_contract": "m164-weak-unowned-semantics-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
