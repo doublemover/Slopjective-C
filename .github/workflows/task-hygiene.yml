@@ -119,6 +119,8 @@ jobs:
         run: npm run check:objc3c:m204-macro-diagnostics
       - name: 34 Run M203 compile-time-eval integration gate
         run: npm run check:objc3c:m203-compile-time-eval
+      - name: 35 Run M202 derive-synthesis integration gate
+        run: npm run check:objc3c:m202-derive-synthesis
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

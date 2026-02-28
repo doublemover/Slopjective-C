@@ -455,6 +455,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain compile-time-eval anchors.
 
+## M202 integration derive/synthesis pipeline
+
+- Gate intent: enforce deterministic derive/synthesis evidence across all lanes.
+### 1.1 Derive/synthesis integration chain
+- Deterministic derive/synthesis gate:
+  - `npm run check:objc3c:m202-derive-synthesis`
+- Chain order:
+  - replays `check:objc3c:m203-compile-time-eval`.
+  - enforces all M202 lane contracts:
+    `tests/tooling/test_objc3c_m202_frontend_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_sema_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_validation_derive_synthesis_contract.py`,
+    `tests/tooling/test_objc3c_m202_integration_derive_synthesis_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through derive/synthesis validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain derive/synthesis anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
