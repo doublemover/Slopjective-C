@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed task-hygiene wiring checks for M155/M156/M157/M158 lane-E closeout."""
+"""Fail-closed task-hygiene wiring checks for M155/M156/M157/M158/M159 lane-E closeout."""
 
 from __future__ import annotations
 
@@ -39,6 +39,10 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
     if "check:compiler-closeout:m158" not in task_hygiene:
         errors.append(
             "package.json scripts.check:task-hygiene must include check:compiler-closeout:m158",
+        )
+    if "check:compiler-closeout:m159" not in task_hygiene:
+        errors.append(
+            "package.json scripts.check:task-hygiene must include check:compiler-closeout:m159",
         )
 
     m155_closeout = scripts.get("check:compiler-closeout:m155", "")
@@ -141,6 +145,31 @@ def _check_package_contracts(scripts: dict[str, str]) -> list[str]:
                 f"must include {required_test}",
             )
 
+    m159_closeout = scripts.get("check:compiler-closeout:m159", "")
+    if "npm run check:objc3c:m159-super-dispatch-method-family-contracts" not in m159_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m159 must run check:objc3c:m159-super-dispatch-method-family-contracts",
+        )
+    if "python scripts/ci/check_task_hygiene.py" not in m159_closeout:
+        errors.append(
+            "package.json scripts.check:compiler-closeout:m159 must run python scripts/ci/check_task_hygiene.py",
+        )
+
+    m159_gate = scripts.get("check:objc3c:m159-super-dispatch-method-family-contracts", "")
+    required_m159_gate_tests = (
+        "test_objc3c_m159_frontend_super_dispatch_method_family_contract.py",
+        "test_objc3c_m159_sema_super_dispatch_method_family_contract.py",
+        "test_objc3c_m159_lowering_super_dispatch_method_family_contract.py",
+        "test_objc3c_m159_validation_super_dispatch_method_family_contract.py",
+        "test_objc3c_m159_integration_super_dispatch_method_family_contract.py",
+    )
+    for required_test in required_m159_gate_tests:
+        if required_test not in m159_gate:
+            errors.append(
+                "package.json scripts.check:objc3c:m159-super-dispatch-method-family-contracts "
+                f"must include {required_test}",
+            )
+
     return errors
 
 
@@ -155,6 +184,8 @@ def _check_workflow_contracts(workflow_text: str) -> list[str]:
         "run: npm run check:objc3c:m157-dispatch-abi-marshalling-contracts",
         "run: npm run check:compiler-closeout:m158",
         "run: npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts",
+        "run: npm run check:compiler-closeout:m159",
+        "run: npm run check:objc3c:m159-super-dispatch-method-family-contracts",
     )
     for required in required_runs:
         if required not in workflow_text:
@@ -172,12 +203,12 @@ def main() -> int:
     errors.extend(_check_workflow_contracts(workflow_text))
 
     if errors:
-        print("M155/M156/M157/M158 task-hygiene contract check failed:")
+        print("M155/M156/M157/M158/M159 task-hygiene contract check failed:")
         for error in errors:
             print(f"- {error}")
         return 1
 
-    print("M155/M156/M157/M158 task-hygiene contract check passed.")
+    print("M155/M156/M157/M158/M159 task-hygiene contract check passed.")
     return 0
 
 

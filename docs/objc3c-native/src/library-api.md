@@ -502,6 +502,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m158_validation_nil_receiver_semantics_foldability_contract.py`
   - `tests/tooling/test_objc3c_m158_integration_nil_receiver_semantics_foldability_contract.py`
 
+## M159 integration super-dispatch and method-family semantics contract
+
+- Integration gate:
+  - `npm run check:objc3c:m159-super-dispatch-method-family-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m159`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m159_frontend_super_dispatch_method_family_contract.py`
+  - `tests/tooling/test_objc3c_m159_sema_super_dispatch_method_family_contract.py`
+  - `tests/tooling/test_objc3c_m159_lowering_super_dispatch_method_family_contract.py`
+  - `tests/tooling/test_objc3c_m159_validation_super_dispatch_method_family_contract.py`
+  - `tests/tooling/test_objc3c_m159_integration_super_dispatch_method_family_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
