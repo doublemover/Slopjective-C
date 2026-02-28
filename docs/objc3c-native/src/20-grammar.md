@@ -1859,6 +1859,24 @@ Frontend SIMD/vector type lowering contract relies on deterministic parser accep
   3. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
 
+## M191 frontend unsafe pointer-arithmetic extension gating
+
+Frontend unsafe pointer-extension gating relies on deterministic parser-owned profile synthesis for unsafe ownership qualifiers, raw pointer type spellings, and pointer-arithmetic operation sites.
+
+- Required frontend unsafe pointer-extension gating signals:
+  - parser profile packet carrier remains `struct Objc3UnsafePointerExtensionProfile`.
+  - parser profile serialization remains `BuildUnsafePointerExtensionProfile(...)`.
+  - parser profile invariant gate remains `IsUnsafePointerExtensionProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeUnsafePointerExtensionProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeUnsafePointerExtensionProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.unsafe_pointer_extension_sites = profile.unsafe_pointer_extension_sites;` and `method.unsafe_pointer_extension_sites = profile.unsafe_pointer_extension_sites;`.
+  - AST carrier anchors remain `bool unsafe_pointer_extension_profile_is_normalized = false;`, `bool deterministic_unsafe_pointer_extension_handoff = false;`, and `std::string unsafe_pointer_extension_profile;` on function/method declarations.
+- Required frontend unsafe pointer-extension gating commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m191_frontend_unsafe_pointer_arithmetic_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
