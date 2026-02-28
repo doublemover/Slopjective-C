@@ -327,7 +327,26 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   1. `npm run test:objc3c:parser-ast-extraction`
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
-  4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+
+## M142 frontend CLI and C API parity harness
+
+For deterministic frontend parity between CLI and the embeddable C API surface, the frontend compile anchor must validate language/compatibility and normalize lowering contract inputs before pipeline execution.
+
+Frontend packet map:
+
+- `frontend parity packet 1.1 deterministic compile option prevalidation` -> `m142_frontend_cli_c_api_prevalidation_packet`
+
+### 1.1 Deterministic compile option prevalidation packet
+
+- Source frontend anchor markers: `ValidateSupportedLanguageVersion(options->language_version, language_version_error)`, `ValidateSupportedCompatibilityMode(options->compatibility_mode, compatibility_mode_error)`, and `SetUsageError(context, result, ...)`.
+- Source lowering normalization markers: `Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);`, `TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)`, `frontend_options.lowering = normalized_lowering;`, and `CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options)`.
+- Usage-error/fail-closed markers: `result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;`, `result->process_exit_code = 2;`, and `objc3c_frontend_set_error(context, lowering_error.c_str());`.
+- Deterministic packet key: `m142_frontend_cli_c_api_prevalidation_packet`.
+
+Recommended M142 frontend parity validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_frontend_cli_c_api_parity_contract.py -q`
 
 ## M214 frontend daemonized compiler packet
 
@@ -1980,6 +1999,19 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Contract validation commands:
   - `python scripts/check_m142_frontend_lowering_parity_contract.py`
   - `npm run check:compiler-closeout:m142`
+
+## Frontend sema/type CLI-C-API parity contract (M142-B001)
+
+- Lane-B sema/type parity surface remains deterministic through:
+  - `native/objc3c/src/sema/objc3_sema_pass_manager_contract.h`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`:
+  - pass diagnostics counters: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, `diagnostics_emitted_by_validate_pure_contract`, `diagnostics_monotonic`, and `diagnostics_total`.
+  - type-system parity counters: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, `ready`, `parity_ready`, `globals_total`, `functions_total`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+  - sema/type extension parity counters: `deterministic_atomic_memory_order_mapping`, `atomic_memory_order_mapping_total`, `atomic_relaxed_ops`, `atomic_acquire_ops`, `atomic_release_ops`, `atomic_acq_rel_ops`, `atomic_seq_cst_ops`, `atomic_unmapped_ops`, `deterministic_vector_type_lowering`, `vector_type_lowering_total`, `vector_return_annotations`, `vector_param_annotations`, `vector_i32_annotations`, `vector_bool_annotations`, `vector_lane2_annotations`, `vector_lane4_annotations`, `vector_lane8_annotations`, `vector_lane16_annotations`, and `vector_unsupported_annotations`.
+- Contract validation command:
+  - `python -m pytest tests/tooling/test_objc3c_m142_sema_cli_c_api_parity_contract.py -q`
 
 ## Artifact tmp-path governance contract (M143-D001)
 
@@ -5115,6 +5147,21 @@ Object backend note for harness replay:
 - M142 parity dimensions exclude `module.object-backend.txt`; it is a provenance note, not a compared artifact payload.
 - Source-mode parity command pins `--cli-ir-object-backend clang` so CLI and C API object outputs are backend-aligned.
 
+Lane-C lowering/LLVM IR/runtime-ABI parity anchors (`M142-C001`):
+
+- Native IR prologue emits deterministic ABI replay markers:
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; runtime_dispatch_decl = declare i32 @<symbol>(i32, ptr[, i32...])`
+  - `; simd_vector_lowering = <canonical replay key>`
+- Runtime dispatch declaration emission reuses the same replay key shape as the prologue marker.
+- Manifest parity still records lowering/runtime ABI controls under:
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+  - `"lowering_vector_abi":{"replay_key":"<canonical replay key>"}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_lowering_cli_c_api_parity_contract.py -q`
+
 `npm run check:compiler-closeout:m142` fail-closes on parity harness source/docs/package drift via:
 
 - `python scripts/check_m142_frontend_lowering_parity_contract.py`
@@ -5362,6 +5409,25 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
+
+## M142 validation/perf CLI and C API parity harness runbook
+
+For deterministic M142 validation and replay evidence, execute the parity harness validation commands against source-mode CLI and C API runs, then enforce closeout contract drift checks.
+
+- `npm run test:objc3c:m142-lowering-parity`
+- `npm run check:objc3c:library-cli-parity:source`
+- `npm run check:compiler-closeout:m142`
+
+Replay artifact anchors:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
+- `artifacts/bin/objc3c-native.exe`
+- `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+
+Recommended M142 validation contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m142_validation_cli_c_api_parity_contract.py -q`
 - `npm run test:objc3c:m143-artifact-governance`
   - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py tests/tooling/test_objc3c_m143_lowering_runtime_abi_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
   - Verifies tmp-governed default output paths, parser/AST lane-A coverage wiring, sema/type-system lane-B governance, lowering/LLVM IR/runtime-ABI lane-C governance, source-mode work-root governance, and M143 docs/package wiring.
@@ -7578,6 +7644,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain SIMD/vector type lowering anchors.
+
+## M142 integration CLI and C API parity harness
+
+- Gate intent: enforce deterministic CLI/C API parity evidence across frontend, sema, lowering/runtime, validation, and integration lanes.
+### 1.1 CLI/C API parity integration chain
+- Deterministic CLI/C API parity gate:
+  - `npm run check:objc3c:m142-cli-c-api-parity`
+- Chain order:
+  - replays `check:compiler-closeout:m142`.
+  - enforces all M142 lane contracts:
+    `tests/tooling/test_objc3c_m142_frontend_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_sema_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_lowering_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_validation_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_integration_cli_c_api_parity_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through CLI/C API parity validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain CLI/C API parity anchors.
 
 ## Current call contract
 
