@@ -115,8 +115,8 @@ def run_placeholders_lint() -> int:
 
 
 def run_unchecked_checkboxes_lint(
-    include_globs: tuple[str, ...],
-    exclude_globs: tuple[str, ...],
+    include_globs: tuple[str, ...] = DEFAULT_INCLUDE_GLOBS,
+    exclude_globs: tuple[str, ...] = DEFAULT_UNCHECKED_CHECKBOX_EXCLUDE_GLOBS,
 ) -> int:
     args: list[str] = ["--format", "json"]
     for include_glob in include_globs:

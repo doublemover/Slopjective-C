@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GLOBS: tuple[str, ...] = ("spec/planning/active/**/*.md",)
+DEFAULT_GLOBS: tuple[str, ...] = ("spec/planning/**/*.md",)
 DEFAULT_EXCLUDE_GLOBS: tuple[str, ...] = ()
 DEFAULT_POLICY_PATH = Path("spec/planning/planning_checkbox_policy.json")
 
