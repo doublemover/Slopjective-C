@@ -2246,3 +2246,35 @@ SIMD/vector packet map:
 Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
+
+## M146 sema/type @interface/@implementation parity contract (M146-B001)
+
+M146-B extends sema/type metadata to track Objective-C interface/implementation declarations and selector-level coherence.
+
+Sema/type contract markers:
+
+- `Objc3MethodInfo`
+- `Objc3InterfaceInfo`
+- `Objc3ImplementationInfo`
+- `Objc3InterfaceImplementationSummary`
+- `interfaces_total`
+- `implementations_total`
+- `type_metadata_interface_entries`
+- `type_metadata_implementation_entries`
+- `deterministic_interface_implementation_handoff`
+
+Semantic coherence diagnostics (fail-closed):
+
+- missing interface declaration for implementation
+- duplicate interface selector / duplicate implementation selector
+- incompatible method signature for selector
+
+Sema/type metadata handoff contract:
+
+- interface metadata packet: `handoff.interfaces_lexicographic`
+- implementation metadata packet: `handoff.implementations_lexicographic`
+- deterministic summary packet: `interface_implementation_summary`
+
+Recommended M146 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`

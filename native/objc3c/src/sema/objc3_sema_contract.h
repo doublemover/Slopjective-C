@@ -63,9 +63,48 @@ struct FunctionInfo {
   bool is_pure_annotation = false;
 };
 
+struct Objc3MethodInfo {
+  std::size_t arity = 0;
+  std::vector<ValueType> param_types;
+  std::vector<bool> param_is_vector;
+  std::vector<std::string> param_vector_base_spelling;
+  std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_invalid_type_suffix;
+  ValueType return_type = ValueType::I32;
+  bool return_is_vector = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
+  bool is_class_method = false;
+  bool has_definition = false;
+};
+
+struct Objc3InterfaceInfo {
+  std::string super_name;
+  std::unordered_map<std::string, Objc3MethodInfo> methods;
+};
+
+struct Objc3ImplementationInfo {
+  bool has_matching_interface = false;
+  std::unordered_map<std::string, Objc3MethodInfo> methods;
+};
+
+struct Objc3InterfaceImplementationSummary {
+  std::size_t declared_interfaces = 0;
+  std::size_t resolved_interfaces = 0;
+  std::size_t declared_implementations = 0;
+  std::size_t resolved_implementations = 0;
+  std::size_t interface_method_symbols = 0;
+  std::size_t implementation_method_symbols = 0;
+  std::size_t linked_implementation_symbols = 0;
+  bool deterministic = true;
+};
+
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
+  std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
+  std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
+  Objc3InterfaceImplementationSummary interface_implementation_summary;
   bool built = false;
 };
 
@@ -85,9 +124,40 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool is_pure_annotation = false;
 };
 
+struct Objc3SemanticMethodTypeMetadata {
+  std::string selector;
+  std::size_t arity = 0;
+  std::vector<ValueType> param_types;
+  std::vector<bool> param_is_vector;
+  std::vector<std::string> param_vector_base_spelling;
+  std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_invalid_type_suffix;
+  ValueType return_type = ValueType::I32;
+  bool return_is_vector = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
+  bool is_class_method = false;
+  bool has_definition = false;
+};
+
+struct Objc3SemanticInterfaceTypeMetadata {
+  std::string name;
+  std::string super_name;
+  std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
+};
+
+struct Objc3SemanticImplementationTypeMetadata {
+  std::string name;
+  bool has_matching_interface = false;
+  std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
+};
+
 struct Objc3SemanticTypeMetadataHandoff {
   std::vector<std::string> global_names_lexicographic;
   std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;
+  std::vector<Objc3SemanticInterfaceTypeMetadata> interfaces_lexicographic;
+  std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
+  Objc3InterfaceImplementationSummary interface_implementation_summary;
 };
 
 struct Objc3SemanticValidationOptions {

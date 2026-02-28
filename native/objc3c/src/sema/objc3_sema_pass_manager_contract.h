@@ -85,11 +85,20 @@ struct Objc3SemaParityContractSurface {
   std::size_t diagnostics_total = 0;
   std::size_t globals_total = 0;
   std::size_t functions_total = 0;
+  std::size_t interfaces_total = 0;
+  std::size_t implementations_total = 0;
   std::size_t type_metadata_global_entries = 0;
   std::size_t type_metadata_function_entries = 0;
+  std::size_t type_metadata_interface_entries = 0;
+  std::size_t type_metadata_implementation_entries = 0;
+  std::size_t interface_method_symbols_total = 0;
+  std::size_t implementation_method_symbols_total = 0;
+  std::size_t linked_implementation_symbols_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
+  bool deterministic_interface_implementation_handoff = false;
+  Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -104,7 +113,16 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.atomic_memory_order_mapping.deterministic &&
          surface.vector_type_lowering.deterministic &&
          surface.globals_total == surface.type_metadata_global_entries &&
-         surface.functions_total == surface.type_metadata_function_entries;
+         surface.functions_total == surface.type_metadata_function_entries &&
+         surface.interfaces_total == surface.type_metadata_interface_entries &&
+         surface.implementations_total == surface.type_metadata_implementation_entries &&
+         surface.interface_implementation_summary.interface_method_symbols == surface.interface_method_symbols_total &&
+         surface.interface_implementation_summary.implementation_method_symbols ==
+             surface.implementation_method_symbols_total &&
+         surface.interface_implementation_summary.linked_implementation_symbols ==
+             surface.linked_implementation_symbols_total &&
+         surface.interface_implementation_summary.deterministic &&
+         surface.deterministic_interface_implementation_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -115,6 +133,7 @@ struct Objc3SemaPassManagerResult {
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
+  bool deterministic_interface_implementation_handoff = false;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

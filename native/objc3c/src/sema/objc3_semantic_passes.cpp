@@ -413,12 +413,24 @@ static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
 }
 
+static bool SupportsGenericReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
+}
+
 static bool SupportsNullabilityReturnTypeSuffix(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
 }
 
+static bool SupportsNullabilityReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
+}
+
 static bool SupportsPointerReturnTypeDeclarator(const FunctionDecl &fn) {
   return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
+}
+
+static bool SupportsPointerReturnTypeDeclarator(const Objc3MethodDecl &method) {
+  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
 }
 
 static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
@@ -488,6 +500,130 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
                                          "'"));
     }
   }
+}
+
+static std::string MethodSelectorName(const Objc3MethodDecl &method) {
+  return method.selector.empty() ? std::string("<unknown>") : method.selector;
+}
+
+static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
+                                                const std::string &owner_name,
+                                                const std::string &owner_kind,
+                                                std::vector<std::string> &diagnostics) {
+  const std::string selector = MethodSelectorName(method);
+  for (const auto &param : method.params) {
+    if (param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param)) {
+      std::string suffix = param.generic_suffix_text;
+      if (suffix.empty()) {
+        suffix = "<...>";
+      }
+      diagnostics.push_back(MakeDiag(param.generic_line, param.generic_column, "O3S206",
+                                     "type mismatch: generic parameter type suffix '" + suffix +
+                                         "' is unsupported for selector '" + selector + "' parameter '" + param.name +
+                                         "' in " + owner_kind + " '" + owner_name + "'"));
+    }
+    if (!SupportsPointerParamTypeDeclarator(param)) {
+      for (const auto &token : param.pointer_declarator_tokens) {
+        diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                       "type mismatch: pointer parameter type declarator '" + token.text +
+                                           "' is unsupported for selector '" + selector + "' parameter '" +
+                                           param.name + "' in " + owner_kind + " '" + owner_name + "'"));
+      }
+    }
+    if (!SupportsNullabilityParamTypeSuffix(param)) {
+      for (const auto &token : param.nullability_suffix_tokens) {
+        diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                       "type mismatch: nullability parameter type suffix '" + token.text +
+                                           "' is unsupported for selector '" + selector + "' parameter '" +
+                                           param.name + "' in " + owner_kind + " '" + owner_name + "'"));
+      }
+    }
+  }
+}
+
+static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
+                                             const std::string &owner_name,
+                                             const std::string &owner_kind,
+                                             std::vector<std::string> &diagnostics) {
+  const std::string selector = MethodSelectorName(method);
+  if (method.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(method)) {
+    std::string suffix = method.return_generic_suffix_text;
+    if (suffix.empty()) {
+      suffix = "<...>";
+    }
+    diagnostics.push_back(MakeDiag(method.return_generic_line, method.return_generic_column, "O3S206",
+                                   "type mismatch: unsupported method return type suffix '" + suffix +
+                                       "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
+                                       "'"));
+  }
+  if (!SupportsPointerReturnTypeDeclarator(method)) {
+    for (const auto &token : method.return_pointer_declarator_tokens) {
+      diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                     "type mismatch: unsupported method return type declarator '" + token.text +
+                                         "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
+                                         "'"));
+    }
+  }
+  if (!SupportsNullabilityReturnTypeSuffix(method)) {
+    for (const auto &token : method.return_nullability_suffix_tokens) {
+      diagnostics.push_back(MakeDiag(token.line, token.column, "O3S206",
+                                     "type mismatch: unsupported method return type suffix '" + token.text +
+                                         "' for selector '" + selector + "' in " + owner_kind + " '" + owner_name +
+                                         "'"));
+    }
+  }
+}
+
+static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method) {
+  Objc3MethodInfo info;
+  info.arity = method.params.size();
+  info.param_types.reserve(method.params.size());
+  info.param_is_vector.reserve(method.params.size());
+  info.param_vector_base_spelling.reserve(method.params.size());
+  info.param_vector_lane_count.reserve(method.params.size());
+  info.param_has_invalid_type_suffix.reserve(method.params.size());
+  for (const auto &param : method.params) {
+    info.param_types.push_back(param.type);
+    info.param_is_vector.push_back(param.vector_spelling);
+    info.param_vector_base_spelling.push_back(param.vector_base_spelling);
+    info.param_vector_lane_count.push_back(param.vector_lane_count);
+    info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
+  }
+  info.return_type = method.return_type;
+  info.return_is_vector = method.return_vector_spelling;
+  info.return_vector_base_spelling = method.return_vector_base_spelling;
+  info.return_vector_lane_count = method.return_vector_lane_count;
+  info.is_class_method = method.is_class_method;
+  info.has_definition = method.has_body;
+  return info;
+}
+
+static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3MethodInfo &rhs) {
+  if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type || lhs.return_is_vector != rhs.return_is_vector ||
+      lhs.is_class_method != rhs.is_class_method) {
+    return false;
+  }
+  if (lhs.return_is_vector &&
+      (lhs.return_vector_base_spelling != rhs.return_vector_base_spelling ||
+       lhs.return_vector_lane_count != rhs.return_vector_lane_count)) {
+    return false;
+  }
+  for (std::size_t i = 0; i < lhs.arity; ++i) {
+    if (i >= lhs.param_types.size() || i >= lhs.param_is_vector.size() || i >= lhs.param_vector_base_spelling.size() ||
+        i >= lhs.param_vector_lane_count.size() || i >= rhs.param_types.size() || i >= rhs.param_is_vector.size() ||
+        i >= rhs.param_vector_base_spelling.size() || i >= rhs.param_vector_lane_count.size()) {
+      return false;
+    }
+    if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
+      return false;
+    }
+    if (lhs.param_is_vector[i] &&
+        (lhs.param_vector_base_spelling[i] != rhs.param_vector_base_spelling[i] ||
+         lhs.param_vector_lane_count[i] != rhs.param_vector_lane_count[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
@@ -1457,10 +1593,13 @@ Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3Semanti
 }
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
-                                                                       std::vector<std::string> &diagnostics) {
+                                                                        std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3SemanticIntegrationSurface surface;
   std::unordered_map<std::string, int> resolved_global_values;
+  Objc3InterfaceImplementationSummary interface_implementation_summary;
+  interface_implementation_summary.declared_interfaces = ast.interfaces.size();
+  interface_implementation_summary.declared_implementations = ast.implementations.size();
 
   for (const auto &global : ast.globals) {
     const bool duplicate_global = surface.globals.find(global.name) != surface.globals.end();
@@ -1555,6 +1694,115 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     }
   }
 
+  for (const auto &interface_decl : ast.interfaces) {
+    auto interface_it = surface.interfaces.find(interface_decl.name);
+    if (interface_it != surface.interfaces.end()) {
+      diagnostics.push_back(
+          MakeDiag(interface_decl.line, interface_decl.column, "O3S200", "duplicate interface '" + interface_decl.name + "'"));
+      continue;
+    }
+
+    Objc3InterfaceInfo interface_info;
+    interface_info.super_name = interface_decl.super_name;
+    for (const auto &method_decl : interface_decl.methods) {
+      ValidateMethodReturnTypeSuffixes(method_decl, interface_decl.name, "interface", diagnostics);
+      ValidateMethodParameterTypeSuffixes(method_decl, interface_decl.name, "interface", diagnostics);
+
+      const std::string selector = MethodSelectorName(method_decl);
+      if (method_decl.has_body) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
+                                       "type mismatch: interface selector '" + selector + "' in '" +
+                                           interface_decl.name + "' must not define a body"));
+      }
+
+      const auto method_insert =
+          interface_info.methods.emplace(selector, BuildMethodInfo(method_decl));
+      if (!method_insert.second) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S200",
+                                       "duplicate interface selector '" + selector + "' in interface '" +
+                                           interface_decl.name + "'"));
+        continue;
+      }
+
+      ++interface_implementation_summary.interface_method_symbols;
+    }
+
+    surface.interfaces.emplace(interface_decl.name, std::move(interface_info));
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    auto implementation_it = surface.implementations.find(implementation_decl.name);
+    if (implementation_it != surface.implementations.end()) {
+      diagnostics.push_back(MakeDiag(implementation_decl.line, implementation_decl.column, "O3S200",
+                                     "duplicate implementation '" + implementation_decl.name + "'"));
+      continue;
+    }
+
+    Objc3ImplementationInfo implementation_info;
+    const auto interface_it = surface.interfaces.find(implementation_decl.name);
+    if (interface_it == surface.interfaces.end()) {
+      diagnostics.push_back(MakeDiag(implementation_decl.line, implementation_decl.column, "O3S206",
+                                     "type mismatch: missing interface declaration for implementation '" +
+                                         implementation_decl.name + "'"));
+    } else {
+      implementation_info.has_matching_interface = true;
+    }
+
+    for (const auto &method_decl : implementation_decl.methods) {
+      ValidateMethodReturnTypeSuffixes(method_decl, implementation_decl.name, "implementation", diagnostics);
+      ValidateMethodParameterTypeSuffixes(method_decl, implementation_decl.name, "implementation", diagnostics);
+
+      const std::string selector = MethodSelectorName(method_decl);
+      if (!method_decl.has_body) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
+                                       "type mismatch: implementation selector '" + selector + "' in '" +
+                                           implementation_decl.name + "' must define a body"));
+      }
+
+      Objc3MethodInfo method_info = BuildMethodInfo(method_decl);
+      const auto method_insert =
+          implementation_info.methods.emplace(selector, std::move(method_info));
+      if (!method_insert.second) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S200",
+                                       "duplicate implementation selector '" + selector + "' in implementation '" +
+                                           implementation_decl.name + "'"));
+        continue;
+      }
+
+      ++interface_implementation_summary.implementation_method_symbols;
+      if (interface_it == surface.interfaces.end()) {
+        continue;
+      }
+
+      const auto interface_method_it = interface_it->second.methods.find(selector);
+      if (interface_method_it == interface_it->second.methods.end()) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
+                                       "type mismatch: implementation selector '" + selector + "' in '" +
+                                           implementation_decl.name + "' is not declared in interface"));
+        continue;
+      }
+
+      if (!IsCompatibleMethodSignature(interface_method_it->second, method_insert.first->second)) {
+        diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
+                                       "type mismatch: incompatible method signature for selector '" + selector +
+                                           "' in implementation '" + implementation_decl.name + "'"));
+        continue;
+      }
+
+      ++interface_implementation_summary.linked_implementation_symbols;
+    }
+
+    surface.implementations.emplace(implementation_decl.name, std::move(implementation_info));
+  }
+
+  interface_implementation_summary.resolved_interfaces = surface.interfaces.size();
+  interface_implementation_summary.resolved_implementations = surface.implementations.size();
+  interface_implementation_summary.deterministic =
+      interface_implementation_summary.linked_implementation_symbols <=
+          interface_implementation_summary.implementation_method_symbols &&
+      interface_implementation_summary.linked_implementation_symbols <=
+          interface_implementation_summary.interface_method_symbols;
+  surface.interface_implementation_summary = interface_implementation_summary;
   surface.built = true;
   return surface;
 }
@@ -1597,6 +1845,186 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.is_pure_annotation = source.is_pure_annotation;
     handoff.functions_lexicographic.push_back(std::move(metadata));
   }
+
+  std::vector<std::string> interface_names;
+  interface_names.reserve(surface.interfaces.size());
+  for (const auto &entry : surface.interfaces) {
+    interface_names.push_back(entry.first);
+  }
+  std::sort(interface_names.begin(), interface_names.end());
+
+  handoff.interfaces_lexicographic.reserve(interface_names.size());
+  for (const std::string &name : interface_names) {
+    const auto interface_it = surface.interfaces.find(name);
+    if (interface_it == surface.interfaces.end()) {
+      continue;
+    }
+
+    Objc3SemanticInterfaceTypeMetadata metadata;
+    metadata.name = name;
+    metadata.super_name = interface_it->second.super_name;
+
+    std::vector<std::string> selectors;
+    selectors.reserve(interface_it->second.methods.size());
+    for (const auto &method_entry : interface_it->second.methods) {
+      selectors.push_back(method_entry.first);
+    }
+    std::sort(selectors.begin(), selectors.end());
+
+    metadata.methods_lexicographic.reserve(selectors.size());
+    for (const std::string &selector : selectors) {
+      const auto method_it = interface_it->second.methods.find(selector);
+      if (method_it == interface_it->second.methods.end()) {
+        continue;
+      }
+      const Objc3MethodInfo &source = method_it->second;
+      Objc3SemanticMethodTypeMetadata method_metadata;
+      method_metadata.selector = selector;
+      method_metadata.arity = source.arity;
+      method_metadata.param_types = source.param_types;
+      method_metadata.param_is_vector = source.param_is_vector;
+      method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
+      method_metadata.param_vector_lane_count = source.param_vector_lane_count;
+      method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.return_type = source.return_type;
+      method_metadata.return_is_vector = source.return_is_vector;
+      method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
+      method_metadata.return_vector_lane_count = source.return_vector_lane_count;
+      method_metadata.is_class_method = source.is_class_method;
+      method_metadata.has_definition = source.has_definition;
+      metadata.methods_lexicographic.push_back(std::move(method_metadata));
+    }
+
+    handoff.interfaces_lexicographic.push_back(std::move(metadata));
+  }
+
+  std::vector<std::string> implementation_names;
+  implementation_names.reserve(surface.implementations.size());
+  for (const auto &entry : surface.implementations) {
+    implementation_names.push_back(entry.first);
+  }
+  std::sort(implementation_names.begin(), implementation_names.end());
+
+  handoff.implementations_lexicographic.reserve(implementation_names.size());
+  for (const std::string &name : implementation_names) {
+    const auto implementation_it = surface.implementations.find(name);
+    if (implementation_it == surface.implementations.end()) {
+      continue;
+    }
+
+    Objc3SemanticImplementationTypeMetadata metadata;
+    metadata.name = name;
+    metadata.has_matching_interface = implementation_it->second.has_matching_interface;
+
+    std::vector<std::string> selectors;
+    selectors.reserve(implementation_it->second.methods.size());
+    for (const auto &method_entry : implementation_it->second.methods) {
+      selectors.push_back(method_entry.first);
+    }
+    std::sort(selectors.begin(), selectors.end());
+
+    metadata.methods_lexicographic.reserve(selectors.size());
+    for (const std::string &selector : selectors) {
+      const auto method_it = implementation_it->second.methods.find(selector);
+      if (method_it == implementation_it->second.methods.end()) {
+        continue;
+      }
+      const Objc3MethodInfo &source = method_it->second;
+      Objc3SemanticMethodTypeMetadata method_metadata;
+      method_metadata.selector = selector;
+      method_metadata.arity = source.arity;
+      method_metadata.param_types = source.param_types;
+      method_metadata.param_is_vector = source.param_is_vector;
+      method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
+      method_metadata.param_vector_lane_count = source.param_vector_lane_count;
+      method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.return_type = source.return_type;
+      method_metadata.return_is_vector = source.return_is_vector;
+      method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
+      method_metadata.return_vector_lane_count = source.return_vector_lane_count;
+      method_metadata.is_class_method = source.is_class_method;
+      method_metadata.has_definition = source.has_definition;
+      metadata.methods_lexicographic.push_back(std::move(method_metadata));
+    }
+
+    handoff.implementations_lexicographic.push_back(std::move(metadata));
+  }
+
+  handoff.interface_implementation_summary = surface.interface_implementation_summary;
+  handoff.interface_implementation_summary.resolved_interfaces = handoff.interfaces_lexicographic.size();
+  handoff.interface_implementation_summary.resolved_implementations = handoff.implementations_lexicographic.size();
+  handoff.interface_implementation_summary.interface_method_symbols = 0;
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    handoff.interface_implementation_summary.interface_method_symbols += metadata.methods_lexicographic.size();
+  }
+  handoff.interface_implementation_summary.implementation_method_symbols = 0;
+  for (const auto &metadata : handoff.implementations_lexicographic) {
+    handoff.interface_implementation_summary.implementation_method_symbols += metadata.methods_lexicographic.size();
+  }
+  handoff.interface_implementation_summary.linked_implementation_symbols = 0;
+  const auto are_compatible_method_metadata = [](const Objc3SemanticMethodTypeMetadata &lhs,
+                                                 const Objc3SemanticMethodTypeMetadata &rhs) {
+    if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type || lhs.return_is_vector != rhs.return_is_vector ||
+        lhs.is_class_method != rhs.is_class_method) {
+      return false;
+    }
+    if (lhs.return_is_vector &&
+        (lhs.return_vector_base_spelling != rhs.return_vector_base_spelling ||
+         lhs.return_vector_lane_count != rhs.return_vector_lane_count)) {
+      return false;
+    }
+    for (std::size_t i = 0; i < lhs.arity; ++i) {
+      if (i >= lhs.param_types.size() || i >= lhs.param_is_vector.size() || i >= lhs.param_vector_base_spelling.size() ||
+          i >= lhs.param_vector_lane_count.size() || i >= rhs.param_types.size() || i >= rhs.param_is_vector.size() ||
+          i >= rhs.param_vector_base_spelling.size() || i >= rhs.param_vector_lane_count.size()) {
+        return false;
+      }
+      if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
+        return false;
+      }
+      if (lhs.param_is_vector[i] &&
+          (lhs.param_vector_base_spelling[i] != rhs.param_vector_base_spelling[i] ||
+           lhs.param_vector_lane_count[i] != rhs.param_vector_lane_count[i])) {
+        return false;
+      }
+    }
+    return true;
+  };
+  std::unordered_map<std::string, const Objc3SemanticInterfaceTypeMetadata *> interfaces_by_name;
+  interfaces_by_name.reserve(handoff.interfaces_lexicographic.size());
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    interfaces_by_name[metadata.name] = &metadata;
+  }
+  for (const auto &implementation : handoff.implementations_lexicographic) {
+    if (!implementation.has_matching_interface) {
+      continue;
+    }
+    const auto interface_it = interfaces_by_name.find(implementation.name);
+    if (interface_it == interfaces_by_name.end()) {
+      continue;
+    }
+    const Objc3SemanticInterfaceTypeMetadata &interface_metadata = *interface_it->second;
+    for (const auto &implementation_method : implementation.methods_lexicographic) {
+      const auto interface_method_it = std::find_if(
+          interface_metadata.methods_lexicographic.begin(),
+          interface_metadata.methods_lexicographic.end(),
+          [&implementation_method](const Objc3SemanticMethodTypeMetadata &candidate) {
+            return candidate.selector == implementation_method.selector;
+          });
+      if (interface_method_it == interface_metadata.methods_lexicographic.end()) {
+        continue;
+      }
+      if (are_compatible_method_metadata(*interface_method_it, implementation_method)) {
+        ++handoff.interface_implementation_summary.linked_implementation_symbols;
+      }
+    }
+  }
+  handoff.interface_implementation_summary.deterministic =
+      handoff.interface_implementation_summary.deterministic &&
+      handoff.interface_implementation_summary.linked_implementation_symbols <=
+          handoff.interface_implementation_summary.implementation_method_symbols &&
+      handoff.interface_implementation_summary.linked_implementation_symbols <=
+          handoff.interface_implementation_summary.interface_method_symbols;
   return handoff;
 }
 
@@ -1605,19 +2033,97 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     return false;
   }
   if (!std::is_sorted(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
-                      [](const Objc3SemanticFunctionTypeMetadata &lhs, const Objc3SemanticFunctionTypeMetadata &rhs) {
+                       [](const Objc3SemanticFunctionTypeMetadata &lhs, const Objc3SemanticFunctionTypeMetadata &rhs) {
+                         return lhs.name < rhs.name;
+                       })) {
+    return false;
+  }
+  if (!std::is_sorted(handoff.interfaces_lexicographic.begin(), handoff.interfaces_lexicographic.end(),
+                      [](const Objc3SemanticInterfaceTypeMetadata &lhs, const Objc3SemanticInterfaceTypeMetadata &rhs) {
                         return lhs.name < rhs.name;
                       })) {
     return false;
   }
-  return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
-                     [](const Objc3SemanticFunctionTypeMetadata &metadata) {
-                       return metadata.param_types.size() == metadata.arity &&
-                              metadata.param_is_vector.size() == metadata.arity &&
-                              metadata.param_vector_base_spelling.size() == metadata.arity &&
-                              metadata.param_vector_lane_count.size() == metadata.arity &&
-                              metadata.param_has_invalid_type_suffix.size() == metadata.arity;
-                     });
+  if (!std::is_sorted(
+          handoff.implementations_lexicographic.begin(),
+          handoff.implementations_lexicographic.end(),
+          [](const Objc3SemanticImplementationTypeMetadata &lhs, const Objc3SemanticImplementationTypeMetadata &rhs) {
+            return lhs.name < rhs.name;
+          })) {
+    return false;
+  }
+
+  const auto is_deterministic_method_metadata = [](const Objc3SemanticMethodTypeMetadata &metadata) {
+    return metadata.param_types.size() == metadata.arity &&
+           metadata.param_is_vector.size() == metadata.arity &&
+           metadata.param_vector_base_spelling.size() == metadata.arity &&
+           metadata.param_vector_lane_count.size() == metadata.arity &&
+           metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+  };
+
+  const bool deterministic_functions =
+      std::all_of(handoff.functions_lexicographic.begin(),
+                  handoff.functions_lexicographic.end(),
+                  [](const Objc3SemanticFunctionTypeMetadata &metadata) {
+                    return metadata.param_types.size() == metadata.arity &&
+                           metadata.param_is_vector.size() == metadata.arity &&
+                           metadata.param_vector_base_spelling.size() == metadata.arity &&
+                           metadata.param_vector_lane_count.size() == metadata.arity &&
+                           metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+                  });
+
+  const bool deterministic_interfaces =
+      std::all_of(handoff.interfaces_lexicographic.begin(),
+                  handoff.interfaces_lexicographic.end(),
+                  [&is_deterministic_method_metadata](const Objc3SemanticInterfaceTypeMetadata &metadata) {
+                    return std::is_sorted(metadata.methods_lexicographic.begin(),
+                                          metadata.methods_lexicographic.end(),
+                                          [](const Objc3SemanticMethodTypeMetadata &lhs,
+                                             const Objc3SemanticMethodTypeMetadata &rhs) {
+                                            return lhs.selector < rhs.selector;
+                                          }) &&
+                           std::all_of(metadata.methods_lexicographic.begin(),
+                                       metadata.methods_lexicographic.end(),
+                                       is_deterministic_method_metadata);
+                  });
+
+  const bool deterministic_implementations =
+      std::all_of(
+          handoff.implementations_lexicographic.begin(),
+          handoff.implementations_lexicographic.end(),
+          [&is_deterministic_method_metadata](const Objc3SemanticImplementationTypeMetadata &metadata) {
+            return std::is_sorted(metadata.methods_lexicographic.begin(),
+                                  metadata.methods_lexicographic.end(),
+                                  [](const Objc3SemanticMethodTypeMetadata &lhs,
+                                     const Objc3SemanticMethodTypeMetadata &rhs) {
+                                    return lhs.selector < rhs.selector;
+                                  }) &&
+                   std::all_of(metadata.methods_lexicographic.begin(),
+                               metadata.methods_lexicographic.end(),
+                               is_deterministic_method_metadata);
+          });
+
+  if (!deterministic_functions || !deterministic_interfaces || !deterministic_implementations) {
+    return false;
+  }
+
+  std::size_t interface_method_symbols = 0;
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    interface_method_symbols += metadata.methods_lexicographic.size();
+  }
+  std::size_t implementation_method_symbols = 0;
+  for (const auto &metadata : handoff.implementations_lexicographic) {
+    implementation_method_symbols += metadata.methods_lexicographic.size();
+  }
+
+  const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
+  return summary.deterministic &&
+         summary.resolved_interfaces == handoff.interfaces_lexicographic.size() &&
+         summary.resolved_implementations == handoff.implementations_lexicographic.size() &&
+         summary.interface_method_symbols == interface_method_symbols &&
+         summary.implementation_method_symbols == implementation_method_symbols &&
+         summary.linked_implementation_symbols <= summary.implementation_method_symbols &&
+         summary.linked_implementation_symbols <= summary.interface_method_symbols;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
