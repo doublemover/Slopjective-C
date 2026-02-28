@@ -635,6 +635,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain atomics/memory-order mapping anchors.
 
+## M193 integration SIMD/vector type lowering
+
+- Gate intent: enforce deterministic SIMD/vector type lowering evidence across all lanes.
+### 1.1 SIMD/vector type lowering integration chain
+- Deterministic SIMD/vector type lowering gate:
+  - `npm run check:objc3c:m193-simd-vector-lowering`
+- Chain order:
+  - replays `check:objc3c:m194-atomics-memory-order`.
+  - enforces all M193 lane contracts:
+    `tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_lowering_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_validation_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_integration_simd_vector_lowering_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through SIMD/vector type lowering validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain SIMD/vector type lowering anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

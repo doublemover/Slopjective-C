@@ -137,6 +137,8 @@ jobs:
         run: npm run check:objc3c:m195-system-extension-policy
       - name: 43 Run M194 atomics memory-order mapping gate
         run: npm run check:objc3c:m194-atomics-memory-order
+      - name: 44 Run M193 SIMD vector type lowering gate
+        run: npm run check:objc3c:m193-simd-vector-lowering
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
