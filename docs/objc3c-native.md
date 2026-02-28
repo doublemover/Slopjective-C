@@ -905,6 +905,37 @@ Recommended M168 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_frontend_block_storage_escape_parser_contract.py -q`
 
+## M169 frontend block copy/dispose helper parser/AST surface (M169-A001)
+
+Frontend parser/AST now emits deterministic block copy/dispose helper carrier
+metadata derived from block capture/storage shape.
+
+M169 parser/AST surface details:
+
+- copy/dispose helper anchors:
+  - `BuildBlockCopyDisposeProfile(...)`
+  - `BuildBlockCopyHelperSymbol(...)`
+  - `BuildBlockDisposeHelperSymbol(...)`
+- parser assignment anchors:
+  - `block_copy_helper_required`
+  - `block_dispose_helper_required`
+  - `block_copy_dispose_profile`
+  - `block_copy_helper_symbol`
+  - `block_dispose_helper_symbol`
+  - `block_copy_dispose_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable helper metadata from block literal shape:
+  - copy/dispose helper enablement follows deterministic capture/byref counts.
+  - helper symbol names remain stable from source coordinates and capture shape.
+  - copy/dispose profile normalization remains tied to normalized storage/escape
+    metadata and stable helper enablement parity.
+
+Recommended M169 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -4732,6 +4763,64 @@ Sema/type metadata handoff contract:
 Recommended M168 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_sema_block_storage_escape_contract.py -q`
+
+## M169 sema/type block copy-dispose helper semantics contract (M169-B001)
+
+M169-B lifts parser-authored block copy/dispose helper metadata into sema
+integration, type-metadata handoff, and pass-manager parity packets so
+lowering/runtime lanes consume deterministic helper contracts.
+
+Sema/type block copy-dispose contract markers:
+
+- `Objc3BlockCopyDisposeSiteMetadata`
+- `Objc3BlockCopyDisposeSemanticsSummary`
+- `BuildBlockCopyDisposeSiteMetadataLexicographic`
+- `BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface`
+- `BuildBlockCopyDisposeSemanticsSummaryFromTypeMetadataHandoff`
+- `block_copy_dispose_sites_total`
+- `block_copy_dispose_copy_helper_required_sites_total`
+- `block_copy_dispose_dispose_helper_required_sites_total`
+- `block_copy_dispose_contract_violation_sites_total`
+- `deterministic_block_copy_dispose_handoff`
+
+Deterministic block copy-dispose invariants (fail-closed):
+
+- block copy-dispose site metadata must remain lexicographically sorted.
+- mutable-capture and byref-slot counts must match capture-entry totals.
+- copy-helper/dispose-helper/profile-normalized/symbolized counters must remain
+  bounded by `block_literal_sites`.
+- copy-helper-required counters must equal dispose-helper-required counters.
+- contract violation counters must remain bounded by `block_literal_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.block_copy_dispose_sites_lexicographic = BuildBlockCopyDisposeSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.block_copy_dispose_semantics_summary = BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface(surface);`
+- handoff site packet:
+  `handoff.block_copy_dispose_sites_lexicographic = surface.block_copy_dispose_sites_lexicographic;`
+- handoff summary packet:
+  `handoff.block_copy_dispose_semantics_summary = BuildBlockCopyDisposeSemanticsSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `block_copy_dispose_sites_total`
+  - `block_copy_dispose_mutable_capture_count_total`
+  - `block_copy_dispose_byref_slot_count_total`
+  - `block_copy_dispose_parameter_entries_total`
+  - `block_copy_dispose_capture_entries_total`
+  - `block_copy_dispose_body_statement_entries_total`
+  - `block_copy_dispose_copy_helper_required_sites_total`
+  - `block_copy_dispose_dispose_helper_required_sites_total`
+  - `block_copy_dispose_profile_normalized_sites_total`
+  - `block_copy_dispose_copy_helper_symbolized_sites_total`
+  - `block_copy_dispose_dispose_helper_symbolized_sites_total`
+  - `block_copy_dispose_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_block_copy_dispose_handoff`
+
+Recommended M169 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -8176,6 +8265,66 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py -q`
 
+## Block copy-dispose helper lowering artifact contract (M169-C001)
+
+M169-C lowers sema-authored block copy/dispose helper semantics into deterministic
+artifact packets and IR metadata publication surfaces.
+
+Lowering contract markers:
+
+- `kObjc3BlockCopyDisposeLoweringLaneContract`
+- `Objc3BlockCopyDisposeLoweringContract`
+- `IsValidObjc3BlockCopyDisposeLoweringContract(...)`
+- `Objc3BlockCopyDisposeLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `block_literal_sites=<N>`
+- `mutable_capture_count_total=<N>`
+- `byref_slot_count_total=<N>`
+- `parameter_entries_total=<N>`
+- `capture_entries_total=<N>`
+- `body_statement_entries_total=<N>`
+- `copy_helper_required_sites=<N>`
+- `dispose_helper_required_sites=<N>`
+- `profile_normalized_sites=<N>`
+- `copy_helper_symbolized_sites=<N>`
+- `dispose_helper_symbolized_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m169-block-copy-dispose-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_block_copy_dispose_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_mutable_capture_count`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_byref_slot_count`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_parameter_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_capture_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_body_statement_entries`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_copy_helper_required_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_dispose_helper_required_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_profile_normalized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_copy_helper_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_dispose_helper_symbolized_sites`
+- `frontend.pipeline.sema_pass_manager.block_copy_dispose_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_block_copy_dispose_replay_key`
+- `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface`
+- `lowering_block_copy_dispose.replay_key`
+- `lowering_block_copy_dispose.lane_contract`
+
+IR publication markers:
+
+- `; block_copy_dispose_lowering = block_literal_sites=<N>;mutable_capture_count_total=<N>;byref_slot_count_total=<N>;parameter_entries_total=<N>;capture_entries_total=<N>;body_statement_entries_total=<N>;copy_helper_required_sites=<N>;dispose_helper_required_sites=<N>;profile_normalized_sites=<N>;copy_helper_symbolized_sites=<N>;dispose_helper_symbolized_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m169-block-copy-dispose-lowering-v1`
+- `; frontend_objc_block_copy_dispose_lowering_profile = block_literal_sites=<N>, mutable_capture_count_total=<N>, byref_slot_count_total=<N>, parameter_entries_total=<N>, capture_entries_total=<N>, body_statement_entries_total=<N>, copy_helper_required_sites=<N>, dispose_helper_required_sites=<N>, profile_normalized_sites=<N>, copy_helper_symbolized_sites=<N>, dispose_helper_symbolized_sites=<N>, contract_violation_sites=<N>, deterministic_block_copy_dispose_lowering_handoff=<bool>`
+- `!objc3.objc_block_copy_dispose_lowering = !{!22}`
+- `!22 = !{i64 <block_literal_sites>, i64 <mutable_capture_count_total>, i64 <byref_slot_count_total>, i64 <parameter_entries_total>, i64 <capture_entries_total>, i64 <body_statement_entries_total>, i64 <copy_helper_required_sites>, i64 <dispose_helper_required_sites>, i64 <profile_normalized_sites>, i64 <copy_helper_symbolized_sites>, i64 <dispose_helper_symbolized_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -10221,6 +10370,36 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py -q
 ```
 
+## M169 validation/conformance/perf block copy-dispose runbook
+
+Block copy-dispose helper validation runbook verifies deterministic parser/sema/lowering packet replay for block helper generation metadata.
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
+```
+
+Block copy-dispose evidence packet fields:
+
+- `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_block_copy_dispose_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_block_copy_dispose_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface.deterministic_handoff`
+  - `lowering_block_copy_dispose.replay_key`
+- `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.ll`
+  - `block_copy_dispose_lowering`
+  - `frontend_objc_block_copy_dispose_lowering_profile`
+  - `!objc3.objc_block_copy_dispose_lowering = !{!22}`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -10895,6 +11074,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m168_lowering_block_storage_escape_contract.py`
   - `tests/tooling/test_objc3c_m168_validation_block_storage_escape_contract.py`
   - `tests/tooling/test_objc3c_m168_integration_block_storage_escape_contract.py`
+
+## M169 integration block copy-dispose helper contract
+
+- Integration gate:
+  - `npm run check:objc3c:m169-block-copy-dispose-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m169`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m169_frontend_block_copy_dispose_helper_parser_contract.py`
+  - `tests/tooling/test_objc3c_m169_sema_block_copy_dispose_contract.py`
+  - `tests/tooling/test_objc3c_m169_lowering_block_copy_dispose_contract.py`
+  - `tests/tooling/test_objc3c_m169_validation_block_copy_dispose_contract.py`
+  - `tests/tooling/test_objc3c_m169_integration_block_copy_dispose_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
