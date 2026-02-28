@@ -151,6 +151,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3InterfaceImplementationSummary &interface_implementation_summary =
       type_metadata_handoff.interface_implementation_summary;
   const Objc3FrontendProtocolCategorySummary &protocol_category_summary = pipeline_result.protocol_category_summary;
+  const Objc3FrontendSelectorNormalizationSummary &selector_normalization_summary =
+      pipeline_result.selector_normalization_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -317,6 +319,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << protocol_category_summary.resolved_protocol_symbols
            << ",\"type_metadata_category_entries\":"
            << protocol_category_summary.resolved_category_symbols
+           << ",\"deterministic_selector_normalization_handoff\":"
+           << (selector_normalization_summary.deterministic_selector_normalization_handoff ? "true" : "false")
+           << ",\"selector_method_declaration_entries\":"
+           << selector_normalization_summary.method_declaration_entries
+           << ",\"selector_normalized_method_declarations\":"
+           << selector_normalization_summary.normalized_method_declarations
+           << ",\"selector_piece_entries\":"
+           << selector_normalization_summary.selector_piece_entries
+           << ",\"selector_piece_parameter_links\":"
+           << selector_normalization_summary.selector_piece_parameter_links
            << "},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
@@ -368,6 +380,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << protocol_category_summary.linked_category_symbols
            << ",\"deterministic_handoff\":"
            << (protocol_category_summary.deterministic_protocol_category_handoff ? "true" : "false")
+           << "}"
+           << ",\"objc_selector_normalization_surface\":{\"method_declaration_entries\":"
+           << selector_normalization_summary.method_declaration_entries
+           << ",\"normalized_method_declarations\":"
+           << selector_normalization_summary.normalized_method_declarations
+           << ",\"selector_piece_entries\":"
+           << selector_normalization_summary.selector_piece_entries
+           << ",\"selector_piece_parameter_links\":"
+           << selector_normalization_summary.selector_piece_parameter_links
+           << ",\"deterministic_handoff\":"
+           << (selector_normalization_summary.deterministic_selector_normalization_handoff ? "true" : "false")
            << "}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
@@ -480,11 +503,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.protocol_method_symbols = protocol_category_summary.protocol_method_symbols;
   ir_frontend_metadata.category_method_symbols = protocol_category_summary.category_method_symbols;
   ir_frontend_metadata.linked_category_symbols = protocol_category_summary.linked_category_symbols;
+  ir_frontend_metadata.selector_method_declaration_entries = selector_normalization_summary.method_declaration_entries;
+  ir_frontend_metadata.selector_normalized_method_declarations =
+      selector_normalization_summary.normalized_method_declarations;
+  ir_frontend_metadata.selector_piece_entries = selector_normalization_summary.selector_piece_entries;
+  ir_frontend_metadata.selector_piece_parameter_links = selector_normalization_summary.selector_piece_parameter_links;
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
       interface_implementation_summary.deterministic;
   ir_frontend_metadata.deterministic_protocol_category_handoff =
       protocol_category_summary.deterministic_protocol_category_handoff;
+  ir_frontend_metadata.deterministic_selector_normalization_handoff =
+      selector_normalization_summary.deterministic_selector_normalization_handoff;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {

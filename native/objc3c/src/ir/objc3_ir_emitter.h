@@ -30,6 +30,11 @@ struct Objc3IRFrontendMetadata {
   std::size_t category_method_symbols = 0;
   std::size_t linked_category_symbols = 0;
   bool deterministic_protocol_category_handoff = false;
+  std::size_t selector_method_declaration_entries = 0;
+  std::size_t selector_normalized_method_declarations = 0;
+  std::size_t selector_piece_entries = 0;
+  std::size_t selector_piece_parameter_links = 0;
+  bool deterministic_selector_normalization_handoff = false;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };

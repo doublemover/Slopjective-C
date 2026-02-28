@@ -57,6 +57,14 @@ struct Objc3FrontendProtocolCategorySummary {
   bool deterministic_protocol_category_handoff = true;
 };
 
+struct Objc3FrontendSelectorNormalizationSummary {
+  std::size_t method_declaration_entries = 0;
+  std::size_t normalized_method_declarations = 0;
+  std::size_t selector_piece_entries = 0;
+  std::size_t selector_piece_parameter_links = 0;
+  bool deterministic_selector_normalization_handoff = true;
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
@@ -65,6 +73,7 @@ struct Objc3FrontendPipelineResult {
   Objc3SemanticIntegrationSurface integration_surface;
   Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
   Objc3FrontendProtocolCategorySummary protocol_category_summary;
+  Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };

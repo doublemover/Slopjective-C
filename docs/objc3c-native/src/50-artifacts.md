@@ -2269,6 +2269,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
 
+## Selector-normalization lowering artifact contract (M148-C001)
+
+M148-C extends lowering/runtime ABI artifact publication with selector-normalized method declaration envelope markers.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m148/lowering-selector-normalization-contract/selector-normalization-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_selector_normalization_handoff`
+- `frontend.pipeline.sema_pass_manager.selector_method_declaration_entries`
+- `frontend.pipeline.sema_pass_manager.selector_normalized_method_declarations`
+- `frontend.pipeline.sema_pass_manager.selector_piece_entries`
+- `frontend.pipeline.sema_pass_manager.selector_piece_parameter_links`
+- `frontend.pipeline.semantic_surface.objc_selector_normalization_surface`
+
+IR publication markers:
+
+- `; frontend_objc_selector_normalization_profile = method_declaration_entries=<N>, normalized_method_declarations=<N>, selector_piece_entries=<N>, selector_piece_parameter_links=<N>, deterministic_selector_normalization_handoff=<bool>`
+- `!objc3.objc_selector_normalization = !{!3}`
+- `!3 = !{i64 <method_declaration_entries>, i64 <normalized_method_declarations>, i64 <selector_piece_entries>, i64 <selector_piece_parameter_links>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

@@ -196,6 +196,54 @@ Objc3FrontendProtocolCategorySummary BuildProtocolCategorySummary(
   return summary;
 }
 
+template <typename Container>
+void AccumulateSelectorNormalizationSummary(const Container &declarations,
+                                           Objc3FrontendSelectorNormalizationSummary &summary) {
+  for (const auto &declaration : declarations) {
+    for (const auto &method : declaration.methods) {
+      ++summary.method_declaration_entries;
+      summary.selector_piece_entries += method.selector_pieces.size();
+
+      std::size_t method_parameter_links = 0;
+      bool method_parameter_names_complete = true;
+      for (const auto &piece : method.selector_pieces) {
+        if (!piece.has_parameter) {
+          continue;
+        }
+        ++method_parameter_links;
+        ++summary.selector_piece_parameter_links;
+        if (piece.parameter_name.empty()) {
+          method_parameter_names_complete = false;
+        }
+      }
+
+      if (method.selector_is_normalized) {
+        ++summary.normalized_method_declarations;
+      }
+
+      summary.deterministic_selector_normalization_handoff =
+          summary.deterministic_selector_normalization_handoff &&
+          (!method.selector_pieces.empty() || method.selector.empty()) &&
+          (method.selector_is_normalized || method.selector_pieces.empty()) &&
+          method_parameter_names_complete &&
+          method_parameter_links <= method.params.size() &&
+          method.params.size() <= method.selector_pieces.size();
+    }
+  }
+}
+
+Objc3FrontendSelectorNormalizationSummary BuildSelectorNormalizationSummary(const Objc3Program &program) {
+  Objc3FrontendSelectorNormalizationSummary summary;
+  AccumulateSelectorNormalizationSummary(program.protocols, summary);
+  AccumulateSelectorNormalizationSummary(program.interfaces, summary);
+  AccumulateSelectorNormalizationSummary(program.implementations, summary);
+  summary.deterministic_selector_normalization_handoff =
+      summary.deterministic_selector_normalization_handoff &&
+      summary.normalized_method_declarations <= summary.method_declaration_entries &&
+      summary.selector_piece_parameter_links <= summary.selector_piece_entries;
+  return summary;
+}
+
 }  // namespace
 
 Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
@@ -227,6 +275,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
   result.program = std::move(parse_result.program);
   result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
+  result.selector_normalization_summary =
+      BuildSelectorNormalizationSummary(Objc3ParsedProgramAst(result.program));
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,

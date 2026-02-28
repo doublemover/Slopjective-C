@@ -119,6 +119,13 @@ class Objc3IREmitter {
         << ", linked_category_symbols=" << frontend_metadata_.linked_category_symbols
         << ", deterministic_protocol_category_handoff="
         << (frontend_metadata_.deterministic_protocol_category_handoff ? "true" : "false") << "\n";
+    out << "; frontend_objc_selector_normalization_profile = method_declaration_entries="
+        << frontend_metadata_.selector_method_declaration_entries
+        << ", normalized_method_declarations=" << frontend_metadata_.selector_normalized_method_declarations
+        << ", selector_piece_entries=" << frontend_metadata_.selector_piece_entries
+        << ", selector_piece_parameter_links=" << frontend_metadata_.selector_piece_parameter_links
+        << ", deterministic_selector_normalization_handoff="
+        << (frontend_metadata_.deterministic_selector_normalization_handoff ? "true" : "false") << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
     if (runtime_dispatch_call_emitted_) {
@@ -242,6 +249,7 @@ class Objc3IREmitter {
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";
+    out << "!objc3.objc_selector_normalization = !{!3}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -264,7 +272,12 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.protocol_method_symbols) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.category_method_symbols) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.linked_category_symbols) << ", i1 "
-        << (frontend_metadata_.deterministic_protocol_category_handoff ? 1 : 0) << "}\n\n";
+        << (frontend_metadata_.deterministic_protocol_category_handoff ? 1 : 0) << "}\n";
+    out << "!3 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.selector_method_declaration_entries)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.selector_normalized_method_declarations)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.selector_piece_entries) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.selector_piece_parameter_links) << ", i1 "
+        << (frontend_metadata_.deterministic_selector_normalization_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
