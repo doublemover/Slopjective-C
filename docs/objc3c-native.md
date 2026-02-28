@@ -227,6 +227,37 @@ Recommended M148 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
 
+## M149 frontend @property grammar and attribute parsing
+
+Frontend parser/AST now accepts Objective-C property declarations within container bodies and captures attribute /
+accessor-modifier metadata in a deterministic structure.
+
+M149 parser surface details:
+
+- Lexer contract emits dedicated token:
+  - `KwAtProperty`
+- Property parser helpers:
+  - `ParseObjcPropertyDecl(...)`
+  - `ParseObjcPropertyAttributes(...)`
+  - `ParseObjcPropertyAttributeValueText()`
+  - `ApplyObjcPropertyAttributes(...)`
+- Container integration:
+  - `@protocol`, `@interface`, and `@implementation` now accept `@property ...;` entries.
+  - parsed properties are stored in `properties` vectors on container AST nodes.
+
+Deterministic recovery/diagnostic anchors:
+
+- invalid property attribute/name failures:
+  - `invalid Objective-C @property attribute`
+  - `invalid Objective-C @property identifier`
+- malformed attribute list / declaration termination:
+  - `missing ')' after Objective-C @property attribute list`
+  - `missing ';' after Objective-C @property declaration`
+
+Recommended M149 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3141,6 +3172,40 @@ Sema/type metadata handoff contract:
 Recommended M148 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`
+
+## M149 sema/type @property attribute and accessor modifier contract (M149-B001)
+
+M149-B extends sema/type metadata and pass-manager parity surfaces for Objective-C `@property` declarations,
+attribute packs, and accessor selector modifiers.
+
+Sema/type contract markers:
+
+- `Objc3PropertyAttributeSummary`
+- `Objc3PropertyInfo`
+- `property_attribute_summary`
+- `property_attribute_entries_total`
+- `property_attribute_contract_violations_total`
+- `has_accessor_selector_contract_violation`
+- `has_invalid_attribute_contract`
+- `deterministic_property_attribute_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- unknown `@property` attribute
+- duplicate `@property` attribute
+- invalid `getter` / `setter` selector contracts
+- conflicting attribute families (`readonly/readwrite`, `atomic/nonatomic`, ownership modifiers)
+- incompatible property signature between interface and implementation
+
+Sema/type metadata handoff contract:
+
+- property summary packet: `handoff.property_attribute_summary`
+- interface/implementation property packets: `properties_lexicographic`
+- parity packet gate: `result.parity_surface.deterministic_property_attribute_handoff`
+
+Recommended M149 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5559,6 +5624,38 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
 
+## Property-attribute lowering artifact contract (M149-C001)
+
+M149-C extends lowering/runtime ABI artifact publication with `@property` grammar envelopes covering attribute and accessor-modifier summaries.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m149/lowering-property-attribute-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m149/lowering-property-attribute-contract/property-attribute-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_property_attribute_handoff`
+- `frontend.pipeline.sema_pass_manager.property_declaration_entries`
+- `frontend.pipeline.sema_pass_manager.property_attribute_entries`
+- `frontend.pipeline.sema_pass_manager.property_attribute_value_entries`
+- `frontend.pipeline.sema_pass_manager.property_accessor_modifier_entries`
+- `frontend.pipeline.sema_pass_manager.property_getter_selector_entries`
+- `frontend.pipeline.sema_pass_manager.property_setter_selector_entries`
+- `frontend.pipeline.semantic_surface.objc_property_attribute_surface`
+
+IR publication markers:
+
+- `; frontend_objc_property_attribute_profile = property_declaration_entries=<N>, property_attribute_entries=<N>, property_attribute_value_entries=<N>, property_accessor_modifier_entries=<N>, property_getter_selector_entries=<N>, property_setter_selector_entries=<N>, deterministic_property_attribute_handoff=<bool>`
+- `!objc3.objc_property_attribute = !{!4}`
+- `!4 = !{i64 <property_declaration_entries>, i64 <property_attribute_entries>, i64 <property_attribute_value_entries>, i64 <property_accessor_modifier_entries>, i64 <property_getter_selector_entries>, i64 <property_setter_selector_entries>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -5942,6 +6039,16 @@ From repo root, execute deterministic M148 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py -q`
 - `npm run check:objc3c:m148-selector-normalization`
+
+## M149 validation @property grammar and attribute parsing runbook
+
+From repo root, execute deterministic M149 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py -q`
+- `npm run check:objc3c:m149-property-attributes`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -7680,6 +7787,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py`
   - `tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py`
   - `tests/tooling/test_objc3c_m148_integration_selector_normalization_contract.py`
+
+## M149 integration @property grammar and attribute parsing
+
+- Integration gate:
+  - `npm run check:objc3c:m149-property-attributes`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m149_frontend_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_lowering_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_validation_property_attribute_contract.py`
+  - `tests/tooling/test_objc3c_m149_integration_property_attribute_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
