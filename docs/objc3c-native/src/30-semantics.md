@@ -2066,3 +2066,31 @@ Foreign type import diagnostics packet map:
 Recommended M199 sema/type foreign type import diagnostics command:
 
 - `python -m pytest tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py -q`
+
+## M198 sema/type swift metadata bridge
+
+For deterministic sema/type Swift metadata-bridge behavior, capture replay-stable packet evidence from parser token-metadata capture, semantic suffix validation hooks, and pass-manager isolation handoff surfaces.
+
+Swift metadata bridge packet map:
+
+- `swift metadata packet 1.1 deterministic sema/type bridge architecture anchors` -> `m198_sema_type_swift_metadata_architecture_packet`
+- `swift metadata packet 1.2 deterministic sema/type bridge isolation anchors` -> `m198_sema_type_swift_metadata_isolation_packet`
+
+### 1.1 Deterministic sema/type swift metadata bridge architecture packet
+
+- Source parser metadata-capture anchors: `static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, const Token &token) {`, `return MakeObjc3SemaTokenMetadata(kind, token.text, token.line, token.column);`, `MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator, Previous()));`, and `MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));`.
+- Source AST metadata-carrier anchors: `std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;`, `std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;`, `std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;`, and `std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;`.
+- Source sema validation anchors: `ValidateReturnTypeSuffixes(fn, diagnostics);`, `ValidateParameterTypeSuffixes(fn, diagnostics);`, `for (const auto &token : param.pointer_declarator_tokens) {`, `for (const auto &token : param.nullability_suffix_tokens) {`, `for (const auto &token : fn.return_pointer_declarator_tokens) {`, and `for (const auto &token : fn.return_nullability_suffix_tokens) {`.
+- Source type-metadata bridge anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`, `metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;`, and `metadata.param_has_invalid_type_suffix.size() == metadata.arity;`.
+- Deterministic sema/type Swift metadata bridge architecture packet key: `m198_sema_type_swift_metadata_architecture_packet`.
+
+### 1.2 Deterministic sema/type swift metadata bridge isolation packet
+
+- Source pass-manager isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Pipeline bridge transport anchors: `sema_input.program = &result.program;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Manifest sema/type parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Deterministic sema/type Swift metadata bridge isolation packet key: `m198_sema_type_swift_metadata_isolation_packet`.
+
+Recommended M198 sema/type Swift metadata bridge validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py -q`
