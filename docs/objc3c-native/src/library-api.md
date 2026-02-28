@@ -555,6 +555,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain Swift metadata-bridge anchors.
 
+## M197 integration C++ interop shim strategy
+
+- Gate intent: enforce deterministic C++ interop-shim evidence across all lanes.
+### 1.1 C++ interop-shim integration chain
+- Deterministic C++ interop-shim gate:
+  - `npm run check:objc3c:m197-cpp-interop-shim`
+- Chain order:
+  - replays `check:objc3c:m198-swift-metadata-bridge`.
+  - enforces all M197 lane contracts:
+    `tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_lowering_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_validation_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_integration_cpp_interop_shim_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through C++ interop-shim validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C++ interop-shim anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

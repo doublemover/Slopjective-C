@@ -129,6 +129,8 @@ jobs:
         run: npm run check:objc3c:m199-foreign-type-diagnostics
       - name: 39 Run M198 swift metadata bridge gate
         run: npm run check:objc3c:m198-swift-metadata-bridge
+      - name: 40 Run M197 C++ interop shim gate
+        run: npm run check:objc3c:m197-cpp-interop-shim
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
