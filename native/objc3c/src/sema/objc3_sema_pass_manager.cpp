@@ -24,6 +24,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());
     input.diagnostics_bus.PublishBatch(pass_diagnostics);
     result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();
+    result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();
   }
+  result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);
+  result.deterministic_type_metadata_handoff =
+      IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);
   return result;
 }

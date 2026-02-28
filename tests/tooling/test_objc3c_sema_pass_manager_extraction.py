@@ -15,15 +15,20 @@ def _read(path: Path) -> str:
 
 def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     contract = _read(PASS_MANAGER_CONTRACT)
+    assert "kObjc3SemaPassManagerContractVersionMajor" in contract
     assert "enum class Objc3SemaPassId {" in contract
     assert "BuildIntegrationSurface" in contract
     assert "ValidateBodies" in contract
     assert "ValidatePureContract" in contract
     assert "kObjc3SemaPassOrder" in contract
+    assert "IsMonotonicObjc3SemaDiagnosticsAfterPass(" in contract
     assert "struct Objc3SemaDiagnosticsBus {" in contract
     assert "PublishBatch(const std::vector<std::string> &batch) const" in contract
     assert "std::size_t Count() const" in contract
     assert "std::vector<std::string> diagnostics;" in contract
+    assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
+    assert "Objc3SemanticTypeMetadataHandoff type_metadata_handoff;" in contract
+    assert "bool deterministic_type_metadata_handoff = false;" in contract
 
 
 def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
@@ -37,6 +42,9 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());" in source
     assert "input.diagnostics_bus.PublishBatch(pass_diagnostics);" in source
     assert "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();" in source
+    assert "result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();" in source
+    assert "result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);" in source
+    assert "result.deterministic_type_metadata_handoff =" in source
 
 
 def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:

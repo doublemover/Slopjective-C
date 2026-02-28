@@ -1191,6 +1191,58 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   return surface;
 }
 
+Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3SemanticTypeMetadataHandoff handoff;
+  handoff.global_names_lexicographic.reserve(surface.globals.size());
+  for (const auto &global : surface.globals) {
+    handoff.global_names_lexicographic.push_back(global.first);
+  }
+  std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());
+
+  std::vector<std::string> function_names;
+  function_names.reserve(surface.functions.size());
+  for (const auto &entry : surface.functions) {
+    function_names.push_back(entry.first);
+  }
+  std::sort(function_names.begin(), function_names.end());
+
+  handoff.functions_lexicographic.reserve(function_names.size());
+  for (const std::string &name : function_names) {
+    const auto function_it = surface.functions.find(name);
+    if (function_it == surface.functions.end()) {
+      continue;
+    }
+    const FunctionInfo &source = function_it->second;
+    Objc3SemanticFunctionTypeMetadata metadata;
+    metadata.name = name;
+    metadata.arity = source.arity;
+    metadata.param_types = source.param_types;
+    metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+    metadata.return_type = source.return_type;
+    metadata.has_definition = source.has_definition;
+    metadata.is_pure_annotation = source.is_pure_annotation;
+    handoff.functions_lexicographic.push_back(std::move(metadata));
+  }
+  return handoff;
+}
+
+bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  if (!std::is_sorted(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end())) {
+    return false;
+  }
+  if (!std::is_sorted(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
+                      [](const Objc3SemanticFunctionTypeMetadata &lhs, const Objc3SemanticFunctionTypeMetadata &rhs) {
+                        return lhs.name < rhs.name;
+                      })) {
+    return false;
+  }
+  return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
+                     [](const Objc3SemanticFunctionTypeMetadata &metadata) {
+                       return metadata.param_types.size() == metadata.arity &&
+                              metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+                     });
+}
+
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
@@ -1237,4 +1289,3 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
   }
 }
-

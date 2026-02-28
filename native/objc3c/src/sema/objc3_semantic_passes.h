@@ -6,6 +6,8 @@
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 std::vector<std::string> &diagnostics);
+Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
+bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);
 void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
                                              const std::unordered_map<std::string, FunctionInfo> &surface_functions,
                                              std::vector<std::string> &diagnostics);
