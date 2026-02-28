@@ -1128,6 +1128,33 @@ Recommended M176 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m176_frontend_module_import_graph_parser_contract.py -q`
 
+## M177 frontend namespace collision and shadowing diagnostics parser/AST surface (M177-A001)
+
+Frontend parser/AST now emits deterministic namespace-collision/shadowing
+profiles for parameter/property/return type annotations.
+
+M177 parser/AST surface details:
+
+- namespace collision/shadowing anchors:
+  - `BuildNamespaceCollisionShadowingProfile(...)`
+  - `IsNamespaceCollisionShadowingProfileNormalized(...)`
+- parser assignment anchors:
+  - `namespace_collision_shadowing_profile`
+  - `namespace_collision_shadowing_profile_is_normalized`
+  - `return_namespace_collision_shadowing_profile`
+  - `return_namespace_collision_shadowing_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives namespace collision and shadowing risk from namespace-segment
+  shape, generic suffix packets, and pointer declarator participation.
+- profile normalization is fail-closed for malformed packets that would
+  destabilize downstream diagnostic routing.
+
+Recommended M177 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m177_frontend_namespace_collision_shadowing_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

@@ -640,6 +640,53 @@ static bool IsModuleImportGraphProfileNormalized(
          import_edge_candidates > 0;
 }
 
+static std::string BuildNamespaceCollisionShadowingProfile(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    bool has_pointer_declarator,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text) : 0;
+  const std::size_t namespace_segments = CountNamespaceSegments(object_pointer_type_name);
+  const bool namespace_collision_risk = namespace_segments > 1 && import_edge_candidates > 0;
+  const bool shadowing_risk = has_pointer_declarator && namespace_segments > 1;
+  const bool diagnostics_ready =
+      !namespace_collision_risk ||
+      (generic_suffix_terminated && object_pointer_type_spelling);
+
+  std::ostringstream out;
+  out << "namespace-collision-shadowing:object-pointer="
+      << (object_pointer_type_spelling ? "true" : "false")
+      << ";has-generic-suffix=" << (has_generic_suffix ? "true" : "false")
+      << ";terminated=" << (generic_suffix_terminated ? "true" : "false")
+      << ";pointer-declarator=" << (has_pointer_declarator ? "true" : "false")
+      << ";namespace-segments=" << namespace_segments
+      << ";import-edge-candidates=" << import_edge_candidates
+      << ";namespace-collision-risk=" << (namespace_collision_risk ? "true" : "false")
+      << ";shadowing-risk=" << (shadowing_risk ? "true" : "false")
+      << ";diagnostics-ready=" << (diagnostics_ready ? "true" : "false");
+  return out.str();
+}
+
+static bool IsNamespaceCollisionShadowingProfileNormalized(
+    bool object_pointer_type_spelling,
+    bool has_generic_suffix,
+    bool generic_suffix_terminated,
+    const std::string &generic_suffix_text,
+    const std::string &object_pointer_type_name) {
+  const std::size_t import_edge_candidates =
+      has_generic_suffix ? CountTopLevelGenericArgumentSlots(generic_suffix_text) : 0;
+  const std::size_t namespace_segments = CountNamespaceSegments(object_pointer_type_name);
+  const bool namespace_collision_risk = namespace_segments > 1 && import_edge_candidates > 0;
+  if (!namespace_collision_risk) {
+    return true;
+  }
+  return generic_suffix_terminated &&
+         object_pointer_type_spelling;
+}
+
 static std::string BuildProtocolQualifiedObjectTypeProfile(
     bool object_pointer_type_spelling,
     bool has_generic_suffix,
@@ -1447,6 +1494,10 @@ class Objc3Parser {
         source.return_module_import_graph_profile_is_normalized;
     target.return_module_import_graph_profile =
         source.return_module_import_graph_profile;
+    target.return_namespace_collision_shadowing_profile_is_normalized =
+        source.return_namespace_collision_shadowing_profile_is_normalized;
+    target.return_namespace_collision_shadowing_profile =
+        source.return_namespace_collision_shadowing_profile;
     target.has_return_pointer_declarator = source.has_return_pointer_declarator;
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
@@ -1511,6 +1562,10 @@ class Objc3Parser {
         source.module_import_graph_profile_is_normalized;
     target.module_import_graph_profile =
         source.module_import_graph_profile;
+    target.namespace_collision_shadowing_profile_is_normalized =
+        source.namespace_collision_shadowing_profile_is_normalized;
+    target.namespace_collision_shadowing_profile =
+        source.namespace_collision_shadowing_profile;
     target.has_pointer_declarator = source.has_pointer_declarator;
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
@@ -2372,6 +2427,8 @@ class Objc3Parser {
     fn.return_generic_metadata_abi_profile.clear();
     fn.return_module_import_graph_profile_is_normalized = false;
     fn.return_module_import_graph_profile.clear();
+    fn.return_namespace_collision_shadowing_profile_is_normalized = false;
+    fn.return_namespace_collision_shadowing_profile.clear();
     fn.has_return_pointer_declarator = false;
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
@@ -2628,6 +2685,21 @@ class Objc3Parser {
             fn.has_return_generic_suffix,
             fn.return_generic_suffix_terminated,
             fn.return_generic_suffix_text);
+    fn.return_namespace_collision_shadowing_profile =
+        BuildNamespaceCollisionShadowingProfile(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.has_return_pointer_declarator,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
+    fn.return_namespace_collision_shadowing_profile_is_normalized =
+        IsNamespaceCollisionShadowingProfileNormalized(
+            fn.return_object_pointer_type_spelling,
+            fn.has_return_generic_suffix,
+            fn.return_generic_suffix_terminated,
+            fn.return_generic_suffix_text,
+            fn.return_object_pointer_type_name);
 
     return true;
   }
@@ -2660,6 +2732,8 @@ class Objc3Parser {
     param.generic_metadata_abi_profile.clear();
     param.module_import_graph_profile_is_normalized = false;
     param.module_import_graph_profile.clear();
+    param.namespace_collision_shadowing_profile_is_normalized = false;
+    param.namespace_collision_shadowing_profile.clear();
     param.has_pointer_declarator = false;
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
@@ -2856,6 +2930,21 @@ class Objc3Parser {
             param.has_generic_suffix,
             param.generic_suffix_terminated,
             param.generic_suffix_text);
+    param.namespace_collision_shadowing_profile =
+        BuildNamespaceCollisionShadowingProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.namespace_collision_shadowing_profile_is_normalized =
+        IsNamespaceCollisionShadowingProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
 
     return true;
   }
