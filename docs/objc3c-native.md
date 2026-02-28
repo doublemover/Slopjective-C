@@ -549,6 +549,22 @@ Frontend interop integration suite/packaging contract relies on deterministic me
   3. `python -m pytest tests/tooling/test_objc3c_m201_frontend_macro_expansion_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
 
+## M199 frontend foreign type import diagnostics
+
+Frontend foreign-type import diagnostics contract relies on deterministic parser-level unsupported-type boundaries, explicit imported-type allowlists, and stable type-spelling carrier fields into AST/sema.
+
+- Required frontend foreign-type diagnostics signals:
+  - unsupported parameter-type import diagnostics remain parser fail-closed `O3P108`.
+  - unsupported return-type import diagnostics remain parser fail-closed `O3P114`.
+  - imported-type allowlists remain explicit: `'id', 'Class', 'SEL', 'Protocol', or 'instancetype'`.
+  - parser spelling carriers remain `param.id_spelling`, `param.class_spelling`, `param.instancetype_spelling`, `fn.return_id_spelling`, `fn.return_class_spelling`, and `fn.return_instancetype_spelling`.
+  - AST carrier continuity remains `bool id_spelling = false;`, `bool class_spelling = false;`, `bool instancetype_spelling = false;`, and return equivalents.
+- Required frontend foreign-type diagnostics commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m200_frontend_interop_packaging_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2606,6 +2622,31 @@ Interop integration suite + packaging packet map:
 Recommended M200 sema/type interop integration suite and packaging command:
 
 - `python -m pytest tests/tooling/test_objc3c_m200_sema_interop_packaging_contract.py -q`
+
+## M199 sema/type foreign type import diagnostics
+
+For deterministic sema/type foreign-type import diagnostics, capture replay-stable packet evidence from foreign-type spelling architecture predicates, type-metadata handoff continuity, and pass-manager diagnostic isolation.
+
+Foreign type import diagnostics packet map:
+
+- `foreign import packet 1.1 deterministic sema/type foreign-type architecture anchors` -> `m199_sema_type_foreign_import_architecture_packet`
+- `foreign import packet 1.2 deterministic sema foreign-type diagnostic isolation anchors` -> `m199_sema_foreign_import_diagnostic_isolation_packet`
+
+### 1.1 Deterministic sema/type foreign-type architecture packet
+
+- Source foreign-type architecture anchors: `static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {`, `return param.id_spelling || param.class_spelling || param.instancetype_spelling;`, `static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {`, `return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;`, and `HasInvalidParamTypeSuffix(param)`.
+- Source type-metadata handoff anchors: `info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));`, `metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;`, and `metadata.param_has_invalid_type_suffix.size() == metadata.arity;`.
+- Deterministic foreign-type architecture packet key: `m199_sema_type_foreign_import_architecture_packet`.
+
+### 1.2 Deterministic sema foreign-type diagnostic isolation packet
+
+- Source foreign-type diagnostic anchors: `ValidateReturnTypeSuffixes(fn, diagnostics);`, `ValidateParameterTypeSuffixes(fn, diagnostics);`, `"type mismatch: generic parameter type suffix '" + suffix +`, `"type mismatch: pointer parameter type declarator '" + token.text +`, `"type mismatch: nullability parameter type suffix '" + token.text +`, `"type mismatch: unsupported function return type suffix '" + suffix +`, `"type mismatch: unsupported function return type declarator '" + token.text +`, and `"O3S206"`.
+- Source pass-manager diagnostic-isolation anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Deterministic foreign-type diagnostic-isolation packet key: `m199_sema_foreign_import_diagnostic_isolation_packet`.
+
+Recommended M199 sema/type foreign type import diagnostics command:
+
+- `python -m pytest tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3239,6 +3280,70 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M199 lowering/runtime foreign type import diagnostics
+
+Lowering/runtime foreign-type import diagnostics evidence is captured as deterministic packet artifacts rooted under `tmp/` so Objective-C import diagnostics remain stage-isolated while lowering/runtime boundary replay metadata stays stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/foreign-type-import-diagnostics-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `foreign type import diagnostic-isolation markers` (required in source-anchor extracts):
+  - `FormatDiagnostic(...)`
+  - `NormalizeDiagnostics(...)`
+  - `WriteDiagnosticsArtifacts(...)`
+  - `FlattenStageDiagnostics(...)`
+  - `ParseDiagSortKey(...)`
+  - `"severity"`
+  - `"line"`
+  - `"column"`
+  - `"code"`
+  - `"message"`
+  - `"raw"`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `std::string FormatDiagnostic(CXDiagnostic diagnostic) {`
+  - `out << severity_text << ":" << line << ":" << column << ": " << ToString(clang_getDiagnosticSpelling(diagnostic));`
+  - `diagnostics.push_back(FormatDiagnostic(diagnostic));`
+  - `NormalizeDiagnostics(diagnostics);`
+  - `WriteDiagnosticsArtifacts(cli_options.out_dir, cli_options.emit_prefix, diagnostics);`
+  - `DiagSortKey ParseDiagSortKey(const std::string &diag) {`
+  - `std::stable_sort(rows.begin(), rows.end(), [](const DiagSortKey &a, const DiagSortKey &b) {`
+  - `if (diagnostics.empty() || diagnostics.back() != row.raw) {`
+  - `const std::vector<std::string> diagnostics = FlattenStageDiagnostics(stage_diagnostics, post_pipeline_diagnostics);`
+  - `const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - foreign-type import diagnostics remain stable after canonical normalization and JSON re-render (`severity/line/column/code/message/raw`) across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, foreign-type diagnostic-isolation marker, or source anchor is missing.
+
+Foreign-type import diagnostics capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/abi-ir-anchors.txt`
+3. `rg -n "FormatDiagnostic\\(|NormalizeDiagnostics\\(|WriteDiagnosticsArtifacts\\(|FlattenStageDiagnostics\\(|ParseDiagSortKey\\(|\\\"severity\\\":|\\\"line\\\":|\\\"column\\\":|\\\"code\\\":|\\\"message\\\":|\\\"raw\\\":|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_objectivec_path.cpp native/objc3c/src/diag/objc3_diag_utils.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/foreign-type-import-diagnostics-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m199_lowering_foreign_type_diagnostics_contract.py -q`
 
 ## M200 lowering/runtime interop integration suite and packaging
 
@@ -5833,6 +5938,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m200_validation_interop_packaging_contract.py -q
 ```
 
+## M199 validation/perf foreign type import diagnostics runbook
+
+Foreign type import diagnostics validation runbook verifies deterministic diagnostics evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Foreign type import diagnostics evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m199_validation_foreign_type_diagnostics_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6370,6 +6520,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain interop integration suite packaging anchors.
+
+## M199 integration foreign type import diagnostics
+
+- Gate intent: enforce deterministic foreign type import diagnostics evidence across all lanes.
+### 1.1 Foreign type import diagnostics integration chain
+- Deterministic foreign type import diagnostics gate:
+  - `npm run check:objc3c:m199-foreign-type-diagnostics`
+- Chain order:
+  - replays `check:objc3c:m200-interop-packaging`.
+  - enforces all M199 lane contracts:
+    `tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_lowering_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_validation_foreign_type_diagnostics_contract.py`,
+    `tests/tooling/test_objc3c_m199_integration_foreign_type_diagnostics_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through foreign type import diagnostics validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain foreign type import diagnostics anchors.
 
 ## Current call contract
 
