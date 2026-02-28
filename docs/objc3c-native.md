@@ -613,6 +613,22 @@ Frontend C-interop header/ABI-alignment contract relies on deterministic C ABI w
   3. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
 
+## M195 frontend system-extension conformance and policy
+
+Frontend system-extension conformance/policy contract relies on deterministic compile-option validation, explicit fail-closed policy boundaries, and stable runtime-dispatch normalization guards.
+
+- Required frontend system-extension conformance/policy signals:
+  - language-policy guard remains `ValidateSupportedLanguageVersion(...)`.
+  - compatibility-policy guard remains `ValidateSupportedCompatibilityMode(...)`.
+  - fail-closed lowering-policy normalization remains `TryNormalizeObjc3LoweringContract(...)`.
+  - policy defaults remain `kRuntimeDispatchDefaultArgs = 4`, `kRuntimeDispatchMaxArgs = 16`, and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+  - compile-option transport remains `frontend_options.lowering.max_message_send_args = options.max_message_send_args;` and `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+- Required frontend system-extension conformance/policy commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2778,6 +2794,34 @@ C interop headers + ABI alignment packet map:
 Recommended M196 sema/type C interop headers and ABI alignment validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py -q`
+
+## M195 sema/type system-extension conformance and policy
+
+For deterministic sema/type system-extension conformance and policy behavior, capture replay-stable packet evidence from compile-option policy gates, sema pass-manager architecture contracts, and manifest isolation surfaces.
+
+System-extension conformance + policy packet map:
+
+- `system-extension packet 1.1 deterministic sema/type conformance architecture anchors` -> `m195_sema_type_system_extension_conformance_architecture_packet`
+- `system-extension packet 1.2 deterministic sema/type policy isolation anchors` -> `m195_sema_type_system_extension_policy_isolation_packet`
+
+### 1.1 Deterministic sema/type conformance architecture packet
+
+- Source compile-option policy anchors: `static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {`, `static bool ValidateSupportedCompatibilityMode(uint8_t requested_compatibility_mode, std::string &error) {`, and `if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {`.
+- Source sema input-contract anchors: `Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;`, `bool migration_assist = false;`, `Objc3SemaDiagnosticsBus diagnostics_bus;`, and `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`.
+- Pipeline sema transport anchors: `if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {`, `sema_input.validation_options = semantic_options;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, and `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`.
+- Source sema/type architecture anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Deterministic sema/type conformance architecture packet key: `m195_sema_type_system_extension_conformance_architecture_packet`.
+
+### 1.2 Deterministic sema/type policy isolation packet
+
+- Source sema pass-isolation anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.ready =`.
+- Manifest policy-isolation anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Manifest policy-isolation anchors under `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface`.
+- Deterministic sema/type policy isolation packet key: `m195_sema_type_system_extension_policy_isolation_packet`.
+
+Recommended M195 sema/type system-extension conformance and policy validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3411,6 +3455,69 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M195 lowering/runtime system-extension conformance and policy
+
+Lowering/runtime system-extension conformance/policy evidence is captured as deterministic packet artifacts rooted under `tmp/` so policy validation guards, lowering boundary serialization, and runtime dispatch surfaces remain replay-stable and isolated across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/system-extension-policy-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `system-extension conformance/policy architecture+isolation anchors` (required in source-anchor extracts):
+  - `ValidateSupportedLanguageVersion(...)`
+  - `ValidateSupportedCompatibilityMode(...)`
+  - `TryNormalizeObjc3LoweringContract(...)`
+  - `kRuntimeDispatchDefaultArgs = 4`
+  - `kRuntimeDispatchMaxArgs = 16`
+  - `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`
+  - `output_dir = "tmp/artifacts/compilation/objc3c-native"`
+  - `frontend_options.lowering.max_message_send_args = options.max_message_send_args;`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `source anchors`:
+  - `static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {`
+  - `static bool ValidateSupportedCompatibilityMode(uint8_t requested_compatibility_mode, std::string &error) {`
+  - `if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {`
+  - `inline constexpr std::size_t kRuntimeDispatchDefaultArgs = 4;`
+  - `inline constexpr std::size_t kRuntimeDispatchMaxArgs = 16;`
+  - `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `std::string output_dir = "tmp/artifacts/compilation/objc3c-native";`
+  - `bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,`
+  - `error = "invalid lowering contract runtime_dispatch_symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " +`
+  - `std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary) {`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and system-extension policy source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, system-extension policy marker, or source anchor is missing.
+
+System-extension conformance/policy capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.ll tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.manifest.json > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/abi-ir-anchors.txt`
+3. `rg -n "ValidateSupportedLanguageVersion|ValidateSupportedCompatibilityMode|TryNormalizeObjc3LoweringContract|kRuntimeDispatchDefaultArgs = 4|kRuntimeDispatchMaxArgs = 16|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\"|output_dir = \\\"tmp/artifacts/compilation/objc3c-native\\\"|frontend_options\\.lowering\\.max_message_send_args = options\\.max_message_send_args;|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/system-extension-policy-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q`
 
 ## M196 lowering/runtime C interop headers and ABI alignment
 
@@ -6437,6 +6544,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m196_validation_c_interop_headers_abi_contract.py -q
 ```
 
+## M195 validation/perf system-extension conformance and policy runbook
+
+System-extension conformance/policy validation runbook verifies deterministic privileged-surface policy evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+System-extension conformance/policy evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -7054,6 +7206,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C-interop header/ABI-alignment anchors.
+
+## M195 integration system-extension conformance and policy
+
+- Gate intent: enforce deterministic system-extension conformance/policy evidence across all lanes.
+### 1.1 System-extension conformance/policy integration chain
+- Deterministic system-extension conformance/policy gate:
+  - `npm run check:objc3c:m195-system-extension-policy`
+- Chain order:
+  - replays `check:objc3c:m196-c-interop-headers-abi`.
+  - enforces all M195 lane contracts:
+    `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py`,
+    `tests/tooling/test_objc3c_m195_integration_system_extension_policy_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through system-extension conformance/policy validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain system-extension conformance/policy anchors.
 
 ## Current call contract
 
