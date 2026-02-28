@@ -171,6 +171,38 @@ Recommended M146 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_frontend_interface_implementation_contract.py -q`
 
+## M147 frontend @protocol/@category grammar
+
+Frontend parser/AST support now accepts Objective-C protocol and category declaration surfaces:
+
+- `@protocol <Name> [<InheritedA, InheritedB>] ... @end`
+- `@protocol <Name>;` forward declaration
+- `@interface <Name> (<CategoryName>) [<AdoptedA, AdoptedB>] ... @end`
+- `@implementation <Name> (<CategoryName>) ... @end`
+
+M147 parser surface details:
+
+- Lexer contract emits dedicated token:
+  - `KwAtProtocol`
+- Parser top-level route:
+  - `ParseObjcProtocolDecl()`
+- Parser composition/category helpers:
+  - `ParseObjcProtocolCompositionClause(...)` supports `<A, B>` lists.
+  - `ParseObjcCategoryClause(...)` supports named and anonymous category clauses.
+
+Deterministic recovery/diagnostic anchors:
+
+- invalid protocol/category identifiers fail closed:
+  - `invalid Objective-C protocol identifier`
+  - `invalid Objective-C protocol composition identifier`
+  - `missing ')' after Objective-C category name`
+- missing container terminators fail closed:
+  - `missing '@end' after @protocol`
+
+Recommended M147 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3013,6 +3045,43 @@ Sema/type metadata handoff contract:
 Recommended M146 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_sema_interface_implementation_contract.py -q`
+
+## M147 sema/type @protocol/@category composition contract (M147-B001)
+
+M147-B extends sema/type metadata and deterministic parity surfaces for protocol-composition suffixes and
+Objective-C category-context method composition tracking.
+
+Sema/type contract markers:
+
+- `Objc3ProtocolCategoryCompositionSummary`
+- `param_has_protocol_composition`
+- `param_protocol_composition_lexicographic`
+- `param_has_invalid_protocol_composition`
+- `return_has_protocol_composition`
+- `return_protocol_composition_lexicographic`
+- `return_has_invalid_protocol_composition`
+- `protocol_composition_sites_total`
+- `category_composition_sites_total`
+- `deterministic_protocol_category_composition_handoff`
+
+Semantic coherence diagnostics (fail-closed):
+
+- malformed protocol composition suffix
+- empty protocol composition suffix
+- invalid protocol identifier
+- duplicate protocol identifier
+- incompatible function signature for composition drift
+- incompatible method signature for selector composition drift
+
+Sema/type metadata handoff contract:
+
+- protocol/category summary packet: `protocol_category_composition_summary`
+- function packet composition fields: `param_protocol_composition_lexicographic`
+- method packet composition fields: `return_protocol_composition_lexicographic`
+
+Recommended M147 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5368,6 +5437,39 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
 
+## Protocol/category lowering artifact contract (M147-C001)
+
+M147-C extends lowering/runtime ABI artifact publication for `@protocol` + `@category` metadata envelopes while preserving deterministic lane-C replay behavior.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m147/lowering-protocol-category-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m147/lowering-protocol-category-contract/protocol-category-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_protocol_category_handoff`
+- `frontend.pipeline.sema_pass_manager.type_metadata_protocol_entries`
+- `frontend.pipeline.sema_pass_manager.type_metadata_category_entries`
+- `frontend.pipeline.semantic_surface.declared_protocols`
+- `frontend.pipeline.semantic_surface.declared_categories`
+- `frontend.pipeline.semantic_surface.resolved_protocol_symbols`
+- `frontend.pipeline.semantic_surface.resolved_category_symbols`
+- `frontend.pipeline.semantic_surface.objc_protocol_category_surface`
+- top-level `"protocols"` and `"categories"` arrays carried by the lowering envelope.
+
+IR publication markers:
+
+- `; frontend_objc_protocol_category_profile = declared_protocols=<N>, declared_categories=<N>, resolved_protocol_symbols=<N>, resolved_category_symbols=<N>, protocol_method_symbols=<N>, category_method_symbols=<N>, linked_category_symbols=<N>, deterministic_protocol_category_handoff=<bool>`
+- `!objc3.objc_protocol_category = !{!2}`
+- `!2 = !{i64 <declared_protocols>, i64 <declared_categories>, i64 <resolved_protocol_symbols>, i64 <resolved_category_symbols>, i64 <protocol_method_symbols>, i64 <category_method_symbols>, i64 <linked_category_symbols>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -5731,6 +5833,16 @@ From repo root, execute deterministic M146 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py -q`
 - `npm run check:objc3c:m146-interface-implementation`
+
+## M147 validation @protocol/@category runbook
+
+From repo root, execute deterministic M147 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py -q`
+- `npm run check:objc3c:m147-protocol-category`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -7447,6 +7559,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m146_lowering_interface_implementation_contract.py`
   - `tests/tooling/test_objc3c_m146_validation_interface_implementation_contract.py`
   - `tests/tooling/test_objc3c_m146_integration_interface_implementation_contract.py`
+
+## M147 integration @protocol/@category grammar
+
+- Integration gate:
+  - `npm run check:objc3c:m147-protocol-category`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py`
+  - `tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py`
+  - `tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py`
+  - `tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py`
+  - `tests/tooling/test_objc3c_m147_integration_protocol_category_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
