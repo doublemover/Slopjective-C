@@ -437,6 +437,22 @@ Frontend whole-module optimization controls require deterministic module-shape p
   3. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
 
+## M207 frontend dispatch-specific optimization passes
+
+Frontend dispatch-specific optimization pass readiness requires deterministic message-send parse boundaries and stable dispatch-control surface export.
+
+- Required frontend dispatch-optimization signals:
+  - message-send parse entry remains `ParseMessageSendExpression()`.
+  - message-send AST tagging remains `message->kind = Expr::Kind::MessageSend`.
+  - postfix parser dispatch gate remains `if (Match(TokenKind::LBracket))`.
+  - manifest lowering control export remains `"runtime_dispatch_symbol"`, `"runtime_dispatch_arg_slots"`, and `"selector_global_ordering"`.
+  - frontend lowering knob export remains `"max_message_send_args"`.
+- Required frontend dispatch-optimization commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2257,6 +2273,34 @@ Recommended M209 sema/type PGO regression gate command:
 
 - `python -m pytest tests/tooling/test_objc3c_m209_sema_pgo_contract.py -q`
 
+## M207 sema/type dispatch-specific optimization passes
+
+For deterministic sema/type dispatch-specific optimization passes, capture replay-stable packet evidence from pass-manager dispatch ordering, message-send type/arity guard hooks, and manifest dispatch-control export surfaces.
+
+Dispatch optimization packet map:
+
+- `dispatch optimization packet 1.1 deterministic sema pass-manager dispatch hooks` -> `m207_sema_pass_dispatch_optimization_packet`
+- `dispatch optimization packet 1.2 deterministic message-send type/arity optimization hooks` -> `m207_message_send_type_arity_optimization_packet`
+
+### 1.1 Deterministic sema pass-manager dispatch optimization packet
+
+- Source pass-dispatch anchors: `kObjc3SemaPassOrder`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `if (pass == Objc3SemaPassId::BuildIntegrationSurface) {`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source pass diagnostics anchors: `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();` and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest pass-manager anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, and `diagnostics_emitted_by_validate_pure_contract`.
+- Deterministic sema pass-dispatch packet key: `m207_sema_pass_dispatch_optimization_packet`.
+
+### 1.2 Deterministic message-send type/arity optimization packet
+
+- Source dispatch-option anchors: `Objc3SemanticValidationOptions`, `std::size_t max_message_send_args = 4;`, and `semantic_options.max_message_send_args = options.lowering.max_message_send_args;`.
+- Source message-send hook anchors: `static ValueType ValidateMessageSendExpr(`, `if (receiver_type != ValueType::Unknown && !IsMessageI32CompatibleType(receiver_type)) {`, `if (expr->args.size() > max_message_send_args) {`, and `0, 0, options.max_message_send_args);`.
+- Manifest dispatch-control anchors: `max_message_send_args`, `runtime_dispatch_symbol`, and `runtime_dispatch_arg_slots`.
+- Deterministic message-send type/arity packet key: `m207_message_send_type_arity_optimization_packet`.
+
+Recommended M207 sema/type dispatch-optimization validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2589,6 +2633,69 @@ LSP semantic profile capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
+
+## M207 lowering/runtime dispatch-specific optimization passes
+
+Lowering/runtime dispatch-specific optimization pass evidence is captured as deterministic packet artifacts rooted under `tmp/` so nil-elision, non-nil fast-path routing, and usage-driven runtime-dispatch declaration emission remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/`
+  - `tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/dispatch-optimization-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `dispatch optimization markers` (required in source-anchor extracts):
+  - `runtime_dispatch_call_emitted_ = false;`
+  - `runtime_dispatch_call_emitted_ = true;`
+  - `receiver_is_compile_time_zero`
+  - `receiver_is_compile_time_nonzero`
+  - `msg_nil_`
+  - `msg_dispatch_`
+  - `phi i32 [0, %`
+  - `FunctionMayHaveGlobalSideEffects`
+  - `call_may_have_global_side_effects`
+  - `global_proofs_invalidated`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `if (runtime_dispatch_call_emitted_) {`
+  - `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`
+  - `lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);`
+  - `if (lowered.receiver_is_compile_time_zero) {`
+  - `if (lowered.receiver_is_compile_time_nonzero) {`
+  - `const std::string nil_label = NewLabel(ctx, "msg_nil_");`
+  - `const std::string dispatch_label = NewLabel(ctx, "msg_dispatch_");`
+  - `ctx.code_lines.push_back("  " + out + " = phi i32 [0, %" + nil_label + "], [" + dispatch_value + ", %" +`
+  - `const bool call_may_have_global_side_effects = FunctionMayHaveGlobalSideEffects(expr->ident);`
+  - `if (call_may_have_global_side_effects) {`
+  - `ctx.global_proofs_invalidated = true;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and dispatch optimization source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, dispatch optimization marker, or source anchor is missing.
+
+Dispatch optimization capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.ll tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.manifest.json > tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/abi-ir-anchors.txt`
+3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|msg_nil_|msg_dispatch_|phi i32 \[0, %|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/dispatch-optimization-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m207_lowering_dispatch_optimizations_contract.py -q`
 
 ## M208 lowering/runtime whole-module optimization controls
 
@@ -4579,6 +4686,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m208_validation_wmo_contract.py -q
 ```
 
+## M207 validation/perf dispatch-specific optimization runbook
+
+Dispatch-specific optimization validation runbook verifies deterministic dispatch-surface evidence before optimization pass promotion.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Dispatch-optimization evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m207_validation_dispatch_optimizations_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4956,6 +5108,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain WMO anchors.
+
+## M207 integration dispatch-specific optimization passes
+
+- Gate intent: enforce deterministic dispatch-specific optimization evidence across all lanes.
+### 1.1 Dispatch-optimization integration chain
+- Deterministic dispatch-optimization gate:
+  - `npm run check:objc3c:m207-dispatch-optimizations`
+- Chain order:
+  - replays `check:objc3c:m208-whole-module-optimization`.
+  - enforces all M207 lane contracts:
+    `tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_lowering_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_validation_dispatch_optimizations_contract.py`,
+    `tests/tooling/test_objc3c_m207_integration_dispatch_optimizations_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through dispatch-optimization validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain dispatch-optimization anchors.
 
 ## Current call contract
 
