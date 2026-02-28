@@ -214,6 +214,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t throws_propagation_normalized_sites_total = 0;
   std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
   std::size_t throws_propagation_contract_violation_sites_total = 0;
+  std::size_t result_like_lowering_sites_total = 0;
+  std::size_t result_like_lowering_result_success_sites_total = 0;
+  std::size_t result_like_lowering_result_failure_sites_total = 0;
+  std::size_t result_like_lowering_result_branch_sites_total = 0;
+  std::size_t result_like_lowering_result_payload_sites_total = 0;
+  std::size_t result_like_lowering_normalized_sites_total = 0;
+  std::size_t result_like_lowering_branch_merge_sites_total = 0;
+  std::size_t result_like_lowering_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -405,6 +413,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
+  bool deterministic_result_like_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -440,6 +449,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -876,6 +886,44 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.throws_propagation_summary.throws_propagation_sites &&
          surface.throws_propagation_summary.deterministic &&
          surface.deterministic_throws_propagation_handoff &&
+         surface.result_like_lowering_summary.result_like_sites ==
+             surface.result_like_lowering_sites_total &&
+         surface.result_like_lowering_summary.result_success_sites ==
+             surface.result_like_lowering_result_success_sites_total &&
+         surface.result_like_lowering_summary.result_failure_sites ==
+             surface.result_like_lowering_result_failure_sites_total &&
+         surface.result_like_lowering_summary.result_branch_sites ==
+             surface.result_like_lowering_result_branch_sites_total &&
+         surface.result_like_lowering_summary.result_payload_sites ==
+             surface.result_like_lowering_result_payload_sites_total &&
+         surface.result_like_lowering_summary.normalized_sites ==
+             surface.result_like_lowering_normalized_sites_total &&
+         surface.result_like_lowering_summary.branch_merge_sites ==
+             surface.result_like_lowering_branch_merge_sites_total &&
+         surface.result_like_lowering_summary.contract_violation_sites ==
+             surface.result_like_lowering_contract_violation_sites_total &&
+         surface.result_like_lowering_summary.result_success_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.result_failure_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.result_branch_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.result_payload_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.normalized_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.branch_merge_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.contract_violation_sites <=
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.result_success_sites +
+                 surface.result_like_lowering_summary.result_failure_sites ==
+             surface.result_like_lowering_summary.normalized_sites &&
+         surface.result_like_lowering_summary.normalized_sites +
+                 surface.result_like_lowering_summary.branch_merge_sites ==
+             surface.result_like_lowering_summary.result_like_sites &&
+         surface.result_like_lowering_summary.deterministic &&
+         surface.deterministic_result_like_lowering_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1535,6 +1583,8 @@ struct Objc3SemaPassManagerResult {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_throws_propagation_handoff = false;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_result_like_lowering_handoff = false;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

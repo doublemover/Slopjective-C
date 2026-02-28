@@ -266,6 +266,30 @@ struct Objc3ThrowsPropagationSummary {
   bool deterministic = true;
 };
 
+struct Objc3NSErrorBridgingSummary {
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t bridge_boundary_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3ResultLikeLoweringSummary {
+  std::size_t result_like_sites = 0;
+  std::size_t result_success_sites = 0;
+  std::size_t result_failure_sites = 0;
+  std::size_t result_branch_sites = 0;
+  std::size_t result_payload_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t branch_merge_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3SymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -701,6 +725,16 @@ struct FunctionInfo {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool ns_error_bridging_profile_is_normalized = false;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t ns_error_bridging_normalized_sites = 0;
+  std::size_t ns_error_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_contract_violation_sites = 0;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };
@@ -765,6 +799,16 @@ struct Objc3MethodInfo {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool ns_error_bridging_profile_is_normalized = false;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t ns_error_bridging_normalized_sites = 0;
+  std::size_t ns_error_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_contract_violation_sites = 0;
   bool is_class_method = false;
   bool has_definition = false;
 };
@@ -869,6 +913,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -954,6 +1000,16 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool ns_error_bridging_profile_is_normalized = false;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t ns_error_bridging_normalized_sites = 0;
+  std::size_t ns_error_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_contract_violation_sites = 0;
   bool has_definition = false;
   bool is_pure_annotation = false;
 };
@@ -1025,6 +1081,16 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool ns_error_bridging_profile_is_normalized = false;
+  bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_parameter_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t failable_call_sites = 0;
+  std::size_t ns_error_bridging_normalized_sites = 0;
+  std::size_t ns_error_bridge_boundary_sites = 0;
+  std::size_t ns_error_bridging_contract_violation_sites = 0;
   bool is_class_method = false;
   bool has_definition = false;
 };
@@ -1121,6 +1187,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;

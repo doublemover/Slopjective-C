@@ -1446,6 +1446,20 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
   info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
   info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+  info.ns_error_bridging_profile_is_normalized =
+      method.ns_error_bridging_profile_is_normalized;
+  info.deterministic_ns_error_bridging_lowering_handoff =
+      method.deterministic_ns_error_bridging_lowering_handoff;
+  info.ns_error_bridging_sites = method.ns_error_bridging_sites;
+  info.ns_error_parameter_sites = method.ns_error_parameter_sites;
+  info.ns_error_out_parameter_sites = method.ns_error_out_parameter_sites;
+  info.ns_error_bridge_path_sites = method.ns_error_bridge_path_sites;
+  info.failable_call_sites = method.failable_call_sites;
+  info.ns_error_bridging_normalized_sites =
+      method.ns_error_bridging_normalized_sites;
+  info.ns_error_bridge_boundary_sites = method.ns_error_bridge_boundary_sites;
+  info.ns_error_bridging_contract_violation_sites =
+      method.ns_error_bridging_contract_violation_sites;
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
   return info;
@@ -3378,6 +3392,165 @@ BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
       summary.normalized_sites + summary.cache_invalidation_candidate_sites ==
           summary.throws_propagation_sites &&
       summary.contract_violation_sites <= summary.throws_propagation_sites;
+  return summary;
+}
+
+static Objc3ResultLikeLoweringSummary BuildResultLikeLoweringSummaryFromProgramAst(
+    const Objc3Program &ast) {
+  Objc3ResultLikeLoweringSummary summary;
+
+  const auto checked_add = [&](std::size_t &total, std::size_t value) {
+    if (value > std::numeric_limits<std::size_t>::max() - total) {
+      total = std::numeric_limits<std::size_t>::max();
+      summary.deterministic = false;
+      return;
+    }
+    total += value;
+  };
+
+  const auto is_partitioned = [](std::size_t lhs, std::size_t rhs, std::size_t total) {
+    return lhs <= std::numeric_limits<std::size_t>::max() - rhs && lhs + rhs == total;
+  };
+
+  const auto accumulate_result_like_profile = [&](const auto &declaration) {
+    checked_add(summary.result_like_sites, declaration.result_like_sites);
+    checked_add(summary.result_success_sites, declaration.result_success_sites);
+    checked_add(summary.result_failure_sites, declaration.result_failure_sites);
+    checked_add(summary.result_branch_sites, declaration.result_branch_sites);
+    checked_add(summary.result_payload_sites, declaration.result_payload_sites);
+    checked_add(summary.normalized_sites, declaration.result_normalized_sites);
+    checked_add(summary.branch_merge_sites, declaration.result_branch_merge_sites);
+    checked_add(summary.contract_violation_sites, declaration.result_contract_violation_sites);
+
+    const bool profile_contract_normalized =
+        declaration.result_success_sites <= declaration.result_like_sites &&
+        declaration.result_failure_sites <= declaration.result_like_sites &&
+        declaration.result_branch_sites <= declaration.result_like_sites &&
+        declaration.result_payload_sites <= declaration.result_like_sites &&
+        declaration.result_normalized_sites <= declaration.result_like_sites &&
+        declaration.result_branch_merge_sites <= declaration.result_like_sites &&
+        declaration.result_contract_violation_sites <= declaration.result_like_sites &&
+        is_partitioned(declaration.result_success_sites,
+                       declaration.result_failure_sites,
+                       declaration.result_normalized_sites) &&
+        is_partitioned(declaration.result_normalized_sites,
+                       declaration.result_branch_merge_sites,
+                       declaration.result_like_sites);
+    summary.deterministic =
+        summary.deterministic && declaration.result_like_profile_is_normalized &&
+        declaration.deterministic_result_like_lowering_handoff &&
+        profile_contract_normalized;
+  };
+
+  for (const auto &function_decl : ast.functions) {
+    accumulate_result_like_profile(function_decl);
+  }
+
+  for (const auto &interface_decl : ast.interfaces) {
+    for (const auto &method_decl : interface_decl.methods) {
+      accumulate_result_like_profile(method_decl);
+    }
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      accumulate_result_like_profile(method_decl);
+    }
+  }
+
+  summary.deterministic =
+      summary.deterministic &&
+      summary.result_success_sites <= summary.result_like_sites &&
+      summary.result_failure_sites <= summary.result_like_sites &&
+      summary.result_branch_sites <= summary.result_like_sites &&
+      summary.result_payload_sites <= summary.result_like_sites &&
+      summary.normalized_sites <= summary.result_like_sites &&
+      summary.branch_merge_sites <= summary.result_like_sites &&
+      summary.contract_violation_sites <= summary.result_like_sites &&
+      is_partitioned(summary.result_success_sites,
+                     summary.result_failure_sites,
+                     summary.normalized_sites) &&
+      is_partitioned(summary.normalized_sites,
+                     summary.branch_merge_sites,
+                     summary.result_like_sites);
+  return summary;
+}
+
+template <typename SiteMetadata>
+static void AccumulateNSErrorBridgingSummaryFromSiteMetadata(
+    const SiteMetadata &metadata,
+    Objc3NSErrorBridgingSummary &summary) {
+  summary.ns_error_bridging_sites += metadata.ns_error_bridging_sites;
+  summary.ns_error_parameter_sites += metadata.ns_error_parameter_sites;
+  summary.ns_error_out_parameter_sites += metadata.ns_error_out_parameter_sites;
+  summary.ns_error_bridge_path_sites += metadata.ns_error_bridge_path_sites;
+  summary.failable_call_sites += metadata.failable_call_sites;
+  summary.normalized_sites += metadata.ns_error_bridging_normalized_sites;
+  summary.bridge_boundary_sites += metadata.ns_error_bridge_boundary_sites;
+  summary.contract_violation_sites += metadata.ns_error_bridging_contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      metadata.deterministic_ns_error_bridging_lowering_handoff &&
+      (metadata.ns_error_bridging_sites == 0u ||
+       metadata.ns_error_bridging_profile_is_normalized);
+}
+
+static void FinalizeNSErrorBridgingSummaryDeterminism(
+    Objc3NSErrorBridgingSummary &summary) {
+  summary.deterministic =
+      summary.deterministic &&
+      summary.ns_error_parameter_sites <= summary.ns_error_bridging_sites &&
+      summary.ns_error_out_parameter_sites <= summary.ns_error_bridging_sites &&
+      summary.ns_error_bridge_path_sites <= summary.ns_error_bridging_sites &&
+      summary.failable_call_sites <= summary.ns_error_bridging_sites &&
+      summary.normalized_sites <= summary.ns_error_bridging_sites &&
+      summary.bridge_boundary_sites <= summary.ns_error_bridging_sites &&
+      summary.normalized_sites + summary.bridge_boundary_sites ==
+          summary.ns_error_bridging_sites &&
+      summary.contract_violation_sites <= summary.ns_error_bridging_sites;
+}
+
+static Objc3NSErrorBridgingSummary
+BuildNSErrorBridgingSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3NSErrorBridgingSummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateNSErrorBridgingSummaryFromSiteMetadata(entry.second, summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateNSErrorBridgingSummaryFromSiteMetadata(method_entry.second,
+                                                       summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateNSErrorBridgingSummaryFromSiteMetadata(method_entry.second,
+                                                       summary);
+    }
+  }
+  FinalizeNSErrorBridgingSummaryDeterminism(summary);
+  return summary;
+}
+
+static Objc3NSErrorBridgingSummary
+BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3NSErrorBridgingSummary summary;
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    AccumulateNSErrorBridgingSummaryFromSiteMetadata(metadata, summary);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      AccumulateNSErrorBridgingSummaryFromSiteMetadata(method_metadata, summary);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      AccumulateNSErrorBridgingSummaryFromSiteMetadata(method_metadata, summary);
+    }
+  }
+  FinalizeNSErrorBridgingSummaryDeterminism(summary);
   return summary;
 }
 
@@ -7137,6 +7310,20 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
       info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
       info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+      info.ns_error_bridging_profile_is_normalized =
+          fn.ns_error_bridging_profile_is_normalized;
+      info.deterministic_ns_error_bridging_lowering_handoff =
+          fn.deterministic_ns_error_bridging_lowering_handoff;
+      info.ns_error_bridging_sites = fn.ns_error_bridging_sites;
+      info.ns_error_parameter_sites = fn.ns_error_parameter_sites;
+      info.ns_error_out_parameter_sites = fn.ns_error_out_parameter_sites;
+      info.ns_error_bridge_path_sites = fn.ns_error_bridge_path_sites;
+      info.failable_call_sites = fn.failable_call_sites;
+      info.ns_error_bridging_normalized_sites =
+          fn.ns_error_bridging_normalized_sites;
+      info.ns_error_bridge_boundary_sites = fn.ns_error_bridge_boundary_sites;
+      info.ns_error_bridging_contract_violation_sites =
+          fn.ns_error_bridging_contract_violation_sites;
       info.has_definition = !fn.is_prototype;
       info.is_pure_annotation = fn.is_pure;
       surface.functions.emplace(fn.name, std::move(info));
@@ -7305,6 +7492,31 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                              existing.return_has_invalid_ownership_qualifier;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
+    existing.ns_error_bridging_profile_is_normalized =
+        existing.ns_error_bridging_profile_is_normalized ||
+        fn.ns_error_bridging_profile_is_normalized;
+    existing.deterministic_ns_error_bridging_lowering_handoff =
+        existing.deterministic_ns_error_bridging_lowering_handoff ||
+        fn.deterministic_ns_error_bridging_lowering_handoff;
+    existing.ns_error_bridging_sites =
+        std::max(existing.ns_error_bridging_sites, fn.ns_error_bridging_sites);
+    existing.ns_error_parameter_sites = std::max(existing.ns_error_parameter_sites,
+                                                 fn.ns_error_parameter_sites);
+    existing.ns_error_out_parameter_sites = std::max(
+        existing.ns_error_out_parameter_sites, fn.ns_error_out_parameter_sites);
+    existing.ns_error_bridge_path_sites = std::max(
+        existing.ns_error_bridge_path_sites, fn.ns_error_bridge_path_sites);
+    existing.failable_call_sites =
+        std::max(existing.failable_call_sites, fn.failable_call_sites);
+    existing.ns_error_bridging_normalized_sites = std::max(
+        existing.ns_error_bridging_normalized_sites,
+        fn.ns_error_bridging_normalized_sites);
+    existing.ns_error_bridge_boundary_sites =
+        std::max(existing.ns_error_bridge_boundary_sites,
+                 fn.ns_error_bridge_boundary_sites);
+    existing.ns_error_bridging_contract_violation_sites = std::max(
+        existing.ns_error_bridging_contract_violation_sites,
+        fn.ns_error_bridging_contract_violation_sites);
     existing.is_pure_annotation = existing.is_pure_annotation || fn.is_pure;
 
     if (!fn.is_prototype) {
@@ -7528,6 +7740,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           surface.cross_module_conformance_summary);
+  surface.result_like_lowering_summary =
+      BuildResultLikeLoweringSummaryFromProgramAst(ast);
+  surface.ns_error_bridging_summary =
+      BuildNSErrorBridgingSummaryFromIntegrationSurface(surface);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -7659,6 +7875,21 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_protocol_composition = source.return_has_protocol_composition;
     metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
     metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+    metadata.ns_error_bridging_profile_is_normalized =
+        source.ns_error_bridging_profile_is_normalized;
+    metadata.deterministic_ns_error_bridging_lowering_handoff =
+        source.deterministic_ns_error_bridging_lowering_handoff;
+    metadata.ns_error_bridging_sites = source.ns_error_bridging_sites;
+    metadata.ns_error_parameter_sites = source.ns_error_parameter_sites;
+    metadata.ns_error_out_parameter_sites = source.ns_error_out_parameter_sites;
+    metadata.ns_error_bridge_path_sites = source.ns_error_bridge_path_sites;
+    metadata.failable_call_sites = source.failable_call_sites;
+    metadata.ns_error_bridging_normalized_sites =
+        source.ns_error_bridging_normalized_sites;
+    metadata.ns_error_bridge_boundary_sites =
+        source.ns_error_bridge_boundary_sites;
+    metadata.ns_error_bridging_contract_violation_sites =
+        source.ns_error_bridging_contract_violation_sites;
     metadata.has_definition = source.has_definition;
     metadata.is_pure_annotation = source.is_pure_annotation;
     handoff.functions_lexicographic.push_back(std::move(metadata));
@@ -7834,6 +8065,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.ns_error_bridging_profile_is_normalized =
+          source.ns_error_bridging_profile_is_normalized;
+      method_metadata.deterministic_ns_error_bridging_lowering_handoff =
+          source.deterministic_ns_error_bridging_lowering_handoff;
+      method_metadata.ns_error_bridging_sites = source.ns_error_bridging_sites;
+      method_metadata.ns_error_parameter_sites = source.ns_error_parameter_sites;
+      method_metadata.ns_error_out_parameter_sites =
+          source.ns_error_out_parameter_sites;
+      method_metadata.ns_error_bridge_path_sites =
+          source.ns_error_bridge_path_sites;
+      method_metadata.failable_call_sites = source.failable_call_sites;
+      method_metadata.ns_error_bridging_normalized_sites =
+          source.ns_error_bridging_normalized_sites;
+      method_metadata.ns_error_bridge_boundary_sites =
+          source.ns_error_bridge_boundary_sites;
+      method_metadata.ns_error_bridging_contract_violation_sites =
+          source.ns_error_bridging_contract_violation_sites;
       method_metadata.is_class_method = source.is_class_method;
       method_metadata.has_definition = source.has_definition;
       metadata.methods_lexicographic.push_back(std::move(method_metadata));
@@ -8012,6 +8260,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.ns_error_bridging_profile_is_normalized =
+          source.ns_error_bridging_profile_is_normalized;
+      method_metadata.deterministic_ns_error_bridging_lowering_handoff =
+          source.deterministic_ns_error_bridging_lowering_handoff;
+      method_metadata.ns_error_bridging_sites = source.ns_error_bridging_sites;
+      method_metadata.ns_error_parameter_sites = source.ns_error_parameter_sites;
+      method_metadata.ns_error_out_parameter_sites =
+          source.ns_error_out_parameter_sites;
+      method_metadata.ns_error_bridge_path_sites =
+          source.ns_error_bridge_path_sites;
+      method_metadata.failable_call_sites = source.failable_call_sites;
+      method_metadata.ns_error_bridging_normalized_sites =
+          source.ns_error_bridging_normalized_sites;
+      method_metadata.ns_error_bridge_boundary_sites =
+          source.ns_error_bridge_boundary_sites;
+      method_metadata.ns_error_bridging_contract_violation_sites =
+          source.ns_error_bridging_contract_violation_sites;
       method_metadata.is_class_method = source.is_class_method;
       method_metadata.has_definition = source.has_definition;
       metadata.methods_lexicographic.push_back(std::move(method_metadata));
@@ -8549,6 +8814,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  handoff.ns_error_bridging_summary =
+      BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
+  handoff.result_like_lowering_summary = surface.result_like_lowering_summary;
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9312,6 +9580,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3ThrowsPropagationSummary throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  const Objc3NSErrorBridgingSummary ns_error_bridging_summary =
+      BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3ResultLikeLoweringSummary result_like_lowering_summary =
+      handoff.result_like_lowering_summary;
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9720,6 +9992,77 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.throws_propagation_summary.throws_propagation_sites &&
          handoff.throws_propagation_summary.contract_violation_sites <=
              handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.ns_error_bridging_summary.deterministic &&
+         handoff.ns_error_bridging_summary.ns_error_bridging_sites ==
+             ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.ns_error_parameter_sites ==
+             ns_error_bridging_summary.ns_error_parameter_sites &&
+         handoff.ns_error_bridging_summary.ns_error_out_parameter_sites ==
+             ns_error_bridging_summary.ns_error_out_parameter_sites &&
+         handoff.ns_error_bridging_summary.ns_error_bridge_path_sites ==
+             ns_error_bridging_summary.ns_error_bridge_path_sites &&
+         handoff.ns_error_bridging_summary.failable_call_sites ==
+             ns_error_bridging_summary.failable_call_sites &&
+         handoff.ns_error_bridging_summary.normalized_sites ==
+             ns_error_bridging_summary.normalized_sites &&
+         handoff.ns_error_bridging_summary.bridge_boundary_sites ==
+             ns_error_bridging_summary.bridge_boundary_sites &&
+         handoff.ns_error_bridging_summary.contract_violation_sites ==
+             ns_error_bridging_summary.contract_violation_sites &&
+         handoff.ns_error_bridging_summary.ns_error_parameter_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.ns_error_out_parameter_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.ns_error_bridge_path_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.failable_call_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.normalized_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.bridge_boundary_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.normalized_sites +
+                 handoff.ns_error_bridging_summary.bridge_boundary_sites ==
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.ns_error_bridging_summary.contract_violation_sites <=
+             handoff.ns_error_bridging_summary.ns_error_bridging_sites &&
+         handoff.result_like_lowering_summary.deterministic &&
+         handoff.result_like_lowering_summary.result_like_sites ==
+             result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.result_success_sites ==
+             result_like_lowering_summary.result_success_sites &&
+         handoff.result_like_lowering_summary.result_failure_sites ==
+             result_like_lowering_summary.result_failure_sites &&
+         handoff.result_like_lowering_summary.result_branch_sites ==
+             result_like_lowering_summary.result_branch_sites &&
+         handoff.result_like_lowering_summary.result_payload_sites ==
+             result_like_lowering_summary.result_payload_sites &&
+         handoff.result_like_lowering_summary.normalized_sites ==
+             result_like_lowering_summary.normalized_sites &&
+         handoff.result_like_lowering_summary.branch_merge_sites ==
+             result_like_lowering_summary.branch_merge_sites &&
+         handoff.result_like_lowering_summary.contract_violation_sites ==
+             result_like_lowering_summary.contract_violation_sites &&
+         handoff.result_like_lowering_summary.result_success_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.result_failure_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.result_branch_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.result_payload_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.normalized_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.branch_merge_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.contract_violation_sites <=
+             handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.result_like_lowering_summary.result_success_sites +
+                 handoff.result_like_lowering_summary.result_failure_sites ==
+             handoff.result_like_lowering_summary.normalized_sites &&
+         handoff.result_like_lowering_summary.normalized_sites +
+                 handoff.result_like_lowering_summary.branch_merge_sites ==
+             handoff.result_like_lowering_summary.result_like_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

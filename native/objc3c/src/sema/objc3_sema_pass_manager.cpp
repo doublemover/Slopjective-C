@@ -258,6 +258,32 @@ bool IsEquivalentThrowsPropagationSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentNSErrorBridgingSummary(
+    const Objc3NSErrorBridgingSummary &lhs,
+    const Objc3NSErrorBridgingSummary &rhs) {
+  return lhs.ns_error_bridging_sites == rhs.ns_error_bridging_sites &&
+         lhs.ns_error_parameter_sites == rhs.ns_error_parameter_sites &&
+         lhs.ns_error_out_parameter_sites == rhs.ns_error_out_parameter_sites &&
+         lhs.ns_error_bridge_path_sites == rhs.ns_error_bridge_path_sites &&
+         lhs.failable_call_sites == rhs.failable_call_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.bridge_boundary_sites == rhs.bridge_boundary_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
+bool IsEquivalentResultLikeLoweringSummary(
+    const Objc3ResultLikeLoweringSummary &lhs,
+    const Objc3ResultLikeLoweringSummary &rhs) {
+  return lhs.result_like_sites == rhs.result_like_sites &&
+         lhs.result_success_sites == rhs.result_success_sites &&
+         lhs.result_failure_sites == rhs.result_failure_sites &&
+         lhs.result_branch_sites == rhs.result_branch_sites &&
+         lhs.result_payload_sites == rhs.result_payload_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.branch_merge_sites == rhs.branch_merge_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
                                                    const Objc3SymbolGraphScopeResolutionSummary &rhs) {
   return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
@@ -880,6 +906,92 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.throws_propagation_summary.contract_violation_sites <=
           result.type_metadata_handoff.throws_propagation_summary
               .throws_propagation_sites;
+  result.ns_error_bridging_summary =
+      result.integration_surface.ns_error_bridging_summary;
+  result.deterministic_ns_error_bridging_handoff =
+      result.type_metadata_handoff.ns_error_bridging_summary.deterministic &&
+      result.integration_surface.ns_error_bridging_summary.deterministic &&
+      IsEquivalentNSErrorBridgingSummary(
+          result.integration_surface.ns_error_bridging_summary,
+          result.type_metadata_handoff.ns_error_bridging_summary) &&
+      result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_parameter_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_out_parameter_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridge_path_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary.failable_call_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary.normalized_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary
+              .bridge_boundary_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary.normalized_sites +
+              result.type_metadata_handoff.ns_error_bridging_summary
+                  .bridge_boundary_sites ==
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites &&
+      result.type_metadata_handoff.ns_error_bridging_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.ns_error_bridging_summary
+              .ns_error_bridging_sites;
+  result.result_like_lowering_summary =
+      result.integration_surface.result_like_lowering_summary;
+  result.deterministic_result_like_lowering_handoff =
+      result.type_metadata_handoff.result_like_lowering_summary.deterministic &&
+      result.integration_surface.result_like_lowering_summary.deterministic &&
+      IsEquivalentResultLikeLoweringSummary(
+          result.integration_surface.result_like_lowering_summary,
+          result.type_metadata_handoff.result_like_lowering_summary) &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .result_success_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .result_failure_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .result_branch_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .result_payload_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary.normalized_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .branch_merge_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .result_success_sites +
+              result.type_metadata_handoff.result_like_lowering_summary
+                  .result_failure_sites ==
+          result.type_metadata_handoff.result_like_lowering_summary
+              .normalized_sites &&
+      result.type_metadata_handoff.result_like_lowering_summary
+              .normalized_sites +
+              result.type_metadata_handoff.result_like_lowering_summary
+                  .branch_merge_sites ==
+          result.type_metadata_handoff.result_like_lowering_summary
+              .result_like_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1597,6 +1709,43 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .cache_invalidation_candidate_sites;
   result.parity_surface.throws_propagation_contract_violation_sites_total =
       result.parity_surface.throws_propagation_summary.contract_violation_sites;
+  result.parity_surface.ns_error_bridging_summary =
+      result.type_metadata_handoff.ns_error_bridging_summary;
+  result.parity_surface.ns_error_bridging_sites_total =
+      result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites;
+  result.parity_surface.ns_error_bridging_ns_error_parameter_sites_total =
+      result.parity_surface.ns_error_bridging_summary.ns_error_parameter_sites;
+  result.parity_surface.ns_error_bridging_ns_error_out_parameter_sites_total =
+      result.parity_surface.ns_error_bridging_summary
+          .ns_error_out_parameter_sites;
+  result.parity_surface.ns_error_bridging_ns_error_bridge_path_sites_total =
+      result.parity_surface.ns_error_bridging_summary.ns_error_bridge_path_sites;
+  result.parity_surface.ns_error_bridging_failable_call_sites_total =
+      result.parity_surface.ns_error_bridging_summary.failable_call_sites;
+  result.parity_surface.ns_error_bridging_normalized_sites_total =
+      result.parity_surface.ns_error_bridging_summary.normalized_sites;
+  result.parity_surface.ns_error_bridging_bridge_boundary_sites_total =
+      result.parity_surface.ns_error_bridging_summary.bridge_boundary_sites;
+  result.parity_surface.ns_error_bridging_contract_violation_sites_total =
+      result.parity_surface.ns_error_bridging_summary.contract_violation_sites;
+  result.parity_surface.result_like_lowering_summary =
+      result.type_metadata_handoff.result_like_lowering_summary;
+  result.parity_surface.result_like_lowering_sites_total =
+      result.parity_surface.result_like_lowering_summary.result_like_sites;
+  result.parity_surface.result_like_lowering_result_success_sites_total =
+      result.parity_surface.result_like_lowering_summary.result_success_sites;
+  result.parity_surface.result_like_lowering_result_failure_sites_total =
+      result.parity_surface.result_like_lowering_summary.result_failure_sites;
+  result.parity_surface.result_like_lowering_result_branch_sites_total =
+      result.parity_surface.result_like_lowering_summary.result_branch_sites;
+  result.parity_surface.result_like_lowering_result_payload_sites_total =
+      result.parity_surface.result_like_lowering_summary.result_payload_sites;
+  result.parity_surface.result_like_lowering_normalized_sites_total =
+      result.parity_surface.result_like_lowering_summary.normalized_sites;
+  result.parity_surface.result_like_lowering_branch_merge_sites_total =
+      result.parity_surface.result_like_lowering_summary.branch_merge_sites;
+  result.parity_surface.result_like_lowering_contract_violation_sites_total =
+      result.parity_surface.result_like_lowering_summary.contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -2476,6 +2625,93 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.throws_propagation_summary.contract_violation_sites <=
           result.parity_surface.throws_propagation_summary.throws_propagation_sites &&
       result.parity_surface.throws_propagation_summary.deterministic;
+  result.parity_surface.deterministic_ns_error_bridging_handoff =
+      result.deterministic_ns_error_bridging_handoff &&
+      result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites ==
+          result.parity_surface.ns_error_bridging_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.ns_error_parameter_sites ==
+          result.parity_surface
+              .ns_error_bridging_ns_error_parameter_sites_total &&
+      result.parity_surface.ns_error_bridging_summary
+              .ns_error_out_parameter_sites ==
+          result.parity_surface
+              .ns_error_bridging_ns_error_out_parameter_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.ns_error_bridge_path_sites ==
+          result.parity_surface
+              .ns_error_bridging_ns_error_bridge_path_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.failable_call_sites ==
+          result.parity_surface.ns_error_bridging_failable_call_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.normalized_sites ==
+          result.parity_surface.ns_error_bridging_normalized_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.bridge_boundary_sites ==
+          result.parity_surface.ns_error_bridging_bridge_boundary_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.contract_violation_sites ==
+          result.parity_surface.ns_error_bridging_contract_violation_sites_total &&
+      result.parity_surface.ns_error_bridging_summary.ns_error_parameter_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary
+              .ns_error_out_parameter_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.ns_error_bridge_path_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.failable_call_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.normalized_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.bridge_boundary_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.normalized_sites +
+              result.parity_surface.ns_error_bridging_summary.bridge_boundary_sites ==
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.contract_violation_sites <=
+          result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+      result.parity_surface.ns_error_bridging_summary.deterministic;
+  result.parity_surface.deterministic_result_like_lowering_handoff =
+      result.deterministic_result_like_lowering_handoff &&
+      result.parity_surface.result_like_lowering_summary.result_like_sites ==
+          result.parity_surface.result_like_lowering_sites_total &&
+      result.parity_surface.result_like_lowering_summary.result_success_sites ==
+          result.parity_surface
+              .result_like_lowering_result_success_sites_total &&
+      result.parity_surface.result_like_lowering_summary.result_failure_sites ==
+          result.parity_surface
+              .result_like_lowering_result_failure_sites_total &&
+      result.parity_surface.result_like_lowering_summary.result_branch_sites ==
+          result.parity_surface
+              .result_like_lowering_result_branch_sites_total &&
+      result.parity_surface.result_like_lowering_summary.result_payload_sites ==
+          result.parity_surface
+              .result_like_lowering_result_payload_sites_total &&
+      result.parity_surface.result_like_lowering_summary.normalized_sites ==
+          result.parity_surface.result_like_lowering_normalized_sites_total &&
+      result.parity_surface.result_like_lowering_summary.branch_merge_sites ==
+          result.parity_surface.result_like_lowering_branch_merge_sites_total &&
+      result.parity_surface.result_like_lowering_summary.contract_violation_sites ==
+          result.parity_surface
+              .result_like_lowering_contract_violation_sites_total &&
+      result.parity_surface.result_like_lowering_summary.result_success_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.result_failure_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.result_branch_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.result_payload_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.normalized_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.branch_merge_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.contract_violation_sites <=
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.result_success_sites +
+              result.parity_surface.result_like_lowering_summary
+                  .result_failure_sites ==
+          result.parity_surface.result_like_lowering_summary.normalized_sites &&
+      result.parity_surface.result_like_lowering_summary.normalized_sites +
+              result.parity_surface.result_like_lowering_summary
+                  .branch_merge_sites ==
+          result.parity_surface.result_like_lowering_summary.result_like_sites &&
+      result.parity_surface.result_like_lowering_summary.deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -3175,6 +3411,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.result_like_lowering_summary.deterministic &&
+      result.parity_surface.deterministic_result_like_lowering_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&

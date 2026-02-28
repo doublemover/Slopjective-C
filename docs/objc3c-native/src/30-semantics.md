@@ -3682,3 +3682,37 @@ Deterministic sema intent:
 Recommended M181 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q`
+
+<a id="m182-sema-type-result-like-lowering-contract-m182-b001"></a>
+## M182 sema/type result-like lowering contract (M182-B001)
+
+M182-B defines deterministic sema summaries for result-like lowering handoff
+safety over parser result-like profiles.
+
+M182 sema/type surface details:
+
+- `Objc3ResultLikeLoweringSummary`
+- `BuildResultLikeLoweringSummaryFromProgramAst`
+- parity counters:
+  - `result_like_lowering_sites_total`
+  - `result_like_lowering_result_success_sites_total`
+  - `result_like_lowering_result_failure_sites_total`
+  - `result_like_lowering_result_branch_sites_total`
+  - `result_like_lowering_result_payload_sites_total`
+  - `result_like_lowering_normalized_sites_total`
+  - `result_like_lowering_branch_merge_sites_total`
+  - `result_like_lowering_contract_violation_sites_total`
+  - `deterministic_result_like_lowering_handoff`
+
+Deterministic sema intent:
+
+- result-like lowering summaries are aggregated from parser-emitted
+  deterministic result-like profiles and preserved across sema/type handoff.
+- normalized and branch-merge counters remain partitioned:
+  `result_like_lowering_normalized_sites_total + result_like_lowering_branch_merge_sites_total == result_like_lowering_sites_total`.
+- normalized result-like counters remain success/failure partitioned:
+  `result_like_lowering_result_success_sites_total + result_like_lowering_result_failure_sites_total == result_like_lowering_normalized_sites_total`.
+
+Recommended M182 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q`
