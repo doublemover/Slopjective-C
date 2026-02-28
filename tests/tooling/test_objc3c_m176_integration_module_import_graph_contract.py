@@ -1,0 +1,55 @@
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+LIBRARY_API_DOC = ROOT / "docs" / "objc3c-native" / "src" / "library-api.md"
+PACKAGE_JSON = ROOT / "package.json"
+TASK_HYGIENE_WORKFLOW = ROOT / ".github" / "workflows" / "task-hygiene.yml"
+
+
+def _read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def test_m176_integration_module_import_graph_is_documented() -> None:
+    library_api_doc = _read(LIBRARY_API_DOC)
+
+    for text in (
+        "## M176 integration module map ingestion and import graph contract",
+        "check:objc3c:m176-module-import-graph-contracts",
+        "check:compiler-closeout:m176",
+        "tests/tooling/test_objc3c_m176_frontend_module_import_graph_parser_contract.py",
+        "tests/tooling/test_objc3c_m176_sema_module_import_graph_contract.py",
+        "tests/tooling/test_objc3c_m176_lowering_module_import_graph_contract.py",
+        "tests/tooling/test_objc3c_m176_validation_module_import_graph_contract.py",
+        "tests/tooling/test_objc3c_m176_integration_module_import_graph_contract.py",
+    ):
+        assert text in library_api_doc
+
+
+def test_m176_integration_module_import_graph_gate_is_wired() -> None:
+    package_json = _read(PACKAGE_JSON)
+    workflow = _read(TASK_HYGIENE_WORKFLOW)
+    scripts = json.loads(package_json)["scripts"]
+
+    assert "check:objc3c:m176-module-import-graph-contracts" in scripts
+    assert scripts["check:objc3c:m176-module-import-graph-contracts"] == (
+        "python -m pytest tests/tooling/test_objc3c_m176_frontend_module_import_graph_parser_contract.py "
+        "tests/tooling/test_objc3c_m176_sema_module_import_graph_contract.py "
+        "tests/tooling/test_objc3c_m176_lowering_module_import_graph_contract.py "
+        "tests/tooling/test_objc3c_m176_validation_module_import_graph_contract.py "
+        "tests/tooling/test_objc3c_m176_integration_module_import_graph_contract.py -q"
+    )
+
+    assert "check:compiler-closeout:m176" in scripts
+    assert scripts["check:compiler-closeout:m176"] == (
+        "npm run check:objc3c:m176-module-import-graph-contracts && "
+        "python scripts/ci/check_task_hygiene.py && python scripts/build_objc3c_native_docs.py --check"
+    )
+    assert "check:compiler-closeout:m176" in scripts["check:task-hygiene"]
+
+    assert "Enforce M176 module import graph packet/docs contract" in workflow
+    assert "npm run check:compiler-closeout:m176" in workflow
+    assert "Run M176 module import graph integration gate" in workflow
+    assert "npm run check:objc3c:m176-module-import-graph-contracts" in workflow

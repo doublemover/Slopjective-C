@@ -11996,6 +11996,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m175_validation_generic_metadata_abi_contract.py`
   - `tests/tooling/test_objc3c_m175_integration_generic_metadata_abi_contract.py`
 
+## M176 integration module map ingestion and import graph contract
+
+- Integration gate:
+  - `npm run check:objc3c:m176-module-import-graph-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m176`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m176_frontend_module_import_graph_parser_contract.py`
+  - `tests/tooling/test_objc3c_m176_sema_module_import_graph_contract.py`
+  - `tests/tooling/test_objc3c_m176_lowering_module_import_graph_contract.py`
+  - `tests/tooling/test_objc3c_m176_validation_module_import_graph_contract.py`
+  - `tests/tooling/test_objc3c_m176_integration_module_import_graph_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
