@@ -898,6 +898,27 @@ int objc3c_frontend_startup_check(void) {
   - M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration gate.
   - The integration gate fail-closes on frontend/lowering/validation/conformance surfaces plus this M183-E001 wiring contract.
 
+## M189 integration task runtime interop and cancellation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m189`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py`
+  - `tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py`
+  - `tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py`
+- Assumptions:
+  - M189-A001, M189-B001, and M189-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - M189-D001 packet-specific artifacts are landed in this workspace.
+  - This initial M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M189-D001 validation/conformance packet.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M189-E001 wiring contract.
+
 ## M190 integration concurrency replay-proof and race-guard contract
 
 - Integration gate:

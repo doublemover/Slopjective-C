@@ -2677,6 +2677,37 @@ Scope assumptions:
 - This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M190-D001 validation/conformance packet.
 - This runbook enforces those currently landed lane surfaces plus M190-E001 integration wiring.
 
+## M189 integration task runtime interop and cancellation contract runbook (M189-E001)
+
+Deterministic M189 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts`
+- `npm run check:compiler-closeout:m189`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M189 task-runtime interop/cancellation packet/docs contract`
+  - `Run M189 task-runtime interop/cancellation integration gate`
+
+Scope assumptions:
+
+- M189-A001, M189-B001, and M189-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- M189-D001 packet-specific artifacts are landed in this workspace.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M189-D001 validation/conformance packet.
+- This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
+
 ## M189 validation/conformance/perf task runtime interop and cancellation runbook (M189-D001)
 
 Deterministic M189 validation sequence:
