@@ -1394,6 +1394,22 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m140_frontend_library_boundary_contract.py`
   - `npm run check:compiler-closeout:m140`
 
+## CMake targetization and linkage topology contract (M141-E001)
+
+- Canonical target/link topology lives in `native/objc3c/CMakeLists.txt`:
+  - Stage-forward links: `objc3c_parse -> objc3c_lex`, `objc3c_sema -> objc3c_parse`, `objc3c_lower -> objc3c_sema_type_system`, `objc3c_ir -> objc3c_lower`.
+  - Semantic/type-system boundary target: `add_library(objc3c_sema_type_system INTERFACE)` and downstream consumption by lower/IR targets.
+  - Runtime ABI split target: `add_library(objc3c_runtime_abi STATIC src/io/objc3_process.cpp)` linked by `objc3c_io`.
+  - Aggregate executable wiring: `target_link_libraries(objc3c-native PRIVATE objc3c_driver)`.
+- Driver entrypoint split:
+  - `native/objc3c/src/main.cpp` delegates to `RunObjc3DriverMain(...)`.
+  - `native/objc3c/src/driver/objc3_driver_main.cpp` owns CLI parse + compilation-driver dispatch.
+- Build-surface parity:
+  - `scripts/build_objc3c_native.ps1` includes `native/objc3c/src/driver/objc3_driver_main.cpp`.
+- Contract validation commands:
+  - `python scripts/check_m141_cmake_target_topology_contract.py`
+  - `npm run check:compiler-closeout:m141`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:
@@ -1838,6 +1854,20 @@ npm run check:compiler-closeout:m140
 - `python scripts/check_m140_frontend_library_boundary_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
 
+## CMake targetization and linkage topology validation artifacts (M141-E001)
+
+M141 target-topology validation commands:
+
+```powershell
+npm run test:objc3c:m141-target-topology
+npm run check:compiler-closeout:m141
+```
+
+`npm run check:compiler-closeout:m141` fail-closes on targetization/linkage-topology drift via:
+
+- `python scripts/check_m141_cmake_target_topology_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_cmake_target_topology.py tests/tooling/test_objc3c_process_io_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -1880,6 +1910,8 @@ npm run check:compiler-closeout:m138
 npm run check:compiler-closeout:m139
 npm run test:objc3c:m140-boundary-contract
 npm run check:compiler-closeout:m140
+npm run test:objc3c:m141-target-topology
+npm run check:compiler-closeout:m141
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -1945,6 +1977,13 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m140_frontend_library_boundary_contract.py`.
   - Runs `npm run test:objc3c:m140-boundary-contract`.
   - Enforces fail-closed M140 frontend-library boundary contract wiring across source/docs/package surfaces.
+- `npm run test:objc3c:m141-target-topology`
+  - Runs `python -m pytest tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_cmake_target_topology.py tests/tooling/test_objc3c_process_io_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`.
+  - Verifies deterministic stage-target linkage topology across CMake driver, sema/type-system boundary, lower/IR/runtime-ABI targets, and aggregate executable wiring.
+- `npm run check:compiler-closeout:m141`
+  - Runs `python scripts/check_m141_cmake_target_topology_contract.py`.
+  - Runs `npm run test:objc3c:m141-target-topology`.
+  - Enforces fail-closed M141 CMake targetization/linkage-topology contract wiring across source/docs/package/workflow surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.

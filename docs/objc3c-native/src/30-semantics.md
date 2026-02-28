@@ -1260,6 +1260,22 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m140_frontend_library_boundary_contract.py`
   - `npm run check:compiler-closeout:m140`
 
+## CMake targetization and linkage topology contract (M141-E001)
+
+- Canonical target/link topology lives in `native/objc3c/CMakeLists.txt`:
+  - Stage-forward links: `objc3c_parse -> objc3c_lex`, `objc3c_sema -> objc3c_parse`, `objc3c_lower -> objc3c_sema_type_system`, `objc3c_ir -> objc3c_lower`.
+  - Semantic/type-system boundary target: `add_library(objc3c_sema_type_system INTERFACE)` and downstream consumption by lower/IR targets.
+  - Runtime ABI split target: `add_library(objc3c_runtime_abi STATIC src/io/objc3_process.cpp)` linked by `objc3c_io`.
+  - Aggregate executable wiring: `target_link_libraries(objc3c-native PRIVATE objc3c_driver)`.
+- Driver entrypoint split:
+  - `native/objc3c/src/main.cpp` delegates to `RunObjc3DriverMain(...)`.
+  - `native/objc3c/src/driver/objc3_driver_main.cpp` owns CLI parse + compilation-driver dispatch.
+- Build-surface parity:
+  - `scripts/build_objc3c_native.ps1` includes `native/objc3c/src/driver/objc3_driver_main.cpp`.
+- Contract validation commands:
+  - `python scripts/check_m141_cmake_target_topology_contract.py`
+  - `npm run check:compiler-closeout:m141`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:

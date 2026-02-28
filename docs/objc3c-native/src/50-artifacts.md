@@ -316,6 +316,20 @@ npm run check:compiler-closeout:m140
 - `python scripts/check_m140_frontend_library_boundary_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_frontend_library_entrypoint_extraction.py tests/tooling/test_objc3c_m140_boundary_contract.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
 
+## CMake targetization and linkage topology validation artifacts (M141-E001)
+
+M141 target-topology validation commands:
+
+```powershell
+npm run test:objc3c:m141-target-topology
+npm run check:compiler-closeout:m141
+```
+
+`npm run check:compiler-closeout:m141` fail-closes on targetization/linkage-topology drift via:
+
+- `python scripts/check_m141_cmake_target_topology_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_cmake_target_topology.py tests/tooling/test_objc3c_process_io_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
