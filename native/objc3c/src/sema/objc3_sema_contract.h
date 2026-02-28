@@ -208,6 +208,17 @@ struct Objc3ModuleImportGraphSummary {
   bool deterministic = true;
 };
 
+struct Objc3NamespaceCollisionShadowingSummary {
+  std::size_t namespace_collision_shadowing_sites = 0;
+  std::size_t namespace_segment_sites = 0;
+  std::size_t import_edge_candidate_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3SymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -806,6 +817,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
   Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
   Objc3ModuleImportGraphSummary module_import_graph_summary;
+  Objc3NamespaceCollisionShadowingSummary namespace_collision_shadowing_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -1053,6 +1065,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
   Objc3GenericMetadataAbiSummary generic_metadata_abi_summary;
   Objc3ModuleImportGraphSummary module_import_graph_summary;
+  Objc3NamespaceCollisionShadowingSummary namespace_collision_shadowing_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;

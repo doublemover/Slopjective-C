@@ -3523,3 +3523,33 @@ Deterministic sema intent:
 Recommended M176 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m176_sema_module_import_graph_contract.py -q`
+
+## M177 sema/type namespace collision and shadowing diagnostics contract (M177-B001)
+
+M177-B defines deterministic sema summaries for cross-module namespace-collision
+and shadowing diagnostics over module-import-graph packets.
+
+M177 sema/type surface details:
+
+- `Objc3NamespaceCollisionShadowingSummary`
+- `BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary`
+- parity counters:
+  - `namespace_collision_shadowing_sites_total`
+  - `namespace_collision_shadowing_namespace_segment_sites_total`
+  - `namespace_collision_shadowing_import_edge_candidate_sites_total`
+  - `namespace_collision_shadowing_object_pointer_type_sites_total`
+  - `namespace_collision_shadowing_pointer_declarator_sites_total`
+  - `namespace_collision_shadowing_normalized_sites_total`
+  - `namespace_collision_shadowing_contract_violation_sites_total`
+  - `deterministic_namespace_collision_shadowing_handoff`
+
+Deterministic sema intent:
+
+- namespace-collision/shadowing summaries are derived from deterministic
+  module-import-graph packets and preserve handoff parity constraints.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M177 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m177_sema_namespace_collision_shadowing_contract.py -q`

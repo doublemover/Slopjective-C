@@ -3219,6 +3219,34 @@ static Objc3ModuleImportGraphSummary BuildModuleImportGraphSummaryFromTypeAnnota
   return summary;
 }
 
+static Objc3NamespaceCollisionShadowingSummary
+BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
+    const Objc3ModuleImportGraphSummary &module_import_graph_summary) {
+  Objc3NamespaceCollisionShadowingSummary summary;
+  summary.namespace_collision_shadowing_sites =
+      module_import_graph_summary.module_import_graph_sites;
+  summary.namespace_segment_sites = module_import_graph_summary.namespace_segment_sites;
+  summary.import_edge_candidate_sites =
+      module_import_graph_summary.import_edge_candidate_sites;
+  summary.object_pointer_type_sites =
+      module_import_graph_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      module_import_graph_summary.pointer_declarator_sites;
+  summary.normalized_sites = module_import_graph_summary.normalized_sites;
+  summary.contract_violation_sites =
+      module_import_graph_summary.contract_violation_sites;
+  summary.deterministic =
+      module_import_graph_summary.deterministic &&
+      summary.namespace_segment_sites <=
+          summary.namespace_collision_shadowing_sites &&
+      summary.import_edge_candidate_sites <=
+          summary.namespace_collision_shadowing_sites &&
+      summary.normalized_sites <= summary.namespace_collision_shadowing_sites &&
+      summary.contract_violation_sites <=
+          summary.namespace_collision_shadowing_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7351,6 +7379,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
           surface.type_annotation_surface_summary,
           surface.generic_metadata_abi_summary);
+  surface.namespace_collision_shadowing_summary =
+      BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
+          surface.module_import_graph_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8357,6 +8388,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
           handoff.type_annotation_surface_summary,
           handoff.generic_metadata_abi_summary);
+  handoff.namespace_collision_shadowing_summary =
+      BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
+          handoff.module_import_graph_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -9103,6 +9137,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildModuleImportGraphSummaryFromTypeAnnotationAndGenericMetadataSummary(
           handoff.type_annotation_surface_summary,
           handoff.generic_metadata_abi_summary);
+  const Objc3NamespaceCollisionShadowingSummary
+      namespace_collision_shadowing_summary =
+          BuildNamespaceCollisionShadowingSummaryFromModuleImportGraphSummary(
+              handoff.module_import_graph_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9353,6 +9391,33 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.module_import_graph_summary.module_import_graph_sites &&
          handoff.module_import_graph_summary.contract_violation_sites <=
              handoff.module_import_graph_summary.module_import_graph_sites &&
+         handoff.namespace_collision_shadowing_summary.deterministic &&
+         handoff.namespace_collision_shadowing_summary.namespace_collision_shadowing_sites ==
+             namespace_collision_shadowing_summary.namespace_collision_shadowing_sites &&
+         handoff.namespace_collision_shadowing_summary.namespace_segment_sites ==
+             namespace_collision_shadowing_summary.namespace_segment_sites &&
+         handoff.namespace_collision_shadowing_summary.import_edge_candidate_sites ==
+             namespace_collision_shadowing_summary.import_edge_candidate_sites &&
+         handoff.namespace_collision_shadowing_summary.object_pointer_type_sites ==
+             namespace_collision_shadowing_summary.object_pointer_type_sites &&
+         handoff.namespace_collision_shadowing_summary.pointer_declarator_sites ==
+             namespace_collision_shadowing_summary.pointer_declarator_sites &&
+         handoff.namespace_collision_shadowing_summary.normalized_sites ==
+             namespace_collision_shadowing_summary.normalized_sites &&
+         handoff.namespace_collision_shadowing_summary.contract_violation_sites ==
+             namespace_collision_shadowing_summary.contract_violation_sites &&
+         handoff.namespace_collision_shadowing_summary.namespace_segment_sites <=
+             handoff.namespace_collision_shadowing_summary
+                 .namespace_collision_shadowing_sites &&
+         handoff.namespace_collision_shadowing_summary.import_edge_candidate_sites <=
+             handoff.namespace_collision_shadowing_summary
+                 .namespace_collision_shadowing_sites &&
+         handoff.namespace_collision_shadowing_summary.normalized_sites <=
+             handoff.namespace_collision_shadowing_summary
+                 .namespace_collision_shadowing_sites &&
+         handoff.namespace_collision_shadowing_summary.contract_violation_sites <=
+             handoff.namespace_collision_shadowing_summary
+                 .namespace_collision_shadowing_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
