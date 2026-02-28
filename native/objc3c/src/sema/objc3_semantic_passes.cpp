@@ -3141,6 +3141,28 @@ BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
   return summary;
 }
 
+static Objc3VarianceBridgeCastSummary BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary,
+    const Objc3ProtocolQualifiedObjectTypeSummary &protocol_summary) {
+  Objc3VarianceBridgeCastSummary summary;
+  summary.variance_bridge_cast_sites = protocol_summary.protocol_qualified_object_type_sites;
+  summary.protocol_composition_sites = protocol_summary.protocol_composition_sites;
+  summary.ownership_qualifier_sites = type_annotation_summary.ownership_qualifier_sites;
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites = protocol_summary.pointer_declarator_sites;
+  summary.normalized_sites = std::min(protocol_summary.normalized_protocol_composition_sites,
+                                      summary.object_pointer_type_sites);
+  summary.contract_violation_sites = protocol_summary.contract_violation_sites +
+                                     type_annotation_summary.invalid_ownership_qualifier_sites;
+  summary.deterministic =
+      type_annotation_summary.deterministic && protocol_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.protocol_composition_sites <= summary.variance_bridge_cast_sites &&
+      summary.normalized_sites <= summary.variance_bridge_cast_sites &&
+      summary.contract_violation_sites <= summary.variance_bridge_cast_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7260,6 +7282,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.protocol_qualified_object_type_summary =
       BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
           surface.type_annotation_surface_summary);
+  surface.variance_bridge_cast_summary =
+      BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
+          surface.type_annotation_surface_summary,
+          surface.protocol_qualified_object_type_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8253,6 +8279,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.protocol_qualified_object_type_summary =
       BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  handoff.variance_bridge_cast_summary =
+      BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
+          handoff.type_annotation_surface_summary,
+          handoff.protocol_qualified_object_type_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -8986,6 +9016,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary =
       BuildProtocolQualifiedObjectTypeSummaryFromTypeAnnotationSurfaceSummary(
           handoff.type_annotation_surface_summary);
+  const Objc3VarianceBridgeCastSummary variance_bridge_cast_summary =
+      BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary(
+          handoff.type_annotation_surface_summary,
+          handoff.protocol_qualified_object_type_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9167,6 +9201,27 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
          handoff.protocol_qualified_object_type_summary.contract_violation_sites <=
              handoff.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
+         handoff.variance_bridge_cast_summary.deterministic &&
+         handoff.variance_bridge_cast_summary.variance_bridge_cast_sites ==
+             variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         handoff.variance_bridge_cast_summary.protocol_composition_sites ==
+             variance_bridge_cast_summary.protocol_composition_sites &&
+         handoff.variance_bridge_cast_summary.ownership_qualifier_sites ==
+             variance_bridge_cast_summary.ownership_qualifier_sites &&
+         handoff.variance_bridge_cast_summary.object_pointer_type_sites ==
+             variance_bridge_cast_summary.object_pointer_type_sites &&
+         handoff.variance_bridge_cast_summary.pointer_declarator_sites ==
+             variance_bridge_cast_summary.pointer_declarator_sites &&
+         handoff.variance_bridge_cast_summary.normalized_sites ==
+             variance_bridge_cast_summary.normalized_sites &&
+         handoff.variance_bridge_cast_summary.contract_violation_sites ==
+             variance_bridge_cast_summary.contract_violation_sites &&
+         handoff.variance_bridge_cast_summary.protocol_composition_sites <=
+             handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         handoff.variance_bridge_cast_summary.normalized_sites <=
+             handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         handoff.variance_bridge_cast_summary.contract_violation_sites <=
+             handoff.variance_bridge_cast_summary.variance_bridge_cast_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

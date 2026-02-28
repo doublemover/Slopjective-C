@@ -5071,6 +5071,36 @@ Deterministic sema intent:
 Recommended M173 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m173_sema_protocol_qualified_object_type_contract.py -q`
+
+## M174 sema/type variance and bridged-cast contract (M174-B001)
+
+M174-B defines deterministic sema summaries for variance and bridged-cast
+packet safety over object-pointer type annotations.
+
+M174 sema/type surface details:
+
+- `Objc3VarianceBridgeCastSummary`
+- `BuildVarianceBridgeCastSummaryFromTypeAnnotationAndProtocolSummary`
+- parity counters:
+  - `variance_bridge_cast_sites_total`
+  - `variance_bridge_cast_protocol_composition_sites_total`
+  - `variance_bridge_cast_ownership_qualifier_sites_total`
+  - `variance_bridge_cast_object_pointer_type_sites_total`
+  - `variance_bridge_cast_pointer_declarator_sites_total`
+  - `variance_bridge_cast_normalized_sites_total`
+  - `variance_bridge_cast_contract_violation_sites_total`
+  - `deterministic_variance_bridge_cast_handoff`
+
+Deterministic sema intent:
+
+- variance/bridged-cast summaries are derived from deterministic type-annotation
+  and protocol-qualified object-type packets.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed normalization.
+
+Recommended M174 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m174_sema_variance_bridge_cast_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

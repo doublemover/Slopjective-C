@@ -154,6 +154,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t protocol_qualified_object_type_pointer_declarator_sites_total = 0;
   std::size_t protocol_qualified_object_type_normalized_protocol_composition_sites_total = 0;
   std::size_t protocol_qualified_object_type_contract_violation_sites_total = 0;
+  std::size_t variance_bridge_cast_sites_total = 0;
+  std::size_t variance_bridge_cast_protocol_composition_sites_total = 0;
+  std::size_t variance_bridge_cast_ownership_qualifier_sites_total = 0;
+  std::size_t variance_bridge_cast_object_pointer_type_sites_total = 0;
+  std::size_t variance_bridge_cast_pointer_declarator_sites_total = 0;
+  std::size_t variance_bridge_cast_normalized_sites_total = 0;
+  std::size_t variance_bridge_cast_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -337,6 +344,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_lightweight_generic_constraint_handoff = false;
   bool deterministic_nullability_flow_warning_precision_handoff = false;
   bool deterministic_protocol_qualified_object_type_handoff = false;
+  bool deterministic_variance_bridge_cast_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -364,6 +372,7 @@ struct Objc3SemaParityContractSurface {
   Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary;
   Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
+  Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -590,6 +599,28 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
          surface.protocol_qualified_object_type_summary.deterministic &&
          surface.deterministic_protocol_qualified_object_type_handoff &&
+         surface.variance_bridge_cast_summary.variance_bridge_cast_sites ==
+             surface.variance_bridge_cast_sites_total &&
+         surface.variance_bridge_cast_summary.protocol_composition_sites ==
+             surface.variance_bridge_cast_protocol_composition_sites_total &&
+         surface.variance_bridge_cast_summary.ownership_qualifier_sites ==
+             surface.variance_bridge_cast_ownership_qualifier_sites_total &&
+         surface.variance_bridge_cast_summary.object_pointer_type_sites ==
+             surface.variance_bridge_cast_object_pointer_type_sites_total &&
+         surface.variance_bridge_cast_summary.pointer_declarator_sites ==
+             surface.variance_bridge_cast_pointer_declarator_sites_total &&
+         surface.variance_bridge_cast_summary.normalized_sites ==
+             surface.variance_bridge_cast_normalized_sites_total &&
+         surface.variance_bridge_cast_summary.contract_violation_sites ==
+             surface.variance_bridge_cast_contract_violation_sites_total &&
+         surface.variance_bridge_cast_summary.protocol_composition_sites <=
+             surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         surface.variance_bridge_cast_summary.normalized_sites <=
+             surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         surface.variance_bridge_cast_summary.contract_violation_sites <=
+             surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+         surface.variance_bridge_cast_summary.deterministic &&
+         surface.deterministic_variance_bridge_cast_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1233,6 +1264,8 @@ struct Objc3SemaPassManagerResult {
   Objc3NullabilityFlowWarningPrecisionSummary nullability_flow_warning_precision_summary;
   bool deterministic_protocol_qualified_object_type_handoff = false;
   Objc3ProtocolQualifiedObjectTypeSummary protocol_qualified_object_type_summary;
+  bool deterministic_variance_bridge_cast_handoff = false;
+  Objc3VarianceBridgeCastSummary variance_bridge_cast_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;
