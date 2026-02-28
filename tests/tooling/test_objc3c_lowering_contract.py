@@ -17,7 +17,18 @@ def test_lowering_contract_module_is_wired() -> None:
     assert '#include "lower/objc3_lowering_contract.h"' in _read(PIPELINE_TYPES)
     header = _read(HEADER)
     source = _read(SOURCE)
+    assert "struct Objc3LoweringIRBoundary {" in header
+    assert "kObjc3SelectorGlobalOrdering" in header
+    assert "TryNormalizeObjc3LoweringContract(" in header
+    assert "TryBuildObjc3LoweringIRBoundary(" in header
+    assert "Objc3LoweringIRBoundaryReplayKey(" in header
     assert "TryGetCompoundAssignmentBinaryOpcode" in header
+    assert "TryNormalizeObjc3LoweringContract(" in source
+    assert "TryBuildObjc3LoweringIRBoundary(" in source
+    assert "Objc3LoweringIRBoundaryReplayKey(" in source
+    assert "runtime_dispatch_symbol=" in source
+    assert "runtime_dispatch_arg_slots=" in source
+    assert "selector_global_ordering=" in source
     assert '#include "lex/objc3_lexer.h"' not in header
     assert '#include "lex/objc3_lexer.h"' not in source
     assert '#include "parse/objc3_parser.h"' not in header

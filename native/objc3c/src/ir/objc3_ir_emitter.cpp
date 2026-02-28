@@ -14,7 +14,10 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
 class Objc3IREmitter {
  public:
   Objc3IREmitter(const Objc3Program &program, const Objc3LoweringContract &lowering_contract)
-      : program_(program), lowering_contract_(lowering_contract) {
+      : program_(program) {
+    if (!TryBuildObjc3LoweringIRBoundary(lowering_contract, lowering_ir_boundary_, boundary_error_)) {
+      return;
+    }
     for (const auto &global : program_.globals) {
       globals_.insert(global.name);
     }
@@ -35,6 +38,15 @@ class Objc3IREmitter {
 
   bool Emit(std::string &ir, std::string &error) {
     runtime_dispatch_call_emitted_ = false;
+
+    if (!boundary_error_.empty()) {
+      error = boundary_error_;
+      return false;
+    }
+    if (!ValidateMessageSendArityContract(error)) {
+      return false;
+    }
+
     std::ostringstream body;
 
     std::vector<int> resolved_global_values;
@@ -76,10 +88,11 @@ class Objc3IREmitter {
 
     std::ostringstream out;
     out << "; objc3c native frontend IR\n";
+    out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     if (runtime_dispatch_call_emitted_) {
-      out << "declare i32 @" << lowering_contract_.runtime_dispatch_symbol << "(i32, ptr";
-      for (std::size_t i = 0; i < lowering_contract_.max_message_send_args; ++i) {
+      out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
+      for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
         out << ", i32";
       }
       out << ")\n\n";
@@ -1135,9 +1148,183 @@ class Objc3IREmitter {
     return const_value != 0;
   }
 
+  bool ValidateMessageSendArityExpr(const Expr *expr, std::string &error) const {
+    if (expr == nullptr) {
+      return true;
+    }
+    switch (expr->kind) {
+      case Expr::Kind::Number:
+      case Expr::Kind::BoolLiteral:
+      case Expr::Kind::NilLiteral:
+      case Expr::Kind::Identifier:
+        return true;
+      case Expr::Kind::Binary:
+        return ValidateMessageSendArityExpr(expr->left.get(), error) &&
+               ValidateMessageSendArityExpr(expr->right.get(), error);
+      case Expr::Kind::Conditional:
+        return ValidateMessageSendArityExpr(expr->left.get(), error) &&
+               ValidateMessageSendArityExpr(expr->right.get(), error) &&
+               ValidateMessageSendArityExpr(expr->third.get(), error);
+      case Expr::Kind::Call:
+        for (const auto &arg : expr->args) {
+          if (!ValidateMessageSendArityExpr(arg.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+      case Expr::Kind::MessageSend:
+        if (expr->args.size() > lowering_ir_boundary_.runtime_dispatch_arg_slots) {
+          error = "message send exceeds runtime dispatch arg slots: got " + std::to_string(expr->args.size()) +
+                  ", max " + std::to_string(lowering_ir_boundary_.runtime_dispatch_arg_slots) + " at " +
+                  std::to_string(expr->line) + ":" + std::to_string(expr->column);
+          return false;
+        }
+        if (!ValidateMessageSendArityExpr(expr->receiver.get(), error)) {
+          return false;
+        }
+        for (const auto &arg : expr->args) {
+          if (!ValidateMessageSendArityExpr(arg.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+    }
+    return true;
+  }
+
+  bool ValidateMessageSendArityForClause(const ForClause &clause, std::string &error) const {
+    switch (clause.kind) {
+      case ForClause::Kind::None:
+        return true;
+      case ForClause::Kind::Expr:
+      case ForClause::Kind::Let:
+      case ForClause::Kind::Assign:
+        return ValidateMessageSendArityExpr(clause.value.get(), error);
+    }
+    return true;
+  }
+
+  bool ValidateMessageSendArityStmt(const Stmt *stmt, std::string &error) const {
+    if (stmt == nullptr) {
+      return true;
+    }
+    switch (stmt->kind) {
+      case Stmt::Kind::Let:
+        return stmt->let_stmt == nullptr || ValidateMessageSendArityExpr(stmt->let_stmt->value.get(), error);
+      case Stmt::Kind::Assign:
+        return stmt->assign_stmt == nullptr || ValidateMessageSendArityExpr(stmt->assign_stmt->value.get(), error);
+      case Stmt::Kind::Return:
+        return stmt->return_stmt == nullptr || ValidateMessageSendArityExpr(stmt->return_stmt->value.get(), error);
+      case Stmt::Kind::Expr:
+        return stmt->expr_stmt == nullptr || ValidateMessageSendArityExpr(stmt->expr_stmt->value.get(), error);
+      case Stmt::Kind::If:
+        if (stmt->if_stmt == nullptr) {
+          return true;
+        }
+        if (!ValidateMessageSendArityExpr(stmt->if_stmt->condition.get(), error)) {
+          return false;
+        }
+        for (const auto &then_stmt : stmt->if_stmt->then_body) {
+          if (!ValidateMessageSendArityStmt(then_stmt.get(), error)) {
+            return false;
+          }
+        }
+        for (const auto &else_stmt : stmt->if_stmt->else_body) {
+          if (!ValidateMessageSendArityStmt(else_stmt.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+      case Stmt::Kind::DoWhile:
+        if (stmt->do_while_stmt == nullptr) {
+          return true;
+        }
+        for (const auto &loop_stmt : stmt->do_while_stmt->body) {
+          if (!ValidateMessageSendArityStmt(loop_stmt.get(), error)) {
+            return false;
+          }
+        }
+        return ValidateMessageSendArityExpr(stmt->do_while_stmt->condition.get(), error);
+      case Stmt::Kind::For:
+        if (stmt->for_stmt == nullptr) {
+          return true;
+        }
+        if (!ValidateMessageSendArityForClause(stmt->for_stmt->init, error) ||
+            !ValidateMessageSendArityExpr(stmt->for_stmt->condition.get(), error) ||
+            !ValidateMessageSendArityForClause(stmt->for_stmt->step, error)) {
+          return false;
+        }
+        for (const auto &loop_stmt : stmt->for_stmt->body) {
+          if (!ValidateMessageSendArityStmt(loop_stmt.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+      case Stmt::Kind::Switch:
+        if (stmt->switch_stmt == nullptr) {
+          return true;
+        }
+        if (!ValidateMessageSendArityExpr(stmt->switch_stmt->condition.get(), error)) {
+          return false;
+        }
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          for (const auto &case_body_stmt : case_stmt.body) {
+            if (!ValidateMessageSendArityStmt(case_body_stmt.get(), error)) {
+              return false;
+            }
+          }
+        }
+        return true;
+      case Stmt::Kind::While:
+        if (stmt->while_stmt == nullptr) {
+          return true;
+        }
+        if (!ValidateMessageSendArityExpr(stmt->while_stmt->condition.get(), error)) {
+          return false;
+        }
+        for (const auto &loop_stmt : stmt->while_stmt->body) {
+          if (!ValidateMessageSendArityStmt(loop_stmt.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+      case Stmt::Kind::Block:
+        if (stmt->block_stmt == nullptr) {
+          return true;
+        }
+        for (const auto &nested_stmt : stmt->block_stmt->body) {
+          if (!ValidateMessageSendArityStmt(nested_stmt.get(), error)) {
+            return false;
+          }
+        }
+        return true;
+      case Stmt::Kind::Break:
+      case Stmt::Kind::Continue:
+      case Stmt::Kind::Empty:
+        return true;
+    }
+    return true;
+  }
+
+  bool ValidateMessageSendArityContract(std::string &error) const {
+    for (const auto &global : program_.globals) {
+      if (!ValidateMessageSendArityExpr(global.value.get(), error)) {
+        return false;
+      }
+    }
+    for (const auto &fn : program_.functions) {
+      for (const auto &stmt : fn.body) {
+        if (!ValidateMessageSendArityStmt(stmt.get(), error)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   LoweredMessageSend LowerMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
     LoweredMessageSend lowered;
-    lowered.args.assign(lowering_contract_.max_message_send_args, "0");
+    lowered.args.assign(lowering_ir_boundary_.runtime_dispatch_arg_slots, "0");
     if (expr == nullptr) {
       return lowered;
     }
@@ -1169,7 +1356,7 @@ class Objc3IREmitter {
 
     const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
       std::ostringstream call;
-      call << "  " << dispatch_value << " = call i32 @" << lowering_contract_.runtime_dispatch_symbol << "(i32 "
+      call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;
       for (const std::string &arg : lowered.args) {
         call << ", i32 " << arg;
@@ -1891,7 +2078,8 @@ class Objc3IREmitter {
   }
 
   const Objc3Program &program_;
-  Objc3LoweringContract lowering_contract_;
+  Objc3LoweringIRBoundary lowering_ir_boundary_;
+  std::string boundary_error_;
   std::unordered_set<std::string> globals_;
   std::unordered_set<std::string> mutable_global_symbols_;
   std::unordered_map<std::string, int> global_const_values_;

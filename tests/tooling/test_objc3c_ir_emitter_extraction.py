@@ -17,6 +17,11 @@ def test_ir_emitter_module_exists_and_pipeline_artifacts_use_api() -> None:
     ir_header = _read(IR_HEADER)
     ir_source = _read(IR_SOURCE)
     assert '#include "parse/objc3_parser_contract.h"' in ir_header
+    assert "TryBuildObjc3LoweringIRBoundary(" in ir_source
+    assert "ValidateMessageSendArityContract(" in ir_source
+    assert "; lowering_ir_boundary = " in ir_source
+    assert "message send exceeds runtime dispatch arg slots" in ir_source
+    assert "Objc3LoweringIRBoundaryReplayKey(" in ir_source
     assert '#include "ast/objc3_ast.h"' not in ir_header
     assert '#include "lex/objc3_lexer.h"' not in ir_header
     assert '#include "lex/objc3_lexer.h"' not in ir_source
