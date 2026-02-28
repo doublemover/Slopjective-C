@@ -175,6 +175,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain differential anchors.
 
+## M216 integration conformance suite v1
+
+- Gate intent: enforce deterministic Objective-C 3 conformance suite v1 mapping against spec sections.
+### 1.1 Conformance integration chain
+- Deterministic conformance gate:
+  - `npm run check:objc3c:m216-conformance-suite-v1`
+- Chain order:
+  - replays `check:objc3c:m217-differential-parity`.
+  - enforces all M216 lane contracts:
+    `tests/tooling/test_objc3c_m216_frontend_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_sema_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_lowering_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_validation_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_integration_conformance_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through conformance suite execution:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain conformance anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

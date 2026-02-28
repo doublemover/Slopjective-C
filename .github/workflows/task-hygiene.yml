@@ -91,6 +91,8 @@ jobs:
         run: npm run check:objc3c:m218-rc-provenance
       - name: 20 Run M217 differential testing integration gate
         run: npm run check:objc3c:m217-differential-parity
+      - name: 21 Run M216 conformance suite v1 integration gate
+        run: npm run check:objc3c:m216-conformance-suite-v1
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
