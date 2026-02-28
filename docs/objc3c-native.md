@@ -203,6 +203,30 @@ Recommended M147 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
 
+## M148 frontend selector-normalized method declaration grammar
+
+Frontend parser/AST method-declaration support now captures selector pieces and emits a canonical selector spelling for
+both declarations and definitions.
+
+M148 parser surface details:
+
+- Selector canonicalization helper:
+  - `BuildNormalizedObjcSelector(...)`
+- Method parser behavior (`ParseObjcMethodDecl(...)`):
+  - captures each selector piece in `selector_pieces`
+  - records parameter linkage per piece (`parameter_name`)
+  - emits deterministic canonical selector text in `selector`
+  - marks canonicalization completion with `selector_is_normalized`
+
+Deterministic grammar intent:
+
+- method declarations and definitions share the same selector-piece normalization path
+- canonical selector text is derived from parsed pieces instead of ad-hoc string concatenation
+
+Recommended M148 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3082,6 +3106,41 @@ Sema/type metadata handoff contract:
 Recommended M147 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
+
+## M148 sema/type selector-normalized method declaration contract (M148-B001)
+
+M148-B extends sema/type metadata and pass-manager parity surfaces for selector-normalized Objective-C
+method declarations consumed from selector-piece grammar.
+
+Sema/type contract markers:
+
+- `Objc3SelectorNormalizationSummary`
+- `selector_normalization_summary`
+- `selector_normalization_methods_total`
+- `selector_normalization_normalized_methods_total`
+- `selector_contract_normalized`
+- `selector_piece_count`
+- `selector_parameter_piece_count`
+- `selector_has_parameter_linkage_mismatch`
+- `deterministic_selector_normalization_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- selector normalization requires selector pieces
+- selector normalization mismatch
+- selector normalization flag mismatch
+- selector arity mismatch
+- selector parameter linkage mismatch
+
+Sema/type metadata handoff contract:
+
+- normalization summary packet: `handoff.selector_normalization_summary`
+- method packet selector fields: `selector_normalized`, `selector_piece_count`, `selector_parameter_piece_count`
+- parity packet gate: `result.parity_surface.deterministic_selector_normalization_handoff`
+
+Recommended M148 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5470,6 +5529,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
 
+## Selector-normalization lowering artifact contract (M148-C001)
+
+M148-C extends lowering/runtime ABI artifact publication with selector-normalized method declaration envelope markers.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m148/lowering-selector-normalization-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m148/lowering-selector-normalization-contract/selector-normalization-source-anchors.txt`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_selector_normalization_handoff`
+- `frontend.pipeline.sema_pass_manager.selector_method_declaration_entries`
+- `frontend.pipeline.sema_pass_manager.selector_normalized_method_declarations`
+- `frontend.pipeline.sema_pass_manager.selector_piece_entries`
+- `frontend.pipeline.sema_pass_manager.selector_piece_parameter_links`
+- `frontend.pipeline.semantic_surface.objc_selector_normalization_surface`
+
+IR publication markers:
+
+- `; frontend_objc_selector_normalization_profile = method_declaration_entries=<N>, normalized_method_declarations=<N>, selector_piece_entries=<N>, selector_piece_parameter_links=<N>, deterministic_selector_normalization_handoff=<bool>`
+- `!objc3.objc_selector_normalization = !{!3}`
+- `!3 = !{i64 <method_declaration_entries>, i64 <normalized_method_declarations>, i64 <selector_piece_entries>, i64 <selector_piece_parameter_links>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -5843,6 +5932,16 @@ From repo root, execute deterministic M147 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py -q`
 - `npm run check:objc3c:m147-protocol-category`
+
+## M148 validation selector-normalized method declaration runbook
+
+From repo root, execute deterministic M148 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py -q`
+- `npm run check:objc3c:m148-selector-normalization`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -7570,6 +7669,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m147_lowering_protocol_category_contract.py`
   - `tests/tooling/test_objc3c_m147_validation_protocol_category_contract.py`
   - `tests/tooling/test_objc3c_m147_integration_protocol_category_contract.py`
+
+## M148 integration selector-normalized method declaration grammar
+
+- Integration gate:
+  - `npm run check:objc3c:m148-selector-normalization`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m148_frontend_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_lowering_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_validation_selector_normalization_contract.py`
+  - `tests/tooling/test_objc3c_m148_integration_selector_normalization_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
