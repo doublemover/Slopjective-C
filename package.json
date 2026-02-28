@@ -104,6 +104,7 @@
     "test:objc3c:m142-lowering-parity": "python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q",
     "check:compiler-closeout:m141": "python scripts/check_m141_cmake_target_topology_contract.py && npm run test:objc3c:m141-target-topology && python scripts/spec_lint.py --glob \"docs/contracts/cmake_target_linkage_topology_expectations.md\"",
     "check:compiler-closeout:m142": "python scripts/check_m142_frontend_lowering_parity_contract.py && npm run test:objc3c:m142-lowering-parity && python scripts/spec_lint.py --glob \"docs/contracts/frontend_lowering_parity_expectations.md\"",
+    "check:compiler-closeout:m145": "python scripts/check_m145_direct_llvm_matrix_contract.py",
     "check:compiler-execution:m02": "python scripts/check_m02_execution_readiness.py",
     "check:compiler-execution:m03": "python scripts/check_m03_execution_readiness.py",
     "check:compiler-execution:m04": "python scripts/check_m04_execution_readiness.py",
