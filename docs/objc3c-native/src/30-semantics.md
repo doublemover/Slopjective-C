@@ -2315,3 +2315,38 @@ Sema/type metadata handoff contract:
 Recommended M147 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_sema_protocol_category_contract.py -q`
+
+## M148 sema/type selector-normalized method declaration contract (M148-B001)
+
+M148-B extends sema/type metadata and pass-manager parity surfaces for selector-normalized Objective-C
+method declarations consumed from selector-piece grammar.
+
+Sema/type contract markers:
+
+- `Objc3SelectorNormalizationSummary`
+- `selector_normalization_summary`
+- `selector_normalization_methods_total`
+- `selector_normalization_normalized_methods_total`
+- `selector_contract_normalized`
+- `selector_piece_count`
+- `selector_parameter_piece_count`
+- `selector_has_parameter_linkage_mismatch`
+- `deterministic_selector_normalization_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- selector normalization requires selector pieces
+- selector normalization mismatch
+- selector normalization flag mismatch
+- selector arity mismatch
+- selector parameter linkage mismatch
+
+Sema/type metadata handoff contract:
+
+- normalization summary packet: `handoff.selector_normalization_summary`
+- method packet selector fields: `selector_normalized`, `selector_piece_count`, `selector_parameter_piece_count`
+- parity packet gate: `result.parity_surface.deterministic_selector_normalization_handoff`
+
+Recommended M148 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m148_sema_selector_normalization_contract.py -q`

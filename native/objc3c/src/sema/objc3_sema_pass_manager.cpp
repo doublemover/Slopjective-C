@@ -70,6 +70,20 @@ bool IsCanonicalPassDiagnostics(const std::vector<std::string> &diagnostics) {
   return std::is_sorted(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);
 }
 
+bool IsEquivalentSelectorNormalizationSummary(const Objc3SelectorNormalizationSummary &lhs,
+                                             const Objc3SelectorNormalizationSummary &rhs) {
+  return lhs.methods_total == rhs.methods_total &&
+         lhs.normalized_methods == rhs.normalized_methods &&
+         lhs.selector_piece_entries == rhs.selector_piece_entries &&
+         lhs.selector_parameter_piece_entries == rhs.selector_parameter_piece_entries &&
+         lhs.selector_pieceless_methods == rhs.selector_pieceless_methods &&
+         lhs.selector_spelling_mismatches == rhs.selector_spelling_mismatches &&
+         lhs.selector_arity_mismatches == rhs.selector_arity_mismatches &&
+         lhs.selector_parameter_linkage_mismatches == rhs.selector_parameter_linkage_mismatches &&
+         lhs.selector_normalization_flag_mismatches == rhs.selector_normalization_flag_mismatches &&
+         lhs.selector_missing_keyword_pieces == rhs.selector_missing_keyword_pieces;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -132,6 +146,18 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.protocol_category_composition_summary.category_composition_symbols &&
       result.integration_surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
           result.type_metadata_handoff.protocol_category_composition_summary.invalid_protocol_composition_sites;
+  result.selector_normalization_summary = result.integration_surface.selector_normalization_summary;
+  result.deterministic_selector_normalization_handoff =
+      result.type_metadata_handoff.selector_normalization_summary.deterministic &&
+      result.integration_surface.selector_normalization_summary.deterministic &&
+      IsEquivalentSelectorNormalizationSummary(result.integration_surface.selector_normalization_summary,
+                                               result.type_metadata_handoff.selector_normalization_summary) &&
+      result.type_metadata_handoff.selector_normalization_summary.normalized_methods <=
+          result.type_metadata_handoff.selector_normalization_summary.methods_total &&
+      result.type_metadata_handoff.selector_normalization_summary.selector_parameter_piece_entries <=
+          result.type_metadata_handoff.selector_normalization_summary.selector_piece_entries &&
+      result.type_metadata_handoff.selector_normalization_summary.contract_violations() <=
+          result.type_metadata_handoff.selector_normalization_summary.methods_total;
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -167,6 +193,27 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.protocol_category_composition_summary.category_composition_symbols;
   result.parity_surface.invalid_protocol_composition_sites_total =
       result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites;
+  result.parity_surface.selector_normalization_summary = result.type_metadata_handoff.selector_normalization_summary;
+  result.parity_surface.selector_normalization_methods_total =
+      result.parity_surface.selector_normalization_summary.methods_total;
+  result.parity_surface.selector_normalization_normalized_methods_total =
+      result.parity_surface.selector_normalization_summary.normalized_methods;
+  result.parity_surface.selector_normalization_piece_entries_total =
+      result.parity_surface.selector_normalization_summary.selector_piece_entries;
+  result.parity_surface.selector_normalization_parameter_piece_entries_total =
+      result.parity_surface.selector_normalization_summary.selector_parameter_piece_entries;
+  result.parity_surface.selector_normalization_pieceless_methods_total =
+      result.parity_surface.selector_normalization_summary.selector_pieceless_methods;
+  result.parity_surface.selector_normalization_spelling_mismatches_total =
+      result.parity_surface.selector_normalization_summary.selector_spelling_mismatches;
+  result.parity_surface.selector_normalization_arity_mismatches_total =
+      result.parity_surface.selector_normalization_summary.selector_arity_mismatches;
+  result.parity_surface.selector_normalization_parameter_linkage_mismatches_total =
+      result.parity_surface.selector_normalization_summary.selector_parameter_linkage_mismatches;
+  result.parity_surface.selector_normalization_flag_mismatches_total =
+      result.parity_surface.selector_normalization_summary.selector_normalization_flag_mismatches;
+  result.parity_surface.selector_normalization_missing_keyword_pieces_total =
+      result.parity_surface.selector_normalization_summary.selector_missing_keyword_pieces;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -193,6 +240,35 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.invalid_protocol_composition_sites_total &&
       result.parity_surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
           result.parity_surface.protocol_category_composition_summary.total_composition_sites();
+  result.parity_surface.deterministic_selector_normalization_handoff =
+      result.deterministic_selector_normalization_handoff &&
+      result.parity_surface.selector_normalization_summary.methods_total ==
+          result.parity_surface.selector_normalization_methods_total &&
+      result.parity_surface.selector_normalization_summary.normalized_methods ==
+          result.parity_surface.selector_normalization_normalized_methods_total &&
+      result.parity_surface.selector_normalization_summary.selector_piece_entries ==
+          result.parity_surface.selector_normalization_piece_entries_total &&
+      result.parity_surface.selector_normalization_summary.selector_parameter_piece_entries ==
+          result.parity_surface.selector_normalization_parameter_piece_entries_total &&
+      result.parity_surface.selector_normalization_summary.selector_pieceless_methods ==
+          result.parity_surface.selector_normalization_pieceless_methods_total &&
+      result.parity_surface.selector_normalization_summary.selector_spelling_mismatches ==
+          result.parity_surface.selector_normalization_spelling_mismatches_total &&
+      result.parity_surface.selector_normalization_summary.selector_arity_mismatches ==
+          result.parity_surface.selector_normalization_arity_mismatches_total &&
+      result.parity_surface.selector_normalization_summary.selector_parameter_linkage_mismatches ==
+          result.parity_surface.selector_normalization_parameter_linkage_mismatches_total &&
+      result.parity_surface.selector_normalization_summary.selector_normalization_flag_mismatches ==
+          result.parity_surface.selector_normalization_flag_mismatches_total &&
+      result.parity_surface.selector_normalization_summary.selector_missing_keyword_pieces ==
+          result.parity_surface.selector_normalization_missing_keyword_pieces_total &&
+      result.parity_surface.selector_normalization_summary.normalized_methods <=
+          result.parity_surface.selector_normalization_summary.methods_total &&
+      result.parity_surface.selector_normalization_summary.selector_parameter_piece_entries <=
+          result.parity_surface.selector_normalization_summary.selector_piece_entries &&
+      result.parity_surface.selector_normalization_summary.contract_violations() <=
+          result.parity_surface.selector_normalization_summary.methods_total &&
+      result.parity_surface.selector_normalization_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -212,6 +288,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.interface_implementation_summary.deterministic &&
       result.parity_surface.deterministic_interface_implementation_handoff &&
       result.parity_surface.protocol_category_composition_summary.deterministic &&
-      result.parity_surface.deterministic_protocol_category_composition_handoff;
+      result.parity_surface.deterministic_protocol_category_composition_handoff &&
+      result.parity_surface.selector_normalization_summary.deterministic &&
+      result.parity_surface.deterministic_selector_normalization_handoff;
   return result;
 }

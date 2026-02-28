@@ -704,8 +704,173 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
   }
 }
 
+struct MethodSelectorNormalizationContractInfo {
+  std::string normalized_selector;
+  std::size_t selector_piece_count = 0;
+  std::size_t selector_parameter_piece_count = 0;
+  bool selector_contract_normalized = false;
+  bool selector_had_pieceless_form = false;
+  bool selector_has_spelling_mismatch = false;
+  bool selector_has_arity_mismatch = false;
+  bool selector_has_parameter_linkage_mismatch = false;
+  bool selector_has_normalization_flag_mismatch = false;
+  bool selector_has_missing_piece_keyword = false;
+};
+
+static std::string BuildNormalizedMethodSelectorFromPieces(
+    const std::vector<Objc3MethodDecl::SelectorPiece> &pieces) {
+  std::string normalized;
+  for (const auto &piece : pieces) {
+    normalized += piece.keyword;
+    if (piece.has_parameter) {
+      normalized += ":";
+    }
+  }
+  return normalized;
+}
+
+static MethodSelectorNormalizationContractInfo BuildMethodSelectorNormalizationContractInfo(
+    const Objc3MethodDecl &method) {
+  MethodSelectorNormalizationContractInfo info;
+  info.selector_piece_count = method.selector_pieces.size();
+  info.selector_had_pieceless_form = method.selector_pieces.empty();
+
+  std::size_t linked_param_index = 0;
+  for (const auto &piece : method.selector_pieces) {
+    if (piece.keyword.empty()) {
+      info.selector_has_missing_piece_keyword = true;
+    }
+    if (!piece.has_parameter) {
+      continue;
+    }
+
+    ++info.selector_parameter_piece_count;
+    if (linked_param_index >= method.params.size() || piece.parameter_name != method.params[linked_param_index].name) {
+      info.selector_has_parameter_linkage_mismatch = true;
+    }
+    ++linked_param_index;
+  }
+  info.selector_has_arity_mismatch = info.selector_parameter_piece_count != method.params.size();
+
+  if (method.selector_pieces.empty()) {
+    info.normalized_selector = method.selector;
+  } else {
+    info.normalized_selector = BuildNormalizedMethodSelectorFromPieces(method.selector_pieces);
+    info.selector_has_spelling_mismatch = method.selector != info.normalized_selector;
+  }
+
+  if (info.normalized_selector.empty()) {
+    info.normalized_selector = "<unknown>";
+  }
+
+  info.selector_has_normalization_flag_mismatch = !method.selector_is_normalized;
+  info.selector_contract_normalized = !info.selector_had_pieceless_form &&
+                                      !info.selector_has_spelling_mismatch &&
+                                      !info.selector_has_arity_mismatch &&
+                                      !info.selector_has_parameter_linkage_mismatch &&
+                                      !info.selector_has_normalization_flag_mismatch &&
+                                      !info.selector_has_missing_piece_keyword &&
+                                      info.normalized_selector != "<unknown>";
+  return info;
+}
+
 static std::string MethodSelectorName(const Objc3MethodDecl &method) {
-  return method.selector.empty() ? std::string("<unknown>") : method.selector;
+  const MethodSelectorNormalizationContractInfo selector_contract =
+      BuildMethodSelectorNormalizationContractInfo(method);
+  return selector_contract.normalized_selector;
+}
+
+static void ValidateMethodSelectorNormalizationContract(
+    const Objc3MethodDecl &method,
+    const std::string &owner_name,
+    const std::string &owner_kind,
+    const MethodSelectorNormalizationContractInfo &selector_contract,
+    std::vector<std::string> &diagnostics) {
+  const std::string selector = selector_contract.normalized_selector.empty()
+                                   ? std::string("<unknown>")
+                                   : selector_contract.normalized_selector;
+  if (selector_contract.selector_had_pieceless_form) {
+    diagnostics.push_back(MakeDiag(method.line,
+                                   method.column,
+                                   "O3S206",
+                                   "type mismatch: selector normalization requires selector pieces for selector '" +
+                                       selector + "' in " + owner_kind + " '" + owner_name + "'"));
+  }
+  if (selector_contract.selector_has_spelling_mismatch) {
+    const std::string raw_selector = method.selector.empty() ? "<unknown>" : method.selector;
+    diagnostics.push_back(MakeDiag(method.line,
+                                   method.column,
+                                   "O3S206",
+                                   "type mismatch: selector normalization mismatch in " + owner_kind + " '" +
+                                       owner_name + "' for selector '" + raw_selector + "' (expected '" + selector +
+                                       "')"));
+  }
+  if (selector_contract.selector_has_normalization_flag_mismatch) {
+    diagnostics.push_back(MakeDiag(method.line,
+                                   method.column,
+                                   "O3S206",
+                                   "type mismatch: selector normalization flag mismatch for selector '" + selector +
+                                       "' in " + owner_kind + " '" + owner_name + "'"));
+  }
+  if (selector_contract.selector_has_missing_piece_keyword) {
+    for (const auto &piece : method.selector_pieces) {
+      if (!piece.keyword.empty()) {
+        continue;
+      }
+      diagnostics.push_back(MakeDiag(piece.line,
+                                     piece.column,
+                                     "O3S206",
+                                     "type mismatch: selector piece keyword must be non-empty for selector '" +
+                                         selector + "' in " + owner_kind + " '" + owner_name + "'"));
+    }
+  }
+  if (selector_contract.selector_has_arity_mismatch) {
+    diagnostics.push_back(MakeDiag(method.line,
+                                   method.column,
+                                   "O3S206",
+                                   "type mismatch: selector arity mismatch for selector '" + selector + "' in " +
+                                       owner_kind + " '" + owner_name + "' (selector parameters=" +
+                                       std::to_string(selector_contract.selector_parameter_piece_count) +
+                                       ", declaration parameters=" + std::to_string(method.params.size()) + ")"));
+  }
+  if (selector_contract.selector_has_parameter_linkage_mismatch) {
+    std::size_t linked_param_index = 0;
+    for (const auto &piece : method.selector_pieces) {
+      if (!piece.has_parameter) {
+        continue;
+      }
+      const bool missing_decl_param = linked_param_index >= method.params.size();
+      const std::string expected_param = piece.parameter_name.empty() ? "<unnamed>" : piece.parameter_name;
+      const std::string actual_param =
+          missing_decl_param
+              ? "<missing>"
+              : (method.params[linked_param_index].name.empty() ? std::string("<unnamed>")
+                                                                : method.params[linked_param_index].name);
+      if (missing_decl_param || expected_param != actual_param) {
+        diagnostics.push_back(MakeDiag(piece.line,
+                                       piece.column,
+                                       "O3S206",
+                                       "type mismatch: selector parameter linkage mismatch for selector '" +
+                                           selector + "' in " + owner_kind + " '" + owner_name + "' piece '" +
+                                           piece.keyword + ":' (piece parameter='" + expected_param +
+                                           "', declaration parameter='" + actual_param + "')"));
+      }
+      ++linked_param_index;
+    }
+
+    while (linked_param_index < method.params.size()) {
+      const FuncParam &param = method.params[linked_param_index];
+      const std::string param_name = param.name.empty() ? "<unnamed>" : param.name;
+      diagnostics.push_back(MakeDiag(param.line,
+                                     param.column,
+                                     "O3S206",
+                                     "type mismatch: selector parameter linkage mismatch for selector '" + selector +
+                                         "' in " + owner_kind + " '" + owner_name +
+                                         "' (declaration parameter '" + param_name +
+                                         "' has no selector piece linkage)"));
+      ++linked_param_index;
+    }
+  }
 }
 
 static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
@@ -790,8 +955,19 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
   }
 }
 
-static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method) {
+static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
+                                       const MethodSelectorNormalizationContractInfo &selector_contract) {
   Objc3MethodInfo info;
+  info.selector_normalized = selector_contract.normalized_selector;
+  info.selector_piece_count = selector_contract.selector_piece_count;
+  info.selector_parameter_piece_count = selector_contract.selector_parameter_piece_count;
+  info.selector_contract_normalized = selector_contract.selector_contract_normalized;
+  info.selector_had_pieceless_form = selector_contract.selector_had_pieceless_form;
+  info.selector_has_spelling_mismatch = selector_contract.selector_has_spelling_mismatch;
+  info.selector_has_arity_mismatch = selector_contract.selector_has_arity_mismatch;
+  info.selector_has_parameter_linkage_mismatch = selector_contract.selector_has_parameter_linkage_mismatch;
+  info.selector_has_normalization_flag_mismatch = selector_contract.selector_has_normalization_flag_mismatch;
+  info.selector_has_missing_piece_keyword = selector_contract.selector_has_missing_piece_keyword;
   info.arity = method.params.size();
   info.param_types.reserve(method.params.size());
   info.param_is_vector.reserve(method.params.size());
@@ -1932,6 +2108,59 @@ static Objc3ProtocolCategoryCompositionSummary BuildProtocolCategoryCompositionS
   return summary;
 }
 
+static void AccumulateSelectorNormalizationFromMethodInfo(const Objc3MethodInfo &method,
+                                                          Objc3SelectorNormalizationSummary &summary) {
+  ++summary.methods_total;
+  if (method.selector_contract_normalized) {
+    ++summary.normalized_methods;
+  }
+  summary.selector_piece_entries += method.selector_piece_count;
+  summary.selector_parameter_piece_entries += method.selector_parameter_piece_count;
+  if (method.selector_had_pieceless_form) {
+    ++summary.selector_pieceless_methods;
+  }
+  if (method.selector_has_spelling_mismatch) {
+    ++summary.selector_spelling_mismatches;
+  }
+  if (method.selector_has_arity_mismatch) {
+    ++summary.selector_arity_mismatches;
+  }
+  if (method.selector_has_parameter_linkage_mismatch) {
+    ++summary.selector_parameter_linkage_mismatches;
+  }
+  if (method.selector_has_normalization_flag_mismatch) {
+    ++summary.selector_normalization_flag_mismatches;
+  }
+  if (method.selector_has_missing_piece_keyword) {
+    ++summary.selector_missing_keyword_pieces;
+  }
+  if (method.selector_parameter_piece_count > method.selector_piece_count ||
+      method.selector_normalized.empty()) {
+    summary.deterministic = false;
+  }
+}
+
+static Objc3SelectorNormalizationSummary BuildSelectorNormalizationSummaryFromSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3SelectorNormalizationSummary summary;
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      AccumulateSelectorNormalizationFromMethodInfo(method_entry.second, summary);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      AccumulateSelectorNormalizationFromMethodInfo(method_entry.second, summary);
+    }
+  }
+
+  summary.deterministic = summary.deterministic &&
+                          summary.normalized_methods <= summary.methods_total &&
+                          summary.selector_parameter_piece_entries <= summary.selector_piece_entries &&
+                          summary.contract_violations() <= summary.methods_total;
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -2080,10 +2309,14 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     Objc3InterfaceInfo interface_info;
     interface_info.super_name = interface_decl.super_name;
     for (const auto &method_decl : interface_decl.methods) {
+      const MethodSelectorNormalizationContractInfo selector_contract =
+          BuildMethodSelectorNormalizationContractInfo(method_decl);
+      ValidateMethodSelectorNormalizationContract(
+          method_decl, interface_decl.name, "interface", selector_contract, diagnostics);
       ValidateMethodReturnTypeSuffixes(method_decl, interface_decl.name, "interface", diagnostics);
       ValidateMethodParameterTypeSuffixes(method_decl, interface_decl.name, "interface", diagnostics);
 
-      const std::string selector = MethodSelectorName(method_decl);
+      const std::string selector = selector_contract.normalized_selector;
       if (method_decl.has_body) {
         diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
                                        "type mismatch: interface selector '" + selector + "' in '" +
@@ -2091,7 +2324,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       }
 
       const auto method_insert =
-          interface_info.methods.emplace(selector, BuildMethodInfo(method_decl));
+          interface_info.methods.emplace(selector, BuildMethodInfo(method_decl, selector_contract));
       if (!method_insert.second) {
         diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S200",
                                        "duplicate interface selector '" + selector + "' in interface '" +
@@ -2124,17 +2357,21 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     }
 
     for (const auto &method_decl : implementation_decl.methods) {
+      const MethodSelectorNormalizationContractInfo selector_contract =
+          BuildMethodSelectorNormalizationContractInfo(method_decl);
+      ValidateMethodSelectorNormalizationContract(
+          method_decl, implementation_decl.name, "implementation", selector_contract, diagnostics);
       ValidateMethodReturnTypeSuffixes(method_decl, implementation_decl.name, "implementation", diagnostics);
       ValidateMethodParameterTypeSuffixes(method_decl, implementation_decl.name, "implementation", diagnostics);
 
-      const std::string selector = MethodSelectorName(method_decl);
+      const std::string selector = selector_contract.normalized_selector;
       if (!method_decl.has_body) {
         diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S206",
                                        "type mismatch: implementation selector '" + selector + "' in '" +
                                            implementation_decl.name + "' must define a body"));
       }
 
-      Objc3MethodInfo method_info = BuildMethodInfo(method_decl);
+      Objc3MethodInfo method_info = BuildMethodInfo(method_decl, selector_contract);
       const auto method_insert =
           implementation_info.methods.emplace(selector, std::move(method_info));
       if (!method_insert.second) {
@@ -2179,6 +2416,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           interface_implementation_summary.interface_method_symbols;
   surface.interface_implementation_summary = interface_implementation_summary;
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
+  surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -2262,6 +2500,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       const Objc3MethodInfo &source = method_it->second;
       Objc3SemanticMethodTypeMetadata method_metadata;
       method_metadata.selector = selector;
+      method_metadata.selector_normalized = source.selector_normalized;
+      method_metadata.selector_piece_count = source.selector_piece_count;
+      method_metadata.selector_parameter_piece_count = source.selector_parameter_piece_count;
+      method_metadata.selector_contract_normalized = source.selector_contract_normalized;
+      method_metadata.selector_had_pieceless_form = source.selector_had_pieceless_form;
+      method_metadata.selector_has_spelling_mismatch = source.selector_has_spelling_mismatch;
+      method_metadata.selector_has_arity_mismatch = source.selector_has_arity_mismatch;
+      method_metadata.selector_has_parameter_linkage_mismatch = source.selector_has_parameter_linkage_mismatch;
+      method_metadata.selector_has_normalization_flag_mismatch = source.selector_has_normalization_flag_mismatch;
+      method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
       method_metadata.param_types = source.param_types;
       method_metadata.param_is_vector = source.param_is_vector;
@@ -2320,6 +2568,16 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       const Objc3MethodInfo &source = method_it->second;
       Objc3SemanticMethodTypeMetadata method_metadata;
       method_metadata.selector = selector;
+      method_metadata.selector_normalized = source.selector_normalized;
+      method_metadata.selector_piece_count = source.selector_piece_count;
+      method_metadata.selector_parameter_piece_count = source.selector_parameter_piece_count;
+      method_metadata.selector_contract_normalized = source.selector_contract_normalized;
+      method_metadata.selector_had_pieceless_form = source.selector_had_pieceless_form;
+      method_metadata.selector_has_spelling_mismatch = source.selector_has_spelling_mismatch;
+      method_metadata.selector_has_arity_mismatch = source.selector_has_arity_mismatch;
+      method_metadata.selector_has_parameter_linkage_mismatch = source.selector_has_parameter_linkage_mismatch;
+      method_metadata.selector_has_normalization_flag_mismatch = source.selector_has_normalization_flag_mismatch;
+      method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
       method_metadata.param_types = source.param_types;
       method_metadata.param_is_vector = source.param_is_vector;
@@ -2435,6 +2693,58 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       handoff.interface_implementation_summary.linked_implementation_symbols <=
           handoff.interface_implementation_summary.interface_method_symbols;
 
+  handoff.selector_normalization_summary = Objc3SelectorNormalizationSummary{};
+  const auto accumulate_method_selector_metadata =
+      [&handoff](const Objc3SemanticMethodTypeMetadata &metadata) {
+        ++handoff.selector_normalization_summary.methods_total;
+        if (metadata.selector_contract_normalized) {
+          ++handoff.selector_normalization_summary.normalized_methods;
+        }
+        handoff.selector_normalization_summary.selector_piece_entries += metadata.selector_piece_count;
+        handoff.selector_normalization_summary.selector_parameter_piece_entries +=
+            metadata.selector_parameter_piece_count;
+        if (metadata.selector_had_pieceless_form) {
+          ++handoff.selector_normalization_summary.selector_pieceless_methods;
+        }
+        if (metadata.selector_has_spelling_mismatch) {
+          ++handoff.selector_normalization_summary.selector_spelling_mismatches;
+        }
+        if (metadata.selector_has_arity_mismatch) {
+          ++handoff.selector_normalization_summary.selector_arity_mismatches;
+        }
+        if (metadata.selector_has_parameter_linkage_mismatch) {
+          ++handoff.selector_normalization_summary.selector_parameter_linkage_mismatches;
+        }
+        if (metadata.selector_has_normalization_flag_mismatch) {
+          ++handoff.selector_normalization_summary.selector_normalization_flag_mismatches;
+        }
+        if (metadata.selector_has_missing_piece_keyword) {
+          ++handoff.selector_normalization_summary.selector_missing_keyword_pieces;
+        }
+        if (metadata.selector_normalized.empty() ||
+            metadata.selector_parameter_piece_count > metadata.selector_piece_count) {
+          handoff.selector_normalization_summary.deterministic = false;
+        }
+      };
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method_selector_metadata(method_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method_selector_metadata(method_metadata);
+    }
+  }
+  handoff.selector_normalization_summary.deterministic =
+      handoff.selector_normalization_summary.deterministic &&
+      handoff.selector_normalization_summary.normalized_methods <=
+          handoff.selector_normalization_summary.methods_total &&
+      handoff.selector_normalization_summary.selector_parameter_piece_entries <=
+          handoff.selector_normalization_summary.selector_piece_entries &&
+      handoff.selector_normalization_summary.contract_violations() <=
+          handoff.selector_normalization_summary.methods_total;
+
   handoff.protocol_category_composition_summary = Objc3ProtocolCategoryCompositionSummary{};
   const auto accumulate_function_metadata_composition =
       [&handoff](const Objc3SemanticFunctionTypeMetadata &metadata) {
@@ -2529,6 +2839,26 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   }
 
   const auto is_deterministic_method_metadata = [](const Objc3SemanticMethodTypeMetadata &metadata) {
+    if (metadata.selector.empty() ||
+        metadata.selector_normalized.empty() ||
+        metadata.selector != metadata.selector_normalized ||
+        metadata.selector_parameter_piece_count > metadata.selector_piece_count ||
+        metadata.selector_had_pieceless_form != (metadata.selector_piece_count == 0u) ||
+        metadata.selector_has_arity_mismatch != (metadata.selector_parameter_piece_count != metadata.arity)) {
+      return false;
+    }
+    if (metadata.selector_contract_normalized &&
+        (metadata.selector_had_pieceless_form ||
+         metadata.selector_has_spelling_mismatch ||
+         metadata.selector_has_arity_mismatch ||
+         metadata.selector_has_parameter_linkage_mismatch ||
+         metadata.selector_has_normalization_flag_mismatch ||
+         metadata.selector_has_missing_piece_keyword)) {
+      return false;
+    }
+    if (metadata.selector_has_missing_piece_keyword && metadata.selector_contract_normalized) {
+      return false;
+    }
     if (metadata.param_types.size() != metadata.arity ||
         metadata.param_is_vector.size() != metadata.arity ||
         metadata.param_vector_base_spelling.size() != metadata.arity ||
@@ -2688,6 +3018,55 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       protocol_category_summary.category_composition_sites <= protocol_category_summary.protocol_composition_sites &&
       protocol_category_summary.category_composition_symbols <= protocol_category_summary.protocol_composition_symbols;
 
+  Objc3SelectorNormalizationSummary selector_summary;
+  const auto accumulate_selector_summary = [&selector_summary](const Objc3SemanticMethodTypeMetadata &metadata) {
+    ++selector_summary.methods_total;
+    if (metadata.selector_contract_normalized) {
+      ++selector_summary.normalized_methods;
+    }
+    selector_summary.selector_piece_entries += metadata.selector_piece_count;
+    selector_summary.selector_parameter_piece_entries += metadata.selector_parameter_piece_count;
+    if (metadata.selector_had_pieceless_form) {
+      ++selector_summary.selector_pieceless_methods;
+    }
+    if (metadata.selector_has_spelling_mismatch) {
+      ++selector_summary.selector_spelling_mismatches;
+    }
+    if (metadata.selector_has_arity_mismatch) {
+      ++selector_summary.selector_arity_mismatches;
+    }
+    if (metadata.selector_has_parameter_linkage_mismatch) {
+      ++selector_summary.selector_parameter_linkage_mismatches;
+    }
+    if (metadata.selector_has_normalization_flag_mismatch) {
+      ++selector_summary.selector_normalization_flag_mismatches;
+    }
+    if (metadata.selector_has_missing_piece_keyword) {
+      ++selector_summary.selector_missing_keyword_pieces;
+    }
+    if (metadata.selector.empty() ||
+        metadata.selector_normalized.empty() ||
+        metadata.selector != metadata.selector_normalized ||
+        metadata.selector_parameter_piece_count > metadata.selector_piece_count) {
+      selector_summary.deterministic = false;
+    }
+  };
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_selector_summary(method);
+    }
+  }
+  for (const auto &metadata : handoff.implementations_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_selector_summary(method);
+    }
+  }
+  selector_summary.deterministic =
+      selector_summary.deterministic &&
+      selector_summary.normalized_methods <= selector_summary.methods_total &&
+      selector_summary.selector_parameter_piece_entries <= selector_summary.selector_piece_entries &&
+      selector_summary.contract_violations() <= selector_summary.methods_total;
+
   std::size_t interface_method_symbols = 0;
   for (const auto &metadata : handoff.interfaces_lexicographic) {
     interface_method_symbols += metadata.methods_lexicographic.size();
@@ -2713,9 +3092,27 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.protocol_category_composition_summary.category_composition_sites ==
              protocol_category_summary.category_composition_sites &&
          handoff.protocol_category_composition_summary.category_composition_symbols ==
-             protocol_category_summary.category_composition_symbols &&
+              protocol_category_summary.category_composition_symbols &&
          handoff.protocol_category_composition_summary.invalid_protocol_composition_sites ==
-             protocol_category_summary.invalid_protocol_composition_sites;
+              protocol_category_summary.invalid_protocol_composition_sites &&
+         handoff.selector_normalization_summary.deterministic &&
+         handoff.selector_normalization_summary.methods_total == selector_summary.methods_total &&
+         handoff.selector_normalization_summary.normalized_methods == selector_summary.normalized_methods &&
+         handoff.selector_normalization_summary.selector_piece_entries == selector_summary.selector_piece_entries &&
+         handoff.selector_normalization_summary.selector_parameter_piece_entries ==
+             selector_summary.selector_parameter_piece_entries &&
+         handoff.selector_normalization_summary.selector_pieceless_methods ==
+             selector_summary.selector_pieceless_methods &&
+         handoff.selector_normalization_summary.selector_spelling_mismatches ==
+             selector_summary.selector_spelling_mismatches &&
+         handoff.selector_normalization_summary.selector_arity_mismatches ==
+             selector_summary.selector_arity_mismatches &&
+         handoff.selector_normalization_summary.selector_parameter_linkage_mismatches ==
+             selector_summary.selector_parameter_linkage_mismatches &&
+         handoff.selector_normalization_summary.selector_normalization_flag_mismatches ==
+             selector_summary.selector_normalization_flag_mismatches &&
+         handoff.selector_normalization_summary.selector_missing_keyword_pieces ==
+             selector_summary.selector_missing_keyword_pieces;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

@@ -99,13 +99,25 @@ struct Objc3SemaParityContractSurface {
   std::size_t category_composition_sites_total = 0;
   std::size_t category_composition_symbols_total = 0;
   std::size_t invalid_protocol_composition_sites_total = 0;
+  std::size_t selector_normalization_methods_total = 0;
+  std::size_t selector_normalization_normalized_methods_total = 0;
+  std::size_t selector_normalization_piece_entries_total = 0;
+  std::size_t selector_normalization_parameter_piece_entries_total = 0;
+  std::size_t selector_normalization_pieceless_methods_total = 0;
+  std::size_t selector_normalization_spelling_mismatches_total = 0;
+  std::size_t selector_normalization_arity_mismatches_total = 0;
+  std::size_t selector_normalization_parameter_linkage_mismatches_total = 0;
+  std::size_t selector_normalization_flag_mismatches_total = 0;
+  std::size_t selector_normalization_missing_keyword_pieces_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
   bool deterministic_protocol_category_composition_handoff = false;
+  bool deterministic_selector_normalization_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -143,7 +155,33 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
              surface.protocol_category_composition_summary.total_composition_sites() &&
          surface.protocol_category_composition_summary.deterministic &&
-         surface.deterministic_protocol_category_composition_handoff;
+         surface.deterministic_protocol_category_composition_handoff &&
+         surface.selector_normalization_summary.methods_total == surface.selector_normalization_methods_total &&
+         surface.selector_normalization_summary.normalized_methods ==
+             surface.selector_normalization_normalized_methods_total &&
+         surface.selector_normalization_summary.selector_piece_entries ==
+             surface.selector_normalization_piece_entries_total &&
+         surface.selector_normalization_summary.selector_parameter_piece_entries ==
+             surface.selector_normalization_parameter_piece_entries_total &&
+         surface.selector_normalization_summary.selector_pieceless_methods ==
+             surface.selector_normalization_pieceless_methods_total &&
+         surface.selector_normalization_summary.selector_spelling_mismatches ==
+             surface.selector_normalization_spelling_mismatches_total &&
+         surface.selector_normalization_summary.selector_arity_mismatches ==
+             surface.selector_normalization_arity_mismatches_total &&
+         surface.selector_normalization_summary.selector_parameter_linkage_mismatches ==
+             surface.selector_normalization_parameter_linkage_mismatches_total &&
+         surface.selector_normalization_summary.selector_normalization_flag_mismatches ==
+             surface.selector_normalization_flag_mismatches_total &&
+         surface.selector_normalization_summary.selector_missing_keyword_pieces ==
+             surface.selector_normalization_missing_keyword_pieces_total &&
+         surface.selector_normalization_summary.selector_parameter_piece_entries <=
+             surface.selector_normalization_summary.selector_piece_entries &&
+         surface.selector_normalization_summary.normalized_methods <= surface.selector_normalization_summary.methods_total &&
+         surface.selector_normalization_summary.contract_violations() <=
+             surface.selector_normalization_summary.methods_total &&
+         surface.selector_normalization_summary.deterministic &&
+         surface.deterministic_selector_normalization_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -156,6 +194,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
   bool deterministic_protocol_category_composition_handoff = false;
+  bool deterministic_selector_normalization_handoff = false;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

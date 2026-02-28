@@ -59,6 +59,26 @@ struct Objc3ProtocolCategoryCompositionSummary {
   std::size_t total_composition_sites() const { return protocol_composition_sites + category_composition_sites; }
 };
 
+struct Objc3SelectorNormalizationSummary {
+  std::size_t methods_total = 0;
+  std::size_t normalized_methods = 0;
+  std::size_t selector_piece_entries = 0;
+  std::size_t selector_parameter_piece_entries = 0;
+  std::size_t selector_pieceless_methods = 0;
+  std::size_t selector_spelling_mismatches = 0;
+  std::size_t selector_arity_mismatches = 0;
+  std::size_t selector_parameter_linkage_mismatches = 0;
+  std::size_t selector_normalization_flag_mismatches = 0;
+  std::size_t selector_missing_keyword_pieces = 0;
+  bool deterministic = true;
+
+  std::size_t contract_violations() const {
+    return selector_pieceless_methods + selector_spelling_mismatches + selector_arity_mismatches +
+           selector_parameter_linkage_mismatches + selector_normalization_flag_mismatches +
+           selector_missing_keyword_pieces;
+  }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -81,6 +101,16 @@ struct FunctionInfo {
 };
 
 struct Objc3MethodInfo {
+  std::string selector_normalized;
+  std::size_t selector_piece_count = 0;
+  std::size_t selector_parameter_piece_count = 0;
+  bool selector_contract_normalized = false;
+  bool selector_had_pieceless_form = false;
+  bool selector_has_spelling_mismatch = false;
+  bool selector_has_arity_mismatch = false;
+  bool selector_has_parameter_linkage_mismatch = false;
+  bool selector_has_normalization_flag_mismatch = false;
+  bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
   std::vector<bool> param_is_vector;
@@ -129,6 +159,7 @@ struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
   bool built = false;
 };
 
@@ -156,6 +187,16 @@ struct Objc3SemanticFunctionTypeMetadata {
 
 struct Objc3SemanticMethodTypeMetadata {
   std::string selector;
+  std::string selector_normalized;
+  std::size_t selector_piece_count = 0;
+  std::size_t selector_parameter_piece_count = 0;
+  bool selector_contract_normalized = false;
+  bool selector_had_pieceless_form = false;
+  bool selector_has_spelling_mismatch = false;
+  bool selector_has_arity_mismatch = false;
+  bool selector_has_parameter_linkage_mismatch = false;
+  bool selector_has_normalization_flag_mismatch = false;
+  bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
   std::vector<bool> param_is_vector;
@@ -195,6 +236,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   std::vector<Objc3SemanticImplementationTypeMetadata> implementations_lexicographic;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
+  Objc3SelectorNormalizationSummary selector_normalization_summary;
 };
 
 struct Objc3SemanticValidationOptions {
