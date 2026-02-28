@@ -74,6 +74,8 @@ inline constexpr const char *kObjc3CrossModuleConformanceLoweringLaneContract =
     "m180-cross-module-conformance-lowering-v1";
 inline constexpr const char *kObjc3ThrowsPropagationLoweringLaneContract =
     "m181-throws-propagation-lowering-v1";
+inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
+    "m182-result-like-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -432,6 +434,18 @@ struct Objc3ThrowsPropagationLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3ResultLikeLoweringContract {
+  std::size_t result_like_sites = 0;
+  std::size_t result_success_sites = 0;
+  std::size_t result_failure_sites = 0;
+  std::size_t result_branch_sites = 0;
+  std::size_t result_payload_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t branch_merge_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -565,3 +579,7 @@ bool IsValidObjc3ThrowsPropagationLoweringContract(
     const Objc3ThrowsPropagationLoweringContract &contract);
 std::string Objc3ThrowsPropagationLoweringReplayKey(
     const Objc3ThrowsPropagationLoweringContract &contract);
+bool IsValidObjc3ResultLikeLoweringContract(
+    const Objc3ResultLikeLoweringContract &contract);
+std::string Objc3ResultLikeLoweringReplayKey(
+    const Objc3ResultLikeLoweringContract &contract);

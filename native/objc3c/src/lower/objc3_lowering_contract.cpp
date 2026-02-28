@@ -1280,3 +1280,44 @@ std::string Objc3ThrowsPropagationLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ThrowsPropagationLoweringLaneContract;
 }
+
+bool IsValidObjc3ResultLikeLoweringContract(
+    const Objc3ResultLikeLoweringContract &contract) {
+  if (contract.result_success_sites > contract.result_like_sites ||
+      contract.result_failure_sites > contract.result_like_sites ||
+      contract.result_branch_sites > contract.result_like_sites ||
+      contract.result_payload_sites > contract.result_like_sites ||
+      contract.normalized_sites > contract.result_like_sites ||
+      contract.branch_merge_sites > contract.result_like_sites ||
+      contract.contract_violation_sites > contract.result_like_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.branch_merge_sites !=
+      contract.result_like_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ResultLikeLoweringReplayKey(
+    const Objc3ResultLikeLoweringContract &contract) {
+  return std::string("result_like_sites=") +
+             std::to_string(contract.result_like_sites) +
+         ";result_success_sites=" +
+         std::to_string(contract.result_success_sites) +
+         ";result_failure_sites=" +
+         std::to_string(contract.result_failure_sites) +
+         ";result_branch_sites=" +
+         std::to_string(contract.result_branch_sites) +
+         ";result_payload_sites=" +
+         std::to_string(contract.result_payload_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";branch_merge_sites=" + std::to_string(contract.branch_merge_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ResultLikeLoweringLaneContract;
+}
