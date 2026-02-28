@@ -1935,3 +1935,28 @@ Recommended M204 sema/type macro diagnostics/provenance validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m204_sema_macro_diagnostics_contract.py -q`
 
+## M203 sema/type compile-time evaluation engine
+
+For deterministic sema/type compile-time evaluation engine behavior, capture replay-stable packet evidence from sema global constant-expression resolution, static type-flow scalar evaluation, and lowering compile-time proof propagation.
+
+Compile-time evaluation packet map:
+
+- `compile-time eval packet 1.1 deterministic sema global const-expression hooks` -> `m203_sema_global_const_eval_packet`
+- `compile-time eval packet 1.2 deterministic type/static-flow compile-time hooks` -> `m203_type_static_flow_compile_time_packet`
+
+### 1.1 Deterministic sema global const-expression packet
+
+- Source const-eval engine anchors: `static bool EvalConstExpr(const Expr *expr, int &value,`, `bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &globals, std::vector<int> &values)`, `if (!EvalConstExpr(global.value.get(), value, &resolved_global_values)) {`, and `MakeDiag(global.line, global.column, "O3S210", "global initializer must be constant expression")`.
+- Artifact const-eval failure anchor: `MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: global initializer failed const evaluation")`.
+- Deterministic sema global const-eval packet key: `m203_sema_global_const_eval_packet`.
+
+### 1.2 Deterministic type/static-flow compile-time packet
+
+- Static analysis compile-time engine anchors: `using StaticScalarBindings = std::unordered_map<std::string, int>;`, `bool TryEvalStaticScalarValue(const Expr *expr, int &value, const StaticScalarBindings *bindings);`, `return TryEvalStaticArithmeticBinary(expr->op, lhs, rhs, value);`, `return TryEvalStaticBitwiseShiftBinary(expr->op, lhs, rhs, value);`, and `if (TryEvalStaticScalarValue(stmt->switch_stmt->condition.get(), static_switch_value, bindings)) {`.
+- Lowering compile-time proof anchors: `bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {`, `bool TryGetCompileTimeI32ExprInContext(const Expr *expr, const FunctionContext &ctx, int &value) const {`, `ctx.const_value_ptrs[ptr] = assigned_const_value;`, and `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`.
+- Deterministic type/static-flow compile-time packet key: `m203_type_static_flow_compile_time_packet`.
+
+Recommended M203 sema/type compile-time evaluation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m203_sema_compile_time_eval_contract.py -q`
+
