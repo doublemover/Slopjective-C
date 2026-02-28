@@ -1709,3 +1709,32 @@ Recommended code-action safety commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m213_sema_debug_fidelity_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m212_sema_code_action_contract.py -q`
 
+## M211 sema/type LSP semantic profile
+
+For semantic tokens/navigation support in LSP clients, capture deterministic sema/type evidence packets from parser token metadata, sema diagnostics ordering, and manifest source anchors before enabling editor integration.
+
+LSP semantic packet map:
+
+- `lsp packet 1.1 deterministic semantic-token metadata` -> `m211_lsp_semantic_token_metadata_packet`
+- `lsp packet 1.2 deterministic navigation source-anchor` -> `m211_lsp_navigation_source_anchor_packet`
+
+### 1.1 Deterministic semantic-token metadata packet
+
+- Token metadata contract anchors: `Objc3SemaTokenMetadata` and `MakeObjc3SemaTokenMetadata(...)`.
+- Parser capture anchors: `MakeSemaTokenMetadata(...)`, `Objc3SemaTokenKind::PointerDeclarator`, and `Objc3SemaTokenKind::NullabilitySuffix`.
+- AST handoff anchors: `pointer_declarator_tokens`, `nullability_suffix_tokens`, `return_pointer_declarator_tokens`, and `return_nullability_suffix_tokens`.
+- Deterministic semantic-token packet key: `m211_lsp_semantic_token_metadata_packet`.
+
+### 1.2 Deterministic navigation source-anchor packet
+
+- Sema diagnostics ordering anchor for stable locations: `CanonicalizePassDiagnostics(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest semantic-surface anchors for navigation indexing: `frontend.pipeline.semantic_surface`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Manifest source-location anchors for go-to navigation: `program.globals[i].line`, `program.globals[i].column`, `fn.line`, and `fn.column`.
+- Deterministic navigation packet key: `m211_lsp_navigation_source_anchor_packet`.
+
+Recommended LSP semantic contract commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_m211_sema_lsp_contract.py -q`
+
