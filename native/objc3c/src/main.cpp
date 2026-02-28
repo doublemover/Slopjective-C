@@ -11,7 +11,6 @@
 #include <memory>
 #include <limits>
 #include <map>
-#include <process.h>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -21,6 +20,7 @@
 #include "ast/objc3_ast.h"
 #include "diag/objc3_diag_types.h"
 #include "ir/objc3_ir_emitter.h"
+#include "io/objc3_process.h"
 #include "lex/objc3_lexer.h"
 #include "lower/objc3_lowering_contract.h"
 #include "token/objc3_token.h"
@@ -4447,40 +4447,6 @@ static void WriteDiagnosticsArtifacts(const fs::path &out_dir, const std::string
                                       const std::vector<std::string> &diagnostics) {
   WriteDiagnosticsTextArtifact(out_dir, emit_prefix, diagnostics);
   WriteDiagnosticsJsonArtifact(out_dir, emit_prefix, diagnostics);
-}
-
-static int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
-  std::vector<const char *> argv;
-  argv.reserve(args.size() + 2);
-  argv.push_back(executable.c_str());
-  for (const auto &arg : args) {
-    argv.push_back(arg.c_str());
-  }
-  argv.push_back(nullptr);
-
-  const int status = _spawnvp(_P_WAIT, executable.c_str(), argv.data());
-  if (status == -1) {
-    return 127;
-  }
-  return status;
-}
-
-static int RunObjectiveCCompile(const fs::path &clang_path, const fs::path &input, const fs::path &object_out) {
-  const std::string clang_exe = clang_path.string();
-  const int syntax_status =
-      RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-fsyntax-only", input.string()});
-  if (syntax_status != 0) {
-    return syntax_status;
-  }
-
-  return RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c", input.string(), "-o",
-                                object_out.string(), "-fno-color-diagnostics"});
-}
-
-static int RunIRCompile(const fs::path &clang_path, const fs::path &ir_path, const fs::path &object_out) {
-  const std::string clang_exe = clang_path.string();
-  return RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
-                                "-fno-color-diagnostics"});
 }
 
 static bool EmitObjc3IR(const Objc3Program &program, const Objc3LoweringContract &lowering_contract,
