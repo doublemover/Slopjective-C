@@ -674,6 +674,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_block_literal_capture_lowering_profile`
 - `!objc3.objc_block_literal_capture_lowering = !{!19}`
 
+## M167 validation/conformance/perf block ABI invoke-trampoline runbook
+
+From repo root, execute deterministic M167 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_lowering_block_abi_invoke_trampoline_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m167_validation_block_abi_invoke_trampoline_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_block_abi_invoke_trampoline.replay_key`
+- `deterministic_block_abi_invoke_trampoline_lowering_handoff`
+- `block_abi_invoke_trampoline_lowering`
+- `frontend_objc_block_abi_invoke_trampoline_lowering_profile`
+- `!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:

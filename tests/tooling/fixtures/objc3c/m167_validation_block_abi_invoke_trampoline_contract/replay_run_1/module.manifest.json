@@ -1,0 +1,43 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_block_abi_invoke_trampoline_lowering_handoff": true,
+        "block_abi_invoke_trampoline_lowering_sites": 7,
+        "block_abi_invoke_trampoline_lowering_invoke_argument_slots": 12,
+        "block_abi_invoke_trampoline_lowering_capture_word_count": 9,
+        "block_abi_invoke_trampoline_lowering_parameter_entries": 12,
+        "block_abi_invoke_trampoline_lowering_capture_entries": 9,
+        "block_abi_invoke_trampoline_lowering_body_statement_entries": 18,
+        "block_abi_invoke_trampoline_lowering_descriptor_symbolized_sites": 7,
+        "block_abi_invoke_trampoline_lowering_invoke_symbolized_sites": 7,
+        "block_abi_invoke_trampoline_lowering_missing_invoke_sites": 0,
+        "block_abi_invoke_trampoline_lowering_non_normalized_layout_sites": 0,
+        "block_abi_invoke_trampoline_lowering_contract_violation_sites": 0,
+        "lowering_block_abi_invoke_trampoline_replay_key": "block_literal_sites=7;invoke_argument_slots_total=12;capture_word_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;descriptor_symbolized_sites=7;invoke_trampoline_symbolized_sites=7;missing_invoke_trampoline_sites=0;non_normalized_layout_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_block_abi_invoke_trampoline_lowering_surface": {
+          "block_literal_sites": 7,
+          "invoke_argument_slots_total": 12,
+          "capture_word_count_total": 9,
+          "parameter_entries_total": 12,
+          "capture_entries_total": 9,
+          "body_statement_entries_total": 18,
+          "descriptor_symbolized_sites": 7,
+          "invoke_trampoline_symbolized_sites": 7,
+          "missing_invoke_trampoline_sites": 0,
+          "non_normalized_layout_sites": 0,
+          "contract_violation_sites": 0,
+          "replay_key": "block_literal_sites=7;invoke_argument_slots_total=12;capture_word_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;descriptor_symbolized_sites=7;invoke_trampoline_symbolized_sites=7;missing_invoke_trampoline_sites=0;non_normalized_layout_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_block_abi_invoke_trampoline": {
+    "replay_key": "block_literal_sites=7;invoke_argument_slots_total=12;capture_word_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;descriptor_symbolized_sites=7;invoke_trampoline_symbolized_sites=7;missing_invoke_trampoline_sites=0;non_normalized_layout_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1",
+    "lane_contract": "m167-block-abi-invoke-trampoline-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

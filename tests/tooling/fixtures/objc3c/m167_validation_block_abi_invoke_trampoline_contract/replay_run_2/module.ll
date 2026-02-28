@@ -1,0 +1,5 @@
+; objc3c native frontend IR
+; block_abi_invoke_trampoline_lowering = block_literal_sites=7;invoke_argument_slots_total=12;capture_word_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;descriptor_symbolized_sites=7;invoke_trampoline_symbolized_sites=7;missing_invoke_trampoline_sites=0;non_normalized_layout_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1
+; frontend_objc_block_abi_invoke_trampoline_lowering_profile = block_literal_sites=7, invoke_argument_slots_total=12, capture_word_count_total=9, parameter_entries_total=12, capture_entries_total=9, body_statement_entries_total=18, descriptor_symbolized_sites=7, invoke_trampoline_symbolized_sites=7, missing_invoke_trampoline_sites=0, non_normalized_layout_sites=0, contract_violation_sites=0, deterministic_block_abi_invoke_trampoline_lowering_handoff=true
+!objc3.objc_block_abi_invoke_trampoline_lowering = !{!20}
+!20 = !{i64 7, i64 12, i64 9, i64 12, i64 9, i64 18, i64 7, i64 7, i64 0, i64 0, i64 0, i1 1}
