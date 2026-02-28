@@ -34,10 +34,12 @@ The stitch order is fixed and must not depend on filesystem iteration order.
 
 - Only files listed in the deterministic stitch order are stitched into `docs/objc3c-native.md`.
 - `README.md` is metadata only and is never stitched.
-- Unknown Markdown files under this directory are contract drift and must fail `--check-contract`.
-- Missing listed fragments are tolerated until migration is complete; once present, ordering is still fixed.
+- Unknown Markdown files under this directory are contract drift and fail both `--check` and `--check-contract`.
+- `--check` is strict and requires all listed fragments to exist.
+- `--check-contract` remains migration-safe and reports partial population without failing.
 
 ## Contract Validation
 
-- Validate contract only: `python scripts/build_objc3c_native_docs.py --check-contract`
-- Build when fragments are present: `python scripts/build_objc3c_native_docs.py`
+- Validate deterministic source contract (migration-safe): `python scripts/build_objc3c_native_docs.py --check-contract`
+- Validate deterministic source + generated output drift (strict): `python scripts/build_objc3c_native_docs.py --check`
+- Build/regenerate output from canonical fragments: `python scripts/build_objc3c_native_docs.py`

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -29,6 +31,7 @@ REQUIRED_HEADINGS: tuple[str, ...] = (
     "## Contract Validation",
 )
 ORDER_LINE_RE = re.compile(r"^\d+\.\s+`([^`]+\.md)`\s*$")
+LINT_DISABLE_LINE = b"<!-- markdownlint-disable-file MD041 -->"
 
 
 def parse_order_from_readme(text: str) -> list[str]:
@@ -75,14 +78,39 @@ def find_unknown_fragments() -> list[str]:
     return unknown
 
 
-def check_contract() -> int:
+def required_fragment_paths() -> tuple[list[Path], list[str]]:
+    paths: list[Path] = []
+    missing: list[str] = []
+    for name in FRAGMENT_ORDER:
+        path = SRC_DIR / name
+        if path.is_file():
+            paths.append(path)
+        else:
+            missing.append(name)
+    return paths, missing
+
+
+def check_contract(*, allow_missing_fragments: bool) -> tuple[int, list[Path]]:
     errors: list[str] = []
+    warnings: list[str] = []
 
     if not README_PATH.is_file():
         errors.append(f"missing contract README: {README_PATH}")
     else:
         readme_text = README_PATH.read_text(encoding="utf-8")
         errors.extend(validate_readme_contract(readme_text))
+
+    required_paths, missing = required_fragment_paths()
+    if missing and not allow_missing_fragments:
+        errors.append(
+            "missing required fragment files: "
+            + ", ".join(missing)
+        )
+    elif missing:
+        warnings.append(
+            "missing fragments tolerated in --check-contract mode: "
+            + ", ".join(missing)
+        )
 
     unknown_fragments = find_unknown_fragments()
     if unknown_fragments:
@@ -95,52 +123,136 @@ def check_contract() -> int:
         print("objc3c-native-docs-contract: FAIL", file=sys.stderr)
         for error in errors:
             print(f"- {error}", file=sys.stderr)
-        return 1
+        print("- Guidance: ensure only canonical fragment files exist and follow README order.", file=sys.stderr)
+        return 1, required_paths
 
-    present = [name for name in FRAGMENT_ORDER if (SRC_DIR / name).is_file()]
     print(
         "objc3c-native-docs-contract: OK "
-        f"(order={len(FRAGMENT_ORDER)}, present={len(present)})"
+        f"(order={len(FRAGMENT_ORDER)}, present={len(required_paths)}, missing={len(missing)})"
     )
-    return 0
+    for warning in warnings:
+        print(f"objc3c-native-docs-contract: WARN {warning}")
+    return 0, required_paths
 
 
-def stitch_fragments() -> str:
-    sections: list[str] = []
-    for name in FRAGMENT_ORDER:
-        path = SRC_DIR / name
-        text = path.read_text(encoding="utf-8").rstrip("\n")
-        header = f"<!-- BEGIN src/{name} -->"
-        footer = f"<!-- END src/{name} -->"
-        sections.append(f"{header}\n{text}\n{footer}")
-    return "\n\n---\n\n".join(sections) + "\n"
+def read_fragment_bytes(path: Path) -> bytes:
+    data = path.read_bytes()
+    if data.startswith(LINT_DISABLE_LINE):
+        first_newline = data.find(b"\n")
+        if first_newline != -1:
+            data = data[first_newline + 1 :]
+            if data.startswith(b"\r\n"):
+                data = data[2:]
+            elif data.startswith(b"\n"):
+                data = data[1:]
+    if not data.endswith((b"\n", b"\r")):
+        data += b"\n"
+    return data
+
+
+def stitch_fragments(paths: list[Path]) -> bytes:
+    return b"".join(read_fragment_bytes(path) for path in paths)
+
+
+def print_diff_preview(actual: bytes, expected: bytes) -> None:
+    actual_text = actual.decode("utf-8", errors="replace")
+    expected_text = expected.decode("utf-8", errors="replace")
+    diff = list(
+        difflib.unified_diff(
+            actual_text.splitlines(),
+            expected_text.splitlines(),
+            fromfile="docs/objc3c-native.md (actual)",
+            tofile="docs/objc3c-native.md (expected)",
+            lineterm="",
+        )
+    )
+    if not diff:
+        return
+    print("- Diff preview:", file=sys.stderr)
+    for line in diff[:120]:
+        print(line, file=sys.stderr)
+
+
+def output_digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:16]
 
 
 def build_docs() -> int:
-    contract_status = check_contract()
+    contract_status, paths = check_contract(allow_missing_fragments=True)
     if contract_status != 0:
         return contract_status
 
-    present = [name for name in FRAGMENT_ORDER if (SRC_DIR / name).is_file()]
-    if not present:
+    if not paths:
         print(
             "objc3c-native-docs-build: no source fragments found; "
             "leaving docs/objc3c-native.md unchanged."
         )
         return 0
 
-    missing = [name for name in FRAGMENT_ORDER if name not in present]
+    _, missing = required_fragment_paths()
     if missing:
         print(
             "objc3c-native-docs-build: FAIL missing required fragments: "
             + ", ".join(missing),
             file=sys.stderr,
         )
+        print(
+            "objc3c-native-docs-build: Guidance: create all canonical "
+            "fragment files before stitching.",
+            file=sys.stderr,
+        )
         return 1
 
-    stitched = stitch_fragments()
-    OUTPUT_PATH.write_text(stitched, encoding="utf-8")
-    print(f"objc3c-native-docs-build: wrote {OUTPUT_PATH}")
+    stitched = stitch_fragments(paths)
+    existing = OUTPUT_PATH.read_bytes() if OUTPUT_PATH.is_file() else b""
+    if existing == stitched:
+        print(
+            "objc3c-native-docs-build: up-to-date "
+            f"(sha256={output_digest(stitched)})"
+        )
+        return 0
+
+    OUTPUT_PATH.write_bytes(stitched)
+    print(
+        "objc3c-native-docs-build: wrote "
+        f"{OUTPUT_PATH} (sha256={output_digest(stitched)})"
+    )
+    return 0
+
+
+def check_drift() -> int:
+    contract_status, paths = check_contract(allow_missing_fragments=False)
+    if contract_status != 0:
+        return contract_status
+
+    expected = stitch_fragments(paths)
+    if not OUTPUT_PATH.is_file():
+        print("objc3c-native-docs-check: FAIL", file=sys.stderr)
+        print(f"- missing generated output: {OUTPUT_PATH}", file=sys.stderr)
+        print(
+            "- Regenerate with: python scripts/build_objc3c_native_docs.py",
+            file=sys.stderr,
+        )
+        return 1
+
+    actual = OUTPUT_PATH.read_bytes()
+    if actual != expected:
+        print("objc3c-native-docs-check: FAIL", file=sys.stderr)
+        print(
+            "- docs/objc3c-native.md drift detected against canonical fragments.",
+            file=sys.stderr,
+        )
+        print(
+            "- Regenerate with: python scripts/build_objc3c_native_docs.py",
+            file=sys.stderr,
+        )
+        print_diff_preview(actual, expected)
+        return 1
+
+    print(
+        "objc3c-native-docs-check: OK "
+        f"(fragments={len(paths)}, sha256={output_digest(expected)})"
+    )
     return 0
 
 
@@ -155,15 +267,29 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--check-contract",
         action="store_true",
-        help="Validate deterministic source fragment and stitch-order contract.",
+        help=(
+            "Validate deterministic source fragment and stitch-order contract "
+            "(migration-safe; allows missing fragment files)."
+        ),
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help=(
+            "Validate deterministic source contract and fail on generated "
+            "output drift."
+        ),
     )
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.check:
+        return check_drift()
     if args.check_contract:
-        return check_contract()
+        status, _ = check_contract(allow_missing_fragments=True)
+        return status
     return build_docs()
 
 
