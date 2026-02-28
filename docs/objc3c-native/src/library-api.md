@@ -255,6 +255,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain debug-fidelity anchors.
 
+## M212 integration refactor/code-action engine
+
+- Gate intent: enforce deterministic code-action/refactor evidence across all lanes.
+### 1.1 Code-action integration chain
+- Deterministic code-action gate:
+  - `npm run check:objc3c:m212-code-action`
+- Chain order:
+  - replays `check:objc3c:m213-debug-fidelity`.
+  - enforces all M212 lane contracts:
+    `tests/tooling/test_objc3c_m212_frontend_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_sema_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_lowering_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_validation_code_action_contract.py`,
+    `tests/tooling/test_objc3c_m212_integration_code_action_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through code-action validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain code-action anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

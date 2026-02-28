@@ -99,6 +99,8 @@ jobs:
         run: npm run check:objc3c:m214-daemonized-watch
       - name: 24 Run M213 debug-info fidelity integration gate
         run: npm run check:objc3c:m213-debug-fidelity
+      - name: 25 Run M212 refactor/code-action integration gate
+        run: npm run check:objc3c:m212-code-action
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
