@@ -3754,6 +3754,34 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m191_lowering_unsafe_pointer_contract.py -q`
 
+## Inline asm and intrinsic governance lowering artifact contract (M192-C001)
+
+M192-C publishes deterministic lowering replay metadata for inline asm and
+intrinsic governance boundaries.
+
+M192-C lowering contract anchors:
+
+- `kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract`
+- `Objc3InlineAsmIntrinsicGovernanceLoweringContract`
+- `IsValidObjc3InlineAsmIntrinsicGovernanceLoweringContract(...)`
+- `Objc3InlineAsmIntrinsicGovernanceLoweringReplayKey(...)`
+- `inline_asm_intrinsic_governance_lowering = inline_asm_intrinsic_sites=<N>`
+- `frontend_objc_inline_asm_intrinsic_governance_lowering_profile`
+- `!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == inline_asm_intrinsic_sites`
+- each of `inline_asm_sites`, `intrinsic_sites`, `governed_intrinsic_sites`,
+  `privileged_intrinsic_sites`, and `contract_violation_sites` is bounded by
+  `inline_asm_intrinsic_sites`
+- `deterministic_inline_asm_intrinsic_governance_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m192_lowering_inline_asm_intrinsic_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

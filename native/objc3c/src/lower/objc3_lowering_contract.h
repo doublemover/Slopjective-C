@@ -80,6 +80,8 @@ inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "m191-unsafe-pointer-extension-gating-lowering-v1";
+inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
+    "m192-inline-asm-intrinsic-governance-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -474,6 +476,18 @@ struct Objc3UnsafePointerExtensionLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3InlineAsmIntrinsicGovernanceLoweringContract {
+  std::size_t inline_asm_intrinsic_sites = 0;
+  std::size_t inline_asm_sites = 0;
+  std::size_t intrinsic_sites = 0;
+  std::size_t governed_intrinsic_sites = 0;
+  std::size_t privileged_intrinsic_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -619,3 +633,7 @@ bool IsValidObjc3UnsafePointerExtensionLoweringContract(
     const Objc3UnsafePointerExtensionLoweringContract &contract);
 std::string Objc3UnsafePointerExtensionLoweringReplayKey(
     const Objc3UnsafePointerExtensionLoweringContract &contract);
+bool IsValidObjc3InlineAsmIntrinsicGovernanceLoweringContract(
+    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract);
+std::string Objc3InlineAsmIntrinsicGovernanceLoweringReplayKey(
+    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract);
