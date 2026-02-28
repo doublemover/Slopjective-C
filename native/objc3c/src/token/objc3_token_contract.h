@@ -101,6 +101,7 @@ using Objc3LexTokenStream = std::vector<Objc3LexToken>;
 enum class Objc3SemaTokenKind {
   PointerDeclarator,
   NullabilitySuffix,
+  OwnershipQualifier,
 };
 
 struct Objc3SemaTokenMetadata {

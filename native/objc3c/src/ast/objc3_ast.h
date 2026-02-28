@@ -218,6 +218,10 @@ struct FuncParam {
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
   std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;
+  bool has_ownership_qualifier = false;
+  std::string ownership_qualifier_spelling;
+  std::string ownership_qualifier_symbol;
+  std::vector<Objc3SemaTokenMetadata> ownership_qualifier_tokens;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -255,6 +259,10 @@ struct Objc3MethodDecl {
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
   std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
+  bool has_return_ownership_qualifier = false;
+  std::string return_ownership_qualifier_spelling;
+  std::string return_ownership_qualifier_symbol;
+  std::vector<Objc3SemaTokenMetadata> return_ownership_qualifier_tokens;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
   std::string method_lookup_symbol;
@@ -296,6 +304,10 @@ struct Objc3PropertyDecl {
   unsigned pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> pointer_declarator_tokens;
   std::vector<Objc3SemaTokenMetadata> nullability_suffix_tokens;
+  bool has_ownership_qualifier = false;
+  std::string ownership_qualifier_spelling;
+  std::string ownership_qualifier_symbol;
+  std::vector<Objc3SemaTokenMetadata> ownership_qualifier_tokens;
   std::vector<Objc3PropertyAttributeDecl> attributes;
   bool is_readonly = false;
   bool is_readwrite = false;
@@ -400,6 +412,10 @@ struct FunctionDecl {
   unsigned return_pointer_declarator_depth = 0;
   std::vector<Objc3SemaTokenMetadata> return_pointer_declarator_tokens;
   std::vector<Objc3SemaTokenMetadata> return_nullability_suffix_tokens;
+  bool has_return_ownership_qualifier = false;
+  std::string return_ownership_qualifier_spelling;
+  std::string return_ownership_qualifier_symbol;
+  std::vector<Objc3SemaTokenMetadata> return_ownership_qualifier_tokens;
   bool is_prototype = false;
   bool is_pure = false;
   std::vector<std::unique_ptr<Stmt>> body;

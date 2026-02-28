@@ -552,6 +552,43 @@ Recommended M160 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m160_frontend_runtime_shim_host_link_contract.py -q`
 
+## M161 frontend ownership qualifier parser/AST surface
+
+Frontend parser/AST now captures Objective-C ownership qualifier spellings and
+token metadata on declaration type annotations.
+
+M161 parser/AST surface details:
+
+- ownership qualifier helper anchors:
+  - `IsOwnershipQualifierSpelling(...)`
+  - `BuildOwnershipQualifierSymbol(...)`
+- parser capture anchors:
+  - `MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier)`
+  - prefix and suffix qualifier capture in `ParseParameterType(...)`
+  - prefix and suffix qualifier capture in `ParseFunctionReturnType(...)`
+- AST ownership qualifier carriers:
+  - `param.has_ownership_qualifier`
+  - `param.ownership_qualifier_spelling`
+  - `param.ownership_qualifier_symbol`
+  - `param.ownership_qualifier_tokens`
+  - `fn.has_return_ownership_qualifier`
+  - `fn.return_ownership_qualifier_spelling`
+  - `fn.return_ownership_qualifier_symbol`
+  - `fn.return_ownership_qualifier_tokens`
+
+Deterministic grammar intent:
+
+- accepted ownership qualifier spellings are pinned to parser-owned canonical tokens:
+  `__strong`, `__weak`, `__autoreleasing`, and `__unsafe_unretained`.
+- symbol packetization is deterministic and role-aware:
+  `ownership-qualifier:<spelling>` for parameter/property spellings and
+  `return-ownership-qualifier:<spelling>` for return type spellings.
+- qualifier metadata is replay-stable through `Objc3SemaTokenKind::OwnershipQualifier`.
+
+Recommended M161 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m161_frontend_ownership_qualifier_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -581,6 +618,7 @@ Pipeline/manifest replay contract includes a `language_version_pragma_contract` 
 - Stable token-kind surface for semantic suffix tracking:
   - `Objc3SemaTokenKind::PointerDeclarator`
   - `Objc3SemaTokenKind::NullabilitySuffix`
+  - `Objc3SemaTokenKind::OwnershipQualifier`
 - Stable metadata row fields:
   - `kind`
   - `text`

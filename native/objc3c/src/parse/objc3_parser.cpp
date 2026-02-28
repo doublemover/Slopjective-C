@@ -398,6 +398,18 @@ static std::string BuildObjcTypecheckReturnFamilySymbol(const FunctionDecl &fn) 
   return "";
 }
 
+static bool IsOwnershipQualifierSpelling(const std::string &text) {
+  return text == "__strong" || text == "__weak" || text == "__autoreleasing" ||
+         text == "__unsafe_unretained";
+}
+
+static std::string BuildOwnershipQualifierSymbol(const std::string &spelling, bool is_return_type) {
+  if (spelling.empty()) {
+    return "";
+  }
+  return std::string(is_return_type ? "return-ownership-qualifier:" : "ownership-qualifier:") + spelling;
+}
+
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
   std::sort(values.begin(), values.end());
   values.erase(std::unique(values.begin(), values.end()), values.end());
@@ -790,6 +802,10 @@ class Objc3Parser {
     target.return_pointer_declarator_depth = source.return_pointer_declarator_depth;
     target.return_pointer_declarator_tokens = source.return_pointer_declarator_tokens;
     target.return_nullability_suffix_tokens = source.return_nullability_suffix_tokens;
+    target.has_return_ownership_qualifier = source.has_return_ownership_qualifier;
+    target.return_ownership_qualifier_spelling = source.return_ownership_qualifier_spelling;
+    target.return_ownership_qualifier_symbol = source.return_ownership_qualifier_symbol;
+    target.return_ownership_qualifier_tokens = source.return_ownership_qualifier_tokens;
   }
 
   void CopyPropertyTypeFromParam(const FuncParam &source, Objc3PropertyDecl &target) {
@@ -813,6 +829,10 @@ class Objc3Parser {
     target.pointer_declarator_depth = source.pointer_declarator_depth;
     target.pointer_declarator_tokens = source.pointer_declarator_tokens;
     target.nullability_suffix_tokens = source.nullability_suffix_tokens;
+    target.has_ownership_qualifier = source.has_ownership_qualifier;
+    target.ownership_qualifier_spelling = source.ownership_qualifier_spelling;
+    target.ownership_qualifier_symbol = source.ownership_qualifier_symbol;
+    target.ownership_qualifier_tokens = source.ownership_qualifier_tokens;
   }
 
   void AssignObjcMethodLookupOverrideConflictSymbols(Objc3MethodDecl &method,
@@ -1625,6 +1645,10 @@ class Objc3Parser {
     fn.return_pointer_declarator_depth = 0;
     fn.return_pointer_declarator_tokens.clear();
     fn.return_nullability_suffix_tokens.clear();
+    fn.has_return_ownership_qualifier = false;
+    fn.return_ownership_qualifier_spelling.clear();
+    fn.return_ownership_qualifier_symbol.clear();
+    fn.return_ownership_qualifier_tokens.clear();
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
@@ -1633,6 +1657,14 @@ class Objc3Parser {
                                       : "unexpected qualifier 'extern' in function return type annotation";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return false;
+    }
+
+    while (At(TokenKind::Identifier) && IsOwnershipQualifierSpelling(Peek().text)) {
+      const Token qualifier = Advance();
+      fn.has_return_ownership_qualifier = true;
+      fn.return_ownership_qualifier_spelling = qualifier.text;
+      fn.return_ownership_qualifier_tokens.push_back(
+          MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
     }
 
     if (Match(TokenKind::KwI32)) {
@@ -1680,7 +1712,8 @@ class Objc3Parser {
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P114",
                      "expected function return type 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', 'void', 'id', "
-                     "'Class', 'SEL', 'Protocol', 'instancetype', object pointer spelling, or vector forms "
+                     "'Class', 'SEL', 'Protocol', 'instancetype', object pointer spelling, ownership qualifiers "
+                     "'__strong/__weak/__autoreleasing/__unsafe_unretained', or vector forms "
                      "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
         return false;
       }
@@ -1739,8 +1772,20 @@ class Objc3Parser {
         continue;
       }
 
+      if (At(TokenKind::Identifier) && IsOwnershipQualifierSpelling(Peek().text)) {
+        const Token qualifier = Advance();
+        fn.has_return_ownership_qualifier = true;
+        fn.return_ownership_qualifier_spelling = qualifier.text;
+        fn.return_ownership_qualifier_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
+        continue;
+      }
+
       break;
     }
+
+    fn.return_ownership_qualifier_symbol =
+        BuildOwnershipQualifierSymbol(fn.return_ownership_qualifier_spelling, true);
 
     return true;
   }
@@ -1765,6 +1810,10 @@ class Objc3Parser {
     param.pointer_declarator_depth = 0;
     param.pointer_declarator_tokens.clear();
     param.nullability_suffix_tokens.clear();
+    param.has_ownership_qualifier = false;
+    param.ownership_qualifier_spelling.clear();
+    param.ownership_qualifier_symbol.clear();
+    param.ownership_qualifier_tokens.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -1772,6 +1821,14 @@ class Objc3Parser {
                                       : "unexpected qualifier 'extern' in parameter type annotation";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return false;
+    }
+
+    while (At(TokenKind::Identifier) && IsOwnershipQualifierSpelling(Peek().text)) {
+      const Token qualifier = Advance();
+      param.has_ownership_qualifier = true;
+      param.ownership_qualifier_spelling = qualifier.text;
+      param.ownership_qualifier_tokens.push_back(
+          MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
     }
 
     if (Match(TokenKind::KwI32)) {
@@ -1819,7 +1876,9 @@ class Objc3Parser {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P108",
                                       "expected parameter type 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', or "
-                                      "'id', 'Class', 'SEL', 'Protocol', 'instancetype', object pointer spelling, or vector forms "
+                                      "'id', 'Class', 'SEL', 'Protocol', 'instancetype', object pointer spelling, "
+                                      "ownership qualifiers '__strong/__weak/__autoreleasing/__unsafe_unretained', "
+                                      "or vector forms "
                                       "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
       return false;
     }
@@ -1830,6 +1889,8 @@ class Objc3Parser {
     if (!param.generic_suffix_terminated) {
       return false;
     }
+
+    param.ownership_qualifier_symbol = BuildOwnershipQualifierSymbol(param.ownership_qualifier_spelling, false);
 
     return true;
   }
@@ -1882,6 +1943,15 @@ class Objc3Parser {
       if (At(TokenKind::Question) || At(TokenKind::Bang)) {
         param.nullability_suffix_tokens.push_back(
             MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));
+        continue;
+      }
+
+      if (At(TokenKind::Identifier) && IsOwnershipQualifierSpelling(Peek().text)) {
+        const Token qualifier = Advance();
+        param.has_ownership_qualifier = true;
+        param.ownership_qualifier_spelling = qualifier.text;
+        param.ownership_qualifier_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
         continue;
       }
 
