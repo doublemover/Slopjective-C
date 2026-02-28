@@ -972,6 +972,35 @@ Objc3ModuleImportGraphLoweringContract BuildModuleImportGraphLoweringContract(
   return contract;
 }
 
+Objc3NamespaceCollisionShadowingLoweringContract
+BuildNamespaceCollisionShadowingLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3NamespaceCollisionShadowingLoweringContract contract;
+  contract.namespace_collision_shadowing_sites =
+      sema_parity_surface.namespace_collision_shadowing_sites_total;
+  contract.namespace_segment_sites =
+      sema_parity_surface
+          .namespace_collision_shadowing_namespace_segment_sites_total;
+  contract.import_edge_candidate_sites =
+      sema_parity_surface
+          .namespace_collision_shadowing_import_edge_candidate_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface
+          .namespace_collision_shadowing_object_pointer_type_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface
+          .namespace_collision_shadowing_pointer_declarator_sites_total;
+  contract.normalized_sites =
+      sema_parity_surface.namespace_collision_shadowing_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface
+          .namespace_collision_shadowing_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.namespace_collision_shadowing_summary.deterministic &&
+      sema_parity_surface.deterministic_namespace_collision_shadowing_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1404,6 +1433,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string module_import_graph_lowering_replay_key =
       Objc3ModuleImportGraphLoweringReplayKey(
           module_import_graph_lowering_contract);
+  const Objc3NamespaceCollisionShadowingLoweringContract
+      namespace_collision_shadowing_lowering_contract =
+          BuildNamespaceCollisionShadowingLoweringContract(
+              pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3NamespaceCollisionShadowingLoweringContract(
+          namespace_collision_shadowing_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {
+        MakeDiag(1,
+                 1,
+                 "O3L300",
+                 "LLVM IR emission failed: invalid namespace collision "
+                 "shadowing lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string namespace_collision_shadowing_lowering_replay_key =
+      Objc3NamespaceCollisionShadowingLoweringReplayKey(
+          namespace_collision_shadowing_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -2088,6 +2135,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_module_import_graph_replay_key\":\""
            << module_import_graph_lowering_replay_key
            << "\""
+           << ",\"deterministic_namespace_collision_shadowing_lowering_handoff\":"
+           << (namespace_collision_shadowing_lowering_contract.deterministic
+                   ? "true"
+                   : "false")
+           << ",\"namespace_collision_shadowing_lowering_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .namespace_collision_shadowing_sites
+           << ",\"namespace_collision_shadowing_lowering_namespace_segment_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .namespace_segment_sites
+           << ",\"namespace_collision_shadowing_lowering_import_edge_candidate_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .import_edge_candidate_sites
+           << ",\"namespace_collision_shadowing_lowering_object_pointer_type_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .object_pointer_type_sites
+           << ",\"namespace_collision_shadowing_lowering_pointer_declarator_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .pointer_declarator_sites
+           << ",\"namespace_collision_shadowing_lowering_normalized_sites\":"
+           << namespace_collision_shadowing_lowering_contract.normalized_sites
+           << ",\"namespace_collision_shadowing_lowering_contract_violation_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .contract_violation_sites
+           << ",\"lowering_namespace_collision_shadowing_replay_key\":\""
+           << namespace_collision_shadowing_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2720,6 +2794,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .namespace_collision_shadowing_sites
+           << ",\"namespace_segment_sites\":"
+           << namespace_collision_shadowing_lowering_contract.namespace_segment_sites
+           << ",\"import_edge_candidate_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .import_edge_candidate_sites
+           << ",\"object_pointer_type_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .object_pointer_type_sites
+           << ",\"pointer_declarator_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .pointer_declarator_sites
+           << ",\"normalized_sites\":"
+           << namespace_collision_shadowing_lowering_contract.normalized_sites
+           << ",\"contract_violation_sites\":"
+           << namespace_collision_shadowing_lowering_contract
+                  .contract_violation_sites
+           << ",\"replay_key\":\""
+           << namespace_collision_shadowing_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (namespace_collision_shadowing_lowering_contract.deterministic
+                   ? "true"
+                   : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2931,6 +3031,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3ModuleImportGraphLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_namespace_collision_shadowing\":{\"replay_key\":\""
+           << namespace_collision_shadowing_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3NamespaceCollisionShadowingLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (namespace_collision_shadowing_lowering_contract.deterministic
+                   ? "true"
+                   : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -3468,6 +3577,31 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       module_import_graph_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_module_import_graph_lowering_handoff =
       module_import_graph_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_namespace_collision_shadowing_replay_key =
+      namespace_collision_shadowing_lowering_replay_key;
+  ir_frontend_metadata.namespace_collision_shadowing_lowering_sites =
+      namespace_collision_shadowing_lowering_contract
+          .namespace_collision_shadowing_sites;
+  ir_frontend_metadata
+      .namespace_collision_shadowing_lowering_namespace_segment_sites =
+      namespace_collision_shadowing_lowering_contract.namespace_segment_sites;
+  ir_frontend_metadata
+      .namespace_collision_shadowing_lowering_import_edge_candidate_sites =
+      namespace_collision_shadowing_lowering_contract.import_edge_candidate_sites;
+  ir_frontend_metadata
+      .namespace_collision_shadowing_lowering_object_pointer_type_sites =
+      namespace_collision_shadowing_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata
+      .namespace_collision_shadowing_lowering_pointer_declarator_sites =
+      namespace_collision_shadowing_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.namespace_collision_shadowing_lowering_normalized_sites =
+      namespace_collision_shadowing_lowering_contract.normalized_sites;
+  ir_frontend_metadata
+      .namespace_collision_shadowing_lowering_contract_violation_sites =
+      namespace_collision_shadowing_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata
+      .deterministic_namespace_collision_shadowing_lowering_handoff =
+      namespace_collision_shadowing_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

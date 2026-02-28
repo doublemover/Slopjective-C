@@ -1051,3 +1051,40 @@ std::string Objc3ModuleImportGraphLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ModuleImportGraphLoweringLaneContract;
 }
+
+bool IsValidObjc3NamespaceCollisionShadowingLoweringContract(
+    const Objc3NamespaceCollisionShadowingLoweringContract &contract) {
+  if (contract.namespace_segment_sites > contract.namespace_collision_shadowing_sites ||
+      contract.import_edge_candidate_sites > contract.namespace_collision_shadowing_sites ||
+      contract.object_pointer_type_sites < contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites > contract.namespace_collision_shadowing_sites ||
+      contract.normalized_sites > contract.namespace_collision_shadowing_sites ||
+      contract.contract_violation_sites > contract.namespace_collision_shadowing_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.namespace_collision_shadowing_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3NamespaceCollisionShadowingLoweringReplayKey(
+    const Objc3NamespaceCollisionShadowingLoweringContract &contract) {
+  return std::string("namespace_collision_shadowing_sites=") +
+             std::to_string(contract.namespace_collision_shadowing_sites) +
+         ";namespace_segment_sites=" + std::to_string(contract.namespace_segment_sites) +
+         ";import_edge_candidate_sites=" +
+             std::to_string(contract.import_edge_candidate_sites) +
+         ";object_pointer_type_sites=" +
+             std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+             std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" +
+             std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3NamespaceCollisionShadowingLoweringLaneContract;
+}

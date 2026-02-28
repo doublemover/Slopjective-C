@@ -8953,6 +8953,29 @@ Recommended M176 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m176_lowering_module_import_graph_contract.py -q`
 
+## Namespace collision and shadowing diagnostics lowering artifact contract (M177-C001)
+
+M177-C lowers sema-authored namespace-collision/shadowing summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M177-C lowering contract anchors:
+
+- `kObjc3NamespaceCollisionShadowingLoweringLaneContract`
+- `Objc3NamespaceCollisionShadowingLoweringContract`
+- `IsValidObjc3NamespaceCollisionShadowingLoweringContract(...)`
+- `Objc3NamespaceCollisionShadowingLoweringReplayKey(...)`
+- `BuildNamespaceCollisionShadowingLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_namespace_collision_shadowing_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_namespace_collision_shadowing_lowering_surface`
+- `lowering_namespace_collision_shadowing.replay_key`
+- `; namespace_collision_shadowing_lowering = namespace_collision_shadowing_sites=<N>...`
+- `; frontend_objc_namespace_collision_shadowing_lowering_profile = namespace_collision_shadowing_sites=<N>...`
+- `!objc3.objc_namespace_collision_shadowing_lowering = !{!30}`
+
+Recommended M177 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m177_lowering_namespace_collision_shadowing_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

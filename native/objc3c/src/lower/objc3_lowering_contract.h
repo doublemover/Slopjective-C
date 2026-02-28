@@ -64,6 +64,8 @@ inline constexpr const char *kObjc3GenericMetadataAbiLoweringLaneContract =
     "m175-generic-metadata-abi-lowering-v1";
 inline constexpr const char *kObjc3ModuleImportGraphLoweringLaneContract =
     "m176-module-import-graph-lowering-v1";
+inline constexpr const char *kObjc3NamespaceCollisionShadowingLoweringLaneContract =
+    "m177-namespace-collision-shadowing-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -364,6 +366,17 @@ struct Objc3ModuleImportGraphLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3NamespaceCollisionShadowingLoweringContract {
+  std::size_t namespace_collision_shadowing_sites = 0;
+  std::size_t namespace_segment_sites = 0;
+  std::size_t import_edge_candidate_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -477,3 +490,7 @@ bool IsValidObjc3ModuleImportGraphLoweringContract(
     const Objc3ModuleImportGraphLoweringContract &contract);
 std::string Objc3ModuleImportGraphLoweringReplayKey(
     const Objc3ModuleImportGraphLoweringContract &contract);
+bool IsValidObjc3NamespaceCollisionShadowingLoweringContract(
+    const Objc3NamespaceCollisionShadowingLoweringContract &contract);
+std::string Objc3NamespaceCollisionShadowingLoweringReplayKey(
+    const Objc3NamespaceCollisionShadowingLoweringContract &contract);
