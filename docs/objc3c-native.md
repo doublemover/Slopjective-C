@@ -348,6 +348,41 @@ Recommended M152 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py -q`
 
+## M153 frontend method lookup-override-conflict parser surface
+
+Frontend parser/AST now emits deterministic method lookup, override lookup, and conflict packets for Objective-C
+protocol/interface/implementation declarations.
+
+M153 parser/AST surface details:
+
+- method lookup helper anchors:
+  - `BuildObjcMethodLookupSymbol(...)`
+  - `BuildObjcMethodOverrideLookupSymbol(...)`
+  - `BuildObjcMethodConflictLookupSymbol(...)`
+  - `BuildObjcMethodLookupSymbolsLexicographic(...)`
+  - `BuildObjcMethodOverrideLookupSymbolsLexicographic(...)`
+  - `BuildObjcMethodConflictLookupSymbolsLexicographic(...)`
+- parser assignment anchors:
+  - `AssignObjcMethodLookupOverrideConflictSymbols(...)`
+  - `FinalizeObjcMethodLookupOverrideConflictPackets(...)`
+  - `method.method_lookup_symbol = lookup_owner_symbol + "::" + BuildObjcMethodLookupSymbol(method);`
+  - `method.override_lookup_symbol = override_owner_symbol + "::" + BuildObjcMethodOverrideLookupSymbol(method);`
+  - `method.conflict_lookup_symbol = BuildObjcMethodConflictLookupSymbol(method);`
+- container packet anchors:
+  - `decl->semantic_link_symbol = "protocol:" + decl->name;`
+  - `decl->method_lookup_symbols_lexicographic`
+  - `decl->override_lookup_symbols_lexicographic`
+  - `decl->conflict_lookup_symbols_lexicographic`
+
+Deterministic grammar intent:
+
+- lookup/override/conflict packets are attached per method and replay-stable for sema handoff.
+- container-level packet vectors are normalized as sorted unique symbols.
+
+Recommended M153 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3409,6 +3444,40 @@ Sema/type metadata handoff contract:
 Recommended M152 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m152_sema_class_protocol_category_linking_contract.py -q`
+
+## M153 sema/type method lookup, override, and conflict semantics contract (M153-B001)
+
+M153-B adds a deterministic semantic summary that tracks method lookup linkage, superclass override lookup, and
+override-signature conflict counts across integration, handoff, and pass-manager parity surfaces.
+
+Sema/type contract markers:
+
+- `Objc3MethodLookupOverrideConflictSummary`
+- `method_lookup_override_conflict_summary`
+- `BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface`
+- `BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff`
+- `deterministic_method_lookup_override_conflict_handoff`
+- `result.parity_surface.method_lookup_override_conflict_summary`
+
+Deterministic lookup/override invariants (fail-closed):
+
+- lookup counts remain bounded and balanced (`hits <= sites`, `hits + misses == sites`).
+- override conflict counts remain bounded (`override_conflicts <= override_lookup_hits`).
+- unresolved superclass/interface references are surfaced deterministically through
+  `unresolved_base_interfaces`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.method_lookup_override_conflict_summary = BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.method_lookup_override_conflict_summary = BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_method_lookup_override_conflict_handoff`
+
+Recommended M153 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -5953,6 +6022,42 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
 
+## Method lookup/override/conflict lowering artifact contract (M153-C001)
+
+M153-C extends lowering contract publication with a replay-stable packet for method lookup, superclass override
+resolution, and override-conflict counters consumed from frontend sema summaries.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m153/lowering-method-lookup-override-conflict-contract/method-lookup-override-conflict-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3MethodLookupOverrideConflictLaneContract`
+- `Objc3MethodLookupOverrideConflictContract`
+- `IsValidObjc3MethodLookupOverrideConflictContract(...)`
+- `Objc3MethodLookupOverrideConflictReplayKey(...)`
+
+Replay key publication markers:
+
+- `method_lookup_sites=<N>`
+- `method_lookup_hits=<N>`
+- `method_lookup_misses=<N>`
+- `override_lookup_sites=<N>`
+- `override_lookup_hits=<N>`
+- `override_lookup_misses=<N>`
+- `override_conflicts=<N>`
+- `unresolved_base_interfaces=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m153-method-lookup-override-conflict-v1`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6376,6 +6481,17 @@ From repo root, execute deterministic M152 contract checks in lane order:
 - `python -m pytest tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py -q`
 - `python -m pytest tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py -q`
 - `npm run check:objc3c:m152-class-protocol-category-linking`
+
+## M153 validation method lookup, override, and conflict semantics runbook
+
+From repo root, execute deterministic M153 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_validation_method_lookup_override_conflict_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m153_integration_method_lookup_override_conflict_contract.py -q`
+- `npm run check:objc3c:m153-method-lookup-override-conflicts`
 
 ```powershell
 npm run test:objc3c:m145-direct-llvm-matrix
@@ -8158,6 +8274,20 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py`
   - `tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py`
   - `tests/tooling/test_objc3c_m152_integration_class_protocol_category_linking_contract.py`
+
+## M153 integration method lookup override conflict contract
+
+- Integration gate:
+  - `npm run check:objc3c:m153-method-lookup-override-conflicts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m153`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_validation_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_integration_method_lookup_override_conflict_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
