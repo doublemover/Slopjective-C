@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministically probe LLVM tool availability and llvm-direct capability surface."""
+"""Deterministically probe LLVM and sema/type-system parity capability surfaces."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "objc3c-llvm-capabilities-v1"
+MODE = "objc3c-llvm-capabilities-v2"
 
 
 def display_path(path: Path) -> str:
@@ -40,12 +40,27 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(
+            command,
+            127,
+            stdout="",
+            stderr=f"executable not found: {command[0]}",
+        )
+    except OSError as exc:
+        return subprocess.CompletedProcess(
+            command,
+            126,
+            stdout="",
+            stderr=f"command launch error ({exc.__class__.__name__}): {command[0]}",
+        )
 
 
 def first_non_empty_line(text: str) -> str:
@@ -99,6 +114,36 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
     }
 
 
+def build_sema_type_system_parity_surface(
+    *,
+    clang_probe: dict[str, object],
+    llc_probe: dict[str, object],
+    llc_features: dict[str, object],
+) -> dict[str, object]:
+    clang_found = bool(clang_probe.get("found"))
+    llc_found = bool(llc_probe.get("found"))
+    llc_supports_obj = bool(llc_features.get("supports_filetype_obj", False))
+
+    deterministic_semantic_diagnostics = clang_found
+    deterministic_type_metadata_handoff = clang_found and llc_found and llc_supports_obj
+
+    blockers: list[str] = []
+    if not clang_found:
+        blockers.append("clang executable missing")
+    if not llc_found:
+        blockers.append("llc executable missing")
+    elif not llc_supports_obj:
+        blockers.append("llc missing --filetype=obj support")
+
+    parity_ready = deterministic_semantic_diagnostics and deterministic_type_metadata_handoff
+    return {
+        "deterministic_semantic_diagnostics": deterministic_semantic_diagnostics,
+        "deterministic_type_metadata_handoff": deterministic_type_metadata_handoff,
+        "parity_ready": parity_ready,
+        "blockers": blockers,
+    }
+
+
 def write_json(path: Path, payload: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(canonical_json(payload), encoding="utf-8")
@@ -115,6 +160,12 @@ def run(argv: Sequence[str]) -> int:
     if bool(llc_probe["found"]):
         llc_features = probe_llc_filetype_obj(args.llc)
 
+    sema_type_system_parity = build_sema_type_system_parity_surface(
+        clang_probe=clang_probe,
+        llc_probe=llc_probe,
+        llc_features=llc_features,
+    )
+
     failures: list[str] = []
     if not bool(clang_probe["found"]):
         failures.append(str(clang_probe.get("diagnostic", "clang executable missing")))
@@ -122,12 +173,18 @@ def run(argv: Sequence[str]) -> int:
         failures.append(str(llc_probe.get("diagnostic", "llc executable missing")))
     if bool(llc_probe["found"]) and not bool(llc_features["supports_filetype_obj"]):
         failures.append("llc capability probe failed: --filetype=obj support not detected")
+    if not bool(sema_type_system_parity["parity_ready"]):
+        failures.append(
+            "sema/type-system parity capability unavailable: "
+            + ", ".join(str(blocker) for blocker in sema_type_system_parity["blockers"])
+        )
 
     summary = {
         "mode": MODE,
         "clang": clang_probe,
         "llc": llc_probe,
         "llc_features": llc_features,
+        "sema_type_system_parity": sema_type_system_parity,
         "failures": failures,
         "ok": not failures,
     }
@@ -139,7 +196,7 @@ def run(argv: Sequence[str]) -> int:
         print(f"wrote summary: {display_path(args.summary_out)}", file=sys.stderr)
         return 1
 
-    print("LLVM-CAP-PASS: clang+llc capabilities discovered")
+    print("LLVM-CAP-PASS: clang+llc capabilities discovered; sema/type-system parity ready")
     print(f"wrote summary: {display_path(args.summary_out)}")
     return 0
 
