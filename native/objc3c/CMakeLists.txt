@@ -47,6 +47,7 @@ target_include_directories(objc3c_parse PUBLIC
 add_library(objc3c_sema STATIC
   src/sema/objc3_semantic_passes.cpp
   src/sema/objc3_static_analysis.cpp
+  src/sema/objc3_pure_contract.cpp
 )
 target_include_directories(objc3c_sema PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src

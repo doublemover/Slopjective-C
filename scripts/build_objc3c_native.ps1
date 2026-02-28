@@ -26,6 +26,7 @@ $sourceFiles = @(
   "native/objc3c/src/parse/objc3_parser.cpp"
   "native/objc3c/src/sema/objc3_semantic_passes.cpp"
   "native/objc3c/src/sema/objc3_static_analysis.cpp"
+  "native/objc3c/src/sema/objc3_pure_contract.cpp"
 )
 
 & $clangxx `
