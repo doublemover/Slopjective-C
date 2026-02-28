@@ -68,6 +68,8 @@ inline constexpr const char *kObjc3NamespaceCollisionShadowingLoweringLaneContra
     "m177-namespace-collision-shadowing-lowering-v1";
 inline constexpr const char *kObjc3PublicPrivateApiPartitionLoweringLaneContract =
     "m178-public-private-api-partition-lowering-v1";
+inline constexpr const char *kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract =
+    "m179-incremental-module-cache-invalidation-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -390,6 +392,18 @@ struct Objc3PublicPrivateApiPartitionLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3IncrementalModuleCacheInvalidationLoweringContract {
+  std::size_t incremental_module_cache_invalidation_sites = 0;
+  std::size_t namespace_segment_sites = 0;
+  std::size_t import_edge_candidate_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t cache_invalidation_candidate_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -511,3 +525,7 @@ bool IsValidObjc3PublicPrivateApiPartitionLoweringContract(
     const Objc3PublicPrivateApiPartitionLoweringContract &contract);
 std::string Objc3PublicPrivateApiPartitionLoweringReplayKey(
     const Objc3PublicPrivateApiPartitionLoweringContract &contract);
+bool IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract);
+std::string Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract);

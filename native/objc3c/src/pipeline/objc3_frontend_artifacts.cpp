@@ -1030,6 +1030,41 @@ BuildPublicPrivateApiPartitionLoweringContract(
   return contract;
 }
 
+Objc3IncrementalModuleCacheInvalidationLoweringContract
+BuildIncrementalModuleCacheInvalidationLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3IncrementalModuleCacheInvalidationLoweringContract contract;
+  contract.incremental_module_cache_invalidation_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_sites_total;
+  contract.namespace_segment_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_namespace_segment_sites_total;
+  contract.import_edge_candidate_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_import_edge_candidate_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_object_pointer_type_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_pointer_declarator_sites_total;
+  contract.normalized_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_normalized_sites_total;
+  contract.cache_invalidation_candidate_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface
+          .incremental_module_cache_invalidation_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.incremental_module_cache_invalidation_summary
+          .deterministic &&
+      sema_parity_surface
+          .deterministic_incremental_module_cache_invalidation_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1498,6 +1533,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string public_private_api_partition_lowering_replay_key =
       Objc3PublicPrivateApiPartitionLoweringReplayKey(
           public_private_api_partition_lowering_contract);
+  const Objc3IncrementalModuleCacheInvalidationLoweringContract
+      incremental_module_cache_invalidation_lowering_contract =
+          BuildIncrementalModuleCacheInvalidationLoweringContract(
+              pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
+          incremental_module_cache_invalidation_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {
+        MakeDiag(
+            1,
+            1,
+            "O3L300",
+            "LLVM IR emission failed: invalid incremental module cache "
+            "invalidation lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string incremental_module_cache_invalidation_lowering_replay_key =
+      Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
+          incremental_module_cache_invalidation_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -2236,6 +2290,38 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_public_private_api_partition_replay_key\":\""
            << public_private_api_partition_lowering_replay_key
            << "\""
+           << ",\"deterministic_incremental_module_cache_invalidation_lowering_handoff\":"
+           << (incremental_module_cache_invalidation_lowering_contract
+                       .deterministic
+                   ? "true"
+                   : "false")
+           << ",\"incremental_module_cache_invalidation_lowering_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .incremental_module_cache_invalidation_sites
+           << ",\"incremental_module_cache_invalidation_lowering_namespace_segment_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .namespace_segment_sites
+           << ",\"incremental_module_cache_invalidation_lowering_import_edge_candidate_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .import_edge_candidate_sites
+           << ",\"incremental_module_cache_invalidation_lowering_object_pointer_type_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .object_pointer_type_sites
+           << ",\"incremental_module_cache_invalidation_lowering_pointer_declarator_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .pointer_declarator_sites
+           << ",\"incremental_module_cache_invalidation_lowering_normalized_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .normalized_sites
+           << ",\"incremental_module_cache_invalidation_lowering_cache_invalidation_candidate_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .cache_invalidation_candidate_sites
+           << ",\"incremental_module_cache_invalidation_lowering_contract_violation_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .contract_violation_sites
+           << ",\"lowering_incremental_module_cache_invalidation_replay_key\":\""
+           << incremental_module_cache_invalidation_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2921,6 +3007,38 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
+           << ",\"objc_incremental_module_cache_invalidation_lowering_surface\":{\"incremental_module_cache_invalidation_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .incremental_module_cache_invalidation_sites
+           << ",\"namespace_segment_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .namespace_segment_sites
+           << ",\"import_edge_candidate_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .import_edge_candidate_sites
+           << ",\"object_pointer_type_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .object_pointer_type_sites
+           << ",\"pointer_declarator_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .pointer_declarator_sites
+           << ",\"normalized_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .normalized_sites
+           << ",\"cache_invalidation_candidate_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .cache_invalidation_candidate_sites
+           << ",\"contract_violation_sites\":"
+           << incremental_module_cache_invalidation_lowering_contract
+                  .contract_violation_sites
+           << ",\"replay_key\":\""
+           << incremental_module_cache_invalidation_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (incremental_module_cache_invalidation_lowering_contract
+                       .deterministic
+                   ? "true"
+                   : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -3148,6 +3266,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3PublicPrivateApiPartitionLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (public_private_api_partition_lowering_contract.deterministic
+                   ? "true"
+                   : "false")
+           << "},\n";
+  manifest << "  \"lowering_incremental_module_cache_invalidation\":{\"replay_key\":\""
+           << incremental_module_cache_invalidation_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (incremental_module_cache_invalidation_lowering_contract
+                       .deterministic
                    ? "true"
                    : "false")
            << "},\n";
@@ -3738,6 +3866,42 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .deterministic_public_private_api_partition_lowering_handoff =
       public_private_api_partition_lowering_contract.deterministic;
+  ir_frontend_metadata
+      .lowering_incremental_module_cache_invalidation_replay_key =
+      incremental_module_cache_invalidation_lowering_replay_key;
+  ir_frontend_metadata.incremental_module_cache_invalidation_lowering_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .incremental_module_cache_invalidation_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_namespace_segment_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .namespace_segment_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_import_edge_candidate_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .import_edge_candidate_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_object_pointer_type_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .object_pointer_type_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_pointer_declarator_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .pointer_declarator_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_normalized_sites =
+      incremental_module_cache_invalidation_lowering_contract.normalized_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_cache_invalidation_candidate_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .cache_invalidation_candidate_sites;
+  ir_frontend_metadata
+      .incremental_module_cache_invalidation_lowering_contract_violation_sites =
+      incremental_module_cache_invalidation_lowering_contract
+          .contract_violation_sites;
+  ir_frontend_metadata
+      .deterministic_incremental_module_cache_invalidation_lowering_handoff =
+      incremental_module_cache_invalidation_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

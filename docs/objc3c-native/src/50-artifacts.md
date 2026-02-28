@@ -3607,6 +3607,29 @@ Recommended M178 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m178_lowering_public_private_api_partition_contract.py -q`
 
+## Incremental module cache and invalidation lowering artifact contract (M179-C001)
+
+M179-C lowers sema-authored incremental module cache/invalidation summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M179-C lowering contract anchors:
+
+- `kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract`
+- `Objc3IncrementalModuleCacheInvalidationLoweringContract`
+- `IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(...)`
+- `Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(...)`
+- `BuildIncrementalModuleCacheInvalidationLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_incremental_module_cache_invalidation_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_incremental_module_cache_invalidation_lowering_surface`
+- `lowering_incremental_module_cache_invalidation.replay_key`
+- `; incremental_module_cache_invalidation_lowering = incremental_module_cache_invalidation_sites=<N>...`
+- `; frontend_objc_incremental_module_cache_invalidation_lowering_profile = incremental_module_cache_invalidation_sites=<N>...`
+- `!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}`
+
+Recommended M179 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m179_lowering_incremental_module_cache_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

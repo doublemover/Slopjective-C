@@ -1131,3 +1131,56 @@ std::string Objc3PublicPrivateApiPartitionLoweringReplayKey(
          ";lane_contract=" +
          kObjc3PublicPrivateApiPartitionLoweringLaneContract;
 }
+
+bool IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract) {
+  if (contract.namespace_segment_sites >
+          contract.incremental_module_cache_invalidation_sites ||
+      contract.import_edge_candidate_sites >
+          contract.incremental_module_cache_invalidation_sites ||
+      contract.object_pointer_type_sites < contract.import_edge_candidate_sites ||
+      contract.pointer_declarator_sites >
+          contract.incremental_module_cache_invalidation_sites ||
+      contract.normalized_sites >
+          contract.incremental_module_cache_invalidation_sites ||
+      contract.cache_invalidation_candidate_sites >
+          contract.incremental_module_cache_invalidation_sites ||
+      contract.contract_violation_sites >
+          contract.incremental_module_cache_invalidation_sites) {
+    return false;
+  }
+  if (contract.normalized_sites +
+          contract.cache_invalidation_candidate_sites >
+      contract.incremental_module_cache_invalidation_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites !=
+           contract.incremental_module_cache_invalidation_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
+    const Objc3IncrementalModuleCacheInvalidationLoweringContract &contract) {
+  return std::string("incremental_module_cache_invalidation_sites=") +
+             std::to_string(contract.incremental_module_cache_invalidation_sites) +
+         ";namespace_segment_sites=" +
+         std::to_string(contract.namespace_segment_sites) +
+         ";import_edge_candidate_sites=" +
+         std::to_string(contract.import_edge_candidate_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";cache_invalidation_candidate_sites=" +
+         std::to_string(contract.cache_invalidation_candidate_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3IncrementalModuleCacheInvalidationLoweringLaneContract;
+}
