@@ -51,6 +51,9 @@ add_library(objc3c_parse STATIC
 target_include_directories(objc3c_parse PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+target_link_libraries(objc3c_parse PUBLIC
+  objc3c_lex
+)
 add_library(objc3c_sema STATIC
   src/sema/objc3_sema_diagnostics_bus.cpp
   src/sema/objc3_sema_pass_manager.cpp
@@ -61,17 +64,26 @@ add_library(objc3c_sema STATIC
 target_include_directories(objc3c_sema PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+target_link_libraries(objc3c_sema PUBLIC
+  objc3c_parse
+)
 add_library(objc3c_lower STATIC
   src/lower/objc3_lowering_contract.cpp
 )
 target_include_directories(objc3c_lower PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+target_link_libraries(objc3c_lower PUBLIC
+  objc3c_sema
+)
 add_library(objc3c_ir STATIC
   src/ir/objc3_ir_emitter.cpp
 )
 target_include_directories(objc3c_ir PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+target_link_libraries(objc3c_ir PUBLIC
+  objc3c_lower
 )
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
@@ -81,9 +93,9 @@ target_include_directories(objc3c_pipeline PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(objc3c_pipeline PUBLIC
-  objc3c_lex
   objc3c_parse
   objc3c_sema
+  objc3c_lower
   objc3c_ir
 )
 add_library(objc3c_io STATIC
@@ -112,6 +124,7 @@ target_link_libraries(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver STATIC
   src/driver/objc3_cli_options.cpp
+  src/driver/objc3_driver_main.cpp
   src/driver/objc3_driver_shell.cpp
   src/driver/objc3_frontend_options.cpp
   src/driver/objc3_objc3_path.cpp
@@ -129,13 +142,4 @@ target_link_libraries(objc3c_driver PUBLIC
 
 target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
-  objc3c_lex
-  objc3c_diag
-  objc3c_parse
-  objc3c_sema
-  objc3c_pipeline
-  objc3c_lower
-  objc3c_ir
-  objc3c_io
-  objc3c_frontend
 )

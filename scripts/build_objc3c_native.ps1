@@ -16,6 +16,7 @@ $outExe = Join-Path $outDir "objc3c-native.exe"
 $sourceFiles = @(
   "native/objc3c/src/main.cpp"
   "native/objc3c/src/driver/objc3_cli_options.cpp"
+  "native/objc3c/src/driver/objc3_driver_main.cpp"
   "native/objc3c/src/driver/objc3_driver_shell.cpp"
   "native/objc3c/src/driver/objc3_frontend_options.cpp"
   "native/objc3c/src/driver/objc3_objc3_path.cpp"
