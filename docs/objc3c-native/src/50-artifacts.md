@@ -515,6 +515,70 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
+## M199 lowering/runtime foreign type import diagnostics
+
+Lowering/runtime foreign-type import diagnostics evidence is captured as deterministic packet artifacts rooted under `tmp/` so Objective-C import diagnostics remain stage-isolated while lowering/runtime boundary replay metadata stays stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/foreign-type-import-diagnostics-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `foreign type import diagnostic-isolation markers` (required in source-anchor extracts):
+  - `FormatDiagnostic(...)`
+  - `NormalizeDiagnostics(...)`
+  - `WriteDiagnosticsArtifacts(...)`
+  - `FlattenStageDiagnostics(...)`
+  - `ParseDiagSortKey(...)`
+  - `"severity"`
+  - `"line"`
+  - `"column"`
+  - `"code"`
+  - `"message"`
+  - `"raw"`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `std::string FormatDiagnostic(CXDiagnostic diagnostic) {`
+  - `out << severity_text << ":" << line << ":" << column << ": " << ToString(clang_getDiagnosticSpelling(diagnostic));`
+  - `diagnostics.push_back(FormatDiagnostic(diagnostic));`
+  - `NormalizeDiagnostics(diagnostics);`
+  - `WriteDiagnosticsArtifacts(cli_options.out_dir, cli_options.emit_prefix, diagnostics);`
+  - `DiagSortKey ParseDiagSortKey(const std::string &diag) {`
+  - `std::stable_sort(rows.begin(), rows.end(), [](const DiagSortKey &a, const DiagSortKey &b) {`
+  - `if (diagnostics.empty() || diagnostics.back() != row.raw) {`
+  - `const std::vector<std::string> diagnostics = FlattenStageDiagnostics(stage_diagnostics, post_pipeline_diagnostics);`
+  - `const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);`
+  - `out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - foreign-type import diagnostics remain stable after canonical normalization and JSON re-render (`severity/line/column/code/message/raw`) across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, foreign-type diagnostic-isolation marker, or source anchor is missing.
+
+Foreign-type import diagnostics capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/abi-ir-anchors.txt`
+3. `rg -n "FormatDiagnostic\\(|NormalizeDiagnostics\\(|WriteDiagnosticsArtifacts\\(|FlattenStageDiagnostics\\(|ParseDiagSortKey\\(|\\\"severity\\\":|\\\"line\\\":|\\\"column\\\":|\\\"code\\\":|\\\"message\\\":|\\\"raw\\\":|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_objectivec_path.cpp native/objc3c/src/diag/objc3_diag_utils.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/foreign-type-import-diagnostics-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m199_lowering_foreign_type_diagnostics_contract.py -q`
+
 ## M200 lowering/runtime interop integration suite and packaging
 
 Lowering/runtime interop integration-suite and packaging evidence is captured as deterministic packet artifacts rooted under `tmp/` so runtime-dispatch contract transport stays isolated and replay-stable across CLI/C-API/frontend/lowering boundaries.
