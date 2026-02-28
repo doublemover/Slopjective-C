@@ -655,6 +655,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain SIMD/vector type lowering anchors.
 
+## M142 integration CLI and C API parity harness
+
+- Gate intent: enforce deterministic CLI/C API parity evidence across frontend, sema, lowering/runtime, validation, and integration lanes.
+### 1.1 CLI/C API parity integration chain
+- Deterministic CLI/C API parity gate:
+  - `npm run check:objc3c:m142-cli-c-api-parity`
+- Chain order:
+  - replays `check:compiler-closeout:m142`.
+  - enforces all M142 lane contracts:
+    `tests/tooling/test_objc3c_m142_frontend_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_sema_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_lowering_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_validation_cli_c_api_parity_contract.py`,
+    `tests/tooling/test_objc3c_m142_integration_cli_c_api_parity_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through CLI/C API parity validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain CLI/C API parity anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
