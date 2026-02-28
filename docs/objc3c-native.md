@@ -581,6 +581,22 @@ Frontend Swift metadata-bridge contract relies on deterministic parser token-met
   3. `python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
 
+## M197 frontend C++ interop shim strategy
+
+Frontend C++ interop-shim contract relies on deterministic message-send parse boundaries, stable selector/argument AST packetization, and explicit parser-to-sema transport surfaces.
+
+- Required frontend C++ interop-shim signals:
+  - interop parse ingress remains `ParseMessageSendExpression()`.
+  - call-form AST surfaces remain `Expr::Kind::MessageSend` with `selector` and `args`.
+  - parser/AST bridge remains `BuildObjc3AstFromTokens(tokens)` and `result.program = std::move(parse_result.program);`.
+  - sema ingress remains `sema_input.program = &result.program;`.
+  - lowering-facing shim budget remains `max_message_send_args = options.lowering.max_message_send_args`.
+- Required frontend C++ interop-shim commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2691,6 +2707,33 @@ Swift metadata bridge packet map:
 Recommended M198 sema/type Swift metadata bridge validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py -q`
+
+## M197 sema/type C++ interop shim strategy
+
+For deterministic sema/type C++ interop shim strategy behavior, capture replay-stable packet evidence from C ABI shim forwarding into the C++ frontend pipeline and sema/type isolation boundaries.
+
+C++ interop shim packet map:
+
+- `interop shim packet 1.1 deterministic sema/type C++ interop architecture anchors` -> `m197_sema_type_cpp_interop_shim_architecture_packet`
+- `interop shim packet 1.2 deterministic sema/type C++ interop isolation anchors` -> `m197_sema_type_cpp_interop_shim_isolation_packet`
+
+### 1.1 Deterministic sema/type C++ interop shim architecture packet
+
+- Source C ABI shim anchors: `Optional C ABI shim for non-C++ embedding environments.`, `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;`, `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`, and `extern "C" OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(`.
+- Source C++ frontend pipeline bridge anchors: `Objc3FrontendCompileProduct CompileObjc3SourceWithPipeline(`, `product.pipeline_result = RunObjc3FrontendPipeline(source, options);`, `product.artifact_bundle = BuildObjc3FrontendArtifacts(input_path, product.pipeline_result, options);`, `Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);`, and `Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);`.
+- Source sema/type metadata handoff anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Deterministic C++ interop shim architecture packet key: `m197_sema_type_cpp_interop_shim_architecture_packet`.
+
+### 1.2 Deterministic sema/type C++ interop shim isolation packet
+
+- Source sema pass-isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.ready =`.
+- Pipeline sema transport-isolation anchors: `sema_input.program = &result.program;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Build/link isolation anchors: `add_library(objc3c_sema_type_system INTERFACE)`, `target_link_libraries(objc3c_lower PUBLIC`, `target_link_libraries(objc3c_ir PUBLIC`, `add_library(objc3c_runtime_abi STATIC`, `target_link_libraries(objc3c_frontend PUBLIC`, and `objc3c_runtime_abi`.
+- Deterministic C++ interop shim isolation packet key: `m197_sema_type_cpp_interop_shim_isolation_packet`.
+
+Recommended M197 sema/type C++ interop shim strategy validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3324,6 +3367,63 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M197 lowering/runtime C++ interop shim strategy
+
+Lowering/runtime C++ interop shim strategy evidence is captured as deterministic packet artifacts rooted under `tmp/` so the C++ frontend surface, C ABI shim surface, and runtime dispatch shim remain replay-stable and isolated across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/`
+  - `tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/cpp-interop-shim-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `C++ interop shim architecture/isolation anchors` (required in source-anchor extracts):
+  - `Optional C ABI shim for non-C++ embedding environments.`
+  - `OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u`
+  - `return objc3c_frontend_compile_file(context, options, result);`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {`
+  - `static const int64_t kModulus = 2147483629LL;`
+- `source anchors`:
+  - `/* Optional C ABI shim for non-C++ embedding environments. */`
+  - `static_assert(OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u, "unexpected c api wrapper abi version");`
+  - `return objc3c_frontend_compile_file(context, options, result);`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {`
+  - `static const int64_t kModulus = 2147483629LL;`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and C++ interop shim source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, C++ interop shim marker, or source anchor is missing.
+
+C++ interop shim strategy capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.ll tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.manifest.json > tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/abi-ir-anchors.txt`
+3. `rg -n "Optional C ABI shim for non-C\\+\\+ embedding environments\\.|OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u|return objc3c_frontend_compile_file\\(context, options, result\\);|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|compile_options\\.runtime_dispatch_symbol = runtime_symbol;|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\";|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"|int objc3_msgsend_i32\\(|static const int64_t kModulus = 2147483629LL;" native/objc3c/src/libobjc3c_frontend/c_api.h native/objc3c/src/libobjc3c_frontend/c_api.cpp native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp tests/tooling/runtime/objc3_msgsend_i32_shim.c > tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/cpp-interop-shim-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m197_lowering_cpp_interop_shim_contract.py -q`
 
 ## M198 lowering/runtime swift metadata bridge
 
@@ -6136,6 +6236,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m198_validation_swift_metadata_bridge_contract.py -q
 ```
 
+## M197 validation/perf C++ interop shim strategy runbook
+
+C++ interop-shim validation runbook verifies deterministic interop-shim evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+C++ interop-shim evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m197_validation_cpp_interop_shim_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6713,6 +6858,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain Swift metadata-bridge anchors.
+
+## M197 integration C++ interop shim strategy
+
+- Gate intent: enforce deterministic C++ interop-shim evidence across all lanes.
+### 1.1 C++ interop-shim integration chain
+- Deterministic C++ interop-shim gate:
+  - `npm run check:objc3c:m197-cpp-interop-shim`
+- Chain order:
+  - replays `check:objc3c:m198-swift-metadata-bridge`.
+  - enforces all M197 lane contracts:
+    `tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_lowering_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_validation_cpp_interop_shim_contract.py`,
+    `tests/tooling/test_objc3c_m197_integration_cpp_interop_shim_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through C++ interop-shim validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C++ interop-shim anchors.
 
 ## Current call contract
 
