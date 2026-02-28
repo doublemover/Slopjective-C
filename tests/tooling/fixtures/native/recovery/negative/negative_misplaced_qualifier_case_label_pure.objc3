@@ -1,5 +1,5 @@
 // Negative fixture: declaration qualifiers are invalid in case-label expression positions.
-// Expected diagnostic code(s): O3P100.
+// Expected diagnostic code(s): O3P100, O3P103.
 module NegativeMisplacedQualifierCaseLabelPure;
 
 fn main() -> i32 {

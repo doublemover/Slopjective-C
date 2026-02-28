@@ -1,3 +1,5 @@
+// Negative fixture: pure definitions reject writes to mutable global state.
+// Expected diagnostic code(s): O3S215.
 module NegativePureDefinitionImpureGlobalWrite;
 
 let counter = 0;
