@@ -29,6 +29,7 @@
 #include "sema/objc3_semantic_passes.h"
 #include "lower/objc3_lowering_contract.h"
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_frontend_pipeline.h"
 #include "token/objc3_token.h"
 
 namespace fs = std::filesystem;
@@ -59,39 +60,6 @@ static std::string MakeDiag(unsigned line, unsigned column, const std::string &c
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
   return out.str();
-}
-
-static Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
-                                                            const Objc3FrontendOptions &options) {
-  Objc3FrontendPipelineResult result;
-
-  Objc3Lexer lexer(source);
-  std::vector<Token> tokens = lexer.Run(result.stage_diagnostics.lexer);
-
-  Objc3ParseResult parse_result = ParseObjc3Program(tokens);
-  result.program = std::move(parse_result.program);
-  result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
-
-  if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
-    result.integration_surface = BuildSemanticIntegrationSurface(result.program, result.stage_diagnostics.semantic);
-    Objc3SemanticValidationOptions semantic_options;
-    semantic_options.max_message_send_args = options.lowering.max_message_send_args;
-    ValidateSemanticBodies(result.program, result.integration_surface, semantic_options,
-                           result.stage_diagnostics.semantic);
-    ValidatePureContractSemanticDiagnostics(result.program, result.integration_surface.functions,
-                                            result.stage_diagnostics.semantic);
-  }
-
-  result.program.diagnostics.reserve(result.stage_diagnostics.lexer.size() + result.stage_diagnostics.parser.size() +
-                                     result.stage_diagnostics.semantic.size());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.lexer.begin(),
-                                    result.stage_diagnostics.lexer.end());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.parser.begin(),
-                                    result.stage_diagnostics.parser.end());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.semantic.begin(),
-                                    result.stage_diagnostics.semantic.end());
-  NormalizeDiagnostics(result.program.diagnostics);
-  return result;
 }
 
 static CXChildVisitResult VisitSymbol(CXCursor cursor, CXCursor, CXClientData client_data) {
@@ -398,5 +366,6 @@ int main(int argc, char **argv) {
 
   return compile_status == 0 ? 0 : 3;
 }
+
 
 

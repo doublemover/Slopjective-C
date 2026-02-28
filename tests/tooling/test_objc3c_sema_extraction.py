@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SEMA_HEADER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
 SEMA_SOURCE = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
+PIPELINE_CPP = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
 PIPELINE_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
 CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
@@ -21,7 +22,9 @@ def test_sema_module_exists_and_main_uses_api() -> None:
     assert "static Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(" not in main_cpp
     assert "static void ValidateSemanticBodies(" not in main_cpp
     assert "static void ValidatePureContractSemanticDiagnostics(" not in main_cpp
-    assert "ValidateSemanticBodies(result.program, result.integration_surface, semantic_options," in main_cpp
+
+    pipeline_cpp = _read(PIPELINE_CPP)
+    assert "ValidateSemanticBodies(result.program, result.integration_surface, semantic_options," in pipeline_cpp
 
 
 def test_pipeline_uses_sema_contract_types() -> None:

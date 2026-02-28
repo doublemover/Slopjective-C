@@ -24,6 +24,7 @@ $sourceFiles = @(
   "native/objc3c/src/lex/objc3_lexer.cpp"
   "native/objc3c/src/lower/objc3_lowering_contract.cpp"
   "native/objc3c/src/parse/objc3_parser.cpp"
+  "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
   "native/objc3c/src/sema/objc3_semantic_passes.cpp"
   "native/objc3c/src/sema/objc3_static_analysis.cpp"
   "native/objc3c/src/sema/objc3_pure_contract.cpp"
