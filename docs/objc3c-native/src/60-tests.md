@@ -2215,6 +2215,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m174_validation_variance_bridge_cast_contract.py -q
 ```
 
+## M175 validation/conformance/perf generic metadata emission and ABI checks runbook
+
+Deterministic M175 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m175_frontend_generic_metadata_abi_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m175_sema_generic_metadata_abi_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m175_lowering_generic_metadata_abi_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m175_validation_generic_metadata_abi_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m175_validation_generic_metadata_abi_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_generic_metadata_abi_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_generic_metadata_abi_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_generic_metadata_abi_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_generic_metadata_abi_lowering_surface.deterministic_handoff`
+  - `lowering_generic_metadata_abi.replay_key`
+- `replay_run_1/module.ll`
+  - `generic_metadata_abi_lowering`
+  - `frontend_objc_generic_metadata_abi_lowering_profile`
+  - `!objc3.objc_generic_metadata_abi_lowering = !{!28}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m175_validation_generic_metadata_abi_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
