@@ -2121,3 +2121,31 @@ C++ interop shim packet map:
 Recommended M197 sema/type C++ interop shim strategy validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py -q`
+
+## M196 sema/type C interop headers and ABI alignment
+
+For deterministic sema/type C interop headers and ABI alignment behavior, capture replay-stable packet evidence from C wrapper ABI identity surfaces and sema pass-manager isolation boundaries.
+
+C interop headers + ABI alignment packet map:
+
+- `c interop packet 1.1 deterministic sema/type C interop headers ABI architecture anchors` -> `m196_sema_type_c_interop_headers_abi_architecture_packet`
+- `c interop packet 1.2 deterministic sema/type C interop headers ABI isolation anchors` -> `m196_sema_type_c_interop_headers_abi_isolation_packet`
+
+### 1.1 Deterministic sema/type C interop headers ABI architecture packet
+
+- Source C interop header ABI anchors: `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`, `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;`, and `typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;`.
+- Source C wrapper ABI-alignment guard anchors: `static_assert(std::is_same_v<objc3c_frontend_c_context_t, objc3c_frontend_context_t>,`, `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`, and `static_assert(std::is_same_v<objc3c_frontend_c_compile_result_t, objc3c_frontend_compile_result_t>,`.
+- Source frontend option-normalization anchors: `Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {`, `frontend_options.compatibility_mode =`, `frontend_options.migration_assist = options.migration_assist != 0;`, and `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+- Source pipeline ABI contract anchors: `inline constexpr std::size_t kRuntimeDispatchDefaultArgs = 4;`, `inline constexpr std::size_t kRuntimeDispatchMaxArgs = 16;`, and `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`.
+- Deterministic sema/type C interop headers ABI architecture packet key: `m196_sema_type_c_interop_headers_abi_architecture_packet`.
+
+### 1.2 Deterministic sema/type C interop headers ABI isolation packet
+
+- Source sema pass-isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, and `result.parity_surface.ready =`.
+- Pipeline sema transport-isolation anchors: `sema_input.program = &result.program;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Build/link runtime ABI isolation anchors: `add_library(objc3c_sema_type_system INTERFACE)`, `add_library(objc3c_runtime_abi STATIC`, `target_link_libraries(objc3c_frontend PUBLIC`, and `objc3c_runtime_abi`.
+- Deterministic sema/type C interop headers ABI isolation packet key: `m196_sema_type_c_interop_headers_abi_isolation_packet`.
+
+Recommended M196 sema/type C interop headers and ABI alignment validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py -q`
