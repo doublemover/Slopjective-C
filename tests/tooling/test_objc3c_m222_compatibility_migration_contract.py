@@ -14,6 +14,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_m222_driver_cli_supports_language_version_and_migration_controls() -> None:
     header = _read(CLI_OPTIONS_HEADER)
     source = _read(CLI_OPTIONS_SOURCE)
@@ -34,12 +43,38 @@ def test_m222_driver_cli_supports_language_version_and_migration_controls() -> N
     frontend_options_source = _read(FRONTEND_OPTIONS_SOURCE)
     assert "options.language_version = static_cast<std::uint8_t>(cli_options.language_version);" in frontend_options_source
     assert "options.compatibility_mode = cli_options.compat_mode == Objc3CompatMode::kLegacy" in frontend_options_source
+    assert "? Objc3FrontendCompatibilityMode::kLegacy" in frontend_options_source
+    assert ": Objc3FrontendCompatibilityMode::kCanonical;" in frontend_options_source
     assert "options.migration_assist = cli_options.migration_assist;" in frontend_options_source
+    _assert_in_order(
+        frontend_options_source,
+        [
+            "options.language_version = static_cast<std::uint8_t>(cli_options.language_version);",
+            "options.compatibility_mode = cli_options.compat_mode == Objc3CompatMode::kLegacy",
+            "? Objc3FrontendCompatibilityMode::kLegacy",
+            ": Objc3FrontendCompatibilityMode::kCanonical;",
+            "options.migration_assist = cli_options.migration_assist;",
+            "options.lowering.max_message_send_args = cli_options.max_message_send_args;",
+        ],
+    )
 
     frontend_artifacts_source = _read(FRONTEND_ARTIFACTS_SOURCE)
     assert "CompatibilityModeName(Objc3FrontendCompatibilityMode mode)" in frontend_artifacts_source
+    assert "case Objc3FrontendCompatibilityMode::kLegacy:" in frontend_artifacts_source
+    assert 'return "legacy";' in frontend_artifacts_source
+    assert 'return "canonical";' in frontend_artifacts_source
     assert "\\\"compatibility_mode\\\":\\\"" in frontend_artifacts_source
     assert "\\\"migration_assist\\\":" in frontend_artifacts_source
+    _assert_in_order(
+        frontend_artifacts_source,
+        [
+            'manifest << "  \\"frontend\\": {\\n";',
+            'manifest << "    \\"language_version\\":"',
+            'manifest << "    \\"compatibility_mode\\":\\""',
+            'manifest << "    \\"migration_assist\\":"',
+            'manifest << "    \\"max_message_send_args\\":"',
+        ],
+    )
 
 
 def test_m222_docs_publish_new_compatibility_controls() -> None:

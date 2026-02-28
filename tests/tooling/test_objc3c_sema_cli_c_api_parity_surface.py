@@ -10,6 +10,15 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _assert_in_order(text: str, snippets: list[str]) -> None:
+    cursor = -1
+    for snippet in snippets:
+        index = text.find(snippet)
+        assert index != -1, f"missing snippet: {snippet}"
+        assert index > cursor, f"snippet out of order: {snippet}"
+        cursor = index
+
+
 def test_c_api_and_cli_diagnostics_json_surface_match() -> None:
     frontend_anchor = _read(FRONTEND_ANCHOR)
     diag_artifacts = _read(DIAG_ARTIFACTS)
@@ -34,6 +43,18 @@ def test_manifest_emits_sema_parity_contract_fields() -> None:
     artifacts = _read(PIPELINE_ARTIFACTS)
 
     assert "language_version" in artifacts
+    assert "compatibility_mode" in artifacts
+    assert "migration_assist" in artifacts
+    _assert_in_order(
+        artifacts,
+        [
+            'manifest << "  \\"frontend\\": {\\n";',
+            'manifest << "    \\"language_version\\":"',
+            'manifest << "    \\"compatibility_mode\\":\\""',
+            'manifest << "    \\"migration_assist\\":"',
+            'manifest << "    \\"max_message_send_args\\":"',
+        ],
+    )
     assert "diagnostics_after_build" in artifacts
     assert "diagnostics_after_validate_bodies" in artifacts
     assert "diagnostics_after_validate_pure_contract" in artifacts

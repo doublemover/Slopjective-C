@@ -127,6 +127,19 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "bundle.stage_diagnostics = pipeline_result.stage_diagnostics;" in artifacts_source
     assert "bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);" in artifacts_source
     assert '\\"language_version\\":' in artifacts_source
+    assert '\\"compatibility_mode\\":\\"' in artifacts_source
+    assert '\\"migration_assist\\":' in artifacts_source
+    assert "CompatibilityModeName(options.compatibility_mode)" in artifacts_source
+    _assert_in_order(
+        artifacts_source,
+        [
+            'manifest << "  \\"frontend\\": {\\n";',
+            'manifest << "    \\"language_version\\":"',
+            'manifest << "    \\"compatibility_mode\\":\\""',
+            'manifest << "    \\"migration_assist\\":"',
+            'manifest << "    \\"max_message_send_args\\":"',
+        ],
+    )
     assert "sema_pass_manager" in artifacts_source
     assert "diagnostics_after_build" in artifacts_source
     assert "diagnostics_emitted_by_build" in artifacts_source
