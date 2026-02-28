@@ -20,6 +20,7 @@ class Objc3IREmitter {
     if (!TryBuildObjc3LoweringIRBoundary(lowering_contract, lowering_ir_boundary_, boundary_error_)) {
       return;
     }
+    vector_signature_function_count_ = CountVectorSignatureFunctions(program_);
     for (const auto &global : program_.globals) {
       globals_.insert(global.name);
     }
@@ -91,6 +92,8 @@ class Objc3IREmitter {
     std::ostringstream out;
     out << "; objc3c native frontend IR\n";
     out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
+    out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";
+    out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
         << ", migration_assist=" << (frontend_metadata_.migration_assist ? "true" : "false")
@@ -175,6 +178,25 @@ class Objc3IREmitter {
       }
     }
     return signatures;
+  }
+
+  static std::size_t CountVectorSignatureFunctions(const Objc3Program &program) {
+    std::unordered_set<std::string> vector_function_names;
+    for (const auto &fn : program.functions) {
+      bool has_vector_signature = fn.return_vector_spelling;
+      if (!has_vector_signature) {
+        for (const auto &param : fn.params) {
+          if (param.vector_spelling) {
+            has_vector_signature = true;
+            break;
+          }
+        }
+      }
+      if (has_vector_signature) {
+        vector_function_names.insert(fn.name);
+      }
+    }
+    return vector_function_names.size();
   }
 
   static std::string EscapeCStringLiteral(const std::string &text) {
@@ -2111,6 +2133,7 @@ class Objc3IREmitter {
   std::unordered_map<std::string, std::size_t> function_arity_;
   std::map<std::string, LoweredFunctionSignature> function_signatures_;
   std::map<std::string, std::string> selector_globals_;
+  std::size_t vector_signature_function_count_ = 0;
   mutable bool runtime_dispatch_call_emitted_ = false;
 };
 

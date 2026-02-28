@@ -515,6 +515,64 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
+## M193 lowering/runtime SIMD/vector type lowering
+
+Lowering/runtime SIMD/vector type-lowering evidence is captured as deterministic packet artifacts rooted under `tmp/` so vector ABI replay material, LLVM IR boundary comments, and emitted manifest contract surfaces stay replay-stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/simd-vector-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; simd_vector_lowering = i32x2=<2 x i32>;i32x4=<4 x i32>;i32x8=<8 x i32>;i32x16=<16 x i32>;boolx2=<2 x i1>;boolx4=<4 x i1>;boolx8=<8 x i1>;boolx16=<16 x i1>;lane_contract=2,4,8,16`
+  - `; simd_vector_function_signatures = <N>`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+  - `"lowering_vector_abi":{"replay_key":"i32x2=<2 x i32>;i32x4=<4 x i32>;i32x8=<8 x i32>;i32x16=<16 x i32>;boolx2=<2 x i1>;boolx4=<4 x i1>;boolx8=<8 x i1>;boolx16=<16 x i1>;lane_contract=2,4,8,16","lane_contract":"2,4,8,16","vector_signature_functions":<N>}`
+  - `"vector_signature_surface":{"vector_signature_functions":<N>,"vector_return_signatures":<N>,"vector_param_signatures":<N>,"vector_i32_signatures":<N>,"vector_bool_signatures":<N>,"lane2":<N>,"lane4":<N>,"lane8":<N>,"lane16":<N>}`
+- `SIMD/vector architecture+isolation anchors` (required in source-anchor extracts):
+  - `kObjc3SimdVectorLaneContract = "2,4,8,16"`
+  - `kObjc3SimdVectorBaseI32 = "i32"`
+  - `kObjc3SimdVectorBaseBool = "bool"`
+  - `IsSupportedObjc3SimdVectorLaneCount(...)`
+  - `TryBuildObjc3SimdVectorLLVMType(...)`
+  - `Objc3SimdVectorTypeLoweringReplayKey()`
+  - `CountVectorSignatureFunctions(...)`
+  - `simd_vector_lowering =`
+  - `simd_vector_function_signatures =`
+  - `"vector_signature_surface"`
+  - `"lowering_vector_abi"`
+  - `"lane_contract":"2,4,8,16"`
+- `source anchors`:
+  - `inline constexpr const char *kObjc3SimdVectorLaneContract = "2,4,8,16";`
+  - `inline constexpr const char *kObjc3SimdVectorBaseI32 = "i32";`
+  - `inline constexpr const char *kObjc3SimdVectorBaseBool = "bool";`
+  - `bool IsSupportedObjc3SimdVectorLaneCount(unsigned lane_count) {`
+  - `bool TryBuildObjc3SimdVectorLLVMType(const std::string &base_spelling, unsigned lane_count, std::string &llvm_type) {`
+  - `std::string Objc3SimdVectorTypeLoweringReplayKey() {`
+  - `static std::size_t CountVectorSignatureFunctions(const Objc3Program &program) {`
+  - `out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";`
+  - `out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";`
+  - `manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions`
+  - `manifest << "  \"lowering_vector_abi\":{\"replay_key\":\"" << Objc3SimdVectorTypeLoweringReplayKey()`
+  - `<< "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and SIMD/vector source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, SIMD/vector marker, or source anchor is missing.
+
+SIMD/vector type-lowering capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|simd_vector_lowering|simd_vector_function_signatures|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"|\"lowering_vector_abi\"|\"vector_signature_surface\"" tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.ll tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.manifest.json > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/abi-ir-anchors.txt`
+3. `rg -n "kObjc3SimdVectorLaneContract|kObjc3SimdVectorBaseI32|kObjc3SimdVectorBaseBool|IsSupportedObjc3SimdVectorLaneCount|TryBuildObjc3SimdVectorLLVMType|Objc3SimdVectorTypeLoweringReplayKey|CountVectorSignatureFunctions|simd_vector_lowering|simd_vector_function_signatures|vector_signature_surface|lowering_vector_abi|lane_contract" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/simd-vector-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m193_lowering_simd_vector_lowering_contract.py -q`
+
 ## M194 lowering/runtime atomics and memory-order mapping
 
 Lowering/runtime atomics memory-order mapping evidence is captured as deterministic packet artifacts rooted under `tmp/` so language atomic-order normalization and LLVM memory-order lowering mappings remain replay-stable and auditable across reruns.
