@@ -3350,3 +3350,29 @@ Deterministic sema intent:
 Recommended M170 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_sema_block_determinism_perf_baseline_contract.py -q`
+
+## M171 sema/type lightweight generics semantic constraints contract (M171-B001)
+
+M171-B defines deterministic sema summaries for lightweight generic
+parameterization consistency and fail-closed instantiation validation.
+
+M171 sema/type surface details:
+
+- `Objc3LightweightGenericConstraintSummary`
+- `BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary`
+- parity counters:
+  - `lightweight_generic_constraint_sites_total`
+  - `lightweight_generic_constraint_normalized_sites_total`
+  - `lightweight_generic_constraint_contract_violation_sites_total`
+  - `deterministic_lightweight_generic_constraint_handoff`
+
+Deterministic sema intent:
+
+- generic constraint packets are derived from deterministic type-annotation
+  counters.
+- invalid generic suffix packets and non-object-pointer instantiations are
+  surfaced as contract violations.
+
+Recommended M171 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m171_sema_lightweight_generics_constraints_contract.py -q`

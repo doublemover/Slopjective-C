@@ -3065,6 +3065,31 @@ static Objc3TypeAnnotationSurfaceSummary BuildTypeAnnotationSurfaceSummaryFromIn
   return summary;
 }
 
+static Objc3LightweightGenericConstraintSummary BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
+    const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary) {
+  Objc3LightweightGenericConstraintSummary summary;
+  summary.generic_constraint_sites = type_annotation_summary.generic_suffix_sites;
+  summary.generic_suffix_sites = type_annotation_summary.generic_suffix_sites;
+  summary.object_pointer_type_sites = type_annotation_summary.object_pointer_type_sites;
+  summary.pointer_declarator_sites = type_annotation_summary.pointer_declarator_sites;
+  summary.terminated_generic_suffix_sites =
+      type_annotation_summary.generic_suffix_sites - type_annotation_summary.invalid_generic_suffix_sites;
+  summary.normalized_constraint_sites =
+      std::min(summary.terminated_generic_suffix_sites, summary.object_pointer_type_sites);
+  summary.contract_violation_sites =
+      type_annotation_summary.invalid_generic_suffix_sites +
+      (summary.generic_suffix_sites > summary.object_pointer_type_sites
+           ? summary.generic_suffix_sites - summary.object_pointer_type_sites
+           : 0u);
+  summary.deterministic =
+      type_annotation_summary.deterministic &&
+      summary.contract_violation_sites == 0u &&
+      summary.terminated_generic_suffix_sites <= summary.generic_suffix_sites &&
+      summary.normalized_constraint_sites <= summary.generic_constraint_sites &&
+      summary.contract_violation_sites <= summary.generic_constraint_sites;
+  return summary;
+}
+
 static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3SymbolGraphScopeResolutionSummary summary;
@@ -7175,6 +7200,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
   surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
   surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);
+  surface.lightweight_generic_constraint_summary =
+      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
+          surface.type_annotation_surface_summary);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
   surface.method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(surface);
@@ -8159,6 +8187,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.type_annotation_surface_summary.ownership_qualifier_sites &&
       handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           handoff.type_annotation_surface_summary.total_type_annotation_sites();
+  handoff.lightweight_generic_constraint_summary =
+      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -8883,6 +8914,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   }
   const Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3LightweightGenericConstraintSummary lightweight_generic_constraint_summary =
+      BuildLightweightGenericConstraintSummaryFromTypeAnnotationSurfaceSummary(
+          handoff.type_annotation_surface_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -9000,6 +9034,27 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              type_annotation_summary.invalid_nullability_suffix_sites &&
          handoff.type_annotation_surface_summary.invalid_ownership_qualifier_sites ==
              type_annotation_summary.invalid_ownership_qualifier_sites &&
+         handoff.lightweight_generic_constraint_summary.deterministic &&
+         handoff.lightweight_generic_constraint_summary.generic_constraint_sites ==
+             lightweight_generic_constraint_summary.generic_constraint_sites &&
+         handoff.lightweight_generic_constraint_summary.generic_suffix_sites ==
+             lightweight_generic_constraint_summary.generic_suffix_sites &&
+         handoff.lightweight_generic_constraint_summary.object_pointer_type_sites ==
+             lightweight_generic_constraint_summary.object_pointer_type_sites &&
+         handoff.lightweight_generic_constraint_summary.terminated_generic_suffix_sites ==
+             lightweight_generic_constraint_summary.terminated_generic_suffix_sites &&
+         handoff.lightweight_generic_constraint_summary.pointer_declarator_sites ==
+             lightweight_generic_constraint_summary.pointer_declarator_sites &&
+         handoff.lightweight_generic_constraint_summary.normalized_constraint_sites ==
+             lightweight_generic_constraint_summary.normalized_constraint_sites &&
+         handoff.lightweight_generic_constraint_summary.contract_violation_sites ==
+             lightweight_generic_constraint_summary.contract_violation_sites &&
+         handoff.lightweight_generic_constraint_summary.terminated_generic_suffix_sites <=
+             handoff.lightweight_generic_constraint_summary.generic_suffix_sites &&
+         handoff.lightweight_generic_constraint_summary.normalized_constraint_sites <=
+             handoff.lightweight_generic_constraint_summary.generic_constraint_sites &&
+         handoff.lightweight_generic_constraint_summary.contract_violation_sites <=
+             handoff.lightweight_generic_constraint_summary.generic_constraint_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&

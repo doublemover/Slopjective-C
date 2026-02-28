@@ -115,6 +115,18 @@ bool IsEquivalentTypeAnnotationSurfaceSummary(const Objc3TypeAnnotationSurfaceSu
          lhs.invalid_ownership_qualifier_sites == rhs.invalid_ownership_qualifier_sites;
 }
 
+bool IsEquivalentLightweightGenericConstraintSummary(
+    const Objc3LightweightGenericConstraintSummary &lhs,
+    const Objc3LightweightGenericConstraintSummary &rhs) {
+  return lhs.generic_constraint_sites == rhs.generic_constraint_sites &&
+         lhs.generic_suffix_sites == rhs.generic_suffix_sites &&
+         lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
+         lhs.terminated_generic_suffix_sites == rhs.terminated_generic_suffix_sites &&
+         lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
+         lhs.normalized_constraint_sites == rhs.normalized_constraint_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentSymbolGraphScopeResolutionSummary(const Objc3SymbolGraphScopeResolutionSummary &lhs,
                                                    const Objc3SymbolGraphScopeResolutionSummary &rhs) {
   return lhs.global_symbol_nodes == rhs.global_symbol_nodes &&
@@ -510,6 +522,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.type_annotation_surface_summary.ownership_qualifier_sites &&
       result.type_metadata_handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.type_metadata_handoff.type_annotation_surface_summary.total_type_annotation_sites();
+  result.lightweight_generic_constraint_summary =
+      result.integration_surface.lightweight_generic_constraint_summary;
+  result.deterministic_lightweight_generic_constraint_handoff =
+      result.type_metadata_handoff.lightweight_generic_constraint_summary.deterministic &&
+      result.integration_surface.lightweight_generic_constraint_summary.deterministic &&
+      IsEquivalentLightweightGenericConstraintSummary(
+          result.integration_surface.lightweight_generic_constraint_summary,
+          result.type_metadata_handoff.lightweight_generic_constraint_summary) &&
+      result.type_metadata_handoff.lightweight_generic_constraint_summary.terminated_generic_suffix_sites <=
+          result.type_metadata_handoff.lightweight_generic_constraint_summary.generic_suffix_sites &&
+      result.type_metadata_handoff.lightweight_generic_constraint_summary.normalized_constraint_sites <=
+          result.type_metadata_handoff.lightweight_generic_constraint_summary.generic_constraint_sites &&
+      result.type_metadata_handoff.lightweight_generic_constraint_summary.contract_violation_sites <=
+          result.type_metadata_handoff.lightweight_generic_constraint_summary.generic_constraint_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1015,6 +1041,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites;
   result.parity_surface.type_annotation_invalid_ownership_qualifier_sites_total =
       result.parity_surface.type_annotation_surface_summary.invalid_ownership_qualifier_sites;
+  result.parity_surface.lightweight_generic_constraint_summary =
+      result.type_metadata_handoff.lightweight_generic_constraint_summary;
+  result.parity_surface.lightweight_generic_constraint_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites;
+  result.parity_surface.lightweight_generic_constraint_generic_suffix_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.generic_suffix_sites;
+  result.parity_surface.lightweight_generic_constraint_object_pointer_type_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.object_pointer_type_sites;
+  result.parity_surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites;
+  result.parity_surface.lightweight_generic_constraint_pointer_declarator_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.pointer_declarator_sites;
+  result.parity_surface.lightweight_generic_constraint_normalized_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.normalized_constraint_sites;
+  result.parity_surface.lightweight_generic_constraint_contract_violation_sites_total =
+      result.parity_surface.lightweight_generic_constraint_summary.contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -1542,6 +1584,29 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
           result.parity_surface.type_annotation_surface_summary.total_type_annotation_sites() &&
       result.parity_surface.type_annotation_surface_summary.deterministic;
+  result.parity_surface.deterministic_lightweight_generic_constraint_handoff =
+      result.deterministic_lightweight_generic_constraint_handoff &&
+      result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites ==
+          result.parity_surface.lightweight_generic_constraint_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.generic_suffix_sites ==
+          result.parity_surface.lightweight_generic_constraint_generic_suffix_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.object_pointer_type_sites ==
+          result.parity_surface.lightweight_generic_constraint_object_pointer_type_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites ==
+          result.parity_surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.pointer_declarator_sites ==
+          result.parity_surface.lightweight_generic_constraint_pointer_declarator_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.normalized_constraint_sites ==
+          result.parity_surface.lightweight_generic_constraint_normalized_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.contract_violation_sites ==
+          result.parity_surface.lightweight_generic_constraint_contract_violation_sites_total &&
+      result.parity_surface.lightweight_generic_constraint_summary.terminated_generic_suffix_sites <=
+          result.parity_surface.lightweight_generic_constraint_summary.generic_suffix_sites &&
+      result.parity_surface.lightweight_generic_constraint_summary.normalized_constraint_sites <=
+          result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
+      result.parity_surface.lightweight_generic_constraint_summary.contract_violation_sites <=
+          result.parity_surface.lightweight_generic_constraint_summary.generic_constraint_sites &&
+      result.parity_surface.lightweight_generic_constraint_summary.deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -2217,6 +2282,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_property_attribute_handoff &&
       result.parity_surface.type_annotation_surface_summary.deterministic &&
       result.parity_surface.deterministic_type_annotation_surface_handoff &&
+      result.parity_surface.lightweight_generic_constraint_summary.deterministic &&
+      result.parity_surface.deterministic_lightweight_generic_constraint_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&
