@@ -51,6 +51,54 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M214 lowering/runtime daemonized compiler profile
+
+Lowering/runtime daemon/watch mode evidence is captured as deterministic packet artifacts under `tmp/` for incremental replay validation.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.manifest.json`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in daemonized packet artifacts):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `incremental replay markers` (required in daemon/watch evidence extracts):
+  - `@@ cycle:cycle-001`
+  - `@@ cycle:cycle-002`
+  - `runtime_dispatch_symbol=`
+  - `selector_global_ordering=lexicographic`
+  - `incremental_cycle_id`
+  - `run1_sha256`
+  - `run2_sha256`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - cycle-001 and cycle-002 captures from identical source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - ABI/IR anchor extracts and incremental replay marker extracts remain stable across daemon/watch reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, incremental replay marker, or source anchor is missing.
+
+Daemonized capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001 --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002 --emit-prefix module`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.manifest.json tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.manifest.json > tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/abi-ir-anchors.txt`
+4. `@("@@ cycle:cycle-001", "@@ cycle:cycle-002") | Set-Content tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "\"incremental_cycle_id\":|\"run1_sha256\":|\"run2_sha256\":" tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m214_lowering_daemonized_contract.py -q`
+
 ## M215 lowering/runtime SDK packaging profile
 
 Lowering/runtime SDK packaging evidence is captured as a deterministic packet for IDE-facing toolchains under `tmp/`.
