@@ -254,6 +254,21 @@ Public-beta triage for frontend/parser uses deterministic intake signals and pat
   3. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
 
+## M219 frontend cross-platform parity packet
+
+Cross-platform frontend parity (Windows/Linux/macOS) is tracked via deterministic parser/AST signals and replay-stable diagnostics.
+
+- Required parity signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable across platforms.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains present and deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required parity commands (run in order per platform):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1683,6 +1698,36 @@ Recommended seeding commands (sema/type lane):
 2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
 3. `python -m pytest tests/tooling/test_objc3c_m225_sema_roadmap_seed_contract.py -q`
 
+## M219 sema/type cross-platform parity profile
+
+To prove sema/type parity across Windows/Linux/macOS before lane promotion, capture deterministic evidence packets for each replay run in stable platform order: `windows-msvc-x64`, `linux-clang-x64`, `macos-clang-arm64`.
+
+### 1.1 Deterministic sema diagnostics cross-platform packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics handoff anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Cross-platform diagnostics evidence packet names (deterministic tuple order):
+  - `windows_sema_diagnostics_packet`
+  - `linux_sema_diagnostics_packet`
+  - `macos_sema_diagnostics_packet`
+
+### 1.2 Deterministic type-metadata handoff cross-platform packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface metadata anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Cross-platform metadata handoff evidence packet names (deterministic tuple order):
+  - `windows_type_metadata_handoff_packet`
+  - `linux_type_metadata_handoff_packet`
+  - `macos_type_metadata_handoff_packet`
+
+Recommended cross-platform parity commands (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m219_sema_cross_platform_contract.py -q`
+
 ## M220 sema/type public-beta triage profile
 
 For sema/type public-beta intake, triage, and patch loops, capture deterministic evidence in two replay-stable packets before promoting fixes to GA-bound lanes.
@@ -1898,6 +1943,44 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M219 lowering/runtime cross-platform parity profile
+
+Cross-platform lowering/runtime parity evidence is captured as deterministic packet artifacts under `tmp/` across windows/linux/macos.
+
+- `packet root`:
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/`
+- `platform packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/windows/`
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/linux/`
+  - `tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/macos/`
+- `packet artifacts` (required for each platform root):
+  - `module.ll`
+  - `module.manifest.json`
+- `replay marker reports`:
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/windows-replay-markers.txt`
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/linux-replay-markers.txt`
+  - `tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/macos-replay-markers.txt`
+- `ABI/IR anchors` (persist verbatim in each platform packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `replay markers` (source anchors that must be present in packet notes across windows/linux/macos):
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+- `cross-platform parity closure criteria`:
+  - rerunning the same source + lowering options on each platform produces byte-identical `module.ll` and `module.manifest.json` within that platform.
+  - replay marker token sets must match across windows/linux/macos (ordering may differ only by tool output line-number prefixes).
+  - closure remains open if any required platform packet artifact, ABI/IR anchor, or replay marker is missing.
+
+Cross-platform capture commands (run per platform worker):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform> --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.ll > tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
+3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.manifest.json >> tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m219_lowering_cross_platform_contract.py -q`
 
 ## M220 lowering/runtime public-beta triage profile
 
@@ -2918,6 +3001,52 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m220_validation_public_beta_contract.py -q
 ```
 
+## M219 validation/perf cross-platform parity runbook
+
+Cross-platform parity validation runs the same deterministic command sequence on Windows, Linux, and macOS.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Cross-platform parity evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `platform`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `platform`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m219_validation_cross_platform_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3055,6 +3184,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain integration anchors.
+
+## M219 integration cross-platform parity matrix
+
+- Gate intent: enforce deterministic cross-platform parity replay across Windows, Linux, and macOS.
+### 1.1 Cross-platform integration chain
+- Deterministic parity gate:
+  - `npm run check:objc3c:m219-cross-platform-parity`
+- Chain order:
+  - replays `check:objc3c:m220-public-beta-triage`.
+  - enforces all M219 lane contracts:
+    `tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_sema_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_lowering_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_validation_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_integration_cross_platform_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through parity runs:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain parity anchors.
 
 ## Current call contract
 
