@@ -34,7 +34,12 @@ target_include_directories(objc3c_lex PUBLIC
 )
 add_library(objc3c_parse INTERFACE)
 add_library(objc3c_sema INTERFACE)
-add_library(objc3c_lower INTERFACE)
+add_library(objc3c_lower STATIC
+  src/lower/objc3_lowering_contract.cpp
+)
+target_include_directories(objc3c_lower PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 add_library(objc3c_ir INTERFACE)
 add_library(objc3c_pipeline INTERFACE)
 add_library(objc3c_frontend STATIC
@@ -45,4 +50,4 @@ target_include_directories(objc3c_frontend PUBLIC
 )
 add_library(objc3c_driver INTERFACE)
 
-target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_frontend)
+target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_lower objc3c_frontend)

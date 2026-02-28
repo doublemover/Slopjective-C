@@ -21,6 +21,7 @@
 #include "ast/objc3_ast.h"
 #include "diag/objc3_diag_types.h"
 #include "lex/objc3_lexer.h"
+#include "lower/objc3_lowering_contract.h"
 #include "token/objc3_token.h"
 
 namespace fs = std::filesystem;
@@ -138,26 +139,6 @@ static bool ParseIntegerLiteralValue(const std::string &text, int &value) {
   }
 
   value = static_cast<int>(parsed);
-  return true;
-}
-
-static bool IsRuntimeDispatchSymbolStart(char c) {
-  return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '$' || c == '.';
-}
-
-static bool IsRuntimeDispatchSymbolBody(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '$' || c == '.';
-}
-
-static bool IsValidRuntimeDispatchSymbol(const std::string &symbol) {
-  if (symbol.empty() || !IsRuntimeDispatchSymbolStart(symbol[0])) {
-    return false;
-  }
-  for (std::size_t i = 1; i < symbol.size(); ++i) {
-    if (!IsRuntimeDispatchSymbolBody(symbol[i])) {
-      return false;
-    }
-  }
   return true;
 }
 
@@ -3104,15 +3085,6 @@ static void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
                                        std::to_string(cause.detail_column) + ")"));
   }
 }
-
-static constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
-static constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
-static constexpr const char *kObjc3RuntimeDispatchSymbol = "objc3_msgsend_i32";
-
-struct Objc3LoweringContract {
-  std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;
-  std::string runtime_dispatch_symbol = kObjc3RuntimeDispatchSymbol;
-};
 
 struct Objc3FrontendOptions {
   Objc3LoweringContract lowering;
