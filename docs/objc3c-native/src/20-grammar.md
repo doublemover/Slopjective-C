@@ -1913,6 +1913,24 @@ Frontend concurrency replay/race-guard contract relies on deterministic parser-o
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m190_frontend_concurrency_replay_parser_contract.py -q`
 
+## M189 frontend task-runtime interop and cancellation packetization
+
+Frontend task-runtime/cancellation contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for runtime hooks, cancellation checks, cancellation handlers, and suspension points.
+
+- Required frontend task-runtime/cancellation signals:
+  - parser symbol classifiers remain `IsTaskRuntimeHookSymbol(...)`, `IsCancellationCheckSymbol(...)`, `IsCancellationHandlerSymbol(...)`, and `IsSuspensionPointSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3TaskRuntimeCancellationProfile`.
+  - parser profile serialization remains `BuildTaskRuntimeCancellationProfile(...)`.
+  - parser profile invariant gate remains `IsTaskRuntimeCancellationProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeTaskRuntimeCancellationProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeTaskRuntimeCancellationProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.task_runtime_interop_sites = profile.task_runtime_interop_sites;` and `method.task_runtime_interop_sites = profile.task_runtime_interop_sites;`.
+  - AST carrier anchors remain `bool task_runtime_cancellation_profile_is_normalized = false;`, `bool deterministic_task_runtime_cancellation_handoff = false;`, and `std::string task_runtime_cancellation_profile;` on function/method declarations.
+- Required frontend task-runtime/cancellation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m189_frontend_task_runtime_cancellation_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
