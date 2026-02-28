@@ -411,3 +411,19 @@ Frontend macro-security policy enforcement relies on deterministic prelude-direc
   3. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
 
+## M204 frontend macro diagnostics and provenance
+
+Frontend macro diagnostics/provenance requires deterministic directive source-location capture and stable diagnostic formatting for replay.
+
+- Required frontend macro-diagnostics signals:
+  - deterministic diagnostic formatter remains `MakeDiag(...)` with `error:<line>:<column>: <message> [<code>]`.
+  - directive provenance capture remains `first_line`, `first_column`, `last_line`, and `last_column`.
+  - pipeline transport preserves directive provenance through `result.language_version_pragma_contract.*`.
+  - manifest provenance packet remains `frontend.language_version_pragma_contract`.
+  - fail-closed directive diagnostics remain `O3L005`, `O3L006`, `O3L007`, and `O3L008`.
+- Required frontend macro-diagnostics commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
+
