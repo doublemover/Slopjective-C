@@ -6,7 +6,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <limits>
@@ -20,6 +19,7 @@
 #include "ast/objc3_ast.h"
 #include "diag/objc3_diag_types.h"
 #include "ir/objc3_ir_emitter.h"
+#include "io/objc3_file_io.h"
 #include "io/objc3_process.h"
 #include "lex/objc3_lexer.h"
 #include "lower/objc3_lowering_contract.h"
@@ -4349,27 +4349,6 @@ static std::string FormatDiagnostic(CXDiagnostic diagnostic) {
   oss << severity_text << ":" << line << ":" << column << ": "
       << ToString(clang_getDiagnosticSpelling(diagnostic));
   return oss.str();
-}
-
-static void WriteText(const fs::path &path, const std::string &contents) {
-  fs::create_directories(path.parent_path());
-  std::ofstream out(path, std::ios::binary);
-  out << contents;
-}
-
-static std::string ReadText(const fs::path &path) {
-  std::ifstream in(path, std::ios::binary);
-  std::ostringstream buffer;
-  buffer << in.rdbuf();
-  return buffer.str();
-}
-
-static std::string JoinLines(const std::vector<std::string> &lines) {
-  std::ostringstream out;
-  for (const auto &line : lines) {
-    out << line << "\n";
-  }
-  return out.str();
 }
 
 static std::string EscapeJsonString(const std::string &value) {
