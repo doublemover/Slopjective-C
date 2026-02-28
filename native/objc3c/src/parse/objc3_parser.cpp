@@ -202,6 +202,29 @@ static std::string BuildObjcPropertyScopePathSymbol(const Objc3PropertyDecl &pro
   return "property:" + property.name;
 }
 
+static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
+  std::sort(values.begin(), values.end());
+  values.erase(std::unique(values.begin(), values.end()), values.end());
+  return values;
+}
+
+static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
+    const std::vector<std::string> &protocol_names) {
+  std::vector<std::string> targets;
+  targets.reserve(protocol_names.size());
+  for (const auto &name : protocol_names) {
+    if (!name.empty()) {
+      targets.push_back("protocol:" + name);
+    }
+  }
+  return BuildSortedUniqueStrings(std::move(targets));
+}
+
+static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_name,
+                                                       const std::string &category_name) {
+  return "category:" + owner_name + "(" + category_name + ")";
+}
+
 class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
@@ -451,6 +474,7 @@ class Objc3Parser {
     decl->name = Previous().text;
     decl->scope_owner_symbol = BuildObjcContainerScopeOwner("protocol", decl->name, false, "");
     decl->scope_path_lexicographic = BuildScopePathLexicographic(decl->scope_owner_symbol, "protocol:" + decl->name);
+    decl->semantic_link_symbol = "protocol:" + decl->name;
     decl->line = Previous().line;
     decl->column = Previous().column;
 
@@ -862,6 +886,8 @@ class Objc3Parser {
     if (!ParseObjcProtocolCompositionClause(decl->inherited_protocols)) {
       SynchronizeObjcContainer();
     }
+    decl->inherited_protocols_lexicographic =
+        BuildProtocolSemanticLinkTargetsLexicographic(decl->inherited_protocols);
 
     if (Match(TokenKind::Semicolon)) {
       decl->is_forward_declaration = true;
@@ -939,6 +965,15 @@ class Objc3Parser {
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
     }
+    decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
+    decl->semantic_link_symbol =
+        BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);
+    if (!decl->super_name.empty()) {
+      decl->semantic_link_super_symbol = "interface:" + decl->super_name;
+    }
+    if (decl->has_category) {
+      decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(decl->name, decl->category_name);
+    }
     decl->scope_owner_symbol =
         BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);
     decl->scope_path_lexicographic =
@@ -1006,6 +1041,12 @@ class Objc3Parser {
 
     if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
       SynchronizeObjcContainer();
+    }
+    decl->semantic_link_symbol =
+        BuildObjcContainerScopeOwner("implementation", decl->name, decl->has_category, decl->category_name);
+    decl->semantic_link_interface_symbol = BuildObjcContainerScopeOwner("interface", decl->name, false, "");
+    if (decl->has_category) {
+      decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(decl->name, decl->category_name);
     }
     decl->scope_owner_symbol =
         BuildObjcContainerScopeOwner("implementation", decl->name, decl->has_category, decl->category_name);

@@ -270,6 +270,8 @@ struct Objc3ProtocolDecl {
   std::string scope_owner_symbol;
   std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> inherited_protocols;
+  std::vector<std::string> inherited_protocols_lexicographic;
+  std::string semantic_link_symbol;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   bool is_forward_declaration = false;
@@ -285,6 +287,10 @@ struct Objc3InterfaceDecl {
   std::string scope_owner_symbol;
   std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> adopted_protocols;
+  std::vector<std::string> adopted_protocols_lexicographic;
+  std::string semantic_link_symbol;
+  std::string semantic_link_super_symbol;
+  std::string semantic_link_category_symbol;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
@@ -297,6 +303,9 @@ struct Objc3ImplementationDecl {
   bool has_category = false;
   std::string scope_owner_symbol;
   std::vector<std::string> scope_path_lexicographic;
+  std::string semantic_link_symbol;
+  std::string semantic_link_interface_symbol;
+  std::string semantic_link_category_symbol;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;

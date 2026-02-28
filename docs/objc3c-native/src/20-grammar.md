@@ -242,6 +242,38 @@ Recommended M151 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py -q`
 
+## M152 frontend class-protocol-category semantic-linking parser surface
+
+Frontend parser/AST now emits deterministic semantic-link packets connecting interfaces, implementations, categories,
+and protocol composition lists.
+
+M152 parser/AST surface details:
+
+- semantic-link helper anchors:
+  - `BuildProtocolSemanticLinkTargetsLexicographic(...)`
+  - `BuildObjcCategorySemanticLinkSymbol(...)`
+- protocol linking markers:
+  - `decl->semantic_link_symbol = "protocol:" + decl->name;`
+  - `decl->inherited_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(...)`
+- interface linking markers:
+  - `decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(...)`
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("interface", ...)`
+  - `decl->semantic_link_super_symbol = "interface:" + decl->super_name;`
+  - `decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(...)`
+- implementation linking markers:
+  - `decl->semantic_link_symbol = BuildObjcContainerScopeOwner("implementation", ...)`
+  - `decl->semantic_link_interface_symbol = BuildObjcContainerScopeOwner("interface", ...)`
+  - `decl->semantic_link_category_symbol = BuildObjcCategorySemanticLinkSymbol(...)`
+
+Deterministic grammar intent:
+
+- protocol link targets are normalized as sorted unique `protocol:<name>` packets.
+- class/category links remain explicit AST fields for sema handoff and deterministic replay.
+
+Recommended M152 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m152_frontend_class_protocol_category_linking_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
