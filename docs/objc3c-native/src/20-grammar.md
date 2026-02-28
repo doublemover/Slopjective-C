@@ -577,6 +577,22 @@ Frontend atomics and memory-order mapping contract relies on deterministic compo
   3. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
 
+## M193 frontend SIMD/vector type lowering
+
+Frontend SIMD/vector type lowering contract relies on deterministic parser acceptance for vector-friendly type spellings and stable AST metadata transport for vector base/lane shape.
+
+- Required frontend SIMD/vector signals:
+  - vector spelling parser entry remains `TryParseVectorTypeSpelling(...)`.
+  - vector return metadata transport remains `fn.return_vector_spelling = true;`, `fn.return_vector_base_spelling = vector_base_spelling;`, and `fn.return_vector_lane_count = vector_lane_count;`.
+  - vector parameter metadata transport remains `param.vector_spelling = true;`, `param.vector_base_spelling = vector_base_spelling;`, and `param.vector_lane_count = vector_lane_count;`.
+  - AST vector metadata remains `bool vector_spelling = false;` + `unsigned vector_lane_count = 1;` on `FuncParam` and `bool return_vector_spelling = false;` + `unsigned return_vector_lane_count = 1;` on `FunctionDecl`.
+  - accepted vector spellings remain `i32x2/i32x4/i32x8/i32x16` and `boolx2/boolx4/boolx8/boolx16`.
+- Required frontend SIMD/vector commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.

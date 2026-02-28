@@ -119,6 +119,44 @@ static Objc3SemaTokenMetadata MakeSemaTokenMetadata(Objc3SemaTokenKind kind, con
   return MakeObjc3SemaTokenMetadata(kind, token.text, token.line, token.column);
 }
 
+static bool TryParseVectorTypeSpelling(const Token &type_token,
+                                       ValueType &vector_type,
+                                       std::string &vector_base_spelling,
+                                       unsigned &vector_lane_count) {
+  const std::string &text = type_token.text;
+  const bool is_i32_vector = text.rfind("i32x", 0) == 0;
+  const bool is_bool_vector = text.rfind("boolx", 0) == 0;
+  if (!is_i32_vector && !is_bool_vector) {
+    return false;
+  }
+
+  const std::size_t prefix_length = is_i32_vector ? 4u : 5u;
+  if (text.size() <= prefix_length) {
+    return false;
+  }
+
+  unsigned lane_count = 0;
+  for (std::size_t i = prefix_length; i < text.size(); ++i) {
+    const char c = text[i];
+    if (!std::isdigit(static_cast<unsigned char>(c))) {
+      return false;
+    }
+    lane_count = (lane_count * 10u) + static_cast<unsigned>(c - '0');
+    if (lane_count > 1024u) {
+      return false;
+    }
+  }
+
+  if (lane_count != 2u && lane_count != 4u && lane_count != 8u && lane_count != 16u) {
+    return false;
+  }
+
+  vector_type = is_i32_vector ? ValueType::I32 : ValueType::Bool;
+  vector_base_spelling = is_i32_vector ? "i32" : "bool";
+  vector_lane_count = lane_count;
+  return true;
+}
+
 class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
@@ -556,6 +594,9 @@ class Objc3Parser {
     fn.return_id_spelling = false;
     fn.return_class_spelling = false;
     fn.return_instancetype_spelling = false;
+    fn.return_vector_spelling = false;
+    fn.return_vector_base_spelling.clear();
+    fn.return_vector_lane_count = 1;
     fn.has_return_generic_suffix = false;
     fn.return_generic_suffix_terminated = true;
     fn.return_generic_suffix_text.clear();
@@ -601,17 +642,30 @@ class Objc3Parser {
     } else {
       if (At(TokenKind::Identifier)) {
         const Token type_token = Advance();
+        ValueType vector_type = ValueType::Unknown;
+        std::string vector_base_spelling;
+        unsigned vector_lane_count = 1;
+        if (TryParseVectorTypeSpelling(type_token, vector_type, vector_base_spelling, vector_lane_count)) {
+          fn.return_type = vector_type;
+          fn.return_vector_spelling = true;
+          fn.return_vector_base_spelling = vector_base_spelling;
+          fn.return_vector_lane_count = vector_lane_count;
+          return true;
+        }
         diagnostics_.push_back(MakeDiag(type_token.line, type_token.column, "O3P114",
                                         "unsupported function return type '" + type_token.text +
                                             "' (expected 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', 'void', "
-                                            "'id', 'Class', 'SEL', 'Protocol', or 'instancetype')"));
+                                            "'id', 'Class', 'SEL', 'Protocol', 'instancetype', or vector forms "
+                                            "'i32x2/i32x4/i32x8/i32x16' and "
+                                            "'boolx2/boolx4/boolx8/boolx16')"));
         return false;
       }
       const Token &token = Peek();
       diagnostics_.push_back(
           MakeDiag(token.line, token.column, "O3P114",
                    "expected function return type 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', 'void', 'id', or "
-                   "'Class', 'SEL', 'Protocol', or 'instancetype'"));
+                   "'Class', 'SEL', 'Protocol', 'instancetype', or vector forms "
+                   "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
       return false;
     }
 
@@ -673,6 +727,9 @@ class Objc3Parser {
   }
 
   bool ParseParameterType(FuncParam &param) {
+    param.vector_spelling = false;
+    param.vector_base_spelling.clear();
+    param.vector_lane_count = 1;
     param.id_spelling = false;
     param.class_spelling = false;
     param.instancetype_spelling = false;
@@ -717,6 +774,20 @@ class Objc3Parser {
       param.instancetype_spelling = true;
     } else if (At(TokenKind::Identifier)) {
       const Token type_token = Advance();
+      ValueType vector_type = ValueType::Unknown;
+      std::string vector_base_spelling;
+      unsigned vector_lane_count = 1;
+      if (TryParseVectorTypeSpelling(type_token, vector_type, vector_base_spelling, vector_lane_count)) {
+        param.type = vector_type;
+        param.vector_spelling = true;
+        param.vector_base_spelling = vector_base_spelling;
+        param.vector_lane_count = vector_lane_count;
+        ParseParameterTypeSuffix(param);
+        if (!param.generic_suffix_terminated) {
+          return false;
+        }
+        return true;
+      }
       FuncParam ignored_suffix;
       ParseParameterTypeSuffix(ignored_suffix);
       if (!ignored_suffix.generic_suffix_terminated) {
@@ -725,13 +796,16 @@ class Objc3Parser {
       diagnostics_.push_back(MakeDiag(type_token.line, type_token.column, "O3P108",
                                       "unsupported parameter type '" + type_token.text +
                                           "' (expected 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', 'id', "
-                                          "'Class', 'SEL', 'Protocol', or 'instancetype')"));
+                                          "'Class', 'SEL', 'Protocol', 'instancetype', or vector forms "
+                                          "'i32x2/i32x4/i32x8/i32x16' and "
+                                          "'boolx2/boolx4/boolx8/boolx16')"));
       return false;
     } else {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P108",
                                       "expected parameter type 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', or "
-                                      "'id', 'Class', 'SEL', 'Protocol', or 'instancetype'"));
+                                      "'id', 'Class', 'SEL', 'Protocol', 'instancetype', or vector forms "
+                                      "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
       return false;
     }
 

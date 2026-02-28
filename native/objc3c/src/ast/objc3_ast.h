@@ -158,6 +158,9 @@ struct ExprStmt {
 struct FuncParam {
   std::string name;
   ValueType type = ValueType::I32;
+  bool vector_spelling = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
   bool id_spelling = false;
   bool class_spelling = false;
   bool instancetype_spelling = false;
@@ -178,6 +181,9 @@ struct FunctionDecl {
   std::string name;
   std::vector<FuncParam> params;
   ValueType return_type = ValueType::I32;
+  bool return_vector_spelling = false;
+  std::string return_vector_base_spelling;
+  unsigned return_vector_lane_count = 1;
   bool return_id_spelling = false;
   bool return_class_spelling = false;
   bool return_instancetype_spelling = false;
