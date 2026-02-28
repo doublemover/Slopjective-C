@@ -51,6 +51,47 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M216 lowering/runtime conformance suite profile
+
+Lowering/runtime conformance suite evidence is captured as deterministic packet artifacts under `tmp/`.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.manifest.json`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/conformance-matrix-markers.txt`
+- `ABI/IR anchors` (persist verbatim in the packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `conformance-matrix markers` (required in matrix summary evidence):
+  - `suite.status`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `spec_section_map`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `Require-Range "CRPT-" 1 6`
+  - `Require-Range "CAN-" 1 7`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - conformance matrix marker rows and ABI/IR anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, source anchor, or conformance-matrix marker is missing.
+
+Conformance suite capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite --emit-prefix module`
+2. `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.ll tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.manifest.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/abi-ir-anchors.txt`
+4. `rg -n "\"suite\":|\"status\":|\"matrix\":|\"total_cases\":|\"failed_cases\":|\"spec_section_map\"" tmp/artifacts/conformance-suite/<target>/summary.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/conformance-matrix-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m216_lowering_conformance_contract.py -q`
+
 ## M217 lowering/runtime differential parity profile
 
 Lowering/runtime differential parity is captured as a deterministic packet versus baseline toolchains under `tmp/`.
