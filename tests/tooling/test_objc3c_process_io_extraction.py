@@ -52,3 +52,15 @@ def test_cmake_registers_io_target() -> None:
     assert "src/io/objc3_process.cpp" in cmake
     assert "target_link_libraries(objc3c-native PRIVATE" in cmake
     assert "objc3c_io" in cmake
+
+
+def test_io_process_exposes_llc_direct_object_emission_path() -> None:
+    io_header = _read(IO_HEADER)
+    io_source = _read(IO_SOURCE)
+    cmake = _read(CMAKE_FILE)
+
+    assert "RunIRCompileLLVMDirect(const std::filesystem::path &llc_path" in io_header
+    assert "{\"-filetype=obj\", \"-o\", object_out.string(), ir_path.string()}" in io_source
+    assert "{\"-cc1\", \"-emit-obj\", \"-x\", \"ir\", ir_path.string(), \"-o\", object_out.string()," in io_source
+    assert "llc not found" in io_source
+    assert "OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION" in cmake

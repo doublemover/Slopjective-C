@@ -134,10 +134,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
   } else {
     std::string backend_error;
-    compile_status = RunIRCompileLLVMDirect(ir_out, object_out, backend_error);
+    compile_status = RunIRCompileLLVMDirect(cli_options.llc_path, cli_options.clang_path, ir_out, object_out, backend_error);
     if (!backend_error.empty()) {
       std::cerr << backend_error << "\n";
     }
+  }
+  if (compile_status == 0) {
+    const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
+    const std::string backend_text =
+        cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
+    WriteText(backend_out, backend_text);
   }
   return compile_status == 0 ? 0 : 3;
 }
@@ -215,6 +221,11 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
   const bool needs_clang_path = extension != ".objc3" || cli_options.ir_object_backend == Objc3IrObjectBackend::kClang;
   if (needs_clang_path && cli_options.clang_path.has_root_path() && !fs::exists(cli_options.clang_path)) {
     std::cerr << "clang executable not found: " << cli_options.clang_path.string() << "\n";
+    return 2;
+  }
+  const bool needs_llc_path = extension == ".objc3" && cli_options.ir_object_backend == Objc3IrObjectBackend::kLLVMDirect;
+  if (needs_llc_path && cli_options.llc_path.has_root_path() && !fs::exists(cli_options.llc_path)) {
+    std::cerr << "llc executable not found: " << cli_options.llc_path.string() << "\n";
     return 2;
   }
 

@@ -39,6 +39,7 @@ $sourceFiles = @(
   -Wall `
   -Wextra `
   -pedantic `
+  -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
   "-I$includeDir" `
   "-Inative/objc3c/src" `
   @sourceFiles `

@@ -14,6 +14,8 @@ int RunIRCompile(const std::filesystem::path &clang_path,
                  const std::filesystem::path &ir_path,
                  const std::filesystem::path &object_out);
 
-int RunIRCompileLLVMDirect(const std::filesystem::path &ir_path,
+int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
+                           const std::filesystem::path &clang_path,
+                           const std::filesystem::path &ir_path,
                            const std::filesystem::path &object_out,
                            std::string &error);

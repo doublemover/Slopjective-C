@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION
-  "Enable experimental llvm-direct object emission backend wiring for .objc3 IR compilation."
-  OFF
+  "Enable llvm-direct object emission backend wiring for .objc3 IR compilation."
+  ON
 )
 
 # M132-A002 target decomposition contract.

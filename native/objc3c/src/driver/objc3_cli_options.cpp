@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cctype>
 #include <cstdlib>
+#include <filesystem>
 #include <string>
 
 namespace {
@@ -41,10 +42,49 @@ bool ParseIrObjectBackend(const std::string &value, Objc3IrObjectBackend &backen
   return false;
 }
 
+std::string ReadEnvironmentVariable(const char *name) {
+#if defined(_WIN32)
+  char *value = nullptr;
+  std::size_t value_length = 0;
+  if (_dupenv_s(&value, &value_length, name) != 0 || value == nullptr || value_length == 0) {
+    if (value != nullptr) {
+      std::free(value);
+    }
+    return "";
+  }
+  std::string result(value);
+  std::free(value);
+  return result;
+#else
+  const char *value = std::getenv(name);
+  return value == nullptr ? "" : std::string(value);
+#endif
+}
+
+std::filesystem::path DefaultLlcPath() {
+#if defined(_WIN32)
+  constexpr const char *llc_name = "llc.exe";
+#else
+  constexpr const char *llc_name = "llc";
+#endif
+  const std::string llvm_root = ReadEnvironmentVariable("LLVM_ROOT");
+  if (!llvm_root.empty()) {
+    return std::filesystem::path(llvm_root) / "bin" / llc_name;
+  }
+#if defined(_WIN32)
+  const std::filesystem::path standard_path = std::filesystem::path("C:\\Program Files\\LLVM\\bin\\llc.exe");
+  if (std::filesystem::exists(standard_path)) {
+    return standard_path;
+  }
+#endif
+  return std::filesystem::path(llc_name);
+}
+
 }  // namespace
 
 std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
+         "[--llc <path>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
@@ -59,6 +99,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
 
   options = Objc3CliOptions{};
   options.input = argv[1];
+  options.llc_path = DefaultLlcPath();
 
   for (int i = 2; i < argc; ++i) {
     std::string flag = argv[i];
@@ -68,6 +109,8 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       options.emit_prefix = argv[++i];
     } else if (flag == "--clang" && i + 1 < argc) {
       options.clang_path = argv[++i];
+    } else if (flag == "--llc" && i + 1 < argc) {
+      options.llc_path = argv[++i];
     } else if (flag == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
       if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {

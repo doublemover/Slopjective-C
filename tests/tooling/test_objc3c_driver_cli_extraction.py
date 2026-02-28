@@ -40,12 +40,14 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     runtime = _read(DRIVER_RUNTIME_SOURCE)
 
     assert "enum class Objc3IrObjectBackend" in header
-    assert "Objc3IrObjectBackend::kClang" in header
+    assert "Objc3IrObjectBackend::kLLVMDirect" in header
     assert "kLLVMDirect" in header
 
+    assert "[--llc <path>]" in source
     assert "--objc3-ir-object-backend <clang|llvm-direct>" in source
     assert "ParseIrObjectBackend" in source
     assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
 
     assert "RunIRCompileLLVMDirect" in runtime
-    assert "cli_options.ir_object_backend == Objc3IrObjectBackend::kClang" in runtime
+    assert "RunIRCompileLLVMDirect(cli_options.llc_path, cli_options.clang_path, ir_out, object_out, backend_error)" in runtime
+    assert ".object-backend.txt" in runtime

@@ -43,15 +43,41 @@ int RunIRCompile(const std::filesystem::path &clang_path,
                                 "-fno-color-diagnostics"});
 }
 
-int RunIRCompileLLVMDirect(const std::filesystem::path &ir_path,
+int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
+                           const std::filesystem::path &clang_path,
+                           const std::filesystem::path &ir_path,
                            const std::filesystem::path &object_out,
                            std::string &error) {
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
-  (void)ir_path;
-  (void)object_out;
-  error = "llvm-direct object emission backend is enabled but implementation is not wired.";
-  return 125;
+  const int llc_status =
+      RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
+  if (llc_status == 0) {
+    return 0;
+  }
+  if (llc_status != 127) {
+    error = "llvm-direct object emission failed: llc exited with status " + std::to_string(llc_status) + " for " +
+            ir_path.string();
+    return llc_status;
+  }
+
+  const int cc1_status = RunProcess(
+      clang_path.string(),
+      {"-cc1", "-emit-obj", "-x", "ir", ir_path.string(), "-o", object_out.string(), "-Wno-override-module"});
+  if (cc1_status == 0) {
+    return 0;
+  }
+
+  if (cc1_status == 127) {
+    error = "llvm-direct object emission failed: llc not found (" + llc_path.string() +
+            "), and clang fallback unavailable (" + clang_path.string() + ").";
+    return 125;
+  }
+  error = "llvm-direct object emission failed: llc not found (" + llc_path.string() +
+          "), clang -cc1 fallback exited with status " + std::to_string(cc1_status) + ".";
+  return cc1_status;
 #else
+  (void)llc_path;
+  (void)clang_path;
   (void)ir_path;
   (void)object_out;
   error = "llvm-direct object emission backend unavailable in this build (enable OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION).";
