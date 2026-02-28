@@ -249,6 +249,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t variance_bridge_cast_lowering_normalized_sites = 0;
   std::size_t variance_bridge_cast_lowering_contract_violation_sites = 0;
   bool deterministic_variance_bridge_cast_lowering_handoff = false;
+  std::string lowering_generic_metadata_abi_replay_key;
+  std::size_t generic_metadata_abi_lowering_sites = 0;
+  std::size_t generic_metadata_abi_lowering_generic_suffix_sites = 0;
+  std::size_t generic_metadata_abi_lowering_protocol_composition_sites = 0;
+  std::size_t generic_metadata_abi_lowering_ownership_qualifier_sites = 0;
+  std::size_t generic_metadata_abi_lowering_object_pointer_type_sites = 0;
+  std::size_t generic_metadata_abi_lowering_pointer_declarator_sites = 0;
+  std::size_t generic_metadata_abi_lowering_normalized_sites = 0;
+  std::size_t generic_metadata_abi_lowering_contract_violation_sites = 0;
+  bool deterministic_generic_metadata_abi_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

@@ -924,6 +924,31 @@ Objc3VarianceBridgeCastLoweringContract BuildVarianceBridgeCastLoweringContract(
   return contract;
 }
 
+Objc3GenericMetadataAbiLoweringContract BuildGenericMetadataAbiLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3GenericMetadataAbiLoweringContract contract;
+  contract.generic_metadata_abi_sites =
+      sema_parity_surface.generic_metadata_abi_sites_total;
+  contract.generic_suffix_sites =
+      sema_parity_surface.generic_metadata_abi_generic_suffix_sites_total;
+  contract.protocol_composition_sites =
+      sema_parity_surface.generic_metadata_abi_protocol_composition_sites_total;
+  contract.ownership_qualifier_sites =
+      sema_parity_surface.generic_metadata_abi_ownership_qualifier_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface.generic_metadata_abi_object_pointer_type_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface.generic_metadata_abi_pointer_declarator_sites_total;
+  contract.normalized_sites =
+      sema_parity_surface.generic_metadata_abi_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.generic_metadata_abi_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.generic_metadata_abi_summary.deterministic &&
+      sema_parity_surface.deterministic_generic_metadata_abi_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1326,6 +1351,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string variance_bridge_cast_lowering_replay_key =
       Objc3VarianceBridgeCastLoweringReplayKey(
           variance_bridge_cast_lowering_contract);
+  const Objc3GenericMetadataAbiLoweringContract generic_metadata_abi_lowering_contract =
+      BuildGenericMetadataAbiLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3GenericMetadataAbiLoweringContract(
+          generic_metadata_abi_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid generic metadata ABI lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string generic_metadata_abi_lowering_replay_key =
+      Objc3GenericMetadataAbiLoweringReplayKey(
+          generic_metadata_abi_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1970,6 +2010,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_variance_bridge_cast_replay_key\":\""
            << variance_bridge_cast_lowering_replay_key
            << "\""
+           << ",\"deterministic_generic_metadata_abi_lowering_handoff\":"
+           << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
+           << ",\"generic_metadata_abi_lowering_sites\":"
+           << generic_metadata_abi_lowering_contract.generic_metadata_abi_sites
+           << ",\"generic_metadata_abi_lowering_generic_suffix_sites\":"
+           << generic_metadata_abi_lowering_contract.generic_suffix_sites
+           << ",\"generic_metadata_abi_lowering_protocol_composition_sites\":"
+           << generic_metadata_abi_lowering_contract.protocol_composition_sites
+           << ",\"generic_metadata_abi_lowering_ownership_qualifier_sites\":"
+           << generic_metadata_abi_lowering_contract.ownership_qualifier_sites
+           << ",\"generic_metadata_abi_lowering_object_pointer_type_sites\":"
+           << generic_metadata_abi_lowering_contract.object_pointer_type_sites
+           << ",\"generic_metadata_abi_lowering_pointer_declarator_sites\":"
+           << generic_metadata_abi_lowering_contract.pointer_declarator_sites
+           << ",\"generic_metadata_abi_lowering_normalized_sites\":"
+           << generic_metadata_abi_lowering_contract.normalized_sites
+           << ",\"generic_metadata_abi_lowering_contract_violation_sites\":"
+           << generic_metadata_abi_lowering_contract.contract_violation_sites
+           << ",\"lowering_generic_metadata_abi_replay_key\":\""
+           << generic_metadata_abi_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2562,6 +2623,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_generic_metadata_abi_lowering_surface\":{\"generic_metadata_abi_sites\":"
+           << generic_metadata_abi_lowering_contract.generic_metadata_abi_sites
+           << ",\"generic_suffix_sites\":"
+           << generic_metadata_abi_lowering_contract.generic_suffix_sites
+           << ",\"protocol_composition_sites\":"
+           << generic_metadata_abi_lowering_contract.protocol_composition_sites
+           << ",\"ownership_qualifier_sites\":"
+           << generic_metadata_abi_lowering_contract.ownership_qualifier_sites
+           << ",\"object_pointer_type_sites\":"
+           << generic_metadata_abi_lowering_contract.object_pointer_type_sites
+           << ",\"pointer_declarator_sites\":"
+           << generic_metadata_abi_lowering_contract.pointer_declarator_sites
+           << ",\"normalized_sites\":"
+           << generic_metadata_abi_lowering_contract.normalized_sites
+           << ",\"contract_violation_sites\":"
+           << generic_metadata_abi_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << generic_metadata_abi_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2761,6 +2843,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3VarianceBridgeCastLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_generic_metadata_abi\":{\"replay_key\":\""
+           << generic_metadata_abi_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3GenericMetadataAbiLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -3260,6 +3348,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       variance_bridge_cast_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_variance_bridge_cast_lowering_handoff =
       variance_bridge_cast_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_generic_metadata_abi_replay_key =
+      generic_metadata_abi_lowering_replay_key;
+  ir_frontend_metadata.generic_metadata_abi_lowering_sites =
+      generic_metadata_abi_lowering_contract.generic_metadata_abi_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_generic_suffix_sites =
+      generic_metadata_abi_lowering_contract.generic_suffix_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_protocol_composition_sites =
+      generic_metadata_abi_lowering_contract.protocol_composition_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_ownership_qualifier_sites =
+      generic_metadata_abi_lowering_contract.ownership_qualifier_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_object_pointer_type_sites =
+      generic_metadata_abi_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_pointer_declarator_sites =
+      generic_metadata_abi_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_normalized_sites =
+      generic_metadata_abi_lowering_contract.normalized_sites;
+  ir_frontend_metadata.generic_metadata_abi_lowering_contract_violation_sites =
+      generic_metadata_abi_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_generic_metadata_abi_lowering_handoff =
+      generic_metadata_abi_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

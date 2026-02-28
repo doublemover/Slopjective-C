@@ -60,6 +60,8 @@ inline constexpr const char *kObjc3ProtocolQualifiedObjectTypeLoweringLaneContra
     "m173-protocol-qualified-object-type-lowering-v1";
 inline constexpr const char *kObjc3VarianceBridgeCastLoweringLaneContract =
     "m174-variance-bridge-cast-lowering-v1";
+inline constexpr const char *kObjc3GenericMetadataAbiLoweringLaneContract =
+    "m175-generic-metadata-abi-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -337,6 +339,18 @@ struct Objc3VarianceBridgeCastLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3GenericMetadataAbiLoweringContract {
+  std::size_t generic_metadata_abi_sites = 0;
+  std::size_t generic_suffix_sites = 0;
+  std::size_t protocol_composition_sites = 0;
+  std::size_t ownership_qualifier_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -442,3 +456,7 @@ bool IsValidObjc3VarianceBridgeCastLoweringContract(
     const Objc3VarianceBridgeCastLoweringContract &contract);
 std::string Objc3VarianceBridgeCastLoweringReplayKey(
     const Objc3VarianceBridgeCastLoweringContract &contract);
+bool IsValidObjc3GenericMetadataAbiLoweringContract(
+    const Objc3GenericMetadataAbiLoweringContract &contract);
+std::string Objc3GenericMetadataAbiLoweringReplayKey(
+    const Objc3GenericMetadataAbiLoweringContract &contract);

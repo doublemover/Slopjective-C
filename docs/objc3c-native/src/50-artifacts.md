@@ -3515,6 +3515,29 @@ Recommended M174 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m174_lowering_variance_bridge_cast_contract.py -q`
 
+## Generic metadata emission and ABI checks lowering artifact contract (M175-C001)
+
+M175-C lowers sema-authored generic metadata/ABI summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M175-C lowering contract anchors:
+
+- `kObjc3GenericMetadataAbiLoweringLaneContract`
+- `Objc3GenericMetadataAbiLoweringContract`
+- `IsValidObjc3GenericMetadataAbiLoweringContract(...)`
+- `Objc3GenericMetadataAbiLoweringReplayKey(...)`
+- `BuildGenericMetadataAbiLoweringContract(...)`
+- `frontend.pipeline.sema_pass_manager.deterministic_generic_metadata_abi_lowering_handoff`
+- `frontend.pipeline.semantic_surface.objc_generic_metadata_abi_lowering_surface`
+- `lowering_generic_metadata_abi.replay_key`
+- `; generic_metadata_abi_lowering = generic_metadata_abi_sites=<N>...`
+- `; frontend_objc_generic_metadata_abi_lowering_profile = generic_metadata_abi_sites=<N>...`
+- `!objc3.objc_generic_metadata_abi_lowering = !{!28}`
+
+Recommended M175 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m175_lowering_generic_metadata_abi_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

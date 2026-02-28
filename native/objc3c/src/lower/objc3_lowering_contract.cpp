@@ -987,3 +987,36 @@ std::string Objc3VarianceBridgeCastLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3VarianceBridgeCastLoweringLaneContract;
 }
+
+bool IsValidObjc3GenericMetadataAbiLoweringContract(
+    const Objc3GenericMetadataAbiLoweringContract &contract) {
+  if (contract.generic_suffix_sites > contract.generic_metadata_abi_sites ||
+      contract.protocol_composition_sites > contract.generic_metadata_abi_sites ||
+      contract.ownership_qualifier_sites > contract.generic_metadata_abi_sites ||
+      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
+      contract.pointer_declarator_sites > contract.generic_metadata_abi_sites ||
+      contract.normalized_sites > contract.generic_metadata_abi_sites ||
+      contract.contract_violation_sites > contract.generic_metadata_abi_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.generic_metadata_abi_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3GenericMetadataAbiLoweringReplayKey(
+    const Objc3GenericMetadataAbiLoweringContract &contract) {
+  return std::string("generic_metadata_abi_sites=") + std::to_string(contract.generic_metadata_abi_sites) +
+         ";generic_suffix_sites=" + std::to_string(contract.generic_suffix_sites) +
+         ";protocol_composition_sites=" + std::to_string(contract.protocol_composition_sites) +
+         ";ownership_qualifier_sites=" + std::to_string(contract.ownership_qualifier_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" + std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3GenericMetadataAbiLoweringLaneContract;
+}
