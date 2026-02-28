@@ -107,6 +107,8 @@ jobs:
         run: npm run check:objc3c:m210-performance-regression
       - name: 28 Run M209 profile-guided optimization integration gate
         run: npm run check:objc3c:m209-pgo-hooks
+      - name: 29 Run M208 whole-module optimization integration gate
+        run: npm run check:objc3c:m208-whole-module-optimization
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

@@ -335,6 +335,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain PGO anchors.
 
+## M208 integration whole-module optimization controls
+
+- Gate intent: enforce deterministic whole-module optimization control evidence across all lanes.
+### 1.1 WMO integration chain
+- Deterministic WMO gate:
+  - `npm run check:objc3c:m208-whole-module-optimization`
+- Chain order:
+  - replays `check:objc3c:m209-pgo-hooks`.
+  - enforces all M208 lane contracts:
+    `tests/tooling/test_objc3c_m208_frontend_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_sema_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_lowering_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_validation_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_integration_wmo_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through WMO validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain WMO anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
