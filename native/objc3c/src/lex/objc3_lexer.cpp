@@ -45,7 +45,12 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
 
 }  // namespace
 
-Objc3Lexer::Objc3Lexer(const std::string &source) : source_(source) {}
+Objc3Lexer::Objc3Lexer(const std::string &source, const Objc3LexerOptions &options)
+    : source_(source), options_(options) {}
+
+const Objc3LexerMigrationHints &Objc3Lexer::MigrationHints() const {
+  return migration_hints_;
+}
 
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
   ConsumeLanguageVersionPragmas(diagnostics);
@@ -125,10 +130,19 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwNil;
       } else if (ident == "YES") {
         kind = TokenKind::KwTrue;
+        if (options_.migration_assist) {
+          ++migration_hints_.legacy_yes_count;
+        }
       } else if (ident == "NO") {
         kind = TokenKind::KwFalse;
+        if (options_.migration_assist) {
+          ++migration_hints_.legacy_no_count;
+        }
       } else if (ident == "NULL") {
         kind = TokenKind::KwNil;
+        if (options_.migration_assist) {
+          ++migration_hints_.legacy_null_count;
+        }
       }
       tokens.push_back(Token{kind, ident, token_line, token_column});
       continue;
@@ -367,9 +381,10 @@ void Objc3Lexer::ConsumeLanguageVersionPragmas(std::vector<std::string> &diagnos
       continue;
     }
 
-    if (version != "3") {
+    if (version != std::to_string(options_.language_version)) {
       diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",
-                                     "unsupported objc language version '" + version + "'; expected 3"));
+                                     "unsupported objc language version '" + version + "'; expected " +
+                                         std::to_string(options_.language_version)));
     }
 
     if (index_ < source_.size() && source_[index_] == '\n') {

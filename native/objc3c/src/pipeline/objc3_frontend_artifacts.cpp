@@ -111,6 +111,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "    \"language_version\":" << static_cast<unsigned>(options.language_version) << ",\n";
   manifest << "    \"compatibility_mode\":\"" << CompatibilityModeName(options.compatibility_mode) << "\",\n";
   manifest << "    \"migration_assist\":" << (options.migration_assist ? "true" : "false") << ",\n";
+  manifest << "    \"migration_hints\":{\"legacy_yes\":" << pipeline_result.migration_hints.legacy_yes_count
+           << ",\"legacy_no\":" << pipeline_result.migration_hints.legacy_no_count << ",\"legacy_null\":"
+           << pipeline_result.migration_hints.legacy_null_count
+           << ",\"legacy_total\":" << pipeline_result.migration_hints.legacy_total() << "},\n";
   manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";
   manifest << "    \"pipeline\": {\n";
   manifest << "      \"semantic_skipped\": " << (pipeline_result.integration_surface.built ? "false" : "true")

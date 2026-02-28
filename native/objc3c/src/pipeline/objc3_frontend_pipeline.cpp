@@ -12,8 +12,18 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
                                                      const Objc3FrontendOptions &options) {
   Objc3FrontendPipelineResult result;
 
-  Objc3Lexer lexer(source);
+  Objc3LexerOptions lexer_options;
+  lexer_options.language_version = options.language_version;
+  lexer_options.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy
+                                         ? Objc3LexerCompatibilityMode::kLegacy
+                                         : Objc3LexerCompatibilityMode::kCanonical;
+  lexer_options.migration_assist = options.migration_assist;
+  Objc3Lexer lexer(source, lexer_options);
   std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
+  const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();
+  result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;
+  result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;
+  result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;
 
   Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
   result.program = std::move(parse_result.program);
