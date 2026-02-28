@@ -169,7 +169,7 @@ static bool EvalConstExpr(const Expr *expr, int &value,
   return false;
 }
 
-bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values) {
+bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &globals, std::vector<int> &values) {
   values.clear();
   values.reserve(globals.size());
   std::unordered_map<std::string, int> resolved_globals;
@@ -1111,12 +1111,13 @@ static StaticScalarBindings CollectFunctionStaticScalarBindings(const FunctionDe
   return bindings;
 }
 
-Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Program &program,
+Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                        std::vector<std::string> &diagnostics) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3SemanticIntegrationSurface surface;
   std::unordered_map<std::string, int> resolved_global_values;
 
-  for (const auto &global : program.globals) {
+  for (const auto &global : ast.globals) {
     const bool duplicate_global = surface.globals.find(global.name) != surface.globals.end();
     if (duplicate_global) {
       diagnostics.push_back(MakeDiag(global.line, global.column, "O3S200", "duplicate global '" + global.name + "'"));
@@ -1132,7 +1133,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Progr
     }
   }
 
-  for (const auto &fn : program.functions) {
+  for (const auto &fn : ast.functions) {
     if (surface.globals.find(fn.name) != surface.globals.end()) {
       diagnostics.push_back(MakeDiag(fn.line, fn.column, "O3S200", "duplicate function '" + fn.name + "'"));
       continue;
@@ -1190,19 +1191,20 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Progr
   return surface;
 }
 
-void ValidateSemanticBodies(const Objc3Program &program, const Objc3SemanticIntegrationSurface &surface,
+void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
   StaticScalarBindings global_static_bindings;
   std::unordered_set<std::string> assigned_identifier_names;
-  for (const auto &fn : program.functions) {
+  for (const auto &fn : ast.functions) {
     CollectAssignedIdentifiers(fn.body, assigned_identifier_names);
   }
   std::vector<int> global_initializer_values;
-  if (ResolveGlobalInitializerValues(program.globals, global_initializer_values)) {
-    const std::size_t count = std::min(program.globals.size(), global_initializer_values.size());
+  if (ResolveGlobalInitializerValues(ast.globals, global_initializer_values)) {
+    const std::size_t count = std::min(ast.globals.size(), global_initializer_values.size());
     for (std::size_t i = 0; i < count; ++i) {
-      const std::string &name = program.globals[i].name;
+      const std::string &name = ast.globals[i].name;
       if (assigned_identifier_names.find(name) != assigned_identifier_names.end()) {
         continue;
       }
@@ -1210,7 +1212,7 @@ void ValidateSemanticBodies(const Objc3Program &program, const Objc3SemanticInte
     }
   }
 
-  for (const auto &fn : program.functions) {
+  for (const auto &fn : ast.functions) {
     ValidateReturnTypeSuffixes(fn, diagnostics);
     ValidateParameterTypeSuffixes(fn, diagnostics);
 
@@ -1235,6 +1237,4 @@ void ValidateSemanticBodies(const Objc3Program &program, const Objc3SemanticInte
     }
   }
 }
-
-
 

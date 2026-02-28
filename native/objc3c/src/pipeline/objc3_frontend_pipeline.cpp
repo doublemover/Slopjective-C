@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "lex/objc3_lexer.h"
-#include "parse/objc3_parser.h"
+#include "parse/objc3_ast_builder_contract.h"
 #include "sema/objc3_semantic_passes.h"
 
 Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
@@ -15,9 +15,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   Objc3Lexer lexer(source);
   std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
 
-  Objc3ParseResult parse_result = ParseObjc3Program(tokens);
+  Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
   result.program = std::move(parse_result.program);
   result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
+  Objc3Program &program_ast = MutableObjc3ParsedProgramAst(result.program);
 
   if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
     result.integration_surface = BuildSemanticIntegrationSurface(result.program, result.stage_diagnostics.semantic);
@@ -29,13 +30,13 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
                                             result.stage_diagnostics.semantic);
   }
 
-  result.program.diagnostics.reserve(result.stage_diagnostics.lexer.size() + result.stage_diagnostics.parser.size() +
-                                     result.stage_diagnostics.semantic.size());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.lexer.begin(),
-                                    result.stage_diagnostics.lexer.end());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.parser.begin(),
-                                    result.stage_diagnostics.parser.end());
-  result.program.diagnostics.insert(result.program.diagnostics.end(), result.stage_diagnostics.semantic.begin(),
-                                    result.stage_diagnostics.semantic.end());
+  program_ast.diagnostics.reserve(result.stage_diagnostics.lexer.size() + result.stage_diagnostics.parser.size() +
+                                  result.stage_diagnostics.semantic.size());
+  program_ast.diagnostics.insert(program_ast.diagnostics.end(), result.stage_diagnostics.lexer.begin(),
+                                 result.stage_diagnostics.lexer.end());
+  program_ast.diagnostics.insert(program_ast.diagnostics.end(), result.stage_diagnostics.parser.begin(),
+                                 result.stage_diagnostics.parser.end());
+  program_ast.diagnostics.insert(program_ast.diagnostics.end(), result.stage_diagnostics.semantic.begin(),
+                                 result.stage_diagnostics.semantic.end());
   return result;
 }

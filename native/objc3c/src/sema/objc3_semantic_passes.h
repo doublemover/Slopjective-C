@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ast/objc3_ast.h"
+#include "parse/objc3_parser_contract.h"
 
 struct FunctionInfo {
   std::size_t arity = 0;
@@ -26,12 +26,12 @@ struct Objc3SemanticValidationOptions {
   std::size_t max_message_send_args = 4;
 };
 
-bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
-Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Program &program,
+bool ResolveGlobalInitializerValues(const std::vector<Objc3ParsedGlobalDecl> &globals, std::vector<int> &values);
+Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 std::vector<std::string> &diagnostics);
-void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
+void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
                                              const std::unordered_map<std::string, FunctionInfo> &surface_functions,
                                              std::vector<std::string> &diagnostics);
-void ValidateSemanticBodies(const Objc3Program &program, const Objc3SemanticIntegrationSurface &surface,
+void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics);

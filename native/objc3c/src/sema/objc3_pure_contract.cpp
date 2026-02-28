@@ -311,11 +311,12 @@ static void CollectPureContractEffectExpr(const Expr *expr, std::vector<std::uno
   }
 }
 
-void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
-                                                    const std::unordered_map<std::string, FunctionInfo> &surface_functions,
-                                                    std::vector<std::string> &diagnostics) {
+void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
+                                             const std::unordered_map<std::string, FunctionInfo> &surface_functions,
+                                             std::vector<std::string> &diagnostics) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
   std::unordered_set<std::string> globals;
-  for (const auto &global : program.globals) {
+  for (const auto &global : ast.globals) {
     globals.insert(global.name);
   }
 
@@ -326,7 +327,7 @@ void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
   }
 
   std::unordered_map<std::string, PureContractEffectInfo> function_effects;
-  for (const auto &fn : program.functions) {
+  for (const auto &fn : ast.functions) {
     if (fn.is_prototype) {
       continue;
     }
@@ -435,7 +436,7 @@ void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
   }
 
   std::unordered_set<std::string> reported;
-  for (const auto &fn : program.functions) {
+  for (const auto &fn : ast.functions) {
     if (fn.is_prototype || !fn.is_pure) {
       continue;
     }
@@ -475,5 +476,3 @@ void ValidatePureContractSemanticDiagnostics(const Objc3Program &program,
                                        std::to_string(cause.detail_column) + ")"));
   }
 }
-
-
