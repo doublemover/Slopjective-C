@@ -134,7 +134,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
   } else {
     std::string backend_error;
-    compile_status = RunIRCompileLLVMDirect(cli_options.llc_path, cli_options.clang_path, ir_out, object_out, backend_error);
+    compile_status = RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error);
     if (!backend_error.empty()) {
       std::cerr << backend_error << "\n";
     }

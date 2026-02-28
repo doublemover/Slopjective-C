@@ -61,6 +61,6 @@ def test_io_process_exposes_llc_direct_object_emission_path() -> None:
 
     assert "RunIRCompileLLVMDirect(const std::filesystem::path &llc_path" in io_header
     assert "{\"-filetype=obj\", \"-o\", object_out.string(), ir_path.string()}" in io_source
-    assert "{\"-cc1\", \"-emit-obj\", \"-x\", \"ir\", ir_path.string(), \"-o\", object_out.string()," in io_source
-    assert "llc not found" in io_source
+    assert "llc executable not found" in io_source
+    assert "-cc1" not in io_source
     assert "OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION" in cmake

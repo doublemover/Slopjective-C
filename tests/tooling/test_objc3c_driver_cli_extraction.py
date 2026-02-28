@@ -49,5 +49,5 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
 
     assert "RunIRCompileLLVMDirect" in runtime
-    assert "RunIRCompileLLVMDirect(cli_options.llc_path, cli_options.clang_path, ir_out, object_out, backend_error)" in runtime
+    assert "RunIRCompileLLVMDirect(cli_options.llc_path, ir_out, object_out, backend_error)" in runtime
     assert ".object-backend.txt" in runtime
