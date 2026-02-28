@@ -453,6 +453,22 @@ Frontend dispatch-specific optimization pass readiness requires deterministic me
   3. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
 
+## M206 frontend canonical optimization pipeline stage-1
+
+Frontend canonical optimization stage-1 relies on deterministic parser/module surfaces that feed stable optimization-control packets.
+
+- Required frontend canonical optimization signals:
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - module set construction remains deterministic via `manifest_function_names.insert(fn.name).second`.
+  - function signature surface remains emitted with `"function_signature_surface"`.
+  - scalar signature counters remain surfaced as `"scalar_return_i32"`, `"scalar_return_bool"`, `"scalar_return_void"`, `"scalar_param_i32"`, and `"scalar_param_bool"`.
+  - semantic surface counts remain emitted for `"declared_globals"`, `"declared_functions"`, `"resolved_global_symbols"`, and `"resolved_function_symbols"`.
+- Required frontend canonical optimization commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2301,6 +2317,36 @@ Recommended M207 sema/type dispatch-optimization validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m207_sema_dispatch_optimizations_contract.py -q`
 
+## M206 sema/type canonical optimization pipeline stage-1
+
+For deterministic sema/type canonical optimization stage-1, capture replay-stable packet evidence from pass-level diagnostics canonicalization, canonical compatibility routing, and type-metadata handoff ordering.
+
+Canonical optimization stage-1 packet map:
+
+- `stage-1 packet 1.1 deterministic canonical sema diagnostics ordering hooks` -> `m206_canonical_sema_diagnostics_stage1_packet`
+- `stage-1 packet 1.2 deterministic canonical type-metadata handoff hooks` -> `m206_canonical_type_metadata_stage1_packet`
+
+### 1.1 Deterministic canonical sema diagnostics ordering packet
+
+- Source canonical-routing anchors: `Objc3SemaCompatibilityMode::Canonical`, `kObjc3SemaPassOrder`, and `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`.
+- Source canonical-diagnostics anchors: `CanonicalizePassDiagnostics(pass_diagnostics);`, `IsCanonicalPassDiagnostics(pass_diagnostics);`, `std::stable_sort(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);`, and `result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest canonical-stage anchors under `frontend`: `compatibility_mode`, `frontend.pipeline.sema_pass_manager`, `deterministic_semantic_diagnostics`, and `diagnostics_monotonic`.
+- Deterministic canonical sema diagnostics packet key: `m206_canonical_sema_diagnostics_stage1_packet`.
+
+### 1.2 Deterministic canonical type-metadata handoff packet
+
+- Source type-handoff anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `std::sort(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end());`, and `std::sort(function_names.begin(), function_names.end());`.
+- Source deterministic-validation anchors: `std::is_sorted(handoff.global_names_lexicographic.begin(), handoff.global_names_lexicographic.end())`, `std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),`, and `result.deterministic_type_metadata_handoff =`.
+- Source parity/readiness anchors: `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest type-metadata anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface canonical-stage anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic canonical type-metadata packet key: `m206_canonical_type_metadata_stage1_packet`.
+
+Recommended M206 sema/type canonical optimization stage-1 validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2633,6 +2679,80 @@ LSP semantic profile capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
+
+## M206 lowering/runtime canonical optimization pipeline stage-1
+
+Lowering/runtime canonical optimization stage-1 evidence is captured as deterministic packet artifacts rooted under `tmp/` so replay checks stay stable across optimizer reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/`
+  - `tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `canonical optimization stage-1 markers` (required in source-anchor extracts):
+  - `runtime_dispatch_call_emitted_ = false;`
+  - `runtime_dispatch_call_emitted_ = true;`
+  - `receiver_is_compile_time_zero`
+  - `receiver_is_compile_time_nonzero`
+  - `FunctionMayHaveGlobalSideEffects`
+  - `call_may_have_global_side_effects`
+  - `global_proofs_invalidated`
+  - `semantic_surface`
+  - `function_signature_surface`
+  - `scalar_return_i32`
+  - `scalar_return_bool`
+  - `scalar_return_void`
+  - `scalar_param_i32`
+  - `scalar_param_bool`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`
+  - `lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);`
+  - `if (lowered.receiver_is_compile_time_zero) {`
+  - `if (lowered.receiver_is_compile_time_nonzero) {`
+  - `const bool call_may_have_global_side_effects = FunctionMayHaveGlobalSideEffects(expr->ident);`
+  - `if (call_may_have_global_side_effects) {`
+  - `ctx.global_proofs_invalidated = true;`
+  - `manifest_functions.reserve(program.functions.size())`
+  - `std::unordered_set<std::string> manifest_function_names`
+  - `if (manifest_function_names.insert(fn.name).second)`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `<< ",\"declared_functions\":" << manifest_functions.size()`
+  - `<< ",\"resolved_global_symbols\":" << pipeline_result.integration_surface.globals.size()`
+  - `<< ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `<< ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32`
+  - `<< ",\"scalar_return_bool\":" << scalar_return_bool`
+  - `<< ",\"scalar_return_void\":" << scalar_return_void << ",\"scalar_param_i32\":" << scalar_param_i32`
+  - `<< ",\"scalar_param_bool\":" << scalar_param_bool << "}}\n";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and canonical optimization source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, canonical optimization marker, or source anchor is missing.
+
+Canonical optimization stage-1 capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1 --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.ll tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.manifest.json > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/abi-ir-anchors.txt`
+3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
 
 ## M207 lowering/runtime dispatch-specific optimization passes
 
@@ -4731,6 +4851,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m207_validation_dispatch_optimizations_contract.py -q
 ```
 
+## M206 validation/perf canonical optimization pipeline stage-1 runbook
+
+Canonical optimization stage-1 validation runbook verifies deterministic optimization-surface evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Canonical optimization stage-1 evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m206_validation_canonical_optimization_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -5128,6 +5293,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain dispatch-optimization anchors.
+
+## M206 integration canonical optimization pipeline stage-1
+
+- Gate intent: enforce deterministic canonical-optimization stage-1 evidence across all lanes.
+### 1.1 Canonical-optimization stage-1 chain
+- Deterministic canonical-optimization stage-1 gate:
+  - `npm run check:objc3c:m206-canonical-optimization-stage1`
+- Chain order:
+  - replays `check:objc3c:m207-dispatch-optimizations`.
+  - enforces all M206 lane contracts:
+    `tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_validation_canonical_optimization_contract.py`,
+    `tests/tooling/test_objc3c_m206_integration_canonical_optimization_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through canonical-optimization validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain canonical-optimization anchors.
 
 ## Current call contract
 
