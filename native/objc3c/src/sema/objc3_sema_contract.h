@@ -100,16 +100,50 @@ struct Objc3PropertyAttributeSummary {
   std::size_t contract_violations() const { return invalid_attribute_entries + property_contract_violations; }
 };
 
+struct Objc3TypeAnnotationSurfaceSummary {
+  std::size_t generic_suffix_sites = 0;
+  std::size_t pointer_declarator_sites = 0;
+  std::size_t nullability_suffix_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t invalid_generic_suffix_sites = 0;
+  std::size_t invalid_pointer_declarator_sites = 0;
+  std::size_t invalid_nullability_suffix_sites = 0;
+  bool deterministic = true;
+
+  std::size_t total_type_annotation_sites() const {
+    return generic_suffix_sites + pointer_declarator_sites + nullability_suffix_sites;
+  }
+
+  std::size_t invalid_type_annotation_sites() const {
+    return invalid_generic_suffix_sites + invalid_pointer_declarator_sites + invalid_nullability_suffix_sites;
+  }
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_generic_suffix;
+  std::vector<bool> param_has_pointer_declarator;
+  std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_object_pointer_type_spelling;
+  std::vector<bool> param_has_invalid_generic_suffix;
+  std::vector<bool> param_has_invalid_pointer_declarator;
+  std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
+  bool return_has_generic_suffix = false;
+  bool return_has_pointer_declarator = false;
+  bool return_has_nullability_suffix = false;
+  bool return_object_pointer_type_spelling = false;
+  bool return_has_invalid_generic_suffix = false;
+  bool return_has_invalid_pointer_declarator = false;
+  bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -137,10 +171,25 @@ struct Objc3MethodInfo {
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_generic_suffix;
+  std::vector<bool> param_has_pointer_declarator;
+  std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_object_pointer_type_spelling;
+  std::vector<bool> param_has_invalid_generic_suffix;
+  std::vector<bool> param_has_invalid_pointer_declarator;
+  std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
+  bool return_has_generic_suffix = false;
+  bool return_has_pointer_declarator = false;
+  bool return_has_nullability_suffix = false;
+  bool return_object_pointer_type_spelling = false;
+  bool return_has_invalid_generic_suffix = false;
+  bool return_has_invalid_pointer_declarator = false;
+  bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -160,6 +209,13 @@ struct Objc3PropertyInfo {
   bool id_spelling = false;
   bool class_spelling = false;
   bool instancetype_spelling = false;
+  bool object_pointer_type_spelling = false;
+  bool has_generic_suffix = false;
+  bool has_pointer_declarator = false;
+  bool has_nullability_suffix = false;
+  bool has_invalid_generic_suffix = false;
+  bool has_invalid_pointer_declarator = false;
+  bool has_invalid_nullability_suffix = false;
   bool has_invalid_type_suffix = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
@@ -218,6 +274,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   bool built = false;
 };
 
@@ -228,10 +285,25 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_generic_suffix;
+  std::vector<bool> param_has_pointer_declarator;
+  std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_object_pointer_type_spelling;
+  std::vector<bool> param_has_invalid_generic_suffix;
+  std::vector<bool> param_has_invalid_pointer_declarator;
+  std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
+  bool return_has_generic_suffix = false;
+  bool return_has_pointer_declarator = false;
+  bool return_has_nullability_suffix = false;
+  bool return_object_pointer_type_spelling = false;
+  bool return_has_invalid_generic_suffix = false;
+  bool return_has_invalid_pointer_declarator = false;
+  bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -260,10 +332,25 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
+  std::vector<bool> param_has_generic_suffix;
+  std::vector<bool> param_has_pointer_declarator;
+  std::vector<bool> param_has_nullability_suffix;
+  std::vector<bool> param_object_pointer_type_spelling;
+  std::vector<bool> param_has_invalid_generic_suffix;
+  std::vector<bool> param_has_invalid_pointer_declarator;
+  std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_type_suffix;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
+  bool return_has_generic_suffix = false;
+  bool return_has_pointer_declarator = false;
+  bool return_has_nullability_suffix = false;
+  bool return_object_pointer_type_spelling = false;
+  bool return_has_invalid_generic_suffix = false;
+  bool return_has_invalid_pointer_declarator = false;
+  bool return_has_invalid_nullability_suffix = false;
+  bool return_has_invalid_type_suffix = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -284,6 +371,13 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool id_spelling = false;
   bool class_spelling = false;
   bool instancetype_spelling = false;
+  bool object_pointer_type_spelling = false;
+  bool has_generic_suffix = false;
+  bool has_pointer_declarator = false;
+  bool has_nullability_suffix = false;
+  bool has_invalid_generic_suffix = false;
+  bool has_invalid_pointer_declarator = false;
+  bool has_invalid_nullability_suffix = false;
   bool has_invalid_type_suffix = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
@@ -333,6 +427,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
 };
 
 struct Objc3SemanticValidationOptions {

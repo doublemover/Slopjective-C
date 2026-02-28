@@ -102,6 +102,17 @@ bool IsEquivalentPropertyAttributeSummary(const Objc3PropertyAttributeSummary &l
          lhs.property_contract_violations == rhs.property_contract_violations;
 }
 
+bool IsEquivalentTypeAnnotationSurfaceSummary(const Objc3TypeAnnotationSurfaceSummary &lhs,
+                                              const Objc3TypeAnnotationSurfaceSummary &rhs) {
+  return lhs.generic_suffix_sites == rhs.generic_suffix_sites &&
+         lhs.pointer_declarator_sites == rhs.pointer_declarator_sites &&
+         lhs.nullability_suffix_sites == rhs.nullability_suffix_sites &&
+         lhs.object_pointer_type_sites == rhs.object_pointer_type_sites &&
+         lhs.invalid_generic_suffix_sites == rhs.invalid_generic_suffix_sites &&
+         lhs.invalid_pointer_declarator_sites == rhs.invalid_pointer_declarator_sites &&
+         lhs.invalid_nullability_suffix_sites == rhs.invalid_nullability_suffix_sites;
+}
+
 }  // namespace
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
@@ -186,6 +197,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.property_attribute_summary.properties_total &&
       result.type_metadata_handoff.property_attribute_summary.setter_modifiers <=
           result.type_metadata_handoff.property_attribute_summary.properties_total;
+  result.type_annotation_surface_summary = result.integration_surface.type_annotation_surface_summary;
+  result.deterministic_type_annotation_surface_handoff =
+      result.type_metadata_handoff.type_annotation_surface_summary.deterministic &&
+      result.integration_surface.type_annotation_surface_summary.deterministic &&
+      IsEquivalentTypeAnnotationSurfaceSummary(result.integration_surface.type_annotation_surface_summary,
+                                               result.type_metadata_handoff.type_annotation_surface_summary) &&
+      result.type_metadata_handoff.type_annotation_surface_summary.invalid_generic_suffix_sites <=
+          result.type_metadata_handoff.type_annotation_surface_summary.generic_suffix_sites &&
+      result.type_metadata_handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
+          result.type_metadata_handoff.type_annotation_surface_summary.pointer_declarator_sites &&
+      result.type_metadata_handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
+          result.type_metadata_handoff.type_annotation_surface_summary.nullability_suffix_sites &&
+      result.type_metadata_handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
+          result.type_metadata_handoff.type_annotation_surface_summary.total_type_annotation_sites();
   result.atomic_memory_order_mapping = BuildAtomicMemoryOrderMappingSummary(*input.program);
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
@@ -271,6 +296,21 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.property_attribute_summary.invalid_attribute_entries;
   result.parity_surface.property_attribute_contract_violations_total =
       result.parity_surface.property_attribute_summary.property_contract_violations;
+  result.parity_surface.type_annotation_surface_summary = result.type_metadata_handoff.type_annotation_surface_summary;
+  result.parity_surface.type_annotation_generic_suffix_sites_total =
+      result.parity_surface.type_annotation_surface_summary.generic_suffix_sites;
+  result.parity_surface.type_annotation_pointer_declarator_sites_total =
+      result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites;
+  result.parity_surface.type_annotation_nullability_suffix_sites_total =
+      result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites;
+  result.parity_surface.type_annotation_object_pointer_type_sites_total =
+      result.parity_surface.type_annotation_surface_summary.object_pointer_type_sites;
+  result.parity_surface.type_annotation_invalid_generic_suffix_sites_total =
+      result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites;
+  result.parity_surface.type_annotation_invalid_pointer_declarator_sites_total =
+      result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+  result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total =
+      result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
@@ -361,6 +401,31 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.property_attribute_summary.setter_modifiers <=
           result.parity_surface.property_attribute_summary.properties_total &&
       result.parity_surface.property_attribute_summary.deterministic;
+  result.parity_surface.deterministic_type_annotation_surface_handoff =
+      result.deterministic_type_annotation_surface_handoff &&
+      result.parity_surface.type_annotation_surface_summary.generic_suffix_sites ==
+          result.parity_surface.type_annotation_generic_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites ==
+          result.parity_surface.type_annotation_pointer_declarator_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites ==
+          result.parity_surface.type_annotation_nullability_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.object_pointer_type_sites ==
+          result.parity_surface.type_annotation_object_pointer_type_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites ==
+          result.parity_surface.type_annotation_invalid_generic_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites ==
+          result.parity_surface.type_annotation_invalid_pointer_declarator_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
+          result.parity_surface.type_annotation_invalid_nullability_suffix_sites_total &&
+      result.parity_surface.type_annotation_surface_summary.invalid_generic_suffix_sites <=
+          result.parity_surface.type_annotation_surface_summary.generic_suffix_sites &&
+      result.parity_surface.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
+          result.parity_surface.type_annotation_surface_summary.pointer_declarator_sites &&
+      result.parity_surface.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
+          result.parity_surface.type_annotation_surface_summary.nullability_suffix_sites &&
+      result.parity_surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
+          result.parity_surface.type_annotation_surface_summary.total_type_annotation_sites() &&
+      result.parity_surface.type_annotation_surface_summary.deterministic;
   result.parity_surface.atomic_memory_order_mapping = result.atomic_memory_order_mapping;
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
@@ -384,6 +449,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.selector_normalization_summary.deterministic &&
       result.parity_surface.deterministic_selector_normalization_handoff &&
       result.parity_surface.property_attribute_summary.deterministic &&
-      result.parity_surface.deterministic_property_attribute_handoff;
+      result.parity_surface.deterministic_property_attribute_handoff &&
+      result.parity_surface.type_annotation_surface_summary.deterministic &&
+      result.parity_surface.deterministic_type_annotation_surface_handoff;
   return result;
 }

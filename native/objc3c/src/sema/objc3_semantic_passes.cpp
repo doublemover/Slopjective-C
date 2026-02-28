@@ -564,14 +564,58 @@ static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &prope
   return property.id_spelling || property.class_spelling || property.instancetype_spelling;
 }
 
+static bool HasInvalidGenericParamTypeSuffix(const FuncParam &param) {
+  return param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param);
+}
+
+static bool HasInvalidPointerParamTypeDeclarator(const FuncParam &param) {
+  return param.has_pointer_declarator && !SupportsPointerParamTypeDeclarator(param);
+}
+
+static bool HasInvalidNullabilityParamTypeSuffix(const FuncParam &param) {
+  return !param.nullability_suffix_tokens.empty() && !SupportsNullabilityParamTypeSuffix(param);
+}
+
+static bool HasInvalidGenericReturnTypeSuffix(const FunctionDecl &fn) {
+  return fn.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(fn);
+}
+
+static bool HasInvalidGenericReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return method.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(method);
+}
+
+static bool HasInvalidPointerReturnTypeDeclarator(const FunctionDecl &fn) {
+  return fn.has_return_pointer_declarator && !SupportsPointerReturnTypeDeclarator(fn);
+}
+
+static bool HasInvalidPointerReturnTypeDeclarator(const Objc3MethodDecl &method) {
+  return method.has_return_pointer_declarator && !SupportsPointerReturnTypeDeclarator(method);
+}
+
+static bool HasInvalidNullabilityReturnTypeSuffix(const FunctionDecl &fn) {
+  return !fn.return_nullability_suffix_tokens.empty() && !SupportsNullabilityReturnTypeSuffix(fn);
+}
+
+static bool HasInvalidNullabilityReturnTypeSuffix(const Objc3MethodDecl &method) {
+  return !method.return_nullability_suffix_tokens.empty() && !SupportsNullabilityReturnTypeSuffix(method);
+}
+
+static bool HasInvalidGenericPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property);
+}
+
+static bool HasInvalidPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
+  return property.has_pointer_declarator && !SupportsPointerPropertyTypeDeclarator(property);
+}
+
+static bool HasInvalidNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &property) {
+  return !property.nullability_suffix_tokens.empty() && !SupportsNullabilityPropertyTypeSuffix(property);
+}
+
 static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  const bool has_unsupported_generic_suffix =
-      property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property);
-  const bool has_unsupported_pointer_declarator =
-      property.has_pointer_declarator && !SupportsPointerPropertyTypeDeclarator(property);
-  const bool has_unsupported_nullability_suffix =
-      !property.nullability_suffix_tokens.empty() && !SupportsNullabilityPropertyTypeSuffix(property);
-  return has_unsupported_generic_suffix || has_unsupported_pointer_declarator || has_unsupported_nullability_suffix;
+  return HasInvalidGenericPropertyTypeSuffix(property) ||
+         HasInvalidPointerPropertyTypeDeclarator(property) ||
+         HasInvalidNullabilityPropertyTypeSuffix(property);
 }
 
 static bool IsKnownPropertyAttributeName(const std::string &name) {
@@ -591,12 +635,9 @@ static bool IsValidPropertySetterSelector(const std::string &selector) {
 }
 
 static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
-  const bool has_unsupported_generic_suffix = param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param);
-  const bool has_unsupported_pointer_declarator =
-      param.has_pointer_declarator && !SupportsPointerParamTypeDeclarator(param);
-  const bool has_unsupported_nullability_suffix =
-      !param.nullability_suffix_tokens.empty() && !SupportsNullabilityParamTypeSuffix(param);
-  return has_unsupported_generic_suffix || has_unsupported_pointer_declarator || has_unsupported_nullability_suffix;
+  return HasInvalidGenericParamTypeSuffix(param) ||
+         HasInvalidPointerParamTypeDeclarator(param) ||
+         HasInvalidNullabilityParamTypeSuffix(param);
 }
 
 static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(const FuncParam &param) {
@@ -1050,6 +1091,13 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.id_spelling = property.id_spelling;
   info.class_spelling = property.class_spelling;
   info.instancetype_spelling = property.instancetype_spelling;
+  info.object_pointer_type_spelling = property.object_pointer_type_spelling;
+  info.has_generic_suffix = property.has_generic_suffix;
+  info.has_pointer_declarator = property.has_pointer_declarator;
+  info.has_nullability_suffix = !property.nullability_suffix_tokens.empty();
+  info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
+  info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
+  info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
   info.has_invalid_type_suffix = HasInvalidPropertyTypeSuffix(property);
   info.attribute_entries = property.attributes.size();
   info.is_readonly = property.is_readonly;
@@ -1212,6 +1260,13 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_is_vector.reserve(method.params.size());
   info.param_vector_base_spelling.reserve(method.params.size());
   info.param_vector_lane_count.reserve(method.params.size());
+  info.param_has_generic_suffix.reserve(method.params.size());
+  info.param_has_pointer_declarator.reserve(method.params.size());
+  info.param_has_nullability_suffix.reserve(method.params.size());
+  info.param_object_pointer_type_spelling.reserve(method.params.size());
+  info.param_has_invalid_generic_suffix.reserve(method.params.size());
+  info.param_has_invalid_pointer_declarator.reserve(method.params.size());
+  info.param_has_invalid_nullability_suffix.reserve(method.params.size());
   info.param_has_invalid_type_suffix.reserve(method.params.size());
   info.param_has_protocol_composition.reserve(method.params.size());
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
@@ -1222,12 +1277,29 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_is_vector.push_back(param.vector_spelling);
     info.param_vector_base_spelling.push_back(param.vector_base_spelling);
     info.param_vector_lane_count.push_back(param.vector_lane_count);
+    info.param_has_generic_suffix.push_back(param.has_generic_suffix);
+    info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
+    info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
+    info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
+    info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
+    info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
+    info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
     info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
     info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
   }
   const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromMethodReturn(method);
+  info.return_has_generic_suffix = method.has_return_generic_suffix;
+  info.return_has_pointer_declarator = method.has_return_pointer_declarator;
+  info.return_has_nullability_suffix = !method.return_nullability_suffix_tokens.empty();
+  info.return_object_pointer_type_spelling = method.return_object_pointer_type_spelling;
+  info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(method);
+  info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(method);
+  info.return_has_invalid_nullability_suffix = HasInvalidNullabilityReturnTypeSuffix(method);
+  info.return_has_invalid_type_suffix = info.return_has_invalid_generic_suffix ||
+                                        info.return_has_invalid_pointer_declarator ||
+                                        info.return_has_invalid_nullability_suffix;
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
@@ -2489,6 +2561,218 @@ static Objc3PropertyAttributeSummary BuildPropertyAttributeSummaryFromSurface(
   return summary;
 }
 
+static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &function_info,
+                                                            Objc3TypeAnnotationSurfaceSummary &summary) {
+  const std::size_t arity = function_info.arity;
+  if (function_info.param_has_generic_suffix.size() != arity ||
+      function_info.param_has_pointer_declarator.size() != arity ||
+      function_info.param_has_nullability_suffix.size() != arity ||
+      function_info.param_object_pointer_type_spelling.size() != arity ||
+      function_info.param_has_invalid_generic_suffix.size() != arity ||
+      function_info.param_has_invalid_pointer_declarator.size() != arity ||
+      function_info.param_has_invalid_nullability_suffix.size() != arity ||
+      function_info.param_has_invalid_type_suffix.size() != arity) {
+    summary.deterministic = false;
+    return;
+  }
+
+  for (std::size_t i = 0; i < arity; ++i) {
+    if (function_info.param_has_generic_suffix[i]) {
+      ++summary.generic_suffix_sites;
+    }
+    if (function_info.param_has_pointer_declarator[i]) {
+      ++summary.pointer_declarator_sites;
+    }
+    if (function_info.param_has_nullability_suffix[i]) {
+      ++summary.nullability_suffix_sites;
+    }
+    if (function_info.param_object_pointer_type_spelling[i]) {
+      ++summary.object_pointer_type_sites;
+    }
+    if (function_info.param_has_invalid_generic_suffix[i]) {
+      ++summary.invalid_generic_suffix_sites;
+    }
+    if (function_info.param_has_invalid_pointer_declarator[i]) {
+      ++summary.invalid_pointer_declarator_sites;
+    }
+    if (function_info.param_has_invalid_nullability_suffix[i]) {
+      ++summary.invalid_nullability_suffix_sites;
+    }
+    const bool expected_invalid =
+        function_info.param_has_invalid_generic_suffix[i] ||
+        function_info.param_has_invalid_pointer_declarator[i] ||
+        function_info.param_has_invalid_nullability_suffix[i];
+    if (function_info.param_has_invalid_type_suffix[i] != expected_invalid) {
+      summary.deterministic = false;
+    }
+  }
+
+  if (function_info.return_has_generic_suffix) {
+    ++summary.generic_suffix_sites;
+  }
+  if (function_info.return_has_pointer_declarator) {
+    ++summary.pointer_declarator_sites;
+  }
+  if (function_info.return_has_nullability_suffix) {
+    ++summary.nullability_suffix_sites;
+  }
+  if (function_info.return_object_pointer_type_spelling) {
+    ++summary.object_pointer_type_sites;
+  }
+  if (function_info.return_has_invalid_generic_suffix) {
+    ++summary.invalid_generic_suffix_sites;
+  }
+  if (function_info.return_has_invalid_pointer_declarator) {
+    ++summary.invalid_pointer_declarator_sites;
+  }
+  if (function_info.return_has_invalid_nullability_suffix) {
+    ++summary.invalid_nullability_suffix_sites;
+  }
+
+  const bool expected_return_invalid = function_info.return_has_invalid_generic_suffix ||
+                                       function_info.return_has_invalid_pointer_declarator ||
+                                       function_info.return_has_invalid_nullability_suffix;
+  if (function_info.return_has_invalid_type_suffix != expected_return_invalid) {
+    summary.deterministic = false;
+  }
+}
+
+static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo &method_info,
+                                                          Objc3TypeAnnotationSurfaceSummary &summary) {
+  const std::size_t arity = method_info.arity;
+  if (method_info.param_has_generic_suffix.size() != arity ||
+      method_info.param_has_pointer_declarator.size() != arity ||
+      method_info.param_has_nullability_suffix.size() != arity ||
+      method_info.param_object_pointer_type_spelling.size() != arity ||
+      method_info.param_has_invalid_generic_suffix.size() != arity ||
+      method_info.param_has_invalid_pointer_declarator.size() != arity ||
+      method_info.param_has_invalid_nullability_suffix.size() != arity ||
+      method_info.param_has_invalid_type_suffix.size() != arity) {
+    summary.deterministic = false;
+    return;
+  }
+
+  for (std::size_t i = 0; i < arity; ++i) {
+    if (method_info.param_has_generic_suffix[i]) {
+      ++summary.generic_suffix_sites;
+    }
+    if (method_info.param_has_pointer_declarator[i]) {
+      ++summary.pointer_declarator_sites;
+    }
+    if (method_info.param_has_nullability_suffix[i]) {
+      ++summary.nullability_suffix_sites;
+    }
+    if (method_info.param_object_pointer_type_spelling[i]) {
+      ++summary.object_pointer_type_sites;
+    }
+    if (method_info.param_has_invalid_generic_suffix[i]) {
+      ++summary.invalid_generic_suffix_sites;
+    }
+    if (method_info.param_has_invalid_pointer_declarator[i]) {
+      ++summary.invalid_pointer_declarator_sites;
+    }
+    if (method_info.param_has_invalid_nullability_suffix[i]) {
+      ++summary.invalid_nullability_suffix_sites;
+    }
+    const bool expected_invalid = method_info.param_has_invalid_generic_suffix[i] ||
+                                  method_info.param_has_invalid_pointer_declarator[i] ||
+                                  method_info.param_has_invalid_nullability_suffix[i];
+    if (method_info.param_has_invalid_type_suffix[i] != expected_invalid) {
+      summary.deterministic = false;
+    }
+  }
+
+  if (method_info.return_has_generic_suffix) {
+    ++summary.generic_suffix_sites;
+  }
+  if (method_info.return_has_pointer_declarator) {
+    ++summary.pointer_declarator_sites;
+  }
+  if (method_info.return_has_nullability_suffix) {
+    ++summary.nullability_suffix_sites;
+  }
+  if (method_info.return_object_pointer_type_spelling) {
+    ++summary.object_pointer_type_sites;
+  }
+  if (method_info.return_has_invalid_generic_suffix) {
+    ++summary.invalid_generic_suffix_sites;
+  }
+  if (method_info.return_has_invalid_pointer_declarator) {
+    ++summary.invalid_pointer_declarator_sites;
+  }
+  if (method_info.return_has_invalid_nullability_suffix) {
+    ++summary.invalid_nullability_suffix_sites;
+  }
+  const bool expected_return_invalid = method_info.return_has_invalid_generic_suffix ||
+                                       method_info.return_has_invalid_pointer_declarator ||
+                                       method_info.return_has_invalid_nullability_suffix;
+  if (method_info.return_has_invalid_type_suffix != expected_return_invalid) {
+    summary.deterministic = false;
+  }
+}
+
+static void AccumulateTypeAnnotationSummaryFromPropertyInfo(const Objc3PropertyInfo &property_info,
+                                                            Objc3TypeAnnotationSurfaceSummary &summary) {
+  if (property_info.has_generic_suffix) {
+    ++summary.generic_suffix_sites;
+  }
+  if (property_info.has_pointer_declarator) {
+    ++summary.pointer_declarator_sites;
+  }
+  if (property_info.has_nullability_suffix) {
+    ++summary.nullability_suffix_sites;
+  }
+  if (property_info.object_pointer_type_spelling) {
+    ++summary.object_pointer_type_sites;
+  }
+  if (property_info.has_invalid_generic_suffix) {
+    ++summary.invalid_generic_suffix_sites;
+  }
+  if (property_info.has_invalid_pointer_declarator) {
+    ++summary.invalid_pointer_declarator_sites;
+  }
+  if (property_info.has_invalid_nullability_suffix) {
+    ++summary.invalid_nullability_suffix_sites;
+  }
+  const bool expected_invalid = property_info.has_invalid_generic_suffix ||
+                                property_info.has_invalid_pointer_declarator ||
+                                property_info.has_invalid_nullability_suffix;
+  if (property_info.has_invalid_type_suffix != expected_invalid) {
+    summary.deterministic = false;
+  }
+}
+
+static Objc3TypeAnnotationSurfaceSummary BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3TypeAnnotationSurfaceSummary summary;
+  for (const auto &function_entry : surface.functions) {
+    AccumulateTypeAnnotationSummaryFromFunctionInfo(function_entry.second, summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateTypeAnnotationSummaryFromMethodInfo(method_entry.second, summary);
+    }
+    for (const auto &property_entry : interface_entry.second.properties) {
+      AccumulateTypeAnnotationSummaryFromPropertyInfo(property_entry.second, summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateTypeAnnotationSummaryFromMethodInfo(method_entry.second, summary);
+    }
+    for (const auto &property_entry : implementation_entry.second.properties) {
+      AccumulateTypeAnnotationSummaryFromPropertyInfo(property_entry.second, summary);
+    }
+  }
+
+  summary.deterministic = summary.deterministic &&
+                          summary.invalid_generic_suffix_sites <= summary.generic_suffix_sites &&
+                          summary.invalid_pointer_declarator_sites <= summary.pointer_declarator_sites &&
+                          summary.invalid_nullability_suffix_sites <= summary.nullability_suffix_sites &&
+                          summary.invalid_type_annotation_sites() <= summary.total_type_annotation_sites();
+  return summary;
+}
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -2528,6 +2812,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_is_vector.reserve(fn.params.size());
       info.param_vector_base_spelling.reserve(fn.params.size());
       info.param_vector_lane_count.reserve(fn.params.size());
+      info.param_has_generic_suffix.reserve(fn.params.size());
+      info.param_has_pointer_declarator.reserve(fn.params.size());
+      info.param_has_nullability_suffix.reserve(fn.params.size());
+      info.param_object_pointer_type_spelling.reserve(fn.params.size());
+      info.param_has_invalid_generic_suffix.reserve(fn.params.size());
+      info.param_has_invalid_pointer_declarator.reserve(fn.params.size());
+      info.param_has_invalid_nullability_suffix.reserve(fn.params.size());
       info.param_has_invalid_type_suffix.reserve(fn.params.size());
       info.param_has_protocol_composition.reserve(fn.params.size());
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
@@ -2538,12 +2829,29 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_is_vector.push_back(param.vector_spelling);
         info.param_vector_base_spelling.push_back(param.vector_base_spelling);
         info.param_vector_lane_count.push_back(param.vector_lane_count);
+        info.param_has_generic_suffix.push_back(param.has_generic_suffix);
+        info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
+        info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
+        info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
+        info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
+        info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
+        info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
         info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
         info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
       }
       const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
+      info.return_has_generic_suffix = fn.has_return_generic_suffix;
+      info.return_has_pointer_declarator = fn.has_return_pointer_declarator;
+      info.return_has_nullability_suffix = !fn.return_nullability_suffix_tokens.empty();
+      info.return_object_pointer_type_spelling = fn.return_object_pointer_type_spelling;
+      info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(fn);
+      info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(fn);
+      info.return_has_invalid_nullability_suffix = HasInvalidNullabilityReturnTypeSuffix(fn);
+      info.return_has_invalid_type_suffix = info.return_has_invalid_generic_suffix ||
+                                            info.return_has_invalid_pointer_declarator ||
+                                            info.return_has_invalid_nullability_suffix;
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
@@ -2604,6 +2912,34 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       continue;
     }
 
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_generic_suffix.size(); ++i) {
+      existing.param_has_generic_suffix[i] =
+          existing.param_has_generic_suffix[i] || fn.params[i].has_generic_suffix;
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_pointer_declarator.size(); ++i) {
+      existing.param_has_pointer_declarator[i] =
+          existing.param_has_pointer_declarator[i] || fn.params[i].has_pointer_declarator;
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_nullability_suffix.size(); ++i) {
+      existing.param_has_nullability_suffix[i] =
+          existing.param_has_nullability_suffix[i] || !fn.params[i].nullability_suffix_tokens.empty();
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_object_pointer_type_spelling.size(); ++i) {
+      existing.param_object_pointer_type_spelling[i] =
+          existing.param_object_pointer_type_spelling[i] || fn.params[i].object_pointer_type_spelling;
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_generic_suffix.size(); ++i) {
+      existing.param_has_invalid_generic_suffix[i] =
+          existing.param_has_invalid_generic_suffix[i] || HasInvalidGenericParamTypeSuffix(fn.params[i]);
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_pointer_declarator.size(); ++i) {
+      existing.param_has_invalid_pointer_declarator[i] =
+          existing.param_has_invalid_pointer_declarator[i] || HasInvalidPointerParamTypeDeclarator(fn.params[i]);
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_nullability_suffix.size(); ++i) {
+      existing.param_has_invalid_nullability_suffix[i] =
+          existing.param_has_invalid_nullability_suffix[i] || HasInvalidNullabilityParamTypeSuffix(fn.params[i]);
+    }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_type_suffix.size(); ++i) {
       existing.param_has_invalid_type_suffix[i] =
           existing.param_has_invalid_type_suffix[i] || HasInvalidParamTypeSuffix(fn.params[i]);
@@ -2613,6 +2949,22 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       existing.param_has_invalid_protocol_composition[i] =
           existing.param_has_invalid_protocol_composition[i] || param_protocol_composition.has_invalid_protocol_composition;
     }
+    existing.return_has_generic_suffix = existing.return_has_generic_suffix || fn.has_return_generic_suffix;
+    existing.return_has_pointer_declarator = existing.return_has_pointer_declarator || fn.has_return_pointer_declarator;
+    existing.return_has_nullability_suffix =
+        existing.return_has_nullability_suffix || !fn.return_nullability_suffix_tokens.empty();
+    existing.return_object_pointer_type_spelling =
+        existing.return_object_pointer_type_spelling || fn.return_object_pointer_type_spelling;
+    existing.return_has_invalid_generic_suffix =
+        existing.return_has_invalid_generic_suffix || HasInvalidGenericReturnTypeSuffix(fn);
+    existing.return_has_invalid_pointer_declarator =
+        existing.return_has_invalid_pointer_declarator || HasInvalidPointerReturnTypeDeclarator(fn);
+    existing.return_has_invalid_nullability_suffix =
+        existing.return_has_invalid_nullability_suffix || HasInvalidNullabilityReturnTypeSuffix(fn);
+    existing.return_has_invalid_type_suffix = existing.return_has_invalid_type_suffix ||
+                                             existing.return_has_invalid_generic_suffix ||
+                                             existing.return_has_invalid_pointer_declarator ||
+                                             existing.return_has_invalid_nullability_suffix;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
     existing.is_pure_annotation = existing.is_pure_annotation || fn.is_pure;
@@ -2797,6 +3149,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
   surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
+  surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -2830,10 +3183,25 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_is_vector = source.param_is_vector;
     metadata.param_vector_base_spelling = source.param_vector_base_spelling;
     metadata.param_vector_lane_count = source.param_vector_lane_count;
+    metadata.param_has_generic_suffix = source.param_has_generic_suffix;
+    metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
+    metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+    metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
+    metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
+    metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
+    metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
     metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
     metadata.param_has_protocol_composition = source.param_has_protocol_composition;
     metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
     metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
+    metadata.return_has_generic_suffix = source.return_has_generic_suffix;
+    metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
+    metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+    metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
+    metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
+    metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
+    metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+    metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -2887,6 +3255,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.id_spelling = source.id_spelling;
       property_metadata.class_spelling = source.class_spelling;
       property_metadata.instancetype_spelling = source.instancetype_spelling;
+      property_metadata.object_pointer_type_spelling = source.object_pointer_type_spelling;
+      property_metadata.has_generic_suffix = source.has_generic_suffix;
+      property_metadata.has_pointer_declarator = source.has_pointer_declarator;
+      property_metadata.has_nullability_suffix = source.has_nullability_suffix;
+      property_metadata.has_invalid_generic_suffix = source.has_invalid_generic_suffix;
+      property_metadata.has_invalid_pointer_declarator = source.has_invalid_pointer_declarator;
+      property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
@@ -2945,10 +3320,25 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_is_vector = source.param_is_vector;
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
+      method_metadata.param_has_generic_suffix = source.param_has_generic_suffix;
+      method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
+      method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+      method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
+      method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
+      method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
+      method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
+      method_metadata.return_has_generic_suffix = source.return_has_generic_suffix;
+      method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
+      method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+      method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
+      method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
+      method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
+      method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+      method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -3005,6 +3395,13 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.id_spelling = source.id_spelling;
       property_metadata.class_spelling = source.class_spelling;
       property_metadata.instancetype_spelling = source.instancetype_spelling;
+      property_metadata.object_pointer_type_spelling = source.object_pointer_type_spelling;
+      property_metadata.has_generic_suffix = source.has_generic_suffix;
+      property_metadata.has_pointer_declarator = source.has_pointer_declarator;
+      property_metadata.has_nullability_suffix = source.has_nullability_suffix;
+      property_metadata.has_invalid_generic_suffix = source.has_invalid_generic_suffix;
+      property_metadata.has_invalid_pointer_declarator = source.has_invalid_pointer_declarator;
+      property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
@@ -3063,10 +3460,25 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_is_vector = source.param_is_vector;
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
+      method_metadata.param_has_generic_suffix = source.param_has_generic_suffix;
+      method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
+      method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
+      method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
+      method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
+      method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
+      method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
+      method_metadata.return_has_generic_suffix = source.return_has_generic_suffix;
+      method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
+      method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
+      method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
+      method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
+      method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
+      method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
+      method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -3290,6 +3702,207 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           handoff.protocol_category_composition_summary.protocol_composition_sites &&
       handoff.protocol_category_composition_summary.category_composition_symbols <=
           handoff.protocol_category_composition_summary.protocol_composition_symbols;
+
+  handoff.type_annotation_surface_summary = Objc3TypeAnnotationSurfaceSummary{};
+  const auto accumulate_function_type_annotations =
+      [&handoff](const Objc3SemanticFunctionTypeMetadata &metadata) {
+        if (metadata.param_has_generic_suffix.size() != metadata.arity ||
+            metadata.param_has_pointer_declarator.size() != metadata.arity ||
+            metadata.param_has_nullability_suffix.size() != metadata.arity ||
+            metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+            metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+            metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
+          handoff.type_annotation_surface_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          if (metadata.param_has_generic_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.generic_suffix_sites;
+          }
+          if (metadata.param_has_pointer_declarator[i]) {
+            ++handoff.type_annotation_surface_summary.pointer_declarator_sites;
+          }
+          if (metadata.param_has_nullability_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
+          }
+          if (metadata.param_object_pointer_type_spelling[i]) {
+            ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
+          }
+          if (metadata.param_has_invalid_generic_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_generic_suffix_sites;
+          }
+          if (metadata.param_has_invalid_pointer_declarator[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+          }
+          if (metadata.param_has_invalid_nullability_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+          }
+          const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                        metadata.param_has_invalid_pointer_declarator[i] ||
+                                        metadata.param_has_invalid_nullability_suffix[i];
+          if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+            handoff.type_annotation_surface_summary.deterministic = false;
+          }
+        }
+        if (metadata.return_has_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.generic_suffix_sites;
+        }
+        if (metadata.return_has_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.pointer_declarator_sites;
+        }
+        if (metadata.return_has_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
+        }
+        if (metadata.return_object_pointer_type_spelling) {
+          ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
+        }
+        if (metadata.return_has_invalid_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_generic_suffix_sites;
+        }
+        if (metadata.return_has_invalid_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+        }
+        if (metadata.return_has_invalid_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+        }
+        const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
+                                             metadata.return_has_invalid_pointer_declarator ||
+                                             metadata.return_has_invalid_nullability_suffix;
+        if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
+          handoff.type_annotation_surface_summary.deterministic = false;
+        }
+      };
+  const auto accumulate_method_type_annotations =
+      [&handoff](const Objc3SemanticMethodTypeMetadata &metadata) {
+        if (metadata.param_has_generic_suffix.size() != metadata.arity ||
+            metadata.param_has_pointer_declarator.size() != metadata.arity ||
+            metadata.param_has_nullability_suffix.size() != metadata.arity ||
+            metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+            metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+            metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+            metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
+          handoff.type_annotation_surface_summary.deterministic = false;
+          return;
+        }
+        for (std::size_t i = 0; i < metadata.arity; ++i) {
+          if (metadata.param_has_generic_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.generic_suffix_sites;
+          }
+          if (metadata.param_has_pointer_declarator[i]) {
+            ++handoff.type_annotation_surface_summary.pointer_declarator_sites;
+          }
+          if (metadata.param_has_nullability_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
+          }
+          if (metadata.param_object_pointer_type_spelling[i]) {
+            ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
+          }
+          if (metadata.param_has_invalid_generic_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_generic_suffix_sites;
+          }
+          if (metadata.param_has_invalid_pointer_declarator[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+          }
+          if (metadata.param_has_invalid_nullability_suffix[i]) {
+            ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+          }
+          const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                        metadata.param_has_invalid_pointer_declarator[i] ||
+                                        metadata.param_has_invalid_nullability_suffix[i];
+          if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+            handoff.type_annotation_surface_summary.deterministic = false;
+          }
+        }
+        if (metadata.return_has_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.generic_suffix_sites;
+        }
+        if (metadata.return_has_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.pointer_declarator_sites;
+        }
+        if (metadata.return_has_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
+        }
+        if (metadata.return_object_pointer_type_spelling) {
+          ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
+        }
+        if (metadata.return_has_invalid_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_generic_suffix_sites;
+        }
+        if (metadata.return_has_invalid_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+        }
+        if (metadata.return_has_invalid_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+        }
+        const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
+                                             metadata.return_has_invalid_pointer_declarator ||
+                                             metadata.return_has_invalid_nullability_suffix;
+        if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
+          handoff.type_annotation_surface_summary.deterministic = false;
+        }
+      };
+  const auto accumulate_property_type_annotations =
+      [&handoff](const Objc3SemanticPropertyTypeMetadata &metadata) {
+        if (metadata.has_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.generic_suffix_sites;
+        }
+        if (metadata.has_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.pointer_declarator_sites;
+        }
+        if (metadata.has_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.nullability_suffix_sites;
+        }
+        if (metadata.object_pointer_type_spelling) {
+          ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
+        }
+        if (metadata.has_invalid_generic_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_generic_suffix_sites;
+        }
+        if (metadata.has_invalid_pointer_declarator) {
+          ++handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites;
+        }
+        if (metadata.has_invalid_nullability_suffix) {
+          ++handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+        }
+        const bool expected_invalid = metadata.has_invalid_generic_suffix ||
+                                      metadata.has_invalid_pointer_declarator ||
+                                      metadata.has_invalid_nullability_suffix;
+        if (metadata.has_invalid_type_suffix != expected_invalid) {
+          handoff.type_annotation_surface_summary.deterministic = false;
+        }
+      };
+  for (const auto &function_metadata : handoff.functions_lexicographic) {
+    accumulate_function_type_annotations(function_metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method_type_annotations(method_metadata);
+    }
+    for (const auto &property_metadata : interface_metadata.properties_lexicographic) {
+      accumulate_property_type_annotations(property_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method_type_annotations(method_metadata);
+    }
+    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+      accumulate_property_type_annotations(property_metadata);
+    }
+  }
+  handoff.type_annotation_surface_summary.deterministic =
+      handoff.type_annotation_surface_summary.deterministic &&
+      handoff.type_annotation_surface_summary.invalid_generic_suffix_sites <=
+          handoff.type_annotation_surface_summary.generic_suffix_sites &&
+      handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
+          handoff.type_annotation_surface_summary.pointer_declarator_sites &&
+      handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
+          handoff.type_annotation_surface_summary.nullability_suffix_sites &&
+      handoff.type_annotation_surface_summary.invalid_type_annotation_sites() <=
+          handoff.type_annotation_surface_summary.total_type_annotation_sites();
   return handoff;
 }
 
@@ -3343,10 +3956,25 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_is_vector.size() != metadata.arity ||
         metadata.param_vector_base_spelling.size() != metadata.arity ||
         metadata.param_vector_lane_count.size() != metadata.arity ||
+        metadata.param_has_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+        metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
         metadata.param_has_protocol_composition.size() != metadata.arity ||
         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+      return false;
+    }
+    if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
+        (metadata.return_has_invalid_pointer_declarator && !metadata.return_has_pointer_declarator) ||
+        (metadata.return_has_invalid_nullability_suffix && !metadata.return_has_nullability_suffix) ||
+        (metadata.return_has_invalid_type_suffix !=
+         (metadata.return_has_invalid_generic_suffix || metadata.return_has_invalid_pointer_declarator ||
+          metadata.return_has_invalid_nullability_suffix))) {
       return false;
     }
     if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
@@ -3357,6 +3985,15 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       return false;
     }
     for (std::size_t i = 0; i < metadata.arity; ++i) {
+      const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                    metadata.param_has_invalid_pointer_declarator[i] ||
+                                    metadata.param_has_invalid_nullability_suffix[i];
+      if ((metadata.param_has_invalid_generic_suffix[i] && !metadata.param_has_generic_suffix[i]) ||
+          (metadata.param_has_invalid_pointer_declarator[i] && !metadata.param_has_pointer_declarator[i]) ||
+          (metadata.param_has_invalid_nullability_suffix[i] && !metadata.param_has_nullability_suffix[i]) ||
+          metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+        return false;
+      }
       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
         return false;
       }
@@ -3375,10 +4012,25 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                         metadata.param_is_vector.size() != metadata.arity ||
                         metadata.param_vector_base_spelling.size() != metadata.arity ||
                         metadata.param_vector_lane_count.size() != metadata.arity ||
+                        metadata.param_has_generic_suffix.size() != metadata.arity ||
+                        metadata.param_has_pointer_declarator.size() != metadata.arity ||
+                        metadata.param_has_nullability_suffix.size() != metadata.arity ||
+                        metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+                        metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+                        metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+                        metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
                         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
                         metadata.param_has_protocol_composition.size() != metadata.arity ||
                         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
                         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
+                      return false;
+                    }
+                    if ((metadata.return_has_invalid_generic_suffix && !metadata.return_has_generic_suffix) ||
+                        (metadata.return_has_invalid_pointer_declarator && !metadata.return_has_pointer_declarator) ||
+                        (metadata.return_has_invalid_nullability_suffix && !metadata.return_has_nullability_suffix) ||
+                        (metadata.return_has_invalid_type_suffix !=
+                         (metadata.return_has_invalid_generic_suffix || metadata.return_has_invalid_pointer_declarator ||
+                          metadata.return_has_invalid_nullability_suffix))) {
                       return false;
                     }
                     if (metadata.return_has_invalid_protocol_composition && !metadata.return_has_protocol_composition) {
@@ -3389,6 +4041,15 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                       return false;
                     }
                     for (std::size_t i = 0; i < metadata.arity; ++i) {
+                      const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                                    metadata.param_has_invalid_pointer_declarator[i] ||
+                                                    metadata.param_has_invalid_nullability_suffix[i];
+                      if ((metadata.param_has_invalid_generic_suffix[i] && !metadata.param_has_generic_suffix[i]) ||
+                          (metadata.param_has_invalid_pointer_declarator[i] && !metadata.param_has_pointer_declarator[i]) ||
+                          (metadata.param_has_invalid_nullability_suffix[i] && !metadata.param_has_nullability_suffix[i]) ||
+                          metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+                        return false;
+                      }
                       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
                         return false;
                       }
@@ -3547,6 +4208,203 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       selector_summary.selector_parameter_piece_entries <= selector_summary.selector_piece_entries &&
       selector_summary.contract_violations() <= selector_summary.methods_total;
 
+  Objc3TypeAnnotationSurfaceSummary type_annotation_summary;
+  const auto accumulate_function_type_annotations = [&type_annotation_summary](
+                                                        const Objc3SemanticFunctionTypeMetadata &metadata) {
+    if (metadata.param_has_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+        metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
+      type_annotation_summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < metadata.arity; ++i) {
+      if (metadata.param_has_generic_suffix[i]) {
+        ++type_annotation_summary.generic_suffix_sites;
+      }
+      if (metadata.param_has_pointer_declarator[i]) {
+        ++type_annotation_summary.pointer_declarator_sites;
+      }
+      if (metadata.param_has_nullability_suffix[i]) {
+        ++type_annotation_summary.nullability_suffix_sites;
+      }
+      if (metadata.param_object_pointer_type_spelling[i]) {
+        ++type_annotation_summary.object_pointer_type_sites;
+      }
+      if (metadata.param_has_invalid_generic_suffix[i]) {
+        ++type_annotation_summary.invalid_generic_suffix_sites;
+      }
+      if (metadata.param_has_invalid_pointer_declarator[i]) {
+        ++type_annotation_summary.invalid_pointer_declarator_sites;
+      }
+      if (metadata.param_has_invalid_nullability_suffix[i]) {
+        ++type_annotation_summary.invalid_nullability_suffix_sites;
+      }
+      const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                    metadata.param_has_invalid_pointer_declarator[i] ||
+                                    metadata.param_has_invalid_nullability_suffix[i];
+      if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+        type_annotation_summary.deterministic = false;
+      }
+    }
+    if (metadata.return_has_generic_suffix) {
+      ++type_annotation_summary.generic_suffix_sites;
+    }
+    if (metadata.return_has_pointer_declarator) {
+      ++type_annotation_summary.pointer_declarator_sites;
+    }
+    if (metadata.return_has_nullability_suffix) {
+      ++type_annotation_summary.nullability_suffix_sites;
+    }
+    if (metadata.return_object_pointer_type_spelling) {
+      ++type_annotation_summary.object_pointer_type_sites;
+    }
+    if (metadata.return_has_invalid_generic_suffix) {
+      ++type_annotation_summary.invalid_generic_suffix_sites;
+    }
+    if (metadata.return_has_invalid_pointer_declarator) {
+      ++type_annotation_summary.invalid_pointer_declarator_sites;
+    }
+    if (metadata.return_has_invalid_nullability_suffix) {
+      ++type_annotation_summary.invalid_nullability_suffix_sites;
+    }
+    const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
+                                         metadata.return_has_invalid_pointer_declarator ||
+                                         metadata.return_has_invalid_nullability_suffix;
+    if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
+      type_annotation_summary.deterministic = false;
+    }
+  };
+  const auto accumulate_method_type_annotations = [&type_annotation_summary](
+                                                      const Objc3SemanticMethodTypeMetadata &metadata) {
+    if (metadata.param_has_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_nullability_suffix.size() != metadata.arity ||
+        metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
+        metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
+        metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
+        metadata.param_has_invalid_type_suffix.size() != metadata.arity) {
+      type_annotation_summary.deterministic = false;
+      return;
+    }
+    for (std::size_t i = 0; i < metadata.arity; ++i) {
+      if (metadata.param_has_generic_suffix[i]) {
+        ++type_annotation_summary.generic_suffix_sites;
+      }
+      if (metadata.param_has_pointer_declarator[i]) {
+        ++type_annotation_summary.pointer_declarator_sites;
+      }
+      if (metadata.param_has_nullability_suffix[i]) {
+        ++type_annotation_summary.nullability_suffix_sites;
+      }
+      if (metadata.param_object_pointer_type_spelling[i]) {
+        ++type_annotation_summary.object_pointer_type_sites;
+      }
+      if (metadata.param_has_invalid_generic_suffix[i]) {
+        ++type_annotation_summary.invalid_generic_suffix_sites;
+      }
+      if (metadata.param_has_invalid_pointer_declarator[i]) {
+        ++type_annotation_summary.invalid_pointer_declarator_sites;
+      }
+      if (metadata.param_has_invalid_nullability_suffix[i]) {
+        ++type_annotation_summary.invalid_nullability_suffix_sites;
+      }
+      const bool expected_invalid = metadata.param_has_invalid_generic_suffix[i] ||
+                                    metadata.param_has_invalid_pointer_declarator[i] ||
+                                    metadata.param_has_invalid_nullability_suffix[i];
+      if (metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
+        type_annotation_summary.deterministic = false;
+      }
+    }
+    if (metadata.return_has_generic_suffix) {
+      ++type_annotation_summary.generic_suffix_sites;
+    }
+    if (metadata.return_has_pointer_declarator) {
+      ++type_annotation_summary.pointer_declarator_sites;
+    }
+    if (metadata.return_has_nullability_suffix) {
+      ++type_annotation_summary.nullability_suffix_sites;
+    }
+    if (metadata.return_object_pointer_type_spelling) {
+      ++type_annotation_summary.object_pointer_type_sites;
+    }
+    if (metadata.return_has_invalid_generic_suffix) {
+      ++type_annotation_summary.invalid_generic_suffix_sites;
+    }
+    if (metadata.return_has_invalid_pointer_declarator) {
+      ++type_annotation_summary.invalid_pointer_declarator_sites;
+    }
+    if (metadata.return_has_invalid_nullability_suffix) {
+      ++type_annotation_summary.invalid_nullability_suffix_sites;
+    }
+    const bool expected_return_invalid = metadata.return_has_invalid_generic_suffix ||
+                                         metadata.return_has_invalid_pointer_declarator ||
+                                         metadata.return_has_invalid_nullability_suffix;
+    if (metadata.return_has_invalid_type_suffix != expected_return_invalid) {
+      type_annotation_summary.deterministic = false;
+    }
+  };
+  const auto accumulate_property_type_annotations = [&type_annotation_summary](
+                                                        const Objc3SemanticPropertyTypeMetadata &metadata) {
+    if (metadata.has_generic_suffix) {
+      ++type_annotation_summary.generic_suffix_sites;
+    }
+    if (metadata.has_pointer_declarator) {
+      ++type_annotation_summary.pointer_declarator_sites;
+    }
+    if (metadata.has_nullability_suffix) {
+      ++type_annotation_summary.nullability_suffix_sites;
+    }
+    if (metadata.object_pointer_type_spelling) {
+      ++type_annotation_summary.object_pointer_type_sites;
+    }
+    if (metadata.has_invalid_generic_suffix) {
+      ++type_annotation_summary.invalid_generic_suffix_sites;
+    }
+    if (metadata.has_invalid_pointer_declarator) {
+      ++type_annotation_summary.invalid_pointer_declarator_sites;
+    }
+    if (metadata.has_invalid_nullability_suffix) {
+      ++type_annotation_summary.invalid_nullability_suffix_sites;
+    }
+    const bool expected_invalid = metadata.has_invalid_generic_suffix ||
+                                  metadata.has_invalid_pointer_declarator ||
+                                  metadata.has_invalid_nullability_suffix;
+    if (metadata.has_invalid_type_suffix != expected_invalid) {
+      type_annotation_summary.deterministic = false;
+    }
+  };
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function_type_annotations(metadata);
+  }
+  for (const auto &metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_method_type_annotations(method);
+    }
+    for (const auto &property : metadata.properties_lexicographic) {
+      accumulate_property_type_annotations(property);
+    }
+  }
+  for (const auto &metadata : handoff.implementations_lexicographic) {
+    for (const auto &method : metadata.methods_lexicographic) {
+      accumulate_method_type_annotations(method);
+    }
+    for (const auto &property : metadata.properties_lexicographic) {
+      accumulate_property_type_annotations(property);
+    }
+  }
+  type_annotation_summary.deterministic =
+      type_annotation_summary.deterministic &&
+      type_annotation_summary.invalid_generic_suffix_sites <= type_annotation_summary.generic_suffix_sites &&
+      type_annotation_summary.invalid_pointer_declarator_sites <= type_annotation_summary.pointer_declarator_sites &&
+      type_annotation_summary.invalid_nullability_suffix_sites <= type_annotation_summary.nullability_suffix_sites &&
+      type_annotation_summary.invalid_type_annotation_sites() <= type_annotation_summary.total_type_annotation_sites();
+
   std::size_t interface_method_symbols = 0;
   for (const auto &metadata : handoff.interfaces_lexicographic) {
     interface_method_symbols += metadata.methods_lexicographic.size();
@@ -3592,7 +4450,21 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.selector_normalization_summary.selector_normalization_flag_mismatches ==
              selector_summary.selector_normalization_flag_mismatches &&
          handoff.selector_normalization_summary.selector_missing_keyword_pieces ==
-             selector_summary.selector_missing_keyword_pieces;
+             selector_summary.selector_missing_keyword_pieces &&
+         handoff.type_annotation_surface_summary.deterministic &&
+         handoff.type_annotation_surface_summary.generic_suffix_sites == type_annotation_summary.generic_suffix_sites &&
+         handoff.type_annotation_surface_summary.pointer_declarator_sites ==
+             type_annotation_summary.pointer_declarator_sites &&
+         handoff.type_annotation_surface_summary.nullability_suffix_sites ==
+             type_annotation_summary.nullability_suffix_sites &&
+         handoff.type_annotation_surface_summary.object_pointer_type_sites ==
+             type_annotation_summary.object_pointer_type_sites &&
+         handoff.type_annotation_surface_summary.invalid_generic_suffix_sites ==
+             type_annotation_summary.invalid_generic_suffix_sites &&
+         handoff.type_annotation_surface_summary.invalid_pointer_declarator_sites ==
+             type_annotation_summary.invalid_pointer_declarator_sites &&
+         handoff.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
+             type_annotation_summary.invalid_nullability_suffix_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

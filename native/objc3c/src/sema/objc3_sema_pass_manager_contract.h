@@ -123,6 +123,13 @@ struct Objc3SemaParityContractSurface {
   std::size_t property_attribute_setter_modifiers_total = 0;
   std::size_t property_attribute_invalid_attribute_entries_total = 0;
   std::size_t property_attribute_contract_violations_total = 0;
+  std::size_t type_annotation_generic_suffix_sites_total = 0;
+  std::size_t type_annotation_pointer_declarator_sites_total = 0;
+  std::size_t type_annotation_nullability_suffix_sites_total = 0;
+  std::size_t type_annotation_object_pointer_type_sites_total = 0;
+  std::size_t type_annotation_invalid_generic_suffix_sites_total = 0;
+  std::size_t type_annotation_invalid_pointer_declarator_sites_total = 0;
+  std::size_t type_annotation_invalid_nullability_suffix_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -130,10 +137,12 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_protocol_category_composition_handoff = false;
   bool deterministic_selector_normalization_handoff = false;
   bool deterministic_property_attribute_handoff = false;
+  bool deterministic_type_annotation_surface_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   Objc3PropertyAttributeSummary property_attribute_summary;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -217,7 +226,30 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.property_attribute_summary.getter_modifiers <= surface.property_attribute_summary.properties_total &&
          surface.property_attribute_summary.setter_modifiers <= surface.property_attribute_summary.properties_total &&
          surface.property_attribute_summary.deterministic &&
-         surface.deterministic_property_attribute_handoff;
+         surface.deterministic_property_attribute_handoff &&
+         surface.type_annotation_surface_summary.generic_suffix_sites == surface.type_annotation_generic_suffix_sites_total &&
+         surface.type_annotation_surface_summary.pointer_declarator_sites ==
+             surface.type_annotation_pointer_declarator_sites_total &&
+         surface.type_annotation_surface_summary.nullability_suffix_sites ==
+             surface.type_annotation_nullability_suffix_sites_total &&
+         surface.type_annotation_surface_summary.object_pointer_type_sites ==
+             surface.type_annotation_object_pointer_type_sites_total &&
+         surface.type_annotation_surface_summary.invalid_generic_suffix_sites ==
+             surface.type_annotation_invalid_generic_suffix_sites_total &&
+         surface.type_annotation_surface_summary.invalid_pointer_declarator_sites ==
+             surface.type_annotation_invalid_pointer_declarator_sites_total &&
+         surface.type_annotation_surface_summary.invalid_nullability_suffix_sites ==
+             surface.type_annotation_invalid_nullability_suffix_sites_total &&
+         surface.type_annotation_surface_summary.invalid_generic_suffix_sites <=
+             surface.type_annotation_surface_summary.generic_suffix_sites &&
+         surface.type_annotation_surface_summary.invalid_pointer_declarator_sites <=
+             surface.type_annotation_surface_summary.pointer_declarator_sites &&
+         surface.type_annotation_surface_summary.invalid_nullability_suffix_sites <=
+             surface.type_annotation_surface_summary.nullability_suffix_sites &&
+         surface.type_annotation_surface_summary.invalid_type_annotation_sites() <=
+             surface.type_annotation_surface_summary.total_type_annotation_sites() &&
+         surface.type_annotation_surface_summary.deterministic &&
+         surface.deterministic_type_annotation_surface_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -234,6 +266,8 @@ struct Objc3SemaPassManagerResult {
   Objc3SelectorNormalizationSummary selector_normalization_summary;
   bool deterministic_property_attribute_handoff = false;
   Objc3PropertyAttributeSummary property_attribute_summary;
+  bool deterministic_type_annotation_surface_handoff = false;
+  Objc3TypeAnnotationSurfaceSummary type_annotation_surface_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

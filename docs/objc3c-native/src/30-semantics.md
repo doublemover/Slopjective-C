@@ -2384,3 +2384,52 @@ Sema/type metadata handoff contract:
 Recommended M149 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m149_sema_property_attribute_contract.py -q`
+
+## M150 sema/type object pointer, nullability, lightweight generic annotation contract (M150-B001)
+
+M150-B extends sema/type metadata and pass-manager parity surfaces for object-pointer declarator,
+nullability suffix, and lightweight generic annotation tracking across functions, methods, and properties.
+
+Sema/type contract markers:
+
+- `Objc3TypeAnnotationSurfaceSummary`
+- `type_annotation_surface_summary`
+- `param_has_generic_suffix`
+- `param_has_pointer_declarator`
+- `param_has_nullability_suffix`
+- `param_object_pointer_type_spelling`
+- `param_has_invalid_generic_suffix`
+- `param_has_invalid_pointer_declarator`
+- `param_has_invalid_nullability_suffix`
+- `return_has_generic_suffix`
+- `return_has_pointer_declarator`
+- `return_has_nullability_suffix`
+- `return_object_pointer_type_spelling`
+- `has_generic_suffix`
+- `has_pointer_declarator`
+- `has_nullability_suffix`
+- `object_pointer_type_spelling`
+- `deterministic_type_annotation_surface_handoff`
+
+Deterministic semantic diagnostics (fail-closed):
+
+- generic suffixes remain constrained to supported Objective-C object spellings
+- nullability suffixes remain constrained to supported Objective-C object spellings
+- incompatible redeclarations keep deterministic type-mismatch diagnostics
+
+Sema/type metadata handoff contract:
+
+- integration summary packet: `BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface)`
+- handoff summary packet: `handoff.type_annotation_surface_summary`
+- parity packet totals:
+  - `type_annotation_generic_suffix_sites_total`
+  - `type_annotation_pointer_declarator_sites_total`
+  - `type_annotation_nullability_suffix_sites_total`
+  - `type_annotation_object_pointer_type_sites_total`
+  - `type_annotation_invalid_generic_suffix_sites_total`
+  - `type_annotation_invalid_pointer_declarator_sites_total`
+  - `type_annotation_invalid_nullability_suffix_sites_total`
+
+Recommended M150 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m150_sema_object_pointer_nullability_generics_contract.py -q`
