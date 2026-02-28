@@ -186,6 +186,9 @@ struct WhileStmt {
 
 struct BlockStmt {
   std::vector<std::unique_ptr<Stmt>> body;
+  bool is_autoreleasepool_scope = false;
+  std::string autoreleasepool_scope_symbol;
+  unsigned autoreleasepool_scope_depth = 0;
   unsigned line = 1;
   unsigned column = 1;
 };

@@ -193,6 +193,12 @@ static std::string BuildMessageSendSelectorLoweringSymbol(
   return "selector-lowering:" + normalized_selector;
 }
 
+static std::string BuildAutoreleasePoolScopeSymbol(unsigned serial, unsigned depth) {
+  std::ostringstream out;
+  out << "autoreleasepool-scope:" << serial << ";depth=" << depth;
+  return out.str();
+}
+
 constexpr unsigned kDispatchAbiMarshallingRuntimeArgSlots = 4u;
 constexpr const char *kRuntimeShimHostLinkDispatchSymbol = "objc3_msgsend_i32";
 
@@ -2113,8 +2119,8 @@ class Objc3Parser {
       }
       if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwDo) ||
           At(TokenKind::KwFor) || At(TokenKind::KwSwitch) || At(TokenKind::KwWhile) || At(TokenKind::KwBreak) ||
-          At(TokenKind::KwContinue) || AtIdentifierAssignment() || AtIdentifierUpdate() || AtPrefixUpdate() ||
-          At(TokenKind::RBrace)) {
+          At(TokenKind::KwContinue) || At(TokenKind::KwAtAutoreleasePool) || AtIdentifierAssignment() ||
+          AtIdentifierUpdate() || AtPrefixUpdate() || At(TokenKind::RBrace)) {
         return;
       }
       Advance();
@@ -2155,6 +2161,33 @@ class Objc3Parser {
                                       : "unexpected qualifier 'extern' in statement position";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return nullptr;
+    }
+
+    if (Match(TokenKind::KwAtAutoreleasePool)) {
+      const Token marker = Previous();
+      const unsigned scope_depth = autoreleasepool_scope_depth_ + 1u;
+      ++autoreleasepool_scope_depth_;
+      const unsigned scope_serial = ++autoreleasepool_scope_serial_;
+      auto body = ParseBlock();
+      --autoreleasepool_scope_depth_;
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Block;
+      stmt->line = marker.line;
+      stmt->column = marker.column;
+      stmt->block_stmt = std::make_unique<BlockStmt>();
+      stmt->block_stmt->line = marker.line;
+      stmt->block_stmt->column = marker.column;
+      stmt->block_stmt->body = std::move(body);
+      stmt->block_stmt->is_autoreleasepool_scope = true;
+      stmt->block_stmt->autoreleasepool_scope_depth = scope_depth;
+      stmt->block_stmt->autoreleasepool_scope_symbol =
+          BuildAutoreleasePoolScopeSymbol(scope_serial, scope_depth);
+      return stmt;
     }
 
     if (Match(TokenKind::KwLet)) {
@@ -3313,6 +3346,8 @@ class Objc3Parser {
   std::vector<std::string> diagnostics_;
   bool saw_module_declaration_ = false;
   bool block_failed_ = false;
+  unsigned autoreleasepool_scope_depth_ = 0;
+  unsigned autoreleasepool_scope_serial_ = 0;
   Objc3AstBuilder ast_builder_;
 };
 

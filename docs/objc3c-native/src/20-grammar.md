@@ -627,6 +627,37 @@ Recommended M162 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m162_frontend_retain_release_parser_contract.py -q`
 
+## M163 frontend autorelease-pool scope grammar surface
+
+Frontend parser/AST now accepts Objective-C autorelease-pool scope statements
+using `@autoreleasepool { ... }` and emits deterministic scope metadata for
+downstream lifetime analysis.
+
+M163 parser/AST surface details:
+
+- lexer/token anchors:
+  - `Objc3LexTokenKind::KwAtAutoreleasePool`
+  - lexer directive match for `@autoreleasepool`
+- parser statement anchors:
+  - `Match(TokenKind::KwAtAutoreleasePool)`
+  - `BuildAutoreleasePoolScopeSymbol(...)`
+  - `stmt->block_stmt->is_autoreleasepool_scope`
+  - `stmt->block_stmt->autoreleasepool_scope_symbol`
+  - `stmt->block_stmt->autoreleasepool_scope_depth`
+- statement recovery anchor:
+  - `At(TokenKind::KwAtAutoreleasePool)` in `SynchronizeStatement()`
+
+Deterministic grammar intent:
+
+- each parsed autorelease-pool block receives parser-owned deterministic scope
+  metadata (`serial`, `depth`) without introducing a new statement kind.
+- scope metadata is carried on `BlockStmt` so sema/lowering can adopt the
+  feature incrementally while existing block traversal remains valid.
+
+Recommended M163 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m163_frontend_autorelease_pool_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

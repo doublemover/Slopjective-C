@@ -97,6 +97,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           tokens.push_back(Token{TokenKind::KwAtEnd, "@end", token_line, token_column});
           continue;
         }
+        if (directive == "autoreleasepool") {
+          tokens.push_back(Token{TokenKind::KwAtAutoreleasePool, "@autoreleasepool", token_line, token_column});
+          continue;
+        }
         diagnostics.push_back(MakeDiag(token_line, token_column, "O3L001",
                                        "unsupported '@' directive '@" + directive + "'"));
         continue;
