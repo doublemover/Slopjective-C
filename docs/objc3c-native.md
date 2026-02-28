@@ -299,6 +299,21 @@ Frontend differential testing against baseline toolchains requires deterministic
   3. `python -m pytest tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
 
+## M216 frontend conformance suite v1 packet
+
+Frontend conformance suite v1 maps parser/AST behavior to deterministic spec-section evidence.
+
+- Required conformance signals:
+  - pragma-prelude diagnostics `O3L005`/`O3L006`/`O3L007`/`O3L008` remain stable.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` remains deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required conformance commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m217_frontend_differential_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1859,6 +1874,35 @@ Recommended differential parity commands (sema/type lane):
 3. `python -m pytest tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py -q`
 4. `python -m pytest tests/tooling/test_objc3c_m217_sema_differential_contract.py -q`
 
+## M216 sema/type conformance suite profile
+
+To operate deterministic sema/type conformance suite v1 replay, capture two evidence packets mapped to explicit spec sections.
+
+Suite v1 spec-section packet map:
+
+- `spec section 1.1 deterministic sema diagnostics` -> `m216_v1_sema_diagnostics_packet`
+- `spec section 1.2 deterministic type-metadata handoff` -> `m216_v1_type_metadata_handoff_packet`
+
+### 1.1 Deterministic sema diagnostics conformance packet
+
+- Source anchors: `kObjc3SemaPassOrder`, `CanonicalizePassDiagnostics(...)`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest diagnostics anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, and `deterministic_semantic_diagnostics`.
+- Deterministic suite-v1 evidence packet key: `m216_v1_sema_diagnostics_packet`.
+
+### 1.2 Deterministic type-metadata handoff conformance packet
+
+- Source anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, and `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest parity anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface anchors from `frontend.pipeline.semantic_surface`: `resolved_global_symbols`, `resolved_function_symbols`, and `function_signature_surface` counters (`scalar_return_i32`, `scalar_return_bool`, `scalar_return_void`, `scalar_param_i32`, `scalar_param_bool`).
+- Deterministic suite-v1 evidence packet key: `m216_v1_type_metadata_handoff_packet`.
+
+Recommended conformance suite command sequence (sema/type lane):
+
+1. `python -m pytest tests/tooling/test_objc3c_sema_extraction.py -q`
+2. `python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py -q`
+3. `python -m pytest tests/tooling/test_objc3c_m216_sema_conformance_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2028,6 +2072,47 @@ Then inspect:
 - `tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata/module.manifest.json`
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
+
+## M216 lowering/runtime conformance suite profile
+
+Lowering/runtime conformance suite evidence is captured as deterministic packet artifacts under `tmp/`.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.manifest.json`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/conformance-matrix-markers.txt`
+- `ABI/IR anchors` (persist verbatim in the packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `conformance-matrix markers` (required in matrix summary evidence):
+  - `suite.status`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `spec_section_map`
+- `source anchors`:
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `Require-Range "CRPT-" 1 6`
+  - `Require-Range "CAN-" 1 7`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll` and `module.manifest.json`.
+  - conformance matrix marker rows and ABI/IR anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, source anchor, or conformance-matrix marker is missing.
+
+Conformance suite capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite --emit-prefix module`
+2. `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
+3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.ll tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.manifest.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/abi-ir-anchors.txt`
+4. `rg -n "\"suite\":|\"status\":|\"matrix\":|\"total_cases\":|\"failed_cases\":|\"spec_section_map\"" tmp/artifacts/conformance-suite/<target>/summary.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/conformance-matrix-markers.txt`
+5. `python -m pytest tests/tooling/test_objc3c_m216_lowering_conformance_contract.py -q`
 
 ## M217 lowering/runtime differential parity profile
 
@@ -3305,6 +3390,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m217_validation_differential_contract.py -q
 ```
 
+## M216 validation/perf conformance suite runbook
+
+Conformance suite v1 validation runs deterministic command order and records spec-mapped evidence packets.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+```
+
+Conformance suite evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `spec_section_map`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `spec_section_map`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `total`
+  - `passed`
+  - `failed`
+  - `results[*].runtime_dispatch_symbol`
+  - `spec_section_map`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `spec_section_map`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m216_validation_conformance_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -3502,6 +3632,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain differential anchors.
+
+## M216 integration conformance suite v1
+
+- Gate intent: enforce deterministic Objective-C 3 conformance suite v1 mapping against spec sections.
+### 1.1 Conformance integration chain
+- Deterministic conformance gate:
+  - `npm run check:objc3c:m216-conformance-suite-v1`
+- Chain order:
+  - replays `check:objc3c:m217-differential-parity`.
+  - enforces all M216 lane contracts:
+    `tests/tooling/test_objc3c_m216_frontend_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_sema_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_lowering_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_validation_conformance_contract.py`,
+    `tests/tooling/test_objc3c_m216_integration_conformance_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through conformance suite execution:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain conformance anchors.
 
 ## Current call contract
 
