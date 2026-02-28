@@ -372,6 +372,77 @@ Macro diagnostics/provenance capture commands (lowering/runtime lane):
 3. `rg -n "MakeDiag\(|error:|ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|O3L005|O3L006|O3L007|O3L008|first_line|first_column|last_line|last_column|ParseDiagSortKey\(|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py -q`
 
+## M203 lowering/runtime compile-time evaluation engine
+
+Lowering/runtime compile-time evaluation engine evidence is captured as deterministic packet artifacts rooted under `tmp/` so constant-evaluation lowering and runtime dispatch fast-path replay remains auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `compile-time evaluation markers` (required in source-anchor extracts):
+  - `TryGetCompileTimeI32ExprInContext`
+  - `IsCompileTimeNilReceiverExprInContext`
+  - `IsCompileTimeKnownNonNilExprInContext`
+  - `has_assigned_const_value`
+  - `has_assigned_nil_value`
+  - `has_clause_const_value`
+  - `has_let_const_value`
+  - `const_value_ptrs`
+  - `nil_bound_ptrs`
+  - `nonzero_bound_ptrs`
+  - `global_proofs_invalidated`
+  - `receiver_is_compile_time_zero`
+  - `receiver_is_compile_time_nonzero`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `const bool has_assigned_const_value =`
+  - `op == "=" && value_expr != nullptr && TryGetCompileTimeI32ExprInContext(value_expr, ctx, assigned_const_value);`
+  - `const bool has_assigned_nil_value = op == "=" && value_expr != nullptr && IsCompileTimeNilReceiverExprInContext(value_expr, ctx);`
+  - `ctx.const_value_ptrs.erase(ptr);`
+  - `const bool has_clause_const_value = TryGetCompileTimeI32ExprInContext(clause.value.get(), ctx, clause_const_value);`
+  - `const bool has_let_const_value = TryGetCompileTimeI32ExprInContext(let->value.get(), ctx, let_const_value);`
+  - `bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {`
+  - `bool TryGetCompileTimeI32ExprInContext(const Expr *expr, const FunctionContext &ctx, int &value) const {`
+  - `if (expr->op == "&&" || expr->op == "||") {`
+  - `if (expr->op == "<<" || expr->op == ">>") {`
+  - `bool IsCompileTimeKnownNonNilExprInContext(const Expr *expr, const FunctionContext &ctx) const {`
+  - `lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);`
+  - `lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);`
+  - `if (lowered.receiver_is_compile_time_zero) {`
+  - `if (lowered.receiver_is_compile_time_nonzero) {`
+  - `ctx.global_proofs_invalidated = true;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `invalid lowering contract runtime_dispatch_symbol`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and compile-time-evaluation source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, compile-time evaluation marker, or source anchor is missing.
+
+Compile-time evaluation engine capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
+3. `rg -n "TryGetCompileTimeI32ExprInContext|IsCompileTimeNilReceiverExprInContext|IsCompileTimeKnownNonNilExprInContext|has_assigned_const_value|has_assigned_nil_value|has_clause_const_value|has_let_const_value|const_value_ptrs|nil_bound_ptrs|nonzero_bound_ptrs|global_proofs_invalidated|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py -q`
+
 ## M205 lowering/runtime macro security policy enforcement
 
 Lowering/runtime macro-security policy enforcement evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma-policy diagnostics and lowering replay boundaries remain auditable and stable across reruns.
