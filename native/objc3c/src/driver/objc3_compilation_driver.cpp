@@ -129,7 +129,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   const fs::path ir_out = cli_options.out_dir / (cli_options.emit_prefix + ".ll");
   WriteText(ir_out, artifacts.ir_text);
   const fs::path object_out = cli_options.out_dir / (cli_options.emit_prefix + ".obj");
-  const int compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
+  int compile_status = 0;
+  if (cli_options.ir_object_backend == Objc3IrObjectBackend::kClang) {
+    compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
+  } else {
+    std::string backend_error;
+    compile_status = RunIRCompileLLVMDirect(ir_out, object_out, backend_error);
+    if (!backend_error.empty()) {
+      std::cerr << backend_error << "\n";
+    }
+  }
   return compile_status == 0 ? 0 : 3;
 }
 
@@ -202,12 +211,13 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
     std::cerr << "input file not found: " << cli_options.input.string() << "\n";
     return 2;
   }
-  if (cli_options.clang_path.has_root_path() && !fs::exists(cli_options.clang_path)) {
+  const std::string extension = ToLower(cli_options.input.extension().string());
+  const bool needs_clang_path = extension != ".objc3" || cli_options.ir_object_backend == Objc3IrObjectBackend::kClang;
+  if (needs_clang_path && cli_options.clang_path.has_root_path() && !fs::exists(cli_options.clang_path)) {
     std::cerr << "clang executable not found: " << cli_options.clang_path.string() << "\n";
     return 2;
   }
 
-  const std::string extension = ToLower(cli_options.input.extension().string());
   if (extension == ".objc3") {
     return RunObjc3LanguagePath(cli_options);
   }

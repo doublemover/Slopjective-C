@@ -32,3 +32,20 @@ def test_cmake_registers_driver_target() -> None:
     assert "src/driver/objc3_cli_options.cpp" in cmake
     assert "src/driver/objc3_compilation_driver.cpp" in cmake
     assert "objc3c_driver" in cmake
+
+
+def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
+    header = _read(DRIVER_HEADER)
+    source = _read(DRIVER_SOURCE)
+    runtime = _read(DRIVER_RUNTIME_SOURCE)
+
+    assert "enum class Objc3IrObjectBackend" in header
+    assert "Objc3IrObjectBackend::kClang" in header
+    assert "kLLVMDirect" in header
+
+    assert "--objc3-ir-object-backend <clang|llvm-direct>" in source
+    assert "ParseIrObjectBackend" in source
+    assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
+
+    assert "RunIRCompileLLVMDirect" in runtime
+    assert "cli_options.ir_object_backend == Objc3IrObjectBackend::kClang" in runtime

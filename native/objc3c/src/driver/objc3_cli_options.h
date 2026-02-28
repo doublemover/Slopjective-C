@@ -4,11 +4,17 @@
 #include <filesystem>
 #include <string>
 
+enum class Objc3IrObjectBackend {
+  kClang,
+  kLLVMDirect,
+};
+
 struct Objc3CliOptions {
   std::filesystem::path input;
   std::filesystem::path out_dir = std::filesystem::path("artifacts") / "compilation" / "objc3c-native";
   std::string emit_prefix = "module";
   std::filesystem::path clang_path = std::filesystem::path("clang");
+  Objc3IrObjectBackend ir_object_backend = Objc3IrObjectBackend::kClang;
   std::size_t max_message_send_args = 4;
   std::string runtime_dispatch_symbol = "objc3_msgsend_i32";
 };

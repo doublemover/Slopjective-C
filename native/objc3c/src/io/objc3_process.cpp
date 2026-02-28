@@ -42,3 +42,19 @@ int RunIRCompile(const std::filesystem::path &clang_path,
   return RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
                                 "-fno-color-diagnostics"});
 }
+
+int RunIRCompileLLVMDirect(const std::filesystem::path &ir_path,
+                           const std::filesystem::path &object_out,
+                           std::string &error) {
+#if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+  (void)ir_path;
+  (void)object_out;
+  error = "llvm-direct object emission backend is enabled but implementation is not wired.";
+  return 125;
+#else
+  (void)ir_path;
+  (void)object_out;
+  error = "llvm-direct object emission backend unavailable in this build (enable OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION).";
+  return 125;
+#endif
+}

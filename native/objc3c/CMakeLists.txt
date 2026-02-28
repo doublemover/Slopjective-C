@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION
+  "Enable experimental llvm-direct object emission backend wiring for .objc3 IR compilation."
+  OFF
+)
+
 # M132-A002 target decomposition contract.
 # Current state: monolithic `src/main.cpp`.
 # Planned steady-state split:
@@ -86,6 +91,11 @@ add_library(objc3c_io STATIC
 target_include_directories(objc3c_io PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+if (OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+  target_compile_definitions(objc3c_io PUBLIC
+    OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1
+  )
+endif()
 add_library(objc3c_frontend STATIC
   src/libobjc3c_frontend/frontend_anchor.cpp
   src/libobjc3c_frontend/objc3_cli_frontend.cpp
