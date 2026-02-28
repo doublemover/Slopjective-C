@@ -46,6 +46,17 @@ struct Objc3FrontendLanguageVersionPragmaContract {
   unsigned last_column = 0;
 };
 
+struct Objc3FrontendProtocolCategorySummary {
+  std::size_t declared_protocols = 0;
+  std::size_t declared_categories = 0;
+  std::size_t resolved_protocol_symbols = 0;
+  std::size_t resolved_category_symbols = 0;
+  std::size_t protocol_method_symbols = 0;
+  std::size_t category_method_symbols = 0;
+  std::size_t linked_category_symbols = 0;
+  bool deterministic_protocol_category_handoff = true;
+};
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
@@ -53,6 +64,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
   Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
+  Objc3FrontendProtocolCategorySummary protocol_category_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaParityContractSurface sema_parity_surface;
 };

@@ -150,6 +150,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff = pipeline_result.sema_type_metadata_handoff;
   const Objc3InterfaceImplementationSummary &interface_implementation_summary =
       type_metadata_handoff.interface_implementation_summary;
+  const Objc3FrontendProtocolCategorySummary &protocol_category_summary = pipeline_result.protocol_category_summary;
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -310,6 +311,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_parity_surface.linked_implementation_symbols_total
            << ",\"deterministic_interface_implementation_summary\":"
            << (pipeline_result.sema_parity_surface.interface_implementation_summary.deterministic ? "true" : "false")
+           << ",\"deterministic_protocol_category_handoff\":"
+           << (protocol_category_summary.deterministic_protocol_category_handoff ? "true" : "false")
+           << ",\"type_metadata_protocol_entries\":"
+           << protocol_category_summary.resolved_protocol_symbols
+           << ",\"type_metadata_category_entries\":"
+           << protocol_category_summary.resolved_category_symbols
            << "},\n";
   manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions
            << ",\"vector_return_signatures\":" << vector_return_signatures
@@ -327,12 +334,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()
            << ",\"resolved_interface_symbols\":" << pipeline_result.integration_surface.interfaces.size()
            << ",\"resolved_implementation_symbols\":" << pipeline_result.integration_surface.implementations.size()
+           << ",\"declared_protocols\":" << protocol_category_summary.declared_protocols
+           << ",\"declared_categories\":" << protocol_category_summary.declared_categories
+           << ",\"resolved_protocol_symbols\":" << protocol_category_summary.resolved_protocol_symbols
+           << ",\"resolved_category_symbols\":" << protocol_category_summary.resolved_category_symbols
            << ",\"interface_method_symbols\":"
            << pipeline_result.sema_parity_surface.interface_implementation_summary.interface_method_symbols
            << ",\"implementation_method_symbols\":"
            << pipeline_result.sema_parity_surface.interface_implementation_summary.implementation_method_symbols
+           << ",\"protocol_method_symbols\":" << protocol_category_summary.protocol_method_symbols
+           << ",\"category_method_symbols\":" << protocol_category_summary.category_method_symbols
            << ",\"linked_implementation_symbols\":"
            << pipeline_result.sema_parity_surface.interface_implementation_summary.linked_implementation_symbols
+           << ",\"linked_category_symbols\":" << protocol_category_summary.linked_category_symbols
            << ",\"objc_interface_implementation_surface\":{\"interface_class_method_symbols\":"
            << interface_class_method_symbols
            << ",\"interface_instance_method_symbols\":"
@@ -345,6 +359,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << implementation_methods_with_body
            << ",\"deterministic_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff ? "true" : "false")
+           << "}"
+           << ",\"objc_protocol_category_surface\":{\"protocol_method_symbols\":"
+           << protocol_category_summary.protocol_method_symbols
+           << ",\"category_method_symbols\":"
+           << protocol_category_summary.category_method_symbols
+           << ",\"linked_category_symbols\":"
+           << protocol_category_summary.linked_category_symbols
+           << ",\"deterministic_handoff\":"
+           << (protocol_category_summary.deterministic_protocol_category_handoff ? "true" : "false")
            << "}"
            << ",\"function_signature_surface\":{\"scalar_return_i32\":" << scalar_return_i32
            << ",\"scalar_return_bool\":" << scalar_return_bool
@@ -428,6 +451,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     }
     manifest << "\n";
   }
+  manifest << "  ],\n";
+  manifest << "  \"protocols\": [\n";
+  manifest << "  ],\n";
+  manifest << "  \"categories\": [\n";
   manifest << "  ]\n";
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
@@ -446,9 +473,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.interface_method_symbols = interface_implementation_summary.interface_method_symbols;
   ir_frontend_metadata.implementation_method_symbols = interface_implementation_summary.implementation_method_symbols;
   ir_frontend_metadata.linked_implementation_symbols = interface_implementation_summary.linked_implementation_symbols;
+  ir_frontend_metadata.declared_protocols = protocol_category_summary.declared_protocols;
+  ir_frontend_metadata.declared_categories = protocol_category_summary.declared_categories;
+  ir_frontend_metadata.resolved_protocol_symbols = protocol_category_summary.resolved_protocol_symbols;
+  ir_frontend_metadata.resolved_category_symbols = protocol_category_summary.resolved_category_symbols;
+  ir_frontend_metadata.protocol_method_symbols = protocol_category_summary.protocol_method_symbols;
+  ir_frontend_metadata.category_method_symbols = protocol_category_summary.category_method_symbols;
+  ir_frontend_metadata.linked_category_symbols = protocol_category_summary.linked_category_symbols;
   ir_frontend_metadata.deterministic_interface_implementation_handoff =
       pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff &&
       interface_implementation_summary.deterministic;
+  ir_frontend_metadata.deterministic_protocol_category_handoff =
+      protocol_category_summary.deterministic_protocol_category_handoff;
 
   std::string ir_error;
   if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
