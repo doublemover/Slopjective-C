@@ -115,6 +115,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain integration anchors.
 
+## M219 integration cross-platform parity matrix
+
+- Gate intent: enforce deterministic cross-platform parity replay across Windows, Linux, and macOS.
+### 1.1 Cross-platform integration chain
+- Deterministic parity gate:
+  - `npm run check:objc3c:m219-cross-platform-parity`
+- Chain order:
+  - replays `check:objc3c:m220-public-beta-triage`.
+  - enforces all M219 lane contracts:
+    `tests/tooling/test_objc3c_m219_frontend_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_sema_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_lowering_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_validation_cross_platform_contract.py`,
+    `tests/tooling/test_objc3c_m219_integration_cross_platform_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through parity runs:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain parity anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

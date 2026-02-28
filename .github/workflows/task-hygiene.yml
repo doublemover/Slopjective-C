@@ -85,6 +85,8 @@ jobs:
         run: npm run check:objc3c:m221-ga-blocker-burndown
       - name: 17 Run M220 public-beta triage integration gate
         run: npm run check:objc3c:m220-public-beta-triage
+      - name: 18 Run M219 cross-platform parity integration gate
+        run: npm run check:objc3c:m219-cross-platform-parity
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
