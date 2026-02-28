@@ -2397,7 +2397,9 @@ python -m pytest tests/tooling/test_objc3c_m179_validation_incremental_module_ca
 Deterministic M180 integration sequence:
 
 ```bash
+python -m pytest tests/tooling/test_objc3c_m180_frontend_cross_module_conformance_parser_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m180_lowering_cross_module_conformance_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m180_validation_cross_module_conformance_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m180_conformance_cross_module_conformance_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m180_integration_cross_module_conformance_contract.py -q
@@ -2416,8 +2418,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M180-A001 and M180-C001 surfaces are not yet landed in this workspace.
-- This runbook enforces the landed M180-B001/M180-D001 surfaces plus M180-E001 integration wiring.
+- M180-A001 through M180-D001 surfaces are landed in this workspace.
+- This runbook enforces parser/sema/lowering/validation/conformance surfaces plus M180-E001 integration wiring.
 
 ## M180 validation/conformance/perf cross-module conformance runbook (M180-D001)
 
