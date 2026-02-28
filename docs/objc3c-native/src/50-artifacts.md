@@ -82,6 +82,28 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tm
 3. Run contract guard:
   - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
 
+## M225 lowering/runtime roadmap seeding profile
+
+Post-1.0 backlog seeding for lowering/runtime 1.1/1.2 should record deterministic artifact evidence plus source-anchored ABI/IR signals:
+
+- `1.1 artifact evidence capture`:
+  - `tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding/module.manifest.json`
+  - extract and persist:
+    - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+    - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+    - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+    - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `1.2 ABI/IR signal extraction`:
+  - replay-key source marker: `Objc3LoweringIRBoundaryReplayKey(...)`
+  - IR ABI declaration marker: `declare i32 @` + `runtime_dispatch_symbol`
+  - lowering normalization marker: `invalid lowering contract runtime_dispatch_symbol`
+
+Roadmap-seeding commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding --emit-prefix module`
+2. `python -m pytest tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py -q`
+
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
 
 Current recovery fixtures are partitioned as:
