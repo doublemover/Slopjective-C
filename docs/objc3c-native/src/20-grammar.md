@@ -165,3 +165,18 @@ GA blocker closure for frontend/parser requires deterministic parser/AST boundar
   3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
 
+## M220 frontend public-beta triage packet
+
+Public-beta triage for frontend/parser uses deterministic intake signals and patch-loop replay evidence.
+
+- Required beta triage signals:
+  - pragma-prelude diagnostics remain stable for `O3L005`/`O3L006`/`O3L007`/`O3L008`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - manifest packet `frontend.language_version_pragma_contract` stays present and deterministic.
+  - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
+- Required triage commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m220_frontend_public_beta_contract.py -q`
+
