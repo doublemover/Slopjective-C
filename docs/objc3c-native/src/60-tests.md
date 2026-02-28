@@ -2320,6 +2320,42 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m177_validation_namespace_collision_shadowing_contract.py -q
 ```
 
+## M178 validation/conformance/perf public/private API partition runbook
+
+Deterministic M178 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m178_frontend_public_private_api_partition_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m178_validation_public_private_api_partition_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_public_private_api_partition_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_public_private_api_partition_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_public_private_api_partition_lowering_surface.deterministic_handoff`
+  - `lowering_public_private_api_partition.replay_key`
+- `replay_run_1/module.ll`
+  - `public_private_api_partition_lowering`
+  - `frontend_objc_public_private_api_partition_lowering_profile`
+  - `!objc3.objc_public_private_api_partition_lowering = !{!31}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Current gap: dedicated M178-C IR emitter markers are not yet source-emitted; fixture IR markers above are deterministic replay anchors for validation/conformance contract coverage.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

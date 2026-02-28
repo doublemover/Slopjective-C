@@ -42,6 +42,9 @@ Minimum scope:
 - `M177-D001.json`: M177 Lane D namespace collision/shadowing lowering replay
   fixture covering deterministic replay-key/profile/metadata parity anchors and
   integration coverage for issue `#4477`.
+- `M178-D001.json`: M178 Lane D public/private API partition lowering replay
+  fixture covering deterministic replay-key/profile/metadata parity anchors and
+  integration coverage for issue `#4482`.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

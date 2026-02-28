@@ -1,0 +1,24 @@
+{
+  "id": "M178-D001",
+  "title": "Public/private API partition lowering replay contract fixture (issue #4482 / task M178-D001)",
+  "feature": "m178 lane-d public/private api partition lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M178",
+    "milestone_number": 263,
+    "lane": "D",
+    "issue": 4482,
+    "task": "M178-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native.md",
+    "tests/tooling/test_objc3c_m178_validation_public_private_api_partition_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: public_private_api_partition_lowering\n// EXPECT: deterministic_public_private_api_partition_lowering_handoff=true\n\nmodule m178_lane_d_public_private_api_partition;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

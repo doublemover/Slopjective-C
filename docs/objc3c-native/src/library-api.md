@@ -801,7 +801,7 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m178_integration_public_private_api_partition_contract.py`
 - Assumptions:
   - M178-C001 and M178-D001 outputs are not yet landed in this workspace.
-  - The integration gate fail-closes on M178-A001 plus M178-B001 surfaces and this M178-E001 wiring contract until M178-C/D contracts land.
+  - The integration gate fail-closes on M178-A001 plus M178-B001 surfaces and this M178-E001 wiring contract, while remaining forward-compatible for future M178-C001/M178-D001 additions.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

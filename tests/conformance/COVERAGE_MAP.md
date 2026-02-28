@@ -33,6 +33,7 @@ CI enforcement:
 | `M08-D001..008` | `#1557..#1564` M08 lane D diagnostic mapping | `diagnostics` |
 | `M145-D001` | `#4317` direct LLVM object-emission fail-closed matrix | `lowering_abi` |
 | `M177-D001` | `#4477` namespace collision/shadowing lowering replay contract | `lowering_abi` |
+| `M178-D001` | `#4482` public/private API partition lowering replay contract | `lowering_abi` |
 | `SCM-01..06` | `#52/#44` strictness/sub-mode matrix | `diagnostics` |
 | `EXE-01..05` | `#83` executor affinity | `semantic`, `lowering_abi`, `module_roundtrip` |
 | `CAN-01..07` | `#82` cancellation propagation | `semantic`, `lowering_abi` |

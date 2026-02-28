@@ -23,6 +23,7 @@ def test_m178_integration_public_private_api_partition_is_documented() -> None:
         "tests/tooling/test_objc3c_m178_sema_public_private_api_partition_contract.py",
         "tests/tooling/test_objc3c_m178_integration_public_private_api_partition_contract.py",
         "M178-C001 and M178-D001 outputs are not yet landed in this workspace.",
+        "while remaining forward-compatible for future M178-C001/M178-D001 additions.",
     ):
         assert text in library_api_doc
 
