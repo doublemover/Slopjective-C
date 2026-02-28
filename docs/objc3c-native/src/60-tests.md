@@ -2145,6 +2145,41 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m172_validation_nullability_flow_warning_precision_contract.py -q
 ```
 
+## M173 validation/conformance/perf protocol-qualified object type runbook
+
+Deterministic M173 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m173_frontend_protocol_qualified_object_type_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m173_sema_protocol_qualified_object_type_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m173_lowering_protocol_qualified_object_type_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m173_validation_protocol_qualified_object_type_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m173_validation_protocol_qualified_object_type_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_protocol_qualified_object_type_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_protocol_qualified_object_type_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_protocol_qualified_object_type_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_protocol_qualified_object_type_lowering_surface.deterministic_handoff`
+  - `lowering_protocol_qualified_object_type.replay_key`
+- `replay_run_1/module.ll`
+  - `protocol_qualified_object_type_lowering`
+  - `frontend_objc_protocol_qualified_object_type_lowering_profile`
+  - `!objc3.objc_protocol_qualified_object_type_lowering = !{!26}`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m173_validation_protocol_qualified_object_type_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`

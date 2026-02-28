@@ -1,0 +1,35 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_protocol_qualified_object_type_lowering_handoff": true,
+        "protocol_qualified_object_type_lowering_sites": 3,
+        "protocol_qualified_object_type_lowering_protocol_composition_sites": 3,
+        "protocol_qualified_object_type_lowering_object_pointer_type_sites": 3,
+        "protocol_qualified_object_type_lowering_terminated_protocol_composition_sites": 3,
+        "protocol_qualified_object_type_lowering_pointer_declarator_sites": 3,
+        "protocol_qualified_object_type_lowering_normalized_protocol_composition_sites": 3,
+        "protocol_qualified_object_type_lowering_contract_violation_sites": 0,
+        "lowering_protocol_qualified_object_type_replay_key": "protocol_qualified_object_type_sites=3;protocol_composition_sites=3;object_pointer_type_sites=3;terminated_protocol_composition_sites=3;pointer_declarator_sites=3;normalized_protocol_composition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m173-protocol-qualified-object-type-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_protocol_qualified_object_type_lowering_surface": {
+          "protocol_qualified_object_type_sites": 3,
+          "protocol_composition_sites": 3,
+          "object_pointer_type_sites": 3,
+          "terminated_protocol_composition_sites": 3,
+          "pointer_declarator_sites": 3,
+          "normalized_protocol_composition_sites": 3,
+          "contract_violation_sites": 0,
+          "replay_key": "protocol_qualified_object_type_sites=3;protocol_composition_sites=3;object_pointer_type_sites=3;terminated_protocol_composition_sites=3;pointer_declarator_sites=3;normalized_protocol_composition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m173-protocol-qualified-object-type-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_protocol_qualified_object_type": {
+    "replay_key": "protocol_qualified_object_type_sites=3;protocol_composition_sites=3;object_pointer_type_sites=3;terminated_protocol_composition_sites=3;pointer_declarator_sites=3;normalized_protocol_composition_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m173-protocol-qualified-object-type-lowering-v1",
+    "lane_contract": "m173-protocol-qualified-object-type-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
