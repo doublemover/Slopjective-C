@@ -415,6 +415,20 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m152_lowering_class_protocol_category_linking_contract.py`
   - `tests/tooling/test_objc3c_m152_validation_class_protocol_category_linking_contract.py`
   - `tests/tooling/test_objc3c_m152_integration_class_protocol_category_linking_contract.py`
+
+## M153 integration method lookup override conflict contract
+
+- Integration gate:
+  - `npm run check:objc3c:m153-method-lookup-override-conflicts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m153`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m153_frontend_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_sema_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_lowering_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_validation_method_lookup_override_conflict_contract.py`
+  - `tests/tooling/test_objc3c_m153_integration_method_lookup_override_conflict_contract.py`
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`

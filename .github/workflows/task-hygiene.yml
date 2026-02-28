@@ -44,6 +44,8 @@ jobs:
         run: npm run check:compiler-closeout:m140
       - name: 00g Enforce M141 CMake target topology packet/docs contract (fail-closed gate)
         run: npm run check:compiler-closeout:m141
+      - name: 00h Enforce M153 method-lookup/override-conflict packet/docs contract (fail-closed gate)
+        run: npm run check:compiler-closeout:m153
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
@@ -153,6 +155,8 @@ jobs:
         run: npm run check:objc3c:m151-symbol-graph-scope-resolution
       - name: 44g Run M152 class-protocol-category semantic-linking gate
         run: npm run check:objc3c:m152-class-protocol-category-linking
+      - name: 44h Run M153 method-lookup/override-conflict integration gate
+        run: npm run check:objc3c:m153-method-lookup-override-conflicts
       - name: 45 Run M142 CLI and C API parity gate
         run: npm run check:objc3c:m142-cli-c-api-parity
 
