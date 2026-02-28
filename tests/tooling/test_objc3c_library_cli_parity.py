@@ -242,6 +242,43 @@ def test_parity_source_mode_requires_binaries(tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "work_key",
+    [
+        "",
+        "../escape",
+        "bad/key",
+    ],
+)
+def test_parity_source_mode_rejects_invalid_work_key(
+    tmp_path: Path,
+    work_key: str,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="--work-key"):
+        parity.run(
+            [
+                "--source",
+                str(source),
+                "--cli-bin",
+                str(cli_bin),
+                "--c-api-bin",
+                str(c_api_bin),
+                "--work-key",
+                work_key,
+                "--allow-non-tmp-work-dir",
+                "--work-dir",
+                str(tmp_path / "work"),
+            ]
+        )
+
+
 def test_parity_source_mode_rejects_non_tmp_work_dir_by_default(
     tmp_path: Path,
 ) -> None:
@@ -303,6 +340,111 @@ def test_parity_source_mode_can_allow_non_tmp_work_dir_when_opted_in(
         ]
     )
     assert exit_code == 0
+
+
+def test_parity_source_mode_work_key_changes_with_backend_and_runtime_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    def _fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        out_dir = Path(command[command.index("--out-dir") + 1])
+        emit_prefix = command[command.index("--emit-prefix") + 1]
+        _write_source_mode_artifacts(out_dir, emit_prefix=emit_prefix, marker="key-variant")
+        return subprocess.CompletedProcess(command, 0, stdout="ok\n", stderr="")
+
+    monkeypatch.setattr(parity.subprocess, "run", _fake_run)
+
+    summary_a = tmp_path / "summary_a.json"
+    exit_code_a = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--allow-non-tmp-work-dir",
+            "--work-dir",
+            str(tmp_path / "work"),
+            "--summary-out",
+            str(summary_a),
+            "--objc3-runtime-dispatch-symbol",
+            "objc3_msgsend_i32",
+            "--cli-ir-object-backend",
+            "clang",
+        ]
+    )
+    assert exit_code_a == 0
+
+    summary_b = tmp_path / "summary_b.json"
+    exit_code_b = parity.run(
+        [
+            "--source",
+            str(source),
+            "--cli-bin",
+            str(cli_bin),
+            "--c-api-bin",
+            str(c_api_bin),
+            "--allow-non-tmp-work-dir",
+            "--work-dir",
+            str(tmp_path / "work"),
+            "--summary-out",
+            str(summary_b),
+            "--objc3-runtime-dispatch-symbol",
+            "objc3_msgsend_i32_alt",
+            "--cli-ir-object-backend",
+            "llvm-direct",
+        ]
+    )
+    assert exit_code_b == 0
+
+    payload_a = json.loads(summary_a.read_text(encoding="utf-8"))
+    payload_b = json.loads(summary_b.read_text(encoding="utf-8"))
+    key_a = payload_a["execution"]["work_key"]
+    key_b = payload_b["execution"]["work_key"]
+    assert key_a != key_b
+    assert len(key_a) == 16
+    assert len(key_b) == 16
+
+
+def test_parity_source_mode_fails_when_stale_generated_outputs_exist(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "sample.objc3"
+    source.write_text("fn main() -> i32 { return 0; }\n", encoding="utf-8")
+    cli_bin = tmp_path / "objc3c-native.exe"
+    c_api_bin = tmp_path / "objc3c-frontend-c-api-runner.exe"
+    cli_bin.write_text("stub\n", encoding="utf-8")
+    c_api_bin.write_text("stub\n", encoding="utf-8")
+
+    work_dir = tmp_path / "work"
+    stale_dir = work_dir / "stale_key" / "library"
+    stale_dir.mkdir(parents=True, exist_ok=True)
+    _write(stale_dir / "module.ll", "stale\n")
+
+    with pytest.raises(ValueError, match="stale generated artifacts"):
+        parity.run(
+            [
+                "--source",
+                str(source),
+                "--cli-bin",
+                str(cli_bin),
+                "--c-api-bin",
+                str(c_api_bin),
+                "--allow-non-tmp-work-dir",
+                "--work-dir",
+                str(work_dir),
+                "--work-key",
+                "stale_key",
+            ]
+        )
 
 
 def test_parity_fixture_contract_matches_golden_and_is_replay_deterministic(
@@ -439,6 +581,7 @@ def test_parity_reports_missing_cli_artifact_or_proxy(tmp_path: Path) -> None:
         ("diagnostics", "DIMENSION=ARTIFACT format"),
         ("unknown=module.ll", "unsupported dimension"),
         ("ir=", "artifact path must be non-empty"),
+        ("ir=subdir/module.ll", "filename only"),
     ],
 )
 def test_parity_rejects_invalid_dimension_map_entries(
@@ -462,6 +605,27 @@ def test_parity_rejects_invalid_dimension_map_entries(
                 "module.ll",
                 "--dimension-map",
                 dimension_map,
+                "--summary-out",
+                str(tmp_path / "summary.json"),
+            ]
+        )
+
+
+def test_parity_rejects_artifacts_entries_with_path_segments(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    cli_dir = tmp_path / "cli"
+    _write(library_dir / "module.ll", "define i32 @main() { ret i32 0 }\n")
+    _write(cli_dir / "module.ll", "define i32 @main() { ret i32 0 }\n")
+
+    with pytest.raises(ValueError, match="filename only"):
+        parity.run(
+            [
+                "--library-dir",
+                str(library_dir),
+                "--cli-dir",
+                str(cli_dir),
+                "--artifacts",
+                "sub/module.ll",
                 "--summary-out",
                 str(tmp_path / "summary.json"),
             ]

@@ -30,6 +30,8 @@ DEFAULT_DIMENSION_MAP = {
 }
 DIMENSION_ORDER = ("diagnostics", "manifest", "ir", "object")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+ARTIFACT_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+WORK_KEY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 @dataclass(frozen=True)
@@ -219,6 +221,36 @@ def default_dimension_map_for_emit_prefix(*, emit_prefix: str, object_artifact: 
     }
 
 
+def normalize_artifact_name(raw: str, *, context: str) -> str:
+    normalized = raw.strip()
+    if not normalized:
+        raise ValueError(f"{context} must be non-empty")
+    if "/" in normalized or "\\" in normalized:
+        raise ValueError(
+            f"{context} must be a filename only (no path separators): {raw!r}"
+        )
+    if normalized in {".", ".."}:
+        raise ValueError(f"{context} must not be '.' or '..': {raw!r}")
+    if not ARTIFACT_NAME_PATTERN.fullmatch(normalized):
+        raise ValueError(
+            f"{context} contains unsupported characters: {raw!r}; "
+            "expected [A-Za-z0-9._-] with leading alphanumeric"
+        )
+    return normalized
+
+
+def normalize_work_key(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        raise ValueError("--work-key must be non-empty when provided")
+    if not WORK_KEY_PATTERN.fullmatch(value):
+        raise ValueError(
+            "--work-key must match [A-Za-z0-9][A-Za-z0-9._-]{0,63} "
+            "(path separators and traversal are not allowed)"
+        )
+    return value
+
+
 def parse_dimension_map(
     values: Sequence[str],
     *,
@@ -242,12 +274,21 @@ def parse_dimension_map(
             raise ValueError(
                 f"--dimension-map artifact path must be non-empty for {dimension!r}"
             )
-        mapping[dimension] = artifact
+        mapping[dimension] = normalize_artifact_name(
+            artifact,
+            context=f"--dimension-map artifact for {dimension!r}",
+        )
     return mapping
 
 
 def normalize_artifacts(values: Sequence[str]) -> list[str]:
-    normalized = sorted({value.strip() for value in values if value and value.strip()})
+    normalized = sorted(
+        {
+            normalize_artifact_name(value, context="--artifacts entry")
+            for value in values
+            if value and value.strip()
+        }
+    )
     if not normalized:
         raise ValueError("--artifacts must include at least one artifact filename")
     return normalized
@@ -354,6 +395,50 @@ def build_source_mode_artifacts(*, emit_prefix: str) -> list[str]:
     ]
 
 
+def default_source_mode_work_key(args: argparse.Namespace) -> str:
+    fingerprint: dict[str, Any] = {
+        "source": display_path(args.source),
+        "emit_prefix": args.emit_prefix,
+        "cli_bin": display_path(args.cli_bin),
+        "c_api_bin": display_path(args.c_api_bin),
+        "cli_ir_object_backend": args.cli_ir_object_backend,
+        "clang_path": display_path(args.clang_path) if args.clang_path is not None else None,
+        "llc_path": display_path(args.llc_path) if args.llc_path is not None else None,
+        "objc3_max_message_args": args.objc3_max_message_args,
+        "objc3_runtime_dispatch_symbol": args.objc3_runtime_dispatch_symbol,
+    }
+    return sha256_text(canonical_json(fingerprint))[:16]
+
+
+def assert_no_stale_source_mode_outputs(
+    *,
+    directory: Path,
+    emit_prefix: str,
+    label: str,
+) -> None:
+    stale_paths: list[str] = []
+    expected_artifacts = list(build_source_mode_artifacts(emit_prefix=emit_prefix))
+    expected_artifacts.extend(
+        (
+            f"{emit_prefix}.diagnostics.txt",
+            f"{emit_prefix}.c_api_summary.json",
+        )
+    )
+    for artifact_name in expected_artifacts:
+        artifact_path = directory / artifact_name
+        proxy_path = directory / f"{artifact_name}.sha256"
+        if artifact_path.exists():
+            stale_paths.append(display_path(artifact_path))
+        if proxy_path.exists():
+            stale_paths.append(display_path(proxy_path))
+    if stale_paths:
+        stale_display = ", ".join(sorted(set(stale_paths)))
+        raise ValueError(
+            f"{label} contains stale generated artifacts; choose a unique --work-key "
+            f"or clear outputs before replay: {stale_display}"
+        )
+
+
 def prepare_source_mode(
     args: argparse.Namespace,
 ) -> tuple[Path, Path, str, list[CommandResult], list[str]]:
@@ -372,9 +457,9 @@ def prepare_source_mode(
 
     work_key = args.work_key
     if work_key is None:
-        work_key = sha256_text(
-            f"{display_path(args.source)}|{args.emit_prefix}"
-        )[:16]
+        work_key = default_source_mode_work_key(args)
+    else:
+        work_key = normalize_work_key(work_key)
     work_root = work_dir / work_key
 
     library_dir = args.library_dir if args.library_dir is not None else work_root / "library"
@@ -384,6 +469,16 @@ def prepare_source_mode(
         ensure_under_tmp(cli_dir, label="cli-dir")
     library_dir.mkdir(parents=True, exist_ok=True)
     cli_dir.mkdir(parents=True, exist_ok=True)
+    assert_no_stale_source_mode_outputs(
+        directory=library_dir,
+        emit_prefix=args.emit_prefix,
+        label="library-dir",
+    )
+    assert_no_stale_source_mode_outputs(
+        directory=cli_dir,
+        emit_prefix=args.emit_prefix,
+        label="cli-dir",
+    )
 
     cli_command: list[str] = [
         str(args.cli_bin),
