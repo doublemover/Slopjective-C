@@ -2041,3 +2041,28 @@ Interop integration suite + packaging packet map:
 Recommended M200 sema/type interop integration suite and packaging command:
 
 - `python -m pytest tests/tooling/test_objc3c_m200_sema_interop_packaging_contract.py -q`
+
+## M199 sema/type foreign type import diagnostics
+
+For deterministic sema/type foreign-type import diagnostics, capture replay-stable packet evidence from foreign-type spelling architecture predicates, type-metadata handoff continuity, and pass-manager diagnostic isolation.
+
+Foreign type import diagnostics packet map:
+
+- `foreign import packet 1.1 deterministic sema/type foreign-type architecture anchors` -> `m199_sema_type_foreign_import_architecture_packet`
+- `foreign import packet 1.2 deterministic sema foreign-type diagnostic isolation anchors` -> `m199_sema_foreign_import_diagnostic_isolation_packet`
+
+### 1.1 Deterministic sema/type foreign-type architecture packet
+
+- Source foreign-type architecture anchors: `static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {`, `return param.id_spelling || param.class_spelling || param.instancetype_spelling;`, `static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {`, `return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;`, and `HasInvalidParamTypeSuffix(param)`.
+- Source type-metadata handoff anchors: `info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));`, `metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;`, and `metadata.param_has_invalid_type_suffix.size() == metadata.arity;`.
+- Deterministic foreign-type architecture packet key: `m199_sema_type_foreign_import_architecture_packet`.
+
+### 1.2 Deterministic sema foreign-type diagnostic isolation packet
+
+- Source foreign-type diagnostic anchors: `ValidateReturnTypeSuffixes(fn, diagnostics);`, `ValidateParameterTypeSuffixes(fn, diagnostics);`, `"type mismatch: generic parameter type suffix '" + suffix +`, `"type mismatch: pointer parameter type declarator '" + token.text +`, `"type mismatch: nullability parameter type suffix '" + token.text +`, `"type mismatch: unsupported function return type suffix '" + suffix +`, `"type mismatch: unsupported function return type declarator '" + token.text +`, and `"O3S206"`.
+- Source pass-manager diagnostic-isolation anchors: `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, and `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`.
+- Deterministic foreign-type diagnostic-isolation packet key: `m199_sema_foreign_import_diagnostic_isolation_packet`.
+
+Recommended M199 sema/type foreign type import diagnostics command:
+
+- `python -m pytest tests/tooling/test_objc3c_m199_sema_foreign_type_diagnostics_contract.py -q`
