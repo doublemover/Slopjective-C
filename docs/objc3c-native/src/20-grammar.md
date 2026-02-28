@@ -918,6 +918,33 @@ Recommended M171 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_frontend_lightweight_generics_parser_contract.py -q`
 
+## M172 frontend nullability-flow parser/AST surface (M172-A001)
+
+Frontend parser/AST now emits deterministic nullability-flow profiles for
+parameter and return type annotations.
+
+M172 parser/AST surface details:
+
+- nullability-flow anchors:
+  - `BuildNullabilityFlowProfile(...)`
+  - `IsNullabilityFlowProfileNormalized(...)`
+- parser assignment anchors:
+  - `nullability_flow_profile`
+  - `nullability_flow_profile_is_normalized`
+  - `return_nullability_flow_profile`
+  - `return_nullability_flow_profile_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives flow precision from object-pointer spelling and nullability
+  suffix presence.
+- nullability-flow profile normalization is fail-closed when nullability
+  suffixes appear without object-pointer type spellings.
+
+Recommended M172 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_frontend_nullability_flow_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
