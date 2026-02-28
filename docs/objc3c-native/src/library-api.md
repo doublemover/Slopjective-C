@@ -135,6 +135,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain parity anchors.
 
+## M218 integration RC automation and provenance
+
+- Gate intent: enforce deterministic RC automation and provenance attestation chain across all lanes.
+### 1.1 RC integration chain
+- Deterministic RC gate:
+  - `npm run check:objc3c:m218-rc-provenance`
+- Chain order:
+  - replays `check:objc3c:m219-cross-platform-parity`.
+  - enforces all M218 lane contracts:
+    `tests/tooling/test_objc3c_m218_frontend_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_sema_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_lowering_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_validation_rc_provenance_contract.py`,
+    `tests/tooling/test_objc3c_m218_integration_rc_provenance_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through RC automation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain provenance anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.

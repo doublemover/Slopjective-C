@@ -87,6 +87,8 @@ jobs:
         run: npm run check:objc3c:m220-public-beta-triage
       - name: 18 Run M219 cross-platform parity integration gate
         run: npm run check:objc3c:m219-cross-platform-parity
+      - name: 19 Run M218 RC automation and provenance integration gate
+        run: npm run check:objc3c:m218-rc-provenance
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
