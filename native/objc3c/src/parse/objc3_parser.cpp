@@ -193,6 +193,35 @@ static std::string BuildMessageSendSelectorLoweringSymbol(
   return "selector-lowering:" + normalized_selector;
 }
 
+constexpr unsigned kDispatchAbiMarshallingRuntimeArgSlots = 4u;
+
+static unsigned ComputeDispatchAbiArgumentPaddingSlots(std::size_t argument_count,
+                                                       unsigned runtime_arg_slots) {
+  if (runtime_arg_slots == 0u) {
+    return 0u;
+  }
+  const std::size_t remainder = argument_count % runtime_arg_slots;
+  if (remainder == 0u) {
+    return 0u;
+  }
+  return static_cast<unsigned>(runtime_arg_slots - static_cast<unsigned>(remainder));
+}
+
+static std::string BuildDispatchAbiMarshallingSymbol(unsigned receiver_slots,
+                                                     unsigned selector_slots,
+                                                     unsigned argument_value_slots,
+                                                     unsigned argument_padding_slots,
+                                                     unsigned argument_total_slots,
+                                                     unsigned total_slots,
+                                                     unsigned runtime_arg_slots) {
+  std::ostringstream out;
+  out << "dispatch-abi-marshalling:recv=" << receiver_slots << ";sel=" << selector_slots
+      << ";arg-values=" << argument_value_slots << ";arg-padding=" << argument_padding_slots
+      << ";arg-total=" << argument_total_slots << ";total=" << total_slots
+      << ";runtime-slots=" << runtime_arg_slots;
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -2980,6 +3009,23 @@ class Objc3Parser {
     message->message_send_form_symbol = BuildMessageSendFormSymbol(message->message_send_form);
     message->selector_lowering_symbol = BuildMessageSendSelectorLoweringSymbol(message->selector_lowering_pieces);
     message->selector_lowering_is_normalized = true;
+    message->dispatch_abi_receiver_slots_marshaled = 1u;
+    message->dispatch_abi_selector_slots_marshaled = 1u;
+    message->dispatch_abi_argument_value_slots_marshaled = static_cast<unsigned>(message->args.size());
+    message->dispatch_abi_runtime_arg_slots = kDispatchAbiMarshallingRuntimeArgSlots;
+    message->dispatch_abi_argument_padding_slots_marshaled = ComputeDispatchAbiArgumentPaddingSlots(
+        message->args.size(), message->dispatch_abi_runtime_arg_slots);
+    message->dispatch_abi_argument_total_slots_marshaled = message->dispatch_abi_argument_value_slots_marshaled +
+                                                           message->dispatch_abi_argument_padding_slots_marshaled;
+    message->dispatch_abi_total_slots_marshaled = message->dispatch_abi_receiver_slots_marshaled +
+                                                  message->dispatch_abi_selector_slots_marshaled +
+                                                  message->dispatch_abi_argument_total_slots_marshaled;
+    message->dispatch_abi_marshalling_symbol = BuildDispatchAbiMarshallingSymbol(
+        message->dispatch_abi_receiver_slots_marshaled, message->dispatch_abi_selector_slots_marshaled,
+        message->dispatch_abi_argument_value_slots_marshaled, message->dispatch_abi_argument_padding_slots_marshaled,
+        message->dispatch_abi_argument_total_slots_marshaled, message->dispatch_abi_total_slots_marshaled,
+        message->dispatch_abi_runtime_arg_slots);
+    message->dispatch_abi_marshalling_is_normalized = true;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();

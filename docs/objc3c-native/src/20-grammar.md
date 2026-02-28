@@ -404,6 +404,44 @@ Recommended M156 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_frontend_message_send_selector_lowering_contract.py -q`
 
+## M157 frontend dispatch ABI marshalling parser/AST surface
+
+Frontend parser/AST now emits deterministic dispatch ABI marshalling packets for bracketed message-send expressions.
+
+M157 parser/AST surface details:
+
+- dispatch-ABI helper anchors:
+  - `ComputeDispatchAbiArgumentPaddingSlots(...)`
+  - `BuildDispatchAbiMarshallingSymbol(...)`
+- parser assignment anchors:
+  - `message->dispatch_abi_receiver_slots_marshaled = 1u;`
+  - `message->dispatch_abi_selector_slots_marshaled = 1u;`
+  - `message->dispatch_abi_argument_value_slots_marshaled = static_cast<unsigned>(message->args.size());`
+  - `message->dispatch_abi_runtime_arg_slots = kDispatchAbiMarshallingRuntimeArgSlots;`
+  - `message->dispatch_abi_argument_padding_slots_marshaled = ComputeDispatchAbiArgumentPaddingSlots(...)`
+  - `message->dispatch_abi_total_slots_marshaled = ...`
+  - `message->dispatch_abi_marshalling_symbol = BuildDispatchAbiMarshallingSymbol(...)`
+  - `message->dispatch_abi_marshalling_is_normalized = true;`
+- AST dispatch-ABI carriers:
+  - `dispatch_abi_receiver_slots_marshaled`
+  - `dispatch_abi_selector_slots_marshaled`
+  - `dispatch_abi_argument_value_slots_marshaled`
+  - `dispatch_abi_argument_padding_slots_marshaled`
+  - `dispatch_abi_argument_total_slots_marshaled`
+  - `dispatch_abi_total_slots_marshaled`
+  - `dispatch_abi_runtime_arg_slots`
+  - `dispatch_abi_marshalling_symbol`
+  - `dispatch_abi_marshalling_is_normalized`
+
+Deterministic grammar intent:
+
+- marshalling slot packets are derived directly from parsed receiver/selector/argument shape.
+- argument padding and total slots are normalized against a stable frontend runtime slot budget.
+
+Recommended M157 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

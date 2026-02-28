@@ -36,6 +36,15 @@ struct Expr {
   std::vector<MessageSendSelectorPiece> selector_lowering_pieces;
   std::string selector_lowering_symbol;
   bool selector_lowering_is_normalized = false;
+  unsigned dispatch_abi_receiver_slots_marshaled = 0;
+  unsigned dispatch_abi_selector_slots_marshaled = 0;
+  unsigned dispatch_abi_argument_value_slots_marshaled = 0;
+  unsigned dispatch_abi_argument_padding_slots_marshaled = 0;
+  unsigned dispatch_abi_argument_total_slots_marshaled = 0;
+  unsigned dispatch_abi_total_slots_marshaled = 0;
+  unsigned dispatch_abi_runtime_arg_slots = 0;
+  std::string dispatch_abi_marshalling_symbol;
+  bool dispatch_abi_marshalling_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;
