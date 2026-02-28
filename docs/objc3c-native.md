@@ -469,6 +469,22 @@ Frontend canonical optimization stage-1 relies on deterministic parser/module su
   3. `python -m pytest tests/tooling/test_objc3c_m207_frontend_dispatch_optimizations_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
 
+## M205 frontend macro security policy enforcement
+
+Frontend macro-security policy enforcement relies on deterministic prelude-directive parsing and fail-closed diagnostics for malformed, unsupported, duplicate, or non-leading directives.
+
+- Required frontend macro-security signals:
+  - prelude directive ingest remains `ConsumeLanguageVersionPragmas(diagnostics)`.
+  - directive parser entry remains `ConsumeLanguageVersionPragmaDirective(...)`.
+  - directive placement enforcement remains `LanguageVersionPragmaPlacement::kNonLeading`.
+  - fail-closed diagnostics remain `O3L005`, `O3L006`, `O3L007`, and `O3L008`.
+  - manifest policy packet remains `frontend.language_version_pragma_contract` with `directive_count`, `duplicate`, and `non_leading`.
+- Required frontend macro-security commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m206_frontend_canonical_optimization_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2347,6 +2363,34 @@ Recommended M206 sema/type canonical optimization stage-1 validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m206_sema_canonical_optimization_contract.py -q`
 
+## M205 sema/type macro security policy enforcement
+
+For deterministic sema/type macro-security policy enforcement, capture replay-stable packet evidence from migration-hint transport, canonical-only enforcement gating, fail-closed diagnostics, and manifest replay surfaces.
+
+Macro security policy packet map:
+
+- `macro policy packet 1.1 deterministic migration-hint transport hooks` -> `m205_macro_policy_migration_transport_packet`
+- `macro policy packet 1.2 deterministic canonical macro-policy/type-surface hooks` -> `m205_macro_policy_canonical_type_surface_packet`
+
+### 1.1 Deterministic migration-hint transport packet
+
+- Source macro-hint capture anchors: `if (options_.migration_assist) {`, `++migration_hints_.legacy_yes_count;`, `++migration_hints_.legacy_no_count;`, and `++migration_hints_.legacy_null_count;`.
+- Pipeline macro-hint transport anchors: `result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;`, `result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;`, `result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;`, `sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;`, and `sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;`.
+- Source sema-input contract anchors: `bool migration_assist = false;`, `Objc3SemaMigrationHints migration_hints;`, and `if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {`.
+- Deterministic migration-hint transport packet key: `m205_macro_policy_migration_transport_packet`.
+
+### 1.2 Deterministic canonical macro-policy/type-surface packet
+
+- Source canonical macro-policy anchors: `AppendMigrationAssistDiagnostics(input, pass_diagnostics);`, `append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");`, `append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");`, `append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");`, `"O3S216"`, and `CanonicalizePassDiagnostics(pass_diagnostics);`.
+- Source deterministic type-surface anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Manifest macro-policy anchors under `frontend`: `migration_assist`, `migration_hints`, `legacy_yes`, `legacy_no`, `legacy_null`, and `legacy_total`.
+- Manifest sema/type readiness anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, and `parity_ready`.
+- Deterministic canonical macro-policy/type-surface packet key: `m205_macro_policy_canonical_type_surface_packet`.
+
+Recommended M205 sema/type macro-security validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m205_sema_macro_security_contract.py -q`
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -2753,6 +2797,70 @@ Canonical optimization stage-1 capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.ll tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.manifest.json > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/abi-ir-anchors.txt`
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
+
+## M205 lowering/runtime macro security policy enforcement
+
+Lowering/runtime macro-security policy enforcement evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma-policy diagnostics and lowering replay boundaries remain auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/macro-security-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `macro-security markers` (required in source-anchor extracts):
+  - `ConsumeLanguageVersionPragmas(diagnostics)`
+  - `ConsumeLanguageVersionPragmaDirective(...)`
+  - `LanguageVersionPragmaPlacement::kNonLeading`
+  - `O3L005`
+  - `O3L006`
+  - `O3L007`
+  - `O3L008`
+  - `frontend.language_version_pragma_contract`
+  - `directive_count`
+  - `duplicate`
+  - `non_leading`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `ConsumeLanguageVersionPragmas(diagnostics);`
+  - `ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false))`
+  - `if (placement == LanguageVersionPragmaPlacement::kNonLeading) {`
+  - `diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L007", kDuplicatePragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L008", kNonLeadingPragmaMessage));`
+  - `result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;`
+  - `result.language_version_pragma_contract.duplicate = pragma_contract.duplicate;`
+  - `result.language_version_pragma_contract.non_leading = pragma_contract.non_leading;`
+  - `manifest << "    \"language_version_pragma_contract\":{\"seen\":"`
+  - `<< ",\"directive_count\":" << pipeline_result.language_version_pragma_contract.directive_count`
+  - `<< ",\"duplicate\":" << (pipeline_result.language_version_pragma_contract.duplicate ? "true" : "false")`
+  - `<< ",\"non_leading\":"`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and macro-security source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, macro-security marker, or source anchor is missing.
+
+Macro-security capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.ll tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.manifest.json > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/abi-ir-anchors.txt`
+3. `rg -n "ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|LanguageVersionPragmaPlacement::kNonLeading|O3L005|O3L006|O3L007|O3L008|language_version_pragma_contract|directive_count|duplicate|non_leading|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/macro-security-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m205_lowering_macro_security_contract.py -q`
 
 ## M207 lowering/runtime dispatch-specific optimization passes
 
@@ -4896,6 +5004,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m206_validation_canonical_optimization_contract.py -q
 ```
 
+## M205 validation/perf macro security policy runbook
+
+Macro security policy validation runbook verifies deterministic fail-closed directive enforcement evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Macro-security evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m205_validation_macro_security_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -5313,6 +5466,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain canonical-optimization anchors.
+
+## M205 integration macro security policy enforcement
+
+- Gate intent: enforce deterministic macro-security policy evidence across all lanes.
+### 1.1 Macro-security integration chain
+- Deterministic macro-security gate:
+  - `npm run check:objc3c:m205-macro-security`
+- Chain order:
+  - replays `check:objc3c:m206-canonical-optimization-stage1`.
+  - enforces all M205 lane contracts:
+    `tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_sema_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_lowering_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_validation_macro_security_contract.py`,
+    `tests/tooling/test_objc3c_m205_integration_macro_security_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through macro-security validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain macro-security anchors.
 
 ## Current call contract
 
