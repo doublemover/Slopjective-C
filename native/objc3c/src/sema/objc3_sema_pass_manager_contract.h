@@ -214,6 +214,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t throws_propagation_normalized_sites_total = 0;
   std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
   std::size_t throws_propagation_contract_violation_sites_total = 0;
+  std::size_t ns_error_bridging_sites_total = 0;
+  std::size_t ns_error_bridging_ns_error_parameter_sites_total = 0;
+  std::size_t ns_error_bridging_ns_error_out_parameter_sites_total = 0;
+  std::size_t ns_error_bridging_ns_error_bridge_path_sites_total = 0;
+  std::size_t ns_error_bridging_failable_call_sites_total = 0;
+  std::size_t ns_error_bridging_normalized_sites_total = 0;
+  std::size_t ns_error_bridging_bridge_boundary_sites_total = 0;
+  std::size_t ns_error_bridging_contract_violation_sites_total = 0;
   std::size_t result_like_lowering_sites_total = 0;
   std::size_t result_like_lowering_result_success_sites_total = 0;
   std::size_t result_like_lowering_result_failure_sites_total = 0;
@@ -413,6 +421,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
+  bool deterministic_ns_error_bridging_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
@@ -449,6 +458,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
@@ -886,6 +896,41 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.throws_propagation_summary.throws_propagation_sites &&
          surface.throws_propagation_summary.deterministic &&
          surface.deterministic_throws_propagation_handoff &&
+         surface.ns_error_bridging_summary.ns_error_bridging_sites ==
+             surface.ns_error_bridging_sites_total &&
+         surface.ns_error_bridging_summary.ns_error_parameter_sites ==
+             surface.ns_error_bridging_ns_error_parameter_sites_total &&
+         surface.ns_error_bridging_summary.ns_error_out_parameter_sites ==
+             surface.ns_error_bridging_ns_error_out_parameter_sites_total &&
+         surface.ns_error_bridging_summary.ns_error_bridge_path_sites ==
+             surface.ns_error_bridging_ns_error_bridge_path_sites_total &&
+         surface.ns_error_bridging_summary.failable_call_sites ==
+             surface.ns_error_bridging_failable_call_sites_total &&
+         surface.ns_error_bridging_summary.normalized_sites ==
+             surface.ns_error_bridging_normalized_sites_total &&
+         surface.ns_error_bridging_summary.bridge_boundary_sites ==
+             surface.ns_error_bridging_bridge_boundary_sites_total &&
+         surface.ns_error_bridging_summary.contract_violation_sites ==
+             surface.ns_error_bridging_contract_violation_sites_total &&
+         surface.ns_error_bridging_summary.ns_error_parameter_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.ns_error_out_parameter_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.ns_error_bridge_path_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.failable_call_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.normalized_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.bridge_boundary_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.normalized_sites +
+                 surface.ns_error_bridging_summary.bridge_boundary_sites ==
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.contract_violation_sites <=
+             surface.ns_error_bridging_summary.ns_error_bridging_sites &&
+         surface.ns_error_bridging_summary.deterministic &&
+         surface.deterministic_ns_error_bridging_handoff &&
          surface.result_like_lowering_summary.result_like_sites ==
              surface.result_like_lowering_sites_total &&
          surface.result_like_lowering_summary.result_success_sites ==
@@ -1583,6 +1628,8 @@ struct Objc3SemaPassManagerResult {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_throws_propagation_handoff = false;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_ns_error_bridging_handoff = false;
+  Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   bool deterministic_result_like_lowering_handoff = false;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;

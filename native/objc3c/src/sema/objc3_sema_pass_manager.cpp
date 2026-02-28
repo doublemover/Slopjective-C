@@ -3411,6 +3411,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.ns_error_bridging_summary.deterministic &&
+      result.parity_surface.deterministic_ns_error_bridging_handoff &&
       result.parity_surface.result_like_lowering_summary.deterministic &&
       result.parity_surface.deterministic_result_like_lowering_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&

@@ -3716,3 +3716,39 @@ Deterministic sema intent:
 Recommended M182 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q`
+
+<a id="m183-sema-type-ns-error-bridging-contract-m183-b001"></a>
+## M183 sema/type NSError bridging contract (M183-B001)
+
+M183-B defines deterministic sema summaries for Objective-C `NSError` bridging
+handoff safety over parser-authored bridging profiles.
+
+M183 sema/type surface details:
+
+- `Objc3NSErrorBridgingSummary`
+- `BuildNSErrorBridgingSummaryFromIntegrationSurface`
+- `BuildNSErrorBridgingSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `ns_error_bridging_sites_total`
+  - `ns_error_bridging_ns_error_parameter_sites_total`
+  - `ns_error_bridging_ns_error_out_parameter_sites_total`
+  - `ns_error_bridging_ns_error_bridge_path_sites_total`
+  - `ns_error_bridging_failable_call_sites_total`
+  - `ns_error_bridging_normalized_sites_total`
+  - `ns_error_bridging_bridge_boundary_sites_total`
+  - `ns_error_bridging_contract_violation_sites_total`
+  - `deterministic_ns_error_bridging_handoff`
+
+Deterministic sema intent:
+
+- NSError-bridging summaries are aggregated from parser-emitted function and
+  method profiles and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and bridge-boundary counters remain partitioned:
+  `ns_error_bridging_normalized_sites_total + ns_error_bridging_bridge_boundary_sites_total == ns_error_bridging_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M183 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
