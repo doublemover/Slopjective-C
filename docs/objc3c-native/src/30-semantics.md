@@ -1276,6 +1276,27 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m141_cmake_target_topology_contract.py`
   - `npm run check:compiler-closeout:m141`
 
+## Frontend lowering parity harness contract (M142-E001)
+
+- Deterministic parity harness entrypoint:
+  - `scripts/check_objc3c_library_cli_parity.py`
+  - Source mode executes both CLI (`--cli-bin`) and C API runner (`--c-api-bin`) from one `.objc3` input.
+- C API runner surface:
+  - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
+  - `objc3c-frontend-c-api-runner` forwards `--objc3-max-message-args` and `--objc3-runtime-dispatch-symbol` into C API compile options.
+- Parity artifact dimensions compare:
+  - `<emit-prefix>.diagnostics.json`
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.obj`
+- Object backend parity note:
+  - CLI default object backend remains `llvm-direct`.
+  - Harness parity flow pins CLI to `--cli-ir-object-backend clang` so CLI and C API object outputs share backend semantics.
+  - CLI-only backend provenance sidecar `<emit-prefix>.object-backend.txt` is informational and intentionally excluded from parity digest dimensions.
+- Contract validation commands:
+  - `python scripts/check_m142_frontend_lowering_parity_contract.py`
+  - `npm run check:compiler-closeout:m142`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:

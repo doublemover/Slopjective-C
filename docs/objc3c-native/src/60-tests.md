@@ -28,6 +28,9 @@ npm run test:objc3c:m140-boundary-contract
 npm run check:compiler-closeout:m140
 npm run test:objc3c:m141-target-topology
 npm run check:compiler-closeout:m141
+npm run test:objc3c:m142-lowering-parity
+npm run check:objc3c:library-cli-parity:source
+npm run check:compiler-closeout:m142
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -100,6 +103,17 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m141_cmake_target_topology_contract.py`.
   - Runs `npm run test:objc3c:m141-target-topology`.
   - Enforces fail-closed M141 CMake targetization/linkage-topology contract wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m142-lowering-parity`
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`.
+  - Verifies source-mode CLI/C API parity harness execution surfaces, C API runner contract snippets, and M142 docs/package wiring.
+- `npm run check:objc3c:library-cli-parity:source`
+  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --cli-ir-object-backend clang`.
+  - Executes CLI and C API runner on one source input and compares deterministic diagnostics/manifest/IR/object digest surfaces.
+  - Writes replay artifacts under `tmp/artifacts/objc3c-native/m142/library-cli-parity/`.
+- `npm run check:compiler-closeout:m142`
+  - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
+  - Runs `npm run test:objc3c:m142-lowering-parity`.
+  - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -180,6 +194,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_e
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1
 python scripts/check_m137_lexer_contract.py
 python scripts/check_m139_sema_pass_manager_contract.py
+python scripts/check_m142_frontend_lowering_parity_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

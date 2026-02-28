@@ -10,14 +10,27 @@ This document captures the currently implemented behavior for the native `objc3c
 ## CLI usage
 
 ```text
-objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
+objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
 - Default `--out-dir`: `artifacts/compilation/objc3c-native`
 - Default `--emit-prefix`: `module`
 - Default `--clang`: `clang` (or explicit path)
+- Default `--llc`: `llc` (or explicit path)
+- Default `--objc3-ir-object-backend`: `llvm-direct`
 - Default `--objc3-max-message-args`: `4`
 - Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
+
+## C API parity runner usage (M142-E001)
+
+```text
+objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
+```
+
+- Binary path produced by native build scripts: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
+- Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
+- For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
 
 ## Driver shell split boundaries (M136-E001)
 
@@ -1410,6 +1423,27 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
   - `python scripts/check_m141_cmake_target_topology_contract.py`
   - `npm run check:compiler-closeout:m141`
 
+## Frontend lowering parity harness contract (M142-E001)
+
+- Deterministic parity harness entrypoint:
+  - `scripts/check_objc3c_library_cli_parity.py`
+  - Source mode executes both CLI (`--cli-bin`) and C API runner (`--c-api-bin`) from one `.objc3` input.
+- C API runner surface:
+  - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
+  - `objc3c-frontend-c-api-runner` forwards `--objc3-max-message-args` and `--objc3-runtime-dispatch-symbol` into C API compile options.
+- Parity artifact dimensions compare:
+  - `<emit-prefix>.diagnostics.json`
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.obj`
+- Object backend parity note:
+  - CLI default object backend remains `llvm-direct`.
+  - Harness parity flow pins CLI to `--cli-ir-object-backend clang` so CLI and C API object outputs share backend semantics.
+  - CLI-only backend provenance sidecar `<emit-prefix>.object-backend.txt` is informational and intentionally excluded from parity digest dimensions.
+- Contract validation commands:
+  - `python scripts/check_m142_frontend_lowering_parity_contract.py`
+  - `npm run check:compiler-closeout:m142`
+
 ## M25 Message-Send Contract Matrix
 
 - Frontend grammar contract:
@@ -1868,6 +1902,39 @@ npm run check:compiler-closeout:m141
 - `python scripts/check_m141_cmake_target_topology_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_cmake_target_topology.py tests/tooling/test_objc3c_process_io_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
 
+## Frontend lowering parity harness artifacts (M142-E001)
+
+Parity harness replay commands:
+
+```powershell
+npm run check:objc3c:library-cli-parity:source
+npm run check:compiler-closeout:m142
+```
+
+`npm run check:objc3c:library-cli-parity:source` writes deterministic parity outputs under:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/library/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/cli/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
+
+Expected compared artifacts per side (`emit_prefix=module` default):
+
+- `module.diagnostics.json`
+- `module.manifest.json`
+- `module.ll`
+- `module.obj`
+
+Object backend note for harness replay:
+
+- CLI emits backend provenance sidecar `module.object-backend.txt` (`clang` or `llvm-direct`).
+- M142 parity dimensions exclude `module.object-backend.txt`; it is a provenance note, not a compared artifact payload.
+- Source-mode parity command pins `--cli-ir-object-backend clang` so CLI and C API object outputs are backend-aligned.
+
+`npm run check:compiler-closeout:m142` fail-closes on parity harness source/docs/package drift via:
+
+- `python scripts/check_m142_frontend_lowering_parity_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -1912,6 +1979,9 @@ npm run test:objc3c:m140-boundary-contract
 npm run check:compiler-closeout:m140
 npm run test:objc3c:m141-target-topology
 npm run check:compiler-closeout:m141
+npm run test:objc3c:m142-lowering-parity
+npm run check:objc3c:library-cli-parity:source
+npm run check:compiler-closeout:m142
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -1984,6 +2054,17 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python scripts/check_m141_cmake_target_topology_contract.py`.
   - Runs `npm run test:objc3c:m141-target-topology`.
   - Enforces fail-closed M141 CMake targetization/linkage-topology contract wiring across source/docs/package/workflow surfaces.
+- `npm run test:objc3c:m142-lowering-parity`
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`.
+  - Verifies source-mode CLI/C API parity harness execution surfaces, C API runner contract snippets, and M142 docs/package wiring.
+- `npm run check:objc3c:library-cli-parity:source`
+  - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --cli-ir-object-backend clang`.
+  - Executes CLI and C API runner on one source input and compares deterministic diagnostics/manifest/IR/object digest surfaces.
+  - Writes replay artifacts under `tmp/artifacts/objc3c-native/m142/library-cli-parity/`.
+- `npm run check:compiler-closeout:m142`
+  - Runs `python scripts/check_m142_frontend_lowering_parity_contract.py`.
+  - Runs `npm run test:objc3c:m142-lowering-parity`.
+  - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -2064,6 +2145,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_e
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1
 python scripts/check_m137_lexer_contract.py
 python scripts/check_m139_sema_pass_manager_contract.py
+python scripts/check_m142_frontend_lowering_parity_contract.py
 python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py

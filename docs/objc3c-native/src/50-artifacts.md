@@ -330,6 +330,39 @@ npm run check:compiler-closeout:m141
 - `python scripts/check_m141_cmake_target_topology_contract.py`
 - `python -m pytest tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_cmake_target_topology.py tests/tooling/test_objc3c_process_io_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_lowering_contract.py tests/tooling/test_objc3c_ir_emitter_extraction.py -q`
 
+## Frontend lowering parity harness artifacts (M142-E001)
+
+Parity harness replay commands:
+
+```powershell
+npm run check:objc3c:library-cli-parity:source
+npm run check:compiler-closeout:m142
+```
+
+`npm run check:objc3c:library-cli-parity:source` writes deterministic parity outputs under:
+
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/library/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/work/cli/`
+- `tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json`
+
+Expected compared artifacts per side (`emit_prefix=module` default):
+
+- `module.diagnostics.json`
+- `module.manifest.json`
+- `module.ll`
+- `module.obj`
+
+Object backend note for harness replay:
+
+- CLI emits backend provenance sidecar `module.object-backend.txt` (`clang` or `llvm-direct`).
+- M142 parity dimensions exclude `module.object-backend.txt`; it is a provenance note, not a compared artifact payload.
+- Source-mode parity command pins `--cli-ir-object-backend clang` so CLI and C API object outputs are backend-aligned.
+
+`npm run check:compiler-closeout:m142` fail-closes on parity harness source/docs/package drift via:
+
+- `python scripts/check_m142_frontend_lowering_parity_contract.py`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_frontend_lowering_parity_contract.py tests/tooling/test_objc3c_sema_cli_c_api_parity_surface.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

@@ -10,14 +10,27 @@ This document captures the currently implemented behavior for the native `objc3c
 ## CLI usage
 
 ```text
-objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
+objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
 - Default `--out-dir`: `artifacts/compilation/objc3c-native`
 - Default `--emit-prefix`: `module`
 - Default `--clang`: `clang` (or explicit path)
+- Default `--llc`: `llc` (or explicit path)
+- Default `--objc3-ir-object-backend`: `llvm-direct`
 - Default `--objc3-max-message-args`: `4`
 - Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
+
+## C API parity runner usage (M142-E001)
+
+```text
+objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--summary-out <path>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>] [--no-emit-manifest] [--no-emit-ir] [--no-emit-object]
+```
+
+- Binary path produced by native build scripts: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- Default summary output when `--summary-out` is omitted: `<out-dir>/<emit-prefix>.c_api_summary.json`
+- Runner output paths are emitted in summary JSON (`diagnostics`, `manifest`, `ir`, `object`) for deterministic parity replay.
+- For CLI/C API parity harness runs, use CLI backend override `--objc3-ir-object-backend clang` so both paths produce objects through the same compile backend.
 
 ## Driver shell split boundaries (M136-E001)
 
