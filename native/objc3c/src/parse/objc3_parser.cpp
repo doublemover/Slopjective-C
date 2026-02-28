@@ -347,6 +347,38 @@ static std::string BuildBlockLiteralCaptureProfile(const std::vector<std::string
   return out.str();
 }
 
+static std::string BuildBlockLiteralAbiLayoutProfile(std::size_t parameter_count,
+                                                     std::size_t capture_count,
+                                                     std::size_t body_statement_count) {
+  std::ostringstream out;
+  out << "block-abi-layout:invoke-arg-slots=" << parameter_count
+      << ";capture-words=" << capture_count
+      << ";body-statements=" << body_statement_count;
+  return out.str();
+}
+
+static std::string BuildBlockLiteralAbiDescriptorSymbol(unsigned line,
+                                                        unsigned column,
+                                                        std::size_t parameter_count,
+                                                        std::size_t capture_count) {
+  std::ostringstream out;
+  out << "__objc3_block_desc_" << line << "_" << column
+      << "_p" << parameter_count
+      << "_c" << capture_count;
+  return out.str();
+}
+
+static std::string BuildBlockLiteralInvokeTrampolineSymbol(unsigned line,
+                                                           unsigned column,
+                                                           std::size_t parameter_count,
+                                                           std::size_t capture_count) {
+  std::ostringstream out;
+  out << "__objc3_block_invoke_" << line << "_" << column
+      << "_p" << parameter_count
+      << "_c" << capture_count;
+  return out.str();
+}
+
 static std::vector<std::string> BuildScopePathLexicographic(std::string owner_symbol,
                                                              std::string entry_symbol) {
   std::vector<std::string> path;
@@ -3551,6 +3583,25 @@ class Objc3Parser {
     block->block_capture_profile =
         BuildBlockLiteralCaptureProfile(block->block_capture_names_lexicographic);
     block->block_literal_is_normalized = true;
+    block->block_abi_invoke_argument_slots = block->block_parameter_count;
+    block->block_abi_capture_word_count = block->block_capture_count;
+    block->block_abi_layout_profile = BuildBlockLiteralAbiLayoutProfile(
+        block->block_parameter_count,
+        block->block_capture_count,
+        block->block_body_statement_count);
+    block->block_abi_descriptor_symbol = BuildBlockLiteralAbiDescriptorSymbol(
+        block->line,
+        block->column,
+        block->block_parameter_count,
+        block->block_capture_count);
+    block->block_invoke_trampoline_symbol = BuildBlockLiteralInvokeTrampolineSymbol(
+        block->line,
+        block->column,
+        block->block_parameter_count,
+        block->block_capture_count);
+    block->block_abi_has_invoke_trampoline = true;
+    block->block_abi_layout_is_normalized =
+        block->block_literal_is_normalized && block->block_capture_set_deterministic;
     return block;
   }
 

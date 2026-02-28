@@ -85,6 +85,13 @@ struct Expr {
   std::string block_capture_profile;
   bool block_capture_set_deterministic = false;
   bool block_literal_is_normalized = false;
+  std::size_t block_abi_invoke_argument_slots = 0;
+  std::size_t block_abi_capture_word_count = 0;
+  std::string block_abi_layout_profile;
+  std::string block_abi_descriptor_symbol;
+  std::string block_invoke_trampoline_symbol;
+  bool block_abi_has_invoke_trampoline = false;
+  bool block_abi_layout_is_normalized = false;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;

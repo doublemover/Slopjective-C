@@ -767,6 +767,37 @@ Recommended M166 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m166_frontend_block_literal_capture_parser_contract.py -q`
 
+## M167 frontend block ABI invoke-trampoline parser/AST surface (M167-A001)
+
+Frontend parser/AST now emits deterministic block ABI carrier metadata used by
+downstream sema/lowering passes for invoke trampoline planning.
+
+M167 parser/AST surface details:
+
+- ABI helper anchors:
+  - `BuildBlockLiteralAbiLayoutProfile(...)`
+  - `BuildBlockLiteralAbiDescriptorSymbol(...)`
+  - `BuildBlockLiteralInvokeTrampolineSymbol(...)`
+- parser assignment anchors:
+  - `block_abi_invoke_argument_slots`
+  - `block_abi_capture_word_count`
+  - `block_abi_layout_profile`
+  - `block_abi_descriptor_symbol`
+  - `block_invoke_trampoline_symbol`
+  - `block_abi_has_invoke_trampoline`
+  - `block_abi_layout_is_normalized`
+
+Deterministic grammar intent:
+
+- parser derives replay-stable block ABI metadata from block literal shape:
+  - invoke argument slots mirror parsed block parameter count.
+  - capture word count mirrors deterministic capture cardinality.
+  - descriptor/invoke symbols are stable from source coordinates and shape.
+
+Recommended M167 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
