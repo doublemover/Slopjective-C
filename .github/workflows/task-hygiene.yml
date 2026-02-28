@@ -103,6 +103,8 @@ jobs:
         run: npm run check:objc3c:m212-code-action
       - name: 26 Run M211 LSP semantic integration gate
         run: npm run check:objc3c:m211-lsp-semantics
+      - name: 27 Run M210 performance-regression integration gate
+        run: npm run check:objc3c:m210-performance-regression
 
   tooling-tests:
     runs-on: ${{ matrix.os }}

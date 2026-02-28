@@ -295,6 +295,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain LSP anchors.
 
+## M210 integration performance budgets and regression gates
+
+- Gate intent: enforce deterministic performance-budget and regression-gate evidence across all lanes.
+### 1.1 Performance-regression integration chain
+- Deterministic performance-regression gate:
+  - `npm run check:objc3c:m210-performance-regression`
+- Chain order:
+  - replays `check:objc3c:m211-lsp-semantics`.
+  - enforces all M210 lane contracts:
+    `tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_lowering_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_validation_perf_regression_contract.py`,
+    `tests/tooling/test_objc3c_m210_integration_perf_regression_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through performance-regression validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain regression-gate anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
