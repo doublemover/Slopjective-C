@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_actor_isolation_sendability_lowering_handoff": true,
+        "actor_isolation_sendability_lowering_sites": 11,
+        "actor_isolation_sendability_lowering_sendability_check_sites": 7,
+        "actor_isolation_sendability_lowering_cross_actor_hop_sites": 4,
+        "actor_isolation_sendability_lowering_non_sendable_capture_sites": 2,
+        "actor_isolation_sendability_lowering_sendable_transfer_sites": 5,
+        "actor_isolation_sendability_lowering_isolation_boundary_sites": 9,
+        "actor_isolation_sendability_lowering_guard_blocked_sites": 2,
+        "actor_isolation_sendability_lowering_contract_violation_sites": 0,
+        "lowering_actor_isolation_sendability_replay_key": "actor_isolation_sites=11;sendability_check_sites=7;cross_actor_hop_sites=4;non_sendable_capture_sites=2;sendable_transfer_sites=5;isolation_boundary_sites=9;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m188-actor-isolation-sendability-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_actor_isolation_sendability_lowering_surface": {
+          "actor_isolation_sites": 11,
+          "sendability_check_sites": 7,
+          "cross_actor_hop_sites": 4,
+          "non_sendable_capture_sites": 2,
+          "sendable_transfer_sites": 5,
+          "isolation_boundary_sites": 9,
+          "guard_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "actor_isolation_sites=11;sendability_check_sites=7;cross_actor_hop_sites=4;non_sendable_capture_sites=2;sendable_transfer_sites=5;isolation_boundary_sites=9;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m188-actor-isolation-sendability-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_actor_isolation_sendability": {
+    "replay_key": "actor_isolation_sites=11;sendability_check_sites=7;cross_actor_hop_sites=4;non_sendable_capture_sites=2;sendable_transfer_sites=5;isolation_boundary_sites=9;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m188-actor-isolation-sendability-lowering-v1",
+    "lane_contract": "m188-actor-isolation-sendability-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

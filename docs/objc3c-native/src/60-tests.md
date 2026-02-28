@@ -2708,6 +2708,44 @@ Scope assumptions:
 - This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M189-D001 validation/conformance packet.
 - This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
 
+## M188 validation/conformance/perf actor isolation and sendability runbook (M188-D001)
+
+Deterministic M188 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m188_validation_actor_isolation_sendability_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_actor_isolation_sendability_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_actor_isolation_sendability_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_actor_isolation_sendability_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_actor_isolation_sendability_lowering_surface.deterministic_handoff`
+  - `lowering_actor_isolation_sendability.replay_key`
+- `replay_run_1/module.ll`
+  - `actor_isolation_sendability_lowering`
+  - `frontend_objc_actor_isolation_sendability_lowering_profile`
+  - `!objc3.objc_actor_isolation_sendability_lowering = !{!41}`
+- `M188-D001.json`
+  - `tracking.issue = 4532`
+  - `tracking.task = M188-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `isolation_boundary_sites + guard_blocked_sites == actor_isolation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+```
+
 ## M189 validation/conformance/perf task runtime interop and cancellation runbook (M189-D001)
 
 Deterministic M189 validation sequence:
