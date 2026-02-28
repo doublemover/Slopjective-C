@@ -901,6 +901,29 @@ Objc3ProtocolQualifiedObjectTypeLoweringContract BuildProtocolQualifiedObjectTyp
   return contract;
 }
 
+Objc3VarianceBridgeCastLoweringContract BuildVarianceBridgeCastLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3VarianceBridgeCastLoweringContract contract;
+  contract.variance_bridge_cast_sites =
+      sema_parity_surface.variance_bridge_cast_sites_total;
+  contract.protocol_composition_sites =
+      sema_parity_surface.variance_bridge_cast_protocol_composition_sites_total;
+  contract.ownership_qualifier_sites =
+      sema_parity_surface.variance_bridge_cast_ownership_qualifier_sites_total;
+  contract.object_pointer_type_sites =
+      sema_parity_surface.variance_bridge_cast_object_pointer_type_sites_total;
+  contract.pointer_declarator_sites =
+      sema_parity_surface.variance_bridge_cast_pointer_declarator_sites_total;
+  contract.normalized_sites =
+      sema_parity_surface.variance_bridge_cast_normalized_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.variance_bridge_cast_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.variance_bridge_cast_summary.deterministic &&
+      sema_parity_surface.deterministic_variance_bridge_cast_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -1288,6 +1311,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string protocol_qualified_object_type_lowering_replay_key =
       Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
           protocol_qualified_object_type_lowering_contract);
+  const Objc3VarianceBridgeCastLoweringContract variance_bridge_cast_lowering_contract =
+      BuildVarianceBridgeCastLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3VarianceBridgeCastLoweringContract(
+          variance_bridge_cast_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid variance/bridged-cast lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string variance_bridge_cast_lowering_replay_key =
+      Objc3VarianceBridgeCastLoweringReplayKey(
+          variance_bridge_cast_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1913,6 +1951,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_protocol_qualified_object_type_replay_key\":\""
            << protocol_qualified_object_type_lowering_replay_key
            << "\""
+           << ",\"deterministic_variance_bridge_cast_lowering_handoff\":"
+           << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
+           << ",\"variance_bridge_cast_lowering_sites\":"
+           << variance_bridge_cast_lowering_contract.variance_bridge_cast_sites
+           << ",\"variance_bridge_cast_lowering_protocol_composition_sites\":"
+           << variance_bridge_cast_lowering_contract.protocol_composition_sites
+           << ",\"variance_bridge_cast_lowering_ownership_qualifier_sites\":"
+           << variance_bridge_cast_lowering_contract.ownership_qualifier_sites
+           << ",\"variance_bridge_cast_lowering_object_pointer_type_sites\":"
+           << variance_bridge_cast_lowering_contract.object_pointer_type_sites
+           << ",\"variance_bridge_cast_lowering_pointer_declarator_sites\":"
+           << variance_bridge_cast_lowering_contract.pointer_declarator_sites
+           << ",\"variance_bridge_cast_lowering_normalized_sites\":"
+           << variance_bridge_cast_lowering_contract.normalized_sites
+           << ",\"variance_bridge_cast_lowering_contract_violation_sites\":"
+           << variance_bridge_cast_lowering_contract.contract_violation_sites
+           << ",\"lowering_variance_bridge_cast_replay_key\":\""
+           << variance_bridge_cast_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -2486,6 +2543,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_variance_bridge_cast_lowering_surface\":{\"variance_bridge_cast_sites\":"
+           << variance_bridge_cast_lowering_contract.variance_bridge_cast_sites
+           << ",\"protocol_composition_sites\":"
+           << variance_bridge_cast_lowering_contract.protocol_composition_sites
+           << ",\"ownership_qualifier_sites\":"
+           << variance_bridge_cast_lowering_contract.ownership_qualifier_sites
+           << ",\"object_pointer_type_sites\":"
+           << variance_bridge_cast_lowering_contract.object_pointer_type_sites
+           << ",\"pointer_declarator_sites\":"
+           << variance_bridge_cast_lowering_contract.pointer_declarator_sites
+           << ",\"normalized_sites\":"
+           << variance_bridge_cast_lowering_contract.normalized_sites
+           << ",\"contract_violation_sites\":"
+           << variance_bridge_cast_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << variance_bridge_cast_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -2679,6 +2755,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (protocol_qualified_object_type_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_variance_bridge_cast\":{\"replay_key\":\""
+           << variance_bridge_cast_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3VarianceBridgeCastLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (variance_bridge_cast_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -3160,6 +3242,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       protocol_qualified_object_type_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_protocol_qualified_object_type_lowering_handoff =
       protocol_qualified_object_type_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_variance_bridge_cast_replay_key =
+      variance_bridge_cast_lowering_replay_key;
+  ir_frontend_metadata.variance_bridge_cast_lowering_sites =
+      variance_bridge_cast_lowering_contract.variance_bridge_cast_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_protocol_composition_sites =
+      variance_bridge_cast_lowering_contract.protocol_composition_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_ownership_qualifier_sites =
+      variance_bridge_cast_lowering_contract.ownership_qualifier_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_object_pointer_type_sites =
+      variance_bridge_cast_lowering_contract.object_pointer_type_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_pointer_declarator_sites =
+      variance_bridge_cast_lowering_contract.pointer_declarator_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_normalized_sites =
+      variance_bridge_cast_lowering_contract.normalized_sites;
+  ir_frontend_metadata.variance_bridge_cast_lowering_contract_violation_sites =
+      variance_bridge_cast_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_variance_bridge_cast_lowering_handoff =
+      variance_bridge_cast_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

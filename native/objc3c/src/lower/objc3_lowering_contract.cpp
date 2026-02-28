@@ -956,3 +956,34 @@ std::string Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract;
 }
+
+bool IsValidObjc3VarianceBridgeCastLoweringContract(
+    const Objc3VarianceBridgeCastLoweringContract &contract) {
+  if (contract.protocol_composition_sites > contract.variance_bridge_cast_sites ||
+      contract.ownership_qualifier_sites > contract.variance_bridge_cast_sites ||
+      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
+      contract.pointer_declarator_sites > contract.variance_bridge_cast_sites ||
+      contract.normalized_sites > contract.variance_bridge_cast_sites ||
+      contract.contract_violation_sites > contract.variance_bridge_cast_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.variance_bridge_cast_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3VarianceBridgeCastLoweringReplayKey(
+    const Objc3VarianceBridgeCastLoweringContract &contract) {
+  return std::string("variance_bridge_cast_sites=") + std::to_string(contract.variance_bridge_cast_sites) +
+         ";protocol_composition_sites=" + std::to_string(contract.protocol_composition_sites) +
+         ";ownership_qualifier_sites=" + std::to_string(contract.ownership_qualifier_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" + std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3VarianceBridgeCastLoweringLaneContract;
+}

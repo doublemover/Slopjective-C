@@ -3489,6 +3489,32 @@ Recommended M173 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m173_lowering_protocol_qualified_object_type_contract.py -q`
 
+## Variance/bridged-cast lowering artifact contract (M174-C001)
+
+M174-C lowers sema-authored variance/bridged-cast summaries into deterministic
+lowering replay metadata and IR side-channel annotations.
+
+M174-C lowering contract anchors:
+
+- `kObjc3VarianceBridgeCastLoweringLaneContract`
+- `Objc3VarianceBridgeCastLoweringContract`
+- `IsValidObjc3VarianceBridgeCastLoweringContract(...)`
+- `Objc3VarianceBridgeCastLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_variance_bridge_cast_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.variance_bridge_cast_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_variance_bridge_cast_lowering_surface`
+- `lowering_variance_bridge_cast.replay_key`
+- `; variance_bridge_cast_lowering = variance_bridge_cast_sites=<N>...`
+- `; frontend_objc_variance_bridge_cast_lowering_profile = variance_bridge_cast_sites=<N>...`
+- `!objc3.objc_variance_bridge_cast_lowering = !{!27}`
+
+Recommended M174 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m174_lowering_variance_bridge_cast_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
