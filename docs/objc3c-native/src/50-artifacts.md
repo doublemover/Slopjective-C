@@ -3437,6 +3437,32 @@ Recommended M171 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m171_lowering_lightweight_generics_constraints_contract.py -q`
 
+## Nullability-flow warning-precision lowering artifact contract (M172-C001)
+
+M172-C lowers sema-authored nullability-flow warning-precision summaries into
+deterministic lowering replay metadata and IR side-channel annotations.
+
+M172-C lowering contract anchors:
+
+- `kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract`
+- `Objc3NullabilityFlowWarningPrecisionLoweringContract`
+- `IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(...)`
+- `Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(...)`
+
+Pipeline/manifest and IR markers:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_nullability_flow_warning_precision_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.nullability_flow_warning_precision_lowering_sites`
+- `frontend.pipeline.semantic_surface.objc_nullability_flow_warning_precision_lowering_surface`
+- `lowering_nullability_flow_warning_precision.replay_key`
+- `; nullability_flow_warning_precision_lowering = nullability_flow_sites=<N>...`
+- `; frontend_objc_nullability_flow_warning_precision_lowering_profile = nullability_flow_sites=<N>...`
+- `!objc3.objc_nullability_flow_warning_precision_lowering = !{!25}`
+
+Recommended M172 lowering contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m172_lowering_nullability_flow_warning_precision_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

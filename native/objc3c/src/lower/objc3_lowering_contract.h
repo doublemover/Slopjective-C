@@ -54,6 +54,8 @@ inline constexpr const char *kObjc3BlockDeterminismPerfBaselineLoweringLaneContr
     "m170-block-determinism-perf-baseline-lowering-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
+inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
+    "m172-nullability-flow-warning-precision-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -298,6 +300,17 @@ struct Objc3LightweightGenericsConstraintLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3NullabilityFlowWarningPrecisionLoweringContract {
+  std::size_t nullability_flow_sites = 0;
+  std::size_t object_pointer_type_sites = 0;
+  std::size_t nullability_suffix_sites = 0;
+  std::size_t nullable_suffix_sites = 0;
+  std::size_t nonnull_suffix_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -391,3 +404,7 @@ bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
     const Objc3LightweightGenericsConstraintLoweringContract &contract);
 std::string Objc3LightweightGenericsConstraintLoweringReplayKey(
     const Objc3LightweightGenericsConstraintLoweringContract &contract);
+bool IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract);
+std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract);

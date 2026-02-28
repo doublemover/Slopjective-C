@@ -888,3 +888,38 @@ std::string Objc3LightweightGenericsConstraintLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3LightweightGenericsConstraintLoweringLaneContract;
 }
+
+bool IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract) {
+  if (contract.nullability_suffix_sites > contract.nullability_flow_sites ||
+      contract.nullable_suffix_sites > contract.nullability_suffix_sites ||
+      contract.nonnull_suffix_sites > contract.nullability_suffix_sites ||
+      contract.object_pointer_type_sites < contract.nullability_suffix_sites ||
+      contract.normalized_sites > contract.nullability_flow_sites ||
+      contract.contract_violation_sites > contract.nullability_flow_sites) {
+    return false;
+  }
+  if (contract.nullability_suffix_sites !=
+      contract.nullable_suffix_sites + contract.nonnull_suffix_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.nullability_flow_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract) {
+  return std::string("nullability_flow_sites=") + std::to_string(contract.nullability_flow_sites) +
+         ";object_pointer_type_sites=" + std::to_string(contract.object_pointer_type_sites) +
+         ";nullability_suffix_sites=" + std::to_string(contract.nullability_suffix_sites) +
+         ";nullable_suffix_sites=" + std::to_string(contract.nullable_suffix_sites) +
+         ";nonnull_suffix_sites=" + std::to_string(contract.nonnull_suffix_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract;
+}

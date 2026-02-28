@@ -222,6 +222,15 @@ struct Objc3IRFrontendMetadata {
   std::size_t lightweight_generic_constraint_lowering_normalized_constraint_sites = 0;
   std::size_t lightweight_generic_constraint_lowering_contract_violation_sites = 0;
   bool deterministic_lightweight_generic_constraint_lowering_handoff = false;
+  std::string lowering_nullability_flow_warning_precision_replay_key;
+  std::size_t nullability_flow_warning_precision_lowering_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_object_pointer_type_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_nullability_suffix_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_nullable_suffix_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_nonnull_suffix_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_normalized_sites = 0;
+  std::size_t nullability_flow_warning_precision_lowering_contract_violation_sites = 0;
+  bool deterministic_nullability_flow_warning_precision_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;
