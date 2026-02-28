@@ -1,0 +1,38 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_message_send_selector_lowering_handoff": true,
+        "message_send_selector_lowering_sites": 5,
+        "message_send_selector_lowering_unary_sites": 2,
+        "message_send_selector_lowering_keyword_sites": 3,
+        "message_send_selector_lowering_selector_piece_sites": 8,
+        "message_send_selector_lowering_argument_expression_sites": 4,
+        "message_send_selector_lowering_receiver_sites": 5,
+        "message_send_selector_lowering_selector_literal_entries": 4,
+        "message_send_selector_lowering_selector_literal_characters": 31,
+        "lowering_message_send_selector_lowering_replay_key": "message_send_sites=5;unary_selector_sites=2;keyword_selector_sites=3;selector_piece_sites=8;argument_expression_sites=4;receiver_expression_sites=5;selector_literal_entries=4;selector_literal_characters=31;deterministic=true;lane_contract=m156-message-send-selector-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_message_send_selector_lowering_surface": {
+          "message_send_sites": 5,
+          "unary_selector_sites": 2,
+          "keyword_selector_sites": 3,
+          "selector_piece_sites": 8,
+          "argument_expression_sites": 4,
+          "receiver_expression_sites": 5,
+          "selector_literal_entries": 4,
+          "selector_literal_characters": 31,
+          "replay_key": "message_send_sites=5;unary_selector_sites=2;keyword_selector_sites=3;selector_piece_sites=8;argument_expression_sites=4;receiver_expression_sites=5;selector_literal_entries=4;selector_literal_characters=31;deterministic=true;lane_contract=m156-message-send-selector-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_message_send_selector_lowering": {
+    "replay_key": "message_send_sites=5;unary_selector_sites=2;keyword_selector_sites=3;selector_piece_sites=8;argument_expression_sites=4;receiver_expression_sites=5;selector_literal_entries=4;selector_literal_characters=31;deterministic=true;lane_contract=m156-message-send-selector-lowering-v1",
+    "lane_contract": "m156-message-send-selector-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

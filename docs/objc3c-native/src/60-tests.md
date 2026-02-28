@@ -484,6 +484,22 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_id_class_sel_object_pointer_typecheck_profile`
 - `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
 
+## M156 validation/conformance/perf message-send selector lowering runbook
+
+From repo root, execute deterministic M156 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m156_validation_message_send_selector_lowering_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_message_send_selector_lowering.replay_key`
+- `deterministic_message_send_selector_lowering_handoff`
+- `message_send_selector_lowering`
+- `frontend_objc_message_send_selector_lowering_profile`
+- `!objc3.objc_message_send_selector_lowering = !{!9}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
