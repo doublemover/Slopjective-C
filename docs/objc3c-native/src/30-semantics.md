@@ -2094,3 +2094,30 @@ Swift metadata bridge packet map:
 Recommended M198 sema/type Swift metadata bridge validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m198_sema_swift_metadata_bridge_contract.py -q`
+
+## M197 sema/type C++ interop shim strategy
+
+For deterministic sema/type C++ interop shim strategy behavior, capture replay-stable packet evidence from C ABI shim forwarding into the C++ frontend pipeline and sema/type isolation boundaries.
+
+C++ interop shim packet map:
+
+- `interop shim packet 1.1 deterministic sema/type C++ interop architecture anchors` -> `m197_sema_type_cpp_interop_shim_architecture_packet`
+- `interop shim packet 1.2 deterministic sema/type C++ interop isolation anchors` -> `m197_sema_type_cpp_interop_shim_isolation_packet`
+
+### 1.1 Deterministic sema/type C++ interop shim architecture packet
+
+- Source C ABI shim anchors: `Optional C ABI shim for non-C++ embedding environments.`, `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;`, `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`, and `extern "C" OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(`.
+- Source C++ frontend pipeline bridge anchors: `Objc3FrontendCompileProduct CompileObjc3SourceWithPipeline(`, `product.pipeline_result = RunObjc3FrontendPipeline(source, options);`, `product.artifact_bundle = BuildObjc3FrontendArtifacts(input_path, product.pipeline_result, options);`, `Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);`, and `Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);`.
+- Source sema/type metadata handoff anchors: `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, `result.deterministic_type_metadata_handoff =`, and `IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);`.
+- Deterministic C++ interop shim architecture packet key: `m197_sema_type_cpp_interop_shim_architecture_packet`.
+
+### 1.2 Deterministic sema/type C++ interop shim isolation packet
+
+- Source sema pass-isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `result.parity_surface.ready =`.
+- Pipeline sema transport-isolation anchors: `sema_input.program = &result.program;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Build/link isolation anchors: `add_library(objc3c_sema_type_system INTERFACE)`, `target_link_libraries(objc3c_lower PUBLIC`, `target_link_libraries(objc3c_ir PUBLIC`, `add_library(objc3c_runtime_abi STATIC`, `target_link_libraries(objc3c_frontend PUBLIC`, and `objc3c_runtime_abi`.
+- Deterministic C++ interop shim isolation packet key: `m197_sema_type_cpp_interop_shim_isolation_packet`.
+
+Recommended M197 sema/type C++ interop shim strategy validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py -q`
