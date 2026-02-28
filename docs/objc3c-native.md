@@ -8537,6 +8537,23 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_arc_diagnostics_fixit_lowering_profile`
 - `!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}`
 
+## M166 validation/conformance/perf block literal capture runbook
+
+From repo root, execute deterministic M166 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m166_frontend_block_literal_capture_parser_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m166_sema_block_literal_capture_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m166_lowering_block_literal_capture_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m166_validation_block_literal_capture_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_block_literal_capture.replay_key`
+- `deterministic_block_literal_capture_lowering_handoff`
+- `block_literal_capture_lowering`
+- `frontend_objc_block_literal_capture_lowering_profile`
+- `!objc3.objc_block_literal_capture_lowering = !{!19}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
