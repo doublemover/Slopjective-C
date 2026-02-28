@@ -393,6 +393,17 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m150_lowering_object_pointer_nullability_generics_contract.py`
   - `tests/tooling/test_objc3c_m150_validation_object_pointer_nullability_generics_contract.py`
   - `tests/tooling/test_objc3c_m150_integration_object_pointer_nullability_generics_contract.py`
+
+## M151 integration symbol graph and scope resolution overhaul
+
+- Integration gate:
+  - `npm run check:objc3c:m151-symbol-graph-scope-resolution`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m151_frontend_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_sema_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_lowering_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_validation_symbol_graph_scope_resolution_contract.py`
+  - `tests/tooling/test_objc3c_m151_integration_symbol_graph_scope_resolution_contract.py`
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
