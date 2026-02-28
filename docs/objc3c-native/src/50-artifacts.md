@@ -3079,6 +3079,61 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m164_lowering_weak_unowned_contract.py -q`
 
+## ARC diagnostics/fix-it lowering artifact contract (M165-C001)
+
+M165-C publishes replay-stable ARC diagnostics/fix-it lowering invariants derived
+from sema ARC diagnostics/fix-it summary surfaces.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m165/lowering-arc-diagnostics-fixit-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m165/lowering-arc-diagnostics-fixit-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m165/lowering-arc-diagnostics-fixit-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m165/lowering-arc-diagnostics-fixit-contract/arc-diagnostics-fixit-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3ArcDiagnosticsFixitLoweringLaneContract`
+- `Objc3ArcDiagnosticsFixitLoweringContract`
+- `IsValidObjc3ArcDiagnosticsFixitLoweringContract(...)`
+- `Objc3ArcDiagnosticsFixitLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `ownership_arc_diagnostic_candidate_sites=<N>`
+- `ownership_arc_fixit_available_sites=<N>`
+- `ownership_arc_profiled_sites=<N>`
+- `ownership_arc_weak_unowned_conflict_diagnostic_sites=<N>`
+- `ownership_arc_empty_fixit_hint_sites=<N>`
+- `contract_violation_sites=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m165-arc-diagnostics-fixit-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_arc_diagnostics_fixit_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites`
+- `frontend.pipeline.sema_pass_manager.arc_diagnostics_fixit_lowering_contract_violation_sites`
+- `frontend.pipeline.sema_pass_manager.lowering_arc_diagnostics_fixit_replay_key`
+- `frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface`
+- `lowering_arc_diagnostics_fixit.replay_key`
+- `lowering_arc_diagnostics_fixit.lane_contract`
+
+IR publication markers:
+
+- `; arc_diagnostics_fixit_lowering = ownership_arc_diagnostic_candidate_sites=<N>;ownership_arc_fixit_available_sites=<N>;ownership_arc_profiled_sites=<N>;ownership_arc_weak_unowned_conflict_diagnostic_sites=<N>;ownership_arc_empty_fixit_hint_sites=<N>;contract_violation_sites=<N>;deterministic=<bool>;lane_contract=m165-arc-diagnostics-fixit-lowering-v1`
+- `; frontend_objc_arc_diagnostics_fixit_lowering_profile = ownership_arc_diagnostic_candidate_sites=<N>, ownership_arc_fixit_available_sites=<N>, ownership_arc_profiled_sites=<N>, ownership_arc_weak_unowned_conflict_diagnostic_sites=<N>, ownership_arc_empty_fixit_hint_sites=<N>, contract_violation_sites=<N>, deterministic_arc_diagnostics_fixit_lowering_handoff=<bool>`
+- `!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}`
+- `!18 = !{i64 <ownership_arc_diagnostic_candidate_sites>, i64 <ownership_arc_fixit_available_sites>, i64 <ownership_arc_profiled_sites>, i64 <ownership_arc_weak_unowned_conflict_diagnostic_sites>, i64 <ownership_arc_empty_fixit_hint_sites>, i64 <contract_violation_sites>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m165_lowering_arc_diagnostics_fixit_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

@@ -138,6 +138,10 @@ class Objc3IREmitter {
       out << "; weak_unowned_semantics_lowering = "
           << frontend_metadata_.lowering_weak_unowned_semantics_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_arc_diagnostics_fixit_replay_key.empty()) {
+      out << "; arc_diagnostics_fixit_lowering = "
+          << frontend_metadata_.lowering_arc_diagnostics_fixit_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -338,6 +342,21 @@ class Objc3IREmitter {
         << ", deterministic_weak_unowned_semantics_lowering_handoff="
         << (frontend_metadata_.deterministic_weak_unowned_semantics_lowering_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_arc_diagnostics_fixit_lowering_profile = ownership_arc_diagnostic_candidate_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites
+        << ", ownership_arc_fixit_available_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites
+        << ", ownership_arc_profiled_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites
+        << ", ownership_arc_weak_unowned_conflict_diagnostic_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites
+        << ", ownership_arc_empty_fixit_hint_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.arc_diagnostics_fixit_lowering_contract_violation_sites
+        << ", deterministic_arc_diagnostics_fixit_lowering_handoff="
+        << (frontend_metadata_.deterministic_arc_diagnostics_fixit_lowering_handoff ? "true" : "false")
+        << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -514,6 +533,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_retain_release_operation_lowering = !{!15}\n";
     out << "!objc3.objc_autoreleasepool_scope_lowering = !{!16}\n";
     out << "!objc3.objc_weak_unowned_semantics_lowering = !{!17}\n";
+    out << "!objc3.objc_arc_diagnostics_fixit_lowering = !{!18}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -758,6 +778,27 @@ class Objc3IREmitter {
                frontend_metadata_.weak_unowned_semantics_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_weak_unowned_semantics_lowering_handoff ? 1 : 0)
+        << "}\n\n";
+    out << "!18 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.arc_diagnostics_fixit_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_arc_diagnostics_fixit_lowering_handoff ? 1 : 0)
         << "}\n\n";
   }
 

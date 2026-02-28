@@ -664,6 +664,27 @@ Objc3WeakUnownedSemanticsLoweringContract BuildWeakUnownedSemanticsLoweringContr
   return contract;
 }
 
+Objc3ArcDiagnosticsFixitLoweringContract BuildArcDiagnosticsFixitLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3ArcDiagnosticsFixitLoweringContract contract;
+  contract.ownership_arc_diagnostic_candidate_sites =
+      sema_parity_surface.ownership_arc_diagnostic_candidate_sites_total;
+  contract.ownership_arc_fixit_available_sites =
+      sema_parity_surface.ownership_arc_fixit_available_sites_total;
+  contract.ownership_arc_profiled_sites =
+      sema_parity_surface.ownership_arc_profiled_sites_total;
+  contract.ownership_arc_weak_unowned_conflict_diagnostic_sites =
+      sema_parity_surface.ownership_arc_weak_unowned_conflict_diagnostic_sites_total;
+  contract.ownership_arc_empty_fixit_hint_sites =
+      sema_parity_surface.ownership_arc_empty_fixit_hint_sites_total;
+  contract.contract_violation_sites =
+      sema_parity_surface.ownership_arc_contract_violation_sites_total;
+  contract.deterministic =
+      sema_parity_surface.arc_diagnostics_fixit_summary.deterministic &&
+      sema_parity_surface.deterministic_arc_diagnostics_fixit_handoff;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -922,6 +943,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string weak_unowned_semantics_lowering_replay_key =
       Objc3WeakUnownedSemanticsLoweringReplayKey(weak_unowned_semantics_lowering_contract);
+  const Objc3ArcDiagnosticsFixitLoweringContract arc_diagnostics_fixit_lowering_contract =
+      BuildArcDiagnosticsFixitLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3ArcDiagnosticsFixitLoweringContract(arc_diagnostics_fixit_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid ARC diagnostics/fix-it lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string arc_diagnostics_fixit_lowering_replay_key =
+      Objc3ArcDiagnosticsFixitLoweringReplayKey(arc_diagnostics_fixit_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -1344,6 +1378,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_weak_unowned_semantics_replay_key\":\""
            << weak_unowned_semantics_lowering_replay_key
            << "\""
+           << ",\"deterministic_arc_diagnostics_fixit_lowering_handoff\":"
+           << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
+           << ",\"arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_diagnostic_candidate_sites
+           << ",\"arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_fixit_available_sites
+           << ",\"arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_profiled_sites
+           << ",\"arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_weak_unowned_conflict_diagnostic_sites
+           << ",\"arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_empty_fixit_hint_sites
+           << ",\"arc_diagnostics_fixit_lowering_contract_violation_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.contract_violation_sites
+           << ",\"lowering_arc_diagnostics_fixit_replay_key\":\""
+           << arc_diagnostics_fixit_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -1714,6 +1765,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_arc_diagnostics_fixit_lowering_surface\":{\"ownership_arc_diagnostic_candidate_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_diagnostic_candidate_sites
+           << ",\"ownership_arc_fixit_available_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_fixit_available_sites
+           << ",\"ownership_arc_profiled_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_profiled_sites
+           << ",\"ownership_arc_weak_unowned_conflict_diagnostic_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_weak_unowned_conflict_diagnostic_sites
+           << ",\"ownership_arc_empty_fixit_hint_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.ownership_arc_empty_fixit_hint_sites
+           << ",\"contract_violation_sites\":"
+           << arc_diagnostics_fixit_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << arc_diagnostics_fixit_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -1853,6 +1921,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3WeakUnownedSemanticsLoweringLaneContract
            << "\",\"deterministic_handoff\":"
            << (weak_unowned_semantics_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_arc_diagnostics_fixit\":{\"replay_key\":\""
+           << arc_diagnostics_fixit_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3ArcDiagnosticsFixitLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (arc_diagnostics_fixit_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -2139,6 +2213,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       weak_unowned_semantics_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_weak_unowned_semantics_lowering_handoff =
       weak_unowned_semantics_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_arc_diagnostics_fixit_replay_key =
+      arc_diagnostics_fixit_lowering_replay_key;
+  ir_frontend_metadata.arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites =
+      arc_diagnostics_fixit_lowering_contract.ownership_arc_diagnostic_candidate_sites;
+  ir_frontend_metadata.arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites =
+      arc_diagnostics_fixit_lowering_contract.ownership_arc_fixit_available_sites;
+  ir_frontend_metadata.arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites =
+      arc_diagnostics_fixit_lowering_contract.ownership_arc_profiled_sites;
+  ir_frontend_metadata
+      .arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites =
+      arc_diagnostics_fixit_lowering_contract.ownership_arc_weak_unowned_conflict_diagnostic_sites;
+  ir_frontend_metadata.arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites =
+      arc_diagnostics_fixit_lowering_contract.ownership_arc_empty_fixit_hint_sites;
+  ir_frontend_metadata.arc_diagnostics_fixit_lowering_contract_violation_sites =
+      arc_diagnostics_fixit_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_arc_diagnostics_fixit_lowering_handoff =
+      arc_diagnostics_fixit_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

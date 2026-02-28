@@ -613,3 +613,31 @@ std::string Objc3WeakUnownedSemanticsLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3WeakUnownedSemanticsLoweringLaneContract;
 }
+
+bool IsValidObjc3ArcDiagnosticsFixitLoweringContract(
+    const Objc3ArcDiagnosticsFixitLoweringContract &contract) {
+  return contract.ownership_arc_fixit_available_sites <=
+             contract.ownership_arc_diagnostic_candidate_sites + contract.contract_violation_sites &&
+         contract.ownership_arc_profiled_sites <=
+             contract.ownership_arc_diagnostic_candidate_sites + contract.contract_violation_sites &&
+         contract.ownership_arc_weak_unowned_conflict_diagnostic_sites <=
+             contract.ownership_arc_diagnostic_candidate_sites + contract.contract_violation_sites &&
+         contract.ownership_arc_empty_fixit_hint_sites <=
+             contract.ownership_arc_fixit_available_sites + contract.contract_violation_sites;
+}
+
+std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
+    const Objc3ArcDiagnosticsFixitLoweringContract &contract) {
+  return std::string("ownership_arc_diagnostic_candidate_sites=") +
+             std::to_string(contract.ownership_arc_diagnostic_candidate_sites) +
+         ";ownership_arc_fixit_available_sites=" +
+             std::to_string(contract.ownership_arc_fixit_available_sites) +
+         ";ownership_arc_profiled_sites=" + std::to_string(contract.ownership_arc_profiled_sites) +
+         ";ownership_arc_weak_unowned_conflict_diagnostic_sites=" +
+             std::to_string(contract.ownership_arc_weak_unowned_conflict_diagnostic_sites) +
+         ";ownership_arc_empty_fixit_hint_sites=" +
+             std::to_string(contract.ownership_arc_empty_fixit_hint_sites) +
+         ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ArcDiagnosticsFixitLoweringLaneContract;
+}

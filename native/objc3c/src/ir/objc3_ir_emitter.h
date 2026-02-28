@@ -143,6 +143,14 @@ struct Objc3IRFrontendMetadata {
   std::size_t weak_unowned_semantics_lowering_conflict_sites = 0;
   std::size_t weak_unowned_semantics_lowering_contract_violation_sites = 0;
   bool deterministic_weak_unowned_semantics_lowering_handoff = false;
+  std::string lowering_arc_diagnostics_fixit_replay_key;
+  std::size_t arc_diagnostics_fixit_lowering_ownership_arc_diagnostic_candidate_sites = 0;
+  std::size_t arc_diagnostics_fixit_lowering_ownership_arc_fixit_available_sites = 0;
+  std::size_t arc_diagnostics_fixit_lowering_ownership_arc_profiled_sites = 0;
+  std::size_t arc_diagnostics_fixit_lowering_ownership_arc_weak_unowned_conflict_diagnostic_sites = 0;
+  std::size_t arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites = 0;
+  std::size_t arc_diagnostics_fixit_lowering_contract_violation_sites = 0;
+  bool deterministic_arc_diagnostics_fixit_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;
