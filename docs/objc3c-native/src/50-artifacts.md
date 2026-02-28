@@ -2571,6 +2571,65 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
 
+## Message-send selector-lowering artifact contract (M156-C001)
+
+M156-C publishes a replay-stable lowering packet for Objective-C message-send expression forms and canonical selector
+lowering metadata.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m156/lowering-message-send-selector-lowering-contract/message-send-selector-lowering-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3MessageSendSelectorLoweringLaneContract`
+- `Objc3MessageSendSelectorLoweringContract`
+- `IsValidObjc3MessageSendSelectorLoweringContract(...)`
+- `Objc3MessageSendSelectorLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `unary_selector_sites=<N>`
+- `keyword_selector_sites=<N>`
+- `selector_piece_sites=<N>`
+- `argument_expression_sites=<N>`
+- `receiver_expression_sites=<N>`
+- `selector_literal_entries=<N>`
+- `selector_literal_characters=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m156-message-send-selector-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_message_send_selector_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_unary_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_keyword_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_piece_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_argument_expression_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_receiver_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_literal_entries`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_literal_characters`
+- `frontend.pipeline.sema_pass_manager.lowering_message_send_selector_lowering_replay_key`
+- `frontend.pipeline.semantic_surface.objc_message_send_selector_lowering_surface`
+- `lowering_message_send_selector_lowering.replay_key`
+- `lowering_message_send_selector_lowering.lane_contract`
+
+IR publication markers:
+
+- `; message_send_selector_lowering = message_send_sites=<N>;unary_selector_sites=<N>;keyword_selector_sites=<N>;selector_piece_sites=<N>;argument_expression_sites=<N>;receiver_expression_sites=<N>;selector_literal_entries=<N>;selector_literal_characters=<N>;deterministic=<bool>;lane_contract=m156-message-send-selector-lowering-v1`
+- `; frontend_objc_message_send_selector_lowering_profile = message_send_sites=<N>, unary_selector_sites=<N>, keyword_selector_sites=<N>, selector_piece_sites=<N>, argument_expression_sites=<N>, receiver_expression_sites=<N>, selector_literal_entries=<N>, selector_literal_characters=<N>, deterministic_message_send_selector_lowering_handoff=<bool>`
+- `!objc3.objc_message_send_selector_lowering = !{!9}`
+- `!9 = !{i64 <message_send_sites>, i64 <unary_selector_sites>, i64 <keyword_selector_sites>, i64 <selector_piece_sites>, i64 <argument_expression_sites>, i64 <receiver_expression_sites>, i64 <selector_literal_entries>, i64 <selector_literal_characters>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

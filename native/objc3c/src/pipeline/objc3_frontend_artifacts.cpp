@@ -156,6 +156,192 @@ Objc3IdClassSelObjectPointerTypecheckContract BuildIdClassSelObjectPointerTypech
   return contract;
 }
 
+std::size_t CountSelectorPieces(const std::string &selector) {
+  if (selector.empty()) {
+    return 0;
+  }
+  std::size_t colons = 0;
+  for (char c : selector) {
+    if (c == ':') {
+      ++colons;
+    }
+  }
+  return colons == 0 ? 1 : colons;
+}
+
+void AccumulateMessageSendSelectorLoweringExpr(
+    const Expr *expr,
+    Objc3MessageSendSelectorLoweringContract &contract,
+    std::unordered_set<std::string> &selector_literals) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::MessageSend: {
+      ++contract.message_send_sites;
+      ++contract.receiver_expression_sites;
+      if (expr->args.empty()) {
+        ++contract.unary_selector_sites;
+      } else {
+        ++contract.keyword_selector_sites;
+      }
+      contract.argument_expression_sites += expr->args.size();
+      const std::size_t selector_pieces = CountSelectorPieces(expr->selector);
+      contract.selector_piece_sites += selector_pieces;
+      if (selector_pieces == 0u) {
+        contract.deterministic = false;
+      } else {
+        selector_literals.insert(expr->selector);
+      }
+      AccumulateMessageSendSelectorLoweringExpr(expr->receiver.get(), contract, selector_literals);
+      for (const auto &arg : expr->args) {
+        AccumulateMessageSendSelectorLoweringExpr(arg.get(), contract, selector_literals);
+      }
+      return;
+    }
+    case Expr::Kind::Binary:
+      AccumulateMessageSendSelectorLoweringExpr(expr->left.get(), contract, selector_literals);
+      AccumulateMessageSendSelectorLoweringExpr(expr->right.get(), contract, selector_literals);
+      return;
+    case Expr::Kind::Conditional:
+      AccumulateMessageSendSelectorLoweringExpr(expr->left.get(), contract, selector_literals);
+      AccumulateMessageSendSelectorLoweringExpr(expr->right.get(), contract, selector_literals);
+      AccumulateMessageSendSelectorLoweringExpr(expr->third.get(), contract, selector_literals);
+      return;
+    case Expr::Kind::Call:
+      for (const auto &arg : expr->args) {
+        AccumulateMessageSendSelectorLoweringExpr(arg.get(), contract, selector_literals);
+      }
+      return;
+    default:
+      return;
+  }
+}
+
+void AccumulateMessageSendSelectorLoweringForClause(
+    const ForClause &clause,
+    Objc3MessageSendSelectorLoweringContract &contract,
+    std::unordered_set<std::string> &selector_literals) {
+  if (clause.value != nullptr) {
+    AccumulateMessageSendSelectorLoweringExpr(clause.value.get(), contract, selector_literals);
+  }
+}
+
+void AccumulateMessageSendSelectorLoweringStmt(
+    const Stmt *stmt,
+    Objc3MessageSendSelectorLoweringContract &contract,
+    std::unordered_set<std::string> &selector_literals) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        AccumulateMessageSendSelectorLoweringExpr(stmt->let_stmt->value.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        AccumulateMessageSendSelectorLoweringExpr(stmt->assign_stmt->value.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        AccumulateMessageSendSelectorLoweringExpr(stmt->return_stmt->value.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        AccumulateMessageSendSelectorLoweringExpr(stmt->expr_stmt->value.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt == nullptr) {
+        return;
+      }
+      AccumulateMessageSendSelectorLoweringExpr(stmt->if_stmt->condition.get(), contract, selector_literals);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        AccumulateMessageSendSelectorLoweringStmt(then_stmt.get(), contract, selector_literals);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        AccumulateMessageSendSelectorLoweringStmt(else_stmt.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt == nullptr) {
+        return;
+      }
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract, selector_literals);
+      }
+      AccumulateMessageSendSelectorLoweringExpr(stmt->do_while_stmt->condition.get(), contract, selector_literals);
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt == nullptr) {
+        return;
+      }
+      AccumulateMessageSendSelectorLoweringForClause(stmt->for_stmt->init, contract, selector_literals);
+      AccumulateMessageSendSelectorLoweringExpr(stmt->for_stmt->condition.get(), contract, selector_literals);
+      AccumulateMessageSendSelectorLoweringForClause(stmt->for_stmt->step, contract, selector_literals);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt == nullptr) {
+        return;
+      }
+      AccumulateMessageSendSelectorLoweringExpr(stmt->switch_stmt->condition.get(), contract, selector_literals);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          AccumulateMessageSendSelectorLoweringStmt(case_stmt.get(), contract, selector_literals);
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt == nullptr) {
+        return;
+      }
+      AccumulateMessageSendSelectorLoweringExpr(stmt->while_stmt->condition.get(), contract, selector_literals);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt == nullptr) {
+        return;
+      }
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        AccumulateMessageSendSelectorLoweringStmt(body_stmt.get(), contract, selector_literals);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+Objc3MessageSendSelectorLoweringContract BuildMessageSendSelectorLoweringContract(const Objc3Program &program) {
+  Objc3MessageSendSelectorLoweringContract contract;
+  std::unordered_set<std::string> selector_literals;
+
+  for (const auto &global : program.globals) {
+    AccumulateMessageSendSelectorLoweringExpr(global.value.get(), contract, selector_literals);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract, selector_literals);
+    }
+  }
+
+  contract.selector_literal_entries = selector_literals.size();
+  for (const auto &selector : selector_literals) {
+    contract.selector_literal_characters += selector.size();
+  }
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -294,6 +480,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string id_class_sel_object_pointer_typecheck_replay_key =
       Objc3IdClassSelObjectPointerTypecheckReplayKey(id_class_sel_object_pointer_typecheck_contract);
+  const Objc3MessageSendSelectorLoweringContract message_send_selector_lowering_contract =
+      BuildMessageSendSelectorLoweringContract(program);
+  if (!IsValidObjc3MessageSendSelectorLoweringContract(message_send_selector_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: invalid message-send selector lowering contract")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  const std::string message_send_selector_lowering_replay_key =
+      Objc3MessageSendSelectorLoweringReplayKey(message_send_selector_lowering_contract);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -544,6 +743,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_id_class_sel_object_pointer_typecheck_replay_key\":\""
            << id_class_sel_object_pointer_typecheck_replay_key
            << "\""
+           << ",\"deterministic_message_send_selector_lowering_handoff\":"
+           << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
+           << ",\"message_send_selector_lowering_sites\":"
+           << message_send_selector_lowering_contract.message_send_sites
+           << ",\"message_send_selector_lowering_unary_sites\":"
+           << message_send_selector_lowering_contract.unary_selector_sites
+           << ",\"message_send_selector_lowering_keyword_sites\":"
+           << message_send_selector_lowering_contract.keyword_selector_sites
+           << ",\"message_send_selector_lowering_selector_piece_sites\":"
+           << message_send_selector_lowering_contract.selector_piece_sites
+           << ",\"message_send_selector_lowering_argument_expression_sites\":"
+           << message_send_selector_lowering_contract.argument_expression_sites
+           << ",\"message_send_selector_lowering_receiver_sites\":"
+           << message_send_selector_lowering_contract.receiver_expression_sites
+           << ",\"message_send_selector_lowering_selector_literal_entries\":"
+           << message_send_selector_lowering_contract.selector_literal_entries
+           << ",\"message_send_selector_lowering_selector_literal_characters\":"
+           << message_send_selector_lowering_contract.selector_literal_characters
+           << ",\"lowering_message_send_selector_lowering_replay_key\":\""
+           << message_send_selector_lowering_replay_key
+           << "\""
            << ",\"deterministic_object_pointer_nullability_generics_handoff\":"
            << (object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff
                    ? "true"
@@ -743,6 +963,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_message_send_selector_lowering_surface\":{\"message_send_sites\":"
+           << message_send_selector_lowering_contract.message_send_sites
+           << ",\"unary_selector_sites\":"
+           << message_send_selector_lowering_contract.unary_selector_sites
+           << ",\"keyword_selector_sites\":"
+           << message_send_selector_lowering_contract.keyword_selector_sites
+           << ",\"selector_piece_sites\":"
+           << message_send_selector_lowering_contract.selector_piece_sites
+           << ",\"argument_expression_sites\":"
+           << message_send_selector_lowering_contract.argument_expression_sites
+           << ",\"receiver_expression_sites\":"
+           << message_send_selector_lowering_contract.receiver_expression_sites
+           << ",\"selector_literal_entries\":"
+           << message_send_selector_lowering_contract.selector_literal_entries
+           << ",\"selector_literal_characters\":"
+           << message_send_selector_lowering_contract.selector_literal_characters
+           << ",\"replay_key\":\""
+           << message_send_selector_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
+           << "}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -828,6 +1069,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract
            << "\",\"deterministic_handoff\":"
            << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_message_send_selector_lowering\":{\"replay_key\":\""
+           << message_send_selector_lowering_replay_key
+           << "\",\"lane_contract\":\"" << kObjc3MessageSendSelectorLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (message_send_selector_lowering_contract.deterministic ? "true" : "false")
            << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
@@ -970,6 +1217,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       id_class_sel_object_pointer_typecheck_contract.object_pointer_typecheck_sites;
   ir_frontend_metadata.id_class_sel_object_pointer_typecheck_sites_total =
       id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites;
+  ir_frontend_metadata.lowering_message_send_selector_lowering_replay_key =
+      message_send_selector_lowering_replay_key;
+  ir_frontend_metadata.message_send_selector_lowering_sites =
+      message_send_selector_lowering_contract.message_send_sites;
+  ir_frontend_metadata.message_send_selector_lowering_unary_sites =
+      message_send_selector_lowering_contract.unary_selector_sites;
+  ir_frontend_metadata.message_send_selector_lowering_keyword_sites =
+      message_send_selector_lowering_contract.keyword_selector_sites;
+  ir_frontend_metadata.message_send_selector_lowering_selector_piece_sites =
+      message_send_selector_lowering_contract.selector_piece_sites;
+  ir_frontend_metadata.message_send_selector_lowering_argument_expression_sites =
+      message_send_selector_lowering_contract.argument_expression_sites;
+  ir_frontend_metadata.message_send_selector_lowering_receiver_sites =
+      message_send_selector_lowering_contract.receiver_expression_sites;
+  ir_frontend_metadata.message_send_selector_lowering_selector_literal_entries =
+      message_send_selector_lowering_contract.selector_literal_entries;
+  ir_frontend_metadata.message_send_selector_lowering_selector_literal_characters =
+      message_send_selector_lowering_contract.selector_literal_characters;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =
@@ -1021,6 +1286,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       property_attribute_summary.deterministic_property_attribute_handoff;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
+  ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =
+      message_send_selector_lowering_contract.deterministic;
   ir_frontend_metadata.deterministic_object_pointer_nullability_generics_handoff =
       object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_handoff =

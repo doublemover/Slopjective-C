@@ -22,6 +22,8 @@ inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
     "m154-property-synthesis-ivar-binding-v1";
 inline constexpr const char *kObjc3IdClassSelObjectPointerTypecheckLaneContract =
     "m155-id-class-sel-object-pointer-typecheck-v1";
+inline constexpr const char *kObjc3MessageSendSelectorLoweringLaneContract =
+    "m156-message-send-selector-lowering-v1";
 
 enum class Objc3AtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,
@@ -74,6 +76,18 @@ struct Objc3IdClassSelObjectPointerTypecheckContract {
   bool deterministic = true;
 };
 
+struct Objc3MessageSendSelectorLoweringContract {
+  std::size_t message_send_sites = 0;
+  std::size_t unary_selector_sites = 0;
+  std::size_t keyword_selector_sites = 0;
+  std::size_t selector_piece_sites = 0;
+  std::size_t argument_expression_sites = 0;
+  std::size_t receiver_expression_sites = 0;
+  std::size_t selector_literal_entries = 0;
+  std::size_t selector_literal_characters = 0;
+  bool deterministic = true;
+};
+
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
                                        Objc3LoweringContract &normalized,
@@ -103,3 +117,7 @@ bool IsValidObjc3IdClassSelObjectPointerTypecheckContract(
     const Objc3IdClassSelObjectPointerTypecheckContract &contract);
 std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
     const Objc3IdClassSelObjectPointerTypecheckContract &contract);
+bool IsValidObjc3MessageSendSelectorLoweringContract(
+    const Objc3MessageSendSelectorLoweringContract &contract);
+std::string Objc3MessageSendSelectorLoweringReplayKey(
+    const Objc3MessageSendSelectorLoweringContract &contract);

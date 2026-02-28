@@ -341,3 +341,40 @@ std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3IdClassSelObjectPointerTypecheckLaneContract;
 }
+
+bool IsValidObjc3MessageSendSelectorLoweringContract(
+    const Objc3MessageSendSelectorLoweringContract &contract) {
+  if (contract.unary_selector_sites + contract.keyword_selector_sites != contract.message_send_sites) {
+    return false;
+  }
+  if (contract.receiver_expression_sites != contract.message_send_sites) {
+    return false;
+  }
+  if (contract.selector_piece_sites < contract.message_send_sites) {
+    return false;
+  }
+  if (contract.argument_expression_sites < contract.keyword_selector_sites) {
+    return false;
+  }
+  if (contract.selector_literal_entries > contract.message_send_sites) {
+    return false;
+  }
+  if (contract.selector_literal_entries == 0 && contract.selector_literal_characters != 0) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3MessageSendSelectorLoweringReplayKey(
+    const Objc3MessageSendSelectorLoweringContract &contract) {
+  return std::string("message_send_sites=") + std::to_string(contract.message_send_sites) +
+         ";unary_selector_sites=" + std::to_string(contract.unary_selector_sites) +
+         ";keyword_selector_sites=" + std::to_string(contract.keyword_selector_sites) +
+         ";selector_piece_sites=" + std::to_string(contract.selector_piece_sites) +
+         ";argument_expression_sites=" + std::to_string(contract.argument_expression_sites) +
+         ";receiver_expression_sites=" + std::to_string(contract.receiver_expression_sites) +
+         ";selector_literal_entries=" + std::to_string(contract.selector_literal_entries) +
+         ";selector_literal_characters=" + std::to_string(contract.selector_literal_characters) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3MessageSendSelectorLoweringLaneContract;
+}

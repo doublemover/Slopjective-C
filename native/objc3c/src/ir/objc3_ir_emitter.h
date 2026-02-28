@@ -62,6 +62,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t object_pointer_typecheck_sites = 0;
   std::size_t id_class_sel_object_pointer_typecheck_sites_total = 0;
   bool deterministic_id_class_sel_object_pointer_typecheck_handoff = false;
+  std::string lowering_message_send_selector_lowering_replay_key;
+  std::size_t message_send_selector_lowering_sites = 0;
+  std::size_t message_send_selector_lowering_unary_sites = 0;
+  std::size_t message_send_selector_lowering_keyword_sites = 0;
+  std::size_t message_send_selector_lowering_selector_piece_sites = 0;
+  std::size_t message_send_selector_lowering_argument_expression_sites = 0;
+  std::size_t message_send_selector_lowering_receiver_sites = 0;
+  std::size_t message_send_selector_lowering_selector_literal_entries = 0;
+  std::size_t message_send_selector_lowering_selector_literal_characters = 0;
+  bool deterministic_message_send_selector_lowering_handoff = false;
   std::size_t object_pointer_type_spellings = 0;
   std::size_t pointer_declarator_entries = 0;
   std::size_t pointer_declarator_depth_total = 0;

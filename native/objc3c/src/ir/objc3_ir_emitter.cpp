@@ -102,6 +102,10 @@ class Objc3IREmitter {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_message_send_selector_lowering_replay_key.empty()) {
+      out << "; message_send_selector_lowering = "
+          << frontend_metadata_.lowering_message_send_selector_lowering_replay_key << "\n";
+    }
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
@@ -166,6 +170,20 @@ class Objc3IREmitter {
         << ", deterministic_id_class_sel_object_pointer_typecheck_handoff="
         << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? "true" : "false")
         << "\n";
+    out << "; frontend_objc_message_send_selector_lowering_profile = message_send_sites="
+        << frontend_metadata_.message_send_selector_lowering_sites
+        << ", unary_selector_sites=" << frontend_metadata_.message_send_selector_lowering_unary_sites
+        << ", keyword_selector_sites=" << frontend_metadata_.message_send_selector_lowering_keyword_sites
+        << ", selector_piece_sites=" << frontend_metadata_.message_send_selector_lowering_selector_piece_sites
+        << ", argument_expression_sites="
+        << frontend_metadata_.message_send_selector_lowering_argument_expression_sites
+        << ", receiver_expression_sites=" << frontend_metadata_.message_send_selector_lowering_receiver_sites
+        << ", selector_literal_entries="
+        << frontend_metadata_.message_send_selector_lowering_selector_literal_entries
+        << ", selector_literal_characters="
+        << frontend_metadata_.message_send_selector_lowering_selector_literal_characters
+        << ", deterministic_message_send_selector_lowering_handoff="
+        << (frontend_metadata_.deterministic_message_send_selector_lowering_handoff ? "true" : "false") << "\n";
     out << "; frontend_objc_object_pointer_nullability_generics_profile = object_pointer_type_spellings="
         << frontend_metadata_.object_pointer_type_spellings
         << ", pointer_declarator_entries=" << frontend_metadata_.pointer_declarator_entries
@@ -333,6 +351,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
+    out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -416,7 +435,23 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.object_pointer_typecheck_sites) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.id_class_sel_object_pointer_typecheck_sites_total)
         << ", i1 "
-        << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? 1 : 0) << "}\n\n";
+        << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? 1 : 0) << "}\n";
+    out << "!9 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_sites)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_unary_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_keyword_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_selector_piece_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_argument_expression_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_receiver_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.message_send_selector_lowering_selector_literal_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.message_send_selector_lowering_selector_literal_characters)
+        << ", i1 " << (frontend_metadata_.deterministic_message_send_selector_lowering_handoff ? 1 : 0) << "}\n\n";
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
