@@ -60,6 +60,18 @@ add_library(objc3c_frontend STATIC
 target_include_directories(objc3c_frontend PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-add_library(objc3c_driver INTERFACE)
+add_library(objc3c_driver STATIC
+  src/driver/objc3_cli_options.cpp
+)
+target_include_directories(objc3c_driver PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
-target_link_libraries(objc3c-native PRIVATE objc3c_lex objc3c_lower objc3c_ir objc3c_io objc3c_frontend)
+target_link_libraries(objc3c-native PRIVATE
+  objc3c_driver
+  objc3c_lex
+  objc3c_lower
+  objc3c_ir
+  objc3c_io
+  objc3c_frontend
+)

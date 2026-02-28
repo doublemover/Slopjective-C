@@ -18,6 +18,7 @@
 
 #include "ast/objc3_ast.h"
 #include "diag/objc3_diag_types.h"
+#include "driver/objc3_cli_options.h"
 #include "ir/objc3_ir_emitter.h"
 #include "io/objc3_file_io.h"
 #include "io/objc3_process.h"
@@ -4409,52 +4410,20 @@ static bool EmitObjc3IR(const Objc3Program &program, const Objc3LoweringContract
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    std::cerr << "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
-                 "[--objc3-max-message-args <0-"
-              << kObjc3RuntimeDispatchMaxArgs << ">] [--objc3-runtime-dispatch-symbol <symbol>]\n";
+  Objc3CliOptions cli_options;
+  std::string cli_error;
+  if (!ParseObjc3CliOptions(argc, argv, cli_options, cli_error)) {
+    std::cerr << cli_error << "\n";
     return 2;
   }
 
-  fs::path input = argv[1];
-  fs::path out_dir = fs::path("artifacts") / "compilation" / "objc3c-native";
-  std::string emit_prefix = "module";
-  fs::path clang_path = fs::path("clang");
+  const fs::path &input = cli_options.input;
+  const fs::path &out_dir = cli_options.out_dir;
+  const std::string &emit_prefix = cli_options.emit_prefix;
+  const fs::path &clang_path = cli_options.clang_path;
   Objc3FrontendOptions frontend_options;
-
-  for (int i = 2; i < argc; ++i) {
-    std::string flag = argv[i];
-    if (flag == "--out-dir" && i + 1 < argc) {
-      out_dir = argv[++i];
-    } else if (flag == "--emit-prefix" && i + 1 < argc) {
-      emit_prefix = argv[++i];
-    } else if (flag == "--clang" && i + 1 < argc) {
-      clang_path = argv[++i];
-    } else if (flag == "--objc3-max-message-args" && i + 1 < argc) {
-      const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
-          parsed > kObjc3RuntimeDispatchMaxArgs) {
-        std::cerr << "invalid --objc3-max-message-args (expected integer 0-"
-                  << kObjc3RuntimeDispatchMaxArgs << "): " << value << "\n";
-        return 2;
-      }
-      frontend_options.lowering.max_message_send_args = static_cast<std::size_t>(parsed);
-    } else if (flag == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
-      const std::string symbol = argv[++i];
-      if (!IsValidRuntimeDispatchSymbol(symbol)) {
-        std::cerr << "invalid --objc3-runtime-dispatch-symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " << symbol
-                  << "\n";
-        return 2;
-      }
-      frontend_options.lowering.runtime_dispatch_symbol = symbol;
-    } else {
-      std::cerr << "unknown arg: " << flag << "\n";
-      return 2;
-    }
-  }
+  frontend_options.lowering.max_message_send_args = cli_options.max_message_send_args;
+  frontend_options.lowering.runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol;
 
   if (!fs::exists(input)) {
     std::cerr << "input file not found: " << input.string() << "\n";
