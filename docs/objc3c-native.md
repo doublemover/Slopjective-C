@@ -597,6 +597,22 @@ Frontend C++ interop-shim contract relies on deterministic message-send parse bo
   3. `python -m pytest tests/tooling/test_objc3c_m198_frontend_swift_metadata_bridge_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
 
+## M196 frontend C interop headers and ABI alignment
+
+Frontend C-interop header/ABI-alignment contract relies on deterministic C ABI wrapper declarations, stable compile-option/result alias surfaces, and explicit frontend-option normalization boundaries.
+
+- Required frontend C-interop header/ABI-alignment signals:
+  - C wrapper header anchor remains `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`.
+  - C wrapper alias surfaces remain `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;` and `typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;`.
+  - wrapper ABI/layout guards remain `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,` and companion compile-result/context checks.
+  - frontend option normalization remains `BuildFrontendOptions(const objc3c_frontend_compile_options_t &options)` plus `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+  - pipeline ABI defaults remain `kRuntimeDispatchDefaultArgs = 4`, `kRuntimeDispatchMaxArgs = 16`, and `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`.
+- Required frontend C-interop header/ABI-alignment commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m197_frontend_cpp_interop_shim_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2734,6 +2750,34 @@ C++ interop shim packet map:
 Recommended M197 sema/type C++ interop shim strategy validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m197_sema_cpp_interop_shim_contract.py -q`
+
+## M196 sema/type C interop headers and ABI alignment
+
+For deterministic sema/type C interop headers and ABI alignment behavior, capture replay-stable packet evidence from C wrapper ABI identity surfaces and sema pass-manager isolation boundaries.
+
+C interop headers + ABI alignment packet map:
+
+- `c interop packet 1.1 deterministic sema/type C interop headers ABI architecture anchors` -> `m196_sema_type_c_interop_headers_abi_architecture_packet`
+- `c interop packet 1.2 deterministic sema/type C interop headers ABI isolation anchors` -> `m196_sema_type_c_interop_headers_abi_isolation_packet`
+
+### 1.1 Deterministic sema/type C interop headers ABI architecture packet
+
+- Source C interop header ABI anchors: `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`, `typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;`, and `typedef objc3c_frontend_compile_result_t objc3c_frontend_c_compile_result_t;`.
+- Source C wrapper ABI-alignment guard anchors: `static_assert(std::is_same_v<objc3c_frontend_c_context_t, objc3c_frontend_context_t>,`, `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`, and `static_assert(std::is_same_v<objc3c_frontend_c_compile_result_t, objc3c_frontend_compile_result_t>,`.
+- Source frontend option-normalization anchors: `Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {`, `frontend_options.compatibility_mode =`, `frontend_options.migration_assist = options.migration_assist != 0;`, and `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`.
+- Source pipeline ABI contract anchors: `inline constexpr std::size_t kRuntimeDispatchDefaultArgs = 4;`, `inline constexpr std::size_t kRuntimeDispatchMaxArgs = 16;`, and `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`.
+- Deterministic sema/type C interop headers ABI architecture packet key: `m196_sema_type_c_interop_headers_abi_architecture_packet`.
+
+### 1.2 Deterministic sema/type C interop headers ABI isolation packet
+
+- Source sema pass-isolation anchors: `inline constexpr std::array<Objc3SemaPassId, 3> kObjc3SemaPassOrder =`, `for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {`, `CanonicalizePassDiagnostics(pass_diagnostics);`, `input.diagnostics_bus.PublishBatch(pass_diagnostics);`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, `result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);`, and `result.parity_surface.ready =`.
+- Pipeline sema transport-isolation anchors: `sema_input.program = &result.program;`, `sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy`, `sema_input.migration_assist = options.migration_assist;`, `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`, `Objc3SemaPassManagerResult sema_result = RunObjc3SemaPassManager(sema_input);`, and `result.sema_parity_surface = sema_result.parity_surface;`.
+- Build/link runtime ABI isolation anchors: `add_library(objc3c_sema_type_system INTERFACE)`, `add_library(objc3c_runtime_abi STATIC`, `target_link_libraries(objc3c_frontend PUBLIC`, and `objc3c_runtime_abi`.
+- Deterministic sema/type C interop headers ABI isolation packet key: `m196_sema_type_c_interop_headers_abi_isolation_packet`.
+
+Recommended M196 sema/type C interop headers and ABI alignment validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3367,6 +3411,73 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M196 lowering/runtime C interop headers and ABI alignment
+
+Lowering/runtime C interop header and ABI-alignment evidence is captured as deterministic packet artifacts rooted under `tmp/` so C shim header contracts, embedding ABI compatibility guards, and lowering/runtime dispatch boundaries remain replay-stable and isolated across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/`
+  - `tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/c-interop-header-abi-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `C interop headers + ABI alignment architecture/isolation anchors` (required in source-anchor extracts):
+  - `Optional C ABI shim for non-C++ embedding environments.`
+  - `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`
+  - `static_assert(OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u, "unexpected c api wrapper abi version");`
+  - `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`
+  - `return objc3c_frontend_is_abi_compatible(requested_abi_version);`
+  - `Public embedding ABI contract:`
+  - `Reserved struct fields are for forward ABI growth and should be zero-initialized by callers.`
+  - `ABI evolution policy for exposed structs/enums is additive; existing fields and values remain stable.`
+  - `#define OBJC3C_FRONTEND_ABI_VERSION 1u`
+  - `#define OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `source anchors`:
+  - `/* Optional C ABI shim for non-C++ embedding environments. */`
+  - `#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u`
+  - `static_assert(OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u, "unexpected c api wrapper abi version");`
+  - `static_assert(std::is_same_v<objc3c_frontend_c_compile_options_t, objc3c_frontend_compile_options_t>,`
+  - `return objc3c_frontend_is_abi_compatible(requested_abi_version);`
+  - `* Public embedding ABI contract:`
+  - `* - Reserved struct fields are for forward ABI growth and should be zero-initialized by callers.`
+  - `* - ABI evolution policy for exposed structs/enums is additive; existing fields and values remain stable.`
+  - `#define OBJC3C_FRONTEND_ABI_VERSION 1u`
+  - `#define OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `compile_options.runtime_dispatch_symbol = runtime_symbol;`
+  - `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and C interop header ABI-alignment source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, C interop header ABI-alignment marker, or source anchor is missing.
+
+C interop header ABI-alignment capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.ll tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.manifest.json > tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/abi-ir-anchors.txt`
+3. `rg -n "Optional C ABI shim for non-C\\+\\+ embedding environments\\.|OBJC3C_FRONTEND_C_API_ABI_VERSION|c_compile_options_t, objc3c_frontend_compile_options_t|objc3c_frontend_is_abi_compatible\\(requested_abi_version\\)|Public embedding ABI contract|Reserved struct fields are for forward ABI growth|ABI evolution policy for exposed structs/enums is additive|OBJC3C_FRONTEND_ABI_VERSION|OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|compile_options\\.runtime_dispatch_symbol = runtime_symbol;|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\";|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/libobjc3c_frontend/c_api.h native/objc3c/src/libobjc3c_frontend/c_api.cpp native/objc3c/src/libobjc3c_frontend/api.h native/objc3c/src/libobjc3c_frontend/version.h native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/c-interop-header-abi-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m196_lowering_c_interop_headers_abi_contract.py -q`
 
 ## M197 lowering/runtime C++ interop shim strategy
 
@@ -6281,6 +6392,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m197_validation_cpp_interop_shim_contract.py -q
 ```
 
+## M196 validation/perf C interop headers and ABI alignment runbook
+
+C-interop header and ABI-alignment validation runbook verifies deterministic C wrapper/ABI evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+C-interop header/ABI-alignment evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m196_validation_c_interop_headers_abi_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -6878,6 +7034,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C++ interop-shim anchors.
+
+## M196 integration C interop headers and ABI alignment
+
+- Gate intent: enforce deterministic C-interop header/ABI-alignment evidence across all lanes.
+### 1.1 C-interop header/ABI-alignment integration chain
+- Deterministic C-interop header/ABI-alignment gate:
+  - `npm run check:objc3c:m196-c-interop-headers-abi`
+- Chain order:
+  - replays `check:objc3c:m197-cpp-interop-shim`.
+  - enforces all M196 lane contracts:
+    `tests/tooling/test_objc3c_m196_frontend_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_sema_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_lowering_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_validation_c_interop_headers_abi_contract.py`,
+    `tests/tooling/test_objc3c_m196_integration_c_interop_headers_abi_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through C-interop header/ABI-alignment validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain C-interop header/ABI-alignment anchors.
 
 ## Current call contract
 
