@@ -651,6 +651,22 @@ Frontend atomics and memory-order mapping contract relies on deterministic compo
   3. `python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
 
+## M193 frontend SIMD/vector type lowering
+
+Frontend SIMD/vector type lowering contract relies on deterministic parser acceptance for vector-friendly type spellings and stable AST metadata transport for vector base/lane shape.
+
+- Required frontend SIMD/vector signals:
+  - vector spelling parser entry remains `TryParseVectorTypeSpelling(...)`.
+  - vector return metadata transport remains `fn.return_vector_spelling = true;`, `fn.return_vector_base_spelling = vector_base_spelling;`, and `fn.return_vector_lane_count = vector_lane_count;`.
+  - vector parameter metadata transport remains `param.vector_spelling = true;`, `param.vector_base_spelling = vector_base_spelling;`, and `param.vector_lane_count = vector_lane_count;`.
+  - AST vector metadata remains `bool vector_spelling = false;` + `unsigned vector_lane_count = 1;` on `FuncParam` and `bool return_vector_spelling = false;` + `unsigned return_vector_lane_count = 1;` on `FunctionDecl`.
+  - accepted vector spellings remain `i32x2/i32x4/i32x8/i32x16` and `boolx2/boolx4/boolx8/boolx16`.
+- Required frontend SIMD/vector commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -2871,6 +2887,35 @@ Atomics memory-order packet map:
 Recommended M194 sema/type atomics and memory-order mapping validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m194_sema_atomics_memory_order_contract.py -q`
+
+## M193 sema/type SIMD/vector type lowering
+
+For deterministic sema/type SIMD/vector type-lowering behavior, capture replay-stable packet evidence from vector-aware type metadata transport, semantic diagnostics isolation, and sema parity-surface replay fields.
+
+SIMD/vector packet map:
+
+- `simd vector packet 1.1 deterministic sema/type vector architecture anchors` -> `m193_sema_type_simd_vector_architecture_packet`
+- `simd vector packet 1.2 deterministic sema/type vector isolation anchors` -> `m193_sema_type_simd_vector_isolation_packet`
+
+### 1.1 Deterministic sema/type vector architecture packet
+
+- Source sema contract anchors: `struct Objc3VectorTypeLoweringSummary {`, `std::vector<bool> param_is_vector;`, `std::vector<std::string> param_vector_base_spelling;`, `std::vector<unsigned> param_vector_lane_count;`, `bool return_is_vector = false;`, and `unsigned return_vector_lane_count = 1;`.
+- Source semantic type-system anchors: `struct SemanticTypeInfo {`, `MakeSemanticTypeFromParam(...)`, `MakeSemanticTypeFromFunctionReturn(...)`, `MakeSemanticTypeFromFunctionInfoParam(...)`, `IsSameSemanticType(...)`, and `SemanticTypeName(...)`.
+- Source sema behavior anchors: `RecordVectorTypeLoweringAnnotation(...)`, `BuildVectorTypeLoweringSummary(...)`, `existing.return_is_vector == fn.return_vector_spelling`, and `type mismatch: incompatible function signature for`.
+- Source diagnostics anchors: `type mismatch: expected '`, `type mismatch: assignment to '`, and `type mismatch: return expression in function '`.
+- Deterministic sema/type SIMD/vector architecture packet key: `m193_sema_type_simd_vector_architecture_packet`.
+
+### 1.2 Deterministic sema/type vector isolation packet
+
+- Source sema pass-manager anchors: `result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);`, `result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;`, `result.parity_surface.vector_type_lowering = result.vector_type_lowering;`, and `result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;`.
+- Source sema parity contract anchors: `Objc3VectorTypeLoweringSummary vector_type_lowering;`, `bool deterministic_vector_type_lowering = false;`, and `surface.deterministic_vector_type_lowering`.
+- Manifest isolation anchors under `frontend.pipeline.sema_pass_manager`: `deterministic_vector_type_lowering`, `vector_type_lowering_total`, `vector_return_annotations`, `vector_param_annotations`, `vector_i32_annotations`, `vector_bool_annotations`, `vector_lane2_annotations`, `vector_lane4_annotations`, `vector_lane8_annotations`, `vector_lane16_annotations`, and `vector_unsupported_annotations`.
+- Vector lane contract remains deterministic as parser-accepted `2/4/8/16` lane spellings.
+- Deterministic sema/type SIMD/vector isolation packet key: `m193_sema_type_simd_vector_isolation_packet`.
+
+Recommended M193 sema/type SIMD/vector type lowering validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -3504,6 +3549,64 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
+
+## M193 lowering/runtime SIMD/vector type lowering
+
+Lowering/runtime SIMD/vector type-lowering evidence is captured as deterministic packet artifacts rooted under `tmp/` so vector ABI replay material, LLVM IR boundary comments, and emitted manifest contract surfaces stay replay-stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/simd-vector-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; simd_vector_lowering = i32x2=<2 x i32>;i32x4=<4 x i32>;i32x8=<8 x i32>;i32x16=<16 x i32>;boolx2=<2 x i1>;boolx4=<4 x i1>;boolx8=<8 x i1>;boolx16=<16 x i1>;lane_contract=2,4,8,16`
+  - `; simd_vector_function_signatures = <N>`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+  - `"lowering_vector_abi":{"replay_key":"i32x2=<2 x i32>;i32x4=<4 x i32>;i32x8=<8 x i32>;i32x16=<16 x i32>;boolx2=<2 x i1>;boolx4=<4 x i1>;boolx8=<8 x i1>;boolx16=<16 x i1>;lane_contract=2,4,8,16","lane_contract":"2,4,8,16","vector_signature_functions":<N>}`
+  - `"vector_signature_surface":{"vector_signature_functions":<N>,"vector_return_signatures":<N>,"vector_param_signatures":<N>,"vector_i32_signatures":<N>,"vector_bool_signatures":<N>,"lane2":<N>,"lane4":<N>,"lane8":<N>,"lane16":<N>}`
+- `SIMD/vector architecture+isolation anchors` (required in source-anchor extracts):
+  - `kObjc3SimdVectorLaneContract = "2,4,8,16"`
+  - `kObjc3SimdVectorBaseI32 = "i32"`
+  - `kObjc3SimdVectorBaseBool = "bool"`
+  - `IsSupportedObjc3SimdVectorLaneCount(...)`
+  - `TryBuildObjc3SimdVectorLLVMType(...)`
+  - `Objc3SimdVectorTypeLoweringReplayKey()`
+  - `CountVectorSignatureFunctions(...)`
+  - `simd_vector_lowering =`
+  - `simd_vector_function_signatures =`
+  - `"vector_signature_surface"`
+  - `"lowering_vector_abi"`
+  - `"lane_contract":"2,4,8,16"`
+- `source anchors`:
+  - `inline constexpr const char *kObjc3SimdVectorLaneContract = "2,4,8,16";`
+  - `inline constexpr const char *kObjc3SimdVectorBaseI32 = "i32";`
+  - `inline constexpr const char *kObjc3SimdVectorBaseBool = "bool";`
+  - `bool IsSupportedObjc3SimdVectorLaneCount(unsigned lane_count) {`
+  - `bool TryBuildObjc3SimdVectorLLVMType(const std::string &base_spelling, unsigned lane_count, std::string &llvm_type) {`
+  - `std::string Objc3SimdVectorTypeLoweringReplayKey() {`
+  - `static std::size_t CountVectorSignatureFunctions(const Objc3Program &program) {`
+  - `out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";`
+  - `out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";`
+  - `manifest << "      \"vector_signature_surface\":{\"vector_signature_functions\":" << vector_signature_functions`
+  - `manifest << "  \"lowering_vector_abi\":{\"replay_key\":\"" << Objc3SimdVectorTypeLoweringReplayKey()`
+  - `<< "\",\"lane_contract\":\"" << kObjc3SimdVectorLaneContract`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and SIMD/vector source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, SIMD/vector marker, or source anchor is missing.
+
+SIMD/vector type-lowering capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|simd_vector_lowering|simd_vector_function_signatures|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"|\"lowering_vector_abi\"|\"vector_signature_surface\"" tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.ll tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.manifest.json > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/abi-ir-anchors.txt`
+3. `rg -n "kObjc3SimdVectorLaneContract|kObjc3SimdVectorBaseI32|kObjc3SimdVectorBaseBool|IsSupportedObjc3SimdVectorLaneCount|TryBuildObjc3SimdVectorLLVMType|Objc3SimdVectorTypeLoweringReplayKey|CountVectorSignatureFunctions|simd_vector_lowering|simd_vector_function_signatures|vector_signature_surface|lowering_vector_abi|lane_contract" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/simd-vector-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m193_lowering_simd_vector_lowering_contract.py -q`
 
 ## M194 lowering/runtime atomics and memory-order mapping
 
@@ -6753,6 +6856,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m194_validation_atomics_memory_order_contract.py -q
 ```
 
+## M193 validation/perf SIMD/vector type lowering runbook
+
+SIMD/vector type lowering validation runbook verifies deterministic vector-friendly parser/sema/lowering evidence across matrix, smoke, replay, and budget gates.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+SIMD/vector type lowering evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m193_validation_simd_vector_lowering_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -7410,6 +7558,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain atomics/memory-order mapping anchors.
+
+## M193 integration SIMD/vector type lowering
+
+- Gate intent: enforce deterministic SIMD/vector type lowering evidence across all lanes.
+### 1.1 SIMD/vector type lowering integration chain
+- Deterministic SIMD/vector type lowering gate:
+  - `npm run check:objc3c:m193-simd-vector-lowering`
+- Chain order:
+  - replays `check:objc3c:m194-atomics-memory-order`.
+  - enforces all M193 lane contracts:
+    `tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_lowering_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_validation_simd_vector_lowering_contract.py`,
+    `tests/tooling/test_objc3c_m193_integration_simd_vector_lowering_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through SIMD/vector type lowering validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain SIMD/vector type lowering anchors.
 
 ## Current call contract
 
