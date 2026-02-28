@@ -40,3 +40,7 @@ jobs:
         run: npm run check:compiler-closeout:m183
       - name: Run M183 NSError bridging integration gate
         run: npm run check:objc3c:m183-ns-error-bridging-contracts
+      - name: Enforce M191 unsafe-pointer packet/docs contract
+        run: npm run check:compiler-closeout:m191
+      - name: Run M191 unsafe-pointer integration gate
+        run: npm run check:objc3c:m191-unsafe-pointer-contracts
