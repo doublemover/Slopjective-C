@@ -113,3 +113,23 @@ Adjusted blocker set for this packet:
 - Cleared by closure + evidence reconciliation: `M133-A001`, `M133-A002`, `M133-C001`, `M133-C002`,
   `M133-A003`, `M133-D001`, `M133-D002`, `M133-E001`, `M133-E002`.
 - Remaining open blockers: `M133-B001`, `M133-B002`, `M133-B003`.
+
+## Follow-up Addendum (2026-02-28, #4251 lane-B completion)
+
+Additional milestone closures landed after the prior addendum:
+
+- `M133-B001` -> [#4242](https://github.com/doublemover/Slopjective-C/issues/4242) -> [fb7fb797](https://github.com/doublemover/Slopjective-C/commit/fb7fb79765b39a1ac7b23f184f3b4f250d4eaf8f)
+- `M133-B002` -> [#4243](https://github.com/doublemover/Slopjective-C/issues/4243) -> [7eaefa12](https://github.com/doublemover/Slopjective-C/commit/7eaefa129260fe8240740f8961c9984c33f8f1b7)
+- `M133-B003` -> [#4244](https://github.com/doublemover/Slopjective-C/issues/4244) -> [29ab8741](https://github.com/doublemover/Slopjective-C/commit/29ab8741bfa1f0d1a5418f5f9510f8a84e3cb0c0)
+
+Revalidated after lane-B completion:
+
+- `python scripts/check_objc3c_dependency_boundaries.py --strict` -> PASS
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1` -> PASS
+- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_recovery_contract.ps1` -> PASS
+
+M133 dependency status is now fully closed for `#4239` through `#4250`.
+
+### Closeout Recommendation Update
+
+`M133-INT-RG-01` is now ready to close. No open milestone blockers remain in the M133 dependency set.
