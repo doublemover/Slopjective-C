@@ -803,6 +803,22 @@ int objc3c_frontend_startup_check(void) {
   - M178-C001 and M178-D001 outputs are not yet landed in this workspace.
   - The integration gate fail-closes on M178-A001 plus M178-B001 surfaces and this M178-E001 wiring contract, while remaining forward-compatible for future M178-C001/M178-D001 additions.
 
+## M179 integration incremental module cache and invalidation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m179-incremental-module-cache-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m179`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m179_frontend_incremental_module_cache_parser_contract.py`
+  - `tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py`
+  - `tests/tooling/test_objc3c_m179_integration_incremental_module_cache_contract.py`
+- Assumptions:
+  - M179-C001 and M179-D001 outputs are not yet landed in this workspace.
+  - The integration gate fail-closes on M179-A001 plus M179-B001 surfaces and this M179-E001 wiring contract, while remaining forward-compatible for future M179-C001/M179-D001 additions.
+
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
   - `npm run check:objc3c:m208-whole-module-optimization`
