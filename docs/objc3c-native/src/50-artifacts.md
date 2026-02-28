@@ -288,6 +288,70 @@ Canonical optimization stage-1 capture commands (lowering/runtime lane):
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
 
+## M205 lowering/runtime macro security policy enforcement
+
+Lowering/runtime macro-security policy enforcement evidence is captured as deterministic packet artifacts rooted under `tmp/` so pragma-policy diagnostics and lowering replay boundaries remain auditable and stable across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/macro-security-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `macro-security markers` (required in source-anchor extracts):
+  - `ConsumeLanguageVersionPragmas(diagnostics)`
+  - `ConsumeLanguageVersionPragmaDirective(...)`
+  - `LanguageVersionPragmaPlacement::kNonLeading`
+  - `O3L005`
+  - `O3L006`
+  - `O3L007`
+  - `O3L008`
+  - `frontend.language_version_pragma_contract`
+  - `directive_count`
+  - `duplicate`
+  - `non_leading`
+  - `runtime_dispatch_symbol`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `ConsumeLanguageVersionPragmas(diagnostics);`
+  - `ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false))`
+  - `if (placement == LanguageVersionPragmaPlacement::kNonLeading) {`
+  - `diagnostics.push_back(MakeDiag(version_line, version_column, "O3L006",`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L007", kDuplicatePragmaMessage));`
+  - `diagnostics.push_back(MakeDiag(directive_line, directive_column, "O3L008", kNonLeadingPragmaMessage));`
+  - `result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;`
+  - `result.language_version_pragma_contract.duplicate = pragma_contract.duplicate;`
+  - `result.language_version_pragma_contract.non_leading = pragma_contract.non_leading;`
+  - `manifest << "    \"language_version_pragma_contract\":{\"seen\":"`
+  - `<< ",\"directive_count\":" << pipeline_result.language_version_pragma_contract.directive_count`
+  - `<< ",\"duplicate\":" << (pipeline_result.language_version_pragma_contract.duplicate ? "true" : "false")`
+  - `<< ",\"non_leading\":"`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and macro-security source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, macro-security marker, or source anchor is missing.
+
+Macro-security capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.ll tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.manifest.json > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/abi-ir-anchors.txt`
+3. `rg -n "ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|LanguageVersionPragmaPlacement::kNonLeading|O3L005|O3L006|O3L007|O3L008|language_version_pragma_contract|directive_count|duplicate|non_leading|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/macro-security-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m205_lowering_macro_security_contract.py -q`
+
 ## M207 lowering/runtime dispatch-specific optimization passes
 
 Lowering/runtime dispatch-specific optimization pass evidence is captured as deterministic packet artifacts rooted under `tmp/` so nil-elision, non-nil fast-path routing, and usage-driven runtime-dispatch declaration emission remain replay-stable.
