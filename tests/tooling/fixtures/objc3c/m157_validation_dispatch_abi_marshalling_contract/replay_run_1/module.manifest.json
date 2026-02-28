@@ -1,0 +1,38 @@
+{
+  "schema_version": "objc3-artifact-manifest/v1",
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_dispatch_abi_marshalling_handoff": true,
+        "dispatch_abi_marshalling_message_send_sites": 5,
+        "dispatch_abi_marshalling_receiver_slots_marshaled": 5,
+        "dispatch_abi_marshalling_selector_slots_marshaled": 5,
+        "dispatch_abi_marshalling_argument_value_slots_marshaled": 6,
+        "dispatch_abi_marshalling_argument_padding_slots_marshaled": 14,
+        "dispatch_abi_marshalling_argument_total_slots_marshaled": 20,
+        "dispatch_abi_marshalling_total_marshaled_slots": 30,
+        "dispatch_abi_marshalling_runtime_dispatch_arg_slots": 4,
+        "lowering_dispatch_abi_marshalling_replay_key": "message_send_sites=5;receiver_slots_marshaled=5;selector_slots_marshaled=5;argument_value_slots_marshaled=6;argument_padding_slots_marshaled=14;argument_total_slots_marshaled=20;total_marshaled_slots=30;runtime_dispatch_arg_slots=4;deterministic=true;lane_contract=m157-dispatch-abi-marshalling-v1"
+      },
+      "semantic_surface": {
+        "objc_dispatch_abi_marshalling_surface": {
+          "message_send_sites": 5,
+          "receiver_slots_marshaled": 5,
+          "selector_slots_marshaled": 5,
+          "argument_value_slots_marshaled": 6,
+          "argument_padding_slots_marshaled": 14,
+          "argument_total_slots_marshaled": 20,
+          "total_marshaled_slots": 30,
+          "runtime_dispatch_arg_slots": 4,
+          "replay_key": "message_send_sites=5;receiver_slots_marshaled=5;selector_slots_marshaled=5;argument_value_slots_marshaled=6;argument_padding_slots_marshaled=14;argument_total_slots_marshaled=20;total_marshaled_slots=30;runtime_dispatch_arg_slots=4;deterministic=true;lane_contract=m157-dispatch-abi-marshalling-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_dispatch_abi_marshalling": {
+    "replay_key": "message_send_sites=5;receiver_slots_marshaled=5;selector_slots_marshaled=5;argument_value_slots_marshaled=6;argument_padding_slots_marshaled=14;argument_total_slots_marshaled=20;total_marshaled_slots=30;runtime_dispatch_arg_slots=4;deterministic=true;lane_contract=m157-dispatch-abi-marshalling-v1",
+    "lane_contract": "m157-dispatch-abi-marshalling-v1",
+    "deterministic_handoff": true
+  }
+}

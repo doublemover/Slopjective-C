@@ -478,6 +478,44 @@ Recommended M156 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_frontend_message_send_selector_lowering_contract.py -q`
 
+## M157 frontend dispatch ABI marshalling parser/AST surface
+
+Frontend parser/AST now emits deterministic dispatch ABI marshalling packets for bracketed message-send expressions.
+
+M157 parser/AST surface details:
+
+- dispatch-ABI helper anchors:
+  - `ComputeDispatchAbiArgumentPaddingSlots(...)`
+  - `BuildDispatchAbiMarshallingSymbol(...)`
+- parser assignment anchors:
+  - `message->dispatch_abi_receiver_slots_marshaled = 1u;`
+  - `message->dispatch_abi_selector_slots_marshaled = 1u;`
+  - `message->dispatch_abi_argument_value_slots_marshaled = static_cast<unsigned>(message->args.size());`
+  - `message->dispatch_abi_runtime_arg_slots = kDispatchAbiMarshallingRuntimeArgSlots;`
+  - `message->dispatch_abi_argument_padding_slots_marshaled = ComputeDispatchAbiArgumentPaddingSlots(...)`
+  - `message->dispatch_abi_total_slots_marshaled = ...`
+  - `message->dispatch_abi_marshalling_symbol = BuildDispatchAbiMarshallingSymbol(...)`
+  - `message->dispatch_abi_marshalling_is_normalized = true;`
+- AST dispatch-ABI carriers:
+  - `dispatch_abi_receiver_slots_marshaled`
+  - `dispatch_abi_selector_slots_marshaled`
+  - `dispatch_abi_argument_value_slots_marshaled`
+  - `dispatch_abi_argument_padding_slots_marshaled`
+  - `dispatch_abi_argument_total_slots_marshaled`
+  - `dispatch_abi_total_slots_marshaled`
+  - `dispatch_abi_runtime_arg_slots`
+  - `dispatch_abi_marshalling_symbol`
+  - `dispatch_abi_marshalling_is_normalized`
+
+Deterministic grammar intent:
+
+- marshalling slot packets are derived directly from parsed receiver/selector/argument shape.
+- argument padding and total slots are normalized against a stable frontend runtime slot budget.
+
+Recommended M157 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3679,6 +3717,55 @@ Sema/type metadata handoff contract:
 Recommended M156 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`
+
+## M157 sema/type dispatch ABI marshalling contract (M157-B001)
+
+M157-B adds a deterministic semantic summary for dispatch ABI marshalling surfaces derived from
+Objective-C message-send selector-lowering metadata and replays that packet through sema handoff
+and pass-manager parity carriers.
+
+Sema/type contract markers:
+
+- `Objc3DispatchAbiMarshallingSummary`
+- `dispatch_abi_marshalling_summary`
+- `BuildDispatchAbiMarshallingSummaryFromSites`
+- `BuildDispatchAbiMarshallingSummaryFromIntegrationSurface`
+- `BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff`
+- `deterministic_dispatch_abi_marshalling_handoff`
+- `result.parity_surface.dispatch_abi_marshalling_summary`
+
+Deterministic dispatch ABI marshalling invariants (fail-closed):
+
+- receiver marshalling remains complete (`receiver_slots == message_send_sites`).
+- selector symbol marshalling partition remains complete
+  (`selector_symbol_slots + missing_selector_symbol_sites == message_send_sites`).
+- argument marshalling partition remains complete
+  (`keyword_argument_slots + unary_argument_slots == argument_slots`).
+- mismatch and contract-violation counters remain bounded by message-send sites.
+- integration and handoff dispatch ABI marshalling summaries remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.dispatch_abi_marshalling_summary = BuildDispatchAbiMarshallingSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `dispatch_abi_marshalling_sites_total`
+  - `dispatch_abi_marshalling_receiver_slots_total`
+  - `dispatch_abi_marshalling_selector_symbol_slots_total`
+  - `dispatch_abi_marshalling_argument_slots_total`
+  - `dispatch_abi_marshalling_keyword_argument_slots_total`
+  - `dispatch_abi_marshalling_unary_argument_slots_total`
+  - `dispatch_abi_marshalling_arity_mismatch_sites_total`
+  - `dispatch_abi_marshalling_missing_selector_symbol_sites_total`
+  - `dispatch_abi_marshalling_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_dispatch_abi_marshalling_handoff`
+
+Recommended M157 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6428,6 +6515,64 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
 
+## Dispatch ABI marshalling artifact contract (M157-C001)
+
+M157-C publishes a replay-stable lowering packet for dispatch-path ABI argument/result marshalling.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m157/lowering-dispatch-abi-marshalling-contract/dispatch-abi-marshalling-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3DispatchAbiMarshallingLaneContract`
+- `Objc3DispatchAbiMarshallingContract`
+- `IsValidObjc3DispatchAbiMarshallingContract(...)`
+- `Objc3DispatchAbiMarshallingReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `receiver_slots_marshaled=<N>`
+- `selector_slots_marshaled=<N>`
+- `argument_value_slots_marshaled=<N>`
+- `argument_padding_slots_marshaled=<N>`
+- `argument_total_slots_marshaled=<N>`
+- `total_marshaled_slots=<N>`
+- `runtime_dispatch_arg_slots=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m157-dispatch-abi-marshalling-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_dispatch_abi_marshalling_handoff`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_message_send_sites`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_receiver_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_selector_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_value_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_padding_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_argument_total_slots_marshaled`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_total_marshaled_slots`
+- `frontend.pipeline.sema_pass_manager.dispatch_abi_marshalling_runtime_dispatch_arg_slots`
+- `frontend.pipeline.sema_pass_manager.lowering_dispatch_abi_marshalling_replay_key`
+- `frontend.pipeline.semantic_surface.objc_dispatch_abi_marshalling_surface`
+- `lowering_dispatch_abi_marshalling.replay_key`
+- `lowering_dispatch_abi_marshalling.lane_contract`
+
+IR publication markers:
+
+- `; dispatch_abi_marshalling_lowering = message_send_sites=<N>;receiver_slots_marshaled=<N>;selector_slots_marshaled=<N>;argument_value_slots_marshaled=<N>;argument_padding_slots_marshaled=<N>;argument_total_slots_marshaled=<N>;total_marshaled_slots=<N>;runtime_dispatch_arg_slots=<N>;deterministic=<bool>;lane_contract=m157-dispatch-abi-marshalling-v1`
+- `; frontend_objc_dispatch_abi_marshalling_profile = message_send_sites=<N>, receiver_slots_marshaled=<N>, selector_slots_marshaled=<N>, argument_value_slots_marshaled=<N>, argument_padding_slots_marshaled=<N>, argument_total_slots_marshaled=<N>, total_marshaled_slots=<N>, runtime_dispatch_arg_slots=<N>, deterministic_dispatch_abi_marshalling_handoff=<bool>`
+- `!objc3.objc_dispatch_abi_marshalling = !{!10}`
+- `!10 = !{i64 <message_send_sites>, i64 <receiver_slots_marshaled>, i64 <selector_slots_marshaled>, i64 <argument_value_slots_marshaled>, i64 <argument_padding_slots_marshaled>, i64 <argument_total_slots_marshaled>, i64 <total_marshaled_slots>, i64 <runtime_dispatch_arg_slots>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6943,6 +7088,25 @@ Validation evidence markers must remain deterministic across replay runs:
 - `message_send_selector_lowering`
 - `frontend_objc_message_send_selector_lowering_profile`
 - `!objc3.objc_message_send_selector_lowering = !{!9}`
+
+## M157 validation/conformance/perf dispatch ABI marshalling runbook
+
+From repo root, execute deterministic M157 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_validation_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_integration_dispatch_abi_marshalling_contract.py -q`
+- `npm run check:objc3c:m157-dispatch-abi-marshalling-contracts`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_dispatch_abi_marshalling.replay_key`
+- `deterministic_dispatch_abi_marshalling_handoff`
+- `dispatch_abi_marshalling_lowering`
+- `frontend_objc_dispatch_abi_marshalling_profile`
+- `!objc3.objc_dispatch_abi_marshalling = !{!10}`
 
 ## M221 validation/perf GA blocker burn-down runbook
 
@@ -8746,6 +8910,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py`
   - `tests/tooling/test_objc3c_m156_validation_message_send_selector_lowering_contract.py`
   - `tests/tooling/test_objc3c_m156_integration_message_send_selector_lowering_contract.py`
+
+## M157 integration dispatch ABI marshalling contract
+
+- Integration gate:
+  - `npm run check:objc3c:m157-dispatch-abi-marshalling-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m157`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_validation_dispatch_abi_marshalling_contract.py`
+  - `tests/tooling/test_objc3c_m157_integration_dispatch_abi_marshalling_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:

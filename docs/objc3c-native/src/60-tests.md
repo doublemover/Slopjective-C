@@ -500,6 +500,25 @@ Validation evidence markers must remain deterministic across replay runs:
 - `frontend_objc_message_send_selector_lowering_profile`
 - `!objc3.objc_message_send_selector_lowering = !{!9}`
 
+## M157 validation/conformance/perf dispatch ABI marshalling runbook
+
+From repo root, execute deterministic M157 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m157_frontend_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_sema_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_lowering_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_validation_dispatch_abi_marshalling_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m157_integration_dispatch_abi_marshalling_contract.py -q`
+- `npm run check:objc3c:m157-dispatch-abi-marshalling-contracts`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_dispatch_abi_marshalling.replay_key`
+- `deterministic_dispatch_abi_marshalling_handoff`
+- `dispatch_abi_marshalling_lowering`
+- `frontend_objc_dispatch_abi_marshalling_profile`
+- `!objc3.objc_dispatch_abi_marshalling = !{!10}`
+
 ## M221 validation/perf GA blocker burn-down runbook
 
 From repo root, run this deterministic blocker-burn sequence and fail closed on first non-zero exit:
