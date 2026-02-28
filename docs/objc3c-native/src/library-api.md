@@ -75,6 +75,26 @@ int objc3c_frontend_startup_check(void) {
     `tests/tooling/test_objc3c_m225_validation_roadmap_seed_contract.py`,
     `tests/tooling/test_objc3c_m225_integration_roadmap_seed_contract.py`.
 
+## M221 integration GA blocker burn-down
+
+- Gate intent: fail closed on unresolved GA blockers by chaining release-readiness and M221 lane contracts.
+### 1.1 GA blocker integration chain
+- Deterministic blocker gate:
+  - `npm run check:objc3c:m221-ga-blocker-burndown`
+- Chain order:
+  - replays `check:objc3c:m225-roadmap-seeding`.
+  - enforces all M221 lane contract surfaces:
+    `tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_sema_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_lowering_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_validation_ga_blocker_contract.py`,
+    `tests/tooling/test_objc3c_m221_integration_ga_blocker_contract.py`.
+### 1.2 ABI/version continuity constraints
+- Keep startup/version invariants unchanged while burning down GA blockers:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain release anchors.
+
 ## Current call contract
 
 - `objc3c_frontend_context_create()` returns `NULL` on allocation failure.
