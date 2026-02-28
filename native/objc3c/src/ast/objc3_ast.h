@@ -163,9 +163,11 @@ struct FuncParam {
   unsigned vector_lane_count = 1;
   bool id_spelling = false;
   bool class_spelling = false;
+  bool sel_spelling = false;
   bool instancetype_spelling = false;
   bool object_pointer_type_spelling = false;
   std::string object_pointer_type_name;
+  std::string typecheck_family_symbol;
   bool has_generic_suffix = false;
   bool generic_suffix_terminated = true;
   std::string generic_suffix_text;
@@ -198,9 +200,11 @@ struct Objc3MethodDecl {
   unsigned return_vector_lane_count = 1;
   bool return_id_spelling = false;
   bool return_class_spelling = false;
+  bool return_sel_spelling = false;
   bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   std::string return_object_pointer_type_name;
+  std::string return_typecheck_family_symbol;
   bool has_return_generic_suffix = false;
   bool return_generic_suffix_terminated = true;
   std::string return_generic_suffix_text;
@@ -237,9 +241,11 @@ struct Objc3PropertyDecl {
   unsigned vector_lane_count = 1;
   bool id_spelling = false;
   bool class_spelling = false;
+  bool sel_spelling = false;
   bool instancetype_spelling = false;
   bool object_pointer_type_spelling = false;
   std::string object_pointer_type_name;
+  std::string typecheck_family_symbol;
   bool has_generic_suffix = false;
   bool generic_suffix_terminated = true;
   std::string generic_suffix_text;
@@ -339,9 +345,11 @@ struct FunctionDecl {
   unsigned return_vector_lane_count = 1;
   bool return_id_spelling = false;
   bool return_class_spelling = false;
+  bool return_sel_spelling = false;
   bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   std::string return_object_pointer_type_name;
+  std::string return_typecheck_family_symbol;
   bool has_return_generic_suffix = false;
   bool return_generic_suffix_terminated = true;
   std::string return_generic_suffix_text;

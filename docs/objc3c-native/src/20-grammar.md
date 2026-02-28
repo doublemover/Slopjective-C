@@ -340,6 +340,37 @@ Recommended M154 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m154_frontend_property_synthesis_ivar_binding_contract.py -q`
 
+## M155 frontend id/Class/SEL/object-pointer typecheck parser surface
+
+Frontend parser/AST now emits deterministic typecheck-family symbols for `id`, `Class`, `SEL`, and named object-pointer
+spellings across function returns, method returns, parameters, and properties.
+
+M155 parser/AST surface details:
+
+- typecheck family helper anchors:
+  - `BuildObjcTypecheckParamFamilySymbol(...)`
+  - `BuildObjcTypecheckReturnFamilySymbol(...)`
+- parser assignment anchors:
+  - `fn.return_typecheck_family_symbol = BuildObjcTypecheckReturnFamilySymbol(fn);`
+  - `param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);`
+  - `target.return_typecheck_family_symbol = source.return_typecheck_family_symbol;`
+  - `target.typecheck_family_symbol = source.typecheck_family_symbol;`
+- AST typecheck-family carriers:
+  - `typecheck_family_symbol`
+  - `return_typecheck_family_symbol`
+  - `sel_spelling`
+  - `return_sel_spelling`
+
+Deterministic grammar intent:
+
+- typecheck-family packets normalize parser spellings into stable symbols (`id`, `Class`, `SEL`, `object-pointer:<name>`).
+- property/method type handoff preserves these packets through `CopyPropertyTypeFromParam(...)` and
+  `CopyMethodReturnTypeFromFunctionDecl(...)`.
+
+Recommended M155 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:

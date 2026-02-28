@@ -210,6 +210,38 @@ static std::string BuildObjcIvarBindingSymbol(const Objc3PropertyDecl &property)
   return "ivar_binding:_" + property.name;
 }
 
+static std::string BuildObjcTypecheckParamFamilySymbol(const FuncParam &param) {
+  if (param.id_spelling) {
+    return "id";
+  }
+  if (param.class_spelling) {
+    return "Class";
+  }
+  if (param.sel_spelling) {
+    return "SEL";
+  }
+  if (param.object_pointer_type_spelling) {
+    return "object-pointer:" + param.object_pointer_type_name;
+  }
+  return "";
+}
+
+static std::string BuildObjcTypecheckReturnFamilySymbol(const FunctionDecl &fn) {
+  if (fn.return_id_spelling) {
+    return "id";
+  }
+  if (fn.return_class_spelling) {
+    return "Class";
+  }
+  if (fn.return_sel_spelling) {
+    return "SEL";
+  }
+  if (fn.return_object_pointer_type_spelling) {
+    return "object-pointer:" + fn.return_object_pointer_type_name;
+  }
+  return "";
+}
+
 static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string> values) {
   std::sort(values.begin(), values.end());
   values.erase(std::unique(values.begin(), values.end()), values.end());
@@ -588,9 +620,11 @@ class Objc3Parser {
     target.return_vector_lane_count = source.return_vector_lane_count;
     target.return_id_spelling = source.return_id_spelling;
     target.return_class_spelling = source.return_class_spelling;
+    target.return_sel_spelling = source.return_sel_spelling;
     target.return_instancetype_spelling = source.return_instancetype_spelling;
     target.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
     target.return_object_pointer_type_name = source.return_object_pointer_type_name;
+    target.return_typecheck_family_symbol = source.return_typecheck_family_symbol;
     target.has_return_generic_suffix = source.has_return_generic_suffix;
     target.return_generic_suffix_terminated = source.return_generic_suffix_terminated;
     target.return_generic_suffix_text = source.return_generic_suffix_text;
@@ -609,9 +643,11 @@ class Objc3Parser {
     target.vector_lane_count = source.vector_lane_count;
     target.id_spelling = source.id_spelling;
     target.class_spelling = source.class_spelling;
+    target.sel_spelling = source.sel_spelling;
     target.instancetype_spelling = source.instancetype_spelling;
     target.object_pointer_type_spelling = source.object_pointer_type_spelling;
     target.object_pointer_type_name = source.object_pointer_type_name;
+    target.typecheck_family_symbol = source.typecheck_family_symbol;
     target.has_generic_suffix = source.has_generic_suffix;
     target.generic_suffix_terminated = source.generic_suffix_terminated;
     target.generic_suffix_text = source.generic_suffix_text;
@@ -1416,9 +1452,11 @@ class Objc3Parser {
   bool ParseFunctionReturnType(FunctionDecl &fn) {
     fn.return_id_spelling = false;
     fn.return_class_spelling = false;
+    fn.return_sel_spelling = false;
     fn.return_instancetype_spelling = false;
     fn.return_object_pointer_type_spelling = false;
     fn.return_object_pointer_type_name.clear();
+    fn.return_typecheck_family_symbol.clear();
     fn.return_vector_spelling = false;
     fn.return_vector_base_spelling.clear();
     fn.return_vector_lane_count = 1;
@@ -1459,6 +1497,7 @@ class Objc3Parser {
       fn.return_class_spelling = true;
     } else if (Match(TokenKind::KwSEL)) {
       fn.return_type = ValueType::I32;
+      fn.return_sel_spelling = true;
     } else if (Match(TokenKind::KwProtocol)) {
       fn.return_type = ValueType::I32;
     } else if (Match(TokenKind::KwInstancetype)) {
@@ -1490,6 +1529,8 @@ class Objc3Parser {
         return false;
       }
     }
+
+    fn.return_typecheck_family_symbol = BuildObjcTypecheckReturnFamilySymbol(fn);
 
     bool parsed_generic_suffix = false;
     while (true) {
@@ -1554,9 +1595,11 @@ class Objc3Parser {
     param.vector_lane_count = 1;
     param.id_spelling = false;
     param.class_spelling = false;
+    param.sel_spelling = false;
     param.instancetype_spelling = false;
     param.object_pointer_type_spelling = false;
     param.object_pointer_type_name.clear();
+    param.typecheck_family_symbol.clear();
     param.has_generic_suffix = false;
     param.generic_suffix_terminated = true;
     param.generic_suffix_text.clear();
@@ -1591,6 +1634,7 @@ class Objc3Parser {
       param.class_spelling = true;
     } else if (Match(TokenKind::KwSEL)) {
       param.type = ValueType::I32;
+      param.sel_spelling = true;
     } else if (Match(TokenKind::KwProtocol)) {
       param.type = ValueType::I32;
     } else if (Match(TokenKind::KwInstancetype)) {
@@ -1623,6 +1667,8 @@ class Objc3Parser {
                                       "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
       return false;
     }
+
+    param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);
 
     ParseParameterTypeSuffix(param);
     if (!param.generic_suffix_terminated) {
