@@ -10,16 +10,20 @@ This document captures the currently implemented behavior for the native `objc3c
 ## CLI usage
 
 ```text
-objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
+objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--llc <path>] [-fobjc-version=<N>] [--objc3-language-version <N>] [--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] [--objc3-max-message-args <0-16>] [--objc3-runtime-dispatch-symbol <symbol>]
 ```
 
 - Default `--out-dir`: `tmp/artifacts/compilation/objc3c-native`
 - Default `--emit-prefix`: `module`
 - Default `--clang`: `clang` (or explicit path)
 - Default `--llc`: `llc` (or explicit path)
+- Default language version: `3` (`-fobjc-version=<N>` or `--objc3-language-version <N>`)
+- Default `--objc3-compat-mode`: `canonical`
+- Default `--objc3-migration-assist`: `off`
 - Default `--objc3-ir-object-backend`: `llvm-direct`
 - Default `--objc3-max-message-args`: `4`
 - Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
+- Native frontend language-version support is currently fail-closed to Objective-C `3` only; other version values return usage error exit `2`.
 
 ## C API parity runner usage (M142-E001)
 
@@ -62,5 +66,6 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `objc3_objc3_path` defines extracted `.objc3` path execution helpers during shell split rollout.
 - `objc3_compilation_driver` owns top-level shell dispatch/orchestration and routes non-`.objc3` inputs to Objective-C path execution.
 - `objc3_objectivec_path` owns Objective-C translation-unit parse, diagnostics normalization, symbol-manifest emission, and object compilation.
-- CLI flags, defaults, and exit code semantics remain unchanged by the split.
+- CLI split boundaries remain stable; compatibility controls (`-fobjc-version`, `--objc3-language-version`,
+  `--objc3-compat-mode`, `--objc3-migration-assist`) are parsed at the driver shell layer and validated fail-closed.
 
