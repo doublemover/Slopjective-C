@@ -51,6 +51,37 @@ Then inspect:
 
 Both artifacts should present aligned compatibility/migration profile information for deterministic replay triage.
 
+## M224 lowering/LLVM IR/runtime ABI release readiness
+
+GA readiness evidence for native `.objc3` lowering remains deterministic and fail-closed:
+
+- IR replay markers must remain present and aligned:
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+- Manifest lowering packet must mirror the runtime boundary contract:
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- Runtime ABI declaration remains symbol-aligned with the lowering contract when dispatch calls are emitted:
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+- Boundary normalization remains fail-closed for invalid symbols:
+  - `invalid lowering contract runtime_dispatch_symbol`
+- Determinism expectation for GA:
+  - identical source + lowering options produce byte-identical `module.ll` and `module.manifest.json`.
+
+Operator evidence sequence:
+
+1. Generate artifacts in a deterministic tmp root:
+
+```powershell
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
+```
+
+2. Validate marker alignment in:
+  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`
+3. Run contract guard:
+  - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
+
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
 
 Current recovery fixtures are partitioned as:
