@@ -1738,3 +1738,30 @@ Recommended LSP semantic contract commands (sema/type lane):
 1. `python -m pytest tests/tooling/test_objc3c_m211_frontend_lsp_contract.py -q`
 2. `python -m pytest tests/tooling/test_objc3c_m211_sema_lsp_contract.py -q`
 
+## M210 sema/type performance budgets and regression gates
+
+For deterministic sema/type performance budgeting and regression gating, capture deterministic packet evidence from pass-manager budget counters, pipeline diagnostics transport, and manifest gate anchors before lane promotion.
+
+Performance budget packet map:
+
+- `budget packet 1.1 deterministic sema pass-manager budget counters` -> `m210_sema_pass_manager_budget_packet`
+- `budget packet 1.2 deterministic sema/type regression gate anchors` -> `m210_sema_type_regression_gate_packet`
+
+### 1.1 Deterministic sema pass-manager budget packet
+
+- Source budget anchors: `kObjc3SemaPassOrder`, `result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();`, `result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();`, and `IsMonotonicObjc3SemaDiagnosticsAfterPass(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Manifest budget anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_after_build`, `diagnostics_after_validate_bodies`, `diagnostics_after_validate_pure_contract`, `diagnostics_emitted_by_build`, `diagnostics_emitted_by_validate_bodies`, and `diagnostics_emitted_by_validate_pure_contract`.
+- Deterministic sema budget packet key: `m210_sema_pass_manager_budget_packet`.
+
+### 1.2 Deterministic sema/type regression gate anchor packet
+
+- Source regression anchors: `BuildSemanticTypeMetadataHandoff(...)`, `IsDeterministicSemanticTypeMetadataHandoff(...)`, `IsReadyObjc3SemaParityContractSurface(...)`, and `result.parity_surface.ready =`.
+- Manifest regression-gate anchors under `frontend.pipeline.sema_pass_manager`: `diagnostics_monotonic`, `deterministic_semantic_diagnostics`, `deterministic_type_metadata_handoff`, `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Semantic-surface regression anchors from `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Deterministic sema/type regression packet key: `m210_sema_type_regression_gate_packet`.
+
+Recommended M210 sema/type regression-gate validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
+
