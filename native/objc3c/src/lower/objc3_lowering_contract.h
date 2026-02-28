@@ -13,3 +13,4 @@ struct Objc3LoweringContract {
 };
 
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol);
+bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);

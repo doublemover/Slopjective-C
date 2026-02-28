@@ -9,7 +9,6 @@
 #include <unordered_set>
 #include <vector>
 
-bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
 class Objc3IREmitter {

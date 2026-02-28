@@ -165,50 +165,6 @@ static bool IsCompoundAssignmentOperator(const std::string &op) {
          op == "^=" || op == "<<=" || op == ">>=";
 }
 
-bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode) {
-  if (op == "+=") {
-    opcode = "add";
-    return true;
-  }
-  if (op == "-=") {
-    opcode = "sub";
-    return true;
-  }
-  if (op == "*=") {
-    opcode = "mul";
-    return true;
-  }
-  if (op == "/=") {
-    opcode = "sdiv";
-    return true;
-  }
-  if (op == "%=") {
-    opcode = "srem";
-    return true;
-  }
-  if (op == "&=") {
-    opcode = "and";
-    return true;
-  }
-  if (op == "|=") {
-    opcode = "or";
-    return true;
-  }
-  if (op == "^=") {
-    opcode = "xor";
-    return true;
-  }
-  if (op == "<<=") {
-    opcode = "shl";
-    return true;
-  }
-  if (op == ">>=") {
-    opcode = "ashr";
-    return true;
-  }
-  return false;
-}
-
 static std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";

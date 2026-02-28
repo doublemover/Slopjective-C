@@ -15,6 +15,8 @@ def test_lowering_contract_module_is_wired() -> None:
     assert HEADER.exists()
     assert SOURCE.exists()
     assert '#include "lower/objc3_lowering_contract.h"' in _read(MAIN_CPP)
+    header = _read(HEADER)
+    assert "TryGetCompoundAssignmentBinaryOpcode" in header
 
 
 def test_cmake_links_lowering_contract_target() -> None:
