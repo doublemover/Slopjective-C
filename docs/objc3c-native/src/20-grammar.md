@@ -150,3 +150,18 @@ Recommended seeding commands (frontend lane):
 2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
 3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
 
+## M221 frontend GA blocker burn-down packet
+
+GA blocker closure for frontend/parser requires deterministic parser/AST boundary evidence and fail-closed pragma diagnostics.
+
+- Required blocker-closure signals:
+  - prelude pragma diagnostics remain stable for `O3L005`/`O3L006`/`O3L007`/`O3L008`.
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(...)`.
+  - pipeline manifest continues exporting `frontend.language_version_pragma_contract`.
+  - token-to-sema bridge metadata remains present through `Objc3SemaTokenMetadata`.
+- Required proof commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m225_frontend_roadmap_seed_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m221_frontend_ga_blocker_contract.py -q`
+
