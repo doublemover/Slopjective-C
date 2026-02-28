@@ -1895,6 +1895,24 @@ Frontend unsafe pointer-extension gating relies on deterministic parser-owned pr
   3. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m191_frontend_unsafe_pointer_arithmetic_parser_contract.py -q`
 
+## M190 frontend concurrency replay-proof and race-guard packetization
+
+Frontend concurrency replay/race-guard contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for replay proof, race guard, task handoff, and actor isolation surfaces.
+
+- Required frontend concurrency replay/race-guard signals:
+  - parser symbol classifiers remain `IsConcurrencyReplaySymbol(...)`, `IsReplayProofSymbol(...)`, `IsRaceGuardSymbol(...)`, `IsTaskHandoffSymbol(...)`, and `IsActorIsolationSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ConcurrencyReplayRaceGuardProfile`.
+  - parser profile serialization remains `BuildConcurrencyReplayRaceGuardProfile(...)`.
+  - parser profile invariant gate remains `IsConcurrencyReplayRaceGuardProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeConcurrencyReplayRaceGuardProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeConcurrencyReplayRaceGuardProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.concurrency_replay_race_guard_sites = profile.concurrency_replay_race_guard_sites;` and `method.concurrency_replay_race_guard_sites = profile.concurrency_replay_race_guard_sites;`.
+  - AST carrier anchors remain `bool concurrency_replay_race_guard_profile_is_normalized = false;`, `bool deterministic_concurrency_replay_race_guard_handoff = false;`, and `std::string concurrency_replay_race_guard_profile;` on function/method declarations.
+- Required frontend concurrency replay/race-guard commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m190_frontend_concurrency_replay_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
