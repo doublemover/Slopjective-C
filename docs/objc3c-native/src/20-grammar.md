@@ -64,3 +64,19 @@ Lexical support:
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
 
+## Lexer token metadata contract (M137-E001)
+
+- Canonical metadata type lives in `native/objc3c/src/token/objc3_token_contract.h` and is consumed by parser/AST boundaries.
+- Stable token-kind surface for semantic suffix tracking:
+  - `Objc3SemaTokenKind::PointerDeclarator`
+  - `Objc3SemaTokenKind::NullabilitySuffix`
+- Stable metadata row fields:
+  - `kind`
+  - `text`
+  - `line`
+  - `column`
+- Parser integration contract:
+  - `native/objc3c/src/parse/objc3_parser.cpp` emits metadata with `MakeObjc3SemaTokenMetadata(...)`.
+- AST integration contract:
+  - `native/objc3c/src/ast/objc3_ast.h` stores suffix token evidence in `std::vector<Objc3SemaTokenMetadata>` fields.
+

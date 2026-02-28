@@ -249,6 +249,22 @@ Expected success surface:
 - Objective-C compile writes diagnostics + manifest + `module_objc.obj`.
 - Both invocations exit `0` on success.
 
+## Lexer extraction contract artifacts (M137-E001)
+
+`scripts/check_objc3c_lexer_extraction_token_contract.ps1` emits deterministic validation artifacts under:
+
+- `tmp/artifacts/objc3c-native/lexer-extraction-token-contract/<run_id>/`
+  - `summary.json` (contract id, pass/fail counters, check rows, and per-case replay evidence)
+  - run logs and replay output directories for positive/negative lexer fixtures
+
+Commands:
+
+```powershell
+npm run test:objc3c:lexer-extraction-token-contract
+npm run test:objc3c:lexer-parity
+npm run check:compiler-closeout:m137
+```
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell

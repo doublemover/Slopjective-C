@@ -101,6 +101,22 @@ Lexical support:
   - `?` is tokenized for parameter-suffix parsing (`id?`) and deterministic diagnostics for unsupported non-`id` suffix usage.
 - Keywords include `module`, `let`, `fn`, `return`, `if`, `else`, `do`, `for`, `switch`, `case`, `default`, `while`, `break`, `continue`, `i32`, `bool`, `BOOL`, `NSInteger`, `NSUInteger`, `void`, `id`, `true`, `false`.
 
+## Lexer token metadata contract (M137-E001)
+
+- Canonical metadata type lives in `native/objc3c/src/token/objc3_token_contract.h` and is consumed by parser/AST boundaries.
+- Stable token-kind surface for semantic suffix tracking:
+  - `Objc3SemaTokenKind::PointerDeclarator`
+  - `Objc3SemaTokenKind::NullabilitySuffix`
+- Stable metadata row fields:
+  - `kind`
+  - `text`
+  - `line`
+  - `column`
+- Parser integration contract:
+  - `native/objc3c/src/parse/objc3_parser.cpp` emits metadata with `MakeObjc3SemaTokenMetadata(...)`.
+- AST integration contract:
+  - `native/objc3c/src/ast/objc3_ast.h` stores suffix token evidence in `std::vector<Objc3SemaTokenMetadata>` fields.
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -1687,6 +1703,22 @@ Expected success surface:
 - Objective-C compile writes diagnostics + manifest + `module_objc.obj`.
 - Both invocations exit `0` on success.
 
+## Lexer extraction contract artifacts (M137-E001)
+
+`scripts/check_objc3c_lexer_extraction_token_contract.ps1` emits deterministic validation artifacts under:
+
+- `tmp/artifacts/objc3c-native/lexer-extraction-token-contract/<run_id>/`
+  - `summary.json` (contract id, pass/fail counters, check rows, and per-case replay evidence)
+  - run logs and replay output directories for positive/negative lexer fixtures
+
+Commands:
+
+```powershell
+npm run test:objc3c:lexer-extraction-token-contract
+npm run test:objc3c:lexer-parity
+npm run check:compiler-closeout:m137
+```
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -1717,8 +1749,11 @@ npm run test:objc3c:lowering-replay-proof
 npm run test:objc3c:execution-smoke
 npm run test:objc3c:execution-replay-proof
 npm run test:objc3c:driver-shell-split
+npm run test:objc3c:lexer-extraction-token-contract
+npm run test:objc3c:lexer-parity
 npm run proof:objc3c
 npm run test:objc3c:lane-e
+npm run check:compiler-closeout:m137
 ```
 
 Driver shell split regression spot-check (M136-E001):
@@ -1754,6 +1789,21 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Verifies `main.cpp` shell boundary: parse + exit-code mapping + delegation-only contract into `driver/*`.
   - Runs a deterministic two-pass smoke compile over `tests/tooling/fixtures/native/driver_split/smoke_compile_driver_shell_split.objc3`.
   - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/driver-shell-split/<run_id>/summary.json`.
+- `npm run test:objc3c:lexer-extraction-token-contract`
+  - Runs `scripts/check_objc3c_lexer_extraction_token_contract.ps1`.
+  - Verifies lexer subsystem extraction surfaces (`lex/*`, pipeline wiring, `TokenKind` contract markers).
+  - Replays positive/negative lexer fixtures and enforces deterministic diagnostics/artifact contracts.
+  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/lexer-extraction-token-contract/<run_id>/summary.json`.
+- `npm run test:objc3c:lexer-parity`
+  - Runs `python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q`.
+  - Verifies lexer extraction parity contract surfaces:
+    - lexer module files exist,
+    - pipeline consumes lexer header boundary,
+    - CMake registers lexer target/source wiring.
+- `npm run check:compiler-closeout:m137`
+  - Runs `python scripts/check_m137_lexer_contract.py`.
+  - Runs `npm run test:objc3c:lexer-extraction-token-contract` and `npm run test:objc3c:lexer-parity`.
+  - Enforces fail-closed M137 lexer/token contract wiring across build/docs/CI/release surfaces.
 - `npm run proof:objc3c`
   - Runs `scripts/run_objc3c_native_compile_proof.ps1`.
   - Replays `tests/tooling/fixtures/native/hello.objc3` twice and writes `artifacts/compilation/objc3c-native/proof_20260226/digest.json` on success.
@@ -1762,6 +1812,9 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
     - `npm run test:objc3c`
     - `npm run test:objc3c:diagnostics-replay-proof`
     - `npm run test:objc3c:parser-replay-proof`
+    - `npm run test:objc3c:driver-shell-split`
+    - `npm run test:objc3c:lexer-extraction-token-contract`
+    - `npm run test:objc3c:lexer-parity`
     - `npm run test:objc3c:perf-budget`
     - `npm run test:objc3c:lowering-regression`
     - `npm run test:objc3c:lowering-replay-proof`
@@ -1814,6 +1867,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_a
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_driver_shell_split_contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1
+python scripts/check_m137_lexer_contract.py
+python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q
 python scripts/check_m23_execution_readiness.py
 python scripts/check_m24_execution_readiness.py
 ```

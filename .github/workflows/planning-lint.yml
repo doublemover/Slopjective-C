@@ -22,5 +22,7 @@ jobs:
         run: python scripts/build_site_index.py --check
       - name: Enforce M135 direct-LLVM packet/docs contract
         run: python scripts/check_m135_direct_llvm_contract.py
+      - name: Enforce M137 lexer token packet/docs contract
+        run: python scripts/check_m137_lexer_contract.py
       - name: Run planning-scope lint
         run: python scripts/planning_lint.py
