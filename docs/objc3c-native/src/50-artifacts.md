@@ -515,6 +515,69 @@ Derive/synthesis pipeline capture commands (lowering/runtime lane):
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
 
+## M195 lowering/runtime system-extension conformance and policy
+
+Lowering/runtime system-extension conformance/policy evidence is captured as deterministic packet artifacts rooted under `tmp/` so policy validation guards, lowering boundary serialization, and runtime dispatch surfaces remain replay-stable and isolated across reruns.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.diagnostics.json`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/system-extension-policy-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `system-extension conformance/policy architecture+isolation anchors` (required in source-anchor extracts):
+  - `ValidateSupportedLanguageVersion(...)`
+  - `ValidateSupportedCompatibilityMode(...)`
+  - `TryNormalizeObjc3LoweringContract(...)`
+  - `kRuntimeDispatchDefaultArgs = 4`
+  - `kRuntimeDispatchMaxArgs = 16`
+  - `kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32"`
+  - `output_dir = "tmp/artifacts/compilation/objc3c-native"`
+  - `frontend_options.lowering.max_message_send_args = options.max_message_send_args;`
+  - `frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;`
+  - `Objc3LoweringIRBoundaryReplayKey(...)`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+  - `<< "\",\"runtime_dispatch_arg_slots\":" << options.lowering.max_message_send_args`
+  - `<< ",\"selector_global_ordering\":\"lexicographic\"},\n";`
+- `source anchors`:
+  - `static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version, std::string &error) {`
+  - `static bool ValidateSupportedCompatibilityMode(uint8_t requested_compatibility_mode, std::string &error) {`
+  - `if (!TryNormalizeObjc3LoweringContract(frontend_options.lowering, normalized_lowering, lowering_error)) {`
+  - `inline constexpr std::size_t kRuntimeDispatchDefaultArgs = 4;`
+  - `inline constexpr std::size_t kRuntimeDispatchMaxArgs = 16;`
+  - `inline constexpr const char *kRuntimeDispatchDefaultSymbol = "objc3_msgsend_i32";`
+  - `std::string output_dir = "tmp/artifacts/compilation/objc3c-native";`
+  - `bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,`
+  - `error = "invalid lowering contract runtime_dispatch_symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " +`
+  - `std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary) {`
+  - `return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +`
+  - `out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";`
+  - `out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";`
+  - `manifest << "  \"lowering\": {\"runtime_dispatch_symbol\":\"" << options.lowering.runtime_dispatch_symbol`
+- `closure criteria`:
+  - rerunning the same source + lowering options must produce byte-identical `module.ll`, `module.manifest.json`, and `module.diagnostics.json`.
+  - ABI/IR anchor extracts and system-extension policy source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, system-extension policy marker, or source anchor is missing.
+
+System-extension conformance/policy capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.ll tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.manifest.json > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/abi-ir-anchors.txt`
+3. `rg -n "ValidateSupportedLanguageVersion|ValidateSupportedCompatibilityMode|TryNormalizeObjc3LoweringContract|kRuntimeDispatchDefaultArgs = 4|kRuntimeDispatchMaxArgs = 16|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\"|output_dir = \\\"tmp/artifacts/compilation/objc3c-native\\\"|frontend_options\\.lowering\\.max_message_send_args = options\\.max_message_send_args;|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/system-extension-policy-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q`
+
 ## M196 lowering/runtime C interop headers and ABI alignment
 
 Lowering/runtime C interop header and ABI-alignment evidence is captured as deterministic packet artifacts rooted under `tmp/` so C shim header contracts, embedding ABI compatibility guards, and lowering/runtime dispatch boundaries remain replay-stable and isolated across reruns.
