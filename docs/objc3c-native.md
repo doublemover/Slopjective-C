@@ -421,6 +421,22 @@ Frontend profile-guided optimization (PGO) hook readiness uses deterministic lex
   3. `python -m pytest tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
 
+## M208 frontend whole-module optimization controls
+
+Frontend whole-module optimization controls require deterministic module-shape packet surfaces from parser ingress to manifest staging.
+
+- Required frontend whole-module control signals:
+  - parser ingress remains exclusively `BuildObjc3AstFromTokens(tokens)`.
+  - module AST extraction remains `const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);`.
+  - module function set shaping remains deterministic via `manifest_functions.reserve(program.functions.size())`.
+  - unique function identity set remains `std::unordered_set<std::string> manifest_function_names`.
+  - manifest semantic surface remains emitted with `"declared_globals"`, `"declared_functions"`, `"resolved_global_symbols"`, and `"resolved_function_symbols"`.
+- Required frontend whole-module commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m209_frontend_pgo_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m208_frontend_wmo_contract.py -q`
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -2186,6 +2202,34 @@ Recommended M210 sema/type regression-gate validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py -q`
 
+## M208 sema/type whole-module optimization controls
+
+For deterministic sema/type whole-module optimization (WMO) controls, capture replay-stable packet evidence from sema pass ordering, integration-surface module shape, and manifest semantic-surface counters before enabling module-wide optimization heuristics.
+
+Whole-module optimization control packet map:
+
+- `wmo control packet 1.1 deterministic sema pass-order + integration surface` -> `m208_sema_pass_order_wmo_control_packet`
+- `wmo control packet 1.2 deterministic type/symbol module-shape parity` -> `m208_type_symbol_module_shape_wmo_control_packet`
+
+### 1.1 Deterministic sema pass-order + integration surface control packet
+
+- Source control anchors: `kObjc3SemaPassOrder`, `BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);`, `ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);`, and `ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);`.
+- Source diagnostics canonicalization anchor: `CanonicalizePassDiagnostics(...)`.
+- Pipeline diagnostics transport anchor: `sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;`.
+- Deterministic sema WMO control packet key: `m208_sema_pass_order_wmo_control_packet`.
+
+### 1.2 Deterministic type/symbol module-shape parity control packet
+
+- Source module-shape anchors: `BuildSemanticTypeMetadataHandoff(...)`, `result.parity_surface.globals_total = result.integration_surface.globals.size();`, `result.parity_surface.functions_total = result.integration_surface.functions.size();`, `result.parity_surface.type_metadata_global_entries = result.type_metadata_handoff.global_names_lexicographic.size();`, and `result.parity_surface.type_metadata_function_entries = result.type_metadata_handoff.functions_lexicographic.size();`.
+- Source readiness anchor: `IsReadyObjc3SemaParityContractSurface(...)`.
+- Manifest WMO control anchors under `frontend.pipeline.sema_pass_manager`: `parity_ready`, `type_metadata_global_entries`, and `type_metadata_function_entries`.
+- Manifest semantic-surface module-shape anchors under `frontend.pipeline.semantic_surface`: `declared_globals`, `declared_functions`, `resolved_global_symbols`, and `resolved_function_symbols`.
+- Deterministic type/symbol WMO control packet key: `m208_type_symbol_module_shape_wmo_control_packet`.
+
+Recommended M208 sema/type whole-module optimization control command:
+
+- `python -m pytest tests/tooling/test_objc3c_m208_sema_wmo_contract.py -q`
+
 ## M209 sema/type profile-guided optimization hooks
 
 For deterministic sema/type profile-guided optimization (PGO) hooks, capture replay-stable packet evidence from sema pass diagnostics emission, type metadata handoff, and semantic-surface counters before changing optimization heuristics.
@@ -2545,6 +2589,58 @@ LSP semantic profile capture commands (lowering/runtime lane):
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
+
+## M208 lowering/runtime whole-module optimization controls
+
+Lowering/runtime whole-module optimization (WMO) controls are captured as deterministic packet artifacts rooted under `tmp/` so module-shape and runtime-dispatch surfaces remain replay-stable.
+
+- `packet roots`:
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/`
+- `packet artifacts`:
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.manifest.json`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/abi-ir-anchors.txt`
+  - `tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/wmo-control-source-anchors.txt`
+- `ABI/IR anchors` (persist verbatim in each packet):
+  - `; lowering_ir_boundary = runtime_dispatch_symbol=<symbol>;runtime_dispatch_arg_slots=<N>;selector_global_ordering=lexicographic`
+  - `; frontend_profile = language_version=<N>, compatibility_mode=<mode>, migration_assist=<bool>, migration_legacy_total=<count>`
+  - `!objc3.frontend = !{!0}`
+  - `declare i32 @<symbol>(i32, ptr, i32, ..., i32)`
+  - `"lowering":{"runtime_dispatch_symbol":"<symbol>","runtime_dispatch_arg_slots":<N>,"selector_global_ordering":"lexicographic"}`
+- `whole-module control markers` (required in source-anchor extracts):
+  - `max_message_send_args`
+  - `semantic_surface`
+  - `declared_functions`
+  - `resolved_function_symbols`
+  - `runtime_dispatch_arg_slots`
+  - `selector_global_ordering`
+- `source anchors`:
+  - `manifest_functions.reserve(program.functions.size())`
+  - `std::unordered_set<std::string> manifest_function_names`
+  - `if (manifest_function_names.insert(fn.name).second)`
+  - `manifest << "    \"max_message_send_args\":" << options.lowering.max_message_send_args << ",\n";`
+  - `manifest << "      \"semantic_surface\": {\"declared_globals\":" << program.globals.size()`
+  - `<< ",\"declared_functions\":" << manifest_functions.size()`
+  - `<< ",\"resolved_function_symbols\":" << pipeline_result.integration_surface.functions.size()`
+  - `if (input.max_message_send_args > kObjc3RuntimeDispatchMaxArgs) {`
+  - `error = "invalid lowering contract max_message_send_args: "`
+  - `boundary.runtime_dispatch_arg_slots = normalized.max_message_send_args;`
+  - `boundary.selector_global_ordering = kObjc3SelectorGlobalOrdering;`
+  - `if (expr->args.size() > lowering_ir_boundary_.runtime_dispatch_arg_slots) {`
+  - `lowered.args.assign(lowering_ir_boundary_.runtime_dispatch_arg_slots, "0");`
+  - `call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "`
+- `closure criteria`:
+  - rerunning identical source + lowering/runtime options preserves byte-identical `module.ll` and `module.manifest.json`.
+  - ABI/IR anchors and WMO control source-anchor extracts remain stable across reruns.
+  - closure remains open if any required packet artifact, ABI/IR anchor, whole-module control marker, or source anchor is missing.
+
+WMO control capture commands (lowering/runtime lane):
+
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls --emit-prefix module`
+2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.ll tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.manifest.json > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/abi-ir-anchors.txt`
+3. `rg -n "manifest_functions\\.reserve\\(program\\.functions\\.size\\(\\)\\)|manifest_function_names|max_message_send_args|semantic_surface|declared_functions|resolved_function_symbols|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/wmo-control-source-anchors.txt`
+4. `python -m pytest tests/tooling/test_objc3c_m208_lowering_wmo_contract.py -q`
 
 ## M209 lowering/runtime profile-guided optimization hooks
 
@@ -4438,6 +4534,51 @@ Contract check:
 python -m pytest tests/tooling/test_objc3c_m209_validation_pgo_contract.py -q
 ```
 
+## M208 validation/perf whole-module optimization runbook
+
+Whole-module optimization (WMO) validation runbook verifies deterministic module-shape and optimization-control evidence before promotion.
+
+```powershell
+npm run test:objc3c:m145-direct-llvm-matrix
+npm run test:objc3c:m145-direct-llvm-matrix:lane-d
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:perf-budget
+```
+
+Whole-module optimization evidence packet fields:
+
+- `tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json`
+  - `status`
+  - `total_elapsed_ms`
+  - `budget_margin_ms`
+  - `cache_proof.status`
+  - `cache_proof.run1.cache_hit`
+  - `cache_proof.run2.cache_hit`
+- `tmp/artifacts/conformance-suite/<target>/summary.json`
+  - `suite.status`
+  - `suite.failures`
+  - `matrix.total_cases`
+  - `matrix.failed_cases`
+  - `selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `status`
+  - `results[*].runtime_dispatch_symbol`
+  - `results[*].selector_global_ordering`
+- `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+  - `status`
+  - `run1_sha256`
+  - `run2_sha256`
+  - `run1_summary`
+  - `run2_summary`
+  - `budget_margin_ms`
+
+Contract check:
+
+```powershell
+python -m pytest tests/tooling/test_objc3c_m208_validation_wmo_contract.py -q
+```
+
 ## Current limitations (implemented behavior only)
 
 - Top-level `.objc3` declarations currently include `module`, `let`, `fn`, `pure fn`, declaration-only `extern fn`, declaration-only `extern pure fn`, and declaration-only `pure extern fn`.
@@ -4795,6 +4936,26 @@ int objc3c_frontend_startup_check(void) {
   - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
   - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
   - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain PGO anchors.
+
+## M208 integration whole-module optimization controls
+
+- Gate intent: enforce deterministic whole-module optimization control evidence across all lanes.
+### 1.1 WMO integration chain
+- Deterministic WMO gate:
+  - `npm run check:objc3c:m208-whole-module-optimization`
+- Chain order:
+  - replays `check:objc3c:m209-pgo-hooks`.
+  - enforces all M208 lane contracts:
+    `tests/tooling/test_objc3c_m208_frontend_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_sema_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_lowering_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_validation_wmo_contract.py`,
+    `tests/tooling/test_objc3c_m208_integration_wmo_contract.py`.
+### 1.2 ABI/version guard continuity
+- Preserve startup/version invariants through WMO validation:
+  - `objc3c_frontend_is_abi_compatible(OBJC3C_FRONTEND_ABI_VERSION)`.
+  - `objc3c_frontend_version().abi_version == objc3c_frontend_abi_version()`.
+  - `OBJC3C_FRONTEND_VERSION_STRING` and `OBJC3C_FRONTEND_ABI_VERSION` remain WMO anchors.
 
 ## Current call contract
 
