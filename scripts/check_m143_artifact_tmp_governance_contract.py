@@ -18,6 +18,7 @@ ARTIFACTS: dict[str, Path] = {
     "compile_wrapper": ROOT / "scripts" / "objc3c_native_compile.ps1",
     "c_api_runner": ROOT / "native" / "objc3c" / "src" / "tools" / "objc3c_frontend_c_api_runner.cpp",
     "parity_script": ROOT / "scripts" / "check_objc3c_library_cli_parity.py",
+    "sema_tmp_governance_script": ROOT / "scripts" / "check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1",
     "parity_test": ROOT / "tests" / "tooling" / "test_objc3c_library_cli_parity.py",
     "c_api_runner_test": ROOT / "tests" / "tooling" / "test_objc3c_c_api_runner_extraction.py",
     "driver_cli_test": ROOT / "tests" / "tooling" / "test_objc3c_driver_cli_extraction.py",
@@ -25,6 +26,7 @@ ARTIFACTS: dict[str, Path] = {
     "semantics_fragment": ROOT / "docs" / "objc3c-native" / "src" / "30-semantics.md",
     "artifacts_fragment": ROOT / "docs" / "objc3c-native" / "src" / "50-artifacts.md",
     "tests_fragment": ROOT / "docs" / "objc3c-native" / "src" / "60-tests.md",
+    "contract_doc": ROOT / "docs" / "contracts" / "artifact_tmp_governance_expectations.md",
     "package_json": ROOT / "package.json",
 }
 
@@ -46,6 +48,12 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-TMP-03E", "contains stale generated artifacts; choose a unique --work-key"),
         ("M143-TMP-03F", "args.emit_prefix = normalize_artifact_name("),
     ),
+    "sema_tmp_governance_script": (
+        ("M143-TMP-06A", '$suiteRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract"'),
+        ("M143-TMP-06B", '$defaultRunId = "m143-sema-type-system-default"'),
+        ("M143-TMP-06C", "return $DefaultRunId"),
+        ("M143-TMP-06D", '$runDirRel = "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/$runId"'),
+    ),
     "parity_test": (
         ("M143-TST-01", "test_parity_source_mode_default_work_key_is_deterministic_for_same_inputs"),
         ("M143-TST-02", "test_parity_source_mode_rejects_invalid_emit_prefix"),
@@ -64,14 +72,28 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     "semantics_fragment": (
         ("M143-DOC-SEM-01", "## Artifact tmp-path governance contract (M143-D001)"),
         ("M143-DOC-SEM-02", "deterministic `--work-key`"),
+        ("M143-DOC-SEM-03", "Parser/AST-facing lane-A closeout coverage"),
+        ("M143-DOC-SEM-04", "m143-sema-type-system-default"),
     ),
     "artifacts_fragment": (
         ("M143-DOC-ART-01", "## Artifact tmp-path governance artifacts (M143-D001)"),
         ("M143-DOC-ART-02", "npm run check:objc3c:library-cli-parity:source:m143"),
+        ("M143-DOC-ART-03", "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json"),
     ),
     "tests_fragment": (
         ("M143-DOC-TST-01", "npm run test:objc3c:m143-artifact-governance"),
         ("M143-DOC-TST-02", "npm run check:compiler-closeout:m143"),
+        ("M143-DOC-TST-03", "tests/tooling/test_objc3c_parser_extraction.py"),
+        ("M143-DOC-TST-04", "tests/tooling/test_objc3c_parser_ast_builder_extraction.py"),
+        ("M143-DOC-TST-05", "m143-sema-type-system-default"),
+    ),
+    "contract_doc": (
+        ("M143-DOC-CON-01", "Contract ID: `objc3c-artifact-tmp-governance-contract/m143-v1`"),
+        ("M143-DOC-CON-02", "| `M143-A001` |"),
+        ("M143-DOC-CON-03", "test_objc3c_parser_extraction.py"),
+        ("M143-DOC-CON-04", "test_objc3c_parser_ast_builder_extraction.py"),
+        ("M143-DOC-CON-05", "| `M143-B001` |"),
+        ("M143-DOC-CON-06", "m143-sema-type-system-default"),
     ),
 }
 
@@ -88,6 +110,13 @@ REQUIRED_PACKAGE_SCRIPTS: dict[str, tuple[str, ...]] = {
         "tests/tooling/test_objc3c_library_cli_parity.py",
         "tests/tooling/test_objc3c_c_api_runner_extraction.py",
         "tests/tooling/test_objc3c_driver_cli_extraction.py",
+        "tests/tooling/test_objc3c_parser_extraction.py",
+        "tests/tooling/test_objc3c_parser_ast_builder_extraction.py",
+        "tests/tooling/test_objc3c_sema_extraction.py",
+        "tests/tooling/test_objc3c_sema_pass_manager_extraction.py",
+        "tests/tooling/test_objc3c_frontend_types_extraction.py",
+        "tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py",
+        "tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py",
         "tests/tooling/test_check_m143_artifact_tmp_governance_contract.py",
     ),
     "check:compiler-closeout:m143": (

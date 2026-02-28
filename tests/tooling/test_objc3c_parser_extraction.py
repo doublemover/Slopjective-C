@@ -20,7 +20,7 @@ def test_parser_module_exists_and_pipeline_uses_api() -> None:
     assert '#include "parse/objc3_parser.h"' not in pipeline_cpp
     assert "class Objc3Parser {" not in pipeline_cpp
     assert "Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);" in pipeline_cpp
-    assert "MutableObjc3ParsedProgramAst(result.program)" in pipeline_cpp
+    assert "result.program = std::move(parse_result.program);" in pipeline_cpp
 
 
 def test_cmake_registers_parse_target() -> None:

@@ -294,7 +294,12 @@ npm run check:compiler-closeout:m139
 
 `npm run test:objc3c:sema-pass-manager-diagnostics-bus` writes deterministic pass-manager diagnostics-bus proof artifacts under:
 
-- `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+- `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`
+
+Deterministic run-id behavior:
+
+- Default run id is fixed to `m143-sema-type-system-default`.
+- Optional override remains `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID` (validated token syntax).
 
 `npm run check:compiler-closeout:m139` fail-closes on sema pass-manager and diagnostics-bus wiring drift via:
 
@@ -393,7 +398,7 @@ Governance contract notes:
 `npm run check:compiler-closeout:m143` fail-closes on tmp-governance source/docs/package drift via:
 
 - `python scripts/check_m143_artifact_tmp_governance_contract.py`
-- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`
 
 ## Execution smoke commands (M26 lane-E)
 

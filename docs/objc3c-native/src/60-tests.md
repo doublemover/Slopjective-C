@@ -118,8 +118,8 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `npm run test:objc3c:m142-lowering-parity`.
   - Enforces fail-closed M142 parity harness wiring across source/docs/package/workflow surfaces.
 - `npm run test:objc3c:m143-artifact-governance`
-  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
-  - Verifies tmp-governed default output paths, source-mode work-root governance, and M143 docs/package wiring.
+  - Runs `python -m pytest tests/tooling/test_objc3c_library_cli_parity.py tests/tooling/test_objc3c_driver_cli_extraction.py tests/tooling/test_objc3c_c_api_runner_extraction.py tests/tooling/test_objc3c_parser_extraction.py tests/tooling/test_objc3c_parser_ast_builder_extraction.py tests/tooling/test_objc3c_m143_artifact_tmp_governance_contract.py tests/tooling/test_check_m143_artifact_tmp_governance_contract.py -q`.
+  - Verifies tmp-governed default output paths, parser/AST lane-A coverage wiring, source-mode work-root governance, and M143 docs/package wiring.
 - `npm run check:objc3c:library-cli-parity:source:m143`
   - Runs `python scripts/check_objc3c_library_cli_parity.py --source ... --summary-out tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json ...`.
   - Enforces deterministic replay roots and fail-closed stale/missing artifact checks under tmp-governed paths.
@@ -168,7 +168,8 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/loweri
   - Runs `python -m pytest tests/tooling/test_objc3c_sema_extraction.py tests/tooling/test_objc3c_sema_pass_manager_extraction.py tests/tooling/test_objc3c_parser_contract_sema_integration.py tests/tooling/test_objc3c_pure_contract_extraction.py tests/tooling/test_objc3c_frontend_types_extraction.py -q`.
   - Verifies sema module extraction boundaries, parser-contract integration, pure-contract extraction boundary, and pipeline diagnostics-bus type surfaces.
   - Replays positive/negative sema fixtures and enforces deterministic diagnostics/artifact contracts for pass-manager + diagnostics-bus extraction.
-  - Writes per-run summary JSON under `tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
+  - Writes per-run summary JSON under `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json`.
+  - Uses deterministic default run id `m143-sema-type-system-default` unless `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID` is explicitly provided.
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
   - Replays all recovery fixtures (positive and negative) twice per fixture.
   - Includes optional Objective-C dispatch fixture roots when present (`recovery/positive/lowering_dispatch`, then `dispatch/positive`).

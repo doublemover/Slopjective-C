@@ -5,14 +5,18 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract"
+$suiteRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract"
+$defaultRunId = "m143-sema-type-system-default"
 $configuredRunId = $env:OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID
 
 function Resolve-ValidatedRunId {
-  param([Parameter()][string]$ConfiguredRunId)
+  param(
+    [Parameter()][string]$ConfiguredRunId,
+    [Parameter(Mandatory = $true)][string]$DefaultRunId
+  )
 
   if ([string]::IsNullOrWhiteSpace($ConfiguredRunId)) {
-    return Get-Date -Format "yyyyMMdd_HHmmss_fff"
+    return $DefaultRunId
   }
 
   $candidate = $ConfiguredRunId.Trim()
@@ -25,10 +29,10 @@ function Resolve-ValidatedRunId {
   return $candidate
 }
 
-$runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId
+$runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId -DefaultRunId $defaultRunId
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
-$runDirRel = "tmp/artifacts/objc3c-native/sema-pass-manager-diagnostics-bus-contract/$runId"
+$runDirRel = "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/$runId"
 $summaryRel = "$runDirRel/summary.json"
 
 $buildScriptPath = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"

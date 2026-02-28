@@ -36,6 +36,24 @@ def test_m143_package_and_docs_wiring_contract() -> None:
     assert "tests/tooling/test_check_m143_artifact_tmp_governance_contract.py" in scripts[
         "test:objc3c:m143-artifact-governance"
     ]
+    assert "tests/tooling/test_objc3c_parser_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_parser_ast_builder_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_sema_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_sema_pass_manager_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_frontend_types_extraction.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
+    assert "tests/tooling/test_objc3c_m143_sema_type_system_tmp_governance_contract.py" in scripts[
+        "test:objc3c:m143-artifact-governance"
+    ]
 
     assert "check:compiler-closeout:m143" in scripts
     assert "python scripts/check_m143_artifact_tmp_governance_contract.py" in scripts[
@@ -49,6 +67,16 @@ def test_m143_package_and_docs_wiring_contract() -> None:
 
     assert "## Artifact tmp-path governance (M143-D001)" in _read(CLI_FRAGMENT)
     assert "## Artifact tmp-path governance contract (M143-D001)" in _read(SEMANTICS_FRAGMENT)
+    assert "Parser/AST-facing lane-A closeout coverage" in _read(SEMANTICS_FRAGMENT)
+    assert "m143-sema-type-system-default" in _read(SEMANTICS_FRAGMENT)
     assert "## Artifact tmp-path governance artifacts (M143-D001)" in _read(ARTIFACTS_FRAGMENT)
+    assert "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/summary.json" in _read(
+        ARTIFACTS_FRAGMENT
+    )
+    assert "tests/tooling/test_objc3c_parser_extraction.py" in _read(TESTS_FRAGMENT)
+    assert "tests/tooling/test_objc3c_parser_ast_builder_extraction.py" in _read(TESTS_FRAGMENT)
+    assert "m143-sema-type-system-default" in _read(TESTS_FRAGMENT)
     assert "npm run check:compiler-closeout:m143" in _read(TESTS_FRAGMENT)
     assert "Contract ID: `objc3c-artifact-tmp-governance-contract/m143-v1`" in _read(CONTRACT_DOC)
+    assert "| `M143-A001` |" in _read(CONTRACT_DOC)
+    assert "| `M143-B001` |" in _read(CONTRACT_DOC)

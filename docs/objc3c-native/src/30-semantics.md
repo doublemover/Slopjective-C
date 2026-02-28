@@ -1308,6 +1308,11 @@ Every currently shipped `.objc3` stage behavior is mapped to contract fields:
 - Replay safety contract for source mode:
   - Fails when expected generated artifacts for `<emit-prefix>` are missing after command execution.
   - Fails when stale `<emit-prefix>` artifacts are already present in target output roots prior to command execution.
+- Lane-B sema/type-system replay artifacts are also tmp-governed:
+  - `scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1` writes `summary.json` under `tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/<run_id>/`.
+  - Default run id is deterministic (`m143-sema-type-system-default`); explicit override remains available via `OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID`.
+- Parser/AST-facing lane-A closeout coverage:
+  - `test:objc3c:m143-artifact-governance` includes `tests/tooling/test_objc3c_parser_extraction.py` and `tests/tooling/test_objc3c_parser_ast_builder_extraction.py`.
 
 ## M25 Message-Send Contract Matrix
 
