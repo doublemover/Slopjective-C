@@ -445,6 +445,39 @@ Recommended M155 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_frontend_id_class_sel_object_pointer_typecheck_contract.py -q`
 
+## M156 frontend message-send selector-lowering parser surface
+
+Frontend parser/AST now emits deterministic message-send form packets and selector-lowering metadata for bracketed
+message-send expressions.
+
+M156 parser/AST surface details:
+
+- message-send helper anchors:
+  - `BuildMessageSendFormSymbol(...)`
+  - `BuildMessageSendSelectorLoweringSymbol(...)`
+- parser assignment anchors:
+  - `message->message_send_form = Expr::MessageSendForm::Keyword;`
+  - `message->message_send_form = Expr::MessageSendForm::Unary;`
+  - `message->message_send_form_symbol = BuildMessageSendFormSymbol(message->message_send_form);`
+  - `message->selector_lowering_symbol = BuildMessageSendSelectorLoweringSymbol(message->selector_lowering_pieces);`
+  - `message->selector_lowering_is_normalized = true;`
+- AST message-send carriers:
+  - `MessageSendForm`
+  - `message_send_form`
+  - `message_send_form_symbol`
+  - `selector_lowering_pieces`
+  - `selector_lowering_symbol`
+  - `selector_lowering_is_normalized`
+
+Deterministic grammar intent:
+
+- message-send parse shape captures unary vs keyword form as a stable parser symbol.
+- selector lowering symbol packets are derived from parsed selector pieces instead of raw token replay.
+
+Recommended M156 frontend contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_frontend_message_send_selector_lowering_contract.py -q`
+
 ## Language-version pragma prelude contract
 
 Implemented lexer contract for `#pragma objc_language_version(...)`:
@@ -3606,6 +3639,46 @@ Sema/type metadata handoff contract:
 Recommended M155 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_sema_id_class_sel_object_pointer_typecheck_contract.py -q`
+
+## M156 sema/type message-send AST form and selector-lowering contract (M156-B001)
+
+M156-B adds a deterministic semantic summary for Objective-C message-send AST forms and selector-lowering
+metadata, then replays it through sema handoff and pass-manager parity carriers.
+
+Sema/type contract markers:
+
+- `Objc3MessageSendSelectorLoweringSiteMetadata`
+- `Objc3MessageSendSelectorLoweringSummary`
+- `message_send_selector_lowering_sites_lexicographic`
+- `message_send_selector_lowering_summary`
+- `BuildMessageSendSelectorLoweringSiteMetadataLexicographic`
+- `BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface`
+- `BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff`
+- `deterministic_message_send_selector_lowering_handoff`
+- `result.parity_surface.message_send_selector_lowering_summary`
+
+Deterministic message-send selector-lowering invariants (fail-closed):
+
+- message-send form partition remains complete (`unary_form_sites + keyword_form_sites == message_send_sites`).
+- selector-lowering piece accounting remains bounded (`selector_lowering_argument_piece_entries <= selector_lowering_piece_entries`).
+- normalized selector-lowering coverage remains bounded (`selector_lowering_normalized_sites <= selector_lowering_symbol_sites <= message_send_sites`).
+- mismatch and contract-violation counters remain bounded by message-send sites.
+- integration and handoff summaries remain parity-equivalent before release gating passes.
+
+Sema/type metadata handoff contract:
+
+- integration site packet:
+  `surface.message_send_selector_lowering_sites_lexicographic = BuildMessageSendSelectorLoweringSiteMetadataLexicographic(ast);`
+- integration summary packet:
+  `surface.message_send_selector_lowering_summary = BuildMessageSendSelectorLoweringSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.message_send_selector_lowering_summary = BuildMessageSendSelectorLoweringSummaryFromTypeMetadataHandoff(handoff);`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_message_send_selector_lowering_handoff`
+
+Recommended M156 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6296,6 +6369,65 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py -q`
 
+## Message-send selector-lowering artifact contract (M156-C001)
+
+M156-C publishes a replay-stable lowering packet for Objective-C message-send expression forms and canonical selector
+lowering metadata.
+
+Deterministic lane-C artifact roots:
+
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.manifest.json`
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.ll`
+- `tmp/artifacts/compilation/objc3c-native/m156/lowering-message-send-selector-lowering-contract/module.diagnostics.json`
+- `tmp/reports/objc3c-native/m156/lowering-message-send-selector-lowering-contract/message-send-selector-lowering-source-anchors.txt`
+
+Lowering contract markers:
+
+- `kObjc3MessageSendSelectorLoweringLaneContract`
+- `Objc3MessageSendSelectorLoweringContract`
+- `IsValidObjc3MessageSendSelectorLoweringContract(...)`
+- `Objc3MessageSendSelectorLoweringReplayKey(...)`
+
+Replay key publication markers:
+
+- `message_send_sites=<N>`
+- `unary_selector_sites=<N>`
+- `keyword_selector_sites=<N>`
+- `selector_piece_sites=<N>`
+- `argument_expression_sites=<N>`
+- `receiver_expression_sites=<N>`
+- `selector_literal_entries=<N>`
+- `selector_literal_characters=<N>`
+- `deterministic=<bool>`
+- `lane_contract=m156-message-send-selector-lowering-v1`
+
+Published manifest contract keys:
+
+- `frontend.pipeline.sema_pass_manager.deterministic_message_send_selector_lowering_handoff`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_unary_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_keyword_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_piece_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_argument_expression_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_receiver_sites`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_literal_entries`
+- `frontend.pipeline.sema_pass_manager.message_send_selector_lowering_selector_literal_characters`
+- `frontend.pipeline.sema_pass_manager.lowering_message_send_selector_lowering_replay_key`
+- `frontend.pipeline.semantic_surface.objc_message_send_selector_lowering_surface`
+- `lowering_message_send_selector_lowering.replay_key`
+- `lowering_message_send_selector_lowering.lane_contract`
+
+IR publication markers:
+
+- `; message_send_selector_lowering = message_send_sites=<N>;unary_selector_sites=<N>;keyword_selector_sites=<N>;selector_piece_sites=<N>;argument_expression_sites=<N>;receiver_expression_sites=<N>;selector_literal_entries=<N>;selector_literal_characters=<N>;deterministic=<bool>;lane_contract=m156-message-send-selector-lowering-v1`
+- `; frontend_objc_message_send_selector_lowering_profile = message_send_sites=<N>, unary_selector_sites=<N>, keyword_selector_sites=<N>, selector_piece_sites=<N>, argument_expression_sites=<N>, receiver_expression_sites=<N>, selector_literal_entries=<N>, selector_literal_characters=<N>, deterministic_message_send_selector_lowering_handoff=<bool>`
+- `!objc3.objc_message_send_selector_lowering = !{!9}`
+- `!9 = !{i64 <message_send_sites>, i64 <unary_selector_sites>, i64 <keyword_selector_sites>, i64 <selector_piece_sites>, i64 <argument_expression_sites>, i64 <receiver_expression_sites>, i64 <selector_literal_entries>, i64 <selector_literal_characters>, i1 <deterministic>}`
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -6795,6 +6927,22 @@ Validation evidence markers must remain deterministic across replay runs:
 - `id_class_sel_object_pointer_typecheck_lowering`
 - `frontend_objc_id_class_sel_object_pointer_typecheck_profile`
 - `!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}`
+
+## M156 validation/conformance/perf message-send selector lowering runbook
+
+From repo root, execute deterministic M156 contract checks in lane order:
+
+- `python -m pytest tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py -q`
+- `python -m pytest tests/tooling/test_objc3c_m156_validation_message_send_selector_lowering_contract.py -q`
+
+Validation evidence markers must remain deterministic across replay runs:
+
+- `lowering_message_send_selector_lowering.replay_key`
+- `deterministic_message_send_selector_lowering_handoff`
+- `message_send_selector_lowering`
+- `frontend_objc_message_send_selector_lowering_profile`
+- `!objc3.objc_message_send_selector_lowering = !{!9}`
 
 ## M221 validation/perf GA blocker burn-down runbook
 
@@ -8583,6 +8731,21 @@ int objc3c_frontend_startup_check(void) {
   - `tests/tooling/test_objc3c_m155_lowering_id_class_sel_object_pointer_typecheck_contract.py`
   - `tests/tooling/test_objc3c_m155_validation_id_class_sel_object_pointer_typecheck_contract.py`
   - `tests/tooling/test_objc3c_m155_integration_id_class_sel_object_pointer_typecheck_contract.py`
+
+## M156 integration message-send selector-lowering contract
+
+- Integration gate:
+  - `npm run check:objc3c:m156-message-send-selector-lowering-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m156`
+- Operational task-hygiene hook:
+  - `python scripts/ci/check_task_hygiene.py`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m156_frontend_message_send_selector_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m156_sema_message_send_selector_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m156_lowering_message_send_selector_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m156_validation_message_send_selector_lowering_contract.py`
+  - `tests/tooling/test_objc3c_m156_integration_message_send_selector_lowering_contract.py`
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
