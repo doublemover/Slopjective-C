@@ -231,6 +231,11 @@ struct Objc3SemaParityContractSurface {
   std::size_t runtime_shim_host_link_contract_violation_sites_total = 0;
   std::string runtime_shim_host_link_runtime_dispatch_symbol;
   bool runtime_shim_host_link_default_runtime_dispatch_symbol_binding = true;
+  std::size_t retain_release_operation_ownership_qualified_sites_total = 0;
+  std::size_t retain_release_operation_retain_insertion_sites_total = 0;
+  std::size_t retain_release_operation_release_insertion_sites_total = 0;
+  std::size_t retain_release_operation_autorelease_insertion_sites_total = 0;
+  std::size_t retain_release_operation_contract_violation_sites_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
@@ -249,6 +254,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_nil_receiver_semantics_foldability_handoff = false;
   bool deterministic_super_dispatch_method_family_handoff = false;
   bool deterministic_runtime_shim_host_link_handoff = false;
+  bool deterministic_retain_release_operation_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
@@ -264,6 +270,7 @@ struct Objc3SemaParityContractSurface {
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;
@@ -752,7 +759,28 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
           (surface.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
            kObjc3RuntimeShimHostLinkDefaultDispatchSymbol)) &&
          surface.runtime_shim_host_link_summary.deterministic &&
-         surface.deterministic_runtime_shim_host_link_handoff;
+         surface.deterministic_runtime_shim_host_link_handoff &&
+         surface.retain_release_operation_summary.ownership_qualified_sites ==
+             surface.retain_release_operation_ownership_qualified_sites_total &&
+         surface.retain_release_operation_summary.retain_insertion_sites ==
+             surface.retain_release_operation_retain_insertion_sites_total &&
+         surface.retain_release_operation_summary.release_insertion_sites ==
+             surface.retain_release_operation_release_insertion_sites_total &&
+         surface.retain_release_operation_summary.autorelease_insertion_sites ==
+             surface.retain_release_operation_autorelease_insertion_sites_total &&
+         surface.retain_release_operation_summary.contract_violation_sites ==
+             surface.retain_release_operation_contract_violation_sites_total &&
+         surface.retain_release_operation_summary.retain_insertion_sites <=
+             surface.retain_release_operation_summary.ownership_qualified_sites +
+                 surface.retain_release_operation_summary.contract_violation_sites &&
+         surface.retain_release_operation_summary.release_insertion_sites <=
+             surface.retain_release_operation_summary.ownership_qualified_sites +
+                 surface.retain_release_operation_summary.contract_violation_sites &&
+         surface.retain_release_operation_summary.autorelease_insertion_sites <=
+             surface.retain_release_operation_summary.ownership_qualified_sites +
+                 surface.retain_release_operation_summary.contract_violation_sites &&
+         surface.retain_release_operation_summary.deterministic &&
+         surface.deterministic_retain_release_operation_handoff;
 }
 
 struct Objc3SemaPassManagerResult {
@@ -791,6 +819,8 @@ struct Objc3SemaPassManagerResult {
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   bool deterministic_runtime_shim_host_link_handoff = false;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
+  bool deterministic_retain_release_operation_handoff = false;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   Objc3AtomicMemoryOrderMappingSummary atomic_memory_order_mapping;
   bool deterministic_atomic_memory_order_mapping = false;
   Objc3VectorTypeLoweringSummary vector_type_lowering;

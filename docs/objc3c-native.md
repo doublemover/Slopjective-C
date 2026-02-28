@@ -4143,6 +4143,60 @@ Sema/type metadata handoff contract:
 Recommended M161 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m161_sema_ownership_qualifier_contract.py -q`
+
+## M162 sema/type retain-release operation contract (M162-B001)
+
+M162-B wires parser-derived ownership-operation profile flags through sema integration and
+type-metadata handoff, then enforces deterministic parity accounting for retain/release
+insertion semantics.
+
+Sema/type retain-release contract markers:
+
+- `Objc3RetainReleaseOperationSummary`
+- `param_ownership_insert_retain`
+- `param_ownership_insert_release`
+- `param_ownership_insert_autorelease`
+- `return_ownership_insert_retain`
+- `return_ownership_insert_release`
+- `return_ownership_insert_autorelease`
+- `ownership_insert_retain`
+- `ownership_insert_release`
+- `ownership_insert_autorelease`
+- `BuildRetainReleaseOperationSummaryFromIntegrationSurface`
+- `BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff`
+- `retain_release_operation_ownership_qualified_sites_total`
+- `retain_release_operation_retain_insertion_sites_total`
+- `retain_release_operation_release_insertion_sites_total`
+- `retain_release_operation_autorelease_insertion_sites_total`
+- `retain_release_operation_contract_violation_sites_total`
+- `deterministic_retain_release_operation_handoff`
+
+Deterministic retain-release invariants (fail-closed):
+
+- ownership-insertion vectors must match declaration arity for functions and methods.
+- retain/release/autorelease insertions on unqualified ownership sites are contract violations.
+- autorelease insertion must not co-occur with retain/release insertion at the same site.
+- insertion counters must remain bounded by
+  `ownership_qualified_sites + contract_violation_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.retain_release_operation_summary = BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);`
+- handoff summary packet:
+  `handoff.retain_release_operation_summary = BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);`
+- parity packet totals:
+  - `retain_release_operation_ownership_qualified_sites_total`
+  - `retain_release_operation_retain_insertion_sites_total`
+  - `retain_release_operation_release_insertion_sites_total`
+  - `retain_release_operation_autorelease_insertion_sites_total`
+  - `retain_release_operation_contract_violation_sites_total`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_retain_release_operation_handoff`
+
+Recommended M162 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m162_sema_retain_release_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

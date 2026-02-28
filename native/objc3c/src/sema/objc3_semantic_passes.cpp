@@ -1175,6 +1175,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.has_pointer_declarator = property.has_pointer_declarator;
   info.has_nullability_suffix = !property.nullability_suffix_tokens.empty();
   info.has_ownership_qualifier = property.has_ownership_qualifier;
+  info.ownership_insert_retain = property.ownership_insert_retain;
+  info.ownership_insert_release = property.ownership_insert_release;
+  info.ownership_insert_autorelease = property.ownership_insert_autorelease;
   info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
   info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
   info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
@@ -1351,6 +1354,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_has_invalid_nullability_suffix.reserve(method.params.size());
   info.param_has_invalid_ownership_qualifier.reserve(method.params.size());
   info.param_has_invalid_type_suffix.reserve(method.params.size());
+  info.param_ownership_insert_retain.reserve(method.params.size());
+  info.param_ownership_insert_release.reserve(method.params.size());
+  info.param_ownership_insert_autorelease.reserve(method.params.size());
   info.param_has_protocol_composition.reserve(method.params.size());
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
   info.param_has_invalid_protocol_composition.reserve(method.params.size());
@@ -1370,6 +1376,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
     info.param_has_invalid_ownership_qualifier.push_back(HasInvalidOwnershipQualifierParamTypeSuffix(param));
     info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
+    info.param_ownership_insert_retain.push_back(param.ownership_insert_retain);
+    info.param_ownership_insert_release.push_back(param.ownership_insert_release);
+    info.param_ownership_insert_autorelease.push_back(param.ownership_insert_autorelease);
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
     info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -1388,6 +1397,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
                                         info.return_has_invalid_pointer_declarator ||
                                         info.return_has_invalid_nullability_suffix ||
                                         info.return_has_invalid_ownership_qualifier;
+  info.return_ownership_insert_retain = method.return_ownership_insert_retain;
+  info.return_ownership_insert_release = method.return_ownership_insert_release;
+  info.return_ownership_insert_autorelease = method.return_ownership_insert_autorelease;
   info.return_type = method.return_type;
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
@@ -1403,7 +1415,10 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
 static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3MethodInfo &rhs) {
   if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type || lhs.return_is_vector != rhs.return_is_vector ||
       lhs.is_class_method != rhs.is_class_method ||
-      lhs.return_has_ownership_qualifier != rhs.return_has_ownership_qualifier) {
+      lhs.return_has_ownership_qualifier != rhs.return_has_ownership_qualifier ||
+      lhs.return_ownership_insert_retain != rhs.return_ownership_insert_retain ||
+      lhs.return_ownership_insert_release != rhs.return_ownership_insert_release ||
+      lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease) {
     return false;
   }
   if (lhs.return_is_vector &&
@@ -1413,6 +1428,14 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
   }
   if (lhs.param_has_ownership_qualifier.size() != lhs.arity ||
       rhs.param_has_ownership_qualifier.size() != rhs.arity) {
+    return false;
+  }
+  if (lhs.param_ownership_insert_retain.size() != lhs.arity ||
+      rhs.param_ownership_insert_retain.size() != rhs.arity ||
+      lhs.param_ownership_insert_release.size() != lhs.arity ||
+      rhs.param_ownership_insert_release.size() != rhs.arity ||
+      lhs.param_ownership_insert_autorelease.size() != lhs.arity ||
+      rhs.param_ownership_insert_autorelease.size() != rhs.arity) {
     return false;
   }
   if (!AreEquivalentProtocolCompositions(lhs.return_has_protocol_composition,
@@ -1437,6 +1460,11 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
       return false;
     }
     if (lhs.param_has_ownership_qualifier[i] != rhs.param_has_ownership_qualifier[i]) {
+      return false;
+    }
+    if (lhs.param_ownership_insert_retain[i] != rhs.param_ownership_insert_retain[i] ||
+        lhs.param_ownership_insert_release[i] != rhs.param_ownership_insert_release[i] ||
+        lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i]) {
       return false;
     }
     if (lhs.param_is_vector[i] &&
@@ -4194,6 +4222,333 @@ BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMe
   return BuildRuntimeShimHostLinkSummaryFromSites(handoff.message_send_selector_lowering_sites_lexicographic);
 }
 
+static Objc3RetainReleaseOperationSummary
+BuildRetainReleaseOperationSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
+  Objc3RetainReleaseOperationSummary summary;
+  std::size_t operation_sites = 0;
+
+  const auto accumulate_function = [&summary, &operation_sites](const FunctionInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_has_ownership_qualifier.size() != arity ||
+        info.param_ownership_insert_retain.size() != arity ||
+        info.param_ownership_insert_release.size() != arity ||
+        info.param_ownership_insert_autorelease.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    operation_sites += arity + 1u;
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool qualified = info.param_has_ownership_qualifier[i];
+      const bool insert_retain = info.param_ownership_insert_retain[i];
+      const bool insert_release = info.param_ownership_insert_release[i];
+      const bool insert_autorelease = info.param_ownership_insert_autorelease[i];
+      if (qualified) {
+        ++summary.ownership_qualified_sites;
+      }
+      if (insert_retain) {
+        ++summary.retain_insertion_sites;
+      }
+      if (insert_release) {
+        ++summary.release_insertion_sites;
+      }
+      if (insert_autorelease) {
+        ++summary.autorelease_insertion_sites;
+      }
+      if ((!qualified && (insert_retain || insert_release || insert_autorelease)) ||
+          (insert_autorelease && (insert_retain || insert_release))) {
+        ++summary.contract_violation_sites;
+      }
+    }
+    const bool return_qualified = info.return_has_ownership_qualifier;
+    if (return_qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (info.return_ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (info.return_ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (info.return_ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!return_qualified && (info.return_ownership_insert_retain || info.return_ownership_insert_release ||
+                               info.return_ownership_insert_autorelease)) ||
+        (info.return_ownership_insert_autorelease &&
+         (info.return_ownership_insert_retain || info.return_ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_method = [&summary, &operation_sites](const Objc3MethodInfo &info) {
+    const std::size_t arity = info.arity;
+    if (info.param_has_ownership_qualifier.size() != arity ||
+        info.param_ownership_insert_retain.size() != arity ||
+        info.param_ownership_insert_release.size() != arity ||
+        info.param_ownership_insert_autorelease.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    operation_sites += arity + 1u;
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool qualified = info.param_has_ownership_qualifier[i];
+      const bool insert_retain = info.param_ownership_insert_retain[i];
+      const bool insert_release = info.param_ownership_insert_release[i];
+      const bool insert_autorelease = info.param_ownership_insert_autorelease[i];
+      if (qualified) {
+        ++summary.ownership_qualified_sites;
+      }
+      if (insert_retain) {
+        ++summary.retain_insertion_sites;
+      }
+      if (insert_release) {
+        ++summary.release_insertion_sites;
+      }
+      if (insert_autorelease) {
+        ++summary.autorelease_insertion_sites;
+      }
+      if ((!qualified && (insert_retain || insert_release || insert_autorelease)) ||
+          (insert_autorelease && (insert_retain || insert_release))) {
+        ++summary.contract_violation_sites;
+      }
+    }
+    const bool return_qualified = info.return_has_ownership_qualifier;
+    if (return_qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (info.return_ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (info.return_ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (info.return_ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!return_qualified && (info.return_ownership_insert_retain || info.return_ownership_insert_release ||
+                               info.return_ownership_insert_autorelease)) ||
+        (info.return_ownership_insert_autorelease &&
+         (info.return_ownership_insert_retain || info.return_ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_property = [&summary, &operation_sites](const Objc3PropertyInfo &info) {
+    ++operation_sites;
+    const bool qualified = info.has_ownership_qualifier;
+    if (qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (info.ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (info.ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (info.ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!qualified &&
+         (info.ownership_insert_retain || info.ownership_insert_release || info.ownership_insert_autorelease)) ||
+        (info.ownership_insert_autorelease && (info.ownership_insert_retain || info.ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  for (const auto &entry : surface.functions) {
+    accumulate_function(entry.second);
+  }
+  for (const auto &entry : surface.interfaces) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+  for (const auto &entry : surface.implementations) {
+    for (const auto &method_entry : entry.second.methods) {
+      accumulate_method(method_entry.second);
+    }
+    for (const auto &property_entry : entry.second.properties) {
+      accumulate_property(property_entry.second);
+    }
+  }
+
+  const std::size_t qualified_or_violation = summary.ownership_qualified_sites + summary.contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      summary.contract_violation_sites <= operation_sites &&
+      summary.retain_insertion_sites <= qualified_or_violation &&
+      summary.release_insertion_sites <= qualified_or_violation &&
+      summary.autorelease_insertion_sites <= qualified_or_violation;
+  return summary;
+}
+
+static Objc3RetainReleaseOperationSummary
+BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3RetainReleaseOperationSummary summary;
+  std::size_t operation_sites = 0;
+
+  const auto accumulate_function = [&summary, &operation_sites](const Objc3SemanticFunctionTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_has_ownership_qualifier.size() != arity ||
+        metadata.param_ownership_insert_retain.size() != arity ||
+        metadata.param_ownership_insert_release.size() != arity ||
+        metadata.param_ownership_insert_autorelease.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    operation_sites += arity + 1u;
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool qualified = metadata.param_has_ownership_qualifier[i];
+      const bool insert_retain = metadata.param_ownership_insert_retain[i];
+      const bool insert_release = metadata.param_ownership_insert_release[i];
+      const bool insert_autorelease = metadata.param_ownership_insert_autorelease[i];
+      if (qualified) {
+        ++summary.ownership_qualified_sites;
+      }
+      if (insert_retain) {
+        ++summary.retain_insertion_sites;
+      }
+      if (insert_release) {
+        ++summary.release_insertion_sites;
+      }
+      if (insert_autorelease) {
+        ++summary.autorelease_insertion_sites;
+      }
+      if ((!qualified && (insert_retain || insert_release || insert_autorelease)) ||
+          (insert_autorelease && (insert_retain || insert_release))) {
+        ++summary.contract_violation_sites;
+      }
+    }
+    const bool return_qualified = metadata.return_has_ownership_qualifier;
+    if (return_qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (metadata.return_ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (metadata.return_ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (metadata.return_ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!return_qualified && (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release ||
+                               metadata.return_ownership_insert_autorelease)) ||
+        (metadata.return_ownership_insert_autorelease &&
+         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_method = [&summary, &operation_sites](const Objc3SemanticMethodTypeMetadata &metadata) {
+    const std::size_t arity = metadata.arity;
+    if (metadata.param_has_ownership_qualifier.size() != arity ||
+        metadata.param_ownership_insert_retain.size() != arity ||
+        metadata.param_ownership_insert_release.size() != arity ||
+        metadata.param_ownership_insert_autorelease.size() != arity) {
+      summary.deterministic = false;
+      return;
+    }
+    operation_sites += arity + 1u;
+    for (std::size_t i = 0; i < arity; ++i) {
+      const bool qualified = metadata.param_has_ownership_qualifier[i];
+      const bool insert_retain = metadata.param_ownership_insert_retain[i];
+      const bool insert_release = metadata.param_ownership_insert_release[i];
+      const bool insert_autorelease = metadata.param_ownership_insert_autorelease[i];
+      if (qualified) {
+        ++summary.ownership_qualified_sites;
+      }
+      if (insert_retain) {
+        ++summary.retain_insertion_sites;
+      }
+      if (insert_release) {
+        ++summary.release_insertion_sites;
+      }
+      if (insert_autorelease) {
+        ++summary.autorelease_insertion_sites;
+      }
+      if ((!qualified && (insert_retain || insert_release || insert_autorelease)) ||
+          (insert_autorelease && (insert_retain || insert_release))) {
+        ++summary.contract_violation_sites;
+      }
+    }
+    const bool return_qualified = metadata.return_has_ownership_qualifier;
+    if (return_qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (metadata.return_ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (metadata.return_ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (metadata.return_ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!return_qualified && (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release ||
+                               metadata.return_ownership_insert_autorelease)) ||
+        (metadata.return_ownership_insert_autorelease &&
+         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  const auto accumulate_property = [&summary, &operation_sites](const Objc3SemanticPropertyTypeMetadata &metadata) {
+    ++operation_sites;
+    const bool qualified = metadata.has_ownership_qualifier;
+    if (qualified) {
+      ++summary.ownership_qualified_sites;
+    }
+    if (metadata.ownership_insert_retain) {
+      ++summary.retain_insertion_sites;
+    }
+    if (metadata.ownership_insert_release) {
+      ++summary.release_insertion_sites;
+    }
+    if (metadata.ownership_insert_autorelease) {
+      ++summary.autorelease_insertion_sites;
+    }
+    if ((!qualified && (metadata.ownership_insert_retain || metadata.ownership_insert_release ||
+                        metadata.ownership_insert_autorelease)) ||
+        (metadata.ownership_insert_autorelease &&
+         (metadata.ownership_insert_retain || metadata.ownership_insert_release))) {
+      ++summary.contract_violation_sites;
+    }
+  };
+
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    accumulate_function(metadata);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata : interface_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : interface_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+  for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
+    for (const auto &method_metadata : implementation_metadata.methods_lexicographic) {
+      accumulate_method(method_metadata);
+    }
+    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+      accumulate_property(property_metadata);
+    }
+  }
+
+  const std::size_t qualified_or_violation = summary.ownership_qualified_sites + summary.contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      summary.contract_violation_sites <= operation_sites &&
+      summary.retain_insertion_sites <= qualified_or_violation &&
+      summary.release_insertion_sites <= qualified_or_violation &&
+      summary.autorelease_insertion_sites <= qualified_or_violation;
+  return summary;
+}
+
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
 BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
   Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
@@ -4546,6 +4901,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_has_invalid_nullability_suffix.reserve(fn.params.size());
       info.param_has_invalid_ownership_qualifier.reserve(fn.params.size());
       info.param_has_invalid_type_suffix.reserve(fn.params.size());
+      info.param_ownership_insert_retain.reserve(fn.params.size());
+      info.param_ownership_insert_release.reserve(fn.params.size());
+      info.param_ownership_insert_autorelease.reserve(fn.params.size());
       info.param_has_protocol_composition.reserve(fn.params.size());
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
       info.param_has_invalid_protocol_composition.reserve(fn.params.size());
@@ -4565,6 +4923,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_has_invalid_nullability_suffix.push_back(HasInvalidNullabilityParamTypeSuffix(param));
         info.param_has_invalid_ownership_qualifier.push_back(HasInvalidOwnershipQualifierParamTypeSuffix(param));
         info.param_has_invalid_type_suffix.push_back(HasInvalidParamTypeSuffix(param));
+        info.param_ownership_insert_retain.push_back(param.ownership_insert_retain);
+        info.param_ownership_insert_release.push_back(param.ownership_insert_release);
+        info.param_ownership_insert_autorelease.push_back(param.ownership_insert_autorelease);
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
         info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
@@ -4583,6 +4944,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                             info.return_has_invalid_pointer_declarator ||
                                             info.return_has_invalid_nullability_suffix ||
                                             info.return_has_invalid_ownership_qualifier;
+      info.return_ownership_insert_retain = fn.return_ownership_insert_retain;
+      info.return_ownership_insert_release = fn.return_ownership_insert_release;
+      info.return_ownership_insert_autorelease = fn.return_ownership_insert_autorelease;
       info.return_type = fn.return_type;
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
@@ -4599,7 +4963,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     FunctionInfo &existing = it->second;
     bool compatible = existing.arity == fn.params.size() && existing.return_type == fn.return_type &&
                       existing.return_is_vector == fn.return_vector_spelling &&
-                      existing.return_has_ownership_qualifier == fn.has_return_ownership_qualifier;
+                      existing.return_has_ownership_qualifier == fn.has_return_ownership_qualifier &&
+                      existing.return_ownership_insert_retain == fn.return_ownership_insert_retain &&
+                      existing.return_ownership_insert_release == fn.return_ownership_insert_release &&
+                      existing.return_ownership_insert_autorelease == fn.return_ownership_insert_autorelease;
     if (compatible && existing.return_is_vector) {
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
@@ -4617,6 +4984,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         if (i >= existing.param_types.size() || i >= existing.param_is_vector.size() ||
             i >= existing.param_vector_base_spelling.size() || i >= existing.param_vector_lane_count.size() ||
             i >= existing.param_has_ownership_qualifier.size() ||
+            i >= existing.param_ownership_insert_retain.size() ||
+            i >= existing.param_ownership_insert_release.size() ||
+            i >= existing.param_ownership_insert_autorelease.size() ||
             i >= existing.param_has_protocol_composition.size() ||
             i >= existing.param_protocol_composition_lexicographic.size() ||
             existing.param_types[i] != fn.params[i].type ||
@@ -4625,6 +4995,12 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           break;
         }
         if (existing.param_has_ownership_qualifier[i] != fn.params[i].has_ownership_qualifier) {
+          compatible = false;
+          break;
+        }
+        if (existing.param_ownership_insert_retain[i] != fn.params[i].ownership_insert_retain ||
+            existing.param_ownership_insert_release[i] != fn.params[i].ownership_insert_release ||
+            existing.param_ownership_insert_autorelease[i] != fn.params[i].ownership_insert_autorelease) {
           compatible = false;
           break;
         }
@@ -4922,6 +5298,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildSuperDispatchMethodFamilySummaryFromIntegrationSurface(surface);
   surface.runtime_shim_host_link_summary =
       BuildRuntimeShimHostLinkSummaryFromIntegrationSurface(surface);
+  surface.retain_release_operation_summary =
+      BuildRetainReleaseOperationSummaryFromIntegrationSurface(surface);
   surface.built = true;
   return surface;
 }
@@ -4965,6 +5343,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
     metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
     metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+    metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
+    metadata.param_ownership_insert_release = source.param_ownership_insert_release;
+    metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
     metadata.param_has_protocol_composition = source.param_has_protocol_composition;
     metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
     metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -4978,6 +5359,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
     metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
     metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
+    metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
+    metadata.return_ownership_insert_release = source.return_ownership_insert_release;
+    metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
     metadata.return_type = source.return_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5041,6 +5425,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
       property_metadata.has_invalid_ownership_qualifier = source.has_invalid_ownership_qualifier;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
+      property_metadata.ownership_insert_retain = source.ownership_insert_retain;
+      property_metadata.ownership_insert_release = source.ownership_insert_release;
+      property_metadata.ownership_insert_autorelease = source.ownership_insert_autorelease;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -5108,6 +5495,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
       method_metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
+      method_metadata.param_ownership_insert_release = source.param_ownership_insert_release;
+      method_metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5121,6 +5511,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
       method_metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
       method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
+      method_metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
+      method_metadata.return_ownership_insert_release = source.return_ownership_insert_release;
+      method_metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5187,6 +5580,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_invalid_nullability_suffix = source.has_invalid_nullability_suffix;
       property_metadata.has_invalid_ownership_qualifier = source.has_invalid_ownership_qualifier;
       property_metadata.has_invalid_type_suffix = source.has_invalid_type_suffix;
+      property_metadata.ownership_insert_retain = source.ownership_insert_retain;
+      property_metadata.ownership_insert_release = source.ownership_insert_release;
+      property_metadata.ownership_insert_autorelease = source.ownership_insert_autorelease;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -5254,6 +5650,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_invalid_nullability_suffix = source.param_has_invalid_nullability_suffix;
       method_metadata.param_has_invalid_ownership_qualifier = source.param_has_invalid_ownership_qualifier;
       method_metadata.param_has_invalid_type_suffix = source.param_has_invalid_type_suffix;
+      method_metadata.param_ownership_insert_retain = source.param_ownership_insert_retain;
+      method_metadata.param_ownership_insert_release = source.param_ownership_insert_release;
+      method_metadata.param_ownership_insert_autorelease = source.param_ownership_insert_autorelease;
       method_metadata.param_has_protocol_composition = source.param_has_protocol_composition;
       method_metadata.param_protocol_composition_lexicographic = source.param_protocol_composition_lexicographic;
       method_metadata.param_has_invalid_protocol_composition = source.param_has_invalid_protocol_composition;
@@ -5267,6 +5666,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_invalid_nullability_suffix = source.return_has_invalid_nullability_suffix;
       method_metadata.return_has_invalid_ownership_qualifier = source.return_has_invalid_ownership_qualifier;
       method_metadata.return_has_invalid_type_suffix = source.return_has_invalid_type_suffix;
+      method_metadata.return_ownership_insert_retain = source.return_ownership_insert_retain;
+      method_metadata.return_ownership_insert_release = source.return_ownership_insert_release;
+      method_metadata.return_ownership_insert_autorelease = source.return_ownership_insert_autorelease;
       method_metadata.return_type = source.return_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
@@ -5297,7 +5699,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   const auto are_compatible_method_metadata = [](const Objc3SemanticMethodTypeMetadata &lhs,
                                                  const Objc3SemanticMethodTypeMetadata &rhs) {
     if (lhs.arity != rhs.arity || lhs.return_type != rhs.return_type || lhs.return_is_vector != rhs.return_is_vector ||
-        lhs.is_class_method != rhs.is_class_method) {
+        lhs.is_class_method != rhs.is_class_method ||
+        lhs.return_ownership_insert_retain != rhs.return_ownership_insert_retain ||
+        lhs.return_ownership_insert_release != rhs.return_ownership_insert_release ||
+        lhs.return_ownership_insert_autorelease != rhs.return_ownership_insert_autorelease) {
       return false;
     }
     if (lhs.return_is_vector &&
@@ -5314,13 +5719,21 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     for (std::size_t i = 0; i < lhs.arity; ++i) {
       if (i >= lhs.param_types.size() || i >= lhs.param_is_vector.size() || i >= lhs.param_vector_base_spelling.size() ||
           i >= lhs.param_vector_lane_count.size() || i >= lhs.param_has_protocol_composition.size() ||
-          i >= lhs.param_protocol_composition_lexicographic.size() || i >= rhs.param_types.size() ||
+          i >= lhs.param_protocol_composition_lexicographic.size() || i >= lhs.param_ownership_insert_retain.size() ||
+          i >= lhs.param_ownership_insert_release.size() || i >= lhs.param_ownership_insert_autorelease.size() ||
+          i >= rhs.param_types.size() ||
           i >= rhs.param_is_vector.size() || i >= rhs.param_vector_base_spelling.size() ||
           i >= rhs.param_vector_lane_count.size() || i >= rhs.param_has_protocol_composition.size() ||
-          i >= rhs.param_protocol_composition_lexicographic.size()) {
+          i >= rhs.param_protocol_composition_lexicographic.size() || i >= rhs.param_ownership_insert_retain.size() ||
+          i >= rhs.param_ownership_insert_release.size() || i >= rhs.param_ownership_insert_autorelease.size()) {
         return false;
       }
       if (lhs.param_types[i] != rhs.param_types[i] || lhs.param_is_vector[i] != rhs.param_is_vector[i]) {
+        return false;
+      }
+      if (lhs.param_ownership_insert_retain[i] != rhs.param_ownership_insert_retain[i] ||
+          lhs.param_ownership_insert_release[i] != rhs.param_ownership_insert_release[i] ||
+          lhs.param_ownership_insert_autorelease[i] != rhs.param_ownership_insert_autorelease[i]) {
         return false;
       }
       if (lhs.param_is_vector[i] &&
@@ -5755,6 +6168,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
   handoff.runtime_shim_host_link_summary =
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
+  handoff.retain_release_operation_summary =
+      BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
   return handoff;
 }
 
@@ -5823,6 +6238,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
+        metadata.param_ownership_insert_retain.size() != metadata.arity ||
+        metadata.param_ownership_insert_release.size() != metadata.arity ||
+        metadata.param_ownership_insert_autorelease.size() != metadata.arity ||
         metadata.param_has_protocol_composition.size() != metadata.arity ||
         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
@@ -5856,12 +6274,26 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
         return false;
       }
+      if ((!metadata.param_has_ownership_qualifier[i] &&
+           (metadata.param_ownership_insert_retain[i] || metadata.param_ownership_insert_release[i] ||
+            metadata.param_ownership_insert_autorelease[i])) ||
+          (metadata.param_ownership_insert_autorelease[i] &&
+           (metadata.param_ownership_insert_retain[i] || metadata.param_ownership_insert_release[i]))) {
+        return false;
+      }
       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
         return false;
       }
       if (metadata.param_has_invalid_protocol_composition[i] && !metadata.param_has_protocol_composition[i]) {
         return false;
       }
+    }
+    if ((!metadata.return_has_ownership_qualifier &&
+         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release ||
+          metadata.return_ownership_insert_autorelease)) ||
+        (metadata.return_ownership_insert_autorelease &&
+         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release))) {
+      return false;
     }
     return true;
   };
@@ -5884,6 +6316,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
                         metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
                         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
+                        metadata.param_ownership_insert_retain.size() != metadata.arity ||
+                        metadata.param_ownership_insert_release.size() != metadata.arity ||
+                        metadata.param_ownership_insert_autorelease.size() != metadata.arity ||
                         metadata.param_has_protocol_composition.size() != metadata.arity ||
                         metadata.param_protocol_composition_lexicographic.size() != metadata.arity ||
                         metadata.param_has_invalid_protocol_composition.size() != metadata.arity) {
@@ -5919,6 +6354,14 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                           metadata.param_has_invalid_type_suffix[i] != expected_invalid) {
                         return false;
                       }
+                      if ((!metadata.param_has_ownership_qualifier[i] &&
+                           (metadata.param_ownership_insert_retain[i] || metadata.param_ownership_insert_release[i] ||
+                            metadata.param_ownership_insert_autorelease[i])) ||
+                          (metadata.param_ownership_insert_autorelease[i] &&
+                           (metadata.param_ownership_insert_retain[i] ||
+                            metadata.param_ownership_insert_release[i]))) {
+                        return false;
+                      }
                       if (!IsSortedUniqueStrings(metadata.param_protocol_composition_lexicographic[i])) {
                         return false;
                       }
@@ -5926,6 +6369,13 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                           !metadata.param_has_protocol_composition[i]) {
                         return false;
                       }
+                    }
+                    if ((!metadata.return_has_ownership_qualifier &&
+                         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release ||
+                          metadata.return_ownership_insert_autorelease)) ||
+                        (metadata.return_ownership_insert_autorelease &&
+                         (metadata.return_ownership_insert_retain || metadata.return_ownership_insert_release))) {
+                      return false;
                     }
                     return true;
                   });
@@ -6340,6 +6790,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildSuperDispatchMethodFamilySummaryFromTypeMetadataHandoff(handoff);
   const Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary =
       BuildRuntimeShimHostLinkSummaryFromTypeMetadataHandoff(handoff);
+  const Objc3RetainReleaseOperationSummary retain_release_operation_summary =
+      BuildRetainReleaseOperationSummaryFromTypeMetadataHandoff(handoff);
 
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
@@ -6750,7 +7202,18 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
               handoff.runtime_shim_host_link_summary.runtime_dispatch_arg_slots + 2u) &&
          (handoff.runtime_shim_host_link_summary.default_runtime_dispatch_symbol_binding ==
           (handoff.runtime_shim_host_link_summary.runtime_dispatch_symbol ==
-           kObjc3RuntimeShimHostLinkDefaultDispatchSymbol));
+           kObjc3RuntimeShimHostLinkDefaultDispatchSymbol)) &&
+         handoff.retain_release_operation_summary.deterministic &&
+         handoff.retain_release_operation_summary.ownership_qualified_sites ==
+             retain_release_operation_summary.ownership_qualified_sites &&
+         handoff.retain_release_operation_summary.retain_insertion_sites ==
+             retain_release_operation_summary.retain_insertion_sites &&
+         handoff.retain_release_operation_summary.release_insertion_sites ==
+             retain_release_operation_summary.release_insertion_sites &&
+         handoff.retain_release_operation_summary.autorelease_insertion_sites ==
+             retain_release_operation_summary.autorelease_insertion_sites &&
+         handoff.retain_release_operation_summary.contract_violation_sites ==
+             retain_release_operation_summary.contract_violation_sites;
 }
 
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,

@@ -330,6 +330,15 @@ struct Objc3RuntimeShimHostLinkSummary {
   bool deterministic = true;
 };
 
+struct Objc3RetainReleaseOperationSummary {
+  std::size_t ownership_qualified_sites = 0;
+  std::size_t retain_insertion_sites = 0;
+  std::size_t release_insertion_sites = 0;
+  std::size_t autorelease_insertion_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
@@ -346,6 +355,9 @@ struct FunctionInfo {
   std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_ownership_insert_retain;
+  std::vector<bool> param_ownership_insert_release;
+  std::vector<bool> param_ownership_insert_autorelease;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -359,6 +371,9 @@ struct FunctionInfo {
   bool return_has_invalid_nullability_suffix = false;
   bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -396,6 +411,9 @@ struct Objc3MethodInfo {
   std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_ownership_insert_retain;
+  std::vector<bool> param_ownership_insert_release;
+  std::vector<bool> param_ownership_insert_autorelease;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -409,6 +427,9 @@ struct Objc3MethodInfo {
   bool return_has_invalid_nullability_suffix = false;
   bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -438,6 +459,9 @@ struct Objc3PropertyInfo {
   bool has_invalid_nullability_suffix = false;
   bool has_invalid_ownership_qualifier = false;
   bool has_invalid_type_suffix = false;
+  bool ownership_insert_retain = false;
+  bool ownership_insert_release = false;
+  bool ownership_insert_autorelease = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -507,6 +531,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
   bool built = false;
 };
 
@@ -527,6 +552,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_ownership_insert_retain;
+  std::vector<bool> param_ownership_insert_release;
+  std::vector<bool> param_ownership_insert_autorelease;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -540,6 +568,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_has_invalid_nullability_suffix = false;
   bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -578,6 +609,9 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_has_invalid_nullability_suffix;
   std::vector<bool> param_has_invalid_ownership_qualifier;
   std::vector<bool> param_has_invalid_type_suffix;
+  std::vector<bool> param_ownership_insert_retain;
+  std::vector<bool> param_ownership_insert_release;
+  std::vector<bool> param_ownership_insert_autorelease;
   std::vector<bool> param_has_protocol_composition;
   std::vector<std::vector<std::string>> param_protocol_composition_lexicographic;
   std::vector<bool> param_has_invalid_protocol_composition;
@@ -591,6 +625,9 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_has_invalid_nullability_suffix = false;
   bool return_has_invalid_ownership_qualifier = false;
   bool return_has_invalid_type_suffix = false;
+  bool return_ownership_insert_retain = false;
+  bool return_ownership_insert_release = false;
+  bool return_ownership_insert_autorelease = false;
   ValueType return_type = ValueType::I32;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
@@ -621,6 +658,9 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool has_invalid_nullability_suffix = false;
   bool has_invalid_ownership_qualifier = false;
   bool has_invalid_type_suffix = false;
+  bool ownership_insert_retain = false;
+  bool ownership_insert_release = false;
+  bool ownership_insert_autorelease = false;
   std::size_t attribute_entries = 0;
   std::vector<std::string> attribute_names_lexicographic;
   bool is_readonly = false;
@@ -681,6 +721,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3NilReceiverSemanticsFoldabilitySummary nil_receiver_semantics_foldability_summary;
   Objc3SuperDispatchMethodFamilySummary super_dispatch_method_family_summary;
   Objc3RuntimeShimHostLinkSummary runtime_shim_host_link_summary;
+  Objc3RetainReleaseOperationSummary retain_release_operation_summary;
 };
 
 struct Objc3SemanticValidationOptions {
