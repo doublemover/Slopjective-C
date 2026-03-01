@@ -252,7 +252,7 @@ try {
 
   $pipelineUsesLexer = (
     $pipelineSourceText.IndexOf('#include "lex/objc3_lexer.h"', [System.StringComparison]::Ordinal) -ge 0 -and
-    $pipelineSourceText.IndexOf("Objc3Lexer lexer(source);", [System.StringComparison]::Ordinal) -ge 0 -and
+    [regex]::IsMatch($pipelineSourceText, '(?m)^\s*Objc3Lexer\s+lexer\s*\(\s*source(?:\s*,\s*[^)]+)?\s*\)\s*;') -and
     $pipelineSourceText.IndexOf("lexer.Run(result.stage_diagnostics.lexer)", [System.StringComparison]::Ordinal) -ge 0 -and
     [regex]::IsMatch($pipelineSourceText, '(?m)^\s*std::vector<\s*(?:Objc3LexToken|Token)\s*>\s+tokens\s*=\s*lexer\.Run\(')
   )

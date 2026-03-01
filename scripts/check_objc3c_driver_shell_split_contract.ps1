@@ -14,6 +14,8 @@ $runDirRel = "tmp/artifacts/objc3c-native/driver-shell-split/$runId"
 $summaryRel = "$runDirRel/summary.json"
 
 $mainSourcePath = Join-Path $repoRoot "native/objc3c/src/main.cpp"
+$driverMainHeaderPath = Join-Path $repoRoot "native/objc3c/src/driver/objc3_driver_main.h"
+$driverMainImplPath = Join-Path $repoRoot "native/objc3c/src/driver/objc3_driver_main.cpp"
 $driverHeaderPath = Join-Path $repoRoot "native/objc3c/src/driver/objc3_compilation_driver.h"
 $driverImplPath = Join-Path $repoRoot "native/objc3c/src/driver/objc3_compilation_driver.cpp"
 $cliOptionsHeaderPath = Join-Path $repoRoot "native/objc3c/src/driver/objc3_cli_options.h"
@@ -141,12 +143,16 @@ New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
   Assert-FileExists -Path $mainSourcePath -Id "source.main.exists" -Description "main source"
+  Assert-FileExists -Path $driverMainHeaderPath -Id "source.driver_main_header.exists" -Description "driver main header"
+  Assert-FileExists -Path $driverMainImplPath -Id "source.driver_main_impl.exists" -Description "driver main implementation"
   Assert-FileExists -Path $driverHeaderPath -Id "source.driver_header.exists" -Description "driver header"
   Assert-FileExists -Path $driverImplPath -Id "source.driver_impl.exists" -Description "driver implementation"
   Assert-FileExists -Path $cliOptionsHeaderPath -Id "source.cli_options_header.exists" -Description "cli options header"
   Assert-FileExists -Path $fixturePath -Id "fixture.driver_split_smoke.exists" -Description "driver split smoke fixture"
 
   $mainText = Read-NormalizedText -Path $mainSourcePath
+  $driverMainHeaderText = Read-NormalizedText -Path $driverMainHeaderPath
+  $driverMainImplText = Read-NormalizedText -Path $driverMainImplPath
   $driverHeaderText = Read-NormalizedText -Path $driverHeaderPath
   $driverImplText = Read-NormalizedText -Path $driverImplPath
   $cliOptionsHeaderText = Read-NormalizedText -Path $cliOptionsHeaderPath
@@ -157,8 +163,7 @@ try {
   )
   $sortedProjectIncludes = @($projectIncludes | Sort-Object)
   $expectedProjectIncludes = @(
-    "driver/objc3_cli_options.h",
-    "driver/objc3_compilation_driver.h"
+    "driver/objc3_driver_main.h"
   )
   $sortedExpectedProjectIncludes = @($expectedProjectIncludes | Sort-Object)
   $includeSetMatches = (($sortedProjectIncludes -join "|") -eq ($sortedExpectedProjectIncludes -join "|"))
@@ -166,7 +171,7 @@ try {
     -Condition $includeSetMatches `
     -Id "contract.main.project_includes" `
     -FailureMessage ("main.cpp project includes mismatch: expected={0} actual={1}" -f ($sortedExpectedProjectIncludes -join ","), ($sortedProjectIncludes -join ",")) `
-    -PassMessage "main.cpp includes only driver split contract headers" `
+    -PassMessage "main.cpp includes only the driver main shell boundary header" `
     -Evidence @{
       expected = $sortedExpectedProjectIncludes
       actual = $sortedProjectIncludes
@@ -179,14 +184,17 @@ try {
     -FailureMessage "main.cpp includes non-driver project headers" `
     -PassMessage "main.cpp project include boundary stays inside driver/*"
 
-  $flowPattern = '(?s)int\s+main\s*\(\s*int\s+argc\s*,\s*char\s*\*\*argv\s*\)\s*\{\s*Objc3CliOptions\s+cli_options;\s*std::string\s+cli_error;\s*if\s*\(!ParseObjc3CliOptions\(argc,\s*argv,\s*cli_options,\s*cli_error\)\)\s*\{\s*std::cerr\s*<<\s*cli_error\s*<<\s*"\\n";\s*return\s+2;\s*\}\s*return\s+RunObjc3CompilationDriver\(cli_options\);\s*\}'
+  $flowPattern = '(?s)int\s+main\s*\(\s*int\s+argc\s*,\s*char\s*\*\*argv\s*\)\s*\{\s*return\s+RunObjc3DriverMain\(argc,\s*argv\);\s*\}'
   Assert-Contract `
     -Condition ([regex]::IsMatch($mainText, $flowPattern)) `
-    -Id "contract.main.parse_then_delegate" `
-    -FailureMessage "main.cpp no longer matches parse-fail-exit(2) then RunObjc3CompilationDriver delegation contract" `
-    -PassMessage "main.cpp parse/delegate flow matches driver shell split contract"
+    -Id "contract.main.delegates_to_driver_main" `
+    -FailureMessage "main.cpp no longer delegates directly to RunObjc3DriverMain(argc, argv)" `
+    -PassMessage "main.cpp delegates to driver main shell entrypoint"
 
   $forbiddenMainTokens = @(
+    "ParseObjc3CliOptions(",
+    "ApplyObjc3LLVMCabilityRouting(",
+    "RunObjc3CompilationDriver(",
     "CompileObjc3SourceForCli(",
     "RunObjectiveCCompile(",
     "WriteManifestArtifact(",
@@ -200,6 +208,44 @@ try {
     -FailureMessage ("main.cpp contains compilation pipeline tokens: {0}" -f ($mainForbiddenHits -join ",")) `
     -PassMessage "main.cpp remains a shell and does not invoke compilation pipeline internals directly" `
     -Evidence @{ forbidden_hits = $mainForbiddenHits }
+
+  Assert-Contract `
+    -Condition ([regex]::IsMatch($driverMainHeaderText, '(?m)^\s*int\s+RunObjc3DriverMain\s*\(\s*int\s+argc\s*,\s*char\s*\*\*argv\s*\)\s*;\s*$')) `
+    -Id "contract.driver_main_header.entry_signature" `
+    -FailureMessage "driver main header missing RunObjc3DriverMain(int argc, char **argv) declaration" `
+    -PassMessage "driver main header exports RunObjc3DriverMain shell entrypoint"
+
+  Assert-Contract `
+    -Condition ([regex]::IsMatch($driverMainImplText, '(?m)^\s*#\s*include\s+"driver/objc3_cli_options.h"\s*$')) `
+    -Id "contract.driver_main_impl.imports_cli_options" `
+    -FailureMessage "driver main implementation missing include for driver/objc3_cli_options.h" `
+    -PassMessage "driver main implementation imports cli options contract surface"
+
+  Assert-Contract `
+    -Condition ([regex]::IsMatch($driverMainImplText, '(?m)^\s*#\s*include\s+"driver/objc3_compilation_driver.h"\s*$')) `
+    -Id "contract.driver_main_impl.imports_compilation_driver" `
+    -FailureMessage "driver main implementation missing include for driver/objc3_compilation_driver.h" `
+    -PassMessage "driver main implementation imports compilation driver boundary"
+
+  Assert-Contract `
+    -Condition ([regex]::IsMatch($driverMainImplText, '(?m)^\s*#\s*include\s+"driver/objc3_llvm_capability_routing.h"\s*$')) `
+    -Id "contract.driver_main_impl.imports_llvm_routing" `
+    -FailureMessage "driver main implementation missing include for driver/objc3_llvm_capability_routing.h" `
+    -PassMessage "driver main implementation imports LLVM capability routing boundary"
+
+  $driverMainFlowPattern = '(?s)int\s+RunObjc3DriverMain\s*\(\s*int\s+argc\s*,\s*char\s*\*\*argv\s*\)\s*\{\s*Objc3CliOptions\s+cli_options;\s*std::string\s+cli_error;\s*if\s*\(!ParseObjc3CliOptions\(argc,\s*argv,\s*cli_options,\s*cli_error\)\)\s*\{\s*std::cerr\s*<<\s*cli_error\s*<<\s*"\\n";\s*return\s+2;\s*\}\s*if\s*\(!ApplyObjc3LLVMCabilityRouting\(cli_options,\s*cli_error\)\)\s*\{\s*std::cerr\s*<<\s*cli_error\s*<<\s*"\\n";\s*return\s+2;\s*\}\s*return\s+RunObjc3CompilationDriver\(cli_options\);\s*\}'
+  Assert-Contract `
+    -Condition ([regex]::IsMatch($driverMainImplText, $driverMainFlowPattern)) `
+    -Id "contract.driver_main_impl.parse_route_delegate_flow" `
+    -FailureMessage "driver main implementation no longer matches parse+route fail-exit(2) then RunObjc3CompilationDriver delegation contract" `
+    -PassMessage "driver main implementation parse/route/delegate flow matches driver shell split contract"
+
+  $driverMainDefinesMain = [regex]::IsMatch($driverMainImplText, '(?m)^\s*int\s+main\s*\(')
+  Assert-Contract `
+    -Condition (-not $driverMainDefinesMain) `
+    -Id "contract.driver_main_impl.no_main_definition" `
+    -FailureMessage "driver main implementation defines main(), violating main/driver split boundary" `
+    -PassMessage "driver main implementation does not define main()"
 
   Assert-Contract `
     -Condition ([regex]::IsMatch($driverHeaderText, '(?m)^\s*#\s*include\s+"driver/objc3_cli_options.h"\s*$')) `
