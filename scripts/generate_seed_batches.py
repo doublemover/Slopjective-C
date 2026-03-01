@@ -23,19 +23,35 @@ TOKEN_RE = re.compile(r"(V013-[A-Z]+-[0-9]{2}|BATCH-V013-[SML]-[0-9]{2})")
 OWNER_DATE_RE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 OWNER_TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:+/-]*$")
 
-SEED_TABLE_HEADER = (
-    "| Seed ID | Family | Worklane | Proposed GH issue title | Primary artifact targets | "
-    "Depends on | Shard class | Acceptance gate ID |"
+SEED_TABLE_COLUMNS = (
+    "Seed ID",
+    "Family",
+    "Worklane",
+    "Proposed GH issue title",
+    "Primary artifact targets",
+    "Depends on",
+    "Shard class",
+    "Acceptance gate ID",
 )
-EDGE_TABLE_HEADER = "| Edge ID | Predecessor | Successor | Type | Rationale |"
-WAVE_TABLE_HEADER = (
-    "| Wave | Seeds eligible for execution (all hard predecessors satisfied) |"
+EDGE_TABLE_COLUMNS = ("Edge ID", "Predecessor", "Successor", "Type", "Rationale")
+WAVE_TABLE_COLUMNS = ("Wave", "Seeds eligible for execution (all hard predecessors satisfied)")
+BATCH_TABLE_COLUMNS = (
+    "Batch ID",
+    "Class",
+    "Included seed IDs",
+    "Entry prerequisites",
+    "Exit signal",
 )
-BATCH_TABLE_HEADER = (
-    "| Batch ID | Class | Included seed IDs | Entry prerequisites | Exit signal |"
-)
-PRIORITY_TABLE_HEADER = (
-    "| Seed ID | CPI | DUV | RBV | ERC | ECP | DC | Priority score | Tier |"
+PRIORITY_TABLE_COLUMNS = (
+    "Seed ID",
+    "CPI",
+    "DUV",
+    "RBV",
+    "ERC",
+    "ECP",
+    "DC",
+    "Priority score",
+    "Tier",
 )
 
 REQUIRED_EDGE_IDS = [f"EDGE-V013-{index:03d}" for index in range(1, 22)]
@@ -205,9 +221,18 @@ def is_separator_row(cells: list[str]) -> bool:
     return True
 
 
-def extract_table(lines: list[str], header: str, expected_columns: int) -> list[list[str]]:
+def extract_table(lines: list[str], header_columns: tuple[str, ...]) -> list[list[str]]:
+    expected_columns = len(header_columns)
+    header_label = "| " + " | ".join(header_columns) + " |"
     for index, line in enumerate(lines):
-        if line.strip() != header:
+        candidate = line.strip()
+        if not candidate.startswith("|"):
+            continue
+        cells = split_markdown_row(candidate)
+        if len(cells) != expected_columns:
+            continue
+        normalized_cells = tuple(sanitize_cell(cell) for cell in cells)
+        if normalized_cells != header_columns:
             continue
 
         cursor = index + 1
@@ -215,7 +240,7 @@ def extract_table(lines: list[str], header: str, expected_columns: int) -> list[
             cursor += 1
 
         if cursor >= len(lines) or not lines[cursor].strip().startswith("|"):
-            raise ParseError(f"missing separator row after table header: {header}")
+            raise ParseError(f"missing separator row after table header: {header_label}")
 
         rows: list[list[str]] = []
         cursor += 1
@@ -235,10 +260,10 @@ def extract_table(lines: list[str], header: str, expected_columns: int) -> list[
             cursor += 1
 
         if not rows:
-            raise ParseError(f"table has no data rows: {header}")
+            raise ParseError(f"table has no data rows: {header_label}")
         return rows
 
-    raise ParseError(f"table header not found: {header}")
+    raise ParseError(f"table header not found: {header_label}")
 
 
 def parse_id_list(cell: str) -> tuple[str, ...]:
@@ -267,7 +292,7 @@ def parse_snapshot_date(lines: list[str]) -> str:
 
 
 def parse_seed_rows(lines: list[str]) -> list[SeedRow]:
-    rows = extract_table(lines, SEED_TABLE_HEADER, expected_columns=8)
+    rows = extract_table(lines, SEED_TABLE_COLUMNS)
     parsed: list[SeedRow] = []
     seen_seed_ids: set[str] = set()
     for row in rows:
@@ -299,7 +324,7 @@ def parse_seed_rows(lines: list[str]) -> list[SeedRow]:
 
 
 def parse_edge_rows(lines: list[str]) -> list[EdgeRow]:
-    rows = extract_table(lines, EDGE_TABLE_HEADER, expected_columns=5)
+    rows = extract_table(lines, EDGE_TABLE_COLUMNS)
     parsed: list[EdgeRow] = []
     seen_edge_ids: set[str] = set()
     for row in rows:
@@ -323,7 +348,7 @@ def parse_edge_rows(lines: list[str]) -> list[EdgeRow]:
 
 
 def parse_wave_rows(lines: list[str]) -> dict[str, tuple[str, ...]]:
-    rows = extract_table(lines, WAVE_TABLE_HEADER, expected_columns=2)
+    rows = extract_table(lines, WAVE_TABLE_COLUMNS)
     waves: dict[str, tuple[str, ...]] = {}
     for row in rows:
         wave_id = row[0]
@@ -336,7 +361,7 @@ def parse_wave_rows(lines: list[str]) -> dict[str, tuple[str, ...]]:
 
 
 def parse_batch_rows(lines: list[str]) -> list[BatchRow]:
-    rows = extract_table(lines, BATCH_TABLE_HEADER, expected_columns=5)
+    rows = extract_table(lines, BATCH_TABLE_COLUMNS)
     parsed: list[BatchRow] = []
     seen_batch_ids: set[str] = set()
     for row in rows:
@@ -366,7 +391,7 @@ def parse_batch_rows(lines: list[str]) -> list[BatchRow]:
 
 
 def parse_priority_rows(lines: list[str]) -> dict[str, PriorityRow]:
-    rows = extract_table(lines, PRIORITY_TABLE_HEADER, expected_columns=9)
+    rows = extract_table(lines, PRIORITY_TABLE_COLUMNS)
     parsed: dict[str, PriorityRow] = {}
     for row in rows:
         seed_id = row[0]
