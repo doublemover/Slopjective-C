@@ -266,6 +266,18 @@ struct Objc3ThrowsPropagationSummary {
   bool deterministic = true;
 };
 
+struct Objc3UnwindCleanupSummary {
+  std::size_t unwind_cleanup_sites = 0;
+  std::size_t exceptional_exit_sites = 0;
+  std::size_t cleanup_action_sites = 0;
+  std::size_t cleanup_scope_sites = 0;
+  std::size_t cleanup_resume_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t fail_closed_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AsyncContinuationSummary {
   std::size_t async_continuation_sites = 0;
   std::size_t async_keyword_sites = 0;
@@ -1023,6 +1035,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
   Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
@@ -1348,6 +1361,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
   Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;

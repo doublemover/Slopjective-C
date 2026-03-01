@@ -265,6 +265,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t result_like_lowering_normalized_sites_total = 0;
   std::size_t result_like_lowering_branch_merge_sites_total = 0;
   std::size_t result_like_lowering_contract_violation_sites_total = 0;
+  std::size_t unwind_cleanup_sites_total = 0;
+  std::size_t unwind_cleanup_exceptional_exit_sites_total = 0;
+  std::size_t unwind_cleanup_action_sites_total = 0;
+  std::size_t unwind_cleanup_scope_sites_total = 0;
+  std::size_t unwind_cleanup_resume_sites_total = 0;
+  std::size_t unwind_cleanup_normalized_sites_total = 0;
+  std::size_t unwind_cleanup_fail_closed_sites_total = 0;
+  std::size_t unwind_cleanup_contract_violation_sites_total = 0;
   std::size_t await_lowering_suspension_state_lowering_sites_total = 0;
   std::size_t await_lowering_suspension_state_lowering_await_keyword_sites_total = 0;
   std::size_t await_lowering_suspension_state_lowering_await_suspension_point_sites_total = 0;
@@ -471,6 +479,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
+  bool deterministic_unwind_cleanup_handoff = false;
   bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
@@ -513,6 +522,7 @@ struct Objc3SemaParityContractSurface {
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
   Objc3AwaitLoweringSuspensionStateSummary
       await_lowering_suspension_state_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
@@ -1183,6 +1193,41 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.result_like_lowering_summary.result_like_sites &&
          surface.result_like_lowering_summary.deterministic &&
          surface.deterministic_result_like_lowering_handoff &&
+         surface.unwind_cleanup_summary.unwind_cleanup_sites ==
+             surface.unwind_cleanup_sites_total &&
+         surface.unwind_cleanup_summary.exceptional_exit_sites ==
+             surface.unwind_cleanup_exceptional_exit_sites_total &&
+         surface.unwind_cleanup_summary.cleanup_action_sites ==
+             surface.unwind_cleanup_action_sites_total &&
+         surface.unwind_cleanup_summary.cleanup_scope_sites ==
+             surface.unwind_cleanup_scope_sites_total &&
+         surface.unwind_cleanup_summary.cleanup_resume_sites ==
+             surface.unwind_cleanup_resume_sites_total &&
+         surface.unwind_cleanup_summary.normalized_sites ==
+             surface.unwind_cleanup_normalized_sites_total &&
+         surface.unwind_cleanup_summary.fail_closed_sites ==
+             surface.unwind_cleanup_fail_closed_sites_total &&
+         surface.unwind_cleanup_summary.contract_violation_sites ==
+             surface.unwind_cleanup_contract_violation_sites_total &&
+         surface.unwind_cleanup_summary.exceptional_exit_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.cleanup_action_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.cleanup_scope_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.cleanup_resume_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.normalized_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.fail_closed_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.contract_violation_sites <=
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.normalized_sites +
+                 surface.unwind_cleanup_summary.fail_closed_sites ==
+             surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+         surface.unwind_cleanup_summary.deterministic &&
+         surface.deterministic_unwind_cleanup_handoff &&
          surface.async_continuation_summary.async_continuation_sites ==
              surface.async_continuation_sites_total &&
          surface.async_continuation_summary.async_keyword_sites ==
@@ -1965,6 +2010,8 @@ struct Objc3SemaPassManagerResult {
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   bool deterministic_result_like_lowering_handoff = false;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  bool deterministic_unwind_cleanup_handoff = false;
+  Objc3UnwindCleanupSummary unwind_cleanup_summary;
   bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
   Objc3AwaitLoweringSuspensionStateSummary
       await_lowering_suspension_state_lowering_summary;

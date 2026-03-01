@@ -341,6 +341,19 @@ bool IsEquivalentResultLikeLoweringSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentUnwindCleanupSummary(
+    const Objc3UnwindCleanupSummary &lhs,
+    const Objc3UnwindCleanupSummary &rhs) {
+  return lhs.unwind_cleanup_sites == rhs.unwind_cleanup_sites &&
+         lhs.exceptional_exit_sites == rhs.exceptional_exit_sites &&
+         lhs.cleanup_action_sites == rhs.cleanup_action_sites &&
+         lhs.cleanup_scope_sites == rhs.cleanup_scope_sites &&
+         lhs.cleanup_resume_sites == rhs.cleanup_resume_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.fail_closed_sites == rhs.fail_closed_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentAwaitLoweringSuspensionStateSummary(
     const Objc3AwaitLoweringSuspensionStateSummary &lhs,
     const Objc3AwaitLoweringSuspensionStateSummary &rhs) {
@@ -1237,6 +1250,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                   .branch_merge_sites ==
           result.type_metadata_handoff.result_like_lowering_summary
               .result_like_sites;
+  result.unwind_cleanup_summary = result.integration_surface.unwind_cleanup_summary;
+  result.deterministic_unwind_cleanup_handoff =
+      result.type_metadata_handoff.unwind_cleanup_summary.deterministic &&
+      result.integration_surface.unwind_cleanup_summary.deterministic &&
+      IsEquivalentUnwindCleanupSummary(
+          result.integration_surface.unwind_cleanup_summary,
+          result.type_metadata_handoff.unwind_cleanup_summary) &&
+      result.type_metadata_handoff.unwind_cleanup_summary.exceptional_exit_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.cleanup_action_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.cleanup_scope_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.cleanup_resume_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.normalized_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.fail_closed_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.type_metadata_handoff.unwind_cleanup_summary.normalized_sites +
+              result.type_metadata_handoff.unwind_cleanup_summary
+                  .fail_closed_sites ==
+          result.type_metadata_handoff.unwind_cleanup_summary.unwind_cleanup_sites;
   result.async_continuation_summary =
       result.integration_surface.async_continuation_summary;
   result.deterministic_async_continuation_handoff =
@@ -2216,6 +2255,24 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.result_like_lowering_summary.branch_merge_sites;
   result.parity_surface.result_like_lowering_contract_violation_sites_total =
       result.parity_surface.result_like_lowering_summary.contract_violation_sites;
+  result.parity_surface.unwind_cleanup_summary =
+      result.type_metadata_handoff.unwind_cleanup_summary;
+  result.parity_surface.unwind_cleanup_sites_total =
+      result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites;
+  result.parity_surface.unwind_cleanup_exceptional_exit_sites_total =
+      result.parity_surface.unwind_cleanup_summary.exceptional_exit_sites;
+  result.parity_surface.unwind_cleanup_action_sites_total =
+      result.parity_surface.unwind_cleanup_summary.cleanup_action_sites;
+  result.parity_surface.unwind_cleanup_scope_sites_total =
+      result.parity_surface.unwind_cleanup_summary.cleanup_scope_sites;
+  result.parity_surface.unwind_cleanup_resume_sites_total =
+      result.parity_surface.unwind_cleanup_summary.cleanup_resume_sites;
+  result.parity_surface.unwind_cleanup_normalized_sites_total =
+      result.parity_surface.unwind_cleanup_summary.normalized_sites;
+  result.parity_surface.unwind_cleanup_fail_closed_sites_total =
+      result.parity_surface.unwind_cleanup_summary.fail_closed_sites;
+  result.parity_surface.unwind_cleanup_contract_violation_sites_total =
+      result.parity_surface.unwind_cleanup_summary.contract_violation_sites;
   result.parity_surface.await_lowering_suspension_state_lowering_summary =
       result.type_metadata_handoff.await_lowering_suspension_state_lowering_summary;
   result.parity_surface.await_lowering_suspension_state_lowering_sites_total =
@@ -3456,6 +3513,42 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                   .branch_merge_sites ==
           result.parity_surface.result_like_lowering_summary.result_like_sites &&
       result.parity_surface.result_like_lowering_summary.deterministic;
+  result.parity_surface.deterministic_unwind_cleanup_handoff =
+      result.deterministic_unwind_cleanup_handoff &&
+      result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites ==
+          result.parity_surface.unwind_cleanup_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.exceptional_exit_sites ==
+          result.parity_surface.unwind_cleanup_exceptional_exit_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_action_sites ==
+          result.parity_surface.unwind_cleanup_action_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_scope_sites ==
+          result.parity_surface.unwind_cleanup_scope_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_resume_sites ==
+          result.parity_surface.unwind_cleanup_resume_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.normalized_sites ==
+          result.parity_surface.unwind_cleanup_normalized_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.fail_closed_sites ==
+          result.parity_surface.unwind_cleanup_fail_closed_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.contract_violation_sites ==
+          result.parity_surface.unwind_cleanup_contract_violation_sites_total &&
+      result.parity_surface.unwind_cleanup_summary.exceptional_exit_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_action_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_scope_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.cleanup_resume_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.normalized_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.fail_closed_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.contract_violation_sites <=
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.normalized_sites +
+              result.parity_surface.unwind_cleanup_summary.fail_closed_sites ==
+          result.parity_surface.unwind_cleanup_summary.unwind_cleanup_sites &&
+      result.parity_surface.unwind_cleanup_summary.deterministic;
   result.parity_surface.deterministic_async_continuation_handoff =
       result.deterministic_async_continuation_handoff &&
       result.parity_surface.async_continuation_summary.async_continuation_sites ==
@@ -4295,6 +4388,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.unwind_cleanup_summary.deterministic &&
+      result.parity_surface.deterministic_unwind_cleanup_handoff &&
       result.parity_surface.async_continuation_summary.deterministic &&
       result.parity_surface.deterministic_async_continuation_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary.deterministic &&

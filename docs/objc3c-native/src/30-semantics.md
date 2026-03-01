@@ -3838,6 +3838,42 @@ Recommended M183 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
 
+<a id="m184-sema-type-unwind-cleanup-contract-m184-b001"></a>
+## M184 sema/type unwind cleanup contract (M184-B001)
+
+M184-B defines deterministic sema summaries for unwind cleanup emission and
+exceptional-control-path cleanup guarantees.
+
+M184 sema/type surface details:
+
+- `Objc3UnwindCleanupSummary`
+- `BuildUnwindCleanupSummaryFromThrowsAndResultSummaries`
+- parity counters:
+  - `unwind_cleanup_sites_total`
+  - `unwind_cleanup_exceptional_exit_sites_total`
+  - `unwind_cleanup_action_sites_total`
+  - `unwind_cleanup_scope_sites_total`
+  - `unwind_cleanup_resume_sites_total`
+  - `unwind_cleanup_normalized_sites_total`
+  - `unwind_cleanup_fail_closed_sites_total`
+  - `unwind_cleanup_contract_violation_sites_total`
+  - `deterministic_unwind_cleanup_handoff`
+
+Deterministic sema intent:
+
+- unwind cleanup summaries are derived from throws-propagation and result-like
+  lowering packets and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and fail-closed counters remain partitioned:
+  `unwind_cleanup_normalized_sites_total + unwind_cleanup_fail_closed_sites_total == unwind_cleanup_sites_total`.
+- exceptional/cleanup counters remain bounded by unwind cleanup sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M184 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py -q`
+
 <a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
 ## M186 sema/type async continuation contract (M186-B001)
 

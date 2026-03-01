@@ -3428,6 +3428,57 @@ BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
   return summary;
 }
 
+static Objc3UnwindCleanupSummary
+BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
+    const Objc3ThrowsPropagationSummary &throws_summary,
+    const Objc3ResultLikeLoweringSummary &result_summary) {
+  Objc3UnwindCleanupSummary summary;
+  summary.unwind_cleanup_sites = throws_summary.throws_propagation_sites;
+
+  const auto saturating_add = [&](std::size_t lhs, std::size_t rhs) {
+    if (rhs > std::numeric_limits<std::size_t>::max() - lhs) {
+      summary.deterministic = false;
+      return std::numeric_limits<std::size_t>::max();
+    }
+    return lhs + rhs;
+  };
+
+  summary.exceptional_exit_sites = std::min(
+      summary.unwind_cleanup_sites,
+      saturating_add(throws_summary.namespace_segment_sites,
+                     throws_summary.import_edge_candidate_sites));
+  summary.cleanup_action_sites = std::min(
+      summary.unwind_cleanup_sites,
+      saturating_add(throws_summary.cache_invalidation_candidate_sites,
+                     result_summary.result_payload_sites));
+  summary.cleanup_scope_sites = std::min(summary.unwind_cleanup_sites,
+                                         result_summary.branch_merge_sites);
+  summary.cleanup_resume_sites = std::min(summary.unwind_cleanup_sites,
+                                          result_summary.result_success_sites);
+  summary.normalized_sites =
+      std::min(summary.unwind_cleanup_sites, throws_summary.normalized_sites);
+  summary.fail_closed_sites =
+      summary.unwind_cleanup_sites - summary.normalized_sites;
+  summary.contract_violation_sites = std::min(
+      summary.unwind_cleanup_sites,
+      saturating_add(throws_summary.contract_violation_sites,
+                     result_summary.contract_violation_sites));
+  summary.deterministic =
+      summary.deterministic &&
+      throws_summary.deterministic &&
+      result_summary.deterministic &&
+      summary.exceptional_exit_sites <= summary.unwind_cleanup_sites &&
+      summary.cleanup_action_sites <= summary.unwind_cleanup_sites &&
+      summary.cleanup_scope_sites <= summary.unwind_cleanup_sites &&
+      summary.cleanup_resume_sites <= summary.unwind_cleanup_sites &&
+      summary.normalized_sites <= summary.unwind_cleanup_sites &&
+      summary.fail_closed_sites <= summary.unwind_cleanup_sites &&
+      summary.contract_violation_sites <= summary.unwind_cleanup_sites &&
+      summary.normalized_sites + summary.fail_closed_sites ==
+          summary.unwind_cleanup_sites;
+  return summary;
+}
+
 static Objc3UnsafePointerExtensionSummary
 BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(
     const Objc3TypeAnnotationSurfaceSummary &type_annotation_summary,
@@ -8268,6 +8319,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(surface);
   surface.result_like_lowering_summary =
       BuildResultLikeLoweringSummaryFromProgramAst(ast);
+  surface.unwind_cleanup_summary =
+      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
+          surface.throws_propagation_summary,
+          surface.result_like_lowering_summary);
   surface.ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromIntegrationSurface(surface);
   surface.symbol_graph_scope_resolution_summary = BuildSymbolGraphScopeResolutionSummaryFromIntegrationSurface(surface);
@@ -9469,6 +9524,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
   handoff.result_like_lowering_summary = surface.result_like_lowering_summary;
+  handoff.unwind_cleanup_summary =
+      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
+          handoff.throws_propagation_summary,
+          handoff.result_like_lowering_summary);
   handoff.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummaryFromTypeMetadataHandoff(handoff);
   handoff.method_lookup_override_conflict_summary =
@@ -10252,6 +10311,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
   const Objc3ResultLikeLoweringSummary result_like_lowering_summary =
       handoff.result_like_lowering_summary;
+  const Objc3UnwindCleanupSummary unwind_cleanup_summary =
+      BuildUnwindCleanupSummaryFromThrowsAndResultSummaries(
+          handoff.throws_propagation_summary,
+          handoff.result_like_lowering_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
@@ -11019,6 +11082,40 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.result_like_lowering_summary.normalized_sites +
                  handoff.result_like_lowering_summary.branch_merge_sites ==
              handoff.result_like_lowering_summary.result_like_sites &&
+         handoff.unwind_cleanup_summary.deterministic &&
+         handoff.unwind_cleanup_summary.unwind_cleanup_sites ==
+             unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.exceptional_exit_sites ==
+             unwind_cleanup_summary.exceptional_exit_sites &&
+         handoff.unwind_cleanup_summary.cleanup_action_sites ==
+             unwind_cleanup_summary.cleanup_action_sites &&
+         handoff.unwind_cleanup_summary.cleanup_scope_sites ==
+             unwind_cleanup_summary.cleanup_scope_sites &&
+         handoff.unwind_cleanup_summary.cleanup_resume_sites ==
+             unwind_cleanup_summary.cleanup_resume_sites &&
+         handoff.unwind_cleanup_summary.normalized_sites ==
+             unwind_cleanup_summary.normalized_sites &&
+         handoff.unwind_cleanup_summary.fail_closed_sites ==
+             unwind_cleanup_summary.fail_closed_sites &&
+         handoff.unwind_cleanup_summary.contract_violation_sites ==
+             unwind_cleanup_summary.contract_violation_sites &&
+         handoff.unwind_cleanup_summary.exceptional_exit_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.cleanup_action_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.cleanup_scope_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.cleanup_resume_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.normalized_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.fail_closed_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.contract_violation_sites <=
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
+         handoff.unwind_cleanup_summary.normalized_sites +
+                 handoff.unwind_cleanup_summary.fail_closed_sites ==
+             handoff.unwind_cleanup_summary.unwind_cleanup_sites &&
          handoff.symbol_graph_scope_resolution_summary.deterministic &&
          handoff.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              symbol_graph_scope_summary.global_symbol_nodes &&
