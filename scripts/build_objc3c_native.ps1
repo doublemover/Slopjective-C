@@ -71,6 +71,22 @@ function Publish-ArtifactWithRetry {
   }
 }
 
+function Get-RepoRelativePath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RootPath,
+    [Parameter(Mandatory = $true)]
+    [string]$TargetPath
+  )
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path.TrimEnd('\', '/')
+  $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
+  $targetUri = [System.Uri]::new($resolvedTarget)
+  $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
+  return $relative.Replace('\', '/')
+}
+
 $sharedSources = @(
   "native/objc3c/src/driver/objc3_cli_options.cpp"
   "native/objc3c/src/driver/objc3_driver_main.cpp"
@@ -148,5 +164,5 @@ Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
-Write-Output ("built=" + [System.IO.Path]::GetRelativePath($repoRoot, $outExe).Replace("\", "/"))
-Write-Output ("built=" + [System.IO.Path]::GetRelativePath($repoRoot, $outCapiExe).Replace("\", "/"))
+Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
