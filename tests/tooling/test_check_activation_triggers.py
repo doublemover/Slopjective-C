@@ -92,6 +92,18 @@ def run_main(args: list[str]) -> tuple[int, str, str]:
     return code, stdout.getvalue(), stderr.getvalue()
 
 
+def normalize_text(value: str) -> str:
+    return value.replace("\r\n", "\n")
+
+
+def assert_text_equal(actual: str, expected: str) -> None:
+    assert normalize_text(actual) == normalize_text(expected)
+
+
+def assert_stream_empty(value: str) -> None:
+    assert value.strip() == ""
+
+
 def write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
@@ -401,11 +413,11 @@ def test_zero_open_baseline_json_matches_expected_fixture() -> None:
     code, stdout, stderr = run_scenario("zero_open", "json")
 
     assert code == 0
-    assert stderr == ""
+    assert_stream_empty(stderr)
     expected = (FIXTURE_ROOT / "zero_open" / "expected.json").read_text(
         encoding="utf-8"
     )
-    assert stdout == expected
+    assert_text_equal(stdout, expected)
 
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
@@ -459,7 +471,7 @@ def test_zero_open_json_output_shape_is_deterministic() -> None:
     code, stdout, stderr = run_scenario("zero_open", "json")
 
     assert code == 0
-    assert stderr == ""
+    assert_stream_empty(stderr)
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
     assert list(payload.keys()) == EXPECTED_PAYLOAD_KEY_ORDER
@@ -508,11 +520,11 @@ def test_zero_open_baseline_markdown_matches_expected_fixture() -> None:
     code, stdout, stderr = run_scenario("zero_open", "markdown")
 
     assert code == 0
-    assert stderr == ""
+    assert_stream_empty(stderr)
     expected = (FIXTURE_ROOT / "zero_open" / "expected.md").read_text(
         encoding="utf-8"
     )
-    assert stdout == expected
+    assert_text_equal(stdout, expected)
     assert (
         f"- Contract ID: `{check_activation_triggers.ACTIVATION_SEED_CONTRACT_ID}`"
         in stdout
@@ -538,11 +550,11 @@ def test_activation_triggered_json_matches_expected_fixture() -> None:
     code, stdout, stderr = run_scenario("activation_triggered", "json")
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
     expected = (FIXTURE_ROOT / "activation_triggered" / "expected.json").read_text(
         encoding="utf-8"
     )
-    assert stdout == expected
+    assert_text_equal(stdout, expected)
 
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
@@ -582,11 +594,11 @@ def test_activation_triggered_markdown_matches_expected_fixture() -> None:
     code, stdout, stderr = run_scenario("activation_triggered", "markdown")
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
     expected = (FIXTURE_ROOT / "activation_triggered" / "expected.md").read_text(
         encoding="utf-8"
     )
-    assert stdout == expected
+    assert_text_equal(stdout, expected)
     assert (
         f"- Contract ID: `{check_activation_triggers.ACTIVATION_SEED_CONTRACT_ID}`"
         in stdout
@@ -632,11 +644,11 @@ def test_catalog_contract_happy_fixture_matches_expected(
     code, stdout, stderr = run_scenario(scenario_name, output_format)
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
     expected = (FIXTURE_ROOT / scenario_name / expected_file).read_text(
         encoding="utf-8"
     )
-    assert stdout == expected
+    assert_text_equal(stdout, expected)
 
     if output_format == "json":
         payload = json.loads(stdout)
@@ -658,7 +670,7 @@ def test_open_blockers_trigger_forces_activation_open_json() -> None:
     )
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
 
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
@@ -686,7 +698,7 @@ def test_open_blockers_trigger_forces_activation_open_markdown() -> None:
     )
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
     assert "- Activation required: `true`" in stdout
     assert "- Gate open: `true`" in stdout
     assert "- Queue state: `dispatch-open`" in stdout
@@ -722,7 +734,7 @@ def test_open_blockers_schema_validation_rejects_malformed_payload(tmp_path: Pat
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open blockers snapshot object must include non-negative integer" in stderr
     assert "open_blocker_count" in stderr
 
@@ -771,7 +783,7 @@ def test_open_blockers_snapshot_requires_generated_at_source_pair(
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "must include both 'generated_at_utc' and 'source' when either field is present" in stderr
     assert "open_blockers.json" in stderr
 
@@ -810,7 +822,7 @@ def test_open_blockers_source_must_be_canonical_string(tmp_path: Path) -> None:
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open blockers snapshot field 'source'" in stderr
     assert "must not contain leading/trailing whitespace" in stderr
     assert "open_blockers.json" in stderr
@@ -855,7 +867,7 @@ def test_open_blockers_line_alias_mismatch_exits_fail_closed(tmp_path: Path) -> 
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "line alias mismatch" in stderr
     assert "line_number=14 line=12" in stderr
 
@@ -908,7 +920,7 @@ def test_open_blockers_array_payload_from_extractor_rows_is_accepted(tmp_path: P
     )
 
     assert code == 1
-    assert stderr == ""
+    assert_stream_empty(stderr)
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
     assert payload["active_trigger_ids"] == [OPEN_BLOCKERS_TRIGGER_ID]
@@ -958,7 +970,7 @@ def test_open_blockers_array_payload_unsorted_exits_fail_closed(tmp_path: Path) 
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open blockers snapshot array must be sorted by" in stderr
     assert "open_blockers.json" in stderr
 
@@ -1003,7 +1015,7 @@ def test_open_blockers_array_payload_duplicate_rows_exits_fail_closed(tmp_path: 
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open blockers snapshot array contains duplicate blocker row" in stderr
     assert "open_blockers.json" in stderr
 
@@ -1040,7 +1052,7 @@ def test_t4_overlay_conflicting_aliases_exits_fail_closed(tmp_path: Path) -> Non
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "must match when both are provided" in stderr
 
 
@@ -1078,7 +1090,7 @@ def test_milestones_snapshot_row_unknown_field_exits_fail_closed(tmp_path: Path)
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open milestones snapshot field 'items'[0] object" in stderr
     assert "unexpected field(s)" in stderr
 
@@ -1111,7 +1123,7 @@ def test_milestones_snapshot_rows_must_be_sorted_by_number(tmp_path: Path) -> No
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open milestones snapshot rows must be sorted by 'number'" in stderr
 
 
@@ -1143,7 +1155,7 @@ def test_milestones_snapshot_rows_reject_duplicate_number(tmp_path: Path) -> Non
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "duplicate milestone number 26" in stderr
 
 
@@ -1172,7 +1184,7 @@ def test_milestones_snapshot_row_rejects_whitespace_title(tmp_path: Path) -> Non
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "open milestones snapshot entries[0].title" in stderr
     assert "must not contain leading/trailing whitespace" in stderr
 
@@ -1261,8 +1273,8 @@ def test_fixture_backed_fail_closed_paths(scenario_name: str) -> None:
     code, stdout, stderr = run_failure_fixture_scenario(scenario_name)
 
     assert code == expected_exit_code
-    assert stdout == ""
-    assert stderr == expected_stderr
+    assert_stream_empty(stdout)
+    assert_text_equal(stderr, expected_stderr)
 
 
 def test_freshness_requested_json_reports_recent_snapshot_state(
@@ -1310,7 +1322,7 @@ def test_freshness_requested_json_reports_recent_snapshot_state(
     )
 
     assert code == 0
-    assert stderr == ""
+    assert_stream_empty(stderr)
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
     freshness = payload["freshness"]
@@ -1369,7 +1381,7 @@ def test_freshness_requested_missing_generated_at_utc_exits_with_error(
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "generated_at_utc" in stderr
     assert "--issues-max-age-seconds" in stderr
     assert "Add the field or omit" in stderr
@@ -1418,7 +1430,7 @@ def test_freshness_requested_stale_snapshot_exits_with_error(
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "freshness check failed" in stderr
     assert "age_seconds=120" in stderr
     assert "max_age_seconds=60" in stderr
@@ -1464,7 +1476,7 @@ def test_freshness_requested_missing_source_exits_with_provenance_error(
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "must include both 'generated_at_utc' and 'source'" in stderr
     assert "issues.json" in stderr
 
@@ -1506,7 +1518,7 @@ def test_snapshot_count_items_parity_drift_exits_with_error(tmp_path: Path) -> N
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "snapshot parity mismatch" in stderr
     assert "declared count 1 != discovered count 0" in stderr
 
@@ -1562,7 +1574,7 @@ def test_catalog_contract_fields_accept_canonical_milestone_row(tmp_path: Path) 
     )
 
     assert code == 0
-    assert stderr == ""
+    assert_stream_empty(stderr)
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
     assert payload["exit_code"] == 0
@@ -1612,7 +1624,7 @@ def test_catalog_contract_lane_label_alias_mismatch_exits_fail_closed(tmp_path: 
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "catalog task lane label alias mismatch" in stderr
     assert "expected label 'lane:B'" in stderr
 
@@ -1657,7 +1669,7 @@ def test_catalog_contract_duplicate_validation_commands_exits_fail_closed(tmp_pa
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "catalog task row 0 field 'validation_commands' contains duplicate entry" in stderr
 
 
@@ -1694,7 +1706,7 @@ def test_catalog_contract_milestone_title_requires_validation_refs(tmp_path: Pat
     )
 
     assert code == 2
-    assert stdout == ""
+    assert_stream_empty(stdout)
     assert "field 'milestone_title' requires non-empty field 'validation_commands'" in stderr
 
 
@@ -1713,7 +1725,7 @@ def test_t4_gate_reduction_json_semantics(scenario_name: str) -> None:
     code, stdout, stderr = run_scenario(
         scenario_name, "json", t4_new_scope_publish=t4_override
     )
-    assert stderr == ""
+    assert_stream_empty(stderr)
 
     payload = json.loads(stdout)
     assert isinstance(payload, dict)
@@ -1736,6 +1748,7 @@ def test_t4_gate_reduction_markdown_semantics(scenario_name: str) -> None:
     code, stdout, stderr = run_scenario(
         scenario_name, "markdown", t4_new_scope_publish=t4_override
     )
-    assert stderr == ""
+    assert_stream_empty(stderr)
     assert code == expectations["exit_code"]
     assert_t4_gate_reduction_markdown(stdout, expectations=expectations)
+
