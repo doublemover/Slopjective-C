@@ -10256,7 +10256,11 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.selector_has_missing_piece_keyword && metadata.selector_contract_normalized) {
       return false;
     }
-    if (metadata.param_types.size() != metadata.arity ||
+    const bool param_types_match_arity = metadata.param_types.size() == metadata.arity;
+    const bool param_invalid_type_suffix_match_arity =
+        metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+    if (!param_types_match_arity ||
+        metadata.param_types.size() != metadata.arity ||
         metadata.param_is_vector.size() != metadata.arity ||
         metadata.param_vector_base_spelling.size() != metadata.arity ||
         metadata.param_vector_lane_count.size() != metadata.arity ||
@@ -10269,6 +10273,7 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_invalid_nullability_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_ownership_qualifier.size() != metadata.arity ||
+        !param_invalid_type_suffix_match_arity ||
         metadata.param_has_invalid_type_suffix.size() != metadata.arity ||
         metadata.param_ownership_insert_retain.size() != metadata.arity ||
         metadata.param_ownership_insert_release.size() != metadata.arity ||
