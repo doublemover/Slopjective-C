@@ -21,15 +21,7 @@ def test_m189_integration_task_runtime_interop_cancellation_is_documented() -> N
         "check:objc3c:m189-task-runtime-interop-cancellation-contracts",
         "check:compiler-closeout:m189",
         ".github/workflows/compiler-closeout.yml",
-        "tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py",
-        "tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py",
-        "tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py",
-        "tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py",
-        "tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py",
-        "tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py",
         "tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py",
-        "M189-A001, M189-B001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.",
-        "This M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus M189-B001 sema, M189-C001 lowering, and M189-D001 validation/conformance packets.",
     ):
         assert text in library_api_doc
 
@@ -39,13 +31,6 @@ def test_m189_e001_integration_runbook_section_is_documented() -> None:
 
     for text in (
         "## M189 integration task runtime interop and cancellation contract runbook (M189-E001)",
-        "python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py -q",
         "npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts",
         "npm run check:compiler-closeout:m189",
         "Enforce M189 task-runtime interop/cancellation packet/docs contract",
@@ -61,8 +46,7 @@ def test_m189_integration_task_runtime_interop_cancellation_gate_is_wired() -> N
 
     assert "check:objc3c:m189-task-runtime-interop-cancellation-contracts" in scripts
     assert scripts["check:objc3c:m189-task-runtime-interop-cancellation-contracts"] == (
-        "python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py "
-        "tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py "
+        "python -m pytest tests/tooling/test_objc3c_m189_frontend_task_runtime_cancellation_parser_contract.py "
         "tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py "
         "tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py "
         "tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py "

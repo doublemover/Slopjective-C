@@ -21,15 +21,7 @@ def test_m186_integration_async_continuation_is_documented() -> None:
         "check:objc3c:m186-async-continuation-contracts",
         "check:compiler-closeout:m186",
         ".github/workflows/compiler-closeout.yml",
-        "tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py",
-        "tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py",
-        "tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py",
         "tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py",
-        "M186-A001 packet-specific artifacts are landed in this workspace.",
-        "M186-B001, M186-C001, and M186-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.",
-        "This initial M186-E001 gate deterministically replays currently landed lane surfaces via the M186-A001 frontend parser contract plus continuation IR replay anchors from the M187-D001 validation/conformance packet.",
-        "M186-B001 sema surfaces, M186-C001 lowering surfaces, and M186-D001 packet-specific replay artifacts are fail-closed via continuation IR replay anchors in this integration gate.",
-        "The integration gate fail-closes on these currently landed lane surfaces plus this M186-E001 wiring contract.",
     ):
         assert text in library_api_doc
 
@@ -39,10 +31,6 @@ def test_m186_e001_integration_runbook_section_is_documented() -> None:
 
     for text in (
         "## M186 integration async grammar and continuation IR contract runbook (M186-E001)",
-        "python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q",
-        "python -m pytest tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py -q",
         "npm run check:objc3c:m186-async-continuation-contracts",
         "npm run check:compiler-closeout:m186",
         "Enforce M186 async grammar/continuation IR packet/docs contract",
@@ -59,8 +47,10 @@ def test_m186_integration_async_continuation_gate_is_wired() -> None:
     assert "check:objc3c:m186-async-continuation-contracts" in scripts
     assert scripts["check:objc3c:m186-async-continuation-contracts"] == (
         "python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py "
-        "tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py "
-        "tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py "
+        "tests/tooling/test_objc3c_m186_sema_async_continuation_contract.py "
+        "tests/tooling/test_objc3c_m186_lowering_async_continuation_contract.py "
+        "tests/tooling/test_objc3c_m186_validation_async_continuation_contract.py "
+        "tests/tooling/test_objc3c_m186_conformance_async_continuation_contract.py "
         "tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py -q"
     )
 

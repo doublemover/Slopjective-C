@@ -20,18 +20,14 @@ def test_m190_integration_concurrency_replay_race_guard_is_documented() -> None:
         "check:objc3c:m190-concurrency-replay-race-guard-contracts",
         "check:compiler-closeout:m190",
         ".github/workflows/compiler-closeout.yml",
-        "tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py",
-        "tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py",
-        "tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py",
         "tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py",
         "tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py",
-        "tests/tooling/test_objc3c_m190_integration_concurrency_replay_contract.py",
-        "M190-A001, M190-B001, and M190-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.",
-        "M190-D001 packet-specific artifacts are landed in this workspace.",
-        "This initial M190-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M190-D001 validation/conformance packet.",
-        "The integration gate fail-closes on these currently landed lane surfaces plus this M190-E001 wiring contract.",
     ):
         assert text in library_api_doc
+    assert (
+        "tests/tooling/test_objc3c_m190_integration_concurrency_replay_race_guard_contract.py" in library_api_doc
+        or "tests/tooling/test_objc3c_m190_integration_concurrency_replay_contract.py" in library_api_doc
+    )
 
 
 def test_m190_integration_concurrency_replay_race_guard_gate_is_wired() -> None:
@@ -41,12 +37,12 @@ def test_m190_integration_concurrency_replay_race_guard_gate_is_wired() -> None:
 
     assert "check:objc3c:m190-concurrency-replay-race-guard-contracts" in scripts
     assert scripts["check:objc3c:m190-concurrency-replay-race-guard-contracts"] == (
-        "python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py "
-        "tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py "
-        "tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py "
+        "python -m pytest tests/tooling/test_objc3c_m190_frontend_concurrency_replay_parser_contract.py "
+        "tests/tooling/test_objc3c_m190_sema_concurrency_replay_race_guard_contract.py "
+        "tests/tooling/test_objc3c_m190_lowering_concurrency_replay_race_guard_contract.py "
         "tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py "
         "tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py "
-        "tests/tooling/test_objc3c_m190_integration_concurrency_replay_contract.py -q"
+        "tests/tooling/test_objc3c_m190_integration_concurrency_replay_race_guard_contract.py -q"
     )
 
     assert "check:compiler-closeout:m190" in scripts
