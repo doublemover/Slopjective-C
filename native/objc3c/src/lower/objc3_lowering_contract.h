@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
+    "m186-async-continuation-lowering-v1";
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
@@ -470,6 +472,20 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3AsyncContinuationLoweringContract {
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3ActorIsolationSendabilityLoweringContract {
   std::size_t actor_isolation_sites = 0;
   std::size_t sendability_check_sites = 0;
@@ -672,6 +688,10 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3AsyncContinuationLoweringContract(
+    const Objc3AsyncContinuationLoweringContract &contract);
+std::string Objc3AsyncContinuationLoweringReplayKey(
+    const Objc3AsyncContinuationLoweringContract &contract);
 bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
     const Objc3ActorIsolationSendabilityLoweringContract &contract);
 std::string Objc3ActorIsolationSendabilityLoweringReplayKey(

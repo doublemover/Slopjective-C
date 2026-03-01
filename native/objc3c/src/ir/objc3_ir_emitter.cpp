@@ -222,6 +222,10 @@ class Objc3IREmitter {
       out << "; ns_error_bridging_lowering = "
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_async_continuation_replay_key.empty()) {
+      out << "; async_continuation_lowering = "
+          << frontend_metadata_.lowering_async_continuation_replay_key << "\n";
+    }
     if (!frontend_metadata_
              .lowering_actor_isolation_sendability_replay_key.empty()) {
       out << "; actor_isolation_sendability_lowering = "
@@ -855,6 +859,36 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_async_continuation_lowering_profile = async_continuation_sites="
+        << frontend_metadata_.async_continuation_lowering_sites
+        << ", async_keyword_sites="
+        << frontend_metadata_.async_continuation_lowering_async_keyword_sites
+        << ", async_function_sites="
+        << frontend_metadata_.async_continuation_lowering_async_function_sites
+        << ", continuation_allocation_sites="
+        << frontend_metadata_
+               .async_continuation_lowering_continuation_allocation_sites
+        << ", continuation_resume_sites="
+        << frontend_metadata_
+               .async_continuation_lowering_continuation_resume_sites
+        << ", continuation_suspend_sites="
+        << frontend_metadata_
+               .async_continuation_lowering_continuation_suspend_sites
+        << ", async_state_machine_sites="
+        << frontend_metadata_
+               .async_continuation_lowering_async_state_machine_sites
+        << ", normalized_sites="
+        << frontend_metadata_.async_continuation_lowering_normalized_sites
+        << ", gate_blocked_sites="
+        << frontend_metadata_.async_continuation_lowering_gate_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .async_continuation_lowering_contract_violation_sites
+        << ", deterministic_async_continuation_lowering_handoff="
+        << (frontend_metadata_.deterministic_async_continuation_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_actor_isolation_sendability_lowering_profile = actor_isolation_sites="
         << frontend_metadata_.actor_isolation_sendability_lowering_sites
         << ", sendability_check_sites="
@@ -1205,6 +1239,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}\n";
     out << "!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}\n";
     out << "!objc3.objc_actor_isolation_sendability_lowering = !{!41}\n";
+    out << "!objc3.objc_async_continuation_lowering = !{!43}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -2179,6 +2214,46 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_actor_isolation_sendability_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!43 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.async_continuation_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.async_continuation_lowering_async_keyword_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.async_continuation_lowering_async_function_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .async_continuation_lowering_continuation_allocation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .async_continuation_lowering_continuation_resume_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .async_continuation_lowering_continuation_suspend_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .async_continuation_lowering_async_state_machine_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.async_continuation_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.async_continuation_lowering_gate_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .async_continuation_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_async_continuation_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

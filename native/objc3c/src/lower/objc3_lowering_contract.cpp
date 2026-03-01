@@ -1364,6 +1364,51 @@ std::string Objc3NSErrorBridgingLoweringReplayKey(
          ";lane_contract=" + kObjc3NSErrorBridgingLoweringLaneContract;
 }
 
+bool IsValidObjc3AsyncContinuationLoweringContract(
+    const Objc3AsyncContinuationLoweringContract &contract) {
+  if (contract.async_keyword_sites > contract.async_continuation_sites ||
+      contract.async_function_sites > contract.async_continuation_sites ||
+      contract.continuation_allocation_sites > contract.async_continuation_sites ||
+      contract.continuation_resume_sites > contract.async_continuation_sites ||
+      contract.continuation_suspend_sites > contract.async_continuation_sites ||
+      contract.async_state_machine_sites > contract.async_continuation_sites ||
+      contract.normalized_sites > contract.async_continuation_sites ||
+      contract.gate_blocked_sites > contract.async_continuation_sites ||
+      contract.contract_violation_sites > contract.async_continuation_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.async_continuation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3AsyncContinuationLoweringReplayKey(
+    const Objc3AsyncContinuationLoweringContract &contract) {
+  return std::string("async_continuation_sites=") +
+             std::to_string(contract.async_continuation_sites) +
+         ";async_keyword_sites=" + std::to_string(contract.async_keyword_sites) +
+         ";async_function_sites=" + std::to_string(contract.async_function_sites) +
+         ";continuation_allocation_sites=" +
+         std::to_string(contract.continuation_allocation_sites) +
+         ";continuation_resume_sites=" +
+         std::to_string(contract.continuation_resume_sites) +
+         ";continuation_suspend_sites=" +
+         std::to_string(contract.continuation_suspend_sites) +
+         ";async_state_machine_sites=" +
+         std::to_string(contract.async_state_machine_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3AsyncContinuationLoweringLaneContract;
+}
+
 bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
     const Objc3ActorIsolationSendabilityLoweringContract &contract) {
   if (contract.sendability_check_sites > contract.actor_isolation_sites ||

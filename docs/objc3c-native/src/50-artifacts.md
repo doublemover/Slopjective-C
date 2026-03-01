@@ -3726,6 +3726,35 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Async grammar and continuation lowering artifact contract (M186-C001)
+
+M186-C publishes deterministic lowering replay metadata for async grammar and
+continuation IR/runtime ABI handoff.
+
+M186-C lowering contract anchors:
+
+- `kObjc3AsyncContinuationLoweringLaneContract`
+- `Objc3AsyncContinuationLoweringContract`
+- `IsValidObjc3AsyncContinuationLoweringContract(...)`
+- `Objc3AsyncContinuationLoweringReplayKey(...)`
+- `async_continuation_lowering = async_continuation_sites=<N>`
+- `frontend_objc_async_continuation_lowering_profile`
+- `!objc3.objc_async_continuation_lowering = !{!43}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == async_continuation_sites`
+- each of `async_keyword_sites`, `async_function_sites`,
+  `continuation_allocation_sites`, `continuation_resume_sites`,
+  `continuation_suspend_sites`, `async_state_machine_sites`, and
+  `contract_violation_sites` is bounded by `async_continuation_sites`
+- `deterministic_async_continuation_lowering_handoff` requires zero contract
+  violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m186_lowering_async_continuation_contract.py -q`
+
 ## Actor isolation and sendability lowering artifact contract (M188-C001)
 
 M188-C publishes deterministic lowering replay metadata for actor isolation and
