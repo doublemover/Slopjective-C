@@ -1985,6 +1985,24 @@ Frontend async-grammar/continuation contract relies on deterministic parser-owne
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q`
 
+## M185 frontend error diagnostics UX and recovery packetization
+
+Frontend error-diagnostics/recovery contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for diagnostic emits, recovery anchors, recovery boundaries, and fail-closed diagnostics.
+
+- Required frontend error-diagnostics/recovery signals:
+  - parser symbol classifiers remain `IsErrorDiagnosticSymbol(...)`, `IsRecoveryAnchorSymbol(...)`, `IsRecoveryBoundarySymbol(...)`, and `IsFailClosedDiagnosticSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ErrorDiagnosticsRecoveryProfile`.
+  - parser profile serialization remains `BuildErrorDiagnosticsRecoveryProfile(...)`.
+  - parser profile invariant gate remains `IsErrorDiagnosticsRecoveryProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeErrorDiagnosticsRecoveryProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeErrorDiagnosticsRecoveryProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.error_diagnostics_recovery_sites = profile.error_diagnostics_recovery_sites;` and `method.error_diagnostics_recovery_sites = profile.error_diagnostics_recovery_sites;`.
+  - AST carrier anchors remain `bool error_diagnostics_recovery_profile_is_normalized = false;`, `bool deterministic_error_diagnostics_recovery_handoff = false;`, and `std::string error_diagnostics_recovery_profile;` on function/method declarations.
+- Required frontend error-diagnostics/recovery commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m185_frontend_error_diagnostics_recovery_parser_contract.py -q`
+
 ## M184 frontend unwind safety and cleanup emission packetization
 
 Frontend unwind-safety/cleanup-emission contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for exceptional exits, cleanup actions, cleanup scopes, and cleanup resume surfaces.
