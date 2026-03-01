@@ -73,7 +73,6 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `objc3_objectivec_path` owns Objective-C translation-unit parse, diagnostics normalization, symbol-manifest emission, and object compilation.
 - CLI split boundaries remain stable; compatibility controls (`-fobjc-version`, `--objc3-language-version`,
   `--objc3-compat-mode`, `--objc3-migration-assist`) are parsed at the driver shell layer and validated fail-closed.
-
 ## Supported `.objc3` grammar (implemented today)
 
 ```ebnf
@@ -2109,7 +2108,6 @@ Frontend compile-time evaluation engine contract relies on deterministic constan
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
-
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -6246,7 +6244,6 @@ Deterministic sema intent:
 Recommended M192 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m192_sema_inline_asm_intrinsic_contract.py -q`
-
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -6365,7 +6362,6 @@ Parser/lexer diagnostics currently emitted include:
 - Stage-local diagnostics are folded into final parsed-program diagnostics through:
   - `TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program)`
   - deterministic insert order: `lexer`, then `parser`, then `semantic`.
-
 ## Artifacts and exit codes
 
 For `.objc3` input:
@@ -10369,7 +10365,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 
 - Optional toolchain override:
   - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH=<clang executable>`
-
 ## Deterministic contract commands
 
 From repo root:
@@ -13580,7 +13575,6 @@ python -m pytest tests/tooling/test_objc3c_m169_validation_block_copy_dispose_co
 - `if` conditions are lowered as non-zero truthiness checks; there is no dedicated condition-type diagnostic.
 - Lexer comment support is limited to `// ...` and non-nested `/* ... */`.
 - Duplicate `module` declarations are rejected with deterministic `O3S200` diagnostics.
-
 # libobjc3c_frontend Library API (Embedding Contract)
 
 This document defines the current public embedding API exposed by `native/objc3c/src/libobjc3c_frontend/api.h`.
