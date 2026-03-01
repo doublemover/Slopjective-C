@@ -266,6 +266,33 @@ struct Objc3ThrowsPropagationSummary {
   bool deterministic = true;
 };
 
+struct Objc3AsyncContinuationSummary {
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3AwaitLoweringSuspensionStateSummary {
+  std::size_t await_suspension_sites = 0;
+  std::size_t await_keyword_sites = 0;
+  std::size_t await_suspension_point_sites = 0;
+  std::size_t await_resume_sites = 0;
+  std::size_t await_state_machine_sites = 0;
+  std::size_t await_continuation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3ConcurrencyReplayRaceGuardSummary {
   std::size_t concurrency_replay_race_guard_sites = 0;
   std::size_t concurrency_replay_sites = 0;
@@ -762,6 +789,18 @@ struct FunctionInfo {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool async_continuation_profile_is_normalized = false;
+  bool deterministic_async_continuation_handoff = false;
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t async_continuation_normalized_sites = 0;
+  std::size_t async_continuation_gate_blocked_sites = 0;
+  std::size_t async_continuation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -847,6 +886,18 @@ struct Objc3MethodInfo {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool async_continuation_profile_is_normalized = false;
+  bool deterministic_async_continuation_handoff = false;
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t async_continuation_normalized_sites = 0;
+  std::size_t async_continuation_gate_blocked_sites = 0;
+  std::size_t async_continuation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -972,6 +1023,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3AsyncContinuationSummary async_continuation_summary;
+  Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
@@ -1062,6 +1115,18 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool async_continuation_profile_is_normalized = false;
+  bool deterministic_async_continuation_handoff = false;
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t async_continuation_normalized_sites = 0;
+  std::size_t async_continuation_gate_blocked_sites = 0;
+  std::size_t async_continuation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -1154,6 +1219,18 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_has_protocol_composition = false;
   std::vector<std::string> return_protocol_composition_lexicographic;
   bool return_has_invalid_protocol_composition = false;
+  bool async_continuation_profile_is_normalized = false;
+  bool deterministic_async_continuation_handoff = false;
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t async_continuation_normalized_sites = 0;
+  std::size_t async_continuation_gate_blocked_sites = 0;
+  std::size_t async_continuation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -1271,6 +1348,8 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3AsyncContinuationSummary async_continuation_summary;
+  Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;

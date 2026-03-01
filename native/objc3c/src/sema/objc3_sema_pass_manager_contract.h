@@ -214,6 +214,16 @@ struct Objc3SemaParityContractSurface {
   std::size_t throws_propagation_normalized_sites_total = 0;
   std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
   std::size_t throws_propagation_contract_violation_sites_total = 0;
+  std::size_t async_continuation_sites_total = 0;
+  std::size_t async_continuation_async_keyword_sites_total = 0;
+  std::size_t async_continuation_async_function_sites_total = 0;
+  std::size_t async_continuation_allocation_sites_total = 0;
+  std::size_t async_continuation_resume_sites_total = 0;
+  std::size_t async_continuation_suspend_sites_total = 0;
+  std::size_t async_continuation_state_machine_sites_total = 0;
+  std::size_t async_continuation_normalized_sites_total = 0;
+  std::size_t async_continuation_gate_blocked_sites_total = 0;
+  std::size_t async_continuation_contract_violation_sites_total = 0;
   std::size_t concurrency_replay_race_guard_sites_total = 0;
   std::size_t concurrency_replay_race_guard_concurrency_replay_sites_total = 0;
   std::size_t concurrency_replay_race_guard_replay_proof_sites_total = 0;
@@ -255,6 +265,15 @@ struct Objc3SemaParityContractSurface {
   std::size_t result_like_lowering_normalized_sites_total = 0;
   std::size_t result_like_lowering_branch_merge_sites_total = 0;
   std::size_t result_like_lowering_contract_violation_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_await_keyword_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_await_suspension_point_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_await_resume_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_await_state_machine_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_await_continuation_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_normalized_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_gate_blocked_sites_total = 0;
+  std::size_t await_lowering_suspension_state_lowering_contract_violation_sites_total = 0;
   std::size_t symbol_graph_global_symbol_nodes_total = 0;
   std::size_t symbol_graph_function_symbol_nodes_total = 0;
   std::size_t symbol_graph_interface_symbol_nodes_total = 0;
@@ -446,11 +465,13 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
+  bool deterministic_async_continuation_handoff = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
+  bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   bool deterministic_method_lookup_override_conflict_handoff = false;
   bool deterministic_property_synthesis_ivar_binding_handoff = false;
@@ -486,11 +507,14 @@ struct Objc3SemaParityContractSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  Objc3AwaitLoweringSuspensionStateSummary
+      await_lowering_suspension_state_lowering_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -1159,6 +1183,117 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.result_like_lowering_summary.result_like_sites &&
          surface.result_like_lowering_summary.deterministic &&
          surface.deterministic_result_like_lowering_handoff &&
+         surface.async_continuation_summary.async_continuation_sites ==
+             surface.async_continuation_sites_total &&
+         surface.async_continuation_summary.async_keyword_sites ==
+             surface.async_continuation_async_keyword_sites_total &&
+         surface.async_continuation_summary.async_function_sites ==
+             surface.async_continuation_async_function_sites_total &&
+         surface.async_continuation_summary.continuation_allocation_sites ==
+             surface.async_continuation_allocation_sites_total &&
+         surface.async_continuation_summary.continuation_resume_sites ==
+             surface.async_continuation_resume_sites_total &&
+         surface.async_continuation_summary.continuation_suspend_sites ==
+             surface.async_continuation_suspend_sites_total &&
+         surface.async_continuation_summary.async_state_machine_sites ==
+             surface.async_continuation_state_machine_sites_total &&
+         surface.async_continuation_summary.normalized_sites ==
+             surface.async_continuation_normalized_sites_total &&
+         surface.async_continuation_summary.gate_blocked_sites ==
+             surface.async_continuation_gate_blocked_sites_total &&
+         surface.async_continuation_summary.contract_violation_sites ==
+             surface.async_continuation_contract_violation_sites_total &&
+         surface.async_continuation_summary.async_keyword_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.async_function_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.continuation_allocation_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.continuation_resume_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.continuation_suspend_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.async_state_machine_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.normalized_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.gate_blocked_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.contract_violation_sites <=
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.normalized_sites +
+                 surface.async_continuation_summary.gate_blocked_sites ==
+             surface.async_continuation_summary.async_continuation_sites &&
+         surface.async_continuation_summary.deterministic &&
+         surface.deterministic_async_continuation_handoff &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites ==
+             surface.await_lowering_suspension_state_lowering_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_keyword_sites ==
+             surface
+                 .await_lowering_suspension_state_lowering_await_keyword_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_point_sites ==
+             surface.await_lowering_suspension_state_lowering_await_suspension_point_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_resume_sites ==
+             surface.await_lowering_suspension_state_lowering_await_resume_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_state_machine_sites ==
+             surface.await_lowering_suspension_state_lowering_await_state_machine_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_continuation_sites ==
+             surface.await_lowering_suspension_state_lowering_await_continuation_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .normalized_sites ==
+             surface.await_lowering_suspension_state_lowering_normalized_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .gate_blocked_sites ==
+             surface.await_lowering_suspension_state_lowering_gate_blocked_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .contract_violation_sites ==
+             surface.await_lowering_suspension_state_lowering_contract_violation_sites_total &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_keyword_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_point_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_resume_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_state_machine_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_point_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .await_continuation_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_point_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .normalized_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .gate_blocked_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .contract_violation_sites <=
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary
+                 .normalized_sites +
+                 surface.await_lowering_suspension_state_lowering_summary
+                     .gate_blocked_sites ==
+             surface.await_lowering_suspension_state_lowering_summary
+                 .await_suspension_sites &&
+         surface.await_lowering_suspension_state_lowering_summary.deterministic &&
+         surface.deterministic_await_lowering_suspension_state_lowering_handoff &&
          surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
              surface.symbol_graph_global_symbol_nodes_total &&
          surface.symbol_graph_scope_resolution_summary.function_symbol_nodes ==
@@ -1818,6 +1953,8 @@ struct Objc3SemaPassManagerResult {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_throws_propagation_handoff = false;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_async_continuation_handoff = false;
+  Objc3AsyncContinuationSummary async_continuation_summary;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   bool deterministic_unsafe_pointer_extension_handoff = false;
@@ -1828,6 +1965,9 @@ struct Objc3SemaPassManagerResult {
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   bool deterministic_result_like_lowering_handoff = false;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
+  Objc3AwaitLoweringSuspensionStateSummary
+      await_lowering_suspension_state_lowering_summary;
   bool deterministic_symbol_graph_scope_resolution_handoff = false;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   bool deterministic_method_lookup_override_conflict_handoff = false;

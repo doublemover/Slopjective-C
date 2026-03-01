@@ -3838,6 +3838,84 @@ Recommended M183 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
 
+<a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
+## M186 sema/type async continuation contract (M186-B001)
+
+M186-B defines deterministic sema summaries for async continuation lowering
+handoff safety over parser-authored async continuation profiles.
+
+M186 sema/type surface details:
+
+- `Objc3AsyncContinuationSummary`
+- `BuildAsyncContinuationSummaryFromIntegrationSurface`
+- `BuildAsyncContinuationSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `async_continuation_sites_total`
+  - `async_continuation_async_keyword_sites_total`
+  - `async_continuation_async_function_sites_total`
+  - `async_continuation_allocation_sites_total`
+  - `async_continuation_resume_sites_total`
+  - `async_continuation_suspend_sites_total`
+  - `async_continuation_state_machine_sites_total`
+  - `async_continuation_normalized_sites_total`
+  - `async_continuation_gate_blocked_sites_total`
+  - `async_continuation_contract_violation_sites_total`
+  - `deterministic_async_continuation_handoff`
+
+Deterministic sema intent:
+
+- async continuation summaries are aggregated from parser-emitted function and
+  method async profiles and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `async_continuation_normalized_sites_total + async_continuation_gate_blocked_sites_total == async_continuation_sites_total`.
+- continuation-detail counters remain bounded by async continuation sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M186 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m186_sema_async_continuation_contract.py -q`
+
+<a id="m187-sema-type-await-lowering-suspension-state-contract-m187-b001"></a>
+## M187 sema/type await lowering and suspension state contract (M187-B001)
+
+M187-B defines deterministic sema summaries for await lowering and suspension
+state handoff safety over parser-authored await suspension profiles.
+
+M187 sema/type surface details:
+
+- `Objc3AwaitLoweringSuspensionStateSummary`
+- `BuildAwaitLoweringSuspensionStateSummaryFromProgramAst`
+- parity counters:
+  - `await_lowering_suspension_state_lowering_sites_total`
+  - `await_lowering_suspension_state_lowering_await_keyword_sites_total`
+  - `await_lowering_suspension_state_lowering_await_suspension_point_sites_total`
+  - `await_lowering_suspension_state_lowering_await_resume_sites_total`
+  - `await_lowering_suspension_state_lowering_await_state_machine_sites_total`
+  - `await_lowering_suspension_state_lowering_await_continuation_sites_total`
+  - `await_lowering_suspension_state_lowering_normalized_sites_total`
+  - `await_lowering_suspension_state_lowering_gate_blocked_sites_total`
+  - `await_lowering_suspension_state_lowering_contract_violation_sites_total`
+  - `deterministic_await_lowering_suspension_state_lowering_handoff`
+
+Deterministic sema intent:
+
+- await lowering/suspension summaries are aggregated from parser-emitted
+  function and method await profiles and preserved across sema/type handoff and
+  pass-manager parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `await_lowering_suspension_state_lowering_normalized_sites_total + await_lowering_suspension_state_lowering_gate_blocked_sites_total == await_lowering_suspension_state_lowering_sites_total`.
+- suspension-point-scoped counters remain bounded:
+  `await_lowering_suspension_state_lowering_await_state_machine_sites_total <= await_lowering_suspension_state_lowering_await_suspension_point_sites_total` and
+  `await_lowering_suspension_state_lowering_await_continuation_sites_total <= await_lowering_suspension_state_lowering_await_suspension_point_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M187 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m187_sema_await_suspension_contract.py -q`
+
 <a id="m192-sema-type-inline-asm-intrinsic-governance-contract-m192-b001"></a>
 ## M192 sema/type inline-asm+intrinsic governance contract (M192-B001)
 

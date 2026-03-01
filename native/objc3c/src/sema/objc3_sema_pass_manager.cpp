@@ -258,6 +258,22 @@ bool IsEquivalentThrowsPropagationSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentAsyncContinuationSummary(
+    const Objc3AsyncContinuationSummary &lhs,
+    const Objc3AsyncContinuationSummary &rhs) {
+  return lhs.async_continuation_sites == rhs.async_continuation_sites &&
+         lhs.async_keyword_sites == rhs.async_keyword_sites &&
+         lhs.async_function_sites == rhs.async_function_sites &&
+         lhs.continuation_allocation_sites ==
+             rhs.continuation_allocation_sites &&
+         lhs.continuation_resume_sites == rhs.continuation_resume_sites &&
+         lhs.continuation_suspend_sites == rhs.continuation_suspend_sites &&
+         lhs.async_state_machine_sites == rhs.async_state_machine_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentConcurrencyReplayRaceGuardSummary(
     const Objc3ConcurrencyReplayRaceGuardSummary &lhs,
     const Objc3ConcurrencyReplayRaceGuardSummary &rhs) {
@@ -322,6 +338,20 @@ bool IsEquivalentResultLikeLoweringSummary(
          lhs.result_payload_sites == rhs.result_payload_sites &&
          lhs.normalized_sites == rhs.normalized_sites &&
          lhs.branch_merge_sites == rhs.branch_merge_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
+bool IsEquivalentAwaitLoweringSuspensionStateSummary(
+    const Objc3AwaitLoweringSuspensionStateSummary &lhs,
+    const Objc3AwaitLoweringSuspensionStateSummary &rhs) {
+  return lhs.await_suspension_sites == rhs.await_suspension_sites &&
+         lhs.await_keyword_sites == rhs.await_keyword_sites &&
+         lhs.await_suspension_point_sites == rhs.await_suspension_point_sites &&
+         lhs.await_resume_sites == rhs.await_resume_sites &&
+         lhs.await_state_machine_sites == rhs.await_state_machine_sites &&
+         lhs.await_continuation_sites == rhs.await_continuation_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
@@ -1207,6 +1237,120 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                   .branch_merge_sites ==
           result.type_metadata_handoff.result_like_lowering_summary
               .result_like_sites;
+  result.async_continuation_summary =
+      result.integration_surface.async_continuation_summary;
+  result.deterministic_async_continuation_handoff =
+      result.type_metadata_handoff.async_continuation_summary.deterministic &&
+      result.integration_surface.async_continuation_summary.deterministic &&
+      IsEquivalentAsyncContinuationSummary(
+          result.integration_surface.async_continuation_summary,
+          result.type_metadata_handoff.async_continuation_summary) &&
+      result.type_metadata_handoff.async_continuation_summary
+              .async_keyword_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .async_function_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .continuation_allocation_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .continuation_resume_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .continuation_suspend_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .async_state_machine_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary.normalized_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites &&
+      result.type_metadata_handoff.async_continuation_summary.normalized_sites +
+              result.type_metadata_handoff.async_continuation_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff.async_continuation_summary
+              .async_continuation_sites;
+  result.await_lowering_suspension_state_lowering_summary =
+      result.integration_surface.await_lowering_suspension_state_lowering_summary;
+  result.deterministic_await_lowering_suspension_state_lowering_handoff =
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary.deterministic &&
+      result.integration_surface
+              .await_lowering_suspension_state_lowering_summary.deterministic &&
+      IsEquivalentAwaitLoweringSuspensionStateSummary(
+          result.integration_surface
+              .await_lowering_suspension_state_lowering_summary,
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary) &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_keyword_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary.await_resume_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_state_machine_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_continuation_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary.normalized_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary.normalized_sites +
+              result.type_metadata_handoff
+                  .await_lowering_suspension_state_lowering_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff
+              .await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites;
   result.symbol_graph_scope_resolution_summary = result.integration_surface.symbol_graph_scope_resolution_summary;
   result.deterministic_symbol_graph_scope_resolution_handoff =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary.deterministic &&
@@ -1924,6 +2068,30 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .cache_invalidation_candidate_sites;
   result.parity_surface.throws_propagation_contract_violation_sites_total =
       result.parity_surface.throws_propagation_summary.contract_violation_sites;
+  result.parity_surface.async_continuation_summary =
+      result.type_metadata_handoff.async_continuation_summary;
+  result.parity_surface.async_continuation_sites_total =
+      result.parity_surface.async_continuation_summary.async_continuation_sites;
+  result.parity_surface.async_continuation_async_keyword_sites_total =
+      result.parity_surface.async_continuation_summary.async_keyword_sites;
+  result.parity_surface.async_continuation_async_function_sites_total =
+      result.parity_surface.async_continuation_summary.async_function_sites;
+  result.parity_surface.async_continuation_allocation_sites_total =
+      result.parity_surface.async_continuation_summary
+          .continuation_allocation_sites;
+  result.parity_surface.async_continuation_resume_sites_total =
+      result.parity_surface.async_continuation_summary.continuation_resume_sites;
+  result.parity_surface.async_continuation_suspend_sites_total =
+      result.parity_surface.async_continuation_summary
+          .continuation_suspend_sites;
+  result.parity_surface.async_continuation_state_machine_sites_total =
+      result.parity_surface.async_continuation_summary.async_state_machine_sites;
+  result.parity_surface.async_continuation_normalized_sites_total =
+      result.parity_surface.async_continuation_summary.normalized_sites;
+  result.parity_surface.async_continuation_gate_blocked_sites_total =
+      result.parity_surface.async_continuation_summary.gate_blocked_sites;
+  result.parity_surface.async_continuation_contract_violation_sites_total =
+      result.parity_surface.async_continuation_summary.contract_violation_sites;
   result.parity_surface.concurrency_replay_race_guard_summary =
       result.type_metadata_handoff.concurrency_replay_race_guard_summary;
   result.parity_surface.concurrency_replay_race_guard_sites_total =
@@ -2048,6 +2216,43 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.result_like_lowering_summary.branch_merge_sites;
   result.parity_surface.result_like_lowering_contract_violation_sites_total =
       result.parity_surface.result_like_lowering_summary.contract_violation_sites;
+  result.parity_surface.await_lowering_suspension_state_lowering_summary =
+      result.type_metadata_handoff.await_lowering_suspension_state_lowering_summary;
+  result.parity_surface.await_lowering_suspension_state_lowering_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_suspension_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_await_keyword_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_keyword_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_await_suspension_point_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_suspension_point_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_await_resume_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_resume_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_await_state_machine_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_state_machine_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_await_continuation_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .await_continuation_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_normalized_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .normalized_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_gate_blocked_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .gate_blocked_sites;
+  result.parity_surface
+      .await_lowering_suspension_state_lowering_contract_violation_sites_total =
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .contract_violation_sites;
   result.parity_surface.symbol_graph_scope_resolution_summary =
       result.type_metadata_handoff.symbol_graph_scope_resolution_summary;
   result.parity_surface.symbol_graph_global_symbol_nodes_total =
@@ -3251,6 +3456,146 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                   .branch_merge_sites ==
           result.parity_surface.result_like_lowering_summary.result_like_sites &&
       result.parity_surface.result_like_lowering_summary.deterministic;
+  result.parity_surface.deterministic_async_continuation_handoff =
+      result.deterministic_async_continuation_handoff &&
+      result.parity_surface.async_continuation_summary.async_continuation_sites ==
+          result.parity_surface.async_continuation_sites_total &&
+      result.parity_surface.async_continuation_summary.async_keyword_sites ==
+          result.parity_surface.async_continuation_async_keyword_sites_total &&
+      result.parity_surface.async_continuation_summary.async_function_sites ==
+          result.parity_surface.async_continuation_async_function_sites_total &&
+      result.parity_surface.async_continuation_summary
+              .continuation_allocation_sites ==
+          result.parity_surface.async_continuation_allocation_sites_total &&
+      result.parity_surface.async_continuation_summary.continuation_resume_sites ==
+          result.parity_surface.async_continuation_resume_sites_total &&
+      result.parity_surface.async_continuation_summary
+              .continuation_suspend_sites ==
+          result.parity_surface.async_continuation_suspend_sites_total &&
+      result.parity_surface.async_continuation_summary.async_state_machine_sites ==
+          result.parity_surface.async_continuation_state_machine_sites_total &&
+      result.parity_surface.async_continuation_summary.normalized_sites ==
+          result.parity_surface.async_continuation_normalized_sites_total &&
+      result.parity_surface.async_continuation_summary.gate_blocked_sites ==
+          result.parity_surface.async_continuation_gate_blocked_sites_total &&
+      result.parity_surface.async_continuation_summary
+              .contract_violation_sites ==
+          result.parity_surface.async_continuation_contract_violation_sites_total &&
+      result.parity_surface.async_continuation_summary.async_keyword_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.async_function_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary
+              .continuation_allocation_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary
+              .continuation_resume_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary
+              .continuation_suspend_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.async_state_machine_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.normalized_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.gate_blocked_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary
+              .contract_violation_sites <=
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.normalized_sites +
+              result.parity_surface.async_continuation_summary.gate_blocked_sites ==
+          result.parity_surface.async_continuation_summary
+              .async_continuation_sites &&
+      result.parity_surface.async_continuation_summary.deterministic;
+  result.parity_surface
+      .deterministic_await_lowering_suspension_state_lowering_handoff =
+      result.deterministic_await_lowering_suspension_state_lowering_handoff &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_keyword_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_await_keyword_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_await_suspension_point_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_resume_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_await_resume_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_state_machine_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_await_state_machine_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_continuation_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_await_continuation_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .normalized_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_normalized_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .gate_blocked_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_gate_blocked_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .await_lowering_suspension_state_lowering_contract_violation_sites_total &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_keyword_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_resume_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_state_machine_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_continuation_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_point_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .normalized_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .gate_blocked_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .contract_violation_sites <=
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .normalized_sites +
+              result.parity_surface.await_lowering_suspension_state_lowering_summary
+                  .gate_blocked_sites ==
+          result.parity_surface.await_lowering_suspension_state_lowering_summary
+              .await_suspension_sites &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .deterministic;
   result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff =
       result.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.global_symbol_nodes ==
@@ -3950,6 +4295,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.async_continuation_summary.deterministic &&
+      result.parity_surface.deterministic_async_continuation_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary.deterministic &&
       result.parity_surface
           .deterministic_concurrency_replay_race_guard_handoff &&
@@ -3963,6 +4310,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_ns_error_bridging_handoff &&
       result.parity_surface.result_like_lowering_summary.deterministic &&
       result.parity_surface.deterministic_result_like_lowering_handoff &&
+      result.parity_surface.await_lowering_suspension_state_lowering_summary
+          .deterministic &&
+      result.parity_surface
+          .deterministic_await_lowering_suspension_state_lowering_handoff &&
       result.parity_surface.symbol_graph_scope_resolution_summary.deterministic &&
       result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
       result.parity_surface.method_lookup_override_conflict_summary.deterministic &&
