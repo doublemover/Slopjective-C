@@ -11,6 +11,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $recoveryFixtureRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery"
+$helloObjc3Source = Join-Path $repoRoot "tests/tooling/fixtures/native/hello.objc3"
 $positiveFixtureDir = Join-Path $recoveryFixtureRoot "positive"
 $negativeFixtureDir = Join-Path $recoveryFixtureRoot "negative"
 
@@ -632,8 +633,12 @@ Invoke-ContractCase `
 
 $invalidDispatchOutDir = Join-Path $outDir "objc3_invalid_dispatch_symbol"
 New-Item -ItemType Directory -Force -Path $invalidDispatchOutDir | Out-Null
+$resolvedInvalidDispatchSource = [System.IO.Path]::GetFullPath($helloObjc3Source)
+if (-not (Test-Path -LiteralPath $resolvedInvalidDispatchSource -PathType Leaf)) {
+  throw "contract FAIL: missing invalid-dispatch source fixture at $resolvedInvalidDispatchSource"
+}
 $invalidDispatchExit = Invoke-Objc3cNativeWithRecovery -Arguments @(
-  "tests/tooling/fixtures/native/hello.objc3",
+  $resolvedInvalidDispatchSource,
   "--out-dir",
   $invalidDispatchOutDir,
   "--emit-prefix",
