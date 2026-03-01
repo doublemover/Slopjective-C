@@ -1817,14 +1817,14 @@ Frontend interop integration suite/packaging contract relies on deterministic me
 
 ## M199 frontend foreign type import diagnostics
 
-Frontend foreign-type import diagnostics contract relies on deterministic parser-level unsupported-type boundaries, explicit imported-type allowlists, and stable type-spelling carrier fields into AST/sema.
+Frontend foreign-type import diagnostics contract relies on deterministic parser fail-closed syntax boundaries, stable foreign/object-pointer spelling carrier fields into AST/sema, and semantic enforcement of generic-suffix allowlists.
 
 - Required frontend foreign-type diagnostics signals:
-  - unsupported parameter-type import diagnostics remain parser fail-closed `O3P108`.
-  - unsupported return-type import diagnostics remain parser fail-closed `O3P114`.
-  - imported-type allowlists remain explicit: `'id', 'Class', 'SEL', 'Protocol', or 'instancetype'`.
-  - parser spelling carriers remain `param.id_spelling`, `param.class_spelling`, `param.instancetype_spelling`, `fn.return_id_spelling`, `fn.return_class_spelling`, and `fn.return_instancetype_spelling`.
-  - AST carrier continuity remains `bool id_spelling = false;`, `bool class_spelling = false;`, `bool instancetype_spelling = false;`, and return equivalents.
+  - malformed parameter-type annotations remain parser fail-closed `O3P108` (invalid/missing type token or unterminated parameter generic suffix syntax).
+  - malformed return-type annotations remain parser fail-closed `O3P114`.
+  - parser spelling carriers remain explicit: `param.id_spelling`, `param.class_spelling`, `param.instancetype_spelling`, `param.object_pointer_type_spelling`, `param.object_pointer_type_name`, `fn.return_id_spelling`, `fn.return_class_spelling`, `fn.return_instancetype_spelling`, `fn.return_object_pointer_type_spelling`, and `fn.return_object_pointer_type_name`.
+  - semantic generic-suffix allowlist enforcement remains `O3S206` via `SupportsGenericParamTypeSuffix` / `SupportsGenericReturnTypeSuffix` (`id` / `Class` / `instancetype`).
+  - AST carrier continuity remains `bool id_spelling = false;`, `bool class_spelling = false;`, `bool instancetype_spelling = false;`, `bool object_pointer_type_spelling = false;`, and return equivalents.
 - Required frontend foreign-type diagnostics commands (run in order):
   1. `npm run test:objc3c:parser-ast-extraction`
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
