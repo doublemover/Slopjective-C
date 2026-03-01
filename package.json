@@ -6,6 +6,7 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
+    "lint": "npm run check:task-hygiene && npm run check:md:all",
     "build:spec": "python scripts/build_pages.py && prettier --write \"site/index.md\"",
     "build:objc3c-native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1",
     "compile:objc3c": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1",
