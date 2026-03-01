@@ -179,7 +179,7 @@ if (!(Test-Path -LiteralPath $fixtureDir -PathType Container)) {
 }
 
 if (!(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
-  & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript *> $buildLogPath
+  & $buildScript *> $buildLogPath
   $buildExitCode = [int]$LASTEXITCODE
   if ($buildExitCode -ne 0) {
     Write-Output ("error: parser replay proof FAIL: native build failed with exit {0}" -f $buildExitCode)

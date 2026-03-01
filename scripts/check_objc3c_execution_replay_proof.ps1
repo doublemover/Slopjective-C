@@ -51,7 +51,7 @@ function Invoke-SmokeRun {
   $previousRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
   try {
     $env:OBJC3C_NATIVE_EXECUTION_RUN_ID = $RunId
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $smokeScript *> $LogPath
+    & $smokeScript *> $LogPath
     return [int]$LASTEXITCODE
   }
   finally {

@@ -174,7 +174,7 @@ function Invoke-BuildNativeCompiler {
   param([string]$RepoRoot)
 
   $buildScript = Join-Path $RepoRoot "scripts/build_objc3c_native.ps1"
-  $null = & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+  $null = & $buildScript
   return [int]$LASTEXITCODE
 }
 

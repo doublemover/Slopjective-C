@@ -102,7 +102,7 @@ function Invoke-DiagnosticsReplayRun {
     $null = $beforeSet.Add($dir)
   }
 
-  & powershell -NoProfile -ExecutionPolicy Bypass -File $diagnosticsScript *> $runLogPath
+  & $diagnosticsScript *> $runLogPath
   $exitCode = [int]$LASTEXITCODE
 
   if ($exitCode -ne 0) {

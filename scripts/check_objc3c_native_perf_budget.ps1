@@ -187,7 +187,7 @@ function Invoke-TimedWrapperCommand {
   $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
   try {
     $ErrorActionPreference = "Continue"
-    $outputLines = & powershell -NoProfile -ExecutionPolicy Bypass -File $ScriptPath @ScriptArguments 2>&1
+    $outputLines = & $ScriptPath @ScriptArguments 2>&1
     $exitCode = $LASTEXITCODE
   } finally {
     $stopwatch.Stop()

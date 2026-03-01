@@ -142,7 +142,7 @@ New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+    & $buildScript
     if ($LASTEXITCODE -ne 0) {
       throw "typed-abi replay FAIL: build failed with exit $LASTEXITCODE"
     }

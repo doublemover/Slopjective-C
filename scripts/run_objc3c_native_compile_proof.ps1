@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $buildScript -PathType Leaf)) {
 New-Item -ItemType Directory -Force -Path $run1 | Out-Null
 New-Item -ItemType Directory -Force -Path $run2 | Out-Null
 
-& powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+& $buildScript
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {

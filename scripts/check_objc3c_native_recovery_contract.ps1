@@ -6,7 +6,7 @@ $outRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/contract
 $outDir = Join-Path $outRoot $runId
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 
-& powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+& $buildScript
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
@@ -22,7 +22,7 @@ function Invoke-Objc3cNativeWithRecovery {
 
   for ($attempt = 1; $attempt -le 2; $attempt++) {
     if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-      & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+      & $buildScript
       if ($LASTEXITCODE -ne 0) {
         throw "contract FAIL: native compiler build failed while recovering missing executable"
       }
@@ -39,7 +39,7 @@ function Invoke-Objc3cNativeWithRecovery {
         throw
       }
       Write-Output "warning: objc3c-native launch failed; rebuilding and retrying once"
-      & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+      & $buildScript
       if ($LASTEXITCODE -ne 0) {
         throw "contract FAIL: native compiler build failed while recovering launch failure"
       }

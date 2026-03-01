@@ -76,7 +76,7 @@ function Invoke-LoweringReplayRun {
   $previousRunId = $env:OBJC3C_NATIVE_LOWERING_RUN_ID
   try {
     $env:OBJC3C_NATIVE_LOWERING_RUN_ID = $RunId
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $loweringScript *> $runLogPath
+    & $loweringScript *> $runLogPath
     $exitCode = [int]$LASTEXITCODE
   } finally {
     if ($null -eq $previousRunId) {

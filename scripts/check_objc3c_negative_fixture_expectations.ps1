@@ -42,7 +42,7 @@ function Invoke-CompileRun {
 
   New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
-  & powershell -NoProfile -ExecutionPolicy Bypass -File $compileScript $FixturePath --out-dir $OutDir --emit-prefix module | Out-Null
+  & $compileScript $FixturePath --out-dir $OutDir --emit-prefix module | Out-Null
   return [int]$LASTEXITCODE
 }
 
