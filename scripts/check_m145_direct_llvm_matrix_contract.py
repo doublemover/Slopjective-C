@@ -574,8 +574,11 @@ def run(argv: Sequence[str]) -> int:
     checks.append(
         (
             "laned-m145-03",
-            "| `M145-D001` | `#4317`" in conformance_coverage_map
-            and "`lowering_abi`" in conformance_coverage_map,
+            re.search(
+                r"\|\s*`M145-D001`\s*\|\s*`#4317`[^|]*\|\s*`lowering_abi`\s*\|",
+                conformance_coverage_map,
+            )
+            is not None,
             "conformance coverage map must trace M145-D001 issue mapping into lowering_abi bucket",
         )
     )
