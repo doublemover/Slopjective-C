@@ -793,6 +793,9 @@ struct FunctionInfo {
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
   std::vector<bool> param_has_ownership_qualifier;
+  std::vector<bool> param_id_spelling;
+  std::vector<bool> param_class_spelling;
+  std::vector<bool> param_instancetype_spelling;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
@@ -816,6 +819,9 @@ struct FunctionInfo {
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
   bool return_has_ownership_qualifier = false;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
@@ -918,6 +924,9 @@ struct Objc3MethodInfo {
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
   std::vector<bool> param_has_ownership_qualifier;
+  std::vector<bool> param_id_spelling;
+  std::vector<bool> param_class_spelling;
+  std::vector<bool> param_instancetype_spelling;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
@@ -927,6 +936,9 @@ struct Objc3MethodInfo {
   std::vector<bool> param_ownership_insert_retain;
   std::vector<bool> param_ownership_insert_release;
   std::vector<bool> param_ownership_insert_autorelease;
+  std::vector<bool> param_ownership_is_weak_reference;
+  std::vector<bool> param_ownership_is_unowned_reference;
+  std::vector<bool> param_ownership_is_unowned_safe_reference;
   std::vector<bool> param_ownership_arc_diagnostic_candidate;
   std::vector<bool> param_ownership_arc_fixit_available;
   std::vector<std::string> param_ownership_arc_diagnostic_profile;
@@ -938,6 +950,9 @@ struct Objc3MethodInfo {
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
   bool return_has_ownership_qualifier = false;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
@@ -947,6 +962,9 @@ struct Objc3MethodInfo {
   bool return_ownership_insert_retain = false;
   bool return_ownership_insert_release = false;
   bool return_ownership_insert_autorelease = false;
+  bool return_ownership_is_weak_reference = false;
+  bool return_ownership_is_unowned_reference = false;
+  bool return_ownership_is_unowned_safe_reference = false;
   bool return_ownership_arc_diagnostic_candidate = false;
   bool return_ownership_arc_fixit_available = false;
   std::string return_ownership_arc_diagnostic_profile;
@@ -1167,6 +1185,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
   std::vector<bool> param_has_ownership_qualifier;
+  std::vector<bool> param_id_spelling;
+  std::vector<bool> param_class_spelling;
+  std::vector<bool> param_instancetype_spelling;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
@@ -1190,6 +1211,9 @@ struct Objc3SemanticFunctionTypeMetadata {
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
   bool return_has_ownership_qualifier = false;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;
@@ -1293,6 +1317,9 @@ struct Objc3SemanticMethodTypeMetadata {
   std::vector<bool> param_has_pointer_declarator;
   std::vector<bool> param_has_nullability_suffix;
   std::vector<bool> param_has_ownership_qualifier;
+  std::vector<bool> param_id_spelling;
+  std::vector<bool> param_class_spelling;
+  std::vector<bool> param_instancetype_spelling;
   std::vector<bool> param_object_pointer_type_spelling;
   std::vector<bool> param_has_invalid_generic_suffix;
   std::vector<bool> param_has_invalid_pointer_declarator;
@@ -1316,6 +1343,9 @@ struct Objc3SemanticMethodTypeMetadata {
   bool return_has_pointer_declarator = false;
   bool return_has_nullability_suffix = false;
   bool return_has_ownership_qualifier = false;
+  bool return_id_spelling = false;
+  bool return_class_spelling = false;
+  bool return_instancetype_spelling = false;
   bool return_object_pointer_type_spelling = false;
   bool return_has_invalid_generic_suffix = false;
   bool return_has_invalid_pointer_declarator = false;

@@ -474,6 +474,9 @@ struct Objc3MethodDecl {
   std::size_t task_runtime_normalized_sites = 0;
   std::size_t task_runtime_gate_blocked_sites = 0;
   std::size_t task_runtime_contract_violation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   std::string task_runtime_cancellation_profile;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
@@ -634,6 +637,8 @@ struct Objc3InterfaceDecl {
   std::string semantic_link_symbol;
   std::string semantic_link_super_symbol;
   std::string semantic_link_category_symbol;
+  std::vector<std::string> property_synthesis_symbols_lexicographic;
+  std::vector<std::string> ivar_binding_symbols_lexicographic;
   std::vector<std::string> method_lookup_symbols_lexicographic;
   std::vector<std::string> override_lookup_symbols_lexicographic;
   std::vector<std::string> conflict_lookup_symbols_lexicographic;
@@ -820,6 +825,9 @@ struct FunctionDecl {
   std::size_t task_runtime_normalized_sites = 0;
   std::size_t task_runtime_gate_blocked_sites = 0;
   std::size_t task_runtime_contract_violation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   std::string task_runtime_cancellation_profile;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
@@ -864,6 +872,9 @@ struct FunctionDecl {
 
 struct GlobalDecl {
   std::string name;
+  std::string scope_owner_symbol;
+  std::vector<std::string> scope_path_lexicographic;
+  std::string semantic_link_symbol;
   std::unique_ptr<Expr> value;
   unsigned line = 1;
   unsigned column = 1;

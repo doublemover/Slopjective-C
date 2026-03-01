@@ -1366,6 +1366,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_has_pointer_declarator.reserve(method.params.size());
   info.param_has_nullability_suffix.reserve(method.params.size());
   info.param_has_ownership_qualifier.reserve(method.params.size());
+  info.param_id_spelling.reserve(method.params.size());
+  info.param_class_spelling.reserve(method.params.size());
+  info.param_instancetype_spelling.reserve(method.params.size());
   info.param_object_pointer_type_spelling.reserve(method.params.size());
   info.param_has_invalid_generic_suffix.reserve(method.params.size());
   info.param_has_invalid_pointer_declarator.reserve(method.params.size());
@@ -1395,6 +1398,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
     info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
     info.param_has_ownership_qualifier.push_back(param.has_ownership_qualifier);
+    info.param_id_spelling.push_back(param.id_spelling);
+    info.param_class_spelling.push_back(param.class_spelling);
+    info.param_instancetype_spelling.push_back(param.instancetype_spelling);
     info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
     info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
     info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
@@ -1420,6 +1426,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_pointer_declarator = method.has_return_pointer_declarator;
   info.return_has_nullability_suffix = !method.return_nullability_suffix_tokens.empty();
   info.return_has_ownership_qualifier = method.has_return_ownership_qualifier;
+  info.return_id_spelling = method.return_id_spelling;
+  info.return_class_spelling = method.return_class_spelling;
+  info.return_instancetype_spelling = method.return_instancetype_spelling;
   info.return_object_pointer_type_spelling = method.return_object_pointer_type_spelling;
   info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(method);
   info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(method);
@@ -8033,6 +8042,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.param_has_pointer_declarator.reserve(fn.params.size());
       info.param_has_nullability_suffix.reserve(fn.params.size());
       info.param_has_ownership_qualifier.reserve(fn.params.size());
+      info.param_id_spelling.reserve(fn.params.size());
+      info.param_class_spelling.reserve(fn.params.size());
+      info.param_instancetype_spelling.reserve(fn.params.size());
       info.param_object_pointer_type_spelling.reserve(fn.params.size());
       info.param_has_invalid_generic_suffix.reserve(fn.params.size());
       info.param_has_invalid_pointer_declarator.reserve(fn.params.size());
@@ -8062,6 +8074,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         info.param_has_pointer_declarator.push_back(param.has_pointer_declarator);
         info.param_has_nullability_suffix.push_back(!param.nullability_suffix_tokens.empty());
         info.param_has_ownership_qualifier.push_back(param.has_ownership_qualifier);
+        info.param_id_spelling.push_back(param.id_spelling);
+        info.param_class_spelling.push_back(param.class_spelling);
+        info.param_instancetype_spelling.push_back(param.instancetype_spelling);
         info.param_object_pointer_type_spelling.push_back(param.object_pointer_type_spelling);
         info.param_has_invalid_generic_suffix.push_back(HasInvalidGenericParamTypeSuffix(param));
         info.param_has_invalid_pointer_declarator.push_back(HasInvalidPointerParamTypeDeclarator(param));
@@ -8087,6 +8102,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_has_pointer_declarator = fn.has_return_pointer_declarator;
       info.return_has_nullability_suffix = !fn.return_nullability_suffix_tokens.empty();
       info.return_has_ownership_qualifier = fn.has_return_ownership_qualifier;
+      info.return_id_spelling = fn.return_id_spelling;
+      info.return_class_spelling = fn.return_class_spelling;
+      info.return_instancetype_spelling = fn.return_instancetype_spelling;
       info.return_object_pointer_type_spelling = fn.return_object_pointer_type_spelling;
       info.return_has_invalid_generic_suffix = HasInvalidGenericReturnTypeSuffix(fn);
       info.return_has_invalid_pointer_declarator = HasInvalidPointerReturnTypeDeclarator(fn);
@@ -8308,6 +8326,16 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       existing.param_has_ownership_qualifier[i] =
           existing.param_has_ownership_qualifier[i] || fn.params[i].has_ownership_qualifier;
     }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_id_spelling.size(); ++i) {
+      existing.param_id_spelling[i] = existing.param_id_spelling[i] || fn.params[i].id_spelling;
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_class_spelling.size(); ++i) {
+      existing.param_class_spelling[i] = existing.param_class_spelling[i] || fn.params[i].class_spelling;
+    }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_instancetype_spelling.size(); ++i) {
+      existing.param_instancetype_spelling[i] =
+          existing.param_instancetype_spelling[i] || fn.params[i].instancetype_spelling;
+    }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_object_pointer_type_spelling.size(); ++i) {
       existing.param_object_pointer_type_spelling[i] =
           existing.param_object_pointer_type_spelling[i] || fn.params[i].object_pointer_type_spelling;
@@ -8344,6 +8372,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
         existing.return_has_nullability_suffix || !fn.return_nullability_suffix_tokens.empty();
     existing.return_has_ownership_qualifier =
         existing.return_has_ownership_qualifier || fn.has_return_ownership_qualifier;
+    existing.return_id_spelling = existing.return_id_spelling || fn.return_id_spelling;
+    existing.return_class_spelling = existing.return_class_spelling || fn.return_class_spelling;
+    existing.return_instancetype_spelling =
+        existing.return_instancetype_spelling || fn.return_instancetype_spelling;
     existing.return_object_pointer_type_spelling =
         existing.return_object_pointer_type_spelling || fn.return_object_pointer_type_spelling;
     existing.return_has_invalid_generic_suffix =
@@ -8834,6 +8866,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
     metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
     metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
+    metadata.param_id_spelling = source.param_id_spelling;
+    metadata.param_class_spelling = source.param_class_spelling;
+    metadata.param_instancetype_spelling = source.param_instancetype_spelling;
     metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
     metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
     metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
@@ -8857,6 +8892,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
     metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
     metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
+    metadata.return_id_spelling = source.return_id_spelling;
+    metadata.return_class_spelling = source.return_class_spelling;
+    metadata.return_instancetype_spelling = source.return_instancetype_spelling;
     metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
     metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
     metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
@@ -9092,6 +9130,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
       method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
       method_metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
+      method_metadata.param_id_spelling = source.param_id_spelling;
+      method_metadata.param_class_spelling = source.param_class_spelling;
+      method_metadata.param_instancetype_spelling = source.param_instancetype_spelling;
       method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
       method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
       method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
@@ -9115,6 +9156,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
       method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
       method_metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
+      method_metadata.return_id_spelling = source.return_id_spelling;
+      method_metadata.return_class_spelling = source.return_class_spelling;
+      method_metadata.return_instancetype_spelling = source.return_instancetype_spelling;
       method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
       method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
       method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
@@ -9366,6 +9410,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.param_has_pointer_declarator = source.param_has_pointer_declarator;
       method_metadata.param_has_nullability_suffix = source.param_has_nullability_suffix;
       method_metadata.param_has_ownership_qualifier = source.param_has_ownership_qualifier;
+      method_metadata.param_id_spelling = source.param_id_spelling;
+      method_metadata.param_class_spelling = source.param_class_spelling;
+      method_metadata.param_instancetype_spelling = source.param_instancetype_spelling;
       method_metadata.param_object_pointer_type_spelling = source.param_object_pointer_type_spelling;
       method_metadata.param_has_invalid_generic_suffix = source.param_has_invalid_generic_suffix;
       method_metadata.param_has_invalid_pointer_declarator = source.param_has_invalid_pointer_declarator;
@@ -9389,6 +9436,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_pointer_declarator = source.return_has_pointer_declarator;
       method_metadata.return_has_nullability_suffix = source.return_has_nullability_suffix;
       method_metadata.return_has_ownership_qualifier = source.return_has_ownership_qualifier;
+      method_metadata.return_id_spelling = source.return_id_spelling;
+      method_metadata.return_class_spelling = source.return_class_spelling;
+      method_metadata.return_instancetype_spelling = source.return_instancetype_spelling;
       method_metadata.return_object_pointer_type_spelling = source.return_object_pointer_type_spelling;
       method_metadata.return_has_invalid_generic_suffix = source.return_has_invalid_generic_suffix;
       method_metadata.return_has_invalid_pointer_declarator = source.return_has_invalid_pointer_declarator;
