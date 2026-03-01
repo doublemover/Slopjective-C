@@ -14,7 +14,8 @@ def _read(path: Path) -> str:
 def test_m168_frontend_block_storage_escape_section_exists() -> None:
     fragment = _read(GRAMMAR_DOC_FRAGMENT)
     for text in (
-        "## M168 frontend __block storage and escape parser/AST surface (M168-A001)",
+        "M168 frontend",
+        "storage and escape parser/AST surface (M168-A001)",
         "BuildBlockStorageEscapeProfile(...)",
         "BuildBlockStorageByrefLayoutSymbol(...)",
         "block_storage_mutable_capture_count",

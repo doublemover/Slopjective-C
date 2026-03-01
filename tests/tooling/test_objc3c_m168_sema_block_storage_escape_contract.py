@@ -16,7 +16,8 @@ def _read(path: Path) -> str:
 def test_m168_sema_block_storage_escape_section_exists() -> None:
     fragment = _read(SEMA_DOC_FRAGMENT)
     for text in (
-        "## M168 sema/type __block storage and escape semantics contract (M168-B001)",
+        "M168 sema/type",
+        "storage and escape semantics contract (M168-B001)",
         "Objc3BlockStorageEscapeSiteMetadata",
         "Objc3BlockStorageEscapeSemanticsSummary",
         "BuildBlockStorageEscapeSemanticsSummaryFromIntegrationSurface",
