@@ -2676,6 +2676,44 @@ Scope assumptions:
 - This runbook fail-closes M184-A001 parser surfaces, M184-B001 sema surfaces, M184-C001 lowering surfaces, and M184-D001 validation/conformance surfaces through M183-E001 replay anchors.
 - This runbook enforces those currently landed lane surfaces plus M184-E001 integration wiring.
 
+## M184 validation/conformance/perf unwind safety and cleanup emission runbook (M184-D001)
+
+Deterministic M184 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m184_validation_unwind_safety_cleanup_emission_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_unwind_cleanup_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_unwind_cleanup_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_unwind_cleanup_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_unwind_cleanup_lowering_surface.deterministic_handoff`
+  - `lowering_unwind_cleanup.replay_key`
+- `replay_run_1/module.ll`
+  - `unwind_cleanup_lowering`
+  - `frontend_objc_unwind_cleanup_lowering_profile`
+  - `!objc3.objc_unwind_cleanup_lowering = !{!44}`
+- `M184-D001.json`
+  - `tracking.issue = 4512`
+  - `tracking.task = M184-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + fail_closed_sites == unwind_cleanup_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py -q
+```
+
 ## M190 integration concurrency replay-proof and race-guard contract runbook (M190-E001)
 
 Deterministic M190 integration sequence:

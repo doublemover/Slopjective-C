@@ -1,0 +1,37 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_unwind_cleanup_lowering_handoff": true,
+        "unwind_cleanup_lowering_sites": 7,
+        "unwind_cleanup_lowering_exceptional_exit_sites": 5,
+        "unwind_cleanup_lowering_cleanup_action_sites": 4,
+        "unwind_cleanup_lowering_cleanup_scope_sites": 3,
+        "unwind_cleanup_lowering_cleanup_resume_sites": 2,
+        "unwind_cleanup_lowering_normalized_sites": 5,
+        "unwind_cleanup_lowering_fail_closed_sites": 2,
+        "unwind_cleanup_lowering_contract_violation_sites": 0,
+        "lowering_unwind_cleanup_replay_key": "unwind_cleanup_sites=7;exceptional_exit_sites=5;cleanup_action_sites=4;cleanup_scope_sites=3;cleanup_resume_sites=2;normalized_sites=5;fail_closed_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m184-unwind-safety-cleanup-emission-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_unwind_cleanup_lowering_surface": {
+          "unwind_cleanup_sites": 7,
+          "exceptional_exit_sites": 5,
+          "cleanup_action_sites": 4,
+          "cleanup_scope_sites": 3,
+          "cleanup_resume_sites": 2,
+          "normalized_sites": 5,
+          "fail_closed_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "unwind_cleanup_sites=7;exceptional_exit_sites=5;cleanup_action_sites=4;cleanup_scope_sites=3;cleanup_resume_sites=2;normalized_sites=5;fail_closed_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m184-unwind-safety-cleanup-emission-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_unwind_cleanup": {
+    "replay_key": "unwind_cleanup_sites=7;exceptional_exit_sites=5;cleanup_action_sites=4;cleanup_scope_sites=3;cleanup_resume_sites=2;normalized_sites=5;fail_closed_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m184-unwind-safety-cleanup-emission-lowering-v1",
+    "lane_contract": "m184-unwind-safety-cleanup-emission-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

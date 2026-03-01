@@ -1,0 +1,25 @@
+{
+  "id": "M184-D001",
+  "title": "Unwind safety and cleanup emission lowering replay contract fixture (issue #4512 / task M184-D001)",
+  "feature": "m184 lane-d unwind safety and cleanup emission lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M184",
+    "milestone_number": 269,
+    "lane": "D",
+    "issue": 4512,
+    "task": "M184-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py",
+    "tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: unwind_cleanup_lowering\n// EXPECT: deterministic_unwind_cleanup_lowering_handoff=true\n\nmodule m184_lane_d_unwind_safety_cleanup_emission;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
