@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 
+#include "diag/objc3_diag_utils.h"
 #include "driver/objc3_driver_shell.h"
 #include "driver/objc3_objectivec_path.h"
 #include "driver/objc3_objc3_path.h"
