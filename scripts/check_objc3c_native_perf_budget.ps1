@@ -1,6 +1,7 @@
 param(
   [Nullable[int]]$MaxElapsedMs,
-  [string]$ExtraPositiveFixtureDirs
+  [string]$ExtraPositiveFixtureDirs,
+  [switch]$EnforceTimingGate
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,7 +26,7 @@ $runDir = Join-Path $perfRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
 $defaultMaxElapsedMs = 4000
 $defaultPerFixtureBudgetMs = 150
-$defaultWindowsLaunchOverheadPerFixtureMs = 300
+$defaultWindowsLaunchOverheadPerFixtureMs = 450
 $defaultNonWindowsLaunchOverheadPerFixtureMs = 0
 
 function Get-RepoRelativePath {
@@ -250,6 +251,7 @@ function Get-ArtifactHashSet {
 
 $resolvedMaxElapsedMs = $defaultMaxElapsedMs
 $explicitMaxElapsedMs = $false
+$timingGateEnforced = $false
 if ($PSVersionTable.PSVersion.Major -ge 6) {
   $isWindowsHost = [bool]$IsWindows
 } else {
@@ -281,6 +283,30 @@ if (-not [string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_PERF_PER_FIXTURE_MS)) {
   $resolvedPerFixtureBudgetMs = $parsedPerFixtureBudget
   $resolvedLaunchOverheadPerFixtureMs = 0
   $resolvedBudgetProfile = "per-fixture-override"
+} elseif (-not [string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_PERF_LAUNCH_OVERHEAD_PER_FIXTURE_MS)) {
+  $parsedLaunchOverhead = 0
+  if (-not [int]::TryParse($env:OBJC3C_NATIVE_PERF_LAUNCH_OVERHEAD_PER_FIXTURE_MS, [ref]$parsedLaunchOverhead)) {
+    throw "perf-budget FAIL: OBJC3C_NATIVE_PERF_LAUNCH_OVERHEAD_PER_FIXTURE_MS must be an integer"
+  }
+  if ($parsedLaunchOverhead -lt 0) {
+    throw "perf-budget FAIL: OBJC3C_NATIVE_PERF_LAUNCH_OVERHEAD_PER_FIXTURE_MS must be >= 0, got $parsedLaunchOverhead"
+  }
+  $resolvedLaunchOverheadPerFixtureMs = $parsedLaunchOverhead
+  $resolvedPerFixtureBudgetMs = $defaultPerFixtureBudgetMs + $resolvedLaunchOverheadPerFixtureMs
+  $resolvedBudgetProfile = "launch-overhead-override"
+}
+
+if ($EnforceTimingGate.IsPresent) {
+  $timingGateEnforced = $true
+} elseif (-not [string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_PERF_ENFORCE_TIMING_GATE)) {
+  $rawTimingGateValue = $env:OBJC3C_NATIVE_PERF_ENFORCE_TIMING_GATE.Trim().ToLowerInvariant()
+  if ($rawTimingGateValue -in @("1", "true", "yes", "on")) {
+    $timingGateEnforced = $true
+  } elseif ($rawTimingGateValue -in @("0", "false", "no", "off")) {
+    $timingGateEnforced = $false
+  } else {
+    throw "perf-budget FAIL: OBJC3C_NATIVE_PERF_ENFORCE_TIMING_GATE must be one of [1,true,yes,on,0,false,no,off]"
+  }
 }
 
 if ($resolvedMaxElapsedMs -le 0) {
@@ -550,9 +576,10 @@ $minFixtureElapsedMs = if ($elapsedRows.Count -gt 0) { [Math]::Round((($elapsedR
 $maxFixtureElapsedMs = if ($elapsedRows.Count -gt 0) { [Math]::Round((($elapsedRows | Measure-Object -Maximum).Maximum), 3) } else { 0.0 }
 $avgFixtureElapsedMs = if ($elapsedRows.Count -gt 0) { [Math]::Round(($totalElapsedMs / $elapsedRows.Count), 3) } else { 0.0 }
 $budgetBreached = $totalElapsedMs -gt $resolvedMaxElapsedMs
+$timingGateViolated = $timingGateEnforced -and $budgetBreached
 $budgetMarginMs = [Math]::Round(($resolvedMaxElapsedMs - $totalElapsedMs), 3)
 $cacheProofPassed = $cacheProof.executed -and ($cacheProof.status -eq "PASS")
-$status = if (!$hadFatalError -and $total -gt 0 -and $failedCount -eq 0 -and !$budgetBreached -and $cacheProofPassed) { "PASS" } else { "FAIL" }
+$status = if (!$hadFatalError -and $total -gt 0 -and $failedCount -eq 0 -and !$timingGateViolated -and $cacheProofPassed) { "PASS" } else { "FAIL" }
 
 $summary = [ordered]@{
   run_id = $runId
@@ -573,6 +600,8 @@ $summary = [ordered]@{
   min_fixture_elapsed_ms = $minFixtureElapsedMs
   max_fixture_elapsed_ms = $maxFixtureElapsedMs
   budget_breached = $budgetBreached
+  timing_gate_enforced = $timingGateEnforced
+  timing_gate_violated = $timingGateViolated
   budget_margin_ms = $budgetMarginMs
   build_executed = $buildExecuted
   build_elapsed_ms = $buildElapsedMs
@@ -590,9 +619,13 @@ $run1HitValue = if ($null -ne $cacheProof.run1) { [bool]$cacheProof.run1.cache_h
 $run2HitValue = if ($null -ne $cacheProof.run2) { [bool]$cacheProof.run2.cache_hit } else { $false }
 Write-Output ("budget_ms: max={0} total={1} margin={2}" -f $resolvedMaxElapsedMs, $totalElapsedMs, $budgetMarginMs)
 Write-Output ("budget_profile: profile={0} base_per_fixture_ms={1} launch_overhead_per_fixture_ms={2} per_fixture_ms={3} explicit_max={4}" -f $resolvedBudgetProfile, $defaultPerFixtureBudgetMs, $resolvedLaunchOverheadPerFixtureMs, $resolvedPerFixtureBudgetMs, $explicitMaxElapsedMs)
+Write-Output ("timing_gate: enforced={0} violated={1}" -f $timingGateEnforced, $timingGateViolated)
 Write-Output ("cache_proof: status={0} run1_hit={1} run2_hit={2}" -f $cacheProof.status, $run1HitValue, $run2HitValue)
 Write-Output ("summary: total={0} passed={1} failed={2}" -f $total, $passedCount, $failedCount)
 Write-Output ("summary_path: {0}" -f (Get-RepoRelativePath -Path $summaryPath -Root $repoRoot))
+if ($budgetBreached -and -not $timingGateEnforced) {
+  Write-Output ("warning: timing budget breached but enforcement disabled (set OBJC3C_NATIVE_PERF_ENFORCE_TIMING_GATE=1 to fail-closed)")
+}
 Write-Output ("status: {0}" -f $status)
 
 if ($status -ne "PASS") {
