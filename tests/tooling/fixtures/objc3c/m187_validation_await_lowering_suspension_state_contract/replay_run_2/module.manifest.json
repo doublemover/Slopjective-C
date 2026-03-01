@@ -1,0 +1,39 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_await_lowering_suspension_state_lowering_handoff": true,
+        "await_lowering_suspension_state_lowering_sites": 12,
+        "await_lowering_suspension_state_lowering_await_keyword_sites": 8,
+        "await_lowering_suspension_state_lowering_await_suspension_point_sites": 6,
+        "await_lowering_suspension_state_lowering_await_resume_sites": 5,
+        "await_lowering_suspension_state_lowering_await_state_machine_sites": 4,
+        "await_lowering_suspension_state_lowering_await_continuation_sites": 4,
+        "await_lowering_suspension_state_lowering_normalized_sites": 10,
+        "await_lowering_suspension_state_lowering_gate_blocked_sites": 2,
+        "await_lowering_suspension_state_lowering_contract_violation_sites": 0,
+        "lowering_await_lowering_suspension_state_replay_key": "await_suspension_sites=12;await_keyword_sites=8;await_suspension_point_sites=6;await_resume_sites=5;await_state_machine_sites=4;await_continuation_sites=4;normalized_sites=10;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m187-await-lowering-suspension-state-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_await_lowering_suspension_state_lowering_surface": {
+          "await_suspension_sites": 12,
+          "await_keyword_sites": 8,
+          "await_suspension_point_sites": 6,
+          "await_resume_sites": 5,
+          "await_state_machine_sites": 4,
+          "await_continuation_sites": 4,
+          "normalized_sites": 10,
+          "gate_blocked_sites": 2,
+          "contract_violation_sites": 0,
+          "replay_key": "await_suspension_sites=12;await_keyword_sites=8;await_suspension_point_sites=6;await_resume_sites=5;await_state_machine_sites=4;await_continuation_sites=4;normalized_sites=10;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m187-await-lowering-suspension-state-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_await_lowering_suspension_state": {
+    "replay_key": "await_suspension_sites=12;await_keyword_sites=8;await_suspension_point_sites=6;await_resume_sites=5;await_state_machine_sites=4;await_continuation_sites=4;normalized_sites=10;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m187-await-lowering-suspension-state-lowering-v1",
+    "lane_contract": "m187-await-lowering-suspension-state-lowering-v1",
+    "deterministic_handoff": true
+  }
+}
