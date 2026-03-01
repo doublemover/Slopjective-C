@@ -2,3 +2,4 @@ node_modules/
 site/_site/
 tests/tooling/fixtures/
 tmp/
+docs/objc3c-native.md
