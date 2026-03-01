@@ -7617,18 +7617,18 @@ class Objc3Parser {
     } else if (Match(TokenKind::KwVoid)) {
       fn.return_type = ValueType::Void;
     } else if (Match(TokenKind::KwId)) {
-      fn.return_type = ValueType::I32;
+      fn.return_type = ValueType::ObjCId;
       fn.return_id_spelling = true;
     } else if (Match(TokenKind::KwClass)) {
-      fn.return_type = ValueType::I32;
+      fn.return_type = ValueType::ObjCClass;
       fn.return_class_spelling = true;
     } else if (Match(TokenKind::KwSEL)) {
-      fn.return_type = ValueType::I32;
+      fn.return_type = ValueType::ObjCSel;
       fn.return_sel_spelling = true;
     } else if (Match(TokenKind::KwProtocol)) {
-      fn.return_type = ValueType::I32;
+      fn.return_type = ValueType::ObjCProtocol;
     } else if (Match(TokenKind::KwInstancetype)) {
-      fn.return_type = ValueType::I32;
+      fn.return_type = ValueType::ObjCInstancetype;
       fn.return_instancetype_spelling = true;
     } else {
       if (At(TokenKind::Identifier)) {
@@ -7642,7 +7642,7 @@ class Objc3Parser {
           fn.return_vector_base_spelling = vector_base_spelling;
           fn.return_vector_lane_count = vector_lane_count;
         } else {
-          fn.return_type = ValueType::I32;
+          fn.return_type = ValueType::ObjCObjectPtr;
           fn.return_object_pointer_type_spelling = true;
           fn.return_object_pointer_type_name = type_token.text;
         }
@@ -7972,18 +7972,18 @@ class Objc3Parser {
     } else if (Match(TokenKind::KwNSInteger) || Match(TokenKind::KwNSUInteger)) {
       param.type = ValueType::I32;
     } else if (Match(TokenKind::KwId)) {
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCId;
       param.id_spelling = true;
     } else if (Match(TokenKind::KwClass)) {
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCClass;
       param.class_spelling = true;
     } else if (Match(TokenKind::KwSEL)) {
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCSel;
       param.sel_spelling = true;
     } else if (Match(TokenKind::KwProtocol)) {
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCProtocol;
     } else if (Match(TokenKind::KwInstancetype)) {
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCInstancetype;
       param.instancetype_spelling = true;
     } else if (At(TokenKind::Identifier)) {
       const Token type_token = Advance();
@@ -8017,7 +8017,7 @@ class Objc3Parser {
                 param.object_pointer_type_name);
         return true;
       }
-      param.type = ValueType::I32;
+      param.type = ValueType::ObjCObjectPtr;
       param.object_pointer_type_spelling = true;
       param.object_pointer_type_name = type_token.text;
     } else {

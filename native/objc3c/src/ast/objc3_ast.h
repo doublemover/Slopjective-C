@@ -17,7 +17,19 @@ struct SymbolContext {
   std::vector<SymbolRow> rows;
 };
 
-enum class ValueType { Unknown, I32, Bool, Void, Function };
+enum class ValueType {
+  Unknown,
+  I32,
+  Bool,
+  Void,
+  Function,
+  ObjCId,
+  ObjCClass,
+  ObjCSel,
+  ObjCProtocol,
+  ObjCInstancetype,
+  ObjCObjectPtr
+};
 
 struct Expr {
   // Legacy extraction anchor retained for contract tests:

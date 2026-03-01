@@ -26,6 +26,18 @@ static const char *TypeName(ValueType type) {
       return "void";
     case ValueType::Function:
       return "function";
+    case ValueType::ObjCId:
+      return "id";
+    case ValueType::ObjCClass:
+      return "Class";
+    case ValueType::ObjCSel:
+      return "SEL";
+    case ValueType::ObjCProtocol:
+      return "Protocol";
+    case ValueType::ObjCInstancetype:
+      return "instancetype";
+    case ValueType::ObjCObjectPtr:
+      return "object-pointer";
     default:
       return "unknown";
   }
@@ -114,8 +126,51 @@ static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
   return !info.is_vector && (info.type == ValueType::Bool || info.type == ValueType::I32);
 }
 
-static bool IsMessageI32CompatibleType(const SemanticTypeInfo &info) {
-  return !info.is_vector && (info.type == ValueType::I32 || info.type == ValueType::Bool);
+static bool IsObjCReferenceValueType(ValueType type) {
+  return type == ValueType::ObjCId ||
+         type == ValueType::ObjCClass ||
+         type == ValueType::ObjCSel ||
+         type == ValueType::ObjCProtocol ||
+         type == ValueType::ObjCInstancetype ||
+         type == ValueType::ObjCObjectPtr;
+}
+
+static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
+  return !info.is_vector && IsObjCReferenceValueType(info.type);
+}
+
+static bool IsMessageCompatibleType(const SemanticTypeInfo &info) {
+  return !info.is_vector && (info.type == ValueType::I32 || info.type == ValueType::Bool ||
+                             IsObjCReferenceValueType(info.type));
+}
+
+static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &target,
+                                                      const SemanticTypeInfo &value) {
+  if (!IsObjCReferenceSemanticType(target) || !IsObjCReferenceSemanticType(value)) {
+    return false;
+  }
+  if (target.type == value.type) {
+    return true;
+  }
+  // `id`/`instancetype` behave as bridge-capable reference tops for now.
+  if (target.type == ValueType::ObjCId || value.type == ValueType::ObjCId) {
+    return true;
+  }
+  if (target.type == ValueType::ObjCInstancetype || value.type == ValueType::ObjCInstancetype) {
+    return true;
+  }
+  // Unknown object-pointer spellings and class/protocol-typed handles are
+  // conservatively accepted as ObjC reference-compatible.
+  if (target.type == ValueType::ObjCObjectPtr || value.type == ValueType::ObjCObjectPtr) {
+    return true;
+  }
+  if (target.type == ValueType::ObjCClass || value.type == ValueType::ObjCClass) {
+    return true;
+  }
+  if (target.type == ValueType::ObjCProtocol || value.type == ValueType::ObjCProtocol) {
+    return true;
+  }
+  return false;
 }
 
 static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
@@ -1649,7 +1704,7 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
 
 // Legacy extraction anchors retained for contract tests:
 // static ValueType ValidateMessageSendExpr(
-// if (receiver_type != ValueType::Unknown && !IsMessageI32CompatibleType(receiver_type)) {
+// if (receiver_type != ValueType::Unknown && !IsMessageCompatibleType(receiver_type)) {
 static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 const std::vector<SemanticScope> &scopes,
                                                 const std::unordered_map<std::string, ValueType> &globals,
@@ -1671,7 +1726,7 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
     case Expr::Kind::BoolLiteral:
       return MakeScalarSemanticType(ValueType::Bool);
     case Expr::Kind::NilLiteral:
-      return MakeScalarSemanticType(ValueType::I32);
+      return MakeScalarSemanticType(ValueType::ObjCId);
     case Expr::Kind::Identifier: {
       const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
       if (!IsUnknownSemanticType(local_type)) {
@@ -1809,6 +1864,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
         }
         return MakeScalarSemanticType(ValueType::I32);
       }
+      if (AreObjCReferenceTypesAssignmentCompatible(then_type, else_type)) {
+        if (then_type.type == else_type.type) {
+          return then_type;
+        }
+        return MakeScalarSemanticType(ValueType::ObjCId);
+      }
       if (!IsSameSemanticType(then_type, else_type)) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                        "type mismatch: conditional branches must be type-compatible"));
@@ -1866,9 +1927,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
           const SemanticTypeInfo expected = MakeSemanticTypeFromFunctionInfoParam(fn_it->second, i);
           const bool bool_coercion =
               !expected.is_vector && expected.type == ValueType::Bool && !arg_type.is_vector && arg_type.type == ValueType::I32;
+          const bool objc_reference_coercion =
+              AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
               !IsSameSemanticType(arg_type, expected) &&
-              !bool_coercion) {
+              !bool_coercion &&
+              !objc_reference_coercion) {
             diagnostics.push_back(MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S206",
                                            "type mismatch: expected '" + SemanticTypeName(expected) +
                                                "' argument for parameter " + std::to_string(i) + " of '" +
@@ -1897,12 +1961,12 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
   const SemanticTypeInfo receiver_type =
       ValidateExpr(expr->receiver.get(), scopes, globals, functions, diagnostics, max_message_send_args);
   const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
-  if (!IsUnknownSemanticType(receiver_type) && !IsMessageI32CompatibleType(receiver_type)) {
+  if (!IsUnknownSemanticType(receiver_type) && !IsMessageCompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column = expr->receiver != nullptr ? expr->receiver->column : expr->column;
     diagnostics.push_back(MakeDiag(diag_line, diag_column, "O3S207",
                                    "type mismatch: message receiver for selector '" + selector +
-                                       "' must be i32-compatible, got '" +
+                                       "' must be ObjC-reference-compatible or scalar bridge-compatible, got '" +
                                        SemanticTypeName(receiver_type) + "'"));
   }
 
@@ -1918,15 +1982,15 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
     const auto &arg = expr->args[i];
     const SemanticTypeInfo arg_type =
         ValidateExpr(arg.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-    if (!IsUnknownSemanticType(arg_type) && !IsMessageI32CompatibleType(arg_type)) {
+    if (!IsUnknownSemanticType(arg_type) && !IsMessageCompatibleType(arg_type)) {
       diagnostics.push_back(MakeDiag(arg->line, arg->column, "O3S209",
                                      "type mismatch: message argument " + std::to_string(i) +
                                          " for selector '" + selector +
-                                         "' must be i32-compatible, got '" +
+                                         "' must be ObjC-reference-compatible or scalar bridge-compatible, got '" +
                                          SemanticTypeName(arg_type) + "'"));
     }
   }
-  return MakeScalarSemanticType(ValueType::I32);
+  return MakeScalarSemanticType(ValueType::ObjCId);
 }
 
 static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &statements,
@@ -1948,12 +2012,16 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
                                      (target_type.type == ValueType::I32 || target_type.type == ValueType::Bool);
     const bool value_known_scalar = IsScalarSemanticType(value_type) &&
                                     (value_type.type == ValueType::I32 || value_type.type == ValueType::Bool);
+    const bool target_known_objc_ref = IsObjCReferenceSemanticType(target_type);
+    const bool value_known_objc_ref = IsObjCReferenceSemanticType(value_type);
     const bool assign_matches =
         IsSameSemanticType(target_type, value_type) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::I32 &&
          value_type.type == ValueType::Bool) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::Bool &&
-         value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr));
+         value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr)) ||
+        (target_known_objc_ref && value_known_objc_ref &&
+         AreObjCReferenceTypesAssignmentCompatible(target_type, value_type));
     if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) && !value_known_scalar) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
@@ -1972,6 +2040,14 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
     }
 
     if (found_target && target_type.is_vector && !IsUnknownSemanticType(value_type) && !assign_matches) {
+      diagnostics.push_back(MakeDiag(line, column, "O3S206",
+                                     "type mismatch: assignment to '" + target_name + "' expects '" +
+                                         SemanticTypeName(target_type) + "', got '" +
+                                         SemanticTypeName(value_type) + "'; " +
+                                         FormatAtomicMemoryOrderMappingHint(op)));
+    }
+    if (found_target && target_known_objc_ref && !IsUnknownSemanticType(value_type) &&
+        !value_known_objc_ref && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
                                          SemanticTypeName(target_type) + "', got '" +
@@ -2215,7 +2291,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
              expected_return_type.type == ValueType::I32 && return_type.type == ValueType::Bool) ||
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
              expected_return_type.type == ValueType::Bool && return_type.type == ValueType::I32 &&
-             IsBoolLikeI32Literal(ret->value.get()));
+             IsBoolLikeI32Literal(ret->value.get())) ||
+            AreObjCReferenceTypesAssignmentCompatible(expected_return_type, return_type);
         if (!return_matches && !IsUnknownSemanticType(return_type) &&
             !(IsScalarSemanticType(return_type) && return_type.type == ValueType::Function)) {
           diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",

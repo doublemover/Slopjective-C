@@ -122,7 +122,7 @@ class Objc3IREmitter {
     EmitEntryPoint(body);
 
     if (fail_open_fallback_triggered_) {
-      error = "lowering encountered unsupported fallback path: " + fail_open_fallback_reason_;
+      error = "lowering encountered unsupported fail-closed path: " + fail_open_fallback_reason_;
       return false;
     }
 
@@ -3940,7 +3940,7 @@ class Objc3IREmitter {
       fail_open_fallback_triggered_ = true;
       fail_open_fallback_reason_ = reason;
     }
-    return "0";
+    return "poison";
   }
 
   void EmitStatement(const Stmt *stmt, FunctionContext &ctx) const {
