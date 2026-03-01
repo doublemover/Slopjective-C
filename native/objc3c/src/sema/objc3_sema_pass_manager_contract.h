@@ -257,6 +257,14 @@ struct Objc3SemaParityContractSurface {
   std::size_t ns_error_bridging_normalized_sites_total = 0;
   std::size_t ns_error_bridging_bridge_boundary_sites_total = 0;
   std::size_t ns_error_bridging_contract_violation_sites_total = 0;
+  std::size_t error_diagnostics_recovery_sites_total = 0;
+  std::size_t error_diagnostics_recovery_diagnostic_emit_sites_total = 0;
+  std::size_t error_diagnostics_recovery_recovery_anchor_sites_total = 0;
+  std::size_t error_diagnostics_recovery_recovery_boundary_sites_total = 0;
+  std::size_t error_diagnostics_recovery_fail_closed_diagnostic_sites_total = 0;
+  std::size_t error_diagnostics_recovery_normalized_sites_total = 0;
+  std::size_t error_diagnostics_recovery_gate_blocked_sites_total = 0;
+  std::size_t error_diagnostics_recovery_contract_violation_sites_total = 0;
   std::size_t result_like_lowering_sites_total = 0;
   std::size_t result_like_lowering_result_success_sites_total = 0;
   std::size_t result_like_lowering_result_failure_sites_total = 0;
@@ -478,6 +486,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
+  bool deterministic_error_diagnostics_recovery_handoff = false;
   bool deterministic_result_like_lowering_handoff = false;
   bool deterministic_unwind_cleanup_handoff = false;
   bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
@@ -521,6 +530,7 @@ struct Objc3SemaParityContractSurface {
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   Objc3UnwindCleanupSummary unwind_cleanup_summary;
   Objc3AwaitLoweringSuspensionStateSummary
@@ -1155,6 +1165,53 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.ns_error_bridging_summary.ns_error_bridging_sites &&
          surface.ns_error_bridging_summary.deterministic &&
          surface.deterministic_ns_error_bridging_handoff &&
+         surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites ==
+             surface.error_diagnostics_recovery_sites_total &&
+         surface.error_diagnostics_recovery_summary.diagnostic_emit_sites ==
+             surface.error_diagnostics_recovery_diagnostic_emit_sites_total &&
+         surface.error_diagnostics_recovery_summary.recovery_anchor_sites ==
+             surface.error_diagnostics_recovery_recovery_anchor_sites_total &&
+         surface.error_diagnostics_recovery_summary.recovery_boundary_sites ==
+             surface.error_diagnostics_recovery_recovery_boundary_sites_total &&
+         surface.error_diagnostics_recovery_summary
+                 .fail_closed_diagnostic_sites ==
+             surface
+                 .error_diagnostics_recovery_fail_closed_diagnostic_sites_total &&
+         surface.error_diagnostics_recovery_summary.normalized_sites ==
+             surface.error_diagnostics_recovery_normalized_sites_total &&
+         surface.error_diagnostics_recovery_summary.gate_blocked_sites ==
+             surface.error_diagnostics_recovery_gate_blocked_sites_total &&
+         surface.error_diagnostics_recovery_summary.contract_violation_sites ==
+             surface.error_diagnostics_recovery_contract_violation_sites_total &&
+         surface.error_diagnostics_recovery_summary.diagnostic_emit_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.recovery_anchor_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.recovery_boundary_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary
+                 .fail_closed_diagnostic_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.normalized_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.gate_blocked_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.contract_violation_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.normalized_sites +
+                 surface.error_diagnostics_recovery_summary.gate_blocked_sites ==
+             surface.error_diagnostics_recovery_summary
+                 .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary.deterministic &&
+         surface.deterministic_error_diagnostics_recovery_handoff &&
          surface.result_like_lowering_summary.result_like_sites ==
              surface.result_like_lowering_sites_total &&
          surface.result_like_lowering_summary.result_success_sites ==
@@ -2008,6 +2065,8 @@ struct Objc3SemaPassManagerResult {
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   bool deterministic_ns_error_bridging_handoff = false;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
+  bool deterministic_error_diagnostics_recovery_handoff = false;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
   bool deterministic_result_like_lowering_handoff = false;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
   bool deterministic_unwind_cleanup_handoff = false;

@@ -366,6 +366,18 @@ struct Objc3ResultLikeLoweringSummary {
   bool deterministic = true;
 };
 
+struct Objc3ErrorDiagnosticsRecoverySummary {
+  std::size_t error_diagnostics_recovery_sites = 0;
+  std::size_t diagnostic_emit_sites = 0;
+  std::size_t recovery_anchor_sites = 0;
+  std::size_t recovery_boundary_sites = 0;
+  std::size_t fail_closed_diagnostic_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3SymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -1043,6 +1055,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;
@@ -1369,6 +1382,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
   Objc3ResultLikeLoweringSummary result_like_lowering_summary;
+  Objc3ErrorDiagnosticsRecoverySummary error_diagnostics_recovery_summary;
   Objc3SymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary;
   Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary;

@@ -328,6 +328,20 @@ bool IsEquivalentNSErrorBridgingSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentErrorDiagnosticsRecoverySummary(
+    const Objc3ErrorDiagnosticsRecoverySummary &lhs,
+    const Objc3ErrorDiagnosticsRecoverySummary &rhs) {
+  return lhs.error_diagnostics_recovery_sites ==
+             rhs.error_diagnostics_recovery_sites &&
+         lhs.diagnostic_emit_sites == rhs.diagnostic_emit_sites &&
+         lhs.recovery_anchor_sites == rhs.recovery_anchor_sites &&
+         lhs.recovery_boundary_sites == rhs.recovery_boundary_sites &&
+         lhs.fail_closed_diagnostic_sites == rhs.fail_closed_diagnostic_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentResultLikeLoweringSummary(
     const Objc3ResultLikeLoweringSummary &lhs,
     const Objc3ResultLikeLoweringSummary &rhs) {
@@ -1203,6 +1217,50 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               .contract_violation_sites <=
           result.type_metadata_handoff.ns_error_bridging_summary
               .ns_error_bridging_sites;
+  result.error_diagnostics_recovery_summary =
+      result.integration_surface.error_diagnostics_recovery_summary;
+  result.deterministic_error_diagnostics_recovery_handoff =
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .deterministic &&
+      result.integration_surface.error_diagnostics_recovery_summary
+          .deterministic &&
+      IsEquivalentErrorDiagnosticsRecoverySummary(
+          result.integration_surface.error_diagnostics_recovery_summary,
+          result.type_metadata_handoff.error_diagnostics_recovery_summary) &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .diagnostic_emit_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .recovery_anchor_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .recovery_boundary_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .fail_closed_diagnostic_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .normalized_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .normalized_sites +
+              result.type_metadata_handoff.error_diagnostics_recovery_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites;
   result.result_like_lowering_summary =
       result.integration_surface.result_like_lowering_summary;
   result.deterministic_result_like_lowering_handoff =
@@ -2237,6 +2295,37 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.ns_error_bridging_summary.bridge_boundary_sites;
   result.parity_surface.ns_error_bridging_contract_violation_sites_total =
       result.parity_surface.ns_error_bridging_summary.contract_violation_sites;
+  result.parity_surface.error_diagnostics_recovery_summary =
+      result.type_metadata_handoff.error_diagnostics_recovery_summary;
+  result.parity_surface.error_diagnostics_recovery_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .error_diagnostics_recovery_sites;
+  result.parity_surface
+      .error_diagnostics_recovery_diagnostic_emit_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .diagnostic_emit_sites;
+  result.parity_surface
+      .error_diagnostics_recovery_recovery_anchor_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .recovery_anchor_sites;
+  result.parity_surface
+      .error_diagnostics_recovery_recovery_boundary_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .recovery_boundary_sites;
+  result.parity_surface
+      .error_diagnostics_recovery_fail_closed_diagnostic_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .fail_closed_diagnostic_sites;
+  result.parity_surface.error_diagnostics_recovery_normalized_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .normalized_sites;
+  result.parity_surface.error_diagnostics_recovery_gate_blocked_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .gate_blocked_sites;
+  result.parity_surface
+      .error_diagnostics_recovery_contract_violation_sites_total =
+      result.parity_surface.error_diagnostics_recovery_summary
+          .contract_violation_sites;
   result.parity_surface.result_like_lowering_summary =
       result.type_metadata_handoff.result_like_lowering_summary;
   result.parity_surface.result_like_lowering_sites_total =
@@ -3467,6 +3556,72 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.ns_error_bridging_summary.contract_violation_sites <=
           result.parity_surface.ns_error_bridging_summary.ns_error_bridging_sites &&
       result.parity_surface.ns_error_bridging_summary.deterministic;
+  result.parity_surface.deterministic_error_diagnostics_recovery_handoff =
+      result.deterministic_error_diagnostics_recovery_handoff &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites ==
+          result.parity_surface.error_diagnostics_recovery_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .diagnostic_emit_sites ==
+          result.parity_surface
+              .error_diagnostics_recovery_diagnostic_emit_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .recovery_anchor_sites ==
+          result.parity_surface
+              .error_diagnostics_recovery_recovery_anchor_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .recovery_boundary_sites ==
+          result.parity_surface
+              .error_diagnostics_recovery_recovery_boundary_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .fail_closed_diagnostic_sites ==
+          result.parity_surface
+              .error_diagnostics_recovery_fail_closed_diagnostic_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .normalized_sites ==
+          result.parity_surface.error_diagnostics_recovery_normalized_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .gate_blocked_sites ==
+          result.parity_surface.error_diagnostics_recovery_gate_blocked_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .error_diagnostics_recovery_contract_violation_sites_total &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .diagnostic_emit_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .recovery_anchor_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .recovery_boundary_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .fail_closed_diagnostic_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .normalized_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .gate_blocked_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .contract_violation_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .normalized_sites +
+              result.parity_surface.error_diagnostics_recovery_summary
+                  .gate_blocked_sites ==
+          result.parity_surface.error_diagnostics_recovery_summary
+              .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary.deterministic;
   result.parity_surface.deterministic_result_like_lowering_handoff =
       result.deterministic_result_like_lowering_handoff &&
       result.parity_surface.result_like_lowering_summary.result_like_sites ==
@@ -4403,6 +4558,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .deterministic_inline_asm_intrinsic_governance_handoff &&
       result.parity_surface.ns_error_bridging_summary.deterministic &&
       result.parity_surface.deterministic_ns_error_bridging_handoff &&
+      result.parity_surface.error_diagnostics_recovery_summary.deterministic &&
+      result.parity_surface.deterministic_error_diagnostics_recovery_handoff &&
       result.parity_surface.result_like_lowering_summary.deterministic &&
       result.parity_surface.deterministic_result_like_lowering_handoff &&
       result.parity_surface.await_lowering_suspension_state_lowering_summary

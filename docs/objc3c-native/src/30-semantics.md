@@ -3874,6 +3874,42 @@ Recommended M184 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py -q`
 
+<a id="m185-sema-type-error-diagnostics-ux-recovery-contract-m185-b001"></a>
+## M185 sema/type error diagnostics UX and recovery contract (M185-B001)
+
+M185-B defines deterministic sema summaries for error diagnostics and recovery
+handoff safety over parser-authored recovery profiles.
+
+M185 sema/type surface details:
+
+- `Objc3ErrorDiagnosticsRecoverySummary`
+- `BuildErrorDiagnosticsRecoverySummaryFromProgramAst`
+- parity counters:
+  - `error_diagnostics_recovery_sites_total`
+  - `error_diagnostics_recovery_diagnostic_emit_sites_total`
+  - `error_diagnostics_recovery_recovery_anchor_sites_total`
+  - `error_diagnostics_recovery_recovery_boundary_sites_total`
+  - `error_diagnostics_recovery_fail_closed_diagnostic_sites_total`
+  - `error_diagnostics_recovery_normalized_sites_total`
+  - `error_diagnostics_recovery_gate_blocked_sites_total`
+  - `error_diagnostics_recovery_contract_violation_sites_total`
+  - `deterministic_error_diagnostics_recovery_handoff`
+
+Deterministic sema intent:
+
+- error-diagnostics/recovery summaries are aggregated from parser-emitted
+  function and method recovery profiles and preserved across sema/type handoff
+  and pass-manager parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `error_diagnostics_recovery_normalized_sites_total + error_diagnostics_recovery_gate_blocked_sites_total == error_diagnostics_recovery_sites_total`.
+- diagnostic and recovery detail counters remain bounded by total recovery sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M185 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m185_sema_error_diagnostics_recovery_contract.py -q`
+
 <a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
 ## M186 sema/type async continuation contract (M186-B001)
 
