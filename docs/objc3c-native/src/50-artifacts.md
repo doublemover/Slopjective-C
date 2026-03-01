@@ -1712,11 +1712,8 @@ Operator evidence sequence:
 npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
 ```
 
-2. Validate marker alignment in:
-  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll`
-  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`
-3. Run contract guard:
-  - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
+1. Validate marker alignment in `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll` and `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`.
+1. Run contract guard: `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`.
 
 ## M225 lowering/runtime roadmap seeding profile
 

@@ -1572,9 +1572,9 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
 - Required SDK packaging commands (run in order):
   1. `npm run test:objc3c:parser-ast-extraction`
-  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
-  3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
-4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+  1. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  1. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
+  1. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
 
 ## M142 frontend CLI and C API parity harness
 
@@ -8065,11 +8065,8 @@ Operator evidence sequence:
 npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
 ```
 
-2. Validate marker alignment in:
-  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll`
-  - `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`
-3. Run contract guard:
-  - `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`
+1. Validate marker alignment in `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll` and `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`.
+1. Run contract guard: `python -m pytest tests/tooling/test_objc3c_m224_lowering_release_contract.py -q`.
 
 ## M225 lowering/runtime roadmap seeding profile
 

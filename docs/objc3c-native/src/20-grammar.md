@@ -1498,9 +1498,9 @@ Frontend SDK/toolchain packaging for IDE workflows depends on deterministic pars
   - token bridge continuity remains visible via `Objc3SemaTokenMetadata`.
 - Required SDK packaging commands (run in order):
   1. `npm run test:objc3c:parser-ast-extraction`
-  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
-  3. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
-4. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
+  1. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  1. `python -m pytest tests/tooling/test_objc3c_m216_frontend_conformance_contract.py -q`
+  1. `python -m pytest tests/tooling/test_objc3c_m215_frontend_sdk_packaging_contract.py -q`
 
 ## M142 frontend CLI and C API parity harness
 
