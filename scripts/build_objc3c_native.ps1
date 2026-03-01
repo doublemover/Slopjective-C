@@ -13,6 +13,34 @@ $outDir = "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $outExe = Join-Path $outDir "objc3c-native.exe"
 $outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
+$tmpOutDir = Join-Path "tmp" "build-objc3c-native"
+New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
+$runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
+$stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
+$stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
+
+function Publish-ArtifactWithRetry {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$StagedPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FinalPath,
+    [int]$MaxAttempts = 40,
+    [int]$SleepMilliseconds = 250
+  )
+
+  for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+    try {
+      Move-Item -Path $StagedPath -Destination $FinalPath -Force
+      return
+    } catch {
+      if ($attempt -eq $MaxAttempts) {
+        throw "failed to publish $FinalPath after $MaxAttempts attempt(s): $($_.Exception.Message)"
+      }
+      Start-Sleep -Milliseconds $SleepMilliseconds
+    }
+  }
+}
 
 $sharedSources = @(
   "native/objc3c/src/driver/objc3_cli_options.cpp"
@@ -64,9 +92,10 @@ $capiRunnerSources = @(
   "-Inative/objc3c/src" `
   @nativeSources `
   $libclang `
-  -o $outExe
+  -o $stagedOutExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
 
 & $clangxx `
   -std=c++20 `
@@ -78,8 +107,9 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   "-Inative/objc3c/src" `
   @capiRunnerSources `
   $libclang `
-  -o $outCapiExe
+  -o $stagedOutCapiExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
 Write-Output "built=$outExe"
 Write-Output "built=$outCapiExe"
