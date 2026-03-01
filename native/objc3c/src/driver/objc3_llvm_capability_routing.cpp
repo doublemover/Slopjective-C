@@ -203,7 +203,14 @@ bool ApplyObjc3LLVMCabilityRouting(Objc3CliOptions &options, std::string &error)
     return true;
   }
 
-  if (!std::filesystem::exists(options.llvm_capabilities_summary)) {
+  std::error_code exists_error;
+  const bool summary_exists = std::filesystem::exists(options.llvm_capabilities_summary, exists_error);
+  if (exists_error) {
+    error = "capability routing fail-closed: unable to stat llvm capabilities summary '" +
+            options.llvm_capabilities_summary.string() + "': " + exists_error.message();
+    return false;
+  }
+  if (!summary_exists) {
     error = "capability routing fail-closed: llvm capabilities summary missing: " +
             options.llvm_capabilities_summary.string();
     return false;
