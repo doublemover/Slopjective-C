@@ -43,11 +43,11 @@ $BucketMinima = [ordered]@{
 Write-Output "Conformance bucket minima check:"
 foreach ($bucket in $BucketMinima.Keys) {
   $bucketPath = Join-Path $RepoRoot "tests/conformance/$bucket"
-  if (-not (Test-Path $bucketPath)) {
+  if (-not (Test-Path -LiteralPath $bucketPath -PathType Container)) {
     Add-Failure "Missing required bucket directory: tests/conformance/$bucket"
     continue
   }
-  $count = (Get-ChildItem $bucketPath -File -Filter "*.json" |
+  $count = (Get-ChildItem -LiteralPath $bucketPath -File -Filter "*.json" |
     Where-Object { $_.Name -ne "manifest.json" } |
     Measure-Object).Count
   Write-Output ("- {0}: {1} fixtures (minimum {2})" -f $bucket, $count, $BucketMinima[$bucket])
@@ -56,7 +56,7 @@ foreach ($bucket in $BucketMinima.Keys) {
   }
 }
 
-$allIds = Get-ChildItem (Join-Path $RepoRoot "tests/conformance") -Recurse -File -Filter "*.json" |
+$allIds = Get-ChildItem -LiteralPath (Join-Path $RepoRoot "tests/conformance") -Recurse -File -Filter "*.json" |
   Where-Object { $_.Name -ne "manifest.json" } |
   ForEach-Object { $_.BaseName }
 

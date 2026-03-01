@@ -5,9 +5,9 @@ $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
 $libclang = Join-Path $llvmRoot "lib\libclang.lib"
 $includeDir = Join-Path $llvmRoot "include"
 
-if (!(Test-Path $clangxx)) { throw "clang++ not found at $clangxx" }
-if (!(Test-Path $libclang)) { throw "libclang not found at $libclang" }
-if (!(Test-Path $includeDir)) { throw "LLVM include dir not found at $includeDir" }
+if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) { throw "clang++ not found at $clangxx" }
+if (!(Test-Path -LiteralPath $libclang -PathType Leaf)) { throw "libclang not found at $libclang" }
+if (!(Test-Path -LiteralPath $includeDir -PathType Container)) { throw "LLVM include dir not found at $includeDir" }
 
 $outDir = "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
@@ -31,7 +31,7 @@ function Publish-ArtifactWithRetry {
 
   for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
     try {
-      Move-Item -Path $StagedPath -Destination $FinalPath -Force
+      Move-Item -LiteralPath $StagedPath -Destination $FinalPath -Force
       return
     } catch {
       if ($attempt -eq $MaxAttempts) {
