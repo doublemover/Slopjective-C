@@ -7,6 +7,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstring>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <new>
@@ -326,7 +327,7 @@ static ParsedFrontendDiagnostic ParseFrontendDiagnostic(const std::string &diag)
   try {
     parsed.line = static_cast<unsigned>(std::stoul(diag.substr(severity_end + 1, line_end - (severity_end + 1))));
     parsed.column = static_cast<unsigned>(std::stoul(diag.substr(line_end + 1, column_end - (line_end + 1))));
-  } catch (...) {
+  } catch (const std::exception &) {
     parsed.line = std::numeric_limits<unsigned>::max();
     parsed.column = std::numeric_limits<unsigned>::max();
   }

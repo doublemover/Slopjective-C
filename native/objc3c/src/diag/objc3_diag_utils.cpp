@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <exception>
 #include <limits>
 #include <string>
 #include <vector>
@@ -76,7 +77,7 @@ DiagSortKey ParseDiagSortKey(const std::string &diag) {
     key.line = static_cast<unsigned>(std::stoul(diag.substr(severity_end + 1, line_end - (severity_end + 1))));
     key.column =
         static_cast<unsigned>(std::stoul(diag.substr(line_end + 1, column_end - (line_end + 1))));
-  } catch (...) {
+  } catch (const std::exception &) {
     key.line = std::numeric_limits<unsigned>::max();
     key.column = std::numeric_limits<unsigned>::max();
   }
