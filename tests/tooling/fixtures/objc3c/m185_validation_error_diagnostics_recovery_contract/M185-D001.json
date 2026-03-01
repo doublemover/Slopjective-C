@@ -1,0 +1,25 @@
+{
+  "id": "M185-D001",
+  "title": "Error diagnostics UX and recovery lowering replay contract fixture (issue #4517 / task M185-D001)",
+  "feature": "m185 lane-d error diagnostics UX and recovery lowering replay determinism",
+  "bucket": "lowering_abi",
+  "profile": "core",
+  "tracking": {
+    "milestone": "M185",
+    "milestone_number": 270,
+    "lane": "D",
+    "issue": 4517,
+    "task": "M185-D001",
+    "sequence": 1
+  },
+  "references": [
+    "docs/objc3c-native/src/60-tests.md",
+    "tests/tooling/test_objc3c_m185_validation_error_diagnostics_recovery_contract.py",
+    "tests/tooling/test_objc3c_m185_conformance_error_diagnostics_recovery_contract.py"
+  ],
+  "source": "// RUN: objc3c --emit-ir %s\n// EXPECT: error_diagnostics_recovery_lowering\n// EXPECT: deterministic_error_diagnostics_recovery_lowering_handoff=true\n\nmodule m185_lane_d_error_diagnostics_recovery;\n\nfn main() -> i32 {\n    return 0;\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}

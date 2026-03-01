@@ -1,0 +1,39 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_error_diagnostics_recovery_lowering_handoff": true,
+        "error_diagnostics_recovery_lowering_sites": 15,
+        "error_diagnostics_recovery_lowering_diagnostic_emission_sites": 11,
+        "error_diagnostics_recovery_lowering_recovery_attempt_sites": 9,
+        "error_diagnostics_recovery_lowering_recovery_success_sites": 7,
+        "error_diagnostics_recovery_lowering_fixit_hint_sites": 6,
+        "error_diagnostics_recovery_lowering_diagnostic_rendering_sites": 10,
+        "error_diagnostics_recovery_lowering_normalized_sites": 12,
+        "error_diagnostics_recovery_lowering_gate_blocked_sites": 3,
+        "error_diagnostics_recovery_lowering_contract_violation_sites": 0,
+        "lowering_error_diagnostics_recovery_replay_key": "error_diagnostics_recovery_sites=15;diagnostic_emission_sites=11;recovery_attempt_sites=9;recovery_success_sites=7;fixit_hint_sites=6;diagnostic_rendering_sites=10;normalized_sites=12;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m185-error-diagnostics-ux-recovery-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_error_diagnostics_recovery_lowering_surface": {
+          "error_diagnostics_recovery_sites": 15,
+          "diagnostic_emission_sites": 11,
+          "recovery_attempt_sites": 9,
+          "recovery_success_sites": 7,
+          "fixit_hint_sites": 6,
+          "diagnostic_rendering_sites": 10,
+          "normalized_sites": 12,
+          "gate_blocked_sites": 3,
+          "contract_violation_sites": 0,
+          "replay_key": "error_diagnostics_recovery_sites=15;diagnostic_emission_sites=11;recovery_attempt_sites=9;recovery_success_sites=7;fixit_hint_sites=6;diagnostic_rendering_sites=10;normalized_sites=12;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m185-error-diagnostics-ux-recovery-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_error_diagnostics_recovery": {
+    "replay_key": "error_diagnostics_recovery_sites=15;diagnostic_emission_sites=11;recovery_attempt_sites=9;recovery_success_sites=7;fixit_hint_sites=6;diagnostic_rendering_sites=10;normalized_sites=12;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m185-error-diagnostics-ux-recovery-lowering-v1",
+    "lane_contract": "m185-error-diagnostics-ux-recovery-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

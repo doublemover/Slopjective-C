@@ -2866,6 +2866,44 @@ Scope assumptions:
 - This runbook fail-closes M187-B001 sema surfaces and M187-C001 lowering surfaces via M187-D001 replay packet anchors.
 - This runbook enforces those currently landed lane surfaces plus M187-E001 integration wiring.
 
+## M185 validation/conformance/perf error diagnostics UX and recovery runbook (M185-D001)
+
+Deterministic M185 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m185_validation_error_diagnostics_recovery_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m185_conformance_error_diagnostics_recovery_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m185_validation_error_diagnostics_recovery_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_error_diagnostics_recovery_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_error_diagnostics_recovery_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_error_diagnostics_recovery_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_error_diagnostics_recovery_lowering_surface.deterministic_handoff`
+  - `lowering_error_diagnostics_recovery.replay_key`
+- `replay_run_1/module.ll`
+  - `error_diagnostics_recovery_lowering`
+  - `frontend_objc_error_diagnostics_recovery_lowering_profile`
+  - `!objc3.objc_error_diagnostics_recovery_lowering = !{!45}`
+- `M185-D001.json`
+  - `tracking.issue = 4517`
+  - `tracking.task = M185-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == error_diagnostics_recovery_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m185_validation_error_diagnostics_recovery_contract.py tests/tooling/test_objc3c_m185_conformance_error_diagnostics_recovery_contract.py -q
+```
+
 ## M186 validation/conformance/perf async grammar and continuation IR runbook (M186-D001)
 
 Deterministic M186 validation sequence:
