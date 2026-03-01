@@ -1967,6 +1967,24 @@ Frontend await-lowering/suspension contract relies on deterministic parser-owned
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py -q`
 
+## M186 frontend async grammar and continuation packetization
+
+Frontend async-grammar/continuation contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for async keyword/function surfaces and continuation allocation/resume/suspend state-machine surfaces.
+
+- Required frontend async-grammar/continuation signals:
+  - parser symbol classifiers remain `IsAsyncKeywordSymbol(...)`, `IsAsyncFunctionSymbol(...)`, `IsContinuationAllocationSymbol(...)`, `IsContinuationResumeSymbol(...)`, `IsContinuationSuspendSymbol(...)`, and `IsAsyncStateMachineSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3AsyncContinuationProfile`.
+  - parser profile serialization remains `BuildAsyncContinuationProfile(...)`.
+  - parser profile invariant gate remains `IsAsyncContinuationProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeAsyncContinuationProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeAsyncContinuationProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.async_continuation_sites = profile.async_continuation_sites;` and `method.async_continuation_sites = profile.async_continuation_sites;`.
+  - AST carrier anchors remain `bool async_continuation_profile_is_normalized = false;`, `bool deterministic_async_continuation_handoff = false;`, and `std::string async_continuation_profile;` on function/method declarations.
+- Required frontend async-grammar/continuation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.

@@ -2108,6 +2108,397 @@ static Objc3InlineAsmIntrinsicGovernanceProfile BuildInlineAsmIntrinsicGovernanc
       counts.privileged_intrinsic_sites);
 }
 
+static bool IsAsyncKeywordSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered == "async" || lowered.find("async_") != std::string::npos;
+}
+
+static bool IsAsyncFunctionSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("async_fn") != std::string::npos ||
+         lowered.find("future") != std::string::npos ||
+         lowered.find("task") != std::string::npos;
+}
+
+static bool IsContinuationAllocationSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("continuation_alloc") != std::string::npos ||
+         lowered.find("make_continuation") != std::string::npos ||
+         lowered.find("continuation_new") != std::string::npos;
+}
+
+static bool IsContinuationResumeSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("continuation_resume") != std::string::npos ||
+         lowered.find("resume_continuation") != std::string::npos ||
+         lowered.find("resume") != std::string::npos;
+}
+
+static bool IsContinuationSuspendSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("continuation_suspend") != std::string::npos ||
+         lowered.find("suspend_continuation") != std::string::npos ||
+         lowered.find("suspend") != std::string::npos;
+}
+
+static bool IsAsyncStateMachineSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildLowercaseProfileToken(symbol);
+  return lowered.find("state_machine") != std::string::npos ||
+         lowered.find("poll") != std::string::npos ||
+         lowered.find("waker") != std::string::npos;
+}
+
+struct Objc3AsyncContinuationSiteCounts {
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+};
+
+static void CollectAsyncContinuationSitesFromSymbol(
+    const std::string &symbol,
+    Objc3AsyncContinuationSiteCounts &counts) {
+  if (IsAsyncKeywordSymbol(symbol)) {
+    counts.async_keyword_sites += 1u;
+  }
+  if (IsAsyncFunctionSymbol(symbol)) {
+    counts.async_function_sites += 1u;
+  }
+  if (IsContinuationAllocationSymbol(symbol)) {
+    counts.continuation_allocation_sites += 1u;
+  }
+  if (IsContinuationResumeSymbol(symbol)) {
+    counts.continuation_resume_sites += 1u;
+  }
+  if (IsContinuationSuspendSymbol(symbol)) {
+    counts.continuation_suspend_sites += 1u;
+  }
+  if (IsAsyncStateMachineSymbol(symbol)) {
+    counts.async_state_machine_sites += 1u;
+  }
+}
+
+static void CollectAsyncContinuationExprSites(
+    const Expr *expr,
+    Objc3AsyncContinuationSiteCounts &counts) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+  case Expr::Kind::Call:
+    CollectAsyncContinuationSitesFromSymbol(expr->ident, counts);
+    for (const auto &arg : expr->args) {
+      CollectAsyncContinuationExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::MessageSend:
+    CollectAsyncContinuationSitesFromSymbol(expr->selector, counts);
+    CollectAsyncContinuationExprSites(expr->receiver.get(), counts);
+    for (const auto &arg : expr->args) {
+      CollectAsyncContinuationExprSites(arg.get(), counts);
+    }
+    return;
+  case Expr::Kind::Binary:
+    CollectAsyncContinuationExprSites(expr->left.get(), counts);
+    CollectAsyncContinuationExprSites(expr->right.get(), counts);
+    return;
+  case Expr::Kind::Conditional:
+    CollectAsyncContinuationExprSites(expr->left.get(), counts);
+    CollectAsyncContinuationExprSites(expr->right.get(), counts);
+    CollectAsyncContinuationExprSites(expr->third.get(), counts);
+    return;
+  case Expr::Kind::BlockLiteral:
+  case Expr::Kind::BoolLiteral:
+  case Expr::Kind::Identifier:
+  case Expr::Kind::NilLiteral:
+  case Expr::Kind::Number:
+  default:
+    return;
+  }
+}
+
+static void CollectAsyncContinuationForClauseSites(
+    const ForClause &clause,
+    Objc3AsyncContinuationSiteCounts &counts) {
+  CollectAsyncContinuationExprSites(clause.value.get(), counts);
+}
+
+static void CollectAsyncContinuationStmtSites(
+    const Stmt *stmt,
+    Objc3AsyncContinuationSiteCounts &counts) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectAsyncContinuationExprSites(stmt->let_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectAsyncContinuationExprSites(stmt->assign_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectAsyncContinuationExprSites(stmt->return_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return;
+    }
+    CollectAsyncContinuationExprSites(stmt->if_stmt->condition.get(), counts);
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      CollectAsyncContinuationStmtSites(then_stmt.get(), counts);
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      CollectAsyncContinuationStmtSites(else_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
+    }
+    CollectAsyncContinuationExprSites(stmt->do_while_stmt->condition.get(), counts);
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return;
+    }
+    CollectAsyncContinuationForClauseSites(stmt->for_stmt->init, counts);
+    CollectAsyncContinuationExprSites(stmt->for_stmt->condition.get(), counts);
+    CollectAsyncContinuationForClauseSites(stmt->for_stmt->step, counts);
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return;
+    }
+    CollectAsyncContinuationExprSites(stmt->switch_stmt->condition.get(), counts);
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &case_stmt : switch_case.body) {
+        CollectAsyncContinuationStmtSites(case_stmt.get(), counts);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return;
+    }
+    CollectAsyncContinuationExprSites(stmt->while_stmt->condition.get(), counts);
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      CollectAsyncContinuationStmtSites(body_stmt.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectAsyncContinuationExprSites(stmt->expr_stmt->value.get(), counts);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static Objc3AsyncContinuationSiteCounts CountAsyncContinuationSitesInBody(
+    const std::vector<std::unique_ptr<Stmt>> &body) {
+  Objc3AsyncContinuationSiteCounts counts;
+  for (const auto &stmt : body) {
+    CollectAsyncContinuationStmtSites(stmt.get(), counts);
+  }
+  return counts;
+}
+
+struct Objc3AsyncContinuationProfile {
+  std::size_t async_continuation_sites = 0;
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t continuation_allocation_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  std::size_t async_state_machine_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic_async_continuation_handoff = false;
+};
+
+static std::string BuildAsyncContinuationProfile(
+    std::size_t async_continuation_sites,
+    std::size_t async_keyword_sites,
+    std::size_t async_function_sites,
+    std::size_t continuation_allocation_sites,
+    std::size_t continuation_resume_sites,
+    std::size_t continuation_suspend_sites,
+    std::size_t async_state_machine_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites,
+    bool deterministic_async_continuation_handoff) {
+  std::ostringstream out;
+  out << "async-continuation:async_continuation_sites=" << async_continuation_sites
+      << ";async_keyword_sites=" << async_keyword_sites
+      << ";async_function_sites=" << async_function_sites
+      << ";continuation_allocation_sites=" << continuation_allocation_sites
+      << ";continuation_resume_sites=" << continuation_resume_sites
+      << ";continuation_suspend_sites=" << continuation_suspend_sites
+      << ";async_state_machine_sites=" << async_state_machine_sites
+      << ";normalized_sites=" << normalized_sites
+      << ";gate_blocked_sites=" << gate_blocked_sites
+      << ";contract_violation_sites=" << contract_violation_sites
+      << ";deterministic_async_continuation_handoff="
+      << (deterministic_async_continuation_handoff ? "true" : "false");
+  return out.str();
+}
+
+static bool IsAsyncContinuationProfileNormalized(
+    std::size_t async_continuation_sites,
+    std::size_t async_keyword_sites,
+    std::size_t async_function_sites,
+    std::size_t continuation_allocation_sites,
+    std::size_t continuation_resume_sites,
+    std::size_t continuation_suspend_sites,
+    std::size_t async_state_machine_sites,
+    std::size_t normalized_sites,
+    std::size_t gate_blocked_sites,
+    std::size_t contract_violation_sites) {
+  if (async_keyword_sites > async_continuation_sites ||
+      async_function_sites > async_continuation_sites ||
+      continuation_allocation_sites > async_continuation_sites ||
+      continuation_resume_sites > async_continuation_sites ||
+      continuation_suspend_sites > async_continuation_sites ||
+      async_state_machine_sites > async_continuation_sites ||
+      normalized_sites > async_continuation_sites ||
+      gate_blocked_sites > async_continuation_sites ||
+      contract_violation_sites > async_continuation_sites) {
+    return false;
+  }
+  if (normalized_sites + gate_blocked_sites != async_continuation_sites) {
+    return false;
+  }
+  return contract_violation_sites == 0u;
+}
+
+static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromCounts(
+    std::size_t async_keyword_sites,
+    std::size_t async_function_sites,
+    std::size_t continuation_allocation_sites,
+    std::size_t continuation_resume_sites,
+    std::size_t continuation_suspend_sites,
+    std::size_t async_state_machine_sites) {
+  Objc3AsyncContinuationProfile profile;
+  profile.async_keyword_sites = async_keyword_sites;
+  profile.async_function_sites = async_function_sites;
+  profile.continuation_allocation_sites = continuation_allocation_sites;
+  profile.continuation_resume_sites = continuation_resume_sites;
+  profile.continuation_suspend_sites = continuation_suspend_sites;
+  profile.async_state_machine_sites = async_state_machine_sites;
+  profile.async_continuation_sites = profile.async_keyword_sites;
+  if (profile.async_continuation_sites >
+      std::numeric_limits<std::size_t>::max() - profile.async_function_sites) {
+    profile.async_continuation_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.async_continuation_sites += profile.async_function_sites;
+  }
+  if (profile.async_continuation_sites >
+      std::numeric_limits<std::size_t>::max() - profile.continuation_allocation_sites) {
+    profile.async_continuation_sites = std::numeric_limits<std::size_t>::max();
+    profile.contract_violation_sites += 1u;
+  } else {
+    profile.async_continuation_sites += profile.continuation_allocation_sites;
+  }
+  profile.gate_blocked_sites =
+      std::min(profile.async_continuation_sites,
+               std::min(profile.continuation_resume_sites, profile.continuation_suspend_sites));
+  profile.normalized_sites = profile.async_continuation_sites - profile.gate_blocked_sites;
+  if (profile.async_keyword_sites > profile.async_continuation_sites ||
+      profile.async_function_sites > profile.async_continuation_sites ||
+      profile.continuation_allocation_sites > profile.async_continuation_sites ||
+      profile.continuation_resume_sites > profile.async_continuation_sites ||
+      profile.continuation_suspend_sites > profile.async_continuation_sites ||
+      profile.async_state_machine_sites > profile.async_continuation_sites ||
+      profile.normalized_sites > profile.async_continuation_sites ||
+      profile.gate_blocked_sites > profile.async_continuation_sites ||
+      profile.contract_violation_sites > profile.async_continuation_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.normalized_sites + profile.gate_blocked_sites != profile.async_continuation_sites) {
+    profile.contract_violation_sites += 1u;
+  }
+  if (profile.contract_violation_sites > profile.async_continuation_sites) {
+    profile.contract_violation_sites = profile.async_continuation_sites;
+  }
+  profile.deterministic_async_continuation_handoff =
+      profile.contract_violation_sites == 0u;
+  return profile;
+}
+
+static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromFunction(
+    const FunctionDecl &fn) {
+  const Objc3AsyncContinuationSiteCounts counts =
+      CountAsyncContinuationSitesInBody(fn.body);
+  return BuildAsyncContinuationProfileFromCounts(
+      counts.async_keyword_sites,
+      counts.async_function_sites,
+      counts.continuation_allocation_sites,
+      counts.continuation_resume_sites,
+      counts.continuation_suspend_sites,
+      counts.async_state_machine_sites);
+}
+
+static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromOpaqueBody(
+    const Objc3MethodDecl &method) {
+  Objc3AsyncContinuationSiteCounts counts;
+  if (method.has_body) {
+    CollectAsyncContinuationSitesFromSymbol(method.selector, counts);
+  }
+  return BuildAsyncContinuationProfileFromCounts(
+      counts.async_keyword_sites,
+      counts.async_function_sites,
+      counts.continuation_allocation_sites,
+      counts.continuation_resume_sites,
+      counts.continuation_suspend_sites,
+      counts.async_state_machine_sites);
+}
+
 static bool IsAwaitKeywordSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
@@ -4422,6 +4813,24 @@ class Objc3Parser {
     target.ns_error_bridge_boundary_sites = source.ns_error_bridge_boundary_sites;
     target.ns_error_bridging_contract_violation_sites = source.ns_error_bridging_contract_violation_sites;
     target.ns_error_bridging_profile = source.ns_error_bridging_profile;
+    target.async_continuation_profile_is_normalized =
+        source.async_continuation_profile_is_normalized;
+    target.deterministic_async_continuation_handoff =
+        source.deterministic_async_continuation_handoff;
+    target.async_continuation_sites = source.async_continuation_sites;
+    target.async_keyword_sites = source.async_keyword_sites;
+    target.async_function_sites = source.async_function_sites;
+    target.continuation_allocation_sites = source.continuation_allocation_sites;
+    target.continuation_resume_sites = source.continuation_resume_sites;
+    target.continuation_suspend_sites = source.continuation_suspend_sites;
+    target.async_state_machine_sites = source.async_state_machine_sites;
+    target.async_continuation_normalized_sites =
+        source.async_continuation_normalized_sites;
+    target.async_continuation_gate_blocked_sites =
+        source.async_continuation_gate_blocked_sites;
+    target.async_continuation_contract_violation_sites =
+        source.async_continuation_contract_violation_sites;
+    target.async_continuation_profile = source.async_continuation_profile;
     target.await_suspension_profile_is_normalized =
         source.await_suspension_profile_is_normalized;
     target.deterministic_await_suspension_handoff =
@@ -4804,6 +5213,90 @@ class Objc3Parser {
         method.ns_error_bridging_normalized_sites,
         method.ns_error_bridge_boundary_sites,
         method.ns_error_bridging_contract_violation_sites);
+  }
+
+  void FinalizeAsyncContinuationProfile(FunctionDecl &fn) {
+    const Objc3AsyncContinuationProfile profile =
+        BuildAsyncContinuationProfileFromFunction(fn);
+    fn.async_continuation_sites = profile.async_continuation_sites;
+    fn.async_keyword_sites = profile.async_keyword_sites;
+    fn.async_function_sites = profile.async_function_sites;
+    fn.continuation_allocation_sites = profile.continuation_allocation_sites;
+    fn.continuation_resume_sites = profile.continuation_resume_sites;
+    fn.continuation_suspend_sites = profile.continuation_suspend_sites;
+    fn.async_state_machine_sites = profile.async_state_machine_sites;
+    fn.async_continuation_normalized_sites = profile.normalized_sites;
+    fn.async_continuation_gate_blocked_sites = profile.gate_blocked_sites;
+    fn.async_continuation_contract_violation_sites =
+        profile.contract_violation_sites;
+    fn.deterministic_async_continuation_handoff =
+        profile.deterministic_async_continuation_handoff;
+    fn.async_continuation_profile = BuildAsyncContinuationProfile(
+        fn.async_continuation_sites,
+        fn.async_keyword_sites,
+        fn.async_function_sites,
+        fn.continuation_allocation_sites,
+        fn.continuation_resume_sites,
+        fn.continuation_suspend_sites,
+        fn.async_state_machine_sites,
+        fn.async_continuation_normalized_sites,
+        fn.async_continuation_gate_blocked_sites,
+        fn.async_continuation_contract_violation_sites,
+        fn.deterministic_async_continuation_handoff);
+    fn.async_continuation_profile_is_normalized =
+        IsAsyncContinuationProfileNormalized(
+            fn.async_continuation_sites,
+            fn.async_keyword_sites,
+            fn.async_function_sites,
+            fn.continuation_allocation_sites,
+            fn.continuation_resume_sites,
+            fn.continuation_suspend_sites,
+            fn.async_state_machine_sites,
+            fn.async_continuation_normalized_sites,
+            fn.async_continuation_gate_blocked_sites,
+            fn.async_continuation_contract_violation_sites);
+  }
+
+  void FinalizeAsyncContinuationProfile(Objc3MethodDecl &method) {
+    const Objc3AsyncContinuationProfile profile =
+        BuildAsyncContinuationProfileFromOpaqueBody(method);
+    method.async_continuation_sites = profile.async_continuation_sites;
+    method.async_keyword_sites = profile.async_keyword_sites;
+    method.async_function_sites = profile.async_function_sites;
+    method.continuation_allocation_sites = profile.continuation_allocation_sites;
+    method.continuation_resume_sites = profile.continuation_resume_sites;
+    method.continuation_suspend_sites = profile.continuation_suspend_sites;
+    method.async_state_machine_sites = profile.async_state_machine_sites;
+    method.async_continuation_normalized_sites = profile.normalized_sites;
+    method.async_continuation_gate_blocked_sites = profile.gate_blocked_sites;
+    method.async_continuation_contract_violation_sites =
+        profile.contract_violation_sites;
+    method.deterministic_async_continuation_handoff =
+        profile.deterministic_async_continuation_handoff;
+    method.async_continuation_profile = BuildAsyncContinuationProfile(
+        method.async_continuation_sites,
+        method.async_keyword_sites,
+        method.async_function_sites,
+        method.continuation_allocation_sites,
+        method.continuation_resume_sites,
+        method.continuation_suspend_sites,
+        method.async_state_machine_sites,
+        method.async_continuation_normalized_sites,
+        method.async_continuation_gate_blocked_sites,
+        method.async_continuation_contract_violation_sites,
+        method.deterministic_async_continuation_handoff);
+    method.async_continuation_profile_is_normalized =
+        IsAsyncContinuationProfileNormalized(
+            method.async_continuation_sites,
+            method.async_keyword_sites,
+            method.async_function_sites,
+            method.continuation_allocation_sites,
+            method.continuation_resume_sites,
+            method.continuation_suspend_sites,
+            method.async_state_machine_sites,
+            method.async_continuation_normalized_sites,
+            method.async_continuation_gate_blocked_sites,
+            method.async_continuation_contract_violation_sites);
   }
 
   void FinalizeAwaitSuspensionProfile(FunctionDecl &fn) {
@@ -5422,6 +5915,7 @@ class Objc3Parser {
       FinalizeThrowsDeclarationProfile(method);
       FinalizeResultLikeProfile(method);
       FinalizeNSErrorBridgingProfile(method);
+      FinalizeAsyncContinuationProfile(method);
       FinalizeAwaitSuspensionProfile(method);
       FinalizeActorIsolationSendabilityProfile(method);
       FinalizeTaskRuntimeCancellationProfile(method);
@@ -5449,6 +5943,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(method);
     FinalizeResultLikeProfile(method);
     FinalizeNSErrorBridgingProfile(method);
+    FinalizeAsyncContinuationProfile(method);
     FinalizeAwaitSuspensionProfile(method);
     FinalizeActorIsolationSendabilityProfile(method);
     FinalizeTaskRuntimeCancellationProfile(method);
@@ -6019,6 +6514,7 @@ class Objc3Parser {
       FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
       FinalizeResultLikeProfile(*fn);
       FinalizeNSErrorBridgingProfile(*fn);
+      FinalizeAsyncContinuationProfile(*fn);
       FinalizeAwaitSuspensionProfile(*fn);
       FinalizeActorIsolationSendabilityProfile(*fn);
       FinalizeTaskRuntimeCancellationProfile(*fn);
@@ -6052,6 +6548,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
     FinalizeResultLikeProfile(*fn);
     FinalizeNSErrorBridgingProfile(*fn);
+    FinalizeAsyncContinuationProfile(*fn);
     FinalizeAwaitSuspensionProfile(*fn);
     FinalizeActorIsolationSendabilityProfile(*fn);
     FinalizeTaskRuntimeCancellationProfile(*fn);

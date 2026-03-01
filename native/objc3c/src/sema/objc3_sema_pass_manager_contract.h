@@ -214,6 +214,15 @@ struct Objc3SemaParityContractSurface {
   std::size_t throws_propagation_normalized_sites_total = 0;
   std::size_t throws_propagation_cache_invalidation_candidate_sites_total = 0;
   std::size_t throws_propagation_contract_violation_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_concurrency_replay_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_replay_proof_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_race_guard_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_task_handoff_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_actor_isolation_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_deterministic_schedule_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_guard_blocked_sites_total = 0;
+  std::size_t concurrency_replay_race_guard_contract_violation_sites_total = 0;
   std::size_t unsafe_pointer_extension_sites_total = 0;
   std::size_t unsafe_pointer_extension_unsafe_keyword_sites_total = 0;
   std::size_t unsafe_pointer_extension_pointer_arithmetic_sites_total = 0;
@@ -437,6 +446,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_incremental_module_cache_invalidation_handoff = false;
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
+  bool deterministic_concurrency_replay_race_guard_handoff = false;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
   bool deterministic_ns_error_bridging_handoff = false;
@@ -476,6 +486,7 @@ struct Objc3SemaParityContractSurface {
   Objc3IncrementalModuleCacheInvalidationSummary incremental_module_cache_invalidation_summary;
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
   Objc3NSErrorBridgingSummary ns_error_bridging_summary;
@@ -916,6 +927,64 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.throws_propagation_summary.throws_propagation_sites &&
          surface.throws_propagation_summary.deterministic &&
          surface.deterministic_throws_propagation_handoff &&
+         surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites ==
+             surface.concurrency_replay_race_guard_sites_total &&
+         surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites ==
+             surface
+                 .concurrency_replay_race_guard_concurrency_replay_sites_total &&
+         surface.concurrency_replay_race_guard_summary.replay_proof_sites ==
+             surface.concurrency_replay_race_guard_replay_proof_sites_total &&
+         surface.concurrency_replay_race_guard_summary.race_guard_sites ==
+             surface.concurrency_replay_race_guard_race_guard_sites_total &&
+         surface.concurrency_replay_race_guard_summary.task_handoff_sites ==
+             surface.concurrency_replay_race_guard_task_handoff_sites_total &&
+         surface.concurrency_replay_race_guard_summary.actor_isolation_sites ==
+             surface
+                 .concurrency_replay_race_guard_actor_isolation_sites_total &&
+         surface.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites ==
+             surface
+                 .concurrency_replay_race_guard_deterministic_schedule_sites_total &&
+         surface.concurrency_replay_race_guard_summary.guard_blocked_sites ==
+             surface.concurrency_replay_race_guard_guard_blocked_sites_total &&
+         surface.concurrency_replay_race_guard_summary.contract_violation_sites ==
+             surface
+                 .concurrency_replay_race_guard_contract_violation_sites_total &&
+         surface.concurrency_replay_race_guard_summary.concurrency_replay_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary.replay_proof_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary.race_guard_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary.task_handoff_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary.actor_isolation_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
+         surface.concurrency_replay_race_guard_summary.guard_blocked_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
+         surface.concurrency_replay_race_guard_summary.contract_violation_sites <=
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         surface.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites +
+                 surface.concurrency_replay_race_guard_summary
+                     .guard_blocked_sites ==
+             surface.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
+         surface.concurrency_replay_race_guard_summary.deterministic &&
+         surface.deterministic_concurrency_replay_race_guard_handoff &&
          surface.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites ==
              surface.unsafe_pointer_extension_sites_total &&
          surface.unsafe_pointer_extension_summary.unsafe_keyword_sites ==
@@ -1749,6 +1818,8 @@ struct Objc3SemaPassManagerResult {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   bool deterministic_throws_propagation_handoff = false;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
+  bool deterministic_concurrency_replay_race_guard_handoff = false;
+  Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;

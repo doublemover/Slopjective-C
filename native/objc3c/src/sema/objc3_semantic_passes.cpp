@@ -1446,6 +1446,22 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
   info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
   info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+  info.concurrency_replay_race_guard_profile_is_normalized =
+      method.concurrency_replay_race_guard_profile_is_normalized;
+  info.deterministic_concurrency_replay_race_guard_handoff =
+      method.deterministic_concurrency_replay_race_guard_handoff;
+  info.concurrency_replay_race_guard_sites =
+      method.concurrency_replay_race_guard_sites;
+  info.concurrency_replay_sites = method.concurrency_replay_sites;
+  info.replay_proof_sites = method.replay_proof_sites;
+  info.race_guard_sites = method.race_guard_sites;
+  info.task_handoff_sites = method.task_handoff_sites;
+  info.actor_isolation_sites = method.actor_isolation_sites;
+  info.deterministic_schedule_sites = method.deterministic_schedule_sites;
+  info.concurrency_replay_guard_blocked_sites =
+      method.concurrency_replay_guard_blocked_sites;
+  info.concurrency_replay_contract_violation_sites =
+      method.concurrency_replay_contract_violation_sites;
   info.ns_error_bridging_profile_is_normalized =
       method.ns_error_bridging_profile_is_normalized;
   info.deterministic_ns_error_bridging_lowering_handoff =
@@ -3600,6 +3616,99 @@ static Objc3ResultLikeLoweringSummary BuildResultLikeLoweringSummaryFromProgramA
       is_partitioned(summary.normalized_sites,
                      summary.branch_merge_sites,
                      summary.result_like_sites);
+  return summary;
+}
+
+template <typename SiteMetadata>
+static void AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(
+    const SiteMetadata &metadata,
+    Objc3ConcurrencyReplayRaceGuardSummary &summary) {
+  summary.concurrency_replay_race_guard_sites +=
+      metadata.concurrency_replay_race_guard_sites;
+  summary.concurrency_replay_sites += metadata.concurrency_replay_sites;
+  summary.replay_proof_sites += metadata.replay_proof_sites;
+  summary.race_guard_sites += metadata.race_guard_sites;
+  summary.task_handoff_sites += metadata.task_handoff_sites;
+  summary.actor_isolation_sites += metadata.actor_isolation_sites;
+  summary.deterministic_schedule_sites += metadata.deterministic_schedule_sites;
+  summary.guard_blocked_sites += metadata.concurrency_replay_guard_blocked_sites;
+  summary.contract_violation_sites +=
+      metadata.concurrency_replay_contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      metadata.deterministic_concurrency_replay_race_guard_handoff &&
+      (metadata.concurrency_replay_race_guard_sites == 0u ||
+       metadata.concurrency_replay_race_guard_profile_is_normalized);
+}
+
+static void FinalizeConcurrencyReplayRaceGuardSummaryDeterminism(
+    Objc3ConcurrencyReplayRaceGuardSummary &summary) {
+  summary.deterministic =
+      summary.deterministic &&
+      summary.concurrency_replay_sites <=
+          summary.concurrency_replay_race_guard_sites &&
+      summary.replay_proof_sites <=
+          summary.concurrency_replay_race_guard_sites &&
+      summary.race_guard_sites <= summary.concurrency_replay_race_guard_sites &&
+      summary.task_handoff_sites <= summary.concurrency_replay_race_guard_sites &&
+      summary.actor_isolation_sites <=
+          summary.concurrency_replay_race_guard_sites &&
+      summary.deterministic_schedule_sites <= summary.concurrency_replay_sites &&
+      summary.guard_blocked_sites <= summary.concurrency_replay_sites &&
+      summary.contract_violation_sites <=
+          summary.concurrency_replay_race_guard_sites &&
+      summary.deterministic_schedule_sites + summary.guard_blocked_sites ==
+          summary.concurrency_replay_sites;
+}
+
+static Objc3ConcurrencyReplayRaceGuardSummary
+BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3ConcurrencyReplayRaceGuardSummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(entry.second,
+                                                                summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  FinalizeConcurrencyReplayRaceGuardSummaryDeterminism(summary);
+  return summary;
+}
+
+static Objc3ConcurrencyReplayRaceGuardSummary
+BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3ConcurrencyReplayRaceGuardSummary summary;
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(metadata,
+                                                                summary);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata :
+         interface_metadata.methods_lexicographic) {
+      AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(
+          method_metadata, summary);
+    }
+  }
+  for (const auto &implementation_metadata :
+       handoff.implementations_lexicographic) {
+    for (const auto &method_metadata :
+         implementation_metadata.methods_lexicographic) {
+      AccumulateConcurrencyReplayRaceGuardSummaryFromSiteMetadata(
+          method_metadata, summary);
+    }
+  }
+  FinalizeConcurrencyReplayRaceGuardSummaryDeterminism(summary);
   return summary;
 }
 
@@ -7437,6 +7546,22 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
       info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
       info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+      info.concurrency_replay_race_guard_profile_is_normalized =
+          fn.concurrency_replay_race_guard_profile_is_normalized;
+      info.deterministic_concurrency_replay_race_guard_handoff =
+          fn.deterministic_concurrency_replay_race_guard_handoff;
+      info.concurrency_replay_race_guard_sites =
+          fn.concurrency_replay_race_guard_sites;
+      info.concurrency_replay_sites = fn.concurrency_replay_sites;
+      info.replay_proof_sites = fn.replay_proof_sites;
+      info.race_guard_sites = fn.race_guard_sites;
+      info.task_handoff_sites = fn.task_handoff_sites;
+      info.actor_isolation_sites = fn.actor_isolation_sites;
+      info.deterministic_schedule_sites = fn.deterministic_schedule_sites;
+      info.concurrency_replay_guard_blocked_sites =
+          fn.concurrency_replay_guard_blocked_sites;
+      info.concurrency_replay_contract_violation_sites =
+          fn.concurrency_replay_contract_violation_sites;
       info.ns_error_bridging_profile_is_normalized =
           fn.ns_error_bridging_profile_is_normalized;
       info.deterministic_ns_error_bridging_lowering_handoff =
@@ -7619,6 +7744,33 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                              existing.return_has_invalid_ownership_qualifier;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
+    existing.concurrency_replay_race_guard_profile_is_normalized =
+        existing.concurrency_replay_race_guard_profile_is_normalized ||
+        fn.concurrency_replay_race_guard_profile_is_normalized;
+    existing.deterministic_concurrency_replay_race_guard_handoff =
+        existing.deterministic_concurrency_replay_race_guard_handoff ||
+        fn.deterministic_concurrency_replay_race_guard_handoff;
+    existing.concurrency_replay_race_guard_sites = std::max(
+        existing.concurrency_replay_race_guard_sites,
+        fn.concurrency_replay_race_guard_sites);
+    existing.concurrency_replay_sites =
+        std::max(existing.concurrency_replay_sites, fn.concurrency_replay_sites);
+    existing.replay_proof_sites =
+        std::max(existing.replay_proof_sites, fn.replay_proof_sites);
+    existing.race_guard_sites =
+        std::max(existing.race_guard_sites, fn.race_guard_sites);
+    existing.task_handoff_sites =
+        std::max(existing.task_handoff_sites, fn.task_handoff_sites);
+    existing.actor_isolation_sites =
+        std::max(existing.actor_isolation_sites, fn.actor_isolation_sites);
+    existing.deterministic_schedule_sites = std::max(
+        existing.deterministic_schedule_sites, fn.deterministic_schedule_sites);
+    existing.concurrency_replay_guard_blocked_sites = std::max(
+        existing.concurrency_replay_guard_blocked_sites,
+        fn.concurrency_replay_guard_blocked_sites);
+    existing.concurrency_replay_contract_violation_sites = std::max(
+        existing.concurrency_replay_contract_violation_sites,
+        fn.concurrency_replay_contract_violation_sites);
     existing.ns_error_bridging_profile_is_normalized =
         existing.ns_error_bridging_profile_is_normalized ||
         fn.ns_error_bridging_profile_is_normalized;
@@ -7867,6 +8019,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           surface.cross_module_conformance_summary);
+  surface.concurrency_replay_race_guard_summary =
+      BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(surface);
   surface.result_like_lowering_summary =
       BuildResultLikeLoweringSummaryFromProgramAst(ast);
   surface.ns_error_bridging_summary =
@@ -8010,6 +8164,22 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_protocol_composition = source.return_has_protocol_composition;
     metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
     metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+    metadata.concurrency_replay_race_guard_profile_is_normalized =
+        source.concurrency_replay_race_guard_profile_is_normalized;
+    metadata.deterministic_concurrency_replay_race_guard_handoff =
+        source.deterministic_concurrency_replay_race_guard_handoff;
+    metadata.concurrency_replay_race_guard_sites =
+        source.concurrency_replay_race_guard_sites;
+    metadata.concurrency_replay_sites = source.concurrency_replay_sites;
+    metadata.replay_proof_sites = source.replay_proof_sites;
+    metadata.race_guard_sites = source.race_guard_sites;
+    metadata.task_handoff_sites = source.task_handoff_sites;
+    metadata.actor_isolation_sites = source.actor_isolation_sites;
+    metadata.deterministic_schedule_sites = source.deterministic_schedule_sites;
+    metadata.concurrency_replay_guard_blocked_sites =
+        source.concurrency_replay_guard_blocked_sites;
+    metadata.concurrency_replay_contract_violation_sites =
+        source.concurrency_replay_contract_violation_sites;
     metadata.ns_error_bridging_profile_is_normalized =
         source.ns_error_bridging_profile_is_normalized;
     metadata.deterministic_ns_error_bridging_lowering_handoff =
@@ -8200,6 +8370,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.concurrency_replay_race_guard_profile_is_normalized =
+          source.concurrency_replay_race_guard_profile_is_normalized;
+      method_metadata.deterministic_concurrency_replay_race_guard_handoff =
+          source.deterministic_concurrency_replay_race_guard_handoff;
+      method_metadata.concurrency_replay_race_guard_sites =
+          source.concurrency_replay_race_guard_sites;
+      method_metadata.concurrency_replay_sites = source.concurrency_replay_sites;
+      method_metadata.replay_proof_sites = source.replay_proof_sites;
+      method_metadata.race_guard_sites = source.race_guard_sites;
+      method_metadata.task_handoff_sites = source.task_handoff_sites;
+      method_metadata.actor_isolation_sites = source.actor_isolation_sites;
+      method_metadata.deterministic_schedule_sites =
+          source.deterministic_schedule_sites;
+      method_metadata.concurrency_replay_guard_blocked_sites =
+          source.concurrency_replay_guard_blocked_sites;
+      method_metadata.concurrency_replay_contract_violation_sites =
+          source.concurrency_replay_contract_violation_sites;
       method_metadata.ns_error_bridging_profile_is_normalized =
           source.ns_error_bridging_profile_is_normalized;
       method_metadata.deterministic_ns_error_bridging_lowering_handoff =
@@ -8395,6 +8582,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.concurrency_replay_race_guard_profile_is_normalized =
+          source.concurrency_replay_race_guard_profile_is_normalized;
+      method_metadata.deterministic_concurrency_replay_race_guard_handoff =
+          source.deterministic_concurrency_replay_race_guard_handoff;
+      method_metadata.concurrency_replay_race_guard_sites =
+          source.concurrency_replay_race_guard_sites;
+      method_metadata.concurrency_replay_sites = source.concurrency_replay_sites;
+      method_metadata.replay_proof_sites = source.replay_proof_sites;
+      method_metadata.race_guard_sites = source.race_guard_sites;
+      method_metadata.task_handoff_sites = source.task_handoff_sites;
+      method_metadata.actor_isolation_sites = source.actor_isolation_sites;
+      method_metadata.deterministic_schedule_sites =
+          source.deterministic_schedule_sites;
+      method_metadata.concurrency_replay_guard_blocked_sites =
+          source.concurrency_replay_guard_blocked_sites;
+      method_metadata.concurrency_replay_contract_violation_sites =
+          source.concurrency_replay_contract_violation_sites;
       method_metadata.ns_error_bridging_profile_is_normalized =
           source.ns_error_bridging_profile_is_normalized;
       method_metadata.deterministic_ns_error_bridging_lowering_handoff =
@@ -8949,6 +9153,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  handoff.concurrency_replay_race_guard_summary =
+      BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
   handoff.ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
   handoff.result_like_lowering_summary = surface.result_like_lowering_summary;
@@ -9723,6 +9929,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3ThrowsPropagationSummary throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  const Objc3ConcurrencyReplayRaceGuardSummary
+      concurrency_replay_race_guard_summary =
+          BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
   const Objc3NSErrorBridgingSummary ns_error_bridging_summary =
       BuildNSErrorBridgingSummaryFromTypeMetadataHandoff(handoff);
   const Objc3ResultLikeLoweringSummary result_like_lowering_summary =
@@ -10144,6 +10353,63 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.throws_propagation_summary.throws_propagation_sites &&
          handoff.throws_propagation_summary.contract_violation_sites <=
              handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.concurrency_replay_race_guard_summary.deterministic &&
+         handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites ==
+             concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites ==
+             concurrency_replay_race_guard_summary.concurrency_replay_sites &&
+         handoff.concurrency_replay_race_guard_summary.replay_proof_sites ==
+             concurrency_replay_race_guard_summary.replay_proof_sites &&
+         handoff.concurrency_replay_race_guard_summary.race_guard_sites ==
+             concurrency_replay_race_guard_summary.race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary.task_handoff_sites ==
+             concurrency_replay_race_guard_summary.task_handoff_sites &&
+         handoff.concurrency_replay_race_guard_summary.actor_isolation_sites ==
+             concurrency_replay_race_guard_summary.actor_isolation_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites ==
+             concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites &&
+         handoff.concurrency_replay_race_guard_summary.guard_blocked_sites ==
+             concurrency_replay_race_guard_summary.guard_blocked_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .contract_violation_sites ==
+             concurrency_replay_race_guard_summary.contract_violation_sites &&
+         handoff.concurrency_replay_race_guard_summary.concurrency_replay_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary.replay_proof_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary.race_guard_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary.task_handoff_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary.actor_isolation_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
+         handoff.concurrency_replay_race_guard_summary.guard_blocked_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .contract_violation_sites <=
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_race_guard_sites &&
+         handoff.concurrency_replay_race_guard_summary
+                 .deterministic_schedule_sites +
+                 handoff.concurrency_replay_race_guard_summary
+                     .guard_blocked_sites ==
+             handoff.concurrency_replay_race_guard_summary
+                 .concurrency_replay_sites &&
          handoff.unsafe_pointer_extension_summary.deterministic &&
          handoff.unsafe_pointer_extension_summary.unsafe_pointer_extension_sites ==
              unsafe_pointer_extension_summary.unsafe_pointer_extension_sites &&

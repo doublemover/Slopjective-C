@@ -258,6 +258,21 @@ bool IsEquivalentThrowsPropagationSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentConcurrencyReplayRaceGuardSummary(
+    const Objc3ConcurrencyReplayRaceGuardSummary &lhs,
+    const Objc3ConcurrencyReplayRaceGuardSummary &rhs) {
+  return lhs.concurrency_replay_race_guard_sites ==
+             rhs.concurrency_replay_race_guard_sites &&
+         lhs.concurrency_replay_sites == rhs.concurrency_replay_sites &&
+         lhs.replay_proof_sites == rhs.replay_proof_sites &&
+         lhs.race_guard_sites == rhs.race_guard_sites &&
+         lhs.task_handoff_sites == rhs.task_handoff_sites &&
+         lhs.actor_isolation_sites == rhs.actor_isolation_sites &&
+         lhs.deterministic_schedule_sites == rhs.deterministic_schedule_sites &&
+         lhs.guard_blocked_sites == rhs.guard_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentUnsafePointerExtensionSummary(
     const Objc3UnsafePointerExtensionSummary &lhs,
     const Objc3UnsafePointerExtensionSummary &rhs) {
@@ -932,6 +947,56 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.throws_propagation_summary.contract_violation_sites <=
           result.type_metadata_handoff.throws_propagation_summary
               .throws_propagation_sites;
+  result.concurrency_replay_race_guard_summary =
+      result.integration_surface.concurrency_replay_race_guard_summary;
+  result.deterministic_concurrency_replay_race_guard_handoff =
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .deterministic &&
+      result.integration_surface.concurrency_replay_race_guard_summary
+          .deterministic &&
+      IsEquivalentConcurrencyReplayRaceGuardSummary(
+          result.integration_surface.concurrency_replay_race_guard_summary,
+          result.type_metadata_handoff
+              .concurrency_replay_race_guard_summary) &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .replay_proof_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .race_guard_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .task_handoff_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .actor_isolation_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .deterministic_schedule_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .guard_blocked_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .deterministic_schedule_sites +
+              result.type_metadata_handoff
+                  .concurrency_replay_race_guard_summary
+                  .guard_blocked_sites ==
+          result.type_metadata_handoff.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites;
   result.unsafe_pointer_extension_summary =
       result.integration_surface.unsafe_pointer_extension_summary;
   result.deterministic_unsafe_pointer_extension_handoff =
@@ -1859,6 +1924,39 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .cache_invalidation_candidate_sites;
   result.parity_surface.throws_propagation_contract_violation_sites_total =
       result.parity_surface.throws_propagation_summary.contract_violation_sites;
+  result.parity_surface.concurrency_replay_race_guard_summary =
+      result.type_metadata_handoff.concurrency_replay_race_guard_summary;
+  result.parity_surface.concurrency_replay_race_guard_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .concurrency_replay_race_guard_sites;
+  result.parity_surface
+      .concurrency_replay_race_guard_concurrency_replay_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .concurrency_replay_sites;
+  result.parity_surface.concurrency_replay_race_guard_replay_proof_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .replay_proof_sites;
+  result.parity_surface.concurrency_replay_race_guard_race_guard_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .race_guard_sites;
+  result.parity_surface.concurrency_replay_race_guard_task_handoff_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .task_handoff_sites;
+  result.parity_surface
+      .concurrency_replay_race_guard_actor_isolation_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .actor_isolation_sites;
+  result.parity_surface
+      .concurrency_replay_race_guard_deterministic_schedule_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .deterministic_schedule_sites;
+  result.parity_surface.concurrency_replay_race_guard_guard_blocked_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .guard_blocked_sites;
+  result.parity_surface
+      .concurrency_replay_race_guard_contract_violation_sites_total =
+      result.parity_surface.concurrency_replay_race_guard_summary
+          .contract_violation_sites;
   result.parity_surface.unsafe_pointer_extension_summary =
       result.type_metadata_handoff.unsafe_pointer_extension_summary;
   result.parity_surface.unsafe_pointer_extension_sites_total =
@@ -2829,6 +2927,82 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.throws_propagation_summary.contract_violation_sites <=
           result.parity_surface.throws_propagation_summary.throws_propagation_sites &&
       result.parity_surface.throws_propagation_summary.deterministic;
+  result.parity_surface.deterministic_concurrency_replay_race_guard_handoff =
+      result.deterministic_concurrency_replay_race_guard_handoff &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites ==
+          result.parity_surface.concurrency_replay_race_guard_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_concurrency_replay_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .replay_proof_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_replay_proof_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .race_guard_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_race_guard_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .task_handoff_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_task_handoff_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .actor_isolation_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_actor_isolation_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .deterministic_schedule_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_deterministic_schedule_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .guard_blocked_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_guard_blocked_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .concurrency_replay_race_guard_contract_violation_sites_total &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .replay_proof_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .race_guard_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .task_handoff_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .actor_isolation_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .deterministic_schedule_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .guard_blocked_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .contract_violation_sites <=
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_race_guard_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary
+              .deterministic_schedule_sites +
+              result.parity_surface.concurrency_replay_race_guard_summary
+                  .guard_blocked_sites ==
+          result.parity_surface.concurrency_replay_race_guard_summary
+              .concurrency_replay_sites &&
+      result.parity_surface.concurrency_replay_race_guard_summary.deterministic;
   result.parity_surface.deterministic_unsafe_pointer_extension_handoff =
       result.deterministic_unsafe_pointer_extension_handoff &&
       result.parity_surface.unsafe_pointer_extension_summary
@@ -3776,6 +3950,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_cross_module_conformance_handoff &&
       result.parity_surface.throws_propagation_summary.deterministic &&
       result.parity_surface.deterministic_throws_propagation_handoff &&
+      result.parity_surface.concurrency_replay_race_guard_summary.deterministic &&
+      result.parity_surface
+          .deterministic_concurrency_replay_race_guard_handoff &&
       result.parity_surface.unsafe_pointer_extension_summary.deterministic &&
       result.parity_surface.deterministic_unsafe_pointer_extension_handoff &&
       result.parity_surface.inline_asm_intrinsic_governance_summary

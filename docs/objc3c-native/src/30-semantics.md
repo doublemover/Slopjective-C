@@ -2247,6 +2247,52 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
+<a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
+## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
+
+M190-B wires parser-authored concurrency replay-proof and race-guard profiles into
+sema/type integration summary, type-metadata handoff, and pass-manager parity gates.
+
+Sema/type contract markers:
+
+- `Objc3ConcurrencyReplayRaceGuardSummary`
+- `concurrency_replay_race_guard_summary`
+- `BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface`
+- `BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff`
+- `concurrency_replay_race_guard_sites_total`
+- `concurrency_replay_race_guard_concurrency_replay_sites_total`
+- `concurrency_replay_race_guard_replay_proof_sites_total`
+- `concurrency_replay_race_guard_race_guard_sites_total`
+- `concurrency_replay_race_guard_task_handoff_sites_total`
+- `concurrency_replay_race_guard_actor_isolation_sites_total`
+- `concurrency_replay_race_guard_deterministic_schedule_sites_total`
+- `concurrency_replay_race_guard_guard_blocked_sites_total`
+- `concurrency_replay_race_guard_contract_violation_sites_total`
+- `deterministic_concurrency_replay_race_guard_handoff`
+
+Deterministic replay/race-guard invariants (fail-closed):
+
+- `concurrency_replay_sites`, `replay_proof_sites`, `race_guard_sites`,
+  `task_handoff_sites`, and `actor_isolation_sites` remain bounded by
+  `concurrency_replay_race_guard_sites`.
+- `deterministic_schedule_sites` and `guard_blocked_sites` remain bounded by
+  `concurrency_replay_sites`.
+- `concurrency_replay_race_guard_deterministic_schedule_sites_total + concurrency_replay_race_guard_guard_blocked_sites_total == concurrency_replay_race_guard_concurrency_replay_sites_total`.
+- `contract_violation_sites <= concurrency_replay_race_guard_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.concurrency_replay_race_guard_summary = BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.concurrency_replay_race_guard_summary = BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_concurrency_replay_race_guard_handoff`
+
+Recommended M190 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m190_sema_concurrency_replay_race_guard_contract.py -q`
+
 <a id="m191-sema-type-unsafe-pointer-extension-gating-contract-m191-b001"></a>
 ## M191 sema/type unsafe-pointer extension gating contract (M191-B001)
 
