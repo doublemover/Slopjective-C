@@ -67,6 +67,7 @@ INVALID_OWNER_VALUES = {
     "unknown",
     "unassigned",
 }
+DEFAULT_UNASSIGNED_OWNER = "unassigned"
 
 CLASS_RANK = {
     "small": 0,
@@ -858,8 +859,8 @@ def build_payload(
             priority = priorities[seed_id]
             family_label = FAMILY_LABEL.get(seed.family, "unknown")
             worklane_label = WORKLANE_LABEL.get(seed.worklane, "unknown")
-            owner_primary = "TBD"
-            owner_backup = "TBD"
+            owner_primary = DEFAULT_UNASSIGNED_OWNER
+            owner_backup = DEFAULT_UNASSIGNED_OWNER
             if owner_assignments is not None:
                 assignment = owner_assignments.get(seed.seed_id)
                 if assignment is None:

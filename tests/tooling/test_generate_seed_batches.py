@@ -113,7 +113,7 @@ def test_owner_map_populates_templates_and_preserves_deterministic_ordering(
     assert set(templates_with.keys()) == set(expected_owners.keys())
 
     for seed_id, owners in templates_without.items():
-        assert owners == ("TBD", "TBD")
+        assert owners == ("unassigned", "unassigned")
         assert templates_with[seed_id] == expected_owners[seed_id]
 
 
