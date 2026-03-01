@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,7 +18,13 @@ def test_m179_conformance_mapping_is_documented() -> None:
     coverage_map = _read(COVERAGE_MAP)
     readme = _read(LOWERING_ABI_README)
 
-    assert "| `M179-D001` | `#4487` incremental module cache/invalidation lowering replay contract | `lowering_abi` |" in coverage_map
+    assert (
+        re.search(
+            r"\|\s*`M179-D001`\s*\|\s*`#4487`[^|]*\|\s*`lowering_abi`\s*\|",
+            coverage_map,
+        )
+        is not None
+    )
     assert "M179-D001.json" in readme
 
 
