@@ -194,20 +194,23 @@ def test_fails_when_seed_table_dependencies_do_not_match_edge_table(
     tmp_path: Path,
 ) -> None:
     matrix_text = MATRIX_PATH.read_text(encoding="utf-8")
-    original_row = (
-        "| `V013-TOOL-03` | `FAM-TOOL` | `WL-TOOL` | "
-        "`[v0.13][tooling] Generate seed DAG and batch skeletons from matrix` | "
-        "`scripts/generate_seed_batches.py`, `spec/planning/v013_seed_dependency_graph.json` | "
-        "`V013-SPEC-02` | `medium` | `AC-V013-TOOL-03` |"
-    )
-    mutated_row = (
-        "| `V013-TOOL-03` | `FAM-TOOL` | `WL-TOOL` | "
-        "`[v0.13][tooling] Generate seed DAG and batch skeletons from matrix` | "
-        "`scripts/generate_seed_batches.py`, `spec/planning/v013_seed_dependency_graph.json` | "
-        "`none` | `medium` | `AC-V013-TOOL-03` |"
-    )
-    assert original_row in matrix_text
-    modified = matrix_text.replace(original_row, mutated_row, 1)
+    lines = matrix_text.splitlines()
+    for index, line in enumerate(lines):
+        candidate = line.strip()
+        if not candidate.startswith("| `V013-TOOL-03`"):
+            continue
+        cells = [cell.strip() for cell in candidate.strip("|").split("|")]
+        assert len(cells) == 8
+        assert cells[5] == "`V013-SPEC-02`"
+        cells[5] = "`none`"
+        lines[index] = "| " + " | ".join(cells) + " |"
+        break
+    else:
+        raise AssertionError("expected seed-table row for V013-TOOL-03")
+
+    modified = "\n".join(lines)
+    if matrix_text.endswith("\n"):
+        modified += "\n"
 
     matrix_path = tmp_path / "dependency_mismatch_matrix.md"
     output_path = tmp_path / "out.json"
