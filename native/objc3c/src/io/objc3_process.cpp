@@ -6,15 +6,25 @@
 #include <vector>
 
 int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
-  std::vector<const char *> argv;
-  argv.reserve(args.size() + 2);
-  argv.push_back(executable.c_str());
+  std::vector<std::string> owned_argv;
+  owned_argv.reserve(args.size() + 1);
+  owned_argv.push_back(executable);
   for (const auto &arg : args) {
+    owned_argv.push_back(arg);
+  }
+
+  std::vector<const char *> argv;
+  argv.reserve(owned_argv.size() + 1);
+  for (const auto &arg : owned_argv) {
     argv.push_back(arg.c_str());
   }
   argv.push_back(nullptr);
 
-  const int status = _spawnvp(_P_WAIT, executable.c_str(), argv.data());
+  const bool has_explicit_path =
+      executable.find('\\') != std::string::npos || executable.find('/') != std::string::npos ||
+      executable.find(':') != std::string::npos;
+  const int status = has_explicit_path ? _spawnv(_P_WAIT, executable.c_str(), argv.data())
+                                       : _spawnvp(_P_WAIT, executable.c_str(), argv.data());
   if (status == -1) {
     return 127;
   }

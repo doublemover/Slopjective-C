@@ -20,6 +20,27 @@ $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $configuredClangPath = $env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH
 $clangCommand = if ([string]::IsNullOrWhiteSpace($configuredClangPath)) { "clang" } else { $configuredClangPath }
+$configuredLlcPath = $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH
+$llcCommand = $configuredLlcPath
+$llcSourcePath = ""
+if ([string]::IsNullOrWhiteSpace($llcCommand)) {
+  $llcCandidate = Get-Command llc -ErrorAction SilentlyContinue
+  if ($null -ne $llcCandidate -and -not [string]::IsNullOrWhiteSpace($llcCandidate.Source)) {
+    $llcCommand = $llcCandidate.Source
+  } else {
+    $llcCommand = "llc"
+  }
+}
+if (-not [string]::IsNullOrWhiteSpace($llcCommand)) {
+  $llcSourcePath = $llcCommand
+  if ((Test-Path -LiteralPath $llcCommand -PathType Leaf) -and $llcCommand.Contains(" ")) {
+    $quoted = $llcCommand.Replace('"', '""')
+    $shortCandidate = cmd /d /c "for %I in (""$quoted"") do @echo %~sI" 2>$null
+    if (-not [string]::IsNullOrWhiteSpace($shortCandidate)) {
+      $llcCommand = $shortCandidate.Trim()
+    }
+  }
+}
 
 function Get-RepoRelativePath {
   param(
@@ -384,7 +405,7 @@ try {
     $linkLog = Join-Path $caseDir "link.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $nativeArgs = @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module")
+    $nativeArgs = @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand)
     if ($expectation.compile_args.Count -gt 0) {
       $nativeArgs += @($expectation.compile_args)
     }
@@ -456,7 +477,7 @@ try {
     $runLog = Join-Path $caseDir "run.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module") -LogPath $compileLog
+    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
     $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
     $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
       Get-Content -LiteralPath $compileDiagPath -Raw
@@ -593,6 +614,8 @@ try {
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_shim = Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot
     clang = $clangCommand
+    llc = $llcCommand
+    llc_source = $llcSourcePath
     total = $total
     passed = $passedCount
     failed = $failedCount
