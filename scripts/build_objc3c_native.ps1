@@ -19,6 +19,7 @@ $sharedSources = @(
   "native/objc3c/src/driver/objc3_driver_main.cpp"
   "native/objc3c/src/driver/objc3_driver_shell.cpp"
   "native/objc3c/src/driver/objc3_frontend_options.cpp"
+  "native/objc3c/src/driver/objc3_llvm_capability_routing.cpp"
   "native/objc3c/src/driver/objc3_objc3_path.cpp"
   "native/objc3c/src/driver/objc3_objectivec_path.cpp"
   "native/objc3c/src/driver/objc3_compilation_driver.cpp"
