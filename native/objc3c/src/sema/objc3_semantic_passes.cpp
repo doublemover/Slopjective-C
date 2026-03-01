@@ -1446,6 +1446,23 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
   info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
   info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+  info.async_continuation_profile_is_normalized =
+      method.async_continuation_profile_is_normalized;
+  info.deterministic_async_continuation_handoff =
+      method.deterministic_async_continuation_handoff;
+  info.async_continuation_sites = method.async_continuation_sites;
+  info.async_keyword_sites = method.async_keyword_sites;
+  info.async_function_sites = method.async_function_sites;
+  info.continuation_allocation_sites = method.continuation_allocation_sites;
+  info.continuation_resume_sites = method.continuation_resume_sites;
+  info.continuation_suspend_sites = method.continuation_suspend_sites;
+  info.async_state_machine_sites = method.async_state_machine_sites;
+  info.async_continuation_normalized_sites =
+      method.async_continuation_normalized_sites;
+  info.async_continuation_gate_blocked_sites =
+      method.async_continuation_gate_blocked_sites;
+  info.async_continuation_contract_violation_sites =
+      method.async_continuation_contract_violation_sites;
   info.concurrency_replay_race_guard_profile_is_normalized =
       method.concurrency_replay_race_guard_profile_is_normalized;
   info.deterministic_concurrency_replay_race_guard_handoff =
@@ -3707,6 +3724,93 @@ BuildAwaitLoweringSuspensionStateSummaryFromProgramAst(
       is_partitioned(summary.normalized_sites,
                      summary.gate_blocked_sites,
                      summary.await_suspension_sites);
+  return summary;
+}
+
+template <typename SiteMetadata>
+static void AccumulateAsyncContinuationSummaryFromSiteMetadata(
+    const SiteMetadata &metadata,
+    Objc3AsyncContinuationSummary &summary) {
+  summary.async_continuation_sites += metadata.async_continuation_sites;
+  summary.async_keyword_sites += metadata.async_keyword_sites;
+  summary.async_function_sites += metadata.async_function_sites;
+  summary.continuation_allocation_sites += metadata.continuation_allocation_sites;
+  summary.continuation_resume_sites += metadata.continuation_resume_sites;
+  summary.continuation_suspend_sites += metadata.continuation_suspend_sites;
+  summary.async_state_machine_sites += metadata.async_state_machine_sites;
+  summary.normalized_sites += metadata.async_continuation_normalized_sites;
+  summary.gate_blocked_sites += metadata.async_continuation_gate_blocked_sites;
+  summary.contract_violation_sites += metadata.async_continuation_contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      metadata.deterministic_async_continuation_handoff &&
+      (metadata.async_continuation_sites == 0u ||
+       metadata.async_continuation_profile_is_normalized);
+}
+
+static void FinalizeAsyncContinuationSummaryDeterminism(
+    Objc3AsyncContinuationSummary &summary) {
+  summary.deterministic =
+      summary.deterministic &&
+      summary.async_keyword_sites <= summary.async_continuation_sites &&
+      summary.async_function_sites <= summary.async_continuation_sites &&
+      summary.continuation_allocation_sites <= summary.async_continuation_sites &&
+      summary.continuation_resume_sites <= summary.async_continuation_sites &&
+      summary.continuation_suspend_sites <= summary.async_continuation_sites &&
+      summary.async_state_machine_sites <= summary.async_continuation_sites &&
+      summary.normalized_sites <= summary.async_continuation_sites &&
+      summary.gate_blocked_sites <= summary.async_continuation_sites &&
+      summary.contract_violation_sites <= summary.async_continuation_sites &&
+      summary.normalized_sites + summary.gate_blocked_sites ==
+          summary.async_continuation_sites;
+}
+
+static Objc3AsyncContinuationSummary
+BuildAsyncContinuationSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3AsyncContinuationSummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateAsyncContinuationSummaryFromSiteMetadata(entry.second, summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateAsyncContinuationSummaryFromSiteMetadata(method_entry.second,
+                                                         summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateAsyncContinuationSummaryFromSiteMetadata(method_entry.second,
+                                                         summary);
+    }
+  }
+  FinalizeAsyncContinuationSummaryDeterminism(summary);
+  return summary;
+}
+
+static Objc3AsyncContinuationSummary
+BuildAsyncContinuationSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3AsyncContinuationSummary summary;
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    AccumulateAsyncContinuationSummaryFromSiteMetadata(metadata, summary);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata :
+         interface_metadata.methods_lexicographic) {
+      AccumulateAsyncContinuationSummaryFromSiteMetadata(method_metadata,
+                                                         summary);
+    }
+  }
+  for (const auto &implementation_metadata :
+       handoff.implementations_lexicographic) {
+    for (const auto &method_metadata :
+         implementation_metadata.methods_lexicographic) {
+      AccumulateAsyncContinuationSummaryFromSiteMetadata(method_metadata,
+                                                         summary);
+    }
+  }
+  FinalizeAsyncContinuationSummaryDeterminism(summary);
   return summary;
 }
 
@@ -7637,6 +7741,23 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
       info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
       info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+      info.async_continuation_profile_is_normalized =
+          fn.async_continuation_profile_is_normalized;
+      info.deterministic_async_continuation_handoff =
+          fn.deterministic_async_continuation_handoff;
+      info.async_continuation_sites = fn.async_continuation_sites;
+      info.async_keyword_sites = fn.async_keyword_sites;
+      info.async_function_sites = fn.async_function_sites;
+      info.continuation_allocation_sites = fn.continuation_allocation_sites;
+      info.continuation_resume_sites = fn.continuation_resume_sites;
+      info.continuation_suspend_sites = fn.continuation_suspend_sites;
+      info.async_state_machine_sites = fn.async_state_machine_sites;
+      info.async_continuation_normalized_sites =
+          fn.async_continuation_normalized_sites;
+      info.async_continuation_gate_blocked_sites =
+          fn.async_continuation_gate_blocked_sites;
+      info.async_continuation_contract_violation_sites =
+          fn.async_continuation_contract_violation_sites;
       info.concurrency_replay_race_guard_profile_is_normalized =
           fn.concurrency_replay_race_guard_profile_is_normalized;
       info.deterministic_concurrency_replay_race_guard_handoff =
@@ -7835,6 +7956,35 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                              existing.return_has_invalid_ownership_qualifier;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
+    existing.async_continuation_profile_is_normalized =
+        existing.async_continuation_profile_is_normalized ||
+        fn.async_continuation_profile_is_normalized;
+    existing.deterministic_async_continuation_handoff =
+        existing.deterministic_async_continuation_handoff ||
+        fn.deterministic_async_continuation_handoff;
+    existing.async_continuation_sites =
+        std::max(existing.async_continuation_sites, fn.async_continuation_sites);
+    existing.async_keyword_sites =
+        std::max(existing.async_keyword_sites, fn.async_keyword_sites);
+    existing.async_function_sites =
+        std::max(existing.async_function_sites, fn.async_function_sites);
+    existing.continuation_allocation_sites = std::max(
+        existing.continuation_allocation_sites, fn.continuation_allocation_sites);
+    existing.continuation_resume_sites = std::max(
+        existing.continuation_resume_sites, fn.continuation_resume_sites);
+    existing.continuation_suspend_sites = std::max(
+        existing.continuation_suspend_sites, fn.continuation_suspend_sites);
+    existing.async_state_machine_sites = std::max(
+        existing.async_state_machine_sites, fn.async_state_machine_sites);
+    existing.async_continuation_normalized_sites = std::max(
+        existing.async_continuation_normalized_sites,
+        fn.async_continuation_normalized_sites);
+    existing.async_continuation_gate_blocked_sites = std::max(
+        existing.async_continuation_gate_blocked_sites,
+        fn.async_continuation_gate_blocked_sites);
+    existing.async_continuation_contract_violation_sites = std::max(
+        existing.async_continuation_contract_violation_sites,
+        fn.async_continuation_contract_violation_sites);
     existing.concurrency_replay_race_guard_profile_is_normalized =
         existing.concurrency_replay_race_guard_profile_is_normalized ||
         fn.concurrency_replay_race_guard_profile_is_normalized;
@@ -8110,6 +8260,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           surface.cross_module_conformance_summary);
+  surface.async_continuation_summary =
+      BuildAsyncContinuationSummaryFromIntegrationSurface(surface);
   surface.await_lowering_suspension_state_lowering_summary =
       BuildAwaitLoweringSuspensionStateSummaryFromProgramAst(ast);
   surface.concurrency_replay_race_guard_summary =
@@ -8257,6 +8409,24 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_has_protocol_composition = source.return_has_protocol_composition;
     metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
     metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+    metadata.async_continuation_profile_is_normalized =
+        source.async_continuation_profile_is_normalized;
+    metadata.deterministic_async_continuation_handoff =
+        source.deterministic_async_continuation_handoff;
+    metadata.async_continuation_sites = source.async_continuation_sites;
+    metadata.async_keyword_sites = source.async_keyword_sites;
+    metadata.async_function_sites = source.async_function_sites;
+    metadata.continuation_allocation_sites =
+        source.continuation_allocation_sites;
+    metadata.continuation_resume_sites = source.continuation_resume_sites;
+    metadata.continuation_suspend_sites = source.continuation_suspend_sites;
+    metadata.async_state_machine_sites = source.async_state_machine_sites;
+    metadata.async_continuation_normalized_sites =
+        source.async_continuation_normalized_sites;
+    metadata.async_continuation_gate_blocked_sites =
+        source.async_continuation_gate_blocked_sites;
+    metadata.async_continuation_contract_violation_sites =
+        source.async_continuation_contract_violation_sites;
     metadata.concurrency_replay_race_guard_profile_is_normalized =
         source.concurrency_replay_race_guard_profile_is_normalized;
     metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -8463,6 +8633,28 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.async_continuation_profile_is_normalized =
+          source.async_continuation_profile_is_normalized;
+      method_metadata.deterministic_async_continuation_handoff =
+          source.deterministic_async_continuation_handoff;
+      method_metadata.async_continuation_sites =
+          source.async_continuation_sites;
+      method_metadata.async_keyword_sites = source.async_keyword_sites;
+      method_metadata.async_function_sites = source.async_function_sites;
+      method_metadata.continuation_allocation_sites =
+          source.continuation_allocation_sites;
+      method_metadata.continuation_resume_sites =
+          source.continuation_resume_sites;
+      method_metadata.continuation_suspend_sites =
+          source.continuation_suspend_sites;
+      method_metadata.async_state_machine_sites =
+          source.async_state_machine_sites;
+      method_metadata.async_continuation_normalized_sites =
+          source.async_continuation_normalized_sites;
+      method_metadata.async_continuation_gate_blocked_sites =
+          source.async_continuation_gate_blocked_sites;
+      method_metadata.async_continuation_contract_violation_sites =
+          source.async_continuation_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -8675,6 +8867,28 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_has_protocol_composition = source.return_has_protocol_composition;
       method_metadata.return_protocol_composition_lexicographic = source.return_protocol_composition_lexicographic;
       method_metadata.return_has_invalid_protocol_composition = source.return_has_invalid_protocol_composition;
+      method_metadata.async_continuation_profile_is_normalized =
+          source.async_continuation_profile_is_normalized;
+      method_metadata.deterministic_async_continuation_handoff =
+          source.deterministic_async_continuation_handoff;
+      method_metadata.async_continuation_sites =
+          source.async_continuation_sites;
+      method_metadata.async_keyword_sites = source.async_keyword_sites;
+      method_metadata.async_function_sites = source.async_function_sites;
+      method_metadata.continuation_allocation_sites =
+          source.continuation_allocation_sites;
+      method_metadata.continuation_resume_sites =
+          source.continuation_resume_sites;
+      method_metadata.continuation_suspend_sites =
+          source.continuation_suspend_sites;
+      method_metadata.async_state_machine_sites =
+          source.async_state_machine_sites;
+      method_metadata.async_continuation_normalized_sites =
+          source.async_continuation_normalized_sites;
+      method_metadata.async_continuation_gate_blocked_sites =
+          source.async_continuation_gate_blocked_sites;
+      method_metadata.async_continuation_contract_violation_sites =
+          source.async_continuation_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9246,6 +9460,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   handoff.throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  handoff.async_continuation_summary =
+      BuildAsyncContinuationSummaryFromTypeMetadataHandoff(handoff);
   handoff.await_lowering_suspension_state_lowering_summary =
       surface.await_lowering_suspension_state_lowering_summary;
   handoff.concurrency_replay_race_guard_summary =
@@ -10024,6 +10240,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3ThrowsPropagationSummary throws_propagation_summary =
       BuildThrowsPropagationSummaryFromCrossModuleConformanceSummary(
           handoff.cross_module_conformance_summary);
+  const Objc3AsyncContinuationSummary async_continuation_summary =
+      BuildAsyncContinuationSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AwaitLoweringSuspensionStateSummary
       await_lowering_suspension_state_lowering_summary =
           handoff.await_lowering_suspension_state_lowering_summary;
@@ -10451,6 +10669,48 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.throws_propagation_summary.throws_propagation_sites &&
          handoff.throws_propagation_summary.contract_violation_sites <=
              handoff.throws_propagation_summary.throws_propagation_sites &&
+         handoff.async_continuation_summary.deterministic &&
+         handoff.async_continuation_summary.async_continuation_sites ==
+             async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.async_keyword_sites ==
+             async_continuation_summary.async_keyword_sites &&
+         handoff.async_continuation_summary.async_function_sites ==
+             async_continuation_summary.async_function_sites &&
+         handoff.async_continuation_summary.continuation_allocation_sites ==
+             async_continuation_summary.continuation_allocation_sites &&
+         handoff.async_continuation_summary.continuation_resume_sites ==
+             async_continuation_summary.continuation_resume_sites &&
+         handoff.async_continuation_summary.continuation_suspend_sites ==
+             async_continuation_summary.continuation_suspend_sites &&
+         handoff.async_continuation_summary.async_state_machine_sites ==
+             async_continuation_summary.async_state_machine_sites &&
+         handoff.async_continuation_summary.normalized_sites ==
+             async_continuation_summary.normalized_sites &&
+         handoff.async_continuation_summary.gate_blocked_sites ==
+             async_continuation_summary.gate_blocked_sites &&
+         handoff.async_continuation_summary.contract_violation_sites ==
+             async_continuation_summary.contract_violation_sites &&
+         handoff.async_continuation_summary.async_keyword_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.async_function_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.continuation_allocation_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.continuation_resume_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.continuation_suspend_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.async_state_machine_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.normalized_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.gate_blocked_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.contract_violation_sites <=
+             handoff.async_continuation_summary.async_continuation_sites &&
+         handoff.async_continuation_summary.normalized_sites +
+                 handoff.async_continuation_summary.gate_blocked_sites ==
+             handoff.async_continuation_summary.async_continuation_sites &&
          handoff.await_lowering_suspension_state_lowering_summary.deterministic &&
          handoff.await_lowering_suspension_state_lowering_summary
                  .await_suspension_sites ==
