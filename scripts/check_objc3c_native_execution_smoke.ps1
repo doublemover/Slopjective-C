@@ -350,10 +350,11 @@ function Assert-RuntimeDispatchParityFromLl {
     throw "execution smoke FAIL: missing module.ll for runtime-dispatch parity check ($FixtureRel)"
   }
   $llText = Get-Content -LiteralPath $LlPath -Raw
+  $llCodeText = (($llText -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
   $declareToken = "declare i32 @$RuntimeDispatchSymbol("
   $callToken = "call i32 @$RuntimeDispatchSymbol("
-  $hasDeclare = $llText.IndexOf($declareToken, [System.StringComparison]::Ordinal) -ge 0
-  $hasCall = $llText.IndexOf($callToken, [System.StringComparison]::Ordinal) -ge 0
+  $hasDeclare = $llCodeText.IndexOf($declareToken, [System.StringComparison]::Ordinal) -ge 0
+  $hasCall = $llCodeText.IndexOf($callToken, [System.StringComparison]::Ordinal) -ge 0
 
   if ($RequiresRuntimeShim) {
     if (-not $hasDeclare -or -not $hasCall) {

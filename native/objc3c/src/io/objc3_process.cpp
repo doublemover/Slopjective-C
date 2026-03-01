@@ -2,13 +2,22 @@
 
 #include <process.h>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
 int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
   owned_argv.reserve(args.size() + 1);
-  owned_argv.push_back(executable);
+  std::string argv0 = executable;
+  const std::filesystem::path executable_path(executable);
+  if (executable_path.has_filename()) {
+    const std::string filename = executable_path.filename().string();
+    if (!filename.empty()) {
+      argv0 = filename;
+    }
+  }
+  owned_argv.push_back(argv0);
   for (const auto &arg : args) {
     owned_argv.push_back(arg);
   }
