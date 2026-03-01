@@ -45,7 +45,7 @@ static std::string ToLowerCopy(std::string value) {
 static const char *DefaultEmitPrefix = "module";
 static const char *DefaultMemoryInputPath = "<memory>";
 
-static int FrontendRunProcess(const std::string &executable, const std::vector<std::string> &args) {
+static int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
   owned_argv.reserve(args.size() + 1);
 
@@ -81,20 +81,20 @@ static int FrontendRunProcess(const std::string &executable, const std::vector<s
   return status;
 }
 
-static int FrontendRunIRCompile(const std::filesystem::path &clang_path,
-                                const std::filesystem::path &ir_path,
-                                const std::filesystem::path &object_out) {
-  return FrontendRunProcess(clang_path.string(),
-                            {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(), "-fno-color-diagnostics"});
+static int RunIRCompile(const std::filesystem::path &clang_path,
+                        const std::filesystem::path &ir_path,
+                        const std::filesystem::path &object_out) {
+  return RunProcess(clang_path.string(),
+                    {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(), "-fno-color-diagnostics"});
 }
 
-static int FrontendRunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
-                                          const std::filesystem::path &ir_path,
-                                          const std::filesystem::path &object_out,
-                                          std::string &error) {
+static int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
+                                  const std::filesystem::path &ir_path,
+                                  const std::filesystem::path &object_out,
+                                  std::string &error) {
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
   const int llc_status =
-      FrontendRunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
+      RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {
     return 0;
   }
@@ -562,10 +562,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       int compile_status = 0;
       std::string backend_error;
       if (wants_clang_backend) {
-        compile_status = FrontendRunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+        compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
       } else {
-        compile_status =
-            FrontendRunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
+        compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
       }
       if (compile_status != 0) {
         result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
