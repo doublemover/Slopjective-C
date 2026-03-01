@@ -1933,6 +1933,168 @@ Frontend SIMD/vector type lowering contract relies on deterministic parser accep
   3. `python -m pytest tests/tooling/test_objc3c_m194_frontend_atomics_memory_order_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
 
+## M192 frontend inline asm + intrinsic governance packetization
+
+Frontend inline-asm/intrinsic governance contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for inline asm and privileged intrinsic gating.
+
+- Required frontend inline-asm/intrinsic governance signals:
+  - parser symbol classifiers remain `IsInlineAsmCallSymbol(...)`, `IsIntrinsicCallSymbol(...)`, and `IsPrivilegedIntrinsicCallSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3InlineAsmIntrinsicGovernanceProfile`.
+  - parser profile serialization remains `BuildInlineAsmIntrinsicGovernanceProfile(...)`.
+  - parser profile invariant gate remains `IsInlineAsmIntrinsicGovernanceProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeInlineAsmIntrinsicGovernanceProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeInlineAsmIntrinsicGovernanceProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;` and `method.inline_asm_intrinsic_sites = profile.inline_asm_intrinsic_sites;`.
+  - AST carrier anchors remain `bool inline_asm_intrinsic_governance_profile_is_normalized = false;`, `bool deterministic_inline_asm_intrinsic_governance_handoff = false;`, and `std::string inline_asm_intrinsic_governance_profile;` on function/method declarations.
+- Required frontend inline-asm/intrinsic governance commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m192_frontend_inline_asm_intrinsic_parser_contract.py -q`
+
+## M191 frontend unsafe pointer-arithmetic extension gating
+
+Frontend unsafe pointer-extension gating relies on deterministic parser-owned profile synthesis for unsafe ownership qualifiers, raw pointer type spellings, and pointer-arithmetic operation sites.
+
+- Required frontend unsafe pointer-extension gating signals:
+  - parser profile packet carrier remains `struct Objc3UnsafePointerExtensionProfile`.
+  - parser profile serialization remains `BuildUnsafePointerExtensionProfile(...)`.
+  - parser profile invariant gate remains `IsUnsafePointerExtensionProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeUnsafePointerExtensionProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeUnsafePointerExtensionProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.unsafe_pointer_extension_sites = profile.unsafe_pointer_extension_sites;` and `method.unsafe_pointer_extension_sites = profile.unsafe_pointer_extension_sites;`.
+  - AST carrier anchors remain `bool unsafe_pointer_extension_profile_is_normalized = false;`, `bool deterministic_unsafe_pointer_extension_handoff = false;`, and `std::string unsafe_pointer_extension_profile;` on function/method declarations.
+- Required frontend unsafe pointer-extension gating commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m193_frontend_simd_vector_lowering_contract.py -q`
+  4. `python -m pytest tests/tooling/test_objc3c_m191_frontend_unsafe_pointer_arithmetic_parser_contract.py -q`
+
+## M190 frontend concurrency replay-proof and race-guard packetization
+
+Frontend concurrency replay/race-guard contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for replay proof, race guard, task handoff, and actor isolation surfaces.
+
+- Required frontend concurrency replay/race-guard signals:
+  - parser symbol classifiers remain `IsConcurrencyReplaySymbol(...)`, `IsReplayProofSymbol(...)`, `IsRaceGuardSymbol(...)`, `IsTaskHandoffSymbol(...)`, and `IsActorIsolationSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ConcurrencyReplayRaceGuardProfile`.
+  - parser profile serialization remains `BuildConcurrencyReplayRaceGuardProfile(...)`.
+  - parser profile invariant gate remains `IsConcurrencyReplayRaceGuardProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeConcurrencyReplayRaceGuardProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeConcurrencyReplayRaceGuardProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.concurrency_replay_race_guard_sites = profile.concurrency_replay_race_guard_sites;` and `method.concurrency_replay_race_guard_sites = profile.concurrency_replay_race_guard_sites;`.
+  - AST carrier anchors remain `bool concurrency_replay_race_guard_profile_is_normalized = false;`, `bool deterministic_concurrency_replay_race_guard_handoff = false;`, and `std::string concurrency_replay_race_guard_profile;` on function/method declarations.
+- Required frontend concurrency replay/race-guard commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m190_frontend_concurrency_replay_parser_contract.py -q`
+
+## M189 frontend task-runtime interop and cancellation packetization
+
+Frontend task-runtime/cancellation contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for runtime hooks, cancellation checks, cancellation handlers, and suspension points.
+
+- Required frontend task-runtime/cancellation signals:
+  - parser symbol classifiers remain `IsTaskRuntimeHookSymbol(...)`, `IsCancellationCheckSymbol(...)`, `IsCancellationHandlerSymbol(...)`, and `IsSuspensionPointSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3TaskRuntimeCancellationProfile`.
+  - parser profile serialization remains `BuildTaskRuntimeCancellationProfile(...)`.
+  - parser profile invariant gate remains `IsTaskRuntimeCancellationProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeTaskRuntimeCancellationProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeTaskRuntimeCancellationProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.task_runtime_interop_sites = profile.task_runtime_interop_sites;` and `method.task_runtime_interop_sites = profile.task_runtime_interop_sites;`.
+  - AST carrier anchors remain `bool task_runtime_cancellation_profile_is_normalized = false;`, `bool deterministic_task_runtime_cancellation_handoff = false;`, and `std::string task_runtime_cancellation_profile;` on function/method declarations.
+- Required frontend task-runtime/cancellation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m189_frontend_task_runtime_cancellation_parser_contract.py -q`
+
+## M188 frontend actor-isolation and sendability packetization
+
+Frontend actor-isolation/sendability contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for actor declarations, actor hops, sendable annotations, and non-sendable crossings.
+
+- Required frontend actor-isolation/sendability signals:
+  - parser symbol classifiers remain `IsActorIsolationDeclSymbol(...)`, `IsActorHopSymbol(...)`, `IsSendableAnnotationSymbol(...)`, and `IsNonSendableCrossingSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ActorIsolationSendabilityProfile`.
+  - parser profile serialization remains `BuildActorIsolationSendabilityProfile(...)`.
+  - parser profile invariant gate remains `IsActorIsolationSendabilityProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeActorIsolationSendabilityProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeActorIsolationSendabilityProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.actor_isolation_sendability_sites = profile.actor_isolation_sendability_sites;` and `method.actor_isolation_sendability_sites = profile.actor_isolation_sendability_sites;`.
+  - AST carrier anchors remain `bool actor_isolation_sendability_profile_is_normalized = false;`, `bool deterministic_actor_isolation_sendability_handoff = false;`, and `std::string actor_isolation_sendability_profile;` on function/method declarations.
+- Required frontend actor-isolation/sendability commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py -q`
+
+## M187 frontend await lowering and suspension packetization
+
+Frontend await-lowering/suspension contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for await keywords, suspension points, resume surfaces, state-machine hooks, and continuation surfaces.
+
+- Required frontend await-lowering/suspension signals:
+  - parser symbol classifiers remain `IsAwaitKeywordSymbol(...)`, `IsAwaitSuspensionPointSymbol(...)`, `IsAwaitResumeSymbol(...)`, `IsAwaitStateMachineSymbol(...)`, and `IsAwaitContinuationSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3AwaitSuspensionProfile`.
+  - parser profile serialization remains `BuildAwaitSuspensionProfile(...)`.
+  - parser profile invariant gate remains `IsAwaitSuspensionProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeAwaitSuspensionProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeAwaitSuspensionProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.await_suspension_sites = profile.await_suspension_sites;` and `method.await_suspension_sites = profile.await_suspension_sites;`.
+  - AST carrier anchors remain `bool await_suspension_profile_is_normalized = false;`, `bool deterministic_await_suspension_handoff = false;`, and `std::string await_suspension_profile;` on function/method declarations.
+- Required frontend await-lowering/suspension commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py -q`
+
+## M186 frontend async grammar and continuation packetization
+
+Frontend async-grammar/continuation contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for async keyword/function surfaces and continuation allocation/resume/suspend state-machine surfaces.
+
+- Required frontend async-grammar/continuation signals:
+  - parser symbol classifiers remain `IsAsyncKeywordSymbol(...)`, `IsAsyncFunctionSymbol(...)`, `IsContinuationAllocationSymbol(...)`, `IsContinuationResumeSymbol(...)`, `IsContinuationSuspendSymbol(...)`, and `IsAsyncStateMachineSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3AsyncContinuationProfile`.
+  - parser profile serialization remains `BuildAsyncContinuationProfile(...)`.
+  - parser profile invariant gate remains `IsAsyncContinuationProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeAsyncContinuationProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeAsyncContinuationProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.async_continuation_sites = profile.async_continuation_sites;` and `method.async_continuation_sites = profile.async_continuation_sites;`.
+  - AST carrier anchors remain `bool async_continuation_profile_is_normalized = false;`, `bool deterministic_async_continuation_handoff = false;`, and `std::string async_continuation_profile;` on function/method declarations.
+- Required frontend async-grammar/continuation commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q`
+
+## M185 frontend error diagnostics UX and recovery packetization
+
+Frontend error-diagnostics/recovery contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for diagnostic emits, recovery anchors, recovery boundaries, and fail-closed diagnostics.
+
+- Required frontend error-diagnostics/recovery signals:
+  - parser symbol classifiers remain `IsErrorDiagnosticSymbol(...)`, `IsRecoveryAnchorSymbol(...)`, `IsRecoveryBoundarySymbol(...)`, and `IsFailClosedDiagnosticSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3ErrorDiagnosticsRecoveryProfile`.
+  - parser profile serialization remains `BuildErrorDiagnosticsRecoveryProfile(...)`.
+  - parser profile invariant gate remains `IsErrorDiagnosticsRecoveryProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeErrorDiagnosticsRecoveryProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeErrorDiagnosticsRecoveryProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.error_diagnostics_recovery_sites = profile.error_diagnostics_recovery_sites;` and `method.error_diagnostics_recovery_sites = profile.error_diagnostics_recovery_sites;`.
+  - AST carrier anchors remain `bool error_diagnostics_recovery_profile_is_normalized = false;`, `bool deterministic_error_diagnostics_recovery_handoff = false;`, and `std::string error_diagnostics_recovery_profile;` on function/method declarations.
+- Required frontend error-diagnostics/recovery commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m185_frontend_error_diagnostics_recovery_parser_contract.py -q`
+
+## M184 frontend unwind safety and cleanup emission packetization
+
+Frontend unwind-safety/cleanup-emission contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for exceptional exits, cleanup actions, cleanup scopes, and cleanup resume surfaces.
+
+- Required frontend unwind-safety/cleanup-emission signals:
+  - parser symbol classifiers remain `IsExceptionalExitSymbol(...)`, `IsCleanupActionSymbol(...)`, `IsCleanupScopeSymbol(...)`, and `IsCleanupResumeSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3UnwindCleanupProfile`.
+  - parser profile serialization remains `BuildUnwindCleanupProfile(...)`.
+  - parser profile invariant gate remains `IsUnwindCleanupProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeUnwindCleanupProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeUnwindCleanupProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.unwind_cleanup_sites = profile.unwind_cleanup_sites;` and `method.unwind_cleanup_sites = profile.unwind_cleanup_sites;`.
+  - AST carrier anchors remain `bool unwind_cleanup_profile_is_normalized = false;`, `bool deterministic_unwind_cleanup_handoff = false;`, and `std::string unwind_cleanup_profile;` on function/method declarations.
+- Required frontend unwind-safety/cleanup-emission commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m184_frontend_unwind_cleanup_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
@@ -4196,6 +4358,91 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
+<a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
+## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
+
+M190-B wires parser-authored concurrency replay-proof and race-guard profiles into
+sema/type integration summary, type-metadata handoff, and pass-manager parity gates.
+
+Sema/type contract markers:
+
+- `Objc3ConcurrencyReplayRaceGuardSummary`
+- `concurrency_replay_race_guard_summary`
+- `BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface`
+- `BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff`
+- `concurrency_replay_race_guard_sites_total`
+- `concurrency_replay_race_guard_concurrency_replay_sites_total`
+- `concurrency_replay_race_guard_replay_proof_sites_total`
+- `concurrency_replay_race_guard_race_guard_sites_total`
+- `concurrency_replay_race_guard_task_handoff_sites_total`
+- `concurrency_replay_race_guard_actor_isolation_sites_total`
+- `concurrency_replay_race_guard_deterministic_schedule_sites_total`
+- `concurrency_replay_race_guard_guard_blocked_sites_total`
+- `concurrency_replay_race_guard_contract_violation_sites_total`
+- `deterministic_concurrency_replay_race_guard_handoff`
+
+Deterministic replay/race-guard invariants (fail-closed):
+
+- `concurrency_replay_sites`, `replay_proof_sites`, `race_guard_sites`,
+  `task_handoff_sites`, and `actor_isolation_sites` remain bounded by
+  `concurrency_replay_race_guard_sites`.
+- `deterministic_schedule_sites` and `guard_blocked_sites` remain bounded by
+  `concurrency_replay_sites`.
+- `concurrency_replay_race_guard_deterministic_schedule_sites_total + concurrency_replay_race_guard_guard_blocked_sites_total == concurrency_replay_race_guard_concurrency_replay_sites_total`.
+- `contract_violation_sites <= concurrency_replay_race_guard_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.concurrency_replay_race_guard_summary = BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.concurrency_replay_race_guard_summary = BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_concurrency_replay_race_guard_handoff`
+
+Recommended M190 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m190_sema_concurrency_replay_race_guard_contract.py -q`
+
+<a id="m191-sema-type-unsafe-pointer-extension-gating-contract-m191-b001"></a>
+## M191 sema/type unsafe-pointer extension gating contract (M191-B001)
+
+M191-B extends sema/type metadata and pass-manager parity surfaces for deterministic unsafe pointer-extension gating summaries replayed from integration surface into type-metadata handoff.
+
+Sema/type contract markers:
+
+- `Objc3UnsafePointerExtensionSummary`
+- `unsafe_pointer_extension_summary`
+- `BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries`
+- `unsafe_pointer_extension_sites_total`
+- `unsafe_pointer_extension_unsafe_keyword_sites_total`
+- `unsafe_pointer_extension_pointer_arithmetic_sites_total`
+- `unsafe_pointer_extension_raw_pointer_type_sites_total`
+- `unsafe_pointer_extension_unsafe_operation_sites_total`
+- `unsafe_pointer_extension_normalized_sites_total`
+- `unsafe_pointer_extension_gate_blocked_sites_total`
+- `unsafe_pointer_extension_contract_violation_sites_total`
+- `deterministic_unsafe_pointer_extension_handoff`
+
+Deterministic unsafe-pointer invariants (fail-closed):
+
+- `unsafe_keyword_sites`, `pointer_arithmetic_sites`, `raw_pointer_type_sites`, `unsafe_operation_sites`, `normalized_sites`, and `gate_blocked_sites` remain bounded by `unsafe_pointer_extension_sites`.
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`.
+- `contract_violation_sites <= unsafe_pointer_extension_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.unsafe_pointer_extension_summary = BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(...)`
+- handoff summary packet:
+  `handoff.unsafe_pointer_extension_summary = BuildUnsafePointerExtensionSummaryFromTypeAnnotationAndWeakUnownedSummaries(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_unsafe_pointer_extension_handoff`
+
+Recommended M191 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m191_sema_unsafe_pointer_arithmetic_contract.py -q`
+
 ## M146 sema/type @interface/@implementation parity contract (M146-B001)
 
 M146-B extends sema/type metadata to track Objective-C interface/implementation declarations and selector-level coherence.
@@ -5701,6 +5948,162 @@ Deterministic sema intent:
 Recommended M183 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
+
+<a id="m184-sema-type-unwind-cleanup-contract-m184-b001"></a>
+## M184 sema/type unwind cleanup contract (M184-B001)
+
+M184-B defines deterministic sema summaries for unwind cleanup emission and
+exceptional-control-path cleanup guarantees.
+
+M184 sema/type surface details:
+
+- `Objc3UnwindCleanupSummary`
+- `BuildUnwindCleanupSummaryFromThrowsAndResultSummaries`
+- parity counters:
+  - `unwind_cleanup_sites_total`
+  - `unwind_cleanup_exceptional_exit_sites_total`
+  - `unwind_cleanup_action_sites_total`
+  - `unwind_cleanup_scope_sites_total`
+  - `unwind_cleanup_resume_sites_total`
+  - `unwind_cleanup_normalized_sites_total`
+  - `unwind_cleanup_fail_closed_sites_total`
+  - `unwind_cleanup_contract_violation_sites_total`
+  - `deterministic_unwind_cleanup_handoff`
+
+Deterministic sema intent:
+
+- unwind cleanup summaries are derived from throws-propagation and result-like
+  lowering packets and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and fail-closed counters remain partitioned:
+  `unwind_cleanup_normalized_sites_total + unwind_cleanup_fail_closed_sites_total == unwind_cleanup_sites_total`.
+- exceptional/cleanup counters remain bounded by unwind cleanup sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M184 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py -q`
+
+<a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
+## M186 sema/type async continuation contract (M186-B001)
+
+M186-B defines deterministic sema summaries for async continuation lowering
+handoff safety over parser-authored async continuation profiles.
+
+M186 sema/type surface details:
+
+- `Objc3AsyncContinuationSummary`
+- `BuildAsyncContinuationSummaryFromIntegrationSurface`
+- `BuildAsyncContinuationSummaryFromTypeMetadataHandoff`
+- parity counters:
+  - `async_continuation_sites_total`
+  - `async_continuation_async_keyword_sites_total`
+  - `async_continuation_async_function_sites_total`
+  - `async_continuation_allocation_sites_total`
+  - `async_continuation_resume_sites_total`
+  - `async_continuation_suspend_sites_total`
+  - `async_continuation_state_machine_sites_total`
+  - `async_continuation_normalized_sites_total`
+  - `async_continuation_gate_blocked_sites_total`
+  - `async_continuation_contract_violation_sites_total`
+  - `deterministic_async_continuation_handoff`
+
+Deterministic sema intent:
+
+- async continuation summaries are aggregated from parser-emitted function and
+  method async profiles and preserved across sema/type handoff and pass-manager
+  parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `async_continuation_normalized_sites_total + async_continuation_gate_blocked_sites_total == async_continuation_sites_total`.
+- continuation-detail counters remain bounded by async continuation sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M186 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m186_sema_async_continuation_contract.py -q`
+
+<a id="m187-sema-type-await-lowering-suspension-state-contract-m187-b001"></a>
+## M187 sema/type await lowering and suspension state contract (M187-B001)
+
+M187-B defines deterministic sema summaries for await lowering and suspension
+state handoff safety over parser-authored await suspension profiles.
+
+M187 sema/type surface details:
+
+- `Objc3AwaitLoweringSuspensionStateSummary`
+- `BuildAwaitLoweringSuspensionStateSummaryFromProgramAst`
+- parity counters:
+  - `await_lowering_suspension_state_lowering_sites_total`
+  - `await_lowering_suspension_state_lowering_await_keyword_sites_total`
+  - `await_lowering_suspension_state_lowering_await_suspension_point_sites_total`
+  - `await_lowering_suspension_state_lowering_await_resume_sites_total`
+  - `await_lowering_suspension_state_lowering_await_state_machine_sites_total`
+  - `await_lowering_suspension_state_lowering_await_continuation_sites_total`
+  - `await_lowering_suspension_state_lowering_normalized_sites_total`
+  - `await_lowering_suspension_state_lowering_gate_blocked_sites_total`
+  - `await_lowering_suspension_state_lowering_contract_violation_sites_total`
+  - `deterministic_await_lowering_suspension_state_lowering_handoff`
+
+Deterministic sema intent:
+
+- await lowering/suspension summaries are aggregated from parser-emitted
+  function and method await profiles and preserved across sema/type handoff and
+  pass-manager parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `await_lowering_suspension_state_lowering_normalized_sites_total + await_lowering_suspension_state_lowering_gate_blocked_sites_total == await_lowering_suspension_state_lowering_sites_total`.
+- suspension-point-scoped counters remain bounded:
+  `await_lowering_suspension_state_lowering_await_state_machine_sites_total <= await_lowering_suspension_state_lowering_await_suspension_point_sites_total` and
+  `await_lowering_suspension_state_lowering_await_continuation_sites_total <= await_lowering_suspension_state_lowering_await_suspension_point_sites_total`.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M187 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m187_sema_await_suspension_contract.py -q`
+
+<a id="m192-sema-type-inline-asm-intrinsic-governance-contract-m192-b001"></a>
+## M192 sema/type inline-asm+intrinsic governance contract (M192-B001)
+
+M192-B defines deterministic sema summaries for inline-asm and intrinsic
+governance handoff safety over unsafe-pointer extension and throws-propagation
+packets.
+
+M192 sema/type surface details:
+
+- `Objc3InlineAsmIntrinsicGovernanceSummary`
+- `BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries`
+- parity counters:
+  - `inline_asm_intrinsic_governance_sites_total`
+  - `inline_asm_intrinsic_governance_inline_asm_sites_total`
+  - `inline_asm_intrinsic_governance_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_governed_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_privileged_intrinsic_sites_total`
+  - `inline_asm_intrinsic_governance_normalized_sites_total`
+  - `inline_asm_intrinsic_governance_gate_blocked_sites_total`
+  - `inline_asm_intrinsic_governance_contract_violation_sites_total`
+  - `deterministic_inline_asm_intrinsic_governance_handoff`
+
+Deterministic sema intent:
+
+- inline-asm counters remain pinned to throws-propagation cache-invalidation
+  candidates:
+  `inline_asm_intrinsic_governance_inline_asm_sites_total == throws_propagation_cache_invalidation_candidate_sites_total`.
+- intrinsic counters remain pinned to unsafe-pointer unsafe-operation sites:
+  `inline_asm_intrinsic_governance_intrinsic_sites_total == unsafe_pointer_extension_unsafe_operation_sites_total`.
+- governed intrinsic counts remain bounded by throws-propagation normalization
+  and privileged intrinsic counts remain bounded by unsafe-pointer
+  normalization.
+- normalized and gate-blocked counters remain partitioned:
+  `inline_asm_intrinsic_governance_normalized_sites_total + inline_asm_intrinsic_governance_gate_blocked_sites_total == inline_asm_intrinsic_governance_sites_total`.
+- governance partition remains replay-stable:
+  `inline_asm_intrinsic_governance_normalized_sites_total - inline_asm_intrinsic_governance_inline_asm_sites_total == inline_asm_intrinsic_governance_governed_intrinsic_sites_total`.
+  `inline_asm_intrinsic_governance_gate_blocked_sites_total == inline_asm_intrinsic_governance_intrinsic_sites_total - inline_asm_intrinsic_governance_governed_intrinsic_sites_total`.
+
+Recommended M192 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m192_sema_inline_asm_intrinsic_contract.py -q`
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:
@@ -9546,6 +9949,238 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Unwind safety and cleanup emission lowering artifact contract (M184-C001)
+
+M184-C publishes deterministic lowering replay metadata for unwind safety and
+cleanup emission boundaries.
+
+M184-C lowering contract anchors:
+
+- `kObjc3UnwindCleanupLoweringLaneContract`
+- `Objc3UnwindCleanupLoweringContract`
+- `IsValidObjc3UnwindCleanupLoweringContract(...)`
+- `Objc3UnwindCleanupLoweringReplayKey(...)`
+- `unwind_cleanup_lowering = unwind_cleanup_sites=<N>`
+- `frontend_objc_unwind_cleanup_lowering_profile`
+- `!objc3.objc_unwind_cleanup_lowering = !{!35}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == unwind_cleanup_sites`
+- each of `unwind_edge_sites`, `cleanup_scope_sites`, `landing_pad_sites`,
+  `cleanup_resume_sites`, and `contract_violation_sites` is bounded by
+  `unwind_cleanup_sites`
+- `cleanup_emit_sites <= cleanup_scope_sites`
+- `landing_pad_sites + cleanup_resume_sites <= unwind_cleanup_sites`
+- `deterministic_unwind_cleanup_lowering_handoff` requires zero contract
+  violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m184_lowering_unwind_cleanup_contract.py -q`
+
+## Error diagnostics UX and recovery lowering artifact contract (M185-C001)
+
+M185-C publishes deterministic lowering replay metadata for parser/semantic
+error diagnostics UX and recovery handoff.
+
+M185-C lowering contract anchors:
+
+- `kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract`
+- `Objc3ErrorDiagnosticsRecoveryLoweringContract`
+- `IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(...)`
+- `Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(...)`
+- `error_diagnostics_recovery_lowering = error_diagnostic_sites=<N>`
+- `frontend_objc_error_diagnostics_recovery_lowering_profile`
+- `!objc3.objc_error_diagnostics_recovery_lowering = !{!44}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == error_diagnostic_sites`
+- each of `parser_diagnostic_sites`, `semantic_diagnostic_sites`,
+  `fixit_hint_sites`, `recovery_candidate_sites`, and
+  `contract_violation_sites` is bounded by `error_diagnostic_sites`
+- `parser_diagnostic_sites + semantic_diagnostic_sites <= error_diagnostic_sites`
+- `recovery_applied_sites <= recovery_candidate_sites`
+- `deterministic_error_diagnostics_recovery_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m185_lowering_error_diagnostics_recovery_contract.py -q`
+
+## Async grammar and continuation lowering artifact contract (M186-C001)
+
+M186-C publishes deterministic lowering replay metadata for async grammar and
+continuation IR/runtime ABI handoff.
+
+M186-C lowering contract anchors:
+
+- `kObjc3AsyncContinuationLoweringLaneContract`
+- `Objc3AsyncContinuationLoweringContract`
+- `IsValidObjc3AsyncContinuationLoweringContract(...)`
+- `Objc3AsyncContinuationLoweringReplayKey(...)`
+- `async_continuation_lowering = async_continuation_sites=<N>`
+- `frontend_objc_async_continuation_lowering_profile`
+- `!objc3.objc_async_continuation_lowering = !{!43}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == async_continuation_sites`
+- each of `async_keyword_sites`, `async_function_sites`,
+  `continuation_allocation_sites`, `continuation_resume_sites`,
+  `continuation_suspend_sites`, `async_state_machine_sites`, and
+  `contract_violation_sites` is bounded by `async_continuation_sites`
+- `deterministic_async_continuation_lowering_handoff` requires zero contract
+  violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m186_lowering_async_continuation_contract.py -q`
+
+## Actor isolation and sendability lowering artifact contract (M188-C001)
+
+M188-C publishes deterministic lowering replay metadata for actor isolation and
+sendability boundary handoff.
+
+M188-C lowering contract anchors:
+
+- `kObjc3ActorIsolationSendabilityLoweringLaneContract`
+- `Objc3ActorIsolationSendabilityLoweringContract`
+- `IsValidObjc3ActorIsolationSendabilityLoweringContract(...)`
+- `Objc3ActorIsolationSendabilityLoweringReplayKey(...)`
+- `actor_isolation_sendability_lowering = actor_isolation_sites=<N>`
+- `frontend_objc_actor_isolation_sendability_lowering_profile`
+- `!objc3.objc_actor_isolation_sendability_lowering = !{!41}`
+
+Deterministic handoff checks:
+
+- `isolation_boundary_sites + guard_blocked_sites == actor_isolation_sites`
+- each of `sendability_check_sites`, `cross_actor_hop_sites`,
+  `isolation_boundary_sites`, and `contract_violation_sites` is bounded by
+  `actor_isolation_sites`
+- `non_sendable_capture_sites <= sendability_check_sites`
+- `sendable_transfer_sites <= sendability_check_sites`
+- `deterministic_actor_isolation_sendability_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m188_lowering_actor_isolation_sendability_contract.py -q`
+
+## Task runtime interop and cancellation lowering artifact contract (M189-C001)
+
+M189-C publishes deterministic lowering replay metadata for task runtime
+interop and cancellation boundaries.
+
+M189-C lowering contract anchors:
+
+- `kObjc3TaskRuntimeInteropCancellationLoweringLaneContract`
+- `Objc3TaskRuntimeInteropCancellationLoweringContract`
+- `IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(...)`
+- `Objc3TaskRuntimeInteropCancellationLoweringReplayKey(...)`
+- `task_runtime_interop_cancellation_lowering = task_runtime_sites=<N>`
+- `frontend_objc_task_runtime_interop_cancellation_lowering_profile`
+- `!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == task_runtime_sites`
+- `runtime_resume_sites + runtime_cancel_sites <= task_runtime_sites`
+- each of `task_runtime_interop_sites`, `cancellation_probe_sites`,
+  `cancellation_handler_sites`, and `contract_violation_sites` is bounded by
+  `task_runtime_sites`
+- `deterministic_task_runtime_interop_cancellation_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q`
+
+## Concurrency replay-proof and race-guard lowering artifact contract (M190-C001)
+
+M190-C publishes deterministic lowering replay metadata for concurrency
+replay-proof scheduling and race-guard boundaries.
+
+M190-C lowering contract anchors:
+
+- `kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract`
+- `Objc3ConcurrencyReplayRaceGuardLoweringContract`
+- `IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(...)`
+- `Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(...)`
+- `concurrency_replay_race_guard_lowering = concurrency_replay_sites=<N>`
+- `frontend_objc_concurrency_replay_race_guard_lowering_profile`
+- `!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}`
+
+Deterministic handoff checks:
+
+- `deterministic_schedule_sites + guard_blocked_sites == concurrency_replay_sites`
+- each of `replay_proof_sites`, `race_guard_sites`, `task_handoff_sites`,
+  `actor_isolation_sites`, and `contract_violation_sites` is bounded by
+  `concurrency_replay_sites`
+- `deterministic_concurrency_replay_race_guard_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m190_lowering_concurrency_replay_race_guard_contract.py -q`
+
+## Unsafe and pointer-arithmetic extension gating lowering artifact contract (M191-C001)
+
+M191-C publishes deterministic lowering replay metadata for unsafe low-level
+extension gating and pointer-arithmetic boundaries.
+
+M191-C lowering contract anchors:
+
+- `kObjc3UnsafePointerExtensionLoweringLaneContract`
+- `Objc3UnsafePointerExtensionLoweringContract`
+- `IsValidObjc3UnsafePointerExtensionLoweringContract(...)`
+- `Objc3UnsafePointerExtensionLoweringReplayKey(...)`
+- `unsafe_pointer_extension_lowering = unsafe_pointer_extension_sites=<N>`
+- `frontend_objc_unsafe_pointer_extension_lowering_profile`
+- `!objc3.objc_unsafe_pointer_extension_lowering = !{!37}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`
+- each of `unsafe_keyword_sites`, `pointer_arithmetic_sites`,
+  `raw_pointer_type_sites`, `unsafe_operation_sites`, and
+  `contract_violation_sites` is bounded by `unsafe_pointer_extension_sites`
+- `deterministic_unsafe_pointer_extension_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m191_lowering_unsafe_pointer_contract.py -q`
+
+## Inline asm and intrinsic governance lowering artifact contract (M192-C001)
+
+M192-C publishes deterministic lowering replay metadata for inline asm and
+intrinsic governance boundaries.
+
+M192-C lowering contract anchors:
+
+- `kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract`
+- `Objc3InlineAsmIntrinsicGovernanceLoweringContract`
+- `IsValidObjc3InlineAsmIntrinsicGovernanceLoweringContract(...)`
+- `Objc3InlineAsmIntrinsicGovernanceLoweringReplayKey(...)`
+- `inline_asm_intrinsic_governance_lowering = inline_asm_intrinsic_sites=<N>`
+- `frontend_objc_inline_asm_intrinsic_governance_lowering_profile`
+- `!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == inline_asm_intrinsic_sites`
+- each of `inline_asm_sites`, `intrinsic_sites`, `governed_intrinsic_sites`,
+  `privileged_intrinsic_sites`, and `contract_violation_sites` is bounded by
+  `inline_asm_intrinsic_sites`
+- `deterministic_inline_asm_intrinsic_governance_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m192_lowering_inline_asm_intrinsic_contract.py -q`
+
 ## Execution smoke commands (M26 lane-E)
 
 ```powershell
@@ -12208,6 +12843,530 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 ```
 
+## M184 integration unwind safety and cleanup emission contract runbook (M184-E001)
+
+Deterministic M184 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m184_integration_unwind_safety_cleanup_emission_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts`
+- `npm run check:compiler-closeout:m184`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M184 unwind safety/cleanup emission packet/docs contract`
+  - `Run M184 unwind safety/cleanup emission integration gate`
+
+Scope assumptions:
+
+- M184-A001, M184-B001, M184-C001, and M184-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via M183-A001 frontend parsing, M183-B001 fail-closed sema replay anchors from M183-D001, M183-C001 lowering replay anchors, and the M183-D001 validation/conformance packet.
+- This runbook fail-closes M184-A001 parser surfaces, M184-B001 sema surfaces, M184-C001 lowering surfaces, and M184-D001 validation/conformance surfaces through M183-E001 replay anchors.
+- This runbook enforces those currently landed lane surfaces plus M184-E001 integration wiring.
+
+## M184 validation/conformance/perf unwind safety and cleanup emission runbook (M184-D001)
+
+Deterministic M184 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m184_validation_unwind_safety_cleanup_emission_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_unwind_cleanup_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_unwind_cleanup_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_unwind_cleanup_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_unwind_cleanup_lowering_surface.deterministic_handoff`
+  - `lowering_unwind_cleanup.replay_key`
+- `replay_run_1/module.ll`
+  - `unwind_cleanup_lowering`
+  - `frontend_objc_unwind_cleanup_lowering_profile`
+  - `!objc3.objc_unwind_cleanup_lowering = !{!44}`
+- `M184-D001.json`
+  - `tracking.issue = 4512`
+  - `tracking.task = M184-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + fail_closed_sites == unwind_cleanup_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py -q
+```
+
+## M190 integration concurrency replay-proof and race-guard contract runbook (M190-E001)
+
+Deterministic M190 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_integration_concurrency_replay_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m190-concurrency-replay-race-guard-contracts`
+- `npm run check:compiler-closeout:m190`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M190 concurrency replay/race-guard packet/docs contract`
+  - `Run M190 concurrency replay/race-guard integration gate`
+
+Scope assumptions:
+
+- M190-A001, M190-B001, and M190-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- M190-D001 packet-specific artifacts are landed in this workspace.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M190-D001 validation/conformance packet.
+- This runbook enforces those currently landed lane surfaces plus M190-E001 integration wiring.
+
+## M189 integration task runtime interop and cancellation contract runbook (M189-E001)
+
+Deterministic M189 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts`
+- `npm run check:compiler-closeout:m189`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M189 task-runtime interop/cancellation packet/docs contract`
+  - `Run M189 task-runtime interop/cancellation integration gate`
+
+Scope assumptions:
+
+- M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+- M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+- This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
+
+## M188 integration actor isolation and sendability contract runbook (M188-E001)
+
+Deterministic M188 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_integration_actor_isolation_sendability_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m188-actor-isolation-sendability-contracts`
+- `npm run check:compiler-closeout:m188`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M188 actor isolation/sendability packet/docs contract`
+  - `Run M188 actor isolation/sendability integration gate`
+
+Scope assumptions:
+
+- M188-A001 and M188-D001 packet-specific artifacts are landed in this workspace.
+- M188-B001 and M188-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M188-A001 frontend parser contract plus the M188-D001 validation/conformance packet.
+- This runbook fail-closes M188-B001 sema surfaces and M188-C001 lowering surfaces via M188-D001 replay packet anchors.
+- This runbook enforces those currently landed lane surfaces plus M188-E001 integration wiring.
+
+## M186 integration async grammar and continuation IR contract runbook (M186-E001)
+
+Deterministic M186 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m186-async-continuation-contracts`
+- `npm run check:compiler-closeout:m186`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M186 async grammar/continuation IR packet/docs contract`
+  - `Run M186 async grammar/continuation IR integration gate`
+
+Scope assumptions:
+
+- M186-A001 packet-specific artifacts are landed in this workspace.
+- M186-B001, M186-C001, and M186-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M186-A001 frontend parser contract plus continuation IR replay anchors from the M187-D001 validation/conformance packet.
+- This runbook fail-closes M186-B001 sema surfaces, M186-C001 lowering surfaces, and M186-D001 packet-specific replay artifacts via continuation IR replay anchors.
+- This runbook enforces those currently landed lane surfaces plus M186-E001 integration wiring.
+
+## M187 integration await lowering and suspension state contract runbook (M187-E001)
+
+Deterministic M187 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_integration_await_lowering_suspension_state_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m187-await-lowering-suspension-state-contracts`
+- `npm run check:compiler-closeout:m187`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M187 await lowering/suspension-state packet/docs contract`
+  - `Run M187 await lowering/suspension-state integration gate`
+
+Scope assumptions:
+
+- M187-A001 and M187-D001 packet-specific artifacts are landed in this workspace.
+- M187-B001 and M187-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M187-A001 frontend parser contract plus the M187-D001 validation/conformance packet.
+- This runbook fail-closes M187-B001 sema surfaces and M187-C001 lowering surfaces via M187-D001 replay packet anchors.
+- This runbook enforces those currently landed lane surfaces plus M187-E001 integration wiring.
+
+## M185 validation/conformance/perf error diagnostics UX and recovery runbook (M185-D001)
+
+Deterministic M185 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m185_validation_error_diagnostics_recovery_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m185_conformance_error_diagnostics_recovery_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m185_validation_error_diagnostics_recovery_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_error_diagnostics_recovery_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_error_diagnostics_recovery_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_error_diagnostics_recovery_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_error_diagnostics_recovery_lowering_surface.deterministic_handoff`
+  - `lowering_error_diagnostics_recovery.replay_key`
+- `replay_run_1/module.ll`
+  - `error_diagnostics_recovery_lowering`
+  - `frontend_objc_error_diagnostics_recovery_lowering_profile`
+  - `!objc3.objc_error_diagnostics_recovery_lowering = !{!45}`
+- `M185-D001.json`
+  - `tracking.issue = 4517`
+  - `tracking.task = M185-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == error_diagnostics_recovery_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m185_validation_error_diagnostics_recovery_contract.py tests/tooling/test_objc3c_m185_conformance_error_diagnostics_recovery_contract.py -q
+```
+
+## M186 validation/conformance/perf async grammar and continuation IR runbook (M186-D001)
+
+Deterministic M186 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_validation_async_continuation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m186_conformance_async_continuation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m186_validation_async_continuation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_async_continuation_ir_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_async_continuation_ir_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_async_continuation_ir_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_async_continuation_ir_lowering_surface.deterministic_handoff`
+  - `lowering_async_continuation_ir.replay_key`
+- `replay_run_1/module.ll`
+  - `async_continuation_ir_lowering`
+  - `frontend_objc_async_continuation_ir_lowering_profile`
+  - `!objc3.objc_async_continuation_ir_lowering = !{!43}`
+- `M186-D001.json`
+  - `tracking.issue = 4522`
+  - `tracking.task = M186-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == async_continuation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_validation_async_continuation_contract.py tests/tooling/test_objc3c_m186_conformance_async_continuation_contract.py -q
+```
+
+## M187 validation/conformance/perf await lowering and suspension state runbook (M187-D001)
+
+Deterministic M187 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m187_validation_await_lowering_suspension_state_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_await_lowering_suspension_state_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_await_lowering_suspension_state_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_await_lowering_suspension_state_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_await_lowering_suspension_state_lowering_surface.deterministic_handoff`
+  - `lowering_await_lowering_suspension_state.replay_key`
+- `replay_run_1/module.ll`
+  - `await_lowering_suspension_state_lowering`
+  - `frontend_objc_await_lowering_suspension_state_lowering_profile`
+  - `!objc3.objc_await_lowering_suspension_state_lowering = !{!42}`
+- `M187-D001.json`
+  - `tracking.issue = 4527`
+  - `tracking.task = M187-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == await_suspension_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+```
+
+## M188 validation/conformance/perf actor isolation and sendability runbook (M188-D001)
+
+Deterministic M188 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m188_validation_actor_isolation_sendability_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_actor_isolation_sendability_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_actor_isolation_sendability_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_actor_isolation_sendability_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_actor_isolation_sendability_lowering_surface.deterministic_handoff`
+  - `lowering_actor_isolation_sendability.replay_key`
+- `replay_run_1/module.ll`
+  - `actor_isolation_sendability_lowering`
+  - `frontend_objc_actor_isolation_sendability_lowering_profile`
+  - `!objc3.objc_actor_isolation_sendability_lowering = !{!41}`
+- `M188-D001.json`
+  - `tracking.issue = 4532`
+  - `tracking.task = M188-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `isolation_boundary_sites + guard_blocked_sites == actor_isolation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+```
+
+## M189 validation/conformance/perf task runtime interop and cancellation runbook (M189-D001)
+
+Deterministic M189 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m189_validation_task_runtime_interop_cancellation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_task_runtime_interop_cancellation_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_task_runtime_interop_cancellation_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_task_runtime_interop_cancellation_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_task_runtime_interop_cancellation_lowering_surface.deterministic_handoff`
+  - `lowering_task_runtime_interop_cancellation.replay_key`
+- `replay_run_1/module.ll`
+  - `task_runtime_interop_cancellation_lowering`
+  - `frontend_objc_task_runtime_interop_cancellation_lowering_profile`
+  - `!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}`
+- `M189-D001.json`
+  - `tracking.issue = 4537`
+  - `tracking.task = M189-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + guard_blocked_sites == task_runtime_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
+```
+
+## M190 validation/conformance/perf concurrency replay-proof and race-guard runbook (M190-D001)
+
+Deterministic M190 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m190_validation_concurrency_replay_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_concurrency_replay_race_guard_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_concurrency_replay_race_guard_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_concurrency_replay_race_guard_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_concurrency_replay_race_guard_lowering_surface.deterministic_handoff`
+  - `lowering_concurrency_replay_race_guard.replay_key`
+- `replay_run_1/module.ll`
+  - `concurrency_replay_race_guard_lowering`
+  - `frontend_objc_concurrency_replay_race_guard_lowering_profile`
+  - `!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}`
+- `M190-D001.json`
+  - `tracking.issue = 4542`
+  - `tracking.task = M190-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `deterministic_schedule_sites + guard_blocked_sites == concurrency_replay_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m190_validation_concurrency_replay_contract.py tests/tooling/test_objc3c_m190_conformance_concurrency_replay_contract.py -q
+```
+
+## M191 validation/conformance/perf unsafe-pointer extension gating runbook (M191-D001)
+
+Deterministic M191 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m191_validation_unsafe_pointer_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_unsafe_pointer_extension_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_unsafe_pointer_extension_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_unsafe_pointer_extension_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_unsafe_pointer_extension_lowering_surface.deterministic_handoff`
+  - `lowering_unsafe_pointer_extension.replay_key`
+- `replay_run_1/module.ll`
+  - `unsafe_pointer_extension_lowering`
+  - `frontend_objc_unsafe_pointer_extension_lowering_profile`
+  - `!objc3.objc_unsafe_pointer_extension_lowering = !{!37}`
+- `M191-D001.json`
+  - `tracking.issue = 4547`
+  - `tracking.task = M191-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == unsafe_pointer_extension_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m191_validation_unsafe_pointer_contract.py tests/tooling/test_objc3c_m191_conformance_unsafe_pointer_contract.py -q
+```
+
+## M192 validation/conformance/perf inline-asm intrinsic governance runbook (M192-D001)
+
+Deterministic M192 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m192_validation_inline_asm_intrinsic_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m192_conformance_inline_asm_intrinsic_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m192_validation_inline_asm_intrinsic_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_inline_asm_intrinsic_governance_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_inline_asm_intrinsic_governance_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_inline_asm_intrinsic_governance_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_inline_asm_intrinsic_governance_lowering_surface.deterministic_handoff`
+  - `lowering_inline_asm_intrinsic_governance.replay_key`
+- `replay_run_1/module.ll`
+  - `inline_asm_intrinsic_governance_lowering`
+  - `frontend_objc_inline_asm_intrinsic_governance_lowering_profile`
+  - `!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}`
+- `M192-D001.json`
+  - `tracking.issue = 4552`
+  - `tracking.task = M192-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == inline_asm_intrinsic_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m192_validation_inline_asm_intrinsic_contract.py tests/tooling/test_objc3c_m192_conformance_inline_asm_intrinsic_contract.py -q
+```
+
 Block copy-dispose evidence packet fields:
 
 - `tests/tooling/fixtures/objc3c/m169_validation_block_copy_dispose_contract/replay_run_1/module.manifest.json`
@@ -13147,6 +14306,185 @@ int objc3c_frontend_startup_check(void) {
   - M183-A001, M183-C001, and M183-D001 outputs are landed in this workspace.
   - M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration gate.
   - The integration gate fail-closes on frontend/lowering/validation/conformance surfaces plus this M183-E001 wiring contract.
+
+## M184 integration unwind safety and cleanup emission contract
+
+- Integration gate:
+  - `npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m184`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py`
+  - `tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py`
+  - `tests/tooling/test_objc3c_m184_integration_unwind_safety_cleanup_emission_contract.py`
+- Assumptions:
+  - M184-A001, M184-B001, M184-C001, and M184-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M184-E001 gate deterministically replays currently landed lane surfaces via M183-A001 frontend parsing, M183-B001 fail-closed sema replay anchors from M183-D001, M183-C001 lowering replay anchors, and the M183-D001 validation/conformance packet.
+  - M184-A001 parser surfaces, M184-B001 sema surfaces, M184-C001 lowering surfaces, and M184-D001 validation/conformance surfaces are fail-closed via M183-E001 replay anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M184-E001 wiring contract.
+
+## M185 integration error diagnostics UX and recovery contract
+
+- Integration gate:
+  - `npm run check:objc3c:m185-error-diagnostics-ux-recovery-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m185`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m184_frontend_unwind_cleanup_parser_contract.py`
+  - `tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py`
+  - `tests/tooling/test_objc3c_m184_lowering_unwind_cleanup_contract.py`
+  - `tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py`
+  - `tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py`
+  - `tests/tooling/test_objc3c_m185_integration_error_diagnostics_ux_recovery_contract.py`
+- Assumptions:
+  - M185-A001, M185-B001, M185-C001, and M185-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M185-E001 gate deterministically replays currently landed lane surfaces via M184-A001 frontend parser recovery anchors, M184-B001 sema diagnostics anchors, M184-C001 lowering anchors, and the M184-D001 validation/conformance packet.
+  - M185-A001 frontend recovery surfaces, M185-B001 semantic diagnostics surfaces, M185-C001 lowering surfaces, and M185-D001 validation/conformance surfaces are fail-closed via M184-E001 replay anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M185-E001 wiring contract.
+
+## M186 integration async grammar and continuation IR contract
+
+- Integration gate:
+  - `npm run check:objc3c:m186-async-continuation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m186`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py`
+  - `tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py`
+- Assumptions:
+  - M186-A001 packet-specific artifacts are landed in this workspace.
+  - M186-B001, M186-C001, and M186-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M186-E001 gate deterministically replays currently landed lane surfaces via the M186-A001 frontend parser contract plus continuation IR replay anchors from the M187-D001 validation/conformance packet.
+  - M186-B001 sema surfaces, M186-C001 lowering surfaces, and M186-D001 packet-specific replay artifacts are fail-closed via continuation IR replay anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M186-E001 wiring contract.
+
+## M187 integration await lowering and suspension state contract
+
+- Integration gate:
+  - `npm run check:objc3c:m187-await-lowering-suspension-state-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m187`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py`
+  - `tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m187_integration_await_lowering_suspension_state_contract.py`
+- Assumptions:
+  - M187-A001 and M187-D001 packet-specific artifacts are landed in this workspace.
+  - M187-B001 and M187-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M187-E001 gate deterministically replays currently landed lane surfaces via the M187-A001 frontend parser contract plus the M187-D001 validation/conformance packet.
+  - M187-B001 sema surfaces and M187-C001 lowering surfaces are fail-closed via M187-D001 replay packet anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M187-E001 wiring contract.
+
+## M188 integration actor isolation and sendability contract
+
+- Integration gate:
+  - `npm run check:objc3c:m188-actor-isolation-sendability-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m188`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py`
+  - `tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py`
+  - `tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py`
+  - `tests/tooling/test_objc3c_m188_integration_actor_isolation_sendability_contract.py`
+- Assumptions:
+  - M188-A001 and M188-D001 packet-specific artifacts are landed in this workspace.
+  - M188-B001 and M188-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M188-E001 gate deterministically replays currently landed lane surfaces via the M188-A001 frontend parser contract plus the M188-D001 validation/conformance packet.
+  - M188-B001 sema surfaces and M188-C001 lowering surfaces are fail-closed via M188-D001 replay packet anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M188-E001 wiring contract.
+
+## M189 integration task runtime interop and cancellation contract
+
+- Integration gate:
+  - `npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m189`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py`
+  - `tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py`
+  - `tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py`
+  - `tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py`
+- Assumptions:
+  - M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+  - M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M189-E001 wiring contract.
+
+## M190 integration concurrency replay-proof and race-guard contract
+
+- Integration gate:
+  - `npm run check:objc3c:m190-concurrency-replay-race-guard-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m190`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m190_lowering_concurrency_replay_race_guard_contract.py`
+  - `tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m190_integration_concurrency_replay_race_guard_contract.py`
+- Assumptions:
+  - M190-A001, M190-B001, and M190-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M190-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema/validation contracts plus the M190-C001 lowering contract.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M190-E001 wiring contract.
+
+## M191 integration unsafe-pointer extension gating contract
+
+- Integration gate:
+  - `npm run check:objc3c:m191-unsafe-pointer-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m191`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m191_integration_unsafe_pointer_contract.py`
+- Assumptions:
+  - M191-A001 through M191-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M191-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema/lowering/validation contracts.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M191-E001 wiring contract.
+
+## M192 integration inline-asm and intrinsic governance gating contract
+
+- Integration gate:
+  - `npm run check:objc3c:m192-inline-asm-intrinsic-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m192`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m192_lowering_inline_asm_intrinsic_contract.py`
+  - `tests/tooling/test_objc3c_m195_validation_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m192_integration_inline_asm_intrinsic_contract.py`
+- Assumptions:
+  - M192-A001, M192-B001, and M192-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M192-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema/validation contracts plus the M192-C001 lowering contract.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M192-E001 wiring contract.
 
 ### 1.1 WMO integration chain
 - Deterministic WMO gate:
