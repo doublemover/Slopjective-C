@@ -4358,6 +4358,100 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
+<a id="m188-sema-type-actor-isolation-sendability-checks-diagnostics-contract-m188-b001"></a>
+## M188 sema/type actor isolation and sendability checks and diagnostics contract (M188-B001)
+
+M188-B wires parser-authored actor-isolation/sendability profiles into sema/type
+integration summary, type-metadata handoff, and pass-manager parity gates for
+deterministic checking and diagnostics counters.
+
+Sema/type contract markers:
+
+- `Objc3ActorIsolationSendabilitySummary`
+- `actor_isolation_sendability_summary`
+- `BuildActorIsolationSendabilitySummaryFromIntegrationSurface`
+- `BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff`
+- `actor_isolation_sendability_sites_total`
+- `actor_isolation_decl_sites_total`
+- `actor_hop_sites_total`
+- `sendable_annotation_sites_total`
+- `non_sendable_crossing_sites_total`
+- `actor_isolation_sendability_isolation_boundary_sites_total`
+- `actor_isolation_sendability_normalized_sites_total`
+- `actor_isolation_sendability_gate_blocked_sites_total`
+- `actor_isolation_sendability_contract_violation_sites_total`
+- `deterministic_actor_isolation_sendability_handoff`
+
+Deterministic actor-isolation/sendability invariants (fail-closed):
+
+- `actor_isolation_decl_sites`, `actor_hop_sites`, `sendable_annotation_sites`,
+  `non_sendable_crossing_sites`, and `isolation_boundary_sites` remain bounded
+  by `actor_isolation_sendability_sites`.
+- `actor_isolation_sendability_normalized_sites_total + actor_isolation_sendability_gate_blocked_sites_total == actor_isolation_sendability_sites_total`.
+- `actor_isolation_sendability_gate_blocked_sites_total <= non_sendable_crossing_sites_total`.
+- `contract_violation_sites <= actor_isolation_sendability_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.actor_isolation_sendability_summary = BuildActorIsolationSendabilitySummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.actor_isolation_sendability_summary = BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_actor_isolation_sendability_handoff`
+
+Recommended M188 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m188_sema_actor_isolation_sendability_contract.py -q`
+
+<a id="m189-sema-type-task-runtime-interop-cancellation-contract-m189-b001"></a>
+## M189 sema/type task runtime interop and cancellation contract (M189-B001)
+
+M189-B wires parser-authored task-runtime/cancellation profiles into sema/type
+integration summary, type-metadata handoff, and pass-manager parity gates for
+deterministic runtime-hook and cancellation diagnostics counters.
+
+Sema/type contract markers:
+
+- `Objc3TaskRuntimeCancellationSummary`
+- `task_runtime_cancellation_summary`
+- `BuildTaskRuntimeCancellationSummaryFromIntegrationSurface`
+- `BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff`
+- `task_runtime_cancellation_sites_total`
+- `task_runtime_cancellation_runtime_hook_sites_total`
+- `task_runtime_cancellation_cancellation_check_sites_total`
+- `task_runtime_cancellation_cancellation_handler_sites_total`
+- `task_runtime_cancellation_suspension_point_sites_total`
+- `task_runtime_cancellation_cancellation_propagation_sites_total`
+- `task_runtime_cancellation_normalized_sites_total`
+- `task_runtime_cancellation_gate_blocked_sites_total`
+- `task_runtime_cancellation_contract_violation_sites_total`
+- `deterministic_task_runtime_cancellation_handoff`
+
+Deterministic task-runtime/cancellation invariants (fail-closed):
+
+- `runtime_hook_sites`, `cancellation_check_sites`,
+  `cancellation_handler_sites`, and `suspension_point_sites` remain bounded by
+  `task_runtime_interop_sites`.
+- `cancellation_propagation_sites <= cancellation_check_sites` and
+  `cancellation_propagation_sites <= cancellation_handler_sites`.
+- `task_runtime_cancellation_normalized_sites_total + task_runtime_cancellation_gate_blocked_sites_total == task_runtime_cancellation_sites_total`.
+- `task_runtime_cancellation_gate_blocked_sites_total <= task_runtime_cancellation_cancellation_propagation_sites_total`.
+- `contract_violation_sites <= task_runtime_interop_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.task_runtime_cancellation_summary = BuildTaskRuntimeCancellationSummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.task_runtime_cancellation_summary = BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_task_runtime_cancellation_handoff`
+
+Recommended M189 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q`
+
 <a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
 ## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
 
@@ -5984,6 +6078,42 @@ Deterministic sema intent:
 Recommended M184 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py -q`
+
+<a id="m185-sema-type-error-diagnostics-ux-recovery-contract-m185-b001"></a>
+## M185 sema/type error diagnostics UX and recovery contract (M185-B001)
+
+M185-B defines deterministic sema summaries for error diagnostics and recovery
+handoff safety over parser-authored recovery profiles.
+
+M185 sema/type surface details:
+
+- `Objc3ErrorDiagnosticsRecoverySummary`
+- `BuildErrorDiagnosticsRecoverySummaryFromProgramAst`
+- parity counters:
+  - `error_diagnostics_recovery_sites_total`
+  - `error_diagnostics_recovery_diagnostic_emit_sites_total`
+  - `error_diagnostics_recovery_recovery_anchor_sites_total`
+  - `error_diagnostics_recovery_recovery_boundary_sites_total`
+  - `error_diagnostics_recovery_fail_closed_diagnostic_sites_total`
+  - `error_diagnostics_recovery_normalized_sites_total`
+  - `error_diagnostics_recovery_gate_blocked_sites_total`
+  - `error_diagnostics_recovery_contract_violation_sites_total`
+  - `deterministic_error_diagnostics_recovery_handoff`
+
+Deterministic sema intent:
+
+- error-diagnostics/recovery summaries are aggregated from parser-emitted
+  function and method recovery profiles and preserved across sema/type handoff
+  and pass-manager parity packets.
+- normalized and gate-blocked counters remain partitioned:
+  `error_diagnostics_recovery_normalized_sites_total + error_diagnostics_recovery_gate_blocked_sites_total == error_diagnostics_recovery_sites_total`.
+- diagnostic and recovery detail counters remain bounded by total recovery sites.
+- malformed packet combinations are surfaced as contract violations with
+  fail-closed deterministic handoff.
+
+Recommended M185 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m185_sema_error_diagnostics_recovery_contract.py -q`
 
 <a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
 ## M186 sema/type async continuation contract (M186-B001)
@@ -10038,6 +10168,38 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m186_lowering_async_continuation_contract.py -q`
 
+## Await lowering and suspension state lowering artifact contract (M187-C001)
+
+M187-C publishes deterministic lowering replay metadata for await lowering and
+suspension state IR/runtime ABI handoff.
+
+M187-C lowering contract anchors:
+
+- `kObjc3AwaitLoweringSuspensionStateLoweringLaneContract`
+- `Objc3AwaitLoweringSuspensionStateLoweringContract`
+- `IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(...)`
+- `Objc3AwaitLoweringSuspensionStateLoweringReplayKey(...)`
+- `await_lowering_suspension_state_lowering = await_suspension_sites=<N>`
+- `frontend_objc_await_lowering_suspension_state_lowering_profile`
+- `!objc3.objc_await_lowering_suspension_state_lowering = !{!42}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == await_suspension_sites`
+- each of `await_keyword_sites`, `await_suspension_point_sites`,
+  `await_resume_sites`, `await_state_machine_sites`,
+  `await_continuation_sites`, and `contract_violation_sites` is bounded by
+  `await_suspension_sites`
+- `await_resume_sites <= await_suspension_point_sites`
+- `await_state_machine_sites <= await_suspension_point_sites`
+- `await_continuation_sites <= await_suspension_point_sites`
+- `deterministic_await_lowering_suspension_state_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m187_lowering_await_suspension_state_contract.py -q`
+
 ## Actor isolation and sendability lowering artifact contract (M188-C001)
 
 M188-C publishes deterministic lowering replay metadata for actor isolation and
@@ -12949,6 +13111,7 @@ Deterministic M189 integration sequence:
 ```bash
 python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
@@ -12968,9 +13131,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
-- M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
-- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+- M189-A001, M189-B001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus M189-B001 sema, M189-C001 lowering, and M189-D001 validation/conformance packets.
 - This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
 
 ## M188 integration actor isolation and sendability contract runbook (M188-E001)
@@ -14419,14 +14581,14 @@ int objc3c_frontend_startup_check(void) {
 - Gate coverage files:
   - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
   - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py`
 - Assumptions:
-  - M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
-  - M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
-  - This initial M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+  - M189-A001, M189-B001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+  - This M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus M189-B001 sema, M189-C001 lowering, and M189-D001 validation/conformance packets.
   - The integration gate fail-closes on these currently landed lane surfaces plus this M189-E001 wiring contract.
 
 ## M190 integration concurrency replay-proof and race-guard contract

@@ -2752,6 +2752,7 @@ Deterministic M189 integration sequence:
 ```bash
 python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
@@ -2771,9 +2772,8 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
-- M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
-- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+- M189-A001, M189-B001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus M189-B001 sema, M189-C001 lowering, and M189-D001 validation/conformance packets.
 - This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
 
 ## M188 integration actor isolation and sendability contract runbook (M188-E001)

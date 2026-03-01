@@ -233,6 +233,16 @@ struct Objc3SemaParityContractSurface {
   std::size_t actor_isolation_sendability_normalized_sites_total = 0;
   std::size_t actor_isolation_sendability_gate_blocked_sites_total = 0;
   std::size_t actor_isolation_sendability_contract_violation_sites_total = 0;
+  std::size_t task_runtime_cancellation_sites_total = 0;
+  std::size_t task_runtime_cancellation_runtime_hook_sites_total = 0;
+  std::size_t task_runtime_cancellation_cancellation_check_sites_total = 0;
+  std::size_t task_runtime_cancellation_cancellation_handler_sites_total = 0;
+  std::size_t task_runtime_cancellation_suspension_point_sites_total = 0;
+  std::size_t task_runtime_cancellation_cancellation_propagation_sites_total =
+      0;
+  std::size_t task_runtime_cancellation_normalized_sites_total = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites_total = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites_total = 0;
   std::size_t concurrency_replay_race_guard_sites_total = 0;
   std::size_t concurrency_replay_race_guard_concurrency_replay_sites_total = 0;
   std::size_t concurrency_replay_race_guard_replay_proof_sites_total = 0;
@@ -492,6 +502,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_throws_propagation_handoff = false;
   bool deterministic_async_continuation_handoff = false;
   bool deterministic_actor_isolation_sendability_handoff = false;
+  bool deterministic_task_runtime_cancellation_handoff = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
@@ -537,6 +548,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ThrowsPropagationSummary throws_propagation_summary;
   Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
@@ -1043,6 +1055,65 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  .actor_isolation_sendability_sites &&
          surface.actor_isolation_sendability_summary.deterministic &&
          surface.deterministic_actor_isolation_sendability_handoff &&
+         surface.task_runtime_cancellation_summary.task_runtime_interop_sites ==
+             surface.task_runtime_cancellation_sites_total &&
+         surface.task_runtime_cancellation_summary.runtime_hook_sites ==
+             surface.task_runtime_cancellation_runtime_hook_sites_total &&
+         surface.task_runtime_cancellation_summary.cancellation_check_sites ==
+             surface.task_runtime_cancellation_cancellation_check_sites_total &&
+         surface.task_runtime_cancellation_summary.cancellation_handler_sites ==
+             surface
+                 .task_runtime_cancellation_cancellation_handler_sites_total &&
+         surface.task_runtime_cancellation_summary.suspension_point_sites ==
+             surface.task_runtime_cancellation_suspension_point_sites_total &&
+         surface.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites ==
+             surface
+                 .task_runtime_cancellation_cancellation_propagation_sites_total &&
+         surface.task_runtime_cancellation_summary.normalized_sites ==
+             surface.task_runtime_cancellation_normalized_sites_total &&
+         surface.task_runtime_cancellation_summary.gate_blocked_sites ==
+             surface.task_runtime_cancellation_gate_blocked_sites_total &&
+         surface.task_runtime_cancellation_summary.contract_violation_sites ==
+             surface.task_runtime_cancellation_contract_violation_sites_total &&
+         surface.task_runtime_cancellation_summary.runtime_hook_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.cancellation_check_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.cancellation_handler_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.suspension_point_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites <=
+             surface.task_runtime_cancellation_summary
+                 .cancellation_check_sites &&
+         surface.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites <=
+             surface.task_runtime_cancellation_summary
+                 .cancellation_handler_sites &&
+         surface.task_runtime_cancellation_summary.normalized_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.gate_blocked_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.gate_blocked_sites <=
+             surface.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites &&
+         surface.task_runtime_cancellation_summary.contract_violation_sites <=
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.normalized_sites +
+                 surface.task_runtime_cancellation_summary.gate_blocked_sites ==
+             surface.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         surface.task_runtime_cancellation_summary.deterministic &&
+         surface.deterministic_task_runtime_cancellation_handoff &&
          surface.concurrency_replay_race_guard_summary
                  .concurrency_replay_race_guard_sites ==
              surface.concurrency_replay_race_guard_sites_total &&
@@ -2131,6 +2202,8 @@ struct Objc3SemaPassManagerResult {
   Objc3AsyncContinuationSummary async_continuation_summary;
   bool deterministic_actor_isolation_sendability_handoff = false;
   Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   bool deterministic_unsafe_pointer_extension_handoff = false;

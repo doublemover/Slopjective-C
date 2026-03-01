@@ -1010,14 +1010,14 @@ int objc3c_frontend_startup_check(void) {
 - Gate coverage files:
   - `tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py`
   - `tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py`
+  - `tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py`
   - `tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py`
 - Assumptions:
-  - M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
-  - M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
-  - This initial M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
+  - M189-A001, M189-B001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+  - This M189-E001 gate deterministically replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus M189-B001 sema, M189-C001 lowering, and M189-D001 validation/conformance packets.
   - The integration gate fail-closes on these currently landed lane surfaces plus this M189-E001 wiring contract.
 
 ## M190 integration concurrency replay-proof and race-guard contract

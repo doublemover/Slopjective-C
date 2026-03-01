@@ -318,6 +318,19 @@ struct Objc3ActorIsolationSendabilitySummary {
   bool deterministic = true;
 };
 
+struct Objc3TaskRuntimeCancellationSummary {
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3ConcurrencyReplayRaceGuardSummary {
   std::size_t concurrency_replay_race_guard_sites = 0;
   std::size_t concurrency_replay_sites = 0;
@@ -849,6 +862,17 @@ struct FunctionInfo {
   std::size_t actor_isolation_sendability_normalized_sites = 0;
   std::size_t actor_isolation_sendability_gate_blocked_sites = 0;
   std::size_t actor_isolation_sendability_contract_violation_sites = 0;
+  bool task_runtime_cancellation_profile_is_normalized = false;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -957,6 +981,17 @@ struct Objc3MethodInfo {
   std::size_t actor_isolation_sendability_normalized_sites = 0;
   std::size_t actor_isolation_sendability_gate_blocked_sites = 0;
   std::size_t actor_isolation_sendability_contract_violation_sites = 0;
+  bool task_runtime_cancellation_profile_is_normalized = false;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -1086,6 +1121,7 @@ struct Objc3SemanticIntegrationSurface {
   Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
@@ -1200,6 +1236,17 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::size_t actor_isolation_sendability_normalized_sites = 0;
   std::size_t actor_isolation_sendability_gate_blocked_sites = 0;
   std::size_t actor_isolation_sendability_contract_violation_sites = 0;
+  bool task_runtime_cancellation_profile_is_normalized = false;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -1315,6 +1362,17 @@ struct Objc3SemanticMethodTypeMetadata {
   std::size_t actor_isolation_sendability_normalized_sites = 0;
   std::size_t actor_isolation_sendability_gate_blocked_sites = 0;
   std::size_t actor_isolation_sendability_contract_violation_sites = 0;
+  bool task_runtime_cancellation_profile_is_normalized = false;
+  bool deterministic_task_runtime_cancellation_handoff = false;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  std::size_t task_runtime_cancellation_normalized_sites = 0;
+  std::size_t task_runtime_cancellation_gate_blocked_sites = 0;
+  std::size_t task_runtime_cancellation_contract_violation_sites = 0;
   bool concurrency_replay_race_guard_profile_is_normalized = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   std::size_t concurrency_replay_race_guard_sites = 0;
@@ -1436,6 +1494,7 @@ struct Objc3SemanticTypeMetadataHandoff {
   Objc3AsyncContinuationSummary async_continuation_summary;
   Objc3AwaitLoweringSuspensionStateSummary await_lowering_suspension_state_lowering_summary;
   Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
+  Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;

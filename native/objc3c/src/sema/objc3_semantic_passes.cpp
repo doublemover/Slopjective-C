@@ -1480,6 +1480,22 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
       method.actor_isolation_sendability_gate_blocked_sites;
   info.actor_isolation_sendability_contract_violation_sites =
       method.actor_isolation_sendability_contract_violation_sites;
+  info.task_runtime_cancellation_profile_is_normalized =
+      method.task_runtime_cancellation_profile_is_normalized;
+  info.deterministic_task_runtime_cancellation_handoff =
+      method.deterministic_task_runtime_cancellation_handoff;
+  info.task_runtime_interop_sites = method.task_runtime_interop_sites;
+  info.runtime_hook_sites = method.runtime_hook_sites;
+  info.cancellation_check_sites = method.cancellation_check_sites;
+  info.cancellation_handler_sites = method.cancellation_handler_sites;
+  info.suspension_point_sites = method.suspension_point_sites;
+  info.cancellation_propagation_sites = method.cancellation_propagation_sites;
+  info.task_runtime_cancellation_normalized_sites =
+      method.task_runtime_cancellation_normalized_sites;
+  info.task_runtime_cancellation_gate_blocked_sites =
+      method.task_runtime_cancellation_gate_blocked_sites;
+  info.task_runtime_cancellation_contract_violation_sites =
+      method.task_runtime_cancellation_contract_violation_sites;
   info.concurrency_replay_race_guard_profile_is_normalized =
       method.concurrency_replay_race_guard_profile_is_normalized;
   info.deterministic_concurrency_replay_race_guard_handoff =
@@ -4074,6 +4090,99 @@ BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(
     }
   }
   FinalizeActorIsolationSendabilitySummaryDeterminism(summary);
+  return summary;
+}
+
+template <typename SiteMetadata>
+static void AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(
+    const SiteMetadata &metadata,
+    Objc3TaskRuntimeCancellationSummary &summary) {
+  summary.task_runtime_interop_sites += metadata.task_runtime_interop_sites;
+  summary.runtime_hook_sites += metadata.runtime_hook_sites;
+  summary.cancellation_check_sites += metadata.cancellation_check_sites;
+  summary.cancellation_handler_sites += metadata.cancellation_handler_sites;
+  summary.suspension_point_sites += metadata.suspension_point_sites;
+  summary.cancellation_propagation_sites +=
+      metadata.cancellation_propagation_sites;
+  summary.normalized_sites += metadata.task_runtime_cancellation_normalized_sites;
+  summary.gate_blocked_sites +=
+      metadata.task_runtime_cancellation_gate_blocked_sites;
+  summary.contract_violation_sites +=
+      metadata.task_runtime_cancellation_contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      metadata.deterministic_task_runtime_cancellation_handoff &&
+      (metadata.task_runtime_interop_sites == 0u ||
+       metadata.task_runtime_cancellation_profile_is_normalized);
+}
+
+static void FinalizeTaskRuntimeCancellationSummaryDeterminism(
+    Objc3TaskRuntimeCancellationSummary &summary) {
+  summary.deterministic =
+      summary.deterministic &&
+      summary.runtime_hook_sites <= summary.task_runtime_interop_sites &&
+      summary.cancellation_check_sites <= summary.task_runtime_interop_sites &&
+      summary.cancellation_handler_sites <= summary.task_runtime_interop_sites &&
+      summary.suspension_point_sites <= summary.task_runtime_interop_sites &&
+      summary.cancellation_propagation_sites <=
+          summary.cancellation_check_sites &&
+      summary.cancellation_propagation_sites <=
+          summary.cancellation_handler_sites &&
+      summary.normalized_sites <= summary.task_runtime_interop_sites &&
+      summary.gate_blocked_sites <= summary.task_runtime_interop_sites &&
+      summary.gate_blocked_sites <= summary.cancellation_propagation_sites &&
+      summary.contract_violation_sites <= summary.task_runtime_interop_sites &&
+      summary.normalized_sites + summary.gate_blocked_sites ==
+          summary.task_runtime_interop_sites;
+}
+
+static Objc3TaskRuntimeCancellationSummary
+BuildTaskRuntimeCancellationSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3TaskRuntimeCancellationSummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(entry.second,
+                                                             summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  FinalizeTaskRuntimeCancellationSummaryDeterminism(summary);
+  return summary;
+}
+
+static Objc3TaskRuntimeCancellationSummary
+BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3TaskRuntimeCancellationSummary summary;
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(metadata, summary);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata :
+         interface_metadata.methods_lexicographic) {
+      AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(method_metadata,
+                                                               summary);
+    }
+  }
+  for (const auto &implementation_metadata :
+       handoff.implementations_lexicographic) {
+    for (const auto &method_metadata :
+         implementation_metadata.methods_lexicographic) {
+      AccumulateTaskRuntimeCancellationSummaryFromSiteMetadata(method_metadata,
+                                                               summary);
+    }
+  }
+  FinalizeTaskRuntimeCancellationSummaryDeterminism(summary);
   return summary;
 }
 
@@ -8038,6 +8147,22 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           fn.actor_isolation_sendability_gate_blocked_sites;
       info.actor_isolation_sendability_contract_violation_sites =
           fn.actor_isolation_sendability_contract_violation_sites;
+      info.task_runtime_cancellation_profile_is_normalized =
+          fn.task_runtime_cancellation_profile_is_normalized;
+      info.deterministic_task_runtime_cancellation_handoff =
+          fn.deterministic_task_runtime_cancellation_handoff;
+      info.task_runtime_interop_sites = fn.task_runtime_interop_sites;
+      info.runtime_hook_sites = fn.runtime_hook_sites;
+      info.cancellation_check_sites = fn.cancellation_check_sites;
+      info.cancellation_handler_sites = fn.cancellation_handler_sites;
+      info.suspension_point_sites = fn.suspension_point_sites;
+      info.cancellation_propagation_sites = fn.cancellation_propagation_sites;
+      info.task_runtime_cancellation_normalized_sites =
+          fn.task_runtime_cancellation_normalized_sites;
+      info.task_runtime_cancellation_gate_blocked_sites =
+          fn.task_runtime_cancellation_gate_blocked_sites;
+      info.task_runtime_cancellation_contract_violation_sites =
+          fn.task_runtime_cancellation_contract_violation_sites;
       info.concurrency_replay_race_guard_profile_is_normalized =
           fn.concurrency_replay_race_guard_profile_is_normalized;
       info.deterministic_concurrency_replay_race_guard_handoff =
@@ -8293,6 +8418,34 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     existing.actor_isolation_sendability_contract_violation_sites = std::max(
         existing.actor_isolation_sendability_contract_violation_sites,
         fn.actor_isolation_sendability_contract_violation_sites);
+    existing.task_runtime_cancellation_profile_is_normalized =
+        existing.task_runtime_cancellation_profile_is_normalized ||
+        fn.task_runtime_cancellation_profile_is_normalized;
+    existing.deterministic_task_runtime_cancellation_handoff =
+        existing.deterministic_task_runtime_cancellation_handoff ||
+        fn.deterministic_task_runtime_cancellation_handoff;
+    existing.task_runtime_interop_sites = std::max(
+        existing.task_runtime_interop_sites, fn.task_runtime_interop_sites);
+    existing.runtime_hook_sites =
+        std::max(existing.runtime_hook_sites, fn.runtime_hook_sites);
+    existing.cancellation_check_sites = std::max(
+        existing.cancellation_check_sites, fn.cancellation_check_sites);
+    existing.cancellation_handler_sites = std::max(
+        existing.cancellation_handler_sites, fn.cancellation_handler_sites);
+    existing.suspension_point_sites = std::max(
+        existing.suspension_point_sites, fn.suspension_point_sites);
+    existing.cancellation_propagation_sites = std::max(
+        existing.cancellation_propagation_sites,
+        fn.cancellation_propagation_sites);
+    existing.task_runtime_cancellation_normalized_sites = std::max(
+        existing.task_runtime_cancellation_normalized_sites,
+        fn.task_runtime_cancellation_normalized_sites);
+    existing.task_runtime_cancellation_gate_blocked_sites = std::max(
+        existing.task_runtime_cancellation_gate_blocked_sites,
+        fn.task_runtime_cancellation_gate_blocked_sites);
+    existing.task_runtime_cancellation_contract_violation_sites = std::max(
+        existing.task_runtime_cancellation_contract_violation_sites,
+        fn.task_runtime_cancellation_contract_violation_sites);
     existing.concurrency_replay_race_guard_profile_is_normalized =
         existing.concurrency_replay_race_guard_profile_is_normalized ||
         fn.concurrency_replay_race_guard_profile_is_normalized;
@@ -8574,6 +8727,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildAwaitLoweringSuspensionStateSummaryFromProgramAst(ast);
   surface.actor_isolation_sendability_summary =
       BuildActorIsolationSendabilitySummaryFromIntegrationSurface(surface);
+  surface.task_runtime_cancellation_summary =
+      BuildTaskRuntimeCancellationSummaryFromIntegrationSurface(surface);
   surface.concurrency_replay_race_guard_summary =
       BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(surface);
   surface.result_like_lowering_summary =
@@ -8760,6 +8915,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         source.actor_isolation_sendability_gate_blocked_sites;
     metadata.actor_isolation_sendability_contract_violation_sites =
         source.actor_isolation_sendability_contract_violation_sites;
+    metadata.task_runtime_cancellation_profile_is_normalized =
+        source.task_runtime_cancellation_profile_is_normalized;
+    metadata.deterministic_task_runtime_cancellation_handoff =
+        source.deterministic_task_runtime_cancellation_handoff;
+    metadata.task_runtime_interop_sites = source.task_runtime_interop_sites;
+    metadata.runtime_hook_sites = source.runtime_hook_sites;
+    metadata.cancellation_check_sites = source.cancellation_check_sites;
+    metadata.cancellation_handler_sites = source.cancellation_handler_sites;
+    metadata.suspension_point_sites = source.suspension_point_sites;
+    metadata.cancellation_propagation_sites =
+        source.cancellation_propagation_sites;
+    metadata.task_runtime_cancellation_normalized_sites =
+        source.task_runtime_cancellation_normalized_sites;
+    metadata.task_runtime_cancellation_gate_blocked_sites =
+        source.task_runtime_cancellation_gate_blocked_sites;
+    metadata.task_runtime_cancellation_contract_violation_sites =
+        source.task_runtime_cancellation_contract_violation_sites;
     metadata.concurrency_replay_race_guard_profile_is_normalized =
         source.concurrency_replay_race_guard_profile_is_normalized;
     metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9008,6 +9180,26 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.actor_isolation_sendability_gate_blocked_sites;
       method_metadata.actor_isolation_sendability_contract_violation_sites =
           source.actor_isolation_sendability_contract_violation_sites;
+      method_metadata.task_runtime_cancellation_profile_is_normalized =
+          source.task_runtime_cancellation_profile_is_normalized;
+      method_metadata.deterministic_task_runtime_cancellation_handoff =
+          source.deterministic_task_runtime_cancellation_handoff;
+      method_metadata.task_runtime_interop_sites =
+          source.task_runtime_interop_sites;
+      method_metadata.runtime_hook_sites = source.runtime_hook_sites;
+      method_metadata.cancellation_check_sites =
+          source.cancellation_check_sites;
+      method_metadata.cancellation_handler_sites =
+          source.cancellation_handler_sites;
+      method_metadata.suspension_point_sites = source.suspension_point_sites;
+      method_metadata.cancellation_propagation_sites =
+          source.cancellation_propagation_sites;
+      method_metadata.task_runtime_cancellation_normalized_sites =
+          source.task_runtime_cancellation_normalized_sites;
+      method_metadata.task_runtime_cancellation_gate_blocked_sites =
+          source.task_runtime_cancellation_gate_blocked_sites;
+      method_metadata.task_runtime_cancellation_contract_violation_sites =
+          source.task_runtime_cancellation_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9262,6 +9454,26 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.actor_isolation_sendability_gate_blocked_sites;
       method_metadata.actor_isolation_sendability_contract_violation_sites =
           source.actor_isolation_sendability_contract_violation_sites;
+      method_metadata.task_runtime_cancellation_profile_is_normalized =
+          source.task_runtime_cancellation_profile_is_normalized;
+      method_metadata.deterministic_task_runtime_cancellation_handoff =
+          source.deterministic_task_runtime_cancellation_handoff;
+      method_metadata.task_runtime_interop_sites =
+          source.task_runtime_interop_sites;
+      method_metadata.runtime_hook_sites = source.runtime_hook_sites;
+      method_metadata.cancellation_check_sites =
+          source.cancellation_check_sites;
+      method_metadata.cancellation_handler_sites =
+          source.cancellation_handler_sites;
+      method_metadata.suspension_point_sites = source.suspension_point_sites;
+      method_metadata.cancellation_propagation_sites =
+          source.cancellation_propagation_sites;
+      method_metadata.task_runtime_cancellation_normalized_sites =
+          source.task_runtime_cancellation_normalized_sites;
+      method_metadata.task_runtime_cancellation_gate_blocked_sites =
+          source.task_runtime_cancellation_gate_blocked_sites;
+      method_metadata.task_runtime_cancellation_contract_violation_sites =
+          source.task_runtime_cancellation_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9839,6 +10051,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       surface.await_lowering_suspension_state_lowering_summary;
   handoff.actor_isolation_sendability_summary =
       BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(handoff);
+  handoff.task_runtime_cancellation_summary =
+      BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff(handoff);
   handoff.concurrency_replay_race_guard_summary =
       BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
   handoff.ns_error_bridging_summary =
@@ -10628,6 +10842,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           handoff.await_lowering_suspension_state_lowering_summary;
   const Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary =
       BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(handoff);
+  const Objc3TaskRuntimeCancellationSummary task_runtime_cancellation_summary =
+      BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff(handoff);
   const Objc3ConcurrencyReplayRaceGuardSummary
       concurrency_replay_race_guard_summary =
           BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
@@ -11237,6 +11453,63 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  handoff.actor_isolation_sendability_summary.gate_blocked_sites ==
              handoff.actor_isolation_sendability_summary
                  .actor_isolation_sendability_sites &&
+         handoff.task_runtime_cancellation_summary.deterministic &&
+         handoff.task_runtime_cancellation_summary.task_runtime_interop_sites ==
+             task_runtime_cancellation_summary.task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.runtime_hook_sites ==
+             task_runtime_cancellation_summary.runtime_hook_sites &&
+         handoff.task_runtime_cancellation_summary.cancellation_check_sites ==
+             task_runtime_cancellation_summary.cancellation_check_sites &&
+         handoff.task_runtime_cancellation_summary.cancellation_handler_sites ==
+             task_runtime_cancellation_summary.cancellation_handler_sites &&
+         handoff.task_runtime_cancellation_summary.suspension_point_sites ==
+             task_runtime_cancellation_summary.suspension_point_sites &&
+         handoff.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites ==
+             task_runtime_cancellation_summary
+                 .cancellation_propagation_sites &&
+         handoff.task_runtime_cancellation_summary.normalized_sites ==
+             task_runtime_cancellation_summary.normalized_sites &&
+         handoff.task_runtime_cancellation_summary.gate_blocked_sites ==
+             task_runtime_cancellation_summary.gate_blocked_sites &&
+         handoff.task_runtime_cancellation_summary.contract_violation_sites ==
+             task_runtime_cancellation_summary.contract_violation_sites &&
+         handoff.task_runtime_cancellation_summary.runtime_hook_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.cancellation_check_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.cancellation_handler_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.suspension_point_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .cancellation_check_sites &&
+         handoff.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .cancellation_handler_sites &&
+         handoff.task_runtime_cancellation_summary.normalized_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.gate_blocked_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.gate_blocked_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .cancellation_propagation_sites &&
+         handoff.task_runtime_cancellation_summary.contract_violation_sites <=
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
+         handoff.task_runtime_cancellation_summary.normalized_sites +
+                 handoff.task_runtime_cancellation_summary.gate_blocked_sites ==
+             handoff.task_runtime_cancellation_summary
+                 .task_runtime_interop_sites &&
          handoff.concurrency_replay_race_guard_summary.deterministic &&
          handoff.concurrency_replay_race_guard_summary
                  .concurrency_replay_race_guard_sites ==

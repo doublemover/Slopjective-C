@@ -2293,6 +2293,54 @@ Recommended M188 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m188_sema_actor_isolation_sendability_contract.py -q`
 
+<a id="m189-sema-type-task-runtime-interop-cancellation-contract-m189-b001"></a>
+## M189 sema/type task runtime interop and cancellation contract (M189-B001)
+
+M189-B wires parser-authored task-runtime/cancellation profiles into sema/type
+integration summary, type-metadata handoff, and pass-manager parity gates for
+deterministic runtime-hook and cancellation diagnostics counters.
+
+Sema/type contract markers:
+
+- `Objc3TaskRuntimeCancellationSummary`
+- `task_runtime_cancellation_summary`
+- `BuildTaskRuntimeCancellationSummaryFromIntegrationSurface`
+- `BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff`
+- `task_runtime_cancellation_sites_total`
+- `task_runtime_cancellation_runtime_hook_sites_total`
+- `task_runtime_cancellation_cancellation_check_sites_total`
+- `task_runtime_cancellation_cancellation_handler_sites_total`
+- `task_runtime_cancellation_suspension_point_sites_total`
+- `task_runtime_cancellation_cancellation_propagation_sites_total`
+- `task_runtime_cancellation_normalized_sites_total`
+- `task_runtime_cancellation_gate_blocked_sites_total`
+- `task_runtime_cancellation_contract_violation_sites_total`
+- `deterministic_task_runtime_cancellation_handoff`
+
+Deterministic task-runtime/cancellation invariants (fail-closed):
+
+- `runtime_hook_sites`, `cancellation_check_sites`,
+  `cancellation_handler_sites`, and `suspension_point_sites` remain bounded by
+  `task_runtime_interop_sites`.
+- `cancellation_propagation_sites <= cancellation_check_sites` and
+  `cancellation_propagation_sites <= cancellation_handler_sites`.
+- `task_runtime_cancellation_normalized_sites_total + task_runtime_cancellation_gate_blocked_sites_total == task_runtime_cancellation_sites_total`.
+- `task_runtime_cancellation_gate_blocked_sites_total <= task_runtime_cancellation_cancellation_propagation_sites_total`.
+- `contract_violation_sites <= task_runtime_interop_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.task_runtime_cancellation_summary = BuildTaskRuntimeCancellationSummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.task_runtime_cancellation_summary = BuildTaskRuntimeCancellationSummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_task_runtime_cancellation_handoff`
+
+Recommended M189 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q`
+
 <a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
 ## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
 

@@ -289,6 +289,21 @@ bool IsEquivalentActorIsolationSendabilitySummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentTaskRuntimeCancellationSummary(
+    const Objc3TaskRuntimeCancellationSummary &lhs,
+    const Objc3TaskRuntimeCancellationSummary &rhs) {
+  return lhs.task_runtime_interop_sites == rhs.task_runtime_interop_sites &&
+         lhs.runtime_hook_sites == rhs.runtime_hook_sites &&
+         lhs.cancellation_check_sites == rhs.cancellation_check_sites &&
+         lhs.cancellation_handler_sites == rhs.cancellation_handler_sites &&
+         lhs.suspension_point_sites == rhs.suspension_point_sites &&
+         lhs.cancellation_propagation_sites ==
+             rhs.cancellation_propagation_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentConcurrencyReplayRaceGuardSummary(
     const Objc3ConcurrencyReplayRaceGuardSummary &lhs,
     const Objc3ConcurrencyReplayRaceGuardSummary &rhs) {
@@ -1071,6 +1086,62 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                   .gate_blocked_sites ==
           result.type_metadata_handoff.actor_isolation_sendability_summary
               .actor_isolation_sendability_sites;
+  result.task_runtime_cancellation_summary =
+      result.integration_surface.task_runtime_cancellation_summary;
+  result.deterministic_task_runtime_cancellation_handoff =
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .deterministic &&
+      result.integration_surface.task_runtime_cancellation_summary
+          .deterministic &&
+      IsEquivalentTaskRuntimeCancellationSummary(
+          result.integration_surface.task_runtime_cancellation_summary,
+          result.type_metadata_handoff.task_runtime_cancellation_summary) &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .runtime_hook_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_check_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_handler_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .suspension_point_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_propagation_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_check_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_propagation_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_handler_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .normalized_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .cancellation_propagation_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.type_metadata_handoff.task_runtime_cancellation_summary
+              .normalized_sites +
+              result.type_metadata_handoff.task_runtime_cancellation_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff.task_runtime_cancellation_summary
+              .task_runtime_interop_sites;
   result.concurrency_replay_race_guard_summary =
       result.integration_surface.concurrency_replay_race_guard_summary;
   result.deterministic_concurrency_replay_race_guard_handoff =
@@ -2283,6 +2354,39 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.actor_isolation_sendability_contract_violation_sites_total =
       result.parity_surface.actor_isolation_sendability_summary
           .contract_violation_sites;
+  result.parity_surface.task_runtime_cancellation_summary =
+      result.type_metadata_handoff.task_runtime_cancellation_summary;
+  result.parity_surface.task_runtime_cancellation_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .task_runtime_interop_sites;
+  result.parity_surface.task_runtime_cancellation_runtime_hook_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .runtime_hook_sites;
+  result.parity_surface
+      .task_runtime_cancellation_cancellation_check_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .cancellation_check_sites;
+  result.parity_surface
+      .task_runtime_cancellation_cancellation_handler_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .cancellation_handler_sites;
+  result.parity_surface
+      .task_runtime_cancellation_suspension_point_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .suspension_point_sites;
+  result.parity_surface
+      .task_runtime_cancellation_cancellation_propagation_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .cancellation_propagation_sites;
+  result.parity_surface.task_runtime_cancellation_normalized_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary.normalized_sites;
+  result.parity_surface.task_runtime_cancellation_gate_blocked_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .gate_blocked_sites;
+  result.parity_surface
+      .task_runtime_cancellation_contract_violation_sites_total =
+      result.parity_surface.task_runtime_cancellation_summary
+          .contract_violation_sites;
   result.parity_surface.concurrency_replay_race_guard_summary =
       result.type_metadata_handoff.concurrency_replay_race_guard_summary;
   result.parity_surface.concurrency_replay_race_guard_sites_total =
@@ -3447,6 +3551,89 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.actor_isolation_sendability_summary
               .actor_isolation_sendability_sites &&
       result.parity_surface.actor_isolation_sendability_summary.deterministic;
+  result.parity_surface.deterministic_task_runtime_cancellation_handoff =
+      result.deterministic_task_runtime_cancellation_handoff &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites ==
+          result.parity_surface.task_runtime_cancellation_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .runtime_hook_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_runtime_hook_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_check_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_cancellation_check_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_handler_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_cancellation_handler_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .suspension_point_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_suspension_point_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_propagation_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_cancellation_propagation_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .normalized_sites ==
+          result.parity_surface.task_runtime_cancellation_normalized_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .gate_blocked_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_gate_blocked_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .task_runtime_cancellation_contract_violation_sites_total &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .runtime_hook_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_check_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_handler_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .suspension_point_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_propagation_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_check_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_propagation_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_handler_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .normalized_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .gate_blocked_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .gate_blocked_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .cancellation_propagation_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .contract_violation_sites <=
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary
+              .normalized_sites +
+              result.parity_surface.task_runtime_cancellation_summary
+                  .gate_blocked_sites ==
+          result.parity_surface.task_runtime_cancellation_summary
+              .task_runtime_interop_sites &&
+      result.parity_surface.task_runtime_cancellation_summary.deterministic;
   result.parity_surface.deterministic_concurrency_replay_race_guard_handoff =
       result.deterministic_concurrency_replay_race_guard_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary
@@ -4719,6 +4906,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.actor_isolation_sendability_summary.deterministic &&
       result.parity_surface
           .deterministic_actor_isolation_sendability_handoff &&
+      result.parity_surface.task_runtime_cancellation_summary.deterministic &&
+      result.parity_surface
+          .deterministic_task_runtime_cancellation_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary.deterministic &&
       result.parity_surface
           .deterministic_concurrency_replay_race_guard_handoff &&
