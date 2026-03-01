@@ -6810,6 +6810,7 @@ class Objc3Parser {
 
     if (Match(TokenKind::Semicolon)) {
       method.has_body = false;
+      method.body.clear();
       FinalizeThrowsDeclarationProfile(method);
       FinalizeResultLikeProfile(method);
       FinalizeNSErrorBridgingProfile(method);
@@ -6832,14 +6833,18 @@ class Objc3Parser {
       return false;
     }
 
-    if (!Match(TokenKind::LBrace)) {
+    if (!At(TokenKind::LBrace)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110",
                                       "missing '{' or ';' after Objective-C implementation method declaration"));
       return false;
     }
+    method.body = ParseBlock();
+    if (block_failed_) {
+      block_failed_ = false;
+      return false;
+    }
     method.has_body = true;
-    ConsumeBracedBodyTail();
     FinalizeThrowsDeclarationProfile(method);
     FinalizeResultLikeProfile(method);
     FinalizeNSErrorBridgingProfile(method);

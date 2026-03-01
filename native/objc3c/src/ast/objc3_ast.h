@@ -516,6 +516,7 @@ struct Objc3MethodDecl {
   std::string inline_asm_intrinsic_governance_profile;
   bool is_class_method = false;
   bool has_body = false;
+  std::vector<std::unique_ptr<Stmt>> body;
   unsigned line = 1;
   unsigned column = 1;
 };

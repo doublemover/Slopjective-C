@@ -70,6 +70,13 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &f
   return MakeScalarSemanticType(fn.return_type);
 }
 
+static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &method) {
+  if (method.return_vector_spelling) {
+    return MakeVectorSemanticType(method.return_type, method.return_vector_base_spelling, method.return_vector_lane_count);
+  }
+  return MakeScalarSemanticType(method.return_type);
+}
+
 static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo &fn, std::size_t index) {
   if (index >= fn.param_types.size()) {
     return MakeScalarSemanticType(ValueType::Unknown);
@@ -12490,6 +12497,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   for (const auto &fn : ast.functions) {
     CollectAssignedIdentifiers(fn.body, assigned_identifier_names);
   }
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (!method.has_body) {
+        continue;
+      }
+      CollectAssignedIdentifiers(method.body, assigned_identifier_names);
+    }
+  }
   std::vector<int> global_initializer_values;
   if (ResolveGlobalInitializerValues(ast.globals, global_initializer_values)) {
     const std::size_t count = std::min(ast.globals.size(), global_initializer_values.size());
@@ -12527,6 +12542,35 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           !BlockAlwaysReturns(fn.body, &static_scalar_bindings)) {
         diagnostics.push_back(
             MakeDiag(fn.line, fn.column, "O3S205", "missing return path in function '" + fn.name + "'"));
+      }
+    }
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (!method.has_body) {
+        continue;
+      }
+
+      std::vector<SemanticScope> scopes;
+      scopes.push_back({});
+      for (const auto &param : method.params) {
+        if (scopes.back().find(param.name) != scopes.back().end()) {
+          diagnostics.push_back(MakeDiag(param.line, param.column, "O3S201", "duplicate parameter '" + param.name + "'"));
+        } else {
+          scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
+        }
+      }
+
+      const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
+      const std::string method_context =
+          "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
+      ValidateStatements(method.body, scopes, surface.globals, surface.functions, expected_return_type, method_context,
+                         diagnostics, 0, 0, options.max_message_send_args);
+      if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
+          !BlockAlwaysReturns(method.body, &global_static_bindings)) {
+        diagnostics.push_back(MakeDiag(method.line, method.column, "O3S205",
+                                       "missing return path in " + method_context));
       }
     }
   }

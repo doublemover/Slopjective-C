@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <map>
 #include <sstream>
 #include <string>
@@ -15,6 +16,12 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
 
 class Objc3IREmitter {
  public:
+  struct MethodDefinition {
+    std::string symbol;
+    std::string implementation_name;
+    const Objc3MethodDecl *method = nullptr;
+  };
+
   Objc3IREmitter(const Objc3Program &program,
                  const Objc3LoweringContract &lowering_contract,
                  const Objc3IRFrontendMetadata &frontend_metadata)
@@ -35,6 +42,20 @@ class Objc3IREmitter {
         function_definitions_.push_back(&fn);
       }
     }
+    std::unordered_map<std::string, std::size_t> method_symbol_counts;
+    for (const auto &implementation : program_.implementations) {
+      for (const auto &method : implementation.methods) {
+        if (!method.has_body) {
+          continue;
+        }
+        const std::string base_symbol =
+            BuildImplementationMethodFunctionSymbol(implementation.name, method.selector, method.is_class_method);
+        const std::size_t ordinal = method_symbol_counts[base_symbol]++;
+        const std::string symbol =
+            ordinal == 0 ? base_symbol : base_symbol + "_" + std::to_string(ordinal + 1u);
+        method_definitions_.push_back(MethodDefinition{symbol, implementation.name, &method});
+      }
+    }
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
     CollectSelectorLiterals();
     CollectMutableGlobalSymbols();
@@ -43,6 +64,8 @@ class Objc3IREmitter {
 
   bool Emit(std::string &ir, std::string &error) {
     runtime_dispatch_call_emitted_ = false;
+    fail_open_fallback_triggered_ = false;
+    fail_open_fallback_reason_.clear();
 
     if (!boundary_error_.empty()) {
       error = boundary_error_;
@@ -88,8 +111,20 @@ class Objc3IREmitter {
       EmitFunction(*fn, body);
       body << "\n";
     }
+    for (const MethodDefinition &method_def : method_definitions_) {
+      if (method_def.method == nullptr) {
+        continue;
+      }
+      EmitMethod(*method_def.method, method_def.symbol, body);
+      body << "\n";
+    }
 
     EmitEntryPoint(body);
+
+    if (fail_open_fallback_triggered_) {
+      error = "lowering encountered unsupported fallback path: " + fail_open_fallback_reason_;
+      return false;
+    }
 
     std::ostringstream out;
     out << "; objc3c native frontend IR\n";
@@ -3614,6 +3649,18 @@ class Objc3IREmitter {
         }
       }
     }
+    for (const auto &implementation : program_.implementations) {
+      for (const auto &method : implementation.methods) {
+        if (!method.has_body) {
+          continue;
+        }
+        for (const auto &stmt : method.body) {
+          if (!ValidateMessageSendArityStmt(stmt.get(), error)) {
+            return false;
+          }
+        }
+      }
+    }
     return true;
   }
 
@@ -3641,7 +3688,7 @@ class Objc3IREmitter {
 
     auto selector_it = selector_globals_.find(lowered.selector);
     if (selector_it == selector_globals_.end()) {
-      return "0";
+      return EmitUnsupportedI32Value("missing selector global for message send selector '" + lowered.selector + "'");
     }
 
     const std::size_t selector_len = lowered.selector.size() + 1;
@@ -3695,7 +3742,7 @@ class Objc3IREmitter {
 
   std::string EmitExpr(const Expr *expr, FunctionContext &ctx) const {
     if (expr == nullptr) {
-      return "0";
+      return EmitUnsupportedI32Value("null expression reached IR lowering");
     }
     switch (expr->kind) {
       case Expr::Kind::Number:
@@ -3705,7 +3752,7 @@ class Objc3IREmitter {
       case Expr::Kind::NilLiteral:
         return "0";
       case Expr::Kind::BlockLiteral:
-        return "0";
+        return EmitUnsupportedI32Value("block literal lowering not implemented");
       case Expr::Kind::Identifier: {
         const std::string ptr = LookupVarPtr(ctx, expr->ident);
         if (!ptr.empty()) {
@@ -3718,7 +3765,7 @@ class Objc3IREmitter {
           ctx.code_lines.push_back("  " + tmp + " = load i32, ptr @" + expr->ident + ", align 4");
           return tmp;
         }
-        return "0";
+        return EmitUnsupportedI32Value("unresolved identifier '" + expr->ident + "' during IR lowering");
       }
       case Expr::Kind::Binary: {
         if (expr->op == "&&" || expr->op == "||") {
@@ -3811,7 +3858,7 @@ class Objc3IREmitter {
         } else if (expr->op == ">=") {
           pred = "sge";
         } else {
-          return "0";
+          return EmitUnsupportedI32Value("unsupported binary operator '" + expr->op + "'");
         }
         const std::string cmp_i1 = NewTemp(ctx);
         const std::string out_i32 = NewTemp(ctx);
@@ -3884,6 +3931,14 @@ class Objc3IREmitter {
       case Expr::Kind::MessageSend: {
         return EmitMessageSendExpr(expr, ctx);
       }
+    }
+    return EmitUnsupportedI32Value("unsupported expression kind reached IR lowering");
+  }
+
+  std::string EmitUnsupportedI32Value(const std::string &reason) const {
+    if (!fail_open_fallback_triggered_) {
+      fail_open_fallback_triggered_ = true;
+      fail_open_fallback_reason_ = reason;
     }
     return "0";
   }
@@ -4334,6 +4389,79 @@ class Objc3IREmitter {
     out << "}\n";
   }
 
+  void EmitMethod(const Objc3MethodDecl &method, const std::string &symbol, std::ostringstream &out) const {
+    std::ostringstream signature;
+    for (std::size_t i = 0; i < method.params.size(); ++i) {
+      if (i != 0) {
+        signature << ", ";
+      }
+      signature << LLVMScalarType(method.params[i].type) << " %arg" << i;
+    }
+
+    out << "define " << LLVMScalarType(method.return_type) << " @" << symbol << "(" << signature.str() << ") {\n";
+    out << "entry:\n";
+
+    FunctionContext ctx;
+    ctx.return_type = method.return_type;
+    ctx.scopes.push_back({});
+
+    for (std::size_t i = 0; i < method.params.size(); ++i) {
+      const auto &param = method.params[i];
+      const std::string ptr = "%" + param.name + ".addr." + std::to_string(ctx.temp_counter++);
+      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+      EmitTypedParamStore(param, i, ptr, ctx);
+      ctx.scopes.back()[param.name] = ptr;
+    }
+
+    for (const auto &stmt : method.body) {
+      EmitStatement(stmt.get(), ctx);
+      if (ctx.terminated) {
+        break;
+      }
+    }
+
+    if (!ctx.terminated) {
+      if (method.return_type == ValueType::Void) {
+        ctx.code_lines.push_back("  ret void");
+      } else {
+        ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(method.return_type)) + " 0");
+      }
+    }
+
+    for (const auto &line : ctx.entry_lines) {
+      out << line << "\n";
+    }
+    for (const auto &line : ctx.code_lines) {
+      out << line << "\n";
+    }
+
+    out << "}\n";
+  }
+
+  static std::string BuildImplementationMethodFunctionSymbol(const std::string &implementation_name,
+                                                             const std::string &selector,
+                                                             bool is_class_method) {
+    auto sanitize = [](const std::string &text) {
+      std::string out;
+      out.reserve(text.size());
+      for (unsigned char ch : text) {
+        if (std::isalnum(ch) != 0) {
+          out.push_back(static_cast<char>(ch));
+        } else {
+          out.push_back('_');
+        }
+      }
+      if (out.empty()) {
+        out = "anonymous";
+      }
+      return out;
+    };
+    const std::string owner = sanitize(implementation_name);
+    const std::string selector_key = sanitize(selector);
+    const char *dispatch_kind = is_class_method ? "class" : "instance";
+    return "objc3_method_" + owner + "_" + dispatch_kind + "_" + selector_key;
+  }
+
   void EmitEntryPoint(std::ostringstream &out) const {
     out << "define i32 @objc3c_entry() {\n";
     out << "entry:\n";
@@ -4385,6 +4513,7 @@ class Objc3IREmitter {
   std::unordered_set<std::string> defined_functions_;
   std::unordered_set<std::string> declared_pure_functions_;
   std::vector<const FunctionDecl *> function_definitions_;
+  std::vector<MethodDefinition> method_definitions_;
   std::unordered_map<std::string, FunctionEffectInfo> function_effects_;
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;
@@ -4392,6 +4521,8 @@ class Objc3IREmitter {
   std::map<std::string, std::string> selector_globals_;
   std::size_t vector_signature_function_count_ = 0;
   mutable bool runtime_dispatch_call_emitted_ = false;
+  mutable bool fail_open_fallback_triggered_ = false;
+  mutable std::string fail_open_fallback_reason_;
 };
 
 bool EmitObjc3IRText(const Objc3Program &program,
