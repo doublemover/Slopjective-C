@@ -1,0 +1,41 @@
+{
+  "frontend": {
+    "pipeline": {
+      "sema_pass_manager": {
+        "deterministic_async_continuation_ir_lowering_handoff": true,
+        "async_continuation_ir_lowering_sites": 14,
+        "async_continuation_ir_lowering_async_keyword_sites": 8,
+        "async_continuation_ir_lowering_async_function_sites": 6,
+        "async_continuation_ir_lowering_continuation_allocation_sites": 5,
+        "async_continuation_ir_lowering_continuation_resume_sites": 4,
+        "async_continuation_ir_lowering_continuation_suspend_sites": 3,
+        "async_continuation_ir_lowering_async_state_machine_sites": 4,
+        "async_continuation_ir_lowering_normalized_sites": 11,
+        "async_continuation_ir_lowering_gate_blocked_sites": 3,
+        "async_continuation_ir_lowering_contract_violation_sites": 0,
+        "lowering_async_continuation_ir_replay_key": "async_continuation_sites=14;async_keyword_sites=8;async_function_sites=6;continuation_allocation_sites=5;continuation_resume_sites=4;continuation_suspend_sites=3;async_state_machine_sites=4;normalized_sites=11;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m186-async-continuation-ir-lowering-v1"
+      },
+      "semantic_surface": {
+        "objc_async_continuation_ir_lowering_surface": {
+          "async_continuation_sites": 14,
+          "async_keyword_sites": 8,
+          "async_function_sites": 6,
+          "continuation_allocation_sites": 5,
+          "continuation_resume_sites": 4,
+          "continuation_suspend_sites": 3,
+          "async_state_machine_sites": 4,
+          "normalized_sites": 11,
+          "gate_blocked_sites": 3,
+          "contract_violation_sites": 0,
+          "replay_key": "async_continuation_sites=14;async_keyword_sites=8;async_function_sites=6;continuation_allocation_sites=5;continuation_resume_sites=4;continuation_suspend_sites=3;async_state_machine_sites=4;normalized_sites=11;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m186-async-continuation-ir-lowering-v1",
+          "deterministic_handoff": true
+        }
+      }
+    }
+  },
+  "lowering_async_continuation_ir": {
+    "replay_key": "async_continuation_sites=14;async_keyword_sites=8;async_function_sites=6;continuation_allocation_sites=5;continuation_resume_sites=4;continuation_suspend_sites=3;async_state_machine_sites=4;normalized_sites=11;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m186-async-continuation-ir-lowering-v1",
+    "lane_contract": "m186-async-continuation-ir-lowering-v1",
+    "deterministic_handoff": true
+  }
+}

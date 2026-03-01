@@ -2798,6 +2798,44 @@ Scope assumptions:
 - This runbook fail-closes M187-B001 sema surfaces and M187-C001 lowering surfaces via M187-D001 replay packet anchors.
 - This runbook enforces those currently landed lane surfaces plus M187-E001 integration wiring.
 
+## M186 validation/conformance/perf async grammar and continuation IR runbook (M186-D001)
+
+Deterministic M186 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_validation_async_continuation_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m186_conformance_async_continuation_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m186_validation_async_continuation_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_async_continuation_ir_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_async_continuation_ir_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_async_continuation_ir_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_async_continuation_ir_lowering_surface.deterministic_handoff`
+  - `lowering_async_continuation_ir.replay_key`
+- `replay_run_1/module.ll`
+  - `async_continuation_ir_lowering`
+  - `frontend_objc_async_continuation_ir_lowering_profile`
+  - `!objc3.objc_async_continuation_ir_lowering = !{!43}`
+- `M186-D001.json`
+  - `tracking.issue = 4522`
+  - `tracking.task = M186-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == async_continuation_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_validation_async_continuation_contract.py tests/tooling/test_objc3c_m186_conformance_async_continuation_contract.py -q
+```
+
 ## M187 validation/conformance/perf await lowering and suspension state runbook (M187-D001)
 
 Deterministic M187 validation sequence:
