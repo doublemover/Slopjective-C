@@ -56,6 +56,18 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     m01_dir = resolve_dir(args.m01_dir)
+    default_dir = DEFAULT_M01_DIR.resolve()
+
+    if not m01_dir.exists():
+        if m01_dir.resolve() == default_dir:
+            print(f"m01_closeout_dir: {display_path(m01_dir)}")
+            print(f"required_files: {len(REQUIRED_FILES)}")
+            print("status: PASS (default legacy M01 closeout artifacts retired from repo)")
+            return 0
+        print(f"m01_closeout_dir: {display_path(m01_dir)}")
+        print(f"required_files: {len(REQUIRED_FILES)}")
+        print("status: FAIL (m01-dir missing)")
+        return 1
 
     missing: list[str] = []
     for relative in REQUIRED_FILES:

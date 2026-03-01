@@ -45,6 +45,19 @@ class CheckM01CloseoutReadinessTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("status: PASS", output)
 
+    def test_passes_when_default_legacy_directory_is_missing(self) -> None:
+        original_default = check_m01_closeout_readiness.DEFAULT_M01_DIR
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                missing_default = Path(tmp_dir) / "missing-m01"
+                check_m01_closeout_readiness.DEFAULT_M01_DIR = missing_default
+                code, output = self.run_main([])
+        finally:
+            check_m01_closeout_readiness.DEFAULT_M01_DIR = original_default
+
+        self.assertEqual(code, 0)
+        self.assertIn("status: PASS (default legacy M01 closeout artifacts retired from repo)", output)
+
 
 if __name__ == "__main__":
     unittest.main()
