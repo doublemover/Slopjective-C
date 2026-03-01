@@ -10,7 +10,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
   $PSNativeCommandUseErrorActionPreference = $false
 }
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $recoveryRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery"
 $positiveDir = Join-Path $recoveryRoot "positive"
 $dispatchRequiredDir = "tests/tooling/fixtures/native/recovery/positive/lowering_dispatch"
