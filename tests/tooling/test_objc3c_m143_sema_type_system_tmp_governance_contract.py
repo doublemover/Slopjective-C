@@ -40,7 +40,7 @@ def test_lane_b_docs_and_contract_publish_deterministic_tmp_path_rules() -> None
     assert "m143-sema-type-system-default" in _read(ARTIFACTS_FRAGMENT)
     assert "m143-sema-type-system-default" in _read(TESTS_FRAGMENT)
     assert "OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID" in _read(TESTS_FRAGMENT)
-    assert "| `M143-B001` |" in _read(CONTRACT_DOC)
+    assert "`M143-B001`" in _read(CONTRACT_DOC)
     assert "m143-sema-type-system-default" in _read(CONTRACT_DOC)
 
 

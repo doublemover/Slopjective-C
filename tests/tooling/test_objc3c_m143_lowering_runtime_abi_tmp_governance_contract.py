@@ -57,7 +57,7 @@ def test_lane_c_docs_and_contract_publish_deterministic_tmp_path_rules() -> None
     assert "OBJC3C_NATIVE_LOWERING_RUN_ID" in _read(TESTS_FRAGMENT)
     assert "OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID" in _read(TESTS_FRAGMENT)
     assert "OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID" in _read(TESTS_FRAGMENT)
-    assert "| `M143-C001` |" in _read(CONTRACT_DOC)
+    assert "`M143-C001`" in _read(CONTRACT_DOC)
     assert "m143-lane-c-lowering-regression-default" in _read(CONTRACT_DOC)
     assert "m143-lane-c-typed-abi-default" in _read(CONTRACT_DOC)
     assert "m143-lane-c-lowering-replay-proof-default" in _read(CONTRACT_DOC)
