@@ -25,6 +25,8 @@ $runDir = Join-Path $perfRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
 $defaultMaxElapsedMs = 4000
 $defaultPerFixtureBudgetMs = 150
+$defaultWindowsLaunchOverheadPerFixtureMs = 300
+$defaultNonWindowsLaunchOverheadPerFixtureMs = 0
 
 function Get-RepoRelativePath {
   param(
@@ -248,6 +250,14 @@ function Get-ArtifactHashSet {
 
 $resolvedMaxElapsedMs = $defaultMaxElapsedMs
 $explicitMaxElapsedMs = $false
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+  $isWindowsHost = [bool]$IsWindows
+} else {
+  $isWindowsHost = ($env:OS -eq "Windows_NT")
+}
+$resolvedLaunchOverheadPerFixtureMs = if ($isWindowsHost) { $defaultWindowsLaunchOverheadPerFixtureMs } else { $defaultNonWindowsLaunchOverheadPerFixtureMs }
+$resolvedPerFixtureBudgetMs = $defaultPerFixtureBudgetMs + $resolvedLaunchOverheadPerFixtureMs
+$resolvedBudgetProfile = if ($isWindowsHost) { "windows-process-launch-calibrated" } else { "baseline" }
 if ($null -ne $MaxElapsedMs) {
   $resolvedMaxElapsedMs = [int]$MaxElapsedMs
   $explicitMaxElapsedMs = $true
@@ -258,6 +268,19 @@ if ($null -ne $MaxElapsedMs) {
   }
   $resolvedMaxElapsedMs = $parsedBudget
   $explicitMaxElapsedMs = $true
+}
+
+if (-not [string]::IsNullOrWhiteSpace($env:OBJC3C_NATIVE_PERF_PER_FIXTURE_MS)) {
+  $parsedPerFixtureBudget = 0
+  if (-not [int]::TryParse($env:OBJC3C_NATIVE_PERF_PER_FIXTURE_MS, [ref]$parsedPerFixtureBudget)) {
+    throw "perf-budget FAIL: OBJC3C_NATIVE_PERF_PER_FIXTURE_MS must be an integer"
+  }
+  if ($parsedPerFixtureBudget -le 0) {
+    throw "perf-budget FAIL: OBJC3C_NATIVE_PERF_PER_FIXTURE_MS must be > 0, got $parsedPerFixtureBudget"
+  }
+  $resolvedPerFixtureBudgetMs = $parsedPerFixtureBudget
+  $resolvedLaunchOverheadPerFixtureMs = 0
+  $resolvedBudgetProfile = "per-fixture-override"
 }
 
 if ($resolvedMaxElapsedMs -le 0) {
@@ -353,7 +376,7 @@ try {
     throw "perf-budget FAIL: no positive fixtures resolved from configured roots"
   }
   if (-not $explicitMaxElapsedMs) {
-    $scaledBudget = [int][Math]::Ceiling($fixtures.Count * $defaultPerFixtureBudgetMs)
+    $scaledBudget = [int][Math]::Ceiling($fixtures.Count * $resolvedPerFixtureBudgetMs)
     if ($scaledBudget -gt $resolvedMaxElapsedMs) {
       $resolvedMaxElapsedMs = $scaledBudget
     }
@@ -539,6 +562,11 @@ $summary = [ordered]@{
   fixture_sets = $fixtureSets
   dispatch_fixture_count = $dispatchFixtureCount
   extra_positive_fixture_dirs = $extraPositiveFixtureDirList
+  budget_profile = $resolvedBudgetProfile
+  base_per_fixture_budget_ms = $defaultPerFixtureBudgetMs
+  launch_overhead_per_fixture_ms = $resolvedLaunchOverheadPerFixtureMs
+  per_fixture_budget_ms = $resolvedPerFixtureBudgetMs
+  explicit_max_elapsed_ms = $explicitMaxElapsedMs
   max_elapsed_ms = $resolvedMaxElapsedMs
   total_elapsed_ms = $totalElapsedMs
   avg_fixture_elapsed_ms = $avgFixtureElapsedMs
@@ -561,6 +589,7 @@ $summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $summaryPath -Enc
 $run1HitValue = if ($null -ne $cacheProof.run1) { [bool]$cacheProof.run1.cache_hit } else { $false }
 $run2HitValue = if ($null -ne $cacheProof.run2) { [bool]$cacheProof.run2.cache_hit } else { $false }
 Write-Output ("budget_ms: max={0} total={1} margin={2}" -f $resolvedMaxElapsedMs, $totalElapsedMs, $budgetMarginMs)
+Write-Output ("budget_profile: profile={0} base_per_fixture_ms={1} launch_overhead_per_fixture_ms={2} per_fixture_ms={3} explicit_max={4}" -f $resolvedBudgetProfile, $defaultPerFixtureBudgetMs, $resolvedLaunchOverheadPerFixtureMs, $resolvedPerFixtureBudgetMs, $explicitMaxElapsedMs)
 Write-Output ("cache_proof: status={0} run1_hit={1} run2_hit={2}" -f $cacheProof.status, $run1HitValue, $run2HitValue)
 Write-Output ("summary: total={0} passed={1} failed={2}" -f $total, $passedCount, $failedCount)
 Write-Output ("summary_path: {0}" -f (Get-RepoRelativePath -Path $summaryPath -Root $repoRoot))
