@@ -194,10 +194,10 @@ function Invoke-ContractCase {
   $exitRun2 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun2
   if ($exitRun2 -ne 0) { throw "contract FAIL: compile failed for $CaseName run2" }
 
-  $manifest1 = Get-Content (Join-Path $run1 "module.manifest.json") -Raw
-  $manifest2 = Get-Content (Join-Path $run2 "module.manifest.json") -Raw
-  $diag1 = Get-Content (Join-Path $run1 "module.diagnostics.txt") -Raw
-  $diag2 = Get-Content (Join-Path $run2 "module.diagnostics.txt") -Raw
+  $manifest1 = Get-Content -LiteralPath (Join-Path $run1 "module.manifest.json") -Raw
+  $manifest2 = Get-Content -LiteralPath (Join-Path $run2 "module.manifest.json") -Raw
+  $diag1 = Get-Content -LiteralPath (Join-Path $run1 "module.diagnostics.txt") -Raw
+  $diag2 = Get-Content -LiteralPath (Join-Path $run2 "module.diagnostics.txt") -Raw
 
   if ($manifest1 -ne $manifest2) { throw "contract FAIL: manifest drift across replay for $CaseName" }
   if ($diag1 -ne $diag2) { throw "contract FAIL: diagnostics drift across replay for $CaseName" }
@@ -218,13 +218,13 @@ function Invoke-ContractCase {
   }
 
   $objPath = Join-Path $run1 "module.obj"
-  if (!(Test-Path $objPath)) { throw "contract FAIL: missing object artifact for $CaseName" }
-  $objSize = (Get-Item $objPath).Length
+  if (!(Test-Path -LiteralPath $objPath -PathType Leaf)) { throw "contract FAIL: missing object artifact for $CaseName" }
+  $objSize = (Get-Item -LiteralPath $objPath).Length
   if ($objSize -le 0) { throw "contract FAIL: empty object artifact for $CaseName" }
 
   if ($RequireLl) {
-    $ll1 = Get-Content (Join-Path $run1 "module.ll") -Raw
-    $ll2 = Get-Content (Join-Path $run2 "module.ll") -Raw
+    $ll1 = Get-Content -LiteralPath (Join-Path $run1 "module.ll") -Raw
+    $ll2 = Get-Content -LiteralPath (Join-Path $run2 "module.ll") -Raw
     $ll1Code = (($ll1 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
     $ll2Code = (($ll2 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
     if ($ll1 -ne $ll2) { throw "contract FAIL: LLVM IR drift across replay for $CaseName" }
@@ -265,11 +265,11 @@ function Get-RecoveryFixtures {
     [string[]]$Extensions = @(".objc3")
   )
 
-  if (!(Test-Path $Directory -PathType Container)) {
+  if (!(Test-Path -LiteralPath $Directory -PathType Container)) {
     throw "contract FAIL: missing $FixtureKind fixture directory at $Directory"
   }
 
-  $fixtures = @(Get-ChildItem -Path $Directory -Recurse -File | Where-Object {
+  $fixtures = @(Get-ChildItem -LiteralPath $Directory -Recurse -File | Where-Object {
       $_.Extension -in $Extensions
     } | Sort-Object FullName)
 
@@ -654,13 +654,13 @@ foreach ($fixture in $positiveFixtures) {
   }
 
   $objPath = Join-Path $caseOutDir "module.obj"
-  if (!(Test-Path $objPath)) { throw "contract FAIL: missing object artifact for positive fixture $source" }
-  $objSize = (Get-Item $objPath).Length
+  if (!(Test-Path -LiteralPath $objPath -PathType Leaf)) { throw "contract FAIL: missing object artifact for positive fixture $source" }
+  $objSize = (Get-Item -LiteralPath $objPath).Length
   if ($objSize -le 0) { throw "contract FAIL: empty object artifact for positive fixture $source" }
 
   $manifestPath = Join-Path $caseOutDir "module.manifest.json"
-  if (!(Test-Path $manifestPath)) { throw "contract FAIL: missing manifest artifact for positive fixture $source" }
-  $manifest = Get-Content $manifestPath -Raw
+  if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "contract FAIL: missing manifest artifact for positive fixture $source" }
+  $manifest = Get-Content -LiteralPath $manifestPath -Raw
   if ([string]::IsNullOrWhiteSpace($manifest)) {
     throw "contract FAIL: empty manifest artifact for positive fixture $source"
   }
@@ -723,8 +723,8 @@ foreach ($fixture in $negativeFixtures) {
     throw "contract FAIL: negative fixture unexpectedly compiled for $source"
   }
   $diagPath1 = Join-Path $run1 "module.diagnostics.txt"
-  if (!(Test-Path $diagPath1)) { throw "contract FAIL: missing diagnostics artifact for negative fixture $source run1" }
-  $diag1 = Get-Content $diagPath1 -Raw
+  if (!(Test-Path -LiteralPath $diagPath1 -PathType Leaf)) { throw "contract FAIL: missing diagnostics artifact for negative fixture $source run1" }
+  $diag1 = Get-Content -LiteralPath $diagPath1 -Raw
   if ([string]::IsNullOrWhiteSpace($diag1)) {
     throw "contract FAIL: empty diagnostics artifact for negative fixture $source run1"
   }
@@ -734,8 +734,8 @@ foreach ($fixture in $negativeFixtures) {
     throw "contract FAIL: negative fixture unexpectedly compiled for $source on replay"
   }
   $diagPath2 = Join-Path $run2 "module.diagnostics.txt"
-  if (!(Test-Path $diagPath2)) { throw "contract FAIL: missing diagnostics artifact for negative fixture $source run2" }
-  $diag2 = Get-Content $diagPath2 -Raw
+  if (!(Test-Path -LiteralPath $diagPath2 -PathType Leaf)) { throw "contract FAIL: missing diagnostics artifact for negative fixture $source run2" }
+  $diag2 = Get-Content -LiteralPath $diagPath2 -Raw
   if ([string]::IsNullOrWhiteSpace($diag2)) {
     throw "contract FAIL: empty diagnostics artifact for negative fixture $source run2"
   }
