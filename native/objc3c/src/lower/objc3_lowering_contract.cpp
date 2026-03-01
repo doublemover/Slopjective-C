@@ -1364,6 +1364,52 @@ std::string Objc3NSErrorBridgingLoweringReplayKey(
          ";lane_contract=" + kObjc3NSErrorBridgingLoweringLaneContract;
 }
 
+bool IsValidObjc3UnwindCleanupLoweringContract(
+    const Objc3UnwindCleanupLoweringContract &contract) {
+  if (contract.unwind_edge_sites > contract.unwind_cleanup_sites ||
+      contract.cleanup_scope_sites > contract.unwind_cleanup_sites ||
+      contract.cleanup_emit_sites > contract.cleanup_scope_sites ||
+      contract.landing_pad_sites > contract.unwind_cleanup_sites ||
+      contract.cleanup_resume_sites > contract.unwind_cleanup_sites ||
+      contract.normalized_sites > contract.unwind_cleanup_sites ||
+      contract.guard_blocked_sites > contract.unwind_cleanup_sites ||
+      contract.contract_violation_sites > contract.unwind_cleanup_sites) {
+    return false;
+  }
+  if (contract.landing_pad_sites + contract.cleanup_resume_sites >
+      contract.unwind_cleanup_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.guard_blocked_sites !=
+      contract.unwind_cleanup_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3UnwindCleanupLoweringReplayKey(
+    const Objc3UnwindCleanupLoweringContract &contract) {
+  return std::string("unwind_cleanup_sites=") +
+             std::to_string(contract.unwind_cleanup_sites) +
+         ";unwind_edge_sites=" + std::to_string(contract.unwind_edge_sites) +
+         ";cleanup_scope_sites=" +
+         std::to_string(contract.cleanup_scope_sites) +
+         ";cleanup_emit_sites=" + std::to_string(contract.cleanup_emit_sites) +
+         ";landing_pad_sites=" + std::to_string(contract.landing_pad_sites) +
+         ";cleanup_resume_sites=" +
+         std::to_string(contract.cleanup_resume_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3UnwindCleanupLoweringLaneContract;
+}
+
 bool IsValidObjc3AsyncContinuationLoweringContract(
     const Objc3AsyncContinuationLoweringContract &contract) {
   if (contract.async_keyword_sites > contract.async_continuation_sites ||

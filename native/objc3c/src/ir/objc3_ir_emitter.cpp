@@ -222,6 +222,10 @@ class Objc3IREmitter {
       out << "; ns_error_bridging_lowering = "
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_unwind_cleanup_replay_key.empty()) {
+      out << "; unwind_cleanup_lowering = "
+          << frontend_metadata_.lowering_unwind_cleanup_replay_key << "\n";
+    }
     if (!frontend_metadata_.lowering_async_continuation_replay_key.empty()) {
       out << "; async_continuation_lowering = "
           << frontend_metadata_.lowering_async_continuation_replay_key << "\n";
@@ -859,6 +863,29 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_unwind_cleanup_lowering_profile = unwind_cleanup_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_sites
+        << ", unwind_edge_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_unwind_edge_sites
+        << ", cleanup_scope_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_cleanup_scope_sites
+        << ", cleanup_emit_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_cleanup_emit_sites
+        << ", landing_pad_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_landing_pad_sites
+        << ", cleanup_resume_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_cleanup_resume_sites
+        << ", normalized_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_normalized_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.unwind_cleanup_lowering_contract_violation_sites
+        << ", deterministic_unwind_cleanup_lowering_handoff="
+        << (frontend_metadata_.deterministic_unwind_cleanup_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_async_continuation_lowering_profile = async_continuation_sites="
         << frontend_metadata_.async_continuation_lowering_sites
         << ", async_keyword_sites="
@@ -1233,6 +1260,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}\n";
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
+    out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
     out << "!objc3.objc_unsafe_pointer_extension_lowering = !{!37}\n";
     out << "!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}\n";
@@ -1990,6 +2018,38 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_throws_propagation_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!35 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_unwind_edge_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_cleanup_scope_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_cleanup_emit_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_landing_pad_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_cleanup_resume_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.unwind_cleanup_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_unwind_cleanup_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

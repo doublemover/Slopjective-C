@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3UnwindCleanupLoweringLaneContract =
+    "m184-unwind-cleanup-lowering-v1";
 inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
     "m186-async-continuation-lowering-v1";
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
@@ -472,6 +474,19 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3UnwindCleanupLoweringContract {
+  std::size_t unwind_cleanup_sites = 0;
+  std::size_t unwind_edge_sites = 0;
+  std::size_t cleanup_scope_sites = 0;
+  std::size_t cleanup_emit_sites = 0;
+  std::size_t landing_pad_sites = 0;
+  std::size_t cleanup_resume_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AsyncContinuationLoweringContract {
   std::size_t async_continuation_sites = 0;
   std::size_t async_keyword_sites = 0;
@@ -688,6 +703,10 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3UnwindCleanupLoweringContract(
+    const Objc3UnwindCleanupLoweringContract &contract);
+std::string Objc3UnwindCleanupLoweringReplayKey(
+    const Objc3UnwindCleanupLoweringContract &contract);
 bool IsValidObjc3AsyncContinuationLoweringContract(
     const Objc3AsyncContinuationLoweringContract &contract);
 std::string Objc3AsyncContinuationLoweringReplayKey(

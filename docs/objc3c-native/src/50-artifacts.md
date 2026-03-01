@@ -3726,6 +3726,36 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Unwind safety and cleanup emission lowering artifact contract (M184-C001)
+
+M184-C publishes deterministic lowering replay metadata for unwind safety and
+cleanup emission boundaries.
+
+M184-C lowering contract anchors:
+
+- `kObjc3UnwindCleanupLoweringLaneContract`
+- `Objc3UnwindCleanupLoweringContract`
+- `IsValidObjc3UnwindCleanupLoweringContract(...)`
+- `Objc3UnwindCleanupLoweringReplayKey(...)`
+- `unwind_cleanup_lowering = unwind_cleanup_sites=<N>`
+- `frontend_objc_unwind_cleanup_lowering_profile`
+- `!objc3.objc_unwind_cleanup_lowering = !{!35}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == unwind_cleanup_sites`
+- each of `unwind_edge_sites`, `cleanup_scope_sites`, `landing_pad_sites`,
+  `cleanup_resume_sites`, and `contract_violation_sites` is bounded by
+  `unwind_cleanup_sites`
+- `cleanup_emit_sites <= cleanup_scope_sites`
+- `landing_pad_sites + cleanup_resume_sites <= unwind_cleanup_sites`
+- `deterministic_unwind_cleanup_lowering_handoff` requires zero contract
+  violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m184_lowering_unwind_cleanup_contract.py -q`
+
 ## Async grammar and continuation lowering artifact contract (M186-C001)
 
 M186-C publishes deterministic lowering replay metadata for async grammar and
