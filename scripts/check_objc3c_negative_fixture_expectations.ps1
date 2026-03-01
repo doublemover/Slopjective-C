@@ -3,7 +3,9 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $fixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery/negative"
 $compileScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
-$outBaseDir = Join-Path $repoRoot "artifacts/compilation/objc3c-native/negative_expectation_check"
+$outBaseRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/negative_expectation_check"
+$runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
+$outBaseDir = Join-Path $outBaseRoot $runId
 $diagnosticHeaderPattern = '(?mi)^\s*//\s*Expected diagnostic code\(s\):\s*(.+?)\s*$'
 $diagnosticCodePattern = 'O3[A-Z]\d{3}'
 
@@ -12,7 +14,7 @@ function Get-ExpectedDiagnosticCodes {
     [string]$FixturePath
   )
 
-  $content = Get-Content -Raw $FixturePath
+  $content = Get-Content -LiteralPath $FixturePath -Raw
   $headerMatch = [regex]::Match($content, $diagnosticHeaderPattern)
   if (-not $headerMatch.Success) {
     return @{
@@ -38,9 +40,6 @@ function Invoke-CompileRun {
     [string]$OutDir
   )
 
-  if (Test-Path $OutDir) {
-    Remove-Item -Recurse -Force $OutDir
-  }
   New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
   & powershell -NoProfile -ExecutionPolicy Bypass -File $compileScript $FixturePath --out-dir $OutDir --emit-prefix module | Out-Null
@@ -53,7 +52,7 @@ function Get-DiagnosticsData {
   )
 
   $diagPath = Join-Path $OutDir "module.diagnostics.txt"
-  if (-not (Test-Path $diagPath -PathType Leaf)) {
+  if (-not (Test-Path -LiteralPath $diagPath -PathType Leaf)) {
     return $null
   }
 
@@ -94,17 +93,37 @@ function Test-ByteArrayEqual {
   return $true
 }
 
-if (-not (Test-Path $compileScript -PathType Leaf)) {
+function Get-FixtureRunSlug {
+  param(
+    [System.IO.FileInfo]$Fixture
+  )
+
+  $base = $Fixture.BaseName -replace "[^A-Za-z0-9_-]", "_"
+  if ($base.Length -gt 48) {
+    $base = $base.Substring(0, 48)
+  }
+  $normalizedPath = [System.IO.Path]::GetFullPath($Fixture.FullName).Replace("\", "/")
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedPath)
+  $sha1 = [System.Security.Cryptography.SHA1]::Create()
+  try {
+    $hash = ([System.BitConverter]::ToString($sha1.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant().Substring(0, 10)
+  } finally {
+    $sha1.Dispose()
+  }
+  return "{0}_{1}" -f $base, $hash
+}
+
+if (-not (Test-Path -LiteralPath $compileScript -PathType Leaf)) {
   Write-Output "FAIL: missing compile script at $compileScript"
   exit 1
 }
 
-if (-not (Test-Path $fixtureDir -PathType Container)) {
+if (-not (Test-Path -LiteralPath $fixtureDir -PathType Container)) {
   Write-Output "FAIL: missing negative fixture directory at $fixtureDir"
   exit 1
 }
 
-$fixtures = @(Get-ChildItem -Path $fixtureDir -File | Where-Object {
+$fixtures = @(Get-ChildItem -LiteralPath $fixtureDir -File | Where-Object {
     $_.Extension -in @(".objc3", ".m")
   } | Sort-Object FullName)
 
@@ -121,6 +140,7 @@ Push-Location $repoRoot
 try {
   foreach ($fixture in $fixtures) {
     $fixtureName = $fixture.Name
+    $fixtureSlug = Get-FixtureRunSlug -Fixture $fixture
     $fixtureErrors = New-Object 'System.Collections.Generic.List[string]'
 
     $headerResult = Get-ExpectedDiagnosticCodes -FixturePath $fixture.FullName
@@ -130,8 +150,8 @@ try {
       $fixtureErrors.Add("expected diagnostic header has no parseable diagnostic codes")
     }
 
-    $run1Dir = Join-Path $outBaseDir ($fixture.BaseName + "_run1")
-    $run2Dir = Join-Path $outBaseDir ($fixture.BaseName + "_run2")
+    $run1Dir = Join-Path $outBaseDir ($fixtureSlug + "_run1")
+    $run2Dir = Join-Path $outBaseDir ($fixtureSlug + "_run2")
 
     $exit1 = Invoke-CompileRun -FixturePath $fixture.FullName -OutDir $run1Dir
     $exit2 = Invoke-CompileRun -FixturePath $fixture.FullName -OutDir $run2Dir
