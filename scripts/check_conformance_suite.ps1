@@ -40,6 +40,14 @@ function Is-MetadataFixtureRecord {
   return $Payload.fixture_id.Trim().Length -gt 0
 }
 
+function Is-ExecutableReplaySmokeCandidate {
+  param([object]$Payload)
+  if (-not (Is-ExecutableFixture -Payload $Payload)) {
+    return $false
+  }
+  return (Has-Property -Object $Payload -Name "source") -and (-not [string]::IsNullOrWhiteSpace("$($Payload.source)"))
+}
+
 function Resolve-FixtureId {
   param(
     [object]$Payload,
@@ -83,6 +91,8 @@ $BucketMinima = [ordered]@{
 
 $AllFixtureIds = [System.Collections.Generic.List[string]]::new()
 $MetadataOnlyFixtureCount = 0
+$ExecutableSmokeCandidates = [System.Collections.Generic.List[object]]::new()
+$SmokeBucketSelection = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
 Write-Output "Conformance bucket minima check:"
 foreach ($bucket in $BucketMinima.Keys) {
@@ -115,6 +125,15 @@ foreach ($bucket in $BucketMinima.Keys) {
 
     if (Is-ExecutableFixture -Payload $payload) {
       $executableCount += 1
+      if ((-not $SmokeBucketSelection.Contains($bucket)) -and (Is-ExecutableReplaySmokeCandidate -Payload $payload)) {
+        $SmokeBucketSelection.Add($bucket) | Out-Null
+        $ExecutableSmokeCandidates.Add([pscustomobject]@{
+            bucket = $bucket
+            fixture_id = $fixtureId
+            source = "$($payload.source)"
+            source_file = $file.FullName
+          }) | Out-Null
+      }
       continue
     }
 
@@ -166,10 +185,81 @@ Require-Range "AGR-RT-" 1 3
 Require-Range "RES-" 1 6
 Require-Range "SYS-DIAG-" 1 8
 
+Write-Output "Executable conformance replay-smoke check:"
+$conformanceSmokeRoot = Join-Path $RepoRoot "tmp/artifacts/conformance-smoke"
+$nativeExePath = Join-Path $RepoRoot "artifacts/bin/objc3c-native.exe"
+if ($ExecutableSmokeCandidates.Count -eq 0) {
+  Add-Failure "No executable conformance fixtures were eligible for replay-smoke validation."
+} elseif (-not (Test-Path -LiteralPath $nativeExePath -PathType Leaf)) {
+  Add-Failure ("Missing native compiler executable required for replay-smoke validation: {0}" -f $nativeExePath)
+} else {
+  foreach ($candidate in $ExecutableSmokeCandidates) {
+    $id = "$($candidate.fixture_id)".Trim()
+    if ([string]::IsNullOrWhiteSpace($id)) {
+      $id = "unknown-fixture"
+    }
+    $safeId = ($id -replace '[^A-Za-z0-9._-]', "_")
+    $fixtureRoot = Join-Path $conformanceSmokeRoot $safeId
+    [System.IO.Directory]::CreateDirectory($fixtureRoot) | Out-Null
+    $sourcePath = Join-Path $fixtureRoot "$safeId.objc3"
+    Set-Content -LiteralPath $sourcePath -Value $candidate.source -Encoding utf8
+
+    $run1Dir = Join-Path $fixtureRoot "replay_run_1"
+    $run2Dir = Join-Path $fixtureRoot "replay_run_2"
+    [System.IO.Directory]::CreateDirectory($run1Dir) | Out-Null
+    [System.IO.Directory]::CreateDirectory($run2Dir) | Out-Null
+    $run1Log = Join-Path $run1Dir "compile.log"
+    $run2Log = Join-Path $run2Dir "compile.log"
+
+    & $nativeExePath $sourcePath "--out-dir" $run1Dir "--emit-prefix" "module" *> $run1Log
+    $exit1 = [int]$LASTEXITCODE
+    & $nativeExePath $sourcePath "--out-dir" $run2Dir "--emit-prefix" "module" *> $run2Log
+    $exit2 = [int]$LASTEXITCODE
+
+    if ($exit1 -ne $exit2) {
+      Add-Failure ("Replay-smoke exit-code drift for fixture '{0}' (bucket '{1}'): run1={2}, run2={3}" -f $id, $candidate.bucket, $exit1, $exit2)
+      continue
+    }
+
+    if ($exit1 -eq 0) {
+      $module1 = Join-Path $run1Dir "module.ll"
+      $module2 = Join-Path $run2Dir "module.ll"
+      if ((-not (Test-Path -LiteralPath $module1 -PathType Leaf)) -or
+          (-not (Test-Path -LiteralPath $module2 -PathType Leaf))) {
+        Add-Failure ("Replay-smoke success path missing IR artifact for fixture '{0}' (bucket '{1}')" -f $id, $candidate.bucket)
+        continue
+      }
+      $hash1 = (Get-FileHash -LiteralPath $module1 -Algorithm SHA256).Hash
+      $hash2 = (Get-FileHash -LiteralPath $module2 -Algorithm SHA256).Hash
+      if ($hash1 -ne $hash2) {
+        Add-Failure ("Replay-smoke IR hash drift for fixture '{0}' (bucket '{1}')" -f $id, $candidate.bucket)
+        continue
+      }
+      Write-Output ("- {0} ({1}) replay-smoke success path deterministic" -f $id, $candidate.bucket)
+      continue
+    }
+
+    $diag1 = Join-Path $run1Dir "module.diagnostics.txt"
+    $diag2 = Join-Path $run2Dir "module.diagnostics.txt"
+    if ((-not (Test-Path -LiteralPath $diag1 -PathType Leaf)) -or
+        (-not (Test-Path -LiteralPath $diag2 -PathType Leaf))) {
+      Add-Failure ("Replay-smoke failure path missing diagnostics artifact for fixture '{0}' (bucket '{1}')" -f $id, $candidate.bucket)
+      continue
+    }
+    $diagHash1 = (Get-FileHash -LiteralPath $diag1 -Algorithm SHA256).Hash
+    $diagHash2 = (Get-FileHash -LiteralPath $diag2 -Algorithm SHA256).Hash
+    if ($diagHash1 -ne $diagHash2) {
+      Add-Failure ("Replay-smoke diagnostics hash drift for fixture '{0}' (bucket '{1}')" -f $id, $candidate.bucket)
+      continue
+    }
+    Write-Output ("- {0} ({1}) replay-smoke failure path deterministic (exit {2})" -f $id, $candidate.bucket, $exit1)
+  }
+}
+
 if ($Failures.Count -gt 0) {
-  Write-Error ("Conformance suite check failed with {0} issue(s):" -f $Failures.Count)
+  Write-Output ("Conformance suite check failed with {0} issue(s):" -f $Failures.Count)
   foreach ($failure in $Failures) {
-    Write-Error ("- " + $failure)
+    Write-Output ("- " + $failure)
   }
   exit 1
 }
