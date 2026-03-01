@@ -1,5 +1,6 @@
 #include "driver/objc3_llvm_capability_routing.h"
 
+#include <exception>
 #include <filesystem>
 #include <sstream>
 #include <string>
@@ -208,7 +209,13 @@ bool ApplyObjc3LLVMCabilityRouting(Objc3CliOptions &options, std::string &error)
     return false;
   }
 
-  const std::string payload = ReadText(options.llvm_capabilities_summary);
+  std::string payload;
+  try {
+    payload = ReadText(options.llvm_capabilities_summary);
+  } catch (const std::exception &read_error) {
+    error = "capability routing fail-closed: " + std::string(read_error.what());
+    return false;
+  }
   Objc3LLVMCabilitySummary summary;
   if (!ParseCapabilitySummary(payload, summary, error)) {
     error = "capability routing fail-closed: " + error;
