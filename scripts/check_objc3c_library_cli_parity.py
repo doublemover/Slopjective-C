@@ -116,6 +116,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="allow --source work/output directories outside repo tmp/",
     )
     parser.add_argument(
+        "--allow-stale-source-mode-outputs",
+        action="store_true",
+        help=(
+            "allow --source mode to reuse existing output paths for the current "
+            "emit-prefix instead of failing on stale artifacts"
+        ),
+    )
+    parser.add_argument(
         "--emit-prefix",
         default="module",
         help="artifact filename prefix for --source mode generation",
@@ -570,16 +578,17 @@ def prepare_source_mode(
         ensure_under_tmp(cli_dir, label="cli-dir")
     library_dir.mkdir(parents=True, exist_ok=True)
     cli_dir.mkdir(parents=True, exist_ok=True)
-    assert_no_stale_source_mode_outputs(
-        directory=library_dir,
-        emit_prefix=args.emit_prefix,
-        label="library-dir",
-    )
-    assert_no_stale_source_mode_outputs(
-        directory=cli_dir,
-        emit_prefix=args.emit_prefix,
-        label="cli-dir",
-    )
+    if not args.allow_stale_source_mode_outputs:
+        assert_no_stale_source_mode_outputs(
+            directory=library_dir,
+            emit_prefix=args.emit_prefix,
+            label="library-dir",
+        )
+        assert_no_stale_source_mode_outputs(
+            directory=cli_dir,
+            emit_prefix=args.emit_prefix,
+            label="cli-dir",
+        )
 
     effective_clang_path = args.clang_path
     effective_llc_path = args.llc_path
@@ -588,6 +597,7 @@ def prepare_source_mode(
         "requested_cli_ir_object_backend": args.cli_ir_object_backend,
         "effective_ir_object_backend": effective_backend,
         "routed_from_capabilities": args.route_cli_backend_from_capabilities,
+        "allow_stale_source_mode_outputs": args.allow_stale_source_mode_outputs,
     }
     capability_failures: list[str] = []
     if args.llvm_capabilities_summary is not None:
