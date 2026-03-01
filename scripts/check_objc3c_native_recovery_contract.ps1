@@ -1,7 +1,9 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$outDir = Join-Path $repoRoot "artifacts/compilation/objc3c-native/contract_check"
+$runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
+$outRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/contract_check"
+$outDir = Join-Path $outRoot $runId
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 
 & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
@@ -181,13 +183,18 @@ function Invoke-ContractCase {
     [switch]$RequireObjc3ManifestSurface
   )
 
+  $resolvedSource = if ([System.IO.Path]::IsPathRooted($Source)) { $Source } else { Join-Path $repoRoot $Source }
+  if (-not (Test-Path -LiteralPath $resolvedSource -PathType Leaf)) {
+    throw "contract FAIL: missing source fixture for $CaseName at $resolvedSource"
+  }
+
   $run1 = Join-Path $outDir ($CaseName + "_run1")
   $run2 = Join-Path $outDir ($CaseName + "_run2")
   New-Item -ItemType Directory -Force -Path $run1 | Out-Null
   New-Item -ItemType Directory -Force -Path $run2 | Out-Null
 
-  $compileArgsRun1 = @($Source, "--out-dir", $run1, "--emit-prefix", "module") + $ExtraArgs
-  $compileArgsRun2 = @($Source, "--out-dir", $run2, "--emit-prefix", "module") + $ExtraArgs
+  $compileArgsRun1 = @($resolvedSource, "--out-dir", $run1, "--emit-prefix", "module") + $ExtraArgs
+  $compileArgsRun2 = @($resolvedSource, "--out-dir", $run2, "--emit-prefix", "module") + $ExtraArgs
 
   $exitRun1 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun1
   if ($exitRun1 -ne 0) { throw "contract FAIL: compile failed for $CaseName run1" }
@@ -767,3 +774,4 @@ foreach ($fixture in $negativeFixtures) {
 }
 
 Write-Output "status: PASS"
+Write-Output ("out_dir: " + [System.IO.Path]::GetRelativePath($repoRoot, $outDir).Replace("\", "/"))
