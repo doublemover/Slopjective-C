@@ -2684,7 +2684,7 @@ Deterministic M189 integration sequence:
 ```bash
 python -m pytest tests/tooling/test_objc3c_m195_frontend_system_extension_policy_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m195_sema_system_extension_policy_contract.py -q
-python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_validation_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_conformance_task_runtime_interop_cancellation_contract.py -q
 python -m pytest tests/tooling/test_objc3c_m189_integration_task_runtime_interop_cancellation_contract.py -q
@@ -2703,10 +2703,78 @@ Workflow anchor:
 
 Scope assumptions:
 
-- M189-A001, M189-B001, and M189-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
-- M189-D001 packet-specific artifacts are landed in this workspace.
-- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema/lowering contracts plus the M189-D001 validation/conformance packet.
+- M189-A001, M189-C001, and M189-D001 packet-specific artifacts are landed in this workspace.
+- M189-B001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed low-level lane surfaces via M195 frontend/sema contracts plus the M189-C001 lowering contract and M189-D001 validation/conformance packet.
 - This runbook enforces those currently landed lane surfaces plus M189-E001 integration wiring.
+
+## M188 integration actor isolation and sendability contract runbook (M188-E001)
+
+Deterministic M188 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m188_frontend_actor_isolation_sendability_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_validation_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_conformance_actor_isolation_sendability_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m188_integration_actor_isolation_sendability_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m188-actor-isolation-sendability-contracts`
+- `npm run check:compiler-closeout:m188`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M188 actor isolation/sendability packet/docs contract`
+  - `Run M188 actor isolation/sendability integration gate`
+
+Scope assumptions:
+
+- M188-A001 and M188-D001 packet-specific artifacts are landed in this workspace.
+- M188-B001 and M188-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M188-A001 frontend parser contract plus the M188-D001 validation/conformance packet.
+- This runbook fail-closes M188-B001 sema surfaces and M188-C001 lowering surfaces via M188-D001 replay packet anchors.
+- This runbook enforces those currently landed lane surfaces plus M188-E001 integration wiring.
+
+## M187 validation/conformance/perf await lowering and suspension state runbook (M187-D001)
+
+Deterministic M187 validation sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+```
+
+Replay packet evidence (`tests/tooling/fixtures/objc3c/m187_validation_await_lowering_suspension_state_contract/`):
+
+- `replay_run_1/module.manifest.json`
+  - `frontend.pipeline.sema_pass_manager.lowering_await_lowering_suspension_state_replay_key`
+  - `frontend.pipeline.sema_pass_manager.deterministic_await_lowering_suspension_state_lowering_handoff`
+  - `frontend.pipeline.semantic_surface.objc_await_lowering_suspension_state_lowering_surface.replay_key`
+  - `frontend.pipeline.semantic_surface.objc_await_lowering_suspension_state_lowering_surface.deterministic_handoff`
+  - `lowering_await_lowering_suspension_state.replay_key`
+- `replay_run_1/module.ll`
+  - `await_lowering_suspension_state_lowering`
+  - `frontend_objc_await_lowering_suspension_state_lowering_profile`
+  - `!objc3.objc_await_lowering_suspension_state_lowering = !{!42}`
+- `M187-D001.json`
+  - `tracking.issue = 4527`
+  - `tracking.task = M187-D001`
+  - `expect.parse = accept`
+
+Replay determinism contract:
+
+- `replay_run_1` and `replay_run_2` must be byte-identical for both manifest and IR.
+- replay keys must match between manifest packet, semantic surface, and IR comment marker.
+- `normalized_sites + gate_blocked_sites == await_suspension_sites`.
+
+Recommended verification command:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+```
 
 ## M188 validation/conformance/perf actor isolation and sendability runbook (M188-D001)
 
