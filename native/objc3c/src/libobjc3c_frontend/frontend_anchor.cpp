@@ -143,9 +143,9 @@ static int RunIRCompile(const std::filesystem::path &clang_path,
   return compile_status;
 }
 
-static int RunIrCompile(const std::filesystem::path &clang_path,
-                        const std::filesystem::path &ir_path,
-                        const std::filesystem::path &object_out) {
+[[maybe_unused]] static int RunIrCompile(const std::filesystem::path &clang_path,
+                                         const std::filesystem::path &ir_path,
+                                         const std::filesystem::path &object_out) {
   return RunIRCompile(clang_path, ir_path, object_out);
 }
 
