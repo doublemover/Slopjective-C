@@ -2738,6 +2738,36 @@ Scope assumptions:
 - This runbook fail-closes M188-B001 sema surfaces and M188-C001 lowering surfaces via M188-D001 replay packet anchors.
 - This runbook enforces those currently landed lane surfaces plus M188-E001 integration wiring.
 
+## M187 integration await lowering and suspension state contract runbook (M187-E001)
+
+Deterministic M187 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m187_frontend_await_suspension_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_integration_await_lowering_suspension_state_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m187-await-lowering-suspension-state-contracts`
+- `npm run check:compiler-closeout:m187`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M187 await lowering/suspension-state packet/docs contract`
+  - `Run M187 await lowering/suspension-state integration gate`
+
+Scope assumptions:
+
+- M187-A001 and M187-D001 packet-specific artifacts are landed in this workspace.
+- M187-B001 and M187-C001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M187-A001 frontend parser contract plus the M187-D001 validation/conformance packet.
+- This runbook fail-closes M187-B001 sema surfaces and M187-C001 lowering surfaces via M187-D001 replay packet anchors.
+- This runbook enforces those currently landed lane surfaces plus M187-E001 integration wiring.
+
 ## M187 validation/conformance/perf await lowering and suspension state runbook (M187-D001)
 
 Deterministic M187 validation sequence:
