@@ -918,6 +918,27 @@ int objc3c_frontend_startup_check(void) {
   - M184-A001 parser surfaces, M184-B001 sema surfaces, M184-C001 lowering surfaces, and M184-D001 validation/conformance surfaces are fail-closed via M183-E001 replay anchors in this integration gate.
   - The integration gate fail-closes on these currently landed lane surfaces plus this M184-E001 wiring contract.
 
+## M185 integration error diagnostics UX and recovery contract
+
+- Integration gate:
+  - `npm run check:objc3c:m185-error-diagnostics-ux-recovery-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m185`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m184_frontend_unwind_cleanup_parser_contract.py`
+  - `tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py`
+  - `tests/tooling/test_objc3c_m184_lowering_unwind_cleanup_contract.py`
+  - `tests/tooling/test_objc3c_m184_validation_unwind_safety_cleanup_emission_contract.py`
+  - `tests/tooling/test_objc3c_m184_conformance_unwind_safety_cleanup_emission_contract.py`
+  - `tests/tooling/test_objc3c_m185_integration_error_diagnostics_ux_recovery_contract.py`
+- Assumptions:
+  - M185-A001, M185-B001, M185-C001, and M185-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M185-E001 gate deterministically replays currently landed lane surfaces via M184-A001 frontend parser recovery anchors, M184-B001 sema diagnostics anchors, M184-C001 lowering anchors, and the M184-D001 validation/conformance packet.
+  - M185-A001 frontend recovery surfaces, M185-B001 semantic diagnostics surfaces, M185-C001 lowering surfaces, and M185-D001 validation/conformance surfaces are fail-closed via M184-E001 replay anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M185-E001 wiring contract.
+
 ## M186 integration async grammar and continuation IR contract
 
 - Integration gate:

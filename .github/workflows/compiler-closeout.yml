@@ -44,6 +44,10 @@ jobs:
         run: npm run check:compiler-closeout:m184
       - name: Run M184 unwind safety/cleanup emission integration gate
         run: npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts
+      - name: Enforce M185 error diagnostics/recovery packet/docs contract
+        run: npm run check:compiler-closeout:m185
+      - name: Run M185 error diagnostics/recovery integration gate
+        run: npm run check:objc3c:m185-error-diagnostics-ux-recovery-contracts
       - name: Enforce M186 async grammar/continuation IR packet/docs contract
         run: npm run check:compiler-closeout:m186
       - name: Run M186 async grammar/continuation IR integration gate
