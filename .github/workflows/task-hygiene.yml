@@ -10,10 +10,11 @@ permissions:
 jobs:
   task-hygiene:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
     env:
       GH_TOKEN: ${{ github.token }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os:
           - ubuntu-latest
@@ -25,7 +26,7 @@ jobs:
           node-version: "20"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
       - name: 00 Enforce ObjC3C dependency boundaries (strict fail-fast gate)
         run: python scripts/check_objc3c_dependency_boundaries.py --strict
       - name: 00a ObjC3C dependency boundary triage hint
@@ -103,7 +104,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install jsonschema
       - name: Install Node dependencies
-        run: npm install
+        run: npm ci
       - name: 01 Run M20 release-gate integration W2 gate (strict deterministic gate)
         run: npm run check:release-gate-integration:w2:strict
       - name: 02 Check catalog status integrity (strict default)
@@ -266,8 +267,9 @@ jobs:
 
   tooling-tests:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os:
           - ubuntu-latest
@@ -276,7 +278,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
       - name: Install Python test/tooling dependencies
         run: |
           python -m pip install --upgrade pip

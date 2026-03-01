@@ -10,6 +10,7 @@ permissions:
 jobs:
   compiler-closeout:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,13 +18,13 @@ jobs:
           node-version: "20"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
       - name: Install Python tooling dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install pytest
       - name: Install Node dependencies
-        run: npm install
+        run: npm ci
       - name: Enforce M180 cross-module conformance packet/docs contract
         run: npm run check:compiler-closeout:m180
       - name: Run M180 cross-module conformance integration gate

@@ -8,6 +8,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,7 +16,7 @@ jobs:
           node-version: "20"
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.12"
       - name: Enforce generated-only objc3c-native docs drift contract
         run: python scripts/build_objc3c_native_docs.py --check
       - name: Enforce generated-only site index drift contract
@@ -23,6 +24,6 @@ jobs:
       - name: Enforce M135 direct-LLVM packet/docs contract
         run: python scripts/check_m135_direct_llvm_contract.py
       - name: Install Node dependencies
-        run: npm install
+        run: npm ci
       - name: Run spec structural lint suite
         run: npm run lint:spec
