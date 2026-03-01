@@ -3756,6 +3756,36 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m184_lowering_unwind_cleanup_contract.py -q`
 
+## Error diagnostics UX and recovery lowering artifact contract (M185-C001)
+
+M185-C publishes deterministic lowering replay metadata for parser/semantic
+error diagnostics UX and recovery handoff.
+
+M185-C lowering contract anchors:
+
+- `kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract`
+- `Objc3ErrorDiagnosticsRecoveryLoweringContract`
+- `IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(...)`
+- `Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(...)`
+- `error_diagnostics_recovery_lowering = error_diagnostic_sites=<N>`
+- `frontend_objc_error_diagnostics_recovery_lowering_profile`
+- `!objc3.objc_error_diagnostics_recovery_lowering = !{!44}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == error_diagnostic_sites`
+- each of `parser_diagnostic_sites`, `semantic_diagnostic_sites`,
+  `fixit_hint_sites`, `recovery_candidate_sites`, and
+  `contract_violation_sites` is bounded by `error_diagnostic_sites`
+- `parser_diagnostic_sites + semantic_diagnostic_sites <= error_diagnostic_sites`
+- `recovery_applied_sites <= recovery_candidate_sites`
+- `deterministic_error_diagnostics_recovery_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m185_lowering_error_diagnostics_recovery_contract.py -q`
+
 ## Async grammar and continuation lowering artifact contract (M186-C001)
 
 M186-C publishes deterministic lowering replay metadata for async grammar and

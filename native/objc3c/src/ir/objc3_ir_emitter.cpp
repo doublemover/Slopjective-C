@@ -226,6 +226,13 @@ class Objc3IREmitter {
       out << "; unwind_cleanup_lowering = "
           << frontend_metadata_.lowering_unwind_cleanup_replay_key << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_error_diagnostics_recovery_replay_key.empty()) {
+      out << "; error_diagnostics_recovery_lowering = "
+          << frontend_metadata_
+                 .lowering_error_diagnostics_recovery_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_async_continuation_replay_key.empty()) {
       out << "; async_continuation_lowering = "
           << frontend_metadata_.lowering_async_continuation_replay_key << "\n";
@@ -886,6 +893,38 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_error_diagnostics_recovery_lowering_profile = error_diagnostic_sites="
+        << frontend_metadata_.error_diagnostics_recovery_lowering_sites
+        << ", parser_diagnostic_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_parser_diagnostic_sites
+        << ", semantic_diagnostic_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_semantic_diagnostic_sites
+        << ", fixit_hint_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_fixit_hint_sites
+        << ", recovery_candidate_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_recovery_candidate_sites
+        << ", recovery_applied_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_recovery_applied_sites
+        << ", normalized_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_normalized_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .error_diagnostics_recovery_lowering_contract_violation_sites
+        << ", deterministic_error_diagnostics_recovery_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_error_diagnostics_recovery_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_async_continuation_lowering_profile = async_continuation_sites="
         << frontend_metadata_.async_continuation_lowering_sites
         << ", async_keyword_sites="
@@ -1268,6 +1307,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}\n";
     out << "!objc3.objc_actor_isolation_sendability_lowering = !{!41}\n";
     out << "!objc3.objc_async_continuation_lowering = !{!43}\n";
+    out << "!objc3.objc_error_diagnostics_recovery_lowering = !{!44}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -2314,6 +2354,47 @@ class Objc3IREmitter {
                    .async_continuation_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_async_continuation_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!44 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.error_diagnostics_recovery_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_parser_diagnostic_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_semantic_diagnostic_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_fixit_hint_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_recovery_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_recovery_applied_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .error_diagnostics_recovery_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_error_diagnostics_recovery_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

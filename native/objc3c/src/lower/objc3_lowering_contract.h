@@ -80,6 +80,8 @@ inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
 inline constexpr const char *kObjc3UnwindCleanupLoweringLaneContract =
     "m184-unwind-cleanup-lowering-v1";
+inline constexpr const char *kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract =
+    "m185-error-diagnostics-recovery-lowering-v1";
 inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
     "m186-async-continuation-lowering-v1";
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
@@ -487,6 +489,19 @@ struct Objc3UnwindCleanupLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3ErrorDiagnosticsRecoveryLoweringContract {
+  std::size_t error_diagnostic_sites = 0;
+  std::size_t parser_diagnostic_sites = 0;
+  std::size_t semantic_diagnostic_sites = 0;
+  std::size_t fixit_hint_sites = 0;
+  std::size_t recovery_candidate_sites = 0;
+  std::size_t recovery_applied_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3AsyncContinuationLoweringContract {
   std::size_t async_continuation_sites = 0;
   std::size_t async_keyword_sites = 0;
@@ -707,6 +722,10 @@ bool IsValidObjc3UnwindCleanupLoweringContract(
     const Objc3UnwindCleanupLoweringContract &contract);
 std::string Objc3UnwindCleanupLoweringReplayKey(
     const Objc3UnwindCleanupLoweringContract &contract);
+bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
+    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
+std::string Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(
+    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract);
 bool IsValidObjc3AsyncContinuationLoweringContract(
     const Objc3AsyncContinuationLoweringContract &contract);
 std::string Objc3AsyncContinuationLoweringReplayKey(
