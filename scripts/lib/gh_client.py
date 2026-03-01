@@ -20,6 +20,7 @@ TRANSIENT_PATTERNS = (
     re.compile(r"\bconnection (?:reset|closed|refused)\b", re.IGNORECASE),
     re.compile(r"\bnetwork\b", re.IGNORECASE),
 )
+DEFAULT_GH_TIMEOUT_SECONDS = 120
 
 CommandRunner = Callable[[Sequence[str], Path], subprocess.CompletedProcess[bytes]]
 SleepFn = Callable[[float], None]
@@ -46,6 +47,7 @@ def _default_runner(args: Sequence[str], cwd: Path) -> subprocess.CompletedProce
         capture_output=True,
         text=False,
         check=False,
+        timeout=DEFAULT_GH_TIMEOUT_SECONDS,
     )
 
 
@@ -76,7 +78,16 @@ class GhClient:
 
         attempt = 0
         while True:
-            proc = self._runner(["gh", *args], self._root)
+            try:
+                proc = self._runner(["gh", *args], self._root)
+            except subprocess.TimeoutExpired:
+                detail = f"timeout after {DEFAULT_GH_TIMEOUT_SECONDS}s"
+                if attempt < self._max_retries and self._is_transient_failure(detail):
+                    delay = self._backoff_base_seconds * (2**attempt)
+                    self._sleeper(delay)
+                    attempt += 1
+                    continue
+                raise GhClientError(f"gh {' '.join(args)} failed: {detail}") from None
             stdout = decode_utf8_safe(proc.stdout)
             stderr = decode_utf8_safe(proc.stderr)
 

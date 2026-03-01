@@ -18,7 +18,7 @@ const args = [
   '--open-blockers-source',
   'fixture:bootstrap-readiness-ci',
   '--output-dir',
-  'reports/bootstrap_readiness/ci_fixture_zero_open',
+  'tmp/reports/bootstrap_readiness/ci_fixture_zero_open',
   '--run-spec-lint',
 ];
 

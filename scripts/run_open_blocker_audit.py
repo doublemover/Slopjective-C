@@ -17,7 +17,7 @@ from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AUDIT_ROOT = ROOT
-DEFAULT_OUTPUT_DIR = ROOT / "reports" / "open_blocker_audit"
+DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "open_blocker_audit"
 DEFAULT_SNAPSHOT_RELATIVE_PATH = Path("inputs") / "open_blockers.snapshot.json"
 DEFAULT_EXCLUDE_PATHS: tuple[str, ...] = (
     ".git/**",
@@ -42,6 +42,7 @@ RUNNER_CONTRACT_ID = "open-blocker-audit-runner"
 RUNNER_CONTRACT_VERSION = "v0.1"
 RUNNER_ID = f"{RUNNER_CONTRACT_ID}/{RUNNER_CONTRACT_VERSION}"
 CHECKER_MODE = "open-blocker-audit-contract-v1"
+DEFAULT_COMMAND_TIMEOUT_SECONDS = 600
 
 ISO_UTC_SECOND_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:/")
@@ -328,21 +329,32 @@ def build_extractor_exclude_paths(
 
 def run_command(spec: CommandSpec) -> CommandResult:
     command = [sys.executable, str(spec.script_path), *spec.actual_args]
-    proc = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-    return CommandResult(
-        spec=spec,
-        exit_code=int(proc.returncode),
-        stdout=normalize_newlines(proc.stdout),
-        stderr=normalize_newlines(proc.stderr),
-    )
+    try:
+        proc = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
+        )
+        return CommandResult(
+            spec=spec,
+            exit_code=int(proc.returncode),
+            stdout=normalize_newlines(proc.stdout),
+            stderr=normalize_newlines(proc.stderr),
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = normalize_newlines(exc.stdout or "")
+        stderr = normalize_newlines(exc.stderr or "")
+        timeout_note = (
+            f"error: command timed out after {DEFAULT_COMMAND_TIMEOUT_SECONDS} seconds: "
+            f"{display_path(spec.script_path)}"
+        )
+        merged_stderr = f"{stderr}\n{timeout_note}" if stderr else timeout_note
+        return CommandResult(spec=spec, exit_code=EXIT_RUNNER_ERROR, stdout=stdout, stderr=merged_stderr)
 
 
 def render_command_log(title: str, result: CommandResult) -> str:

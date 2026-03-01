@@ -5,7 +5,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const root = process.cwd();
-const outputDir = path.join(root, 'reports', 'open_blocker_audit', 'ci_repo_root');
+const outputDir = path.join(root, 'tmp', 'reports', 'open_blocker_audit', 'ci_repo_root');
 const stdoutPath = path.join(outputDir, 'open_blocker_audit_contract_check.stdout.json');
 const stderrPath = path.join(outputDir, 'open_blocker_audit_contract_check.stderr.txt');
 
@@ -14,11 +14,11 @@ fs.mkdirSync(outputDir, { recursive: true });
 const args = [
   'scripts/check_open_blocker_audit_contract.py',
   '--summary',
-  'reports/open_blocker_audit/ci_repo_root/open_blocker_audit_summary.json',
+  'tmp/reports/open_blocker_audit/ci_repo_root/open_blocker_audit_summary.json',
   '--snapshot',
-  'reports/open_blocker_audit/ci_repo_root/inputs/open_blockers.snapshot.json',
+  'tmp/reports/open_blocker_audit/ci_repo_root/inputs/open_blockers.snapshot.json',
   '--extract-log',
-  'reports/open_blocker_audit/ci_repo_root/extract_open_blockers.log',
+  'tmp/reports/open_blocker_audit/ci_repo_root/extract_open_blockers.log',
   '--contract-id',
   'open-blocker-audit-runner',
   '--contract-version',
@@ -38,4 +38,4 @@ if (completed.status !== 0) {
   process.exit(completed.status === null ? 1 : completed.status);
 }
 
-console.log('open-blocker-audit-contract: OK (fixture contract run captured to reports/open_blocker_audit/ci_repo_root)');
+console.log('open-blocker-audit-contract: OK (fixture contract run captured to tmp/reports/open_blocker_audit/ci_repo_root)');

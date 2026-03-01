@@ -15,8 +15,9 @@ from typing import Any, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG_JSON = ROOT / "spec" / "planning" / "remaining_task_review_catalog.json"
 DEFAULT_OPEN_BLOCKERS_ROOT = ROOT / "spec" / "planning"
-DEFAULT_OUTPUT_DIR = ROOT / "reports" / "bootstrap_readiness"
+DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "bootstrap_readiness"
 DEFAULT_REFRESH_OPEN_BLOCKERS_RELATIVE_PATH = Path("inputs") / "open_blockers.snapshot.json"
+DEFAULT_COMMAND_TIMEOUT_SECONDS = 600
 
 CHECK_BOOTSTRAP_READINESS_SCRIPT_PATH = ROOT / "scripts" / "check_bootstrap_readiness.py"
 EXTRACT_OPEN_BLOCKERS_SCRIPT_PATH = ROOT / "scripts" / "extract_open_blockers.py"
@@ -85,21 +86,32 @@ def bool_text(value: bool) -> str:
 
 def run_command(spec: CommandSpec) -> CommandResult:
     command = [sys.executable, str(spec.script_path), *spec.actual_args]
-    proc = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-    return CommandResult(
-        spec=spec,
-        exit_code=int(proc.returncode),
-        stdout=normalize_newlines(proc.stdout),
-        stderr=normalize_newlines(proc.stderr),
-    )
+    try:
+        proc = subprocess.run(
+            command,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
+        )
+        return CommandResult(
+            spec=spec,
+            exit_code=int(proc.returncode),
+            stdout=normalize_newlines(proc.stdout),
+            stderr=normalize_newlines(proc.stderr),
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = normalize_newlines(exc.stdout or "")
+        stderr = normalize_newlines(exc.stderr or "")
+        timeout_note = (
+            f"error: command timed out after {DEFAULT_COMMAND_TIMEOUT_SECONDS} seconds: "
+            f"{display_path(spec.script_path)}"
+        )
+        merged_stderr = f"{stderr}\n{timeout_note}" if stderr else timeout_note
+        return CommandResult(spec=spec, exit_code=EXIT_RUNNER_ERROR, stdout=stdout, stderr=merged_stderr)
 
 
 def render_command_log(title: str, result: CommandResult) -> str:
