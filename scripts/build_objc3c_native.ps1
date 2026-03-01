@@ -1,19 +1,22 @@
 $ErrorActionPreference = "Stop"
 
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
 $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
 $libclang = Join-Path $llvmRoot "lib\libclang.lib"
 $includeDir = Join-Path $llvmRoot "include"
+$nativeSourceRoot = Join-Path $repoRoot "native/objc3c/src"
 
 if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) { throw "clang++ not found at $clangxx" }
 if (!(Test-Path -LiteralPath $libclang -PathType Leaf)) { throw "libclang not found at $libclang" }
 if (!(Test-Path -LiteralPath $includeDir -PathType Container)) { throw "LLVM include dir not found at $includeDir" }
+if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "native source root not found at $nativeSourceRoot" }
 
-$outDir = "artifacts/bin"
+$outDir = Join-Path $repoRoot "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $outExe = Join-Path $outDir "objc3c-native.exe"
 $outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
-$tmpOutDir = Join-Path "tmp" "build-objc3c-native"
+$tmpOutDir = Join-Path $repoRoot "tmp/build-objc3c-native"
 New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
@@ -77,10 +80,18 @@ $sharedSources = @(
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
 ) + $sharedSources
+$nativeSourcePaths = @($nativeSources | ForEach-Object { Join-Path $repoRoot $_ })
 
 $capiRunnerSources = @(
   "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp"
 ) + $sharedSources
+$capiRunnerSourcePaths = @($capiRunnerSources | ForEach-Object { Join-Path $repoRoot $_ })
+
+foreach ($sourcePath in @($nativeSourcePaths + $capiRunnerSourcePaths)) {
+  if (!(Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+    throw "native source file missing: $sourcePath"
+  }
+}
 
 & $clangxx `
   -std=c++20 `
@@ -89,8 +100,8 @@ $capiRunnerSources = @(
   -pedantic `
   -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
   "-I$includeDir" `
-  "-Inative/objc3c/src" `
-  @nativeSources `
+  "-I$nativeSourceRoot" `
+  @nativeSourcePaths `
   $libclang `
   -o $stagedOutExe
 
@@ -104,12 +115,12 @@ Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
   -pedantic `
   -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
   "-I$includeDir" `
-  "-Inative/objc3c/src" `
-  @capiRunnerSources `
+  "-I$nativeSourceRoot" `
+  @capiRunnerSourcePaths `
   $libclang `
   -o $stagedOutCapiExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
-Write-Output "built=$outExe"
-Write-Output "built=$outCapiExe"
+Write-Output ("built=" + [System.IO.Path]::GetRelativePath($repoRoot, $outExe).Replace("\", "/"))
+Write-Output ("built=" + [System.IO.Path]::GetRelativePath($repoRoot, $outCapiExe).Replace("\", "/"))
