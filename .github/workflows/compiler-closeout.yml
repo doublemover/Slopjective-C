@@ -40,6 +40,10 @@ jobs:
         run: npm run check:compiler-closeout:m183
       - name: Run M183 NSError bridging integration gate
         run: npm run check:objc3c:m183-ns-error-bridging-contracts
+      - name: Enforce M184 unwind safety/cleanup emission packet/docs contract
+        run: npm run check:compiler-closeout:m184
+      - name: Run M184 unwind safety/cleanup emission integration gate
+        run: npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts
       - name: Enforce M186 async grammar/continuation IR packet/docs contract
         run: npm run check:compiler-closeout:m186
       - name: Run M186 async grammar/continuation IR integration gate

@@ -2646,6 +2646,36 @@ Recommended verification command:
 python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
 ```
 
+## M184 integration unwind safety and cleanup emission contract runbook (M184-E001)
+
+Deterministic M184 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m183_frontend_ns_error_bridging_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_validation_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m183_conformance_ns_error_bridging_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m184_integration_unwind_safety_cleanup_emission_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts`
+- `npm run check:compiler-closeout:m184`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M184 unwind safety/cleanup emission packet/docs contract`
+  - `Run M184 unwind safety/cleanup emission integration gate`
+
+Scope assumptions:
+
+- M184-A001, M184-B001, M184-C001, and M184-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via M183-A001 frontend parsing, M183-B001 fail-closed sema replay anchors from M183-D001, M183-C001 lowering replay anchors, and the M183-D001 validation/conformance packet.
+- This runbook fail-closes M184-A001 parser surfaces, M184-B001 sema surfaces, M184-C001 lowering surfaces, and M184-D001 validation/conformance surfaces through M183-E001 replay anchors.
+- This runbook enforces those currently landed lane surfaces plus M184-E001 integration wiring.
+
 ## M190 integration concurrency replay-proof and race-guard contract runbook (M190-E001)
 
 Deterministic M190 integration sequence:
