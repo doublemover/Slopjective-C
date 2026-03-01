@@ -1,5 +1,7 @@
 #include "libobjc3c_frontend/api.h"
 
+#include <process.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cstring>
@@ -12,7 +14,6 @@
 #include <system_error>
 #include <vector>
 
-#include "io/objc3_process.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
 struct objc3c_frontend_context {
@@ -43,6 +44,75 @@ static std::string ToLowerCopy(std::string value) {
 
 static const char *DefaultEmitPrefix = "module";
 static const char *DefaultMemoryInputPath = "<memory>";
+
+static int FrontendRunProcess(const std::string &executable, const std::vector<std::string> &args) {
+  std::vector<std::string> owned_argv;
+  owned_argv.reserve(args.size() + 1);
+
+  std::string argv0 = executable;
+  const std::filesystem::path executable_path(executable);
+  if (executable_path.has_filename()) {
+    const std::string filename = executable_path.filename().string();
+    if (!filename.empty()) {
+      argv0 = filename;
+    }
+  }
+
+  owned_argv.push_back(argv0);
+  for (const auto &arg : args) {
+    owned_argv.push_back(arg);
+  }
+
+  std::vector<const char *> argv;
+  argv.reserve(owned_argv.size() + 1);
+  for (const auto &arg : owned_argv) {
+    argv.push_back(arg.c_str());
+  }
+  argv.push_back(nullptr);
+
+  const bool has_explicit_path =
+      executable.find('\\') != std::string::npos || executable.find('/') != std::string::npos ||
+      executable.find(':') != std::string::npos;
+  const int status = has_explicit_path ? _spawnv(_P_WAIT, executable.c_str(), argv.data())
+                                       : _spawnvp(_P_WAIT, executable.c_str(), argv.data());
+  if (status == -1) {
+    return 127;
+  }
+  return status;
+}
+
+static int FrontendRunIRCompile(const std::filesystem::path &clang_path,
+                                const std::filesystem::path &ir_path,
+                                const std::filesystem::path &object_out) {
+  return FrontendRunProcess(clang_path.string(),
+                            {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(), "-fno-color-diagnostics"});
+}
+
+static int FrontendRunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
+                                          const std::filesystem::path &ir_path,
+                                          const std::filesystem::path &object_out,
+                                          std::string &error) {
+#if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+  const int llc_status =
+      FrontendRunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
+  if (llc_status == 0) {
+    return 0;
+  }
+  if (llc_status == 127) {
+    error = "llvm-direct object emission failed: llc executable not found: " + llc_path.string();
+    return 125;
+  }
+  error = "llvm-direct object emission failed: llc exited with status " + std::to_string(llc_status) + " for " +
+          ir_path.string();
+  return llc_status;
+#else
+  (void)llc_path;
+  (void)ir_path;
+  (void)object_out;
+  error = "llvm-direct object emission backend unavailable in this build (enable OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION).";
+  return 125;
+#endif
+}
 
 static uint8_t NormalizeLanguageVersion(uint8_t requested_language_version) {
   if (requested_language_version == 0u) {
@@ -492,9 +562,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       int compile_status = 0;
       std::string backend_error;
       if (wants_clang_backend) {
-        compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+        compile_status = FrontendRunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
       } else {
-        compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
+        compile_status =
+            FrontendRunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
       }
       if (compile_status != 0) {
         result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;

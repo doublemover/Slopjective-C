@@ -4390,11 +4390,11 @@ class Objc3IREmitter {
   mutable bool runtime_dispatch_call_emitted_ = false;
 };
 
-bool EmitObjc3IRText(const Objc3ParsedProgram &program,
+bool EmitObjc3IRText(const Objc3Program &program,
                      const Objc3LoweringContract &lowering_contract,
                      const Objc3IRFrontendMetadata &frontend_metadata,
                      std::string &ir,
                      std::string &error) {
-  Objc3IREmitter emitter(Objc3ParsedProgramAst(program), lowering_contract, frontend_metadata);
+  Objc3IREmitter emitter(program, lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }

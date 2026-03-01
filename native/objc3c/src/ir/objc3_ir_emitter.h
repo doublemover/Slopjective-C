@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <string>
 
+#include "ast/objc3_ast.h"
 #include "lower/objc3_lowering_contract.h"
-#include "parse/objc3_parser_contract.h"
 
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
@@ -478,7 +478,7 @@ struct Objc3IRFrontendMetadata {
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };
 
-bool EmitObjc3IRText(const Objc3ParsedProgram &program,
+bool EmitObjc3IRText(const Objc3Program &program,
                      const Objc3LoweringContract &lowering_contract,
                      const Objc3IRFrontendMetadata &frontend_metadata,
                      std::string &ir,

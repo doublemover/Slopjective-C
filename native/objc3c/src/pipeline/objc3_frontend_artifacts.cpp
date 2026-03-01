@@ -4410,7 +4410,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       symbol_graph_scope_resolution_summary.deterministic_handoff_key;
 
   std::string ir_error;
-  if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
+  if (!EmitObjc3IRText(pipeline_result.program.ast, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
     bundle.post_pipeline_diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     bundle.manifest_json.clear();
