@@ -1985,6 +1985,24 @@ Frontend async-grammar/continuation contract relies on deterministic parser-owne
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q`
 
+## M184 frontend unwind safety and cleanup emission packetization
+
+Frontend unwind-safety/cleanup-emission contract relies on deterministic parser-owned symbol classification and replay-stable AST profile packet transport for exceptional exits, cleanup actions, cleanup scopes, and cleanup resume surfaces.
+
+- Required frontend unwind-safety/cleanup-emission signals:
+  - parser symbol classifiers remain `IsExceptionalExitSymbol(...)`, `IsCleanupActionSymbol(...)`, `IsCleanupScopeSymbol(...)`, and `IsCleanupResumeSymbol(...)`.
+  - parser profile packet carrier remains `struct Objc3UnwindCleanupProfile`.
+  - parser profile serialization remains `BuildUnwindCleanupProfile(...)`.
+  - parser profile invariant gate remains `IsUnwindCleanupProfileNormalized(...)`.
+  - function declaration finalization remains `FinalizeUnwindCleanupProfile(FunctionDecl &fn)`.
+  - Objective-C method declaration finalization remains `FinalizeUnwindCleanupProfile(Objc3MethodDecl &method)`.
+  - parser profile transport remains `fn.unwind_cleanup_sites = profile.unwind_cleanup_sites;` and `method.unwind_cleanup_sites = profile.unwind_cleanup_sites;`.
+  - AST carrier anchors remain `bool unwind_cleanup_profile_is_normalized = false;`, `bool deterministic_unwind_cleanup_handoff = false;`, and `std::string unwind_cleanup_profile;` on function/method declarations.
+- Required frontend unwind-safety/cleanup-emission commands (run in order):
+  1. `npm run test:objc3c:parser-ast-extraction`
+  2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
+  3. `python -m pytest tests/tooling/test_objc3c_m184_frontend_unwind_cleanup_parser_contract.py -q`
+
 ## M203 frontend compile-time evaluation engine
 
 Frontend compile-time evaluation engine contract relies on deterministic constant-expression folding surfaces and stable parser-to-sema value-provenance transport.
