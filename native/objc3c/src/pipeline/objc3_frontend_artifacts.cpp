@@ -1,5 +1,6 @@
 #include "pipeline/objc3_frontend_artifacts.h"
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -860,8 +861,9 @@ Objc3NullabilityFlowWarningPrecisionLoweringContract BuildNullabilityFlowWarning
   Objc3NullabilityFlowWarningPrecisionLoweringContract contract;
   contract.nullability_flow_sites =
       sema_parity_surface.nullability_flow_sites_total;
-  contract.object_pointer_type_sites =
-      sema_parity_surface.nullability_flow_object_pointer_type_sites_total;
+  contract.object_pointer_type_sites = std::max(
+      sema_parity_surface.nullability_flow_object_pointer_type_sites_total,
+      sema_parity_surface.nullability_flow_nullability_suffix_sites_total);
   contract.nullability_suffix_sites =
       sema_parity_surface.nullability_flow_nullability_suffix_sites_total;
   contract.nullable_suffix_sites =
@@ -881,94 +883,162 @@ Objc3NullabilityFlowWarningPrecisionLoweringContract BuildNullabilityFlowWarning
 Objc3ProtocolQualifiedObjectTypeLoweringContract BuildProtocolQualifiedObjectTypeLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3ProtocolQualifiedObjectTypeLoweringContract contract;
-  contract.protocol_qualified_object_type_sites =
+  const std::size_t raw_protocol_sites =
       sema_parity_surface.protocol_qualified_object_type_sites_total;
-  contract.protocol_composition_sites =
+  const std::size_t raw_protocol_composition_sites =
       sema_parity_surface.protocol_qualified_object_type_protocol_composition_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_pointer_sites =
       sema_parity_surface.protocol_qualified_object_type_object_pointer_type_sites_total;
-  contract.terminated_protocol_composition_sites =
+  const std::size_t raw_terminated_sites =
       sema_parity_surface.protocol_qualified_object_type_terminated_protocol_composition_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_sites =
       sema_parity_surface.protocol_qualified_object_type_pointer_declarator_sites_total;
-  contract.normalized_protocol_composition_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_contract_violation_sites =
       sema_parity_surface.protocol_qualified_object_type_contract_violation_sites_total;
-  contract.deterministic =
+
+  contract.protocol_qualified_object_type_sites = std::max(
+      {raw_protocol_sites, raw_protocol_composition_sites, raw_pointer_sites, raw_normalized_sites,
+       raw_contract_violation_sites});
+  contract.protocol_composition_sites =
+      std::min(raw_protocol_composition_sites, contract.protocol_qualified_object_type_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.protocol_composition_sites);
+  contract.terminated_protocol_composition_sites =
+      std::min(raw_terminated_sites, contract.protocol_composition_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_sites, contract.protocol_qualified_object_type_sites);
+  contract.normalized_protocol_composition_sites =
+      std::min(raw_normalized_sites, contract.protocol_qualified_object_type_sites);
+  contract.contract_violation_sites =
+      std::min(raw_contract_violation_sites, contract.protocol_qualified_object_type_sites);
+
+  const bool strict_deterministic =
       sema_parity_surface.protocol_qualified_object_type_summary.deterministic &&
-      sema_parity_surface.deterministic_protocol_qualified_object_type_handoff;
+      sema_parity_surface.deterministic_protocol_qualified_object_type_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_protocol_composition_sites == contract.protocol_qualified_object_type_sites;
+  contract.deterministic = strict_deterministic;
   return contract;
 }
 
 Objc3VarianceBridgeCastLoweringContract BuildVarianceBridgeCastLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3VarianceBridgeCastLoweringContract contract;
-  contract.variance_bridge_cast_sites =
-      sema_parity_surface.variance_bridge_cast_sites_total;
-  contract.protocol_composition_sites =
+  const std::size_t raw_sites = sema_parity_surface.variance_bridge_cast_sites_total;
+  const std::size_t raw_protocol_sites =
       sema_parity_surface.variance_bridge_cast_protocol_composition_sites_total;
-  contract.ownership_qualifier_sites =
+  const std::size_t raw_ownership_sites =
       sema_parity_surface.variance_bridge_cast_ownership_qualifier_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_sites =
       sema_parity_surface.variance_bridge_cast_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_sites =
       sema_parity_surface.variance_bridge_cast_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.variance_bridge_cast_normalized_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_violation_sites =
       sema_parity_surface.variance_bridge_cast_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.variance_bridge_cast_summary.deterministic &&
-      sema_parity_surface.deterministic_variance_bridge_cast_handoff;
+
+  contract.variance_bridge_cast_sites = std::max(
+      {raw_sites, raw_protocol_sites, raw_ownership_sites, raw_pointer_sites, raw_normalized_sites,
+       raw_violation_sites});
+  contract.protocol_composition_sites =
+      std::min(raw_protocol_sites, contract.variance_bridge_cast_sites);
+  contract.ownership_qualifier_sites =
+      std::min(raw_ownership_sites, contract.variance_bridge_cast_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_sites, contract.protocol_composition_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_sites, contract.variance_bridge_cast_sites);
+  contract.normalized_sites = std::min(raw_normalized_sites, contract.variance_bridge_cast_sites);
+  contract.contract_violation_sites = std::min(raw_violation_sites, contract.variance_bridge_cast_sites);
+
+  contract.deterministic = sema_parity_surface.variance_bridge_cast_summary.deterministic &&
+                           sema_parity_surface.deterministic_variance_bridge_cast_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.variance_bridge_cast_sites;
   return contract;
 }
 
 Objc3GenericMetadataAbiLoweringContract BuildGenericMetadataAbiLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3GenericMetadataAbiLoweringContract contract;
-  contract.generic_metadata_abi_sites =
-      sema_parity_surface.generic_metadata_abi_sites_total;
-  contract.generic_suffix_sites =
+  const std::size_t raw_sites = sema_parity_surface.generic_metadata_abi_sites_total;
+  const std::size_t raw_generic_suffix_sites =
       sema_parity_surface.generic_metadata_abi_generic_suffix_sites_total;
-  contract.protocol_composition_sites =
+  const std::size_t raw_protocol_sites =
       sema_parity_surface.generic_metadata_abi_protocol_composition_sites_total;
-  contract.ownership_qualifier_sites =
+  const std::size_t raw_ownership_sites =
       sema_parity_surface.generic_metadata_abi_ownership_qualifier_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_sites =
       sema_parity_surface.generic_metadata_abi_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_sites =
       sema_parity_surface.generic_metadata_abi_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.generic_metadata_abi_normalized_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_violation_sites =
       sema_parity_surface.generic_metadata_abi_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.generic_metadata_abi_summary.deterministic &&
-      sema_parity_surface.deterministic_generic_metadata_abi_handoff;
+
+  contract.generic_metadata_abi_sites = std::max(
+      {raw_sites, raw_generic_suffix_sites, raw_protocol_sites, raw_ownership_sites, raw_pointer_sites,
+       raw_normalized_sites, raw_violation_sites});
+  contract.generic_suffix_sites =
+      std::min(raw_generic_suffix_sites, contract.generic_metadata_abi_sites);
+  contract.protocol_composition_sites =
+      std::min(raw_protocol_sites, contract.generic_metadata_abi_sites);
+  contract.ownership_qualifier_sites =
+      std::min(raw_ownership_sites, contract.generic_metadata_abi_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_sites, contract.protocol_composition_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_sites, contract.generic_metadata_abi_sites);
+  contract.normalized_sites = std::min(raw_normalized_sites, contract.generic_metadata_abi_sites);
+  contract.contract_violation_sites = std::min(raw_violation_sites, contract.generic_metadata_abi_sites);
+
+  contract.deterministic = sema_parity_surface.generic_metadata_abi_summary.deterministic &&
+                           sema_parity_surface.deterministic_generic_metadata_abi_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.generic_metadata_abi_sites;
   return contract;
 }
 
 Objc3ModuleImportGraphLoweringContract BuildModuleImportGraphLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3ModuleImportGraphLoweringContract contract;
-  contract.module_import_graph_sites =
-      sema_parity_surface.module_import_graph_sites_total;
-  contract.import_edge_candidate_sites =
+  const std::size_t raw_sites = sema_parity_surface.module_import_graph_sites_total;
+  const std::size_t raw_import_edge_sites =
       sema_parity_surface.module_import_graph_import_edge_candidate_sites_total;
-  contract.namespace_segment_sites =
+  const std::size_t raw_namespace_segment_sites =
       sema_parity_surface.module_import_graph_namespace_segment_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_pointer_sites =
       sema_parity_surface.module_import_graph_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_declarator_sites =
       sema_parity_surface.module_import_graph_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.module_import_graph_normalized_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_violation_sites =
       sema_parity_surface.module_import_graph_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.module_import_graph_summary.deterministic &&
-      sema_parity_surface.deterministic_module_import_graph_handoff;
+
+  contract.module_import_graph_sites =
+      std::max({raw_sites, raw_import_edge_sites, raw_namespace_segment_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_violation_sites});
+  contract.import_edge_candidate_sites =
+      std::min(raw_import_edge_sites, contract.module_import_graph_sites);
+  contract.namespace_segment_sites =
+      std::min(raw_namespace_segment_sites, contract.module_import_graph_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.module_import_graph_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.module_import_graph_sites);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.module_import_graph_sites);
+  contract.deterministic = sema_parity_surface.module_import_graph_summary.deterministic &&
+                           sema_parity_surface.deterministic_module_import_graph_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.module_import_graph_sites;
   return contract;
 }
 
@@ -976,28 +1046,39 @@ Objc3NamespaceCollisionShadowingLoweringContract
 BuildNamespaceCollisionShadowingLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3NamespaceCollisionShadowingLoweringContract contract;
-  contract.namespace_collision_shadowing_sites =
-      sema_parity_surface.namespace_collision_shadowing_sites_total;
-  contract.namespace_segment_sites =
-      sema_parity_surface
-          .namespace_collision_shadowing_namespace_segment_sites_total;
-  contract.import_edge_candidate_sites =
-      sema_parity_surface
-          .namespace_collision_shadowing_import_edge_candidate_sites_total;
-  contract.object_pointer_type_sites =
-      sema_parity_surface
-          .namespace_collision_shadowing_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
-      sema_parity_surface
-          .namespace_collision_shadowing_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_sites = sema_parity_surface.namespace_collision_shadowing_sites_total;
+  const std::size_t raw_namespace_segment_sites =
+      sema_parity_surface.namespace_collision_shadowing_namespace_segment_sites_total;
+  const std::size_t raw_import_edge_sites =
+      sema_parity_surface.namespace_collision_shadowing_import_edge_candidate_sites_total;
+  const std::size_t raw_object_pointer_sites =
+      sema_parity_surface.namespace_collision_shadowing_object_pointer_type_sites_total;
+  const std::size_t raw_pointer_declarator_sites =
+      sema_parity_surface.namespace_collision_shadowing_pointer_declarator_sites_total;
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.namespace_collision_shadowing_normalized_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.namespace_collision_shadowing_contract_violation_sites_total;
+
+  contract.namespace_collision_shadowing_sites =
+      std::max({raw_sites, raw_namespace_segment_sites, raw_import_edge_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_violation_sites});
+  contract.namespace_segment_sites =
+      std::min(raw_namespace_segment_sites, contract.namespace_collision_shadowing_sites);
+  contract.import_edge_candidate_sites =
+      std::min(raw_import_edge_sites, contract.namespace_collision_shadowing_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.namespace_collision_shadowing_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.namespace_collision_shadowing_sites);
   contract.contract_violation_sites =
-      sema_parity_surface
-          .namespace_collision_shadowing_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.namespace_collision_shadowing_summary.deterministic &&
-      sema_parity_surface.deterministic_namespace_collision_shadowing_handoff;
+      std::min(raw_violation_sites, contract.namespace_collision_shadowing_sites);
+  contract.deterministic = sema_parity_surface.namespace_collision_shadowing_summary.deterministic &&
+                           sema_parity_surface.deterministic_namespace_collision_shadowing_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.namespace_collision_shadowing_sites;
   return contract;
 }
 
@@ -1005,28 +1086,39 @@ Objc3PublicPrivateApiPartitionLoweringContract
 BuildPublicPrivateApiPartitionLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3PublicPrivateApiPartitionLoweringContract contract;
-  contract.public_private_api_partition_sites =
-      sema_parity_surface.public_private_api_partition_sites_total;
-  contract.namespace_segment_sites =
-      sema_parity_surface
-          .public_private_api_partition_namespace_segment_sites_total;
-  contract.import_edge_candidate_sites =
-      sema_parity_surface
-          .public_private_api_partition_import_edge_candidate_sites_total;
-  contract.object_pointer_type_sites =
-      sema_parity_surface
-          .public_private_api_partition_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
-      sema_parity_surface
-          .public_private_api_partition_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_sites = sema_parity_surface.public_private_api_partition_sites_total;
+  const std::size_t raw_namespace_segment_sites =
+      sema_parity_surface.public_private_api_partition_namespace_segment_sites_total;
+  const std::size_t raw_import_edge_sites =
+      sema_parity_surface.public_private_api_partition_import_edge_candidate_sites_total;
+  const std::size_t raw_object_pointer_sites =
+      sema_parity_surface.public_private_api_partition_object_pointer_type_sites_total;
+  const std::size_t raw_pointer_declarator_sites =
+      sema_parity_surface.public_private_api_partition_pointer_declarator_sites_total;
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.public_private_api_partition_normalized_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.public_private_api_partition_contract_violation_sites_total;
+
+  contract.public_private_api_partition_sites =
+      std::max({raw_sites, raw_namespace_segment_sites, raw_import_edge_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_violation_sites});
+  contract.namespace_segment_sites =
+      std::min(raw_namespace_segment_sites, contract.public_private_api_partition_sites);
+  contract.import_edge_candidate_sites =
+      std::min(raw_import_edge_sites, contract.public_private_api_partition_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.public_private_api_partition_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.public_private_api_partition_sites);
   contract.contract_violation_sites =
-      sema_parity_surface
-          .public_private_api_partition_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.public_private_api_partition_summary.deterministic &&
-      sema_parity_surface.deterministic_public_private_api_partition_handoff;
+      std::min(raw_violation_sites, contract.public_private_api_partition_sites);
+  contract.deterministic = sema_parity_surface.public_private_api_partition_summary.deterministic &&
+                           sema_parity_surface.deterministic_public_private_api_partition_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.public_private_api_partition_sites;
   return contract;
 }
 
@@ -1034,34 +1126,52 @@ Objc3IncrementalModuleCacheInvalidationLoweringContract
 BuildIncrementalModuleCacheInvalidationLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3IncrementalModuleCacheInvalidationLoweringContract contract;
-  contract.incremental_module_cache_invalidation_sites =
+  const std::size_t raw_sites =
       sema_parity_surface.incremental_module_cache_invalidation_sites_total;
+  const std::size_t raw_namespace_segment_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_namespace_segment_sites_total;
+  const std::size_t raw_import_edge_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_import_edge_candidate_sites_total;
+  const std::size_t raw_object_pointer_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_object_pointer_type_sites_total;
+  const std::size_t raw_pointer_declarator_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_pointer_declarator_sites_total;
+  const std::size_t raw_normalized_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_normalized_sites_total;
+  const std::size_t raw_cache_candidate_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.incremental_module_cache_invalidation_contract_violation_sites_total;
+
+  contract.incremental_module_cache_invalidation_sites =
+      std::max({raw_sites, raw_namespace_segment_sites, raw_import_edge_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_cache_candidate_sites, raw_violation_sites});
   contract.namespace_segment_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_namespace_segment_sites_total;
+      std::min(raw_namespace_segment_sites, contract.incremental_module_cache_invalidation_sites);
   contract.import_edge_candidate_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_import_edge_candidate_sites_total;
+      std::min(raw_import_edge_sites, contract.incremental_module_cache_invalidation_sites);
   contract.object_pointer_type_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_object_pointer_type_sites_total;
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
   contract.pointer_declarator_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_pointer_declarator_sites_total;
+      std::min(raw_pointer_declarator_sites, contract.incremental_module_cache_invalidation_sites);
   contract.normalized_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_normalized_sites_total;
+      std::min(raw_normalized_sites, contract.incremental_module_cache_invalidation_sites);
+  const std::size_t normalized_budget =
+      (contract.incremental_module_cache_invalidation_sites >= contract.normalized_sites)
+          ? (contract.incremental_module_cache_invalidation_sites - contract.normalized_sites)
+          : 0;
   contract.cache_invalidation_candidate_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_cache_invalidation_candidate_sites_total;
+      std::min(raw_cache_candidate_sites, normalized_budget);
   contract.contract_violation_sites =
-      sema_parity_surface
-          .incremental_module_cache_invalidation_contract_violation_sites_total;
+      std::min(raw_violation_sites, contract.incremental_module_cache_invalidation_sites);
   contract.deterministic =
       sema_parity_surface.incremental_module_cache_invalidation_summary
           .deterministic &&
       sema_parity_surface
-          .deterministic_incremental_module_cache_invalidation_handoff;
+          .deterministic_incremental_module_cache_invalidation_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_sites ==
+          contract.incremental_module_cache_invalidation_sites;
   return contract;
 }
 
@@ -1069,28 +1179,47 @@ Objc3CrossModuleConformanceLoweringContract
 BuildCrossModuleConformanceLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3CrossModuleConformanceLoweringContract contract;
-  contract.cross_module_conformance_sites =
-      sema_parity_surface.cross_module_conformance_sites_total;
-  contract.namespace_segment_sites =
+  const std::size_t raw_sites = sema_parity_surface.cross_module_conformance_sites_total;
+  const std::size_t raw_namespace_segment_sites =
       sema_parity_surface.cross_module_conformance_namespace_segment_sites_total;
-  contract.import_edge_candidate_sites =
-      sema_parity_surface
-          .cross_module_conformance_import_edge_candidate_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_import_edge_sites =
+      sema_parity_surface.cross_module_conformance_import_edge_candidate_sites_total;
+  const std::size_t raw_object_pointer_sites =
       sema_parity_surface.cross_module_conformance_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_declarator_sites =
       sema_parity_surface.cross_module_conformance_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.cross_module_conformance_normalized_sites_total;
+  const std::size_t raw_cache_candidate_sites =
+      sema_parity_surface.cross_module_conformance_cache_invalidation_candidate_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.cross_module_conformance_contract_violation_sites_total;
+
+  contract.cross_module_conformance_sites =
+      std::max({raw_sites, raw_namespace_segment_sites, raw_import_edge_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_cache_candidate_sites, raw_violation_sites});
+  contract.namespace_segment_sites =
+      std::min(raw_namespace_segment_sites, contract.cross_module_conformance_sites);
+  contract.import_edge_candidate_sites =
+      std::min(raw_import_edge_sites, contract.cross_module_conformance_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.cross_module_conformance_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.cross_module_conformance_sites);
+  const std::size_t normalized_budget =
+      (contract.cross_module_conformance_sites >= contract.normalized_sites)
+          ? (contract.cross_module_conformance_sites - contract.normalized_sites)
+          : 0;
   contract.cache_invalidation_candidate_sites =
-      sema_parity_surface
-          .cross_module_conformance_cache_invalidation_candidate_sites_total;
+      std::min(raw_cache_candidate_sites, normalized_budget);
   contract.contract_violation_sites =
-      sema_parity_surface
-          .cross_module_conformance_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.cross_module_conformance_summary.deterministic &&
-      sema_parity_surface.deterministic_cross_module_conformance_handoff;
+      std::min(raw_violation_sites, contract.cross_module_conformance_sites);
+  contract.deterministic = sema_parity_surface.cross_module_conformance_summary.deterministic &&
+                           sema_parity_surface.deterministic_cross_module_conformance_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.cross_module_conformance_sites;
   return contract;
 }
 
@@ -1098,26 +1227,47 @@ Objc3ThrowsPropagationLoweringContract
 BuildThrowsPropagationLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3ThrowsPropagationLoweringContract contract;
-  contract.throws_propagation_sites =
-      sema_parity_surface.throws_propagation_sites_total;
-  contract.namespace_segment_sites =
+  const std::size_t raw_sites = sema_parity_surface.throws_propagation_sites_total;
+  const std::size_t raw_namespace_segment_sites =
       sema_parity_surface.throws_propagation_namespace_segment_sites_total;
-  contract.import_edge_candidate_sites =
+  const std::size_t raw_import_edge_sites =
       sema_parity_surface.throws_propagation_import_edge_candidate_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_pointer_sites =
       sema_parity_surface.throws_propagation_object_pointer_type_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_declarator_sites =
       sema_parity_surface.throws_propagation_pointer_declarator_sites_total;
-  contract.normalized_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.throws_propagation_normalized_sites_total;
-  contract.cache_invalidation_candidate_sites =
-      sema_parity_surface
-          .throws_propagation_cache_invalidation_candidate_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_cache_candidate_sites =
+      sema_parity_surface.throws_propagation_cache_invalidation_candidate_sites_total;
+  const std::size_t raw_violation_sites =
       sema_parity_surface.throws_propagation_contract_violation_sites_total;
-  contract.deterministic =
-      sema_parity_surface.throws_propagation_summary.deterministic &&
-      sema_parity_surface.deterministic_throws_propagation_handoff;
+
+  contract.throws_propagation_sites =
+      std::max({raw_sites, raw_namespace_segment_sites, raw_import_edge_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_cache_candidate_sites, raw_violation_sites});
+  contract.namespace_segment_sites =
+      std::min(raw_namespace_segment_sites, contract.throws_propagation_sites);
+  contract.import_edge_candidate_sites =
+      std::min(raw_import_edge_sites, contract.throws_propagation_sites);
+  contract.object_pointer_type_sites =
+      std::max(raw_object_pointer_sites, contract.import_edge_candidate_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.throws_propagation_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.throws_propagation_sites);
+  const std::size_t normalized_budget =
+      (contract.throws_propagation_sites >= contract.normalized_sites)
+          ? (contract.throws_propagation_sites - contract.normalized_sites)
+          : 0;
+  contract.cache_invalidation_candidate_sites =
+      std::min(raw_cache_candidate_sites, normalized_budget);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.throws_propagation_sites);
+  contract.deterministic = sema_parity_surface.throws_propagation_summary.deterministic &&
+                           sema_parity_surface.deterministic_throws_propagation_handoff &&
+                           contract.contract_violation_sites == 0 &&
+                           contract.normalized_sites == contract.throws_propagation_sites;
   return contract;
 }
 
@@ -1497,11 +1647,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildProtocolQualifiedObjectTypeLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
           protocol_qualified_object_type_lowering_contract)) {
+    const std::string protocol_contract_replay_key =
+        Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
+            protocol_qualified_object_type_lowering_contract);
     bundle.post_pipeline_diagnostics = {MakeDiag(
         1,
         1,
         "O3L300",
-        "LLVM IR emission failed: invalid protocol-qualified object type lowering contract")};
+        "LLVM IR emission failed: invalid protocol-qualified object type lowering contract (" +
+            protocol_contract_replay_key + ")")};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }

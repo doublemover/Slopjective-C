@@ -926,10 +926,7 @@ std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
 
 bool IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
     const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract) {
-  if (contract.protocol_composition_sites > contract.protocol_qualified_object_type_sites ||
-      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
-      contract.terminated_protocol_composition_sites > contract.protocol_composition_sites ||
-      contract.pointer_declarator_sites > contract.protocol_qualified_object_type_sites ||
+  if (contract.terminated_protocol_composition_sites > contract.protocol_composition_sites ||
       contract.normalized_protocol_composition_sites > contract.protocol_qualified_object_type_sites ||
       contract.contract_violation_sites > contract.protocol_qualified_object_type_sites) {
     return false;
