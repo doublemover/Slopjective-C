@@ -6,7 +6,10 @@
 #include <vector>
 
 void WriteText(const std::filesystem::path &path, const std::string &contents) {
-  std::filesystem::create_directories(path.parent_path());
+  const std::filesystem::path parent = path.parent_path();
+  if (!parent.empty()) {
+    std::filesystem::create_directories(parent);
+  }
   std::ofstream out(path, std::ios::binary);
   out << contents;
 }

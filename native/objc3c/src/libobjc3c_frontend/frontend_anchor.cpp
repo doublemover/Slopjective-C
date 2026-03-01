@@ -352,7 +352,9 @@ static ParsedFrontendDiagnostic ParseFrontendDiagnostic(const std::string &diag)
 
 static bool WriteTextFile(const std::filesystem::path &path, const std::string &contents, std::string &error) {
   std::error_code mkdir_error;
-  std::filesystem::create_directories(path.parent_path(), mkdir_error);
+  if (!path.parent_path().empty()) {
+    std::filesystem::create_directories(path.parent_path(), mkdir_error);
+  }
   if (mkdir_error) {
     error = "failed to create output directory '" + path.parent_path().string() + "': " + mkdir_error.message();
     return false;
