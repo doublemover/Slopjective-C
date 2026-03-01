@@ -1,6 +1,11 @@
 #include "io/objc3_process.h"
 
+#if defined(_WIN32)
 #include <process.h>
+#else
+#include <spawn.h>
+#include <sys/wait.h>
+#endif
 
 #include <array>
 #include <cstdint>
@@ -10,6 +15,9 @@
 #include <vector>
 
 namespace {
+#if !defined(_WIN32)
+extern char **environ;
+#endif
 
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
@@ -83,6 +91,7 @@ int RunProcess(const std::string &executable, const std::vector<std::string> &ar
   }
   argv.push_back(nullptr);
 
+#if defined(_WIN32)
   const bool has_explicit_path =
       executable.find('\\') != std::string::npos || executable.find('/') != std::string::npos ||
       executable.find(':') != std::string::npos;
@@ -92,6 +101,35 @@ int RunProcess(const std::string &executable, const std::vector<std::string> &ar
     return 127;
   }
   return status;
+#else
+  std::vector<char *> mutable_argv;
+  mutable_argv.reserve(owned_argv.size() + 1);
+  for (auto &arg : owned_argv) {
+    mutable_argv.push_back(arg.data());
+  }
+  mutable_argv.push_back(nullptr);
+
+  const bool has_explicit_path = executable.find('/') != std::string::npos;
+  pid_t child_pid = 0;
+  const int spawn_status =
+      has_explicit_path ? posix_spawn(&child_pid, executable.c_str(), nullptr, nullptr, mutable_argv.data(), environ)
+                        : posix_spawnp(&child_pid, executable.c_str(), nullptr, nullptr, mutable_argv.data(), environ);
+  if (spawn_status != 0) {
+    return 127;
+  }
+
+  int wait_status = 0;
+  if (waitpid(child_pid, &wait_status, 0) < 0) {
+    return 127;
+  }
+  if (WIFEXITED(wait_status)) {
+    return WEXITSTATUS(wait_status);
+  }
+  if (WIFSIGNALED(wait_status)) {
+    return 128 + WTERMSIG(wait_status);
+  }
+  return 127;
+#endif
 }
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
