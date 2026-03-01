@@ -5191,6 +5191,8 @@ class Objc3Parser {
         }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
+      } else if (AtCStyleTopLevelFunctionDeclStart()) {
+        ParseTopLevelCompatFunctionDecl(program);
       } else {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100",
@@ -5223,6 +5225,290 @@ class Objc3Parser {
       return true;
     }
     return false;
+  }
+
+  static bool IsCompatBuiltinTypeSpelling(const std::string &spelling) {
+    return spelling == "int" || spelling == "bool" || spelling == "BOOL" || spelling == "void" ||
+           spelling == "id" || spelling == "Class" || spelling == "SEL" || spelling == "Protocol" ||
+           spelling == "instancetype" || spelling == "NSInteger" || spelling == "NSUInteger";
+  }
+
+  bool AtCStyleTypeLeadToken() const {
+    if (At(TokenKind::KwI32) || At(TokenKind::KwBool) || At(TokenKind::KwBOOL) || At(TokenKind::KwVoid) ||
+        At(TokenKind::KwId) || At(TokenKind::KwClass) || At(TokenKind::KwSEL) || At(TokenKind::KwProtocol) ||
+        At(TokenKind::KwInstancetype) || At(TokenKind::KwNSInteger) || At(TokenKind::KwNSUInteger)) {
+      return true;
+    }
+    return At(TokenKind::Identifier) && IsCompatBuiltinTypeSpelling(Peek().text);
+  }
+
+  bool AtCStyleTopLevelFunctionDeclStart() const {
+    if (!AtCStyleTypeLeadToken()) {
+      return false;
+    }
+    std::size_t cursor = index_ + 1;
+    while (cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::Star) {
+      ++cursor;
+    }
+    if (cursor >= tokens_.size() || tokens_[cursor].kind != TokenKind::Identifier) {
+      return false;
+    }
+    ++cursor;
+    return cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::LParen;
+  }
+
+  bool ParseCStyleCompatType(ValueType &type, bool allow_void, bool &id_spelling, bool &class_spelling,
+                             bool &sel_spelling, bool &instancetype_spelling, bool &object_pointer_spelling,
+                             std::string &object_pointer_name, unsigned &pointer_depth, unsigned diag_line,
+                             unsigned diag_column, const char *diagnostic_context) {
+    type = ValueType::Unknown;
+    id_spelling = false;
+    class_spelling = false;
+    sel_spelling = false;
+    instancetype_spelling = false;
+    object_pointer_spelling = false;
+    object_pointer_name.clear();
+    pointer_depth = 0;
+
+    const auto parse_builtin_type = [&](const std::string &spelling) -> bool {
+      if (spelling == "int" || spelling == "NSInteger" || spelling == "NSUInteger") {
+        type = ValueType::I32;
+        return true;
+      }
+      if (spelling == "bool" || spelling == "BOOL") {
+        type = ValueType::Bool;
+        return true;
+      }
+      if (spelling == "void") {
+        type = ValueType::Void;
+        return true;
+      }
+      if (spelling == "id") {
+        type = ValueType::ObjCId;
+        id_spelling = true;
+        return true;
+      }
+      if (spelling == "Class") {
+        type = ValueType::ObjCClass;
+        class_spelling = true;
+        return true;
+      }
+      if (spelling == "SEL") {
+        type = ValueType::ObjCSel;
+        sel_spelling = true;
+        return true;
+      }
+      if (spelling == "Protocol") {
+        type = ValueType::ObjCProtocol;
+        return true;
+      }
+      if (spelling == "instancetype") {
+        type = ValueType::ObjCInstancetype;
+        instancetype_spelling = true;
+        return true;
+      }
+      return false;
+    };
+
+    if (Match(TokenKind::KwI32)) {
+      type = ValueType::I32;
+    } else if (Match(TokenKind::KwBool) || Match(TokenKind::KwBOOL)) {
+      type = ValueType::Bool;
+    } else if (Match(TokenKind::KwVoid)) {
+      type = ValueType::Void;
+    } else if (Match(TokenKind::KwId)) {
+      type = ValueType::ObjCId;
+      id_spelling = true;
+    } else if (Match(TokenKind::KwClass)) {
+      type = ValueType::ObjCClass;
+      class_spelling = true;
+    } else if (Match(TokenKind::KwSEL)) {
+      type = ValueType::ObjCSel;
+      sel_spelling = true;
+    } else if (Match(TokenKind::KwProtocol)) {
+      type = ValueType::ObjCProtocol;
+    } else if (Match(TokenKind::KwInstancetype)) {
+      type = ValueType::ObjCInstancetype;
+      instancetype_spelling = true;
+    } else if (Match(TokenKind::KwNSInteger) || Match(TokenKind::KwNSUInteger)) {
+      type = ValueType::I32;
+    } else if (At(TokenKind::Identifier) && parse_builtin_type(Peek().text)) {
+      Advance();
+    } else if (At(TokenKind::Identifier)) {
+      const Token object_name = Advance();
+      type = ValueType::ObjCObjectPtr;
+      object_pointer_spelling = true;
+      object_pointer_name = object_name.text;
+    } else {
+      diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
+                                      std::string("expected ") + diagnostic_context + " type"));
+      return false;
+    }
+
+    while (Match(TokenKind::Star)) {
+      ++pointer_depth;
+    }
+
+    if (pointer_depth > 0u) {
+      if (type == ValueType::Void || type == ValueType::I32 || type == ValueType::Bool) {
+        diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
+                                        "unsupported pointer type in C-style compatibility declaration"));
+        return false;
+      }
+      if (!object_pointer_spelling && !id_spelling && !class_spelling && !sel_spelling && !instancetype_spelling) {
+        object_pointer_spelling = true;
+      }
+      if (object_pointer_name.empty() && At(TokenKind::Identifier)) {
+        object_pointer_name = Peek().text;
+      }
+    }
+
+    if (!allow_void && type == ValueType::Void) {
+      diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P108",
+                                      "void is only allowed as '(void)' in C-style compatibility parameter lists"));
+      return false;
+    }
+    return true;
+  }
+
+  bool ParseCStyleCompatFunctionParameters(FunctionDecl &fn) {
+    if (At(TokenKind::RParen)) {
+      return true;
+    }
+
+    std::size_t parameter_index = 0;
+    while (true) {
+      FuncParam param;
+      const Token &type_token = Peek();
+      param.line = type_token.line;
+      param.column = type_token.column;
+
+      unsigned pointer_depth = 0;
+      if (!ParseCStyleCompatType(param.type, parameter_index == 0, param.id_spelling, param.class_spelling,
+                                 param.sel_spelling, param.instancetype_spelling, param.object_pointer_type_spelling,
+                                 param.object_pointer_type_name, pointer_depth,
+                                 type_token.line, type_token.column, "parameter")) {
+        return false;
+      }
+      param.has_pointer_declarator = pointer_depth > 0u;
+      param.pointer_declarator_depth = pointer_depth;
+
+      if (parameter_index == 0 && param.type == ValueType::Void && At(TokenKind::RParen)) {
+        return true;
+      }
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P101", "invalid parameter identifier"));
+        return false;
+      }
+
+      const Token name_token = Advance();
+      param.name = name_token.text;
+      param.line = name_token.line;
+      param.column = name_token.column;
+      param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);
+      fn.params.push_back(std::move(param));
+      ++parameter_index;
+
+      if (!Match(TokenKind::Comma)) {
+        return true;
+      }
+    }
+  }
+
+  void ParseTopLevelCompatFunctionDecl(Objc3ParsedProgram &program) {
+    auto fn = std::make_unique<FunctionDecl>();
+    const Token &return_type_token = Peek();
+    unsigned return_pointer_depth = 0;
+    if (!ParseCStyleCompatType(fn->return_type, true, fn->return_id_spelling, fn->return_class_spelling,
+                               fn->return_sel_spelling, fn->return_instancetype_spelling,
+                               fn->return_object_pointer_type_spelling, fn->return_object_pointer_type_name,
+                               return_pointer_depth, return_type_token.line, return_type_token.column, "function return")) {
+      SynchronizeTopLevel();
+      return;
+    }
+    fn->has_return_pointer_declarator = return_pointer_depth > 0u;
+    fn->return_pointer_declarator_depth = return_pointer_depth;
+    fn->return_typecheck_family_symbol = BuildObjcTypecheckReturnFamilySymbol(*fn);
+
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P101", "invalid function identifier"));
+      SynchronizeTopLevel();
+      return;
+    }
+    const Token name_token = Advance();
+    fn->name = name_token.text;
+    fn->line = name_token.line;
+    fn->column = name_token.column;
+    fn->scope_owner_symbol = "global";
+    fn->scope_path_lexicographic =
+        BuildScopePathLexicographic(fn->scope_owner_symbol, "function:" + fn->name);
+
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after function name"));
+      SynchronizeTopLevel();
+      return;
+    }
+
+    if (!ParseCStyleCompatFunctionParameters(*fn)) {
+      SynchronizeTopLevel();
+      return;
+    }
+
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after parameters"));
+      SynchronizeTopLevel();
+      return;
+    }
+
+    if (Match(TokenKind::Semicolon)) {
+      fn->is_prototype = true;
+      FinalizeThrowsDeclarationProfile(*fn, true);
+      FinalizeResultLikeProfile(*fn);
+      FinalizeNSErrorBridgingProfile(*fn);
+      FinalizeUnwindCleanupProfile(*fn);
+      FinalizeErrorDiagnosticsRecoveryProfile(*fn);
+      FinalizeAsyncContinuationProfile(*fn);
+      FinalizeAwaitSuspensionProfile(*fn);
+      FinalizeActorIsolationSendabilityProfile(*fn);
+      FinalizeTaskRuntimeCancellationProfile(*fn);
+      FinalizeConcurrencyReplayRaceGuardProfile(*fn);
+      FinalizeUnsafePointerExtensionProfile(*fn);
+      FinalizeInlineAsmIntrinsicGovernanceProfile(*fn);
+      ast_builder_.AddFunctionDecl(program, std::move(*fn));
+      return;
+    }
+
+    if (!At(TokenKind::LBrace)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "missing '{' to start block"));
+      SynchronizeTopLevel();
+      return;
+    }
+
+    fn->body = ParseBlock();
+    if (block_failed_) {
+      block_failed_ = false;
+      SynchronizeTopLevel();
+      return;
+    }
+
+    FinalizeThrowsDeclarationProfile(*fn, true);
+    FinalizeResultLikeProfile(*fn);
+    FinalizeNSErrorBridgingProfile(*fn);
+    FinalizeUnwindCleanupProfile(*fn);
+    FinalizeErrorDiagnosticsRecoveryProfile(*fn);
+    FinalizeAsyncContinuationProfile(*fn);
+    FinalizeAwaitSuspensionProfile(*fn);
+    FinalizeActorIsolationSendabilityProfile(*fn);
+    FinalizeTaskRuntimeCancellationProfile(*fn);
+    FinalizeConcurrencyReplayRaceGuardProfile(*fn);
+    FinalizeUnsafePointerExtensionProfile(*fn);
+    FinalizeInlineAsmIntrinsicGovernanceProfile(*fn);
+    ast_builder_.AddFunctionDecl(program, std::move(*fn));
   }
 
   void ParseTopLevelFunctionDecl(Objc3ParsedProgram &program) {

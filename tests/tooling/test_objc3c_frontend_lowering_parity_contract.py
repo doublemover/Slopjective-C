@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -66,7 +67,15 @@ def test_m142_package_and_docs_wiring_contract() -> None:
     assert "python scripts/check_m142_frontend_lowering_parity_contract.py" in scripts["check:compiler-closeout:m142"]
     assert "npm run test:objc3c:m142-lowering-parity" in scripts["check:compiler-closeout:m142"]
     assert '--glob "docs/contracts/frontend_lowering_parity_expectations.md"' in scripts["check:compiler-closeout:m142"]
-    assert "check:compiler-closeout:m142" in scripts["check:task-hygiene"]
+    assert "python scripts/ci/run_task_hygiene_gate.py" in scripts["check:task-hygiene"]
+    dry_run = subprocess.run(
+        ["python", "scripts/ci/run_task_hygiene_gate.py", "--dry-run"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "check:compiler-closeout:m142" in dry_run.stdout.splitlines()
 
     assert "## C API parity runner usage (M142-E001)" in _read(CLI_FRAGMENT)
     assert "## Frontend lowering parity harness contract (M142-E001)" in _read(SEMANTICS_FRAGMENT)
