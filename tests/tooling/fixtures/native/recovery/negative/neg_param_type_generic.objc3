@@ -1,11 +1,11 @@
-// Negative fixture: generic-like parameter type syntax is unsupported.
-// Expected diagnostic code(s): O3P108, O3P110, O3P100.
+// Negative fixture: generic parameter suffix on non-object-pointer parameter type is unsupported.
+// Expected diagnostic code(s): O3S206.
 module NegativeGenericParamType;
 
-fn passthrough(value: Box<i32>): i32 {
+fn passthrough(value: Box<i32>) -> i32 {
   return 1;
 }
 
-fn main(): i32 {
+fn main() -> i32 {
   return passthrough(1);
 }

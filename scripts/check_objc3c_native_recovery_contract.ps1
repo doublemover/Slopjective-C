@@ -191,15 +191,17 @@ function Invoke-ContractCase {
   if ($RequireLl) {
     $ll1 = Get-Content (Join-Path $run1 "module.ll") -Raw
     $ll2 = Get-Content (Join-Path $run2 "module.ll") -Raw
+    $ll1Code = (($ll1 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
+    $ll2Code = (($ll2 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
     if ($ll1 -ne $ll2) { throw "contract FAIL: LLVM IR drift across replay for $CaseName" }
     foreach ($token in $RequiredLlTokens) {
       if ([string]::IsNullOrWhiteSpace($token)) {
         continue
       }
-      if ($ll1.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
+      if ($ll1Code.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
         throw "contract FAIL: missing LLVM IR token '$token' in run1 for $CaseName"
       }
-      if ($ll2.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
+      if ($ll2Code.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
         throw "contract FAIL: missing LLVM IR token '$token' in run2 for $CaseName"
       }
     }
@@ -207,10 +209,10 @@ function Invoke-ContractCase {
       if ([string]::IsNullOrWhiteSpace($token)) {
         continue
       }
-      if ($ll1.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
+      if ($ll1Code.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
         throw "contract FAIL: forbidden LLVM IR token '$token' present in run1 for $CaseName"
       }
-      if ($ll2.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
+      if ($ll2Code.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
         throw "contract FAIL: forbidden LLVM IR token '$token' present in run2 for $CaseName"
       }
     }

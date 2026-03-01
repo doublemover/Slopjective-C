@@ -695,9 +695,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.language_version_pragma_contract.last_line = pragma_contract.last_line;
   result.language_version_pragma_contract.last_column = pragma_contract.last_column;
 
-  Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
-  result.program = std::move(parse_result.program);
-  result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
+  if (result.stage_diagnostics.lexer.empty()) {
+    Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
+    result.program = std::move(parse_result.program);
+    result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
+  }
   result.selector_normalization_summary =
       BuildSelectorNormalizationSummary(Objc3ParsedProgramAst(result.program));
   result.property_attribute_summary =

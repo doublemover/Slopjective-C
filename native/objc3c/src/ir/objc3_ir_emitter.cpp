@@ -2796,6 +2796,7 @@ class Objc3IREmitter {
       case Expr::Kind::BoolLiteral:
       case Expr::Kind::NilLiteral:
       case Expr::Kind::Identifier:
+      case Expr::Kind::BlockLiteral:
         return;
       case Expr::Kind::Binary:
         CollectFunctionEffectExpr(expr->left.get(), scopes, info);
@@ -3446,6 +3447,7 @@ class Objc3IREmitter {
       case Expr::Kind::BoolLiteral:
       case Expr::Kind::NilLiteral:
       case Expr::Kind::Identifier:
+      case Expr::Kind::BlockLiteral:
         return true;
       case Expr::Kind::Binary:
         return ValidateMessageSendArityExpr(expr->left.get(), error) &&
@@ -3697,6 +3699,8 @@ class Objc3IREmitter {
       case Expr::Kind::BoolLiteral:
         return expr->bool_value ? "1" : "0";
       case Expr::Kind::NilLiteral:
+        return "0";
+      case Expr::Kind::BlockLiteral:
         return "0";
       case Expr::Kind::Identifier: {
         const std::string ptr = LookupVarPtr(ctx, expr->ident);

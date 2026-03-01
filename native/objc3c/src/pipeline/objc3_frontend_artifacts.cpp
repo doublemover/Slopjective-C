@@ -836,23 +836,42 @@ Objc3BlockDeterminismPerfBaselineLoweringContract BuildBlockDeterminismPerfBasel
 Objc3LightweightGenericsConstraintLoweringContract BuildLightweightGenericsConstraintLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3LightweightGenericsConstraintLoweringContract contract;
-  contract.generic_constraint_sites =
+  const std::size_t raw_sites =
       sema_parity_surface.lightweight_generic_constraint_sites_total;
-  contract.generic_suffix_sites =
+  const std::size_t raw_generic_suffix_sites =
       sema_parity_surface.lightweight_generic_constraint_generic_suffix_sites_total;
-  contract.object_pointer_type_sites =
+  const std::size_t raw_object_pointer_sites =
       sema_parity_surface.lightweight_generic_constraint_object_pointer_type_sites_total;
-  contract.terminated_generic_suffix_sites =
+  const std::size_t raw_terminated_generic_suffix_sites =
       sema_parity_surface.lightweight_generic_constraint_terminated_generic_suffix_sites_total;
-  contract.pointer_declarator_sites =
+  const std::size_t raw_pointer_declarator_sites =
       sema_parity_surface.lightweight_generic_constraint_pointer_declarator_sites_total;
-  contract.normalized_constraint_sites =
+  const std::size_t raw_normalized_sites =
       sema_parity_surface.lightweight_generic_constraint_normalized_sites_total;
-  contract.contract_violation_sites =
+  const std::size_t raw_violation_sites =
       sema_parity_surface.lightweight_generic_constraint_contract_violation_sites_total;
+
+  contract.generic_constraint_sites =
+      std::max({raw_sites, raw_generic_suffix_sites, raw_object_pointer_sites, raw_pointer_declarator_sites,
+                raw_normalized_sites, raw_violation_sites});
+  contract.generic_suffix_sites =
+      std::min(raw_generic_suffix_sites, contract.generic_constraint_sites);
+  contract.object_pointer_type_sites =
+      std::min(raw_object_pointer_sites, contract.generic_constraint_sites);
+  contract.terminated_generic_suffix_sites =
+      std::min(raw_terminated_generic_suffix_sites, contract.generic_suffix_sites);
+  contract.pointer_declarator_sites =
+      std::min(raw_pointer_declarator_sites, contract.generic_constraint_sites);
+  contract.normalized_constraint_sites =
+      std::min(raw_normalized_sites, contract.generic_constraint_sites);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.generic_constraint_sites);
+
   contract.deterministic =
       sema_parity_surface.lightweight_generic_constraint_summary.deterministic &&
-      sema_parity_surface.deterministic_lightweight_generic_constraint_handoff;
+      sema_parity_surface.deterministic_lightweight_generic_constraint_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_constraint_sites == contract.generic_constraint_sites;
   return contract;
 }
 

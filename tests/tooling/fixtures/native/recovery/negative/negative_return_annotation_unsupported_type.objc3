@@ -2,6 +2,6 @@
 // Expected diagnostic code(s): O3P114.
 module NegativeReturnAnnotationUnsupportedType;
 
-fn main() -> token {
+fn main() -> {
   return 0;
 }

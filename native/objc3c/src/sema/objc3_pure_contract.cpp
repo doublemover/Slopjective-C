@@ -285,6 +285,7 @@ static void CollectPureContractEffectExpr(const Expr *expr, std::vector<std::uno
     case Expr::Kind::BoolLiteral:
     case Expr::Kind::NilLiteral:
     case Expr::Kind::Identifier:
+    case Expr::Kind::BlockLiteral:
       return;
     case Expr::Kind::Binary:
       CollectPureContractEffectExpr(expr->left.get(), scopes, info);
