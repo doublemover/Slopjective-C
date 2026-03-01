@@ -274,6 +274,21 @@ bool IsEquivalentAsyncContinuationSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentActorIsolationSendabilitySummary(
+    const Objc3ActorIsolationSendabilitySummary &lhs,
+    const Objc3ActorIsolationSendabilitySummary &rhs) {
+  return lhs.actor_isolation_sendability_sites ==
+             rhs.actor_isolation_sendability_sites &&
+         lhs.actor_isolation_decl_sites == rhs.actor_isolation_decl_sites &&
+         lhs.actor_hop_sites == rhs.actor_hop_sites &&
+         lhs.sendable_annotation_sites == rhs.sendable_annotation_sites &&
+         lhs.non_sendable_crossing_sites == rhs.non_sendable_crossing_sites &&
+         lhs.isolation_boundary_sites == rhs.isolation_boundary_sites &&
+         lhs.normalized_sites == rhs.normalized_sites &&
+         lhs.gate_blocked_sites == rhs.gate_blocked_sites &&
+         lhs.contract_violation_sites == rhs.contract_violation_sites;
+}
+
 bool IsEquivalentConcurrencyReplayRaceGuardSummary(
     const Objc3ConcurrencyReplayRaceGuardSummary &lhs,
     const Objc3ConcurrencyReplayRaceGuardSummary &rhs) {
@@ -1004,6 +1019,58 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.throws_propagation_summary.contract_violation_sites <=
           result.type_metadata_handoff.throws_propagation_summary
               .throws_propagation_sites;
+  result.actor_isolation_sendability_summary =
+      result.integration_surface.actor_isolation_sendability_summary;
+  result.deterministic_actor_isolation_sendability_handoff =
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .deterministic &&
+      result.integration_surface.actor_isolation_sendability_summary
+          .deterministic &&
+      IsEquivalentActorIsolationSendabilitySummary(
+          result.integration_surface.actor_isolation_sendability_summary,
+          result.type_metadata_handoff.actor_isolation_sendability_summary) &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_decl_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_hop_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .sendable_annotation_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .non_sendable_crossing_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .isolation_boundary_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .normalized_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .gate_blocked_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .non_sendable_crossing_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .contract_violation_sites <=
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.type_metadata_handoff.actor_isolation_sendability_summary
+              .normalized_sites +
+              result.type_metadata_handoff.actor_isolation_sendability_summary
+                  .gate_blocked_sites ==
+          result.type_metadata_handoff.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites;
   result.concurrency_replay_race_guard_summary =
       result.integration_surface.concurrency_replay_race_guard_summary;
   result.deterministic_concurrency_replay_race_guard_handoff =
@@ -2189,6 +2256,33 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.async_continuation_summary.gate_blocked_sites;
   result.parity_surface.async_continuation_contract_violation_sites_total =
       result.parity_surface.async_continuation_summary.contract_violation_sites;
+  result.parity_surface.actor_isolation_sendability_summary =
+      result.type_metadata_handoff.actor_isolation_sendability_summary;
+  result.parity_surface.actor_isolation_sendability_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .actor_isolation_sendability_sites;
+  result.parity_surface.actor_isolation_decl_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .actor_isolation_decl_sites;
+  result.parity_surface.actor_hop_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary.actor_hop_sites;
+  result.parity_surface.sendable_annotation_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .sendable_annotation_sites;
+  result.parity_surface.non_sendable_crossing_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .non_sendable_crossing_sites;
+  result.parity_surface.actor_isolation_sendability_isolation_boundary_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .isolation_boundary_sites;
+  result.parity_surface.actor_isolation_sendability_normalized_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary.normalized_sites;
+  result.parity_surface.actor_isolation_sendability_gate_blocked_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .gate_blocked_sites;
+  result.parity_surface.actor_isolation_sendability_contract_violation_sites_total =
+      result.parity_surface.actor_isolation_sendability_summary
+          .contract_violation_sites;
   result.parity_surface.concurrency_replay_race_guard_summary =
       result.type_metadata_handoff.concurrency_replay_race_guard_summary;
   result.parity_surface.concurrency_replay_race_guard_sites_total =
@@ -3278,6 +3372,81 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.throws_propagation_summary.contract_violation_sites <=
           result.parity_surface.throws_propagation_summary.throws_propagation_sites &&
       result.parity_surface.throws_propagation_summary.deterministic;
+  result.parity_surface.deterministic_actor_isolation_sendability_handoff =
+      result.deterministic_actor_isolation_sendability_handoff &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites ==
+          result.parity_surface.actor_isolation_sendability_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_decl_sites ==
+          result.parity_surface.actor_isolation_decl_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary.actor_hop_sites ==
+          result.parity_surface.actor_hop_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .sendable_annotation_sites ==
+          result.parity_surface.sendable_annotation_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .non_sendable_crossing_sites ==
+          result.parity_surface.non_sendable_crossing_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .isolation_boundary_sites ==
+          result.parity_surface
+              .actor_isolation_sendability_isolation_boundary_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .normalized_sites ==
+          result.parity_surface
+              .actor_isolation_sendability_normalized_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .gate_blocked_sites ==
+          result.parity_surface
+              .actor_isolation_sendability_gate_blocked_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .contract_violation_sites ==
+          result.parity_surface
+              .actor_isolation_sendability_contract_violation_sites_total &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_decl_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .actor_hop_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .sendable_annotation_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .non_sendable_crossing_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .isolation_boundary_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .normalized_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .gate_blocked_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .gate_blocked_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .non_sendable_crossing_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .contract_violation_sites <=
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary
+              .normalized_sites +
+              result.parity_surface.actor_isolation_sendability_summary
+                  .gate_blocked_sites ==
+          result.parity_surface.actor_isolation_sendability_summary
+              .actor_isolation_sendability_sites &&
+      result.parity_surface.actor_isolation_sendability_summary.deterministic;
   result.parity_surface.deterministic_concurrency_replay_race_guard_handoff =
       result.deterministic_concurrency_replay_race_guard_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary
@@ -4547,6 +4716,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_unwind_cleanup_handoff &&
       result.parity_surface.async_continuation_summary.deterministic &&
       result.parity_surface.deterministic_async_continuation_handoff &&
+      result.parity_surface.actor_isolation_sendability_summary.deterministic &&
+      result.parity_surface
+          .deterministic_actor_isolation_sendability_handoff &&
       result.parity_surface.concurrency_replay_race_guard_summary.deterministic &&
       result.parity_surface
           .deterministic_concurrency_replay_race_guard_handoff &&

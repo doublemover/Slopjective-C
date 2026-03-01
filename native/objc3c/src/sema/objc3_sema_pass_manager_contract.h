@@ -224,6 +224,15 @@ struct Objc3SemaParityContractSurface {
   std::size_t async_continuation_normalized_sites_total = 0;
   std::size_t async_continuation_gate_blocked_sites_total = 0;
   std::size_t async_continuation_contract_violation_sites_total = 0;
+  std::size_t actor_isolation_sendability_sites_total = 0;
+  std::size_t actor_isolation_decl_sites_total = 0;
+  std::size_t actor_hop_sites_total = 0;
+  std::size_t sendable_annotation_sites_total = 0;
+  std::size_t non_sendable_crossing_sites_total = 0;
+  std::size_t actor_isolation_sendability_isolation_boundary_sites_total = 0;
+  std::size_t actor_isolation_sendability_normalized_sites_total = 0;
+  std::size_t actor_isolation_sendability_gate_blocked_sites_total = 0;
+  std::size_t actor_isolation_sendability_contract_violation_sites_total = 0;
   std::size_t concurrency_replay_race_guard_sites_total = 0;
   std::size_t concurrency_replay_race_guard_concurrency_replay_sites_total = 0;
   std::size_t concurrency_replay_race_guard_replay_proof_sites_total = 0;
@@ -482,6 +491,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_cross_module_conformance_handoff = false;
   bool deterministic_throws_propagation_handoff = false;
   bool deterministic_async_continuation_handoff = false;
+  bool deterministic_actor_isolation_sendability_handoff = false;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   bool deterministic_unsafe_pointer_extension_handoff = false;
   bool deterministic_inline_asm_intrinsic_governance_handoff = false;
@@ -526,6 +536,7 @@ struct Objc3SemaParityContractSurface {
   Objc3CrossModuleConformanceSummary cross_module_conformance_summary;
   Objc3ThrowsPropagationSummary throws_propagation_summary;
   Objc3AsyncContinuationSummary async_continuation_summary;
+  Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   Objc3UnsafePointerExtensionSummary unsafe_pointer_extension_summary;
   Objc3InlineAsmIntrinsicGovernanceSummary inline_asm_intrinsic_governance_summary;
@@ -971,6 +982,67 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.throws_propagation_summary.throws_propagation_sites &&
          surface.throws_propagation_summary.deterministic &&
          surface.deterministic_throws_propagation_handoff &&
+         surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites ==
+             surface.actor_isolation_sendability_sites_total &&
+         surface.actor_isolation_sendability_summary
+                 .actor_isolation_decl_sites ==
+             surface.actor_isolation_decl_sites_total &&
+         surface.actor_isolation_sendability_summary.actor_hop_sites ==
+             surface.actor_hop_sites_total &&
+         surface.actor_isolation_sendability_summary
+                 .sendable_annotation_sites ==
+             surface.sendable_annotation_sites_total &&
+         surface.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites ==
+             surface.non_sendable_crossing_sites_total &&
+         surface.actor_isolation_sendability_summary
+                 .isolation_boundary_sites ==
+             surface.actor_isolation_sendability_isolation_boundary_sites_total &&
+         surface.actor_isolation_sendability_summary.normalized_sites ==
+             surface.actor_isolation_sendability_normalized_sites_total &&
+         surface.actor_isolation_sendability_summary.gate_blocked_sites ==
+             surface.actor_isolation_sendability_gate_blocked_sites_total &&
+         surface.actor_isolation_sendability_summary.contract_violation_sites ==
+             surface.actor_isolation_sendability_contract_violation_sites_total &&
+         surface.actor_isolation_sendability_summary
+                 .actor_isolation_decl_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.actor_hop_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary
+                 .sendable_annotation_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary
+                 .isolation_boundary_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.normalized_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.gate_blocked_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.gate_blocked_sites <=
+             surface.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites &&
+         surface.actor_isolation_sendability_summary
+                 .contract_violation_sites <=
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.normalized_sites +
+                 surface.actor_isolation_sendability_summary.gate_blocked_sites ==
+             surface.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         surface.actor_isolation_sendability_summary.deterministic &&
+         surface.deterministic_actor_isolation_sendability_handoff &&
          surface.concurrency_replay_race_guard_summary
                  .concurrency_replay_race_guard_sites ==
              surface.concurrency_replay_race_guard_sites_total &&
@@ -2057,6 +2129,8 @@ struct Objc3SemaPassManagerResult {
   Objc3ThrowsPropagationSummary throws_propagation_summary;
   bool deterministic_async_continuation_handoff = false;
   Objc3AsyncContinuationSummary async_continuation_summary;
+  bool deterministic_actor_isolation_sendability_handoff = false;
+  Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary;
   bool deterministic_concurrency_replay_race_guard_handoff = false;
   Objc3ConcurrencyReplayRaceGuardSummary concurrency_replay_race_guard_summary;
   bool deterministic_unsafe_pointer_extension_handoff = false;

@@ -1463,6 +1463,23 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
       method.async_continuation_gate_blocked_sites;
   info.async_continuation_contract_violation_sites =
       method.async_continuation_contract_violation_sites;
+  info.actor_isolation_sendability_profile_is_normalized =
+      method.actor_isolation_sendability_profile_is_normalized;
+  info.deterministic_actor_isolation_sendability_handoff =
+      method.deterministic_actor_isolation_sendability_handoff;
+  info.actor_isolation_sendability_sites =
+      method.actor_isolation_sendability_sites;
+  info.actor_isolation_decl_sites = method.actor_isolation_decl_sites;
+  info.actor_hop_sites = method.actor_hop_sites;
+  info.sendable_annotation_sites = method.sendable_annotation_sites;
+  info.non_sendable_crossing_sites = method.non_sendable_crossing_sites;
+  info.isolation_boundary_sites = method.isolation_boundary_sites;
+  info.actor_isolation_sendability_normalized_sites =
+      method.actor_isolation_sendability_normalized_sites;
+  info.actor_isolation_sendability_gate_blocked_sites =
+      method.actor_isolation_sendability_gate_blocked_sites;
+  info.actor_isolation_sendability_contract_violation_sites =
+      method.actor_isolation_sendability_contract_violation_sites;
   info.concurrency_replay_race_guard_profile_is_normalized =
       method.concurrency_replay_race_guard_profile_is_normalized;
   info.deterministic_concurrency_replay_race_guard_handoff =
@@ -3960,6 +3977,103 @@ BuildAsyncContinuationSummaryFromTypeMetadataHandoff(
     }
   }
   FinalizeAsyncContinuationSummaryDeterminism(summary);
+  return summary;
+}
+
+template <typename SiteMetadata>
+static void AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(
+    const SiteMetadata &metadata,
+    Objc3ActorIsolationSendabilitySummary &summary) {
+  summary.actor_isolation_sendability_sites +=
+      metadata.actor_isolation_sendability_sites;
+  summary.actor_isolation_decl_sites += metadata.actor_isolation_decl_sites;
+  summary.actor_hop_sites += metadata.actor_hop_sites;
+  summary.sendable_annotation_sites += metadata.sendable_annotation_sites;
+  summary.non_sendable_crossing_sites += metadata.non_sendable_crossing_sites;
+  summary.isolation_boundary_sites += metadata.isolation_boundary_sites;
+  summary.normalized_sites +=
+      metadata.actor_isolation_sendability_normalized_sites;
+  summary.gate_blocked_sites +=
+      metadata.actor_isolation_sendability_gate_blocked_sites;
+  summary.contract_violation_sites +=
+      metadata.actor_isolation_sendability_contract_violation_sites;
+  summary.deterministic =
+      summary.deterministic &&
+      metadata.deterministic_actor_isolation_sendability_handoff &&
+      (metadata.actor_isolation_sendability_sites == 0u ||
+       metadata.actor_isolation_sendability_profile_is_normalized);
+}
+
+static void FinalizeActorIsolationSendabilitySummaryDeterminism(
+    Objc3ActorIsolationSendabilitySummary &summary) {
+  summary.deterministic =
+      summary.deterministic &&
+      summary.actor_isolation_decl_sites <=
+          summary.actor_isolation_sendability_sites &&
+      summary.actor_hop_sites <= summary.actor_isolation_sendability_sites &&
+      summary.sendable_annotation_sites <=
+          summary.actor_isolation_sendability_sites &&
+      summary.non_sendable_crossing_sites <=
+          summary.actor_isolation_sendability_sites &&
+      summary.isolation_boundary_sites <=
+          summary.actor_isolation_sendability_sites &&
+      summary.normalized_sites <= summary.actor_isolation_sendability_sites &&
+      summary.gate_blocked_sites <= summary.actor_isolation_sendability_sites &&
+      summary.gate_blocked_sites <= summary.non_sendable_crossing_sites &&
+      summary.contract_violation_sites <=
+          summary.actor_isolation_sendability_sites &&
+      summary.normalized_sites + summary.gate_blocked_sites ==
+          summary.actor_isolation_sendability_sites;
+}
+
+static Objc3ActorIsolationSendabilitySummary
+BuildActorIsolationSendabilitySummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3ActorIsolationSendabilitySummary summary;
+  for (const auto &entry : surface.functions) {
+    AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(entry.second,
+                                                               summary);
+  }
+  for (const auto &interface_entry : surface.interfaces) {
+    for (const auto &method_entry : interface_entry.second.methods) {
+      AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  for (const auto &implementation_entry : surface.implementations) {
+    for (const auto &method_entry : implementation_entry.second.methods) {
+      AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(
+          method_entry.second, summary);
+    }
+  }
+  FinalizeActorIsolationSendabilitySummaryDeterminism(summary);
+  return summary;
+}
+
+static Objc3ActorIsolationSendabilitySummary
+BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3ActorIsolationSendabilitySummary summary;
+  for (const auto &metadata : handoff.functions_lexicographic) {
+    AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(metadata,
+                                                               summary);
+  }
+  for (const auto &interface_metadata : handoff.interfaces_lexicographic) {
+    for (const auto &method_metadata :
+         interface_metadata.methods_lexicographic) {
+      AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(
+          method_metadata, summary);
+    }
+  }
+  for (const auto &implementation_metadata :
+       handoff.implementations_lexicographic) {
+    for (const auto &method_metadata :
+         implementation_metadata.methods_lexicographic) {
+      AccumulateActorIsolationSendabilitySummaryFromSiteMetadata(
+          method_metadata, summary);
+    }
+  }
+  FinalizeActorIsolationSendabilitySummaryDeterminism(summary);
   return summary;
 }
 
@@ -7907,6 +8021,23 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           fn.async_continuation_gate_blocked_sites;
       info.async_continuation_contract_violation_sites =
           fn.async_continuation_contract_violation_sites;
+      info.actor_isolation_sendability_profile_is_normalized =
+          fn.actor_isolation_sendability_profile_is_normalized;
+      info.deterministic_actor_isolation_sendability_handoff =
+          fn.deterministic_actor_isolation_sendability_handoff;
+      info.actor_isolation_sendability_sites =
+          fn.actor_isolation_sendability_sites;
+      info.actor_isolation_decl_sites = fn.actor_isolation_decl_sites;
+      info.actor_hop_sites = fn.actor_hop_sites;
+      info.sendable_annotation_sites = fn.sendable_annotation_sites;
+      info.non_sendable_crossing_sites = fn.non_sendable_crossing_sites;
+      info.isolation_boundary_sites = fn.isolation_boundary_sites;
+      info.actor_isolation_sendability_normalized_sites =
+          fn.actor_isolation_sendability_normalized_sites;
+      info.actor_isolation_sendability_gate_blocked_sites =
+          fn.actor_isolation_sendability_gate_blocked_sites;
+      info.actor_isolation_sendability_contract_violation_sites =
+          fn.actor_isolation_sendability_contract_violation_sites;
       info.concurrency_replay_race_guard_profile_is_normalized =
           fn.concurrency_replay_race_guard_profile_is_normalized;
       info.deterministic_concurrency_replay_race_guard_handoff =
@@ -8134,6 +8265,34 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     existing.async_continuation_contract_violation_sites = std::max(
         existing.async_continuation_contract_violation_sites,
         fn.async_continuation_contract_violation_sites);
+    existing.actor_isolation_sendability_profile_is_normalized =
+        existing.actor_isolation_sendability_profile_is_normalized ||
+        fn.actor_isolation_sendability_profile_is_normalized;
+    existing.deterministic_actor_isolation_sendability_handoff =
+        existing.deterministic_actor_isolation_sendability_handoff ||
+        fn.deterministic_actor_isolation_sendability_handoff;
+    existing.actor_isolation_sendability_sites = std::max(
+        existing.actor_isolation_sendability_sites,
+        fn.actor_isolation_sendability_sites);
+    existing.actor_isolation_decl_sites = std::max(
+        existing.actor_isolation_decl_sites, fn.actor_isolation_decl_sites);
+    existing.actor_hop_sites =
+        std::max(existing.actor_hop_sites, fn.actor_hop_sites);
+    existing.sendable_annotation_sites = std::max(
+        existing.sendable_annotation_sites, fn.sendable_annotation_sites);
+    existing.non_sendable_crossing_sites = std::max(
+        existing.non_sendable_crossing_sites, fn.non_sendable_crossing_sites);
+    existing.isolation_boundary_sites = std::max(
+        existing.isolation_boundary_sites, fn.isolation_boundary_sites);
+    existing.actor_isolation_sendability_normalized_sites = std::max(
+        existing.actor_isolation_sendability_normalized_sites,
+        fn.actor_isolation_sendability_normalized_sites);
+    existing.actor_isolation_sendability_gate_blocked_sites = std::max(
+        existing.actor_isolation_sendability_gate_blocked_sites,
+        fn.actor_isolation_sendability_gate_blocked_sites);
+    existing.actor_isolation_sendability_contract_violation_sites = std::max(
+        existing.actor_isolation_sendability_contract_violation_sites,
+        fn.actor_isolation_sendability_contract_violation_sites);
     existing.concurrency_replay_race_guard_profile_is_normalized =
         existing.concurrency_replay_race_guard_profile_is_normalized ||
         fn.concurrency_replay_race_guard_profile_is_normalized;
@@ -8413,6 +8572,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       BuildAsyncContinuationSummaryFromIntegrationSurface(surface);
   surface.await_lowering_suspension_state_lowering_summary =
       BuildAwaitLoweringSuspensionStateSummaryFromProgramAst(ast);
+  surface.actor_isolation_sendability_summary =
+      BuildActorIsolationSendabilitySummaryFromIntegrationSurface(surface);
   surface.concurrency_replay_race_guard_summary =
       BuildConcurrencyReplayRaceGuardSummaryFromIntegrationSurface(surface);
   surface.result_like_lowering_summary =
@@ -8582,6 +8743,23 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         source.async_continuation_gate_blocked_sites;
     metadata.async_continuation_contract_violation_sites =
         source.async_continuation_contract_violation_sites;
+    metadata.actor_isolation_sendability_profile_is_normalized =
+        source.actor_isolation_sendability_profile_is_normalized;
+    metadata.deterministic_actor_isolation_sendability_handoff =
+        source.deterministic_actor_isolation_sendability_handoff;
+    metadata.actor_isolation_sendability_sites =
+        source.actor_isolation_sendability_sites;
+    metadata.actor_isolation_decl_sites = source.actor_isolation_decl_sites;
+    metadata.actor_hop_sites = source.actor_hop_sites;
+    metadata.sendable_annotation_sites = source.sendable_annotation_sites;
+    metadata.non_sendable_crossing_sites = source.non_sendable_crossing_sites;
+    metadata.isolation_boundary_sites = source.isolation_boundary_sites;
+    metadata.actor_isolation_sendability_normalized_sites =
+        source.actor_isolation_sendability_normalized_sites;
+    metadata.actor_isolation_sendability_gate_blocked_sites =
+        source.actor_isolation_sendability_gate_blocked_sites;
+    metadata.actor_isolation_sendability_contract_violation_sites =
+        source.actor_isolation_sendability_contract_violation_sites;
     metadata.concurrency_replay_race_guard_profile_is_normalized =
         source.concurrency_replay_race_guard_profile_is_normalized;
     metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -8810,6 +8988,26 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.async_continuation_gate_blocked_sites;
       method_metadata.async_continuation_contract_violation_sites =
           source.async_continuation_contract_violation_sites;
+      method_metadata.actor_isolation_sendability_profile_is_normalized =
+          source.actor_isolation_sendability_profile_is_normalized;
+      method_metadata.deterministic_actor_isolation_sendability_handoff =
+          source.deterministic_actor_isolation_sendability_handoff;
+      method_metadata.actor_isolation_sendability_sites =
+          source.actor_isolation_sendability_sites;
+      method_metadata.actor_isolation_decl_sites =
+          source.actor_isolation_decl_sites;
+      method_metadata.actor_hop_sites = source.actor_hop_sites;
+      method_metadata.sendable_annotation_sites =
+          source.sendable_annotation_sites;
+      method_metadata.non_sendable_crossing_sites =
+          source.non_sendable_crossing_sites;
+      method_metadata.isolation_boundary_sites = source.isolation_boundary_sites;
+      method_metadata.actor_isolation_sendability_normalized_sites =
+          source.actor_isolation_sendability_normalized_sites;
+      method_metadata.actor_isolation_sendability_gate_blocked_sites =
+          source.actor_isolation_sendability_gate_blocked_sites;
+      method_metadata.actor_isolation_sendability_contract_violation_sites =
+          source.actor_isolation_sendability_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9044,6 +9242,26 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.async_continuation_gate_blocked_sites;
       method_metadata.async_continuation_contract_violation_sites =
           source.async_continuation_contract_violation_sites;
+      method_metadata.actor_isolation_sendability_profile_is_normalized =
+          source.actor_isolation_sendability_profile_is_normalized;
+      method_metadata.deterministic_actor_isolation_sendability_handoff =
+          source.deterministic_actor_isolation_sendability_handoff;
+      method_metadata.actor_isolation_sendability_sites =
+          source.actor_isolation_sendability_sites;
+      method_metadata.actor_isolation_decl_sites =
+          source.actor_isolation_decl_sites;
+      method_metadata.actor_hop_sites = source.actor_hop_sites;
+      method_metadata.sendable_annotation_sites =
+          source.sendable_annotation_sites;
+      method_metadata.non_sendable_crossing_sites =
+          source.non_sendable_crossing_sites;
+      method_metadata.isolation_boundary_sites = source.isolation_boundary_sites;
+      method_metadata.actor_isolation_sendability_normalized_sites =
+          source.actor_isolation_sendability_normalized_sites;
+      method_metadata.actor_isolation_sendability_gate_blocked_sites =
+          source.actor_isolation_sendability_gate_blocked_sites;
+      method_metadata.actor_isolation_sendability_contract_violation_sites =
+          source.actor_isolation_sendability_contract_violation_sites;
       method_metadata.concurrency_replay_race_guard_profile_is_normalized =
           source.concurrency_replay_race_guard_profile_is_normalized;
       method_metadata.deterministic_concurrency_replay_race_guard_handoff =
@@ -9619,6 +9837,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       BuildAsyncContinuationSummaryFromTypeMetadataHandoff(handoff);
   handoff.await_lowering_suspension_state_lowering_summary =
       surface.await_lowering_suspension_state_lowering_summary;
+  handoff.actor_isolation_sendability_summary =
+      BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(handoff);
   handoff.concurrency_replay_race_guard_summary =
       BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
   handoff.ns_error_bridging_summary =
@@ -10406,6 +10626,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
   const Objc3AwaitLoweringSuspensionStateSummary
       await_lowering_suspension_state_lowering_summary =
           handoff.await_lowering_suspension_state_lowering_summary;
+  const Objc3ActorIsolationSendabilitySummary actor_isolation_sendability_summary =
+      BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(handoff);
   const Objc3ConcurrencyReplayRaceGuardSummary
       concurrency_replay_race_guard_summary =
           BuildConcurrencyReplayRaceGuardSummaryFromTypeMetadataHandoff(handoff);
@@ -10953,6 +11175,68 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                      .gate_blocked_sites ==
              handoff.await_lowering_suspension_state_lowering_summary
                  .await_suspension_sites &&
+         handoff.actor_isolation_sendability_summary.deterministic &&
+         handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites ==
+             actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .actor_isolation_decl_sites ==
+             actor_isolation_sendability_summary.actor_isolation_decl_sites &&
+         handoff.actor_isolation_sendability_summary.actor_hop_sites ==
+             actor_isolation_sendability_summary.actor_hop_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .sendable_annotation_sites ==
+             actor_isolation_sendability_summary.sendable_annotation_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites ==
+             actor_isolation_sendability_summary.non_sendable_crossing_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .isolation_boundary_sites ==
+             actor_isolation_sendability_summary.isolation_boundary_sites &&
+         handoff.actor_isolation_sendability_summary.normalized_sites ==
+             actor_isolation_sendability_summary.normalized_sites &&
+         handoff.actor_isolation_sendability_summary.gate_blocked_sites ==
+             actor_isolation_sendability_summary.gate_blocked_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .contract_violation_sites ==
+             actor_isolation_sendability_summary.contract_violation_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .actor_isolation_decl_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary.actor_hop_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .sendable_annotation_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .isolation_boundary_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary.normalized_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary.gate_blocked_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary.gate_blocked_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .non_sendable_crossing_sites &&
+         handoff.actor_isolation_sendability_summary
+                 .contract_violation_sites <=
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
+         handoff.actor_isolation_sendability_summary.normalized_sites +
+                 handoff.actor_isolation_sendability_summary.gate_blocked_sites ==
+             handoff.actor_isolation_sendability_summary
+                 .actor_isolation_sendability_sites &&
          handoff.concurrency_replay_race_guard_summary.deterministic &&
          handoff.concurrency_replay_race_guard_summary
                  .concurrency_replay_race_guard_sites ==

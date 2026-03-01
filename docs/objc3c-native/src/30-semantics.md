@@ -2247,6 +2247,52 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
+<a id="m188-sema-type-actor-isolation-sendability-checks-diagnostics-contract-m188-b001"></a>
+## M188 sema/type actor isolation and sendability checks and diagnostics contract (M188-B001)
+
+M188-B wires parser-authored actor-isolation/sendability profiles into sema/type
+integration summary, type-metadata handoff, and pass-manager parity gates for
+deterministic checking and diagnostics counters.
+
+Sema/type contract markers:
+
+- `Objc3ActorIsolationSendabilitySummary`
+- `actor_isolation_sendability_summary`
+- `BuildActorIsolationSendabilitySummaryFromIntegrationSurface`
+- `BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff`
+- `actor_isolation_sendability_sites_total`
+- `actor_isolation_decl_sites_total`
+- `actor_hop_sites_total`
+- `sendable_annotation_sites_total`
+- `non_sendable_crossing_sites_total`
+- `actor_isolation_sendability_isolation_boundary_sites_total`
+- `actor_isolation_sendability_normalized_sites_total`
+- `actor_isolation_sendability_gate_blocked_sites_total`
+- `actor_isolation_sendability_contract_violation_sites_total`
+- `deterministic_actor_isolation_sendability_handoff`
+
+Deterministic actor-isolation/sendability invariants (fail-closed):
+
+- `actor_isolation_decl_sites`, `actor_hop_sites`, `sendable_annotation_sites`,
+  `non_sendable_crossing_sites`, and `isolation_boundary_sites` remain bounded
+  by `actor_isolation_sendability_sites`.
+- `actor_isolation_sendability_normalized_sites_total + actor_isolation_sendability_gate_blocked_sites_total == actor_isolation_sendability_sites_total`.
+- `actor_isolation_sendability_gate_blocked_sites_total <= non_sendable_crossing_sites_total`.
+- `contract_violation_sites <= actor_isolation_sendability_sites`.
+
+Sema/type metadata handoff contract:
+
+- integration summary packet:
+  `surface.actor_isolation_sendability_summary = BuildActorIsolationSendabilitySummaryFromIntegrationSurface(...)`
+- handoff summary packet:
+  `handoff.actor_isolation_sendability_summary = BuildActorIsolationSendabilitySummaryFromTypeMetadataHandoff(...)`
+- deterministic parity gate:
+  `result.parity_surface.deterministic_actor_isolation_sendability_handoff`
+
+Recommended M188 sema contract check:
+
+- `python -m pytest tests/tooling/test_objc3c_m188_sema_actor_isolation_sendability_contract.py -q`
+
 <a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
 ## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
 
