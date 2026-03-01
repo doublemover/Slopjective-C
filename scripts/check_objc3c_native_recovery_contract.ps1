@@ -12,6 +12,40 @@ $recoveryFixtureRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recove
 $positiveFixtureDir = Join-Path $recoveryFixtureRoot "positive"
 $negativeFixtureDir = Join-Path $recoveryFixtureRoot "negative"
 
+function Invoke-Objc3cNativeWithRecovery {
+  param(
+    [string[]]$Arguments
+  )
+
+  for ($attempt = 1; $attempt -le 2; $attempt++) {
+    if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+      & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+      if ($LASTEXITCODE -ne 0) {
+        throw "contract FAIL: native compiler build failed while recovering missing executable"
+      }
+      if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+        throw "contract FAIL: native compiler executable missing at $exe"
+      }
+    }
+
+    try {
+      & $exe @Arguments
+      return $LASTEXITCODE
+    } catch {
+      if ($attempt -ge 2) {
+        throw
+      }
+      Write-Output "warning: objc3c-native launch failed; rebuilding and retrying once"
+      & powershell -NoProfile -ExecutionPolicy Bypass -File $buildScript
+      if ($LASTEXITCODE -ne 0) {
+        throw "contract FAIL: native compiler build failed while recovering launch failure"
+      }
+    }
+  }
+
+  throw "contract FAIL: unreachable launch state"
+}
+
 function Assert-Objc3ManifestPipelineSurface {
   param(
     [string]$ManifestText,
@@ -155,10 +189,10 @@ function Invoke-ContractCase {
   $compileArgsRun1 = @($Source, "--out-dir", $run1, "--emit-prefix", "module") + $ExtraArgs
   $compileArgsRun2 = @($Source, "--out-dir", $run2, "--emit-prefix", "module") + $ExtraArgs
 
-  & $exe @compileArgsRun1
-  if ($LASTEXITCODE -ne 0) { throw "contract FAIL: compile failed for $CaseName run1" }
-  & $exe @compileArgsRun2
-  if ($LASTEXITCODE -ne 0) { throw "contract FAIL: compile failed for $CaseName run2" }
+  $exitRun1 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun1
+  if ($exitRun1 -ne 0) { throw "contract FAIL: compile failed for $CaseName run1" }
+  $exitRun2 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun2
+  if ($exitRun2 -ne 0) { throw "contract FAIL: compile failed for $CaseName run2" }
 
   $manifest1 = Get-Content (Join-Path $run1 "module.manifest.json") -Raw
   $manifest2 = Get-Content (Join-Path $run2 "module.manifest.json") -Raw
@@ -591,8 +625,15 @@ Invoke-ContractCase `
 
 $invalidDispatchOutDir = Join-Path $outDir "objc3_invalid_dispatch_symbol"
 New-Item -ItemType Directory -Force -Path $invalidDispatchOutDir | Out-Null
-& $exe "tests/tooling/fixtures/native/hello.objc3" --out-dir $invalidDispatchOutDir --emit-prefix module --objc3-runtime-dispatch-symbol "9invalid_symbol"
-$invalidDispatchExit = $LASTEXITCODE
+$invalidDispatchExit = Invoke-Objc3cNativeWithRecovery -Arguments @(
+  "tests/tooling/fixtures/native/hello.objc3",
+  "--out-dir",
+  $invalidDispatchOutDir,
+  "--emit-prefix",
+  "module",
+  "--objc3-runtime-dispatch-symbol",
+  "9invalid_symbol"
+)
 if ($invalidDispatchExit -ne 2) {
   throw "contract FAIL: invalid runtime dispatch symbol should fail with exit 2 (got $invalidDispatchExit)"
 }
@@ -607,9 +648,9 @@ foreach ($fixture in $positiveFixtures) {
   $caseOutDir = Join-Path $outDir $caseName
   New-Item -ItemType Directory -Force -Path $caseOutDir | Out-Null
 
-  & $exe $source --out-dir $caseOutDir --emit-prefix module
-  if ($LASTEXITCODE -ne 0) {
-    throw "contract FAIL: positive fixture compile failed for $source with exit $LASTEXITCODE"
+  $positiveExit = Invoke-Objc3cNativeWithRecovery -Arguments @($source, "--out-dir", $caseOutDir, "--emit-prefix", "module")
+  if ($positiveExit -ne 0) {
+    throw "contract FAIL: positive fixture compile failed for $source with exit $positiveExit"
   }
 
   $objPath = Join-Path $caseOutDir "module.obj"
@@ -677,8 +718,7 @@ foreach ($fixture in $negativeFixtures) {
   New-Item -ItemType Directory -Force -Path $run1 | Out-Null
   New-Item -ItemType Directory -Force -Path $run2 | Out-Null
 
-  & $exe $source --out-dir $run1 --emit-prefix module
-  $exit1 = $LASTEXITCODE
+  $exit1 = Invoke-Objc3cNativeWithRecovery -Arguments @($source, "--out-dir", $run1, "--emit-prefix", "module")
   if ($exit1 -eq 0) {
     throw "contract FAIL: negative fixture unexpectedly compiled for $source"
   }
@@ -689,8 +729,7 @@ foreach ($fixture in $negativeFixtures) {
     throw "contract FAIL: empty diagnostics artifact for negative fixture $source run1"
   }
 
-  & $exe $source --out-dir $run2 --emit-prefix module
-  $exit2 = $LASTEXITCODE
+  $exit2 = Invoke-Objc3cNativeWithRecovery -Arguments @($source, "--out-dir", $run2, "--emit-prefix", "module")
   if ($exit2 -eq 0) {
     throw "contract FAIL: negative fixture unexpectedly compiled for $source on replay"
   }
