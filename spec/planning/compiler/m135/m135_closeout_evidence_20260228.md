@@ -34,13 +34,13 @@ All M135 issues are currently open:
 
 ## Dependency Status Matrix
 
-| ID | Issue | Lane | Current GitHub state | Closeout status |
-| --- | --- | --- | --- | --- |
-| `M135-A001` | [#4264](https://github.com/doublemover/Slopjective-C/issues/4264) | A | OPEN | Blocking M135 closeout |
-| `M135-B001` | [#4265](https://github.com/doublemover/Slopjective-C/issues/4265) | B | OPEN | Blocking M135 closeout |
-| `M135-C001` | [#4266](https://github.com/doublemover/Slopjective-C/issues/4266) | C | OPEN | Blocking M135 closeout |
-| `M135-D001` | [#4267](https://github.com/doublemover/Slopjective-C/issues/4267) | D | OPEN | Blocking M135 closeout |
-| `M135-E001` | [#4268](https://github.com/doublemover/Slopjective-C/issues/4268) | E | OPEN | Gate issue; packet and contract owner |
+| ID          | Issue                                                             | Lane | Current GitHub state | Closeout status                       |
+| ----------- | ----------------------------------------------------------------- | ---- | -------------------- | ------------------------------------- |
+| `M135-A001` | [#4264](https://github.com/doublemover/Slopjective-C/issues/4264) | A    | OPEN                 | Blocking M135 closeout                |
+| `M135-B001` | [#4265](https://github.com/doublemover/Slopjective-C/issues/4265) | B    | OPEN                 | Blocking M135 closeout                |
+| `M135-C001` | [#4266](https://github.com/doublemover/Slopjective-C/issues/4266) | C    | OPEN                 | Blocking M135 closeout                |
+| `M135-D001` | [#4267](https://github.com/doublemover/Slopjective-C/issues/4267) | D    | OPEN                 | Blocking M135 closeout                |
+| `M135-E001` | [#4268](https://github.com/doublemover/Slopjective-C/issues/4268) | E    | OPEN                 | Gate issue; packet and contract owner |
 
 ## Validation Contract
 

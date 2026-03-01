@@ -469,4 +469,3 @@ Minimum diagnostics:
 
 A future revision may introduce typed throws syntax to restrict throwable error sets.
 ObjC 3.0 v1 intentionally ships only untyped `throws` and uses the reservation rules in [§6.3.7](#part-6-3-7) to preserve forward compatibility with that future work.
-

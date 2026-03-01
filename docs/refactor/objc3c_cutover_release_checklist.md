@@ -6,13 +6,13 @@ This checklist is the production-readiness gate for final ObjC3C modular cutover
 
 ## 2. ownership assignments
 
-| Area | Primary ownership | Backup ownership | Decision authority |
-| --- | --- | --- | --- |
-| Cutover execution | Release owner | Integrator | Release owner |
-| Boundary and architecture integrity | Lane A owner | Lane B owner | Integrator |
-| Semantic/pipeline correctness | Lane B owner | Integrator | Integrator |
-| Determinism/perf evidence | Lane D owner | Release owner | Release owner |
-| Workflow/governance evidence | Lane E owner | Release owner | Release owner |
+| Area                                | Primary ownership | Backup ownership | Decision authority |
+| ----------------------------------- | ----------------- | ---------------- | ------------------ |
+| Cutover execution                   | Release owner     | Integrator       | Release owner      |
+| Boundary and architecture integrity | Lane A owner      | Lane B owner     | Integrator         |
+| Semantic/pipeline correctness       | Lane B owner      | Integrator       | Integrator         |
+| Determinism/perf evidence           | Lane D owner      | Release owner    | Release owner      |
+| Workflow/governance evidence        | Lane E owner      | Release owner    | Release owner      |
 
 ## 3. cutover readiness checklist (`CR-M134-01`..`CR-M134-13`)
 
@@ -49,11 +49,11 @@ Fallback confidence requirements:
 Lane-D placeholders are retained for audit and marked resolved once their issue-linked evidence landed.
 Post-milestone tooling baseline tracking remains explicit via closed evidence issue [#4263](https://github.com/doublemover/Slopjective-C/issues/4263).
 
-| Placeholder ID | Dependency | Owner | Required evidence | Current state | Unblock criteria |
-| --- | --- | --- | --- | --- | --- |
-| `PEND-D001` | `M134-D001` | Lane D owner | Determinism replay summary for cutover candidate across subsystem suites | `PASS` | Closed via [#4258](https://github.com/doublemover/Slopjective-C/issues/4258) evidence landing. |
-| `PEND-D002` | `M134-D002` | Lane D owner | Performance and regression budget confirmation for modularized path | `PASS` | Closed via [#4259](https://github.com/doublemover/Slopjective-C/issues/4259) evidence landing. |
-| `PEND-TOOL-4263` | [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) | INT/tooling owners | Deterministic full-suite tooling baseline (`python -m pytest tests/tooling -q`) | `PASS` | Closed with `python -m pytest tests/tooling -q` -> `527 passed, 2 skipped` and issue [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) set `state=closed`. |
+| Placeholder ID   | Dependency                                                        | Owner              | Required evidence                                                               | Current state | Unblock criteria                                                                                                                                                           |
+| ---------------- | ----------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PEND-D001`      | `M134-D001`                                                       | Lane D owner       | Determinism replay summary for cutover candidate across subsystem suites        | `PASS`        | Closed via [#4258](https://github.com/doublemover/Slopjective-C/issues/4258) evidence landing.                                                                             |
+| `PEND-D002`      | `M134-D002`                                                       | Lane D owner       | Performance and regression budget confirmation for modularized path             | `PASS`        | Closed via [#4259](https://github.com/doublemover/Slopjective-C/issues/4259) evidence landing.                                                                             |
+| `PEND-TOOL-4263` | [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) | INT/tooling owners | Deterministic full-suite tooling baseline (`python -m pytest tests/tooling -q`) | `PASS`        | Closed with `python -m pytest tests/tooling -q` -> `527 passed, 2 skipped` and issue [#4263](https://github.com/doublemover/Slopjective-C/issues/4263) set `state=closed`. |
 
 Closeout may be represented as complete only with either:
 

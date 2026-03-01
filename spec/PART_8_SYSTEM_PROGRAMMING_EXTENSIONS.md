@@ -466,4 +466,3 @@ In strict-system mode, toolchains should:
 ## 8.10 Open issues {#part-8-10}
 
 No open issues are tracked in this part for v1.
-

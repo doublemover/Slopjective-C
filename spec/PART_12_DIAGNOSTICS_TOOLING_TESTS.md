@@ -365,5 +365,3 @@ For features like macros and async:
 ## 12.7 Open issues {#part-12-7}
 
 No open issues are tracked in this part for v1.
-
-

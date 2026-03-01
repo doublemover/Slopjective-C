@@ -6,26 +6,26 @@ This playbook defines ownership, update workflow, and review rules for generated
 
 ### objc3c-native docs ownership
 
-| Source | Generated output | Owner group | Required check |
-| --- | --- | --- | --- |
-| `docs/objc3c-native/src/10-cli.md` | `docs/objc3c-native.md` | compiler/tooling | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/20-grammar.md` | `docs/objc3c-native.md` | compiler/parser | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/30-semantics.md` | `docs/objc3c-native.md` | compiler/semantics | `python scripts/build_objc3c_native_docs.py --check` |
+| Source                                     | Generated output        | Owner group          | Required check                                       |
+| ------------------------------------------ | ----------------------- | -------------------- | ---------------------------------------------------- |
+| `docs/objc3c-native/src/10-cli.md`         | `docs/objc3c-native.md` | compiler/tooling     | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/20-grammar.md`     | `docs/objc3c-native.md` | compiler/parser      | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/30-semantics.md`   | `docs/objc3c-native.md` | compiler/semantics   | `python scripts/build_objc3c_native_docs.py --check` |
 | `docs/objc3c-native/src/40-diagnostics.md` | `docs/objc3c-native.md` | compiler/diagnostics | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/50-artifacts.md` | `docs/objc3c-native.md` | compiler/release | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/60-tests.md` | `docs/objc3c-native.md` | compiler/qa | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/README.md` | `docs/objc3c-native.md` | compiler/docs | `python scripts/build_objc3c_native_docs.py --check` |
-| `docs/objc3c-native/src/OWNERSHIP.md` | process metadata | compiler/docs | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/50-artifacts.md`   | `docs/objc3c-native.md` | compiler/release     | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/60-tests.md`       | `docs/objc3c-native.md` | compiler/qa          | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/README.md`         | `docs/objc3c-native.md` | compiler/docs        | `python scripts/build_objc3c_native_docs.py --check` |
+| `docs/objc3c-native/src/OWNERSHIP.md`      | process metadata        | compiler/docs        | `python scripts/build_objc3c_native_docs.py --check` |
 
 ### site index ownership
 
-| Source | Generated output | Owner group | Required check |
-| --- | --- | --- | --- |
-| `site/src/index.contract.json` | `site/index.md` | compiler/docs | `python scripts/build_site_index.py --check` |
-| `site/src/README.md` | policy metadata | compiler/docs | `python scripts/build_site_index.py --check` |
-| `site/src/OWNERSHIP.md` | process metadata | compiler/docs | `python scripts/build_site_index.py --check` |
-| `spec/TABLE_OF_CONTENTS.md` | `site/index.md` order surface | spec/maintainers | `python scripts/build_site_index.py --check` |
-| `spec/*.md` listed in TOC | `site/index.md` content surface | spec/maintainers | `python scripts/build_site_index.py --check` |
+| Source                         | Generated output                | Owner group      | Required check                               |
+| ------------------------------ | ------------------------------- | ---------------- | -------------------------------------------- |
+| `site/src/index.contract.json` | `site/index.md`                 | compiler/docs    | `python scripts/build_site_index.py --check` |
+| `site/src/README.md`           | policy metadata                 | compiler/docs    | `python scripts/build_site_index.py --check` |
+| `site/src/OWNERSHIP.md`        | process metadata                | compiler/docs    | `python scripts/build_site_index.py --check` |
+| `spec/TABLE_OF_CONTENTS.md`    | `site/index.md` order surface   | spec/maintainers | `python scripts/build_site_index.py --check` |
+| `spec/*.md` listed in TOC      | `site/index.md` content surface | spec/maintainers | `python scripts/build_site_index.py --check` |
 
 ## update workflow
 

@@ -278,4 +278,3 @@ Implementations are encouraged to provide a conformance suite that includes:
 - correct argument evaluation semantics for optional sends,
 - `throws` propagation behavior in nested `do/catch`,
 - executor hop correctness and actor isolation enforcement across module boundaries.
-

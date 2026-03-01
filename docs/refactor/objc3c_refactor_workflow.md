@@ -11,10 +11,10 @@ This refactor workflow defines how parallel lanes decompose `native/objc3c/src/m
 
 ## 3. Parallel-lane operating model
 
-| Role | Required responsibility | Artifact |
-| --- | --- | --- |
-| Lane owner | Deliver issue-scoped slices and keep dependency state current | Issue updates + PR body |
-| Reviewer | Enforce scope, risk, and evidence gates | review checklist in PR |
+| Role       | Required responsibility                                       | Artifact                      |
+| ---------- | ------------------------------------------------------------- | ----------------------------- |
+| Lane owner | Deliver issue-scoped slices and keep dependency state current | Issue updates + PR body       |
+| Reviewer   | Enforce scope, risk, and evidence gates                       | review checklist in PR        |
 | Integrator | Sequence dependent merges and resolve lane ordering conflicts | merge notes + follow-up issue |
 
 Parallel-lane rule set:
@@ -33,11 +33,11 @@ Parallel-lane rule set:
 
 PR slicing is required for every refactor lane.
 
-| Slice class | Max files | Max changed lines | Must include |
-| --- | --- | --- | --- |
-| `docs` | 3 | 500 | issue linkage + validation commands |
-| `code+tests` | 10 | 800 | tests, risk notes, rollback impact |
-| `plumbing` | 6 | 400 | dependency map + follow-up issues |
+| Slice class  | Max files | Max changed lines | Must include                        |
+| ------------ | --------- | ----------------- | ----------------------------------- |
+| `docs`       | 3         | 500               | issue linkage + validation commands |
+| `code+tests` | 10        | 800               | tests, risk notes, rollback impact  |
+| `plumbing`   | 6         | 400               | dependency map + follow-up issues   |
 
 If any cap is exceeded, split before requesting review.
 

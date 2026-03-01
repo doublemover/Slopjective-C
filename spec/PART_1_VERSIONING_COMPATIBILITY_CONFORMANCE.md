@@ -254,4 +254,3 @@ Profiles may:
 This part defines the _hook point_ and selection mechanism; profile contents are specified in **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)**.
 
 When emitting a machine-readable conformance report, implementations shall report the selected profile set using the schema in [§12.4.5](#part-12-4-5).
-

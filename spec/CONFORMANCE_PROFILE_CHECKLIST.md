@@ -251,4 +251,3 @@ A serious conformance claim should ship with:
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
   - runtime contracts for `throws` and `async` behave correctly under optimization,
 - migration tooling notes for large codebases (warning groups, fix-its, staged adoption).
-

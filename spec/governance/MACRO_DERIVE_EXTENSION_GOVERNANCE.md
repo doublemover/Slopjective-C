@@ -104,13 +104,13 @@ Additional requirements by transition:
 
 ## 6. Stage transition decision table {#mdx-gov-6}
 
-| Transition | Allowed | Minimum decision inputs | Effective in |
-| --- | --- | --- | --- |
-| Experimental -> Provisional | Yes | Full dossier; implementation evidence (1+); test mapping complete | Next minor or major release |
-| Provisional -> Stable | Yes | Full dossier; independent implementations (2+); interop proof; migration guidance | Next major release by default (minor only with explicit waiver) |
-| Stable -> Deprecated | Yes | Replacement and migration plan; deprecation diagnostics/fix-its; sunset schedule | Next minor or major release |
-| Provisional -> Experimental (rollback) | Yes | Regression/soundness report and rollback note | Immediate patch/minor release |
-| Deprecated -> Stable (reversal) | Exceptional | New evidence equivalent to Provisional -> Stable plus rationale for reversal | Next major release |
+| Transition                             | Allowed     | Minimum decision inputs                                                           | Effective in                                                    |
+| -------------------------------------- | ----------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Experimental -> Provisional            | Yes         | Full dossier; implementation evidence (1+); test mapping complete                 | Next minor or major release                                     |
+| Provisional -> Stable                  | Yes         | Full dossier; independent implementations (2+); interop proof; migration guidance | Next major release by default (minor only with explicit waiver) |
+| Stable -> Deprecated                   | Yes         | Replacement and migration plan; deprecation diagnostics/fix-its; sunset schedule  | Next minor or major release                                     |
+| Provisional -> Experimental (rollback) | Yes         | Regression/soundness report and rollback note                                     | Immediate patch/minor release                                   |
+| Deprecated -> Stable (reversal)        | Exceptional | New evidence equivalent to Provisional -> Stable plus rationale for reversal      | Next major release                                              |
 
 ## 7. Versioning and change control {#mdx-gov-7}
 

@@ -116,4 +116,3 @@ This pass makes the draft more “engineer-ready” by tightening the boundary b
 - Adds **[MODULE_METADATA_AND_ABI_TABLES.md](#d)**: explicit tables for what must be preserved in module metadata and emitted interfaces, and which features are ABI-affecting.
 - Tightens the meaning of `await`: it is required for **any potentially suspending operation**, including cross-executor and cross-actor access (even when the callee is not explicitly `async`), aligning the surface model with implementable executor/actor hops.
 - Expands C with more concrete lowering obligations where separate compilation would otherwise be ambiguous.
-

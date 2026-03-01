@@ -754,12 +754,12 @@ Required optional-spelling fix-it behavior (`optional<T>` -> `Optional<T>`):
 
 Profile severity behavior for optional-spelling diagnostics:
 
-| Validation condition | Core | Strict | Strict Concurrency | Strict System |
-| --- | --- | --- | --- | --- |
-| `OPT-SPELL-NONCANON` (future mode, compatibility alias accepted) | Warning with required fix-it in migration mode; error with required fix-it otherwise | Error with required fix-it | Error with required fix-it | Error with required fix-it |
-| `OPT-SPELL-NONCANON-UNSUPPORTED` (future mode, canonical-only acceptance) | Error with required fix-it | Error with required fix-it | Error with required fix-it | Error with required fix-it |
-| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail) | Error | Error | Error | Error |
-| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable | Note (paired with owning warning/error) | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
+| Validation condition                                                      | Core                                                                                 | Strict                          | Strict Concurrency              | Strict System                   |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------- | ------------------------------- |
+| `OPT-SPELL-NONCANON` (future mode, compatibility alias accepted)          | Warning with required fix-it in migration mode; error with required fix-it otherwise | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
+| `OPT-SPELL-NONCANON-UNSUPPORTED` (future mode, canonical-only acceptance) | Error with required fix-it                                                           | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
+| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail)                        | Error                                                                                | Error                           | Error                           | Error                           |
+| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable           | Note (paired with owning warning/error)                                              | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
 
 Conforming interface emission for future value-optionals shall print canonical `Optional<...>` spellings only.
 
@@ -886,5 +886,3 @@ No open issues are tracked in this part for v0.11.
 Resolved by decisions [D-013](DECISIONS_LOG.md#decisions-d-013),
 [D-014](DECISIONS_LOG.md#decisions-d-014), and
 [D-015](DECISIONS_LOG.md#decisions-d-015).
-
-

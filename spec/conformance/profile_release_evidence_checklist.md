@@ -12,33 +12,33 @@ Each release claim shall be backed by an evidence bundle with a stable ID:
 
 Required bundle metadata:
 
-| Field | Requirement |
-| --- | --- |
-| `release_id` | Stable unique release evidence ID. |
-| `toolchain` | Toolchain name and version used for evidence generation. |
-| `git_revision` | Full commit SHA for the evaluated source tree. |
-| `target_triples` | Non-empty list of tested targets. |
-| `generated_at` | UTC RFC3339 timestamp. |
+| Field              | Requirement                                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| `release_id`       | Stable unique release evidence ID.                                 |
+| `toolchain`        | Toolchain name and version used for evidence generation.           |
+| `git_revision`     | Full commit SHA for the evaluated source tree.                     |
+| `target_triples`   | Non-empty list of tested targets.                                  |
+| `generated_at`     | UTC RFC3339 timestamp.                                             |
 | `profiles_claimed` | Subset of `core`, `strict`, `strict-concurrency`, `strict-system`. |
-| `artifacts[]` | Non-empty list with artifact ID, path/URI, and SHA-256 digest. |
-| `reviews[]` | Reviewer records with role, decision, timestamp, and notes. |
-| `approvals[]` | Final release approvals with approver identity and timestamp. |
+| `artifacts[]`      | Non-empty list with artifact ID, path/URI, and SHA-256 digest.     |
+| `reviews[]`        | Reviewer records with role, decision, timestamp, and notes.        |
+| `approvals[]`      | Final release approvals with approver identity and timestamp.      |
 
 ## Required artifact definitions
 
-| Artifact ID | Required content | Validation / evidence check |
-| --- | --- | --- |
-| `EVID-01` | Conformance report JSON (Part 12, 12.4.4/12.4.5) including `mode`, `profiles`, `versions`, and `known_deviations`. | Validate with `--validate-objc3-conformance=<path>` (or equivalent), non-zero on failure. |
-| `EVID-02` | Conformance suite bucket manifests: `tests/conformance/parser/manifest.json`, `tests/conformance/semantic/manifest.json`, `tests/conformance/lowering_abi/manifest.json`, `tests/conformance/module_roundtrip/manifest.json`, `tests/conformance/diagnostics/manifest.json`. | Verify manifests are present and enumerate executed tests for the release run. |
-| `EVID-03` | Profile test-count summary mapped to Part 12 minimums (12.5.6). | Verify published counts meet or exceed profile minima. |
-| `EVID-04` | Traceability map: `tests/conformance/COVERAGE_MAP.md` (or generated equivalent) linked to executed tests. | Verify every required profile family links to concrete test IDs. |
-| `EVID-05` | Runtime manifest evidence: `reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json` plus validation log. | Validate against `schemas/objc3-runtime-2025Q4.manifest.schema.json`. |
-| `EVID-06` | ABI manifest evidence: `reports/conformance/manifests/objc3-abi-2025Q4.example.json` plus validation log. | Validate against `schemas/objc3-abi-2025Q4.schema.json`. |
-| `EVID-07` | Strictness/sub-mode matrix evidence (`SCM-01`..`SCM-06`) and macro-value checks. | Verify matrix results align with Part 1 strictness/concurrency model and report `mode` fields. |
-| `EVID-08` | Strict diagnostics/fix-it evidence for required strict-only behaviors. | Verify strict-only diagnostics include stable code/severity/span/fix-it metadata. |
-| `EVID-09` | Strict concurrency evidence for isolation, Sendable-like rules, and executor-boundary checks. | Verify additional strict-concurrency tests are present and passing. |
-| `EVID-10` | Strict system evidence for borrowed/resource/capture-list rules and metadata preservation. | Verify borrowed/resource/capture tests are present and passing. |
-| `EVID-11` | Review and approval record (who approved what, when, and for which `release_id`). | Verify all required review roles are completed and no required step is skipped. |
+| Artifact ID | Required content                                                                                                                                                                                                                                                             | Validation / evidence check                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `EVID-01`   | Conformance report JSON (Part 12, 12.4.4/12.4.5) including `mode`, `profiles`, `versions`, and `known_deviations`.                                                                                                                                                           | Validate with `--validate-objc3-conformance=<path>` (or equivalent), non-zero on failure.      |
+| `EVID-02`   | Conformance suite bucket manifests: `tests/conformance/parser/manifest.json`, `tests/conformance/semantic/manifest.json`, `tests/conformance/lowering_abi/manifest.json`, `tests/conformance/module_roundtrip/manifest.json`, `tests/conformance/diagnostics/manifest.json`. | Verify manifests are present and enumerate executed tests for the release run.                 |
+| `EVID-03`   | Profile test-count summary mapped to Part 12 minimums (12.5.6).                                                                                                                                                                                                              | Verify published counts meet or exceed profile minima.                                         |
+| `EVID-04`   | Traceability map: `tests/conformance/COVERAGE_MAP.md` (or generated equivalent) linked to executed tests.                                                                                                                                                                    | Verify every required profile family links to concrete test IDs.                               |
+| `EVID-05`   | Runtime manifest evidence: `reports/conformance/manifests/objc3-runtime-2025Q4.manifest.json` plus validation log.                                                                                                                                                           | Validate against `schemas/objc3-runtime-2025Q4.manifest.schema.json`.                          |
+| `EVID-06`   | ABI manifest evidence: `reports/conformance/manifests/objc3-abi-2025Q4.example.json` plus validation log.                                                                                                                                                                    | Validate against `schemas/objc3-abi-2025Q4.schema.json`.                                       |
+| `EVID-07`   | Strictness/sub-mode matrix evidence (`SCM-01`..`SCM-06`) and macro-value checks.                                                                                                                                                                                             | Verify matrix results align with Part 1 strictness/concurrency model and report `mode` fields. |
+| `EVID-08`   | Strict diagnostics/fix-it evidence for required strict-only behaviors.                                                                                                                                                                                                       | Verify strict-only diagnostics include stable code/severity/span/fix-it metadata.              |
+| `EVID-09`   | Strict concurrency evidence for isolation, Sendable-like rules, and executor-boundary checks.                                                                                                                                                                                | Verify additional strict-concurrency tests are present and passing.                            |
+| `EVID-10`   | Strict system evidence for borrowed/resource/capture-list rules and metadata preservation.                                                                                                                                                                                   | Verify borrowed/resource/capture tests are present and passing.                                |
+| `EVID-11`   | Review and approval record (who approved what, when, and for which `release_id`).                                                                                                                                                                                            | Verify all required review roles are completed and no required step is skipped.                |
 
 ## Profile checklists
 
@@ -46,13 +46,13 @@ Required bundle metadata:
 
 Required artifact mapping:
 
-| Requirement | Artifact IDs |
-| --- | --- |
-| Report schema, mode, and profile claim (`core`) | `EVID-01` |
-| Required bucket coverage and profile minima | `EVID-02`, `EVID-03` |
-| Traceability to required conformance families | `EVID-04` |
-| Runtime and ABI normative-reference evidence | `EVID-05`, `EVID-06` |
-| Release review and approval record | `EVID-11` |
+| Requirement                                     | Artifact IDs         |
+| ----------------------------------------------- | -------------------- |
+| Report schema, mode, and profile claim (`core`) | `EVID-01`            |
+| Required bucket coverage and profile minima     | `EVID-02`, `EVID-03` |
+| Traceability to required conformance families   | `EVID-04`            |
+| Runtime and ABI normative-reference evidence    | `EVID-05`, `EVID-06` |
+| Release review and approval record              | `EVID-11`            |
 
 Checklist:
 
@@ -68,12 +68,12 @@ Checklist:
 
 Required artifact mapping:
 
-| Requirement | Artifact IDs |
-| --- | --- |
-| All Core requirements remain satisfied | `EVID-01`..`EVID-06` |
+| Requirement                                | Artifact IDs         |
+| ------------------------------------------ | -------------------- |
+| All Core requirements remain satisfied     | `EVID-01`..`EVID-06` |
 | Strict mode mapping and matrix consistency | `EVID-01`, `EVID-07` |
-| Strict-only diagnostics/fix-it evidence | `EVID-08` |
-| Release review and approval record | `EVID-11` |
+| Strict-only diagnostics/fix-it evidence    | `EVID-08`            |
+| Release review and approval record         | `EVID-11`            |
 
 Checklist:
 
@@ -87,12 +87,12 @@ Checklist:
 
 Required artifact mapping:
 
-| Requirement | Artifact IDs |
-| --- | --- |
-| All Strict requirements remain satisfied | `EVID-01`..`EVID-08` |
+| Requirement                                            | Artifact IDs         |
+| ------------------------------------------------------ | -------------------- |
+| All Strict requirements remain satisfied               | `EVID-01`..`EVID-08` |
 | Strict concurrency mode and report/profile consistency | `EVID-01`, `EVID-07` |
-| Isolation/Sendable/executor-boundary evidence | `EVID-09` |
-| Release review and approval record | `EVID-11` |
+| Isolation/Sendable/executor-boundary evidence          | `EVID-09`            |
+| Release review and approval record                     | `EVID-11`            |
 
 Checklist:
 
@@ -106,12 +106,12 @@ Checklist:
 
 Required artifact mapping:
 
-| Requirement | Artifact IDs |
-| --- | --- |
-| All Strict Concurrency requirements remain satisfied | `EVID-01`..`EVID-09` |
-| Strict-system mode plus strict-concurrency sub-mode | `EVID-01`, `EVID-07` |
-| Borrowed/resource/capture-list and metadata-preservation evidence | `EVID-10` |
-| Release review and approval record | `EVID-11` |
+| Requirement                                                       | Artifact IDs         |
+| ----------------------------------------------------------------- | -------------------- |
+| All Strict Concurrency requirements remain satisfied              | `EVID-01`..`EVID-09` |
+| Strict-system mode plus strict-concurrency sub-mode               | `EVID-01`, `EVID-07` |
+| Borrowed/resource/capture-list and metadata-preservation evidence | `EVID-10`            |
+| Release review and approval record                                | `EVID-11`            |
 
 Checklist:
 

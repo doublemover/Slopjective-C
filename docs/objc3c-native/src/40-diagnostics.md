@@ -118,4 +118,3 @@ Parser/lexer diagnostics currently emitted include:
 - Stage-local diagnostics are folded into final parsed-program diagnostics through:
   - `TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program)`
   - deterministic insert order: `lexer`, then `parser`, then `semantic`.
-

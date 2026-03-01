@@ -233,5 +233,3 @@ A conforming implementation’s suite shall include at least:
 - `PERF-DYN-02` (mixed class behavior): in an `objc_direct_members` class, unannotated members lower as direct while `objc_dynamic` members remain dynamic.
 - `PERF-DYN-03` (attribute conflict): `objc_direct` + `objc_dynamic` on the same method is rejected.
 - `PERF-DYN-04` (final/sealed interaction): `objc_final objc_dynamic` methods remain non-overridable but dynamically dispatched; `objc_sealed` still rejects out-of-module subclassing regardless of method dispatch mode.
-
-

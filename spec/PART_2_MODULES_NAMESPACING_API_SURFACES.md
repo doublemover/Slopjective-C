@@ -206,4 +206,3 @@ Toolchains may provide additional proprietary metadata formats, but they do not 
 - Missing or mismatched error-effect metadata (`throws`, `objc_nserror`, `objc_status_code(...)`) on imported declarations: hard error.
 - Mismatch between emitted interface metadata and compiled module metadata for [Table A](#d-3-1) items: diagnosed per [D.3.5](#d-3-5) (ABI-significant mismatches are always errors).
 - Claiming portable concurrency metadata support while omitting required OCI-1 fields for imported declarations: hard error in strict-concurrency/strict-system profiles; recoverable diagnostic in Core/Strict when allowed by [D.3.5](#d-3-5).
-

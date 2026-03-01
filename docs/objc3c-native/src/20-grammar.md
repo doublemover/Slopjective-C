@@ -799,7 +799,7 @@ Recommended M167 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_frontend_block_abi_invoke_trampoline_parser_contract.py -q`
 
-## M168 frontend __block storage and escape parser/AST surface (M168-A001)
+## M168 frontend \_\_block storage and escape parser/AST surface (M168-A001)
 
 Frontend parser/AST now emits deterministic mutable-capture storage and escape
 profile carrier metadata for block literals.
@@ -1693,7 +1693,6 @@ Frontend macro diagnostics/provenance requires deterministic directive source-lo
   3. `python -m pytest tests/tooling/test_objc3c_m205_frontend_macro_security_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
 
-
 ## M202 frontend derive/synthesis pipeline
 
 Frontend derive/synthesis pipeline contract relies on deterministic semantic-surface synthesis from parser AST into sorted metadata handoff packets.
@@ -2036,4 +2035,3 @@ Frontend compile-time evaluation engine contract relies on deterministic constan
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
-

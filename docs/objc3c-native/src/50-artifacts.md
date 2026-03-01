@@ -1928,6 +1928,7 @@ npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3
 ```
 
 Native driver option for `.objc3` frontend behavior:
+
 - `--objc3-max-message-args <0-16>`
   - Default: `4`
   - Tightens the semantic arg-cap check for bracketed message-send expressions.
@@ -4002,4 +4003,3 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 
 - Optional toolchain override:
   - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH=<clang executable>`
-

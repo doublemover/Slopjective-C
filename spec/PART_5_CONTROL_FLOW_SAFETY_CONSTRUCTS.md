@@ -311,5 +311,3 @@ Minimum diagnostics include:
 ## 5.7 Open issues {#part-5-7}
 
 None currently tracked in this part.
-
-

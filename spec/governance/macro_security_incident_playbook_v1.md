@@ -27,23 +27,23 @@ Normative requirements:
 
 ### 2.1 Incident class taxonomy (`INC-*`)
 
-| Incident class | Definition | Typical trigger examples |
-| --- | --- | --- |
-| `INC-SIGN` | Signing compromise, key misuse, or fraudulent signer identity. | `MPROV-002`, `MPROV-003`, signer key theft signal |
-| `INC-PAYLOAD` | Package payload tampering or malicious content insertion. | `MPROV-005`, mirror tamper evidence |
-| `INC-SOURCE` | Unauthorized source substitution or repository takeover. | `MPROV-011`, source integrity alert |
-| `INC-PROV` | Provenance evidence forgery, omission, or replay mismatch with security implications. | `MPROV-009`, `MPROV-010` |
-| `INC-TRUST` | Trust-root mismatch, revocation propagation failure, or policy bypass attempt. | `MPROV-012`, stale trust bundle |
-| `INC-COORD` | Coordinated multi-vendor event requiring synchronized containment and disclosure. | Shared ecosystem compromise |
+| Incident class | Definition                                                                            | Typical trigger examples                          |
+| -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `INC-SIGN`     | Signing compromise, key misuse, or fraudulent signer identity.                        | `MPROV-002`, `MPROV-003`, signer key theft signal |
+| `INC-PAYLOAD`  | Package payload tampering or malicious content insertion.                             | `MPROV-005`, mirror tamper evidence               |
+| `INC-SOURCE`   | Unauthorized source substitution or repository takeover.                              | `MPROV-011`, source integrity alert               |
+| `INC-PROV`     | Provenance evidence forgery, omission, or replay mismatch with security implications. | `MPROV-009`, `MPROV-010`                          |
+| `INC-TRUST`    | Trust-root mismatch, revocation propagation failure, or policy bypass attempt.        | `MPROV-012`, stale trust bundle                   |
+| `INC-COORD`    | Coordinated multi-vendor event requiring synchronized containment and disclosure.     | Shared ecosystem compromise                       |
 
 ### 2.2 Severity model (`SEV-*`)
 
-| Severity | Definition | Initial response SLA |
-| --- | --- | --- |
-| `SEV-1` Critical | Active or highly probable exploitation with release-impacting or ecosystem-wide risk. | Acknowledge <= 15 minutes; containment start <= 30 minutes. |
-| `SEV-2` High | Confirmed compromise with constrained but material impact. | Acknowledge <= 30 minutes; containment start <= 60 minutes. |
-| `SEV-3` Medium | Suspected compromise or integrity break without confirmed active exploitation. | Acknowledge <= 4 hours; containment start <= 8 hours. |
-| `SEV-4` Low | Security-relevant anomaly with low confidence/impact requiring audit trail. | Acknowledge <= 1 business day; triage complete <= 2 business days. |
+| Severity         | Definition                                                                            | Initial response SLA                                               |
+| ---------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `SEV-1` Critical | Active or highly probable exploitation with release-impacting or ecosystem-wide risk. | Acknowledge <= 15 minutes; containment start <= 30 minutes.        |
+| `SEV-2` High     | Confirmed compromise with constrained but material impact.                            | Acknowledge <= 30 minutes; containment start <= 60 minutes.        |
+| `SEV-3` Medium   | Suspected compromise or integrity break without confirmed active exploitation.        | Acknowledge <= 4 hours; containment start <= 8 hours.              |
+| `SEV-4` Low      | Security-relevant anomaly with low confidence/impact requiring audit trail.           | Acknowledge <= 1 business day; triage complete <= 2 business days. |
 
 ### 2.3 Severity assignment algorithm
 
@@ -64,21 +64,21 @@ Decision rules:
 
 ### 3.1 CER phase contract
 
-| Phase | Entry condition | Exit condition | Required outputs |
-| --- | --- | --- | --- |
-| `CER-C` Containment | Incident accepted with `SEV-*` assigned. | Further spread blocked and impact scope bounded. | denylist/quarantine state, freeze list, ownership assignments |
+| Phase               | Entry condition                                          | Exit condition                                                        | Required outputs                                                         |
+| ------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `CER-C` Containment | Incident accepted with `SEV-*` assigned.                 | Further spread blocked and impact scope bounded.                      | denylist/quarantine state, freeze list, ownership assignments            |
 | `CER-E` Eradication | Containment controls are active and scope is understood. | Root cause removed and compromised artifacts replaced or invalidated. | remediation records, trust/signer update records, clean lineage evidence |
-| `CER-R` Recovery | Eradication evidence approved. | Release and CI flow restored under verified-safe state. | recovery validation report, release-unblock decision |
+| `CER-R` Recovery    | Eradication evidence approved.                           | Release and CI flow restored under verified-safe state.               | recovery validation report, release-unblock decision                     |
 
 ### 3.2 Containment controls by severity
 
-| Control | `SEV-1` | `SEV-2` | `SEV-3` | `SEV-4` |
-| --- | --- | --- | --- | --- |
-| Denylist compromised package coordinates | Immediate | Immediate | As triage confirms | Optional |
-| Freeze lockfile updates touching impacted packages | Immediate | Immediate | Case-by-case | Optional |
-| Block release publication gates | Immediate | If release surface is affected | If uncertainty remains | Not required |
-| Revoke suspect signer or trust path | Immediate when signer/trust is implicated | Immediate when signer/trust is implicated | Pending evidence | Not required |
-| Notify maintainers/vendors | <= 1 hour | <= 4 hours | <= 1 business day | <= 2 business days |
+| Control                                            | `SEV-1`                                   | `SEV-2`                                   | `SEV-3`                | `SEV-4`            |
+| -------------------------------------------------- | ----------------------------------------- | ----------------------------------------- | ---------------------- | ------------------ |
+| Denylist compromised package coordinates           | Immediate                                 | Immediate                                 | As triage confirms     | Optional           |
+| Freeze lockfile updates touching impacted packages | Immediate                                 | Immediate                                 | Case-by-case           | Optional           |
+| Block release publication gates                    | Immediate                                 | If release surface is affected            | If uncertainty remains | Not required       |
+| Revoke suspect signer or trust path                | Immediate when signer/trust is implicated | Immediate when signer/trust is implicated | Pending evidence       | Not required       |
+| Notify maintainers/vendors                         | <= 1 hour                                 | <= 4 hours                                | <= 1 business day      | <= 2 business days |
 
 Containment is complete only when all conditions hold:
 
@@ -120,33 +120,33 @@ Recovery is complete only when:
 
 ### 3.5 CER gate approvals
 
-| Gate | Decision | Required approvers |
-| --- | --- | --- |
-| `G-C1` | Containment declared effective | IC + tooling owner |
-| `G-E1` | Eradication plan approved | IC + security owner + provenance owner |
-| `G-E2` | Eradication complete | Security owner + governance delegate |
-| `G-R1` | Recovery start approved | IC + release owner |
-| `G-R2` | Incident closure approved | IC + security owner + program owner |
+| Gate   | Decision                       | Required approvers                     |
+| ------ | ------------------------------ | -------------------------------------- |
+| `G-C1` | Containment declared effective | IC + tooling owner                     |
+| `G-E1` | Eradication plan approved      | IC + security owner + provenance owner |
+| `G-E2` | Eradication complete           | Security owner + governance delegate   |
+| `G-R1` | Recovery start approved        | IC + release owner                     |
+| `G-R2` | Incident closure approved      | IC + security owner + program owner    |
 
 ## 4. Disclosure and Notification Timeline Policy
 
 ### 4.1 Disclosure tracks
 
-| Track | Use case | Default confidentiality |
-| --- | --- | --- |
-| `DT-PRIVATE` | Active investigation with uncertain impact or active exploit risk. | Internal and need-to-know vendor channels only. |
-| `DT-COORD` | Confirmed issue requiring coordinated fix rollout. | Controlled multi-party disclosure with embargo date. |
-| `DT-PUBLIC` | Immediate user action is required. | Public advisory once safe containment guidance exists. |
+| Track        | Use case                                                           | Default confidentiality                                |
+| ------------ | ------------------------------------------------------------------ | ------------------------------------------------------ |
+| `DT-PRIVATE` | Active investigation with uncertain impact or active exploit risk. | Internal and need-to-know vendor channels only.        |
+| `DT-COORD`   | Confirmed issue requiring coordinated fix rollout.                 | Controlled multi-party disclosure with embargo date.   |
+| `DT-PUBLIC`  | Immediate user action is required.                                 | Public advisory once safe containment guidance exists. |
 
 ### 4.2 Timeline SLAs by severity
 
-| Milestone | `SEV-1` | `SEV-2` | `SEV-3` | `SEV-4` |
-| --- | --- | --- | --- | --- |
-| Internal incident start notice | <= 30 minutes | <= 1 hour | <= 8 hours | <= 1 business day |
-| Vendor/maintainer notification | <= 1 hour | <= 4 hours | <= 1 business day | <= 2 business days |
-| Preliminary external statement (if user risk exists) | <= 4 hours | <= 1 business day | <= 3 business days | As needed |
-| Full advisory with mitigation instructions | <= 24 hours | <= 2 business days | <= 5 business days | Optional |
-| Post-incident report publication target | <= 5 business days from closure | <= 7 business days | <= 10 business days | <= 15 business days |
+| Milestone                                            | `SEV-1`                         | `SEV-2`            | `SEV-3`             | `SEV-4`             |
+| ---------------------------------------------------- | ------------------------------- | ------------------ | ------------------- | ------------------- |
+| Internal incident start notice                       | <= 30 minutes                   | <= 1 hour          | <= 8 hours          | <= 1 business day   |
+| Vendor/maintainer notification                       | <= 1 hour                       | <= 4 hours         | <= 1 business day   | <= 2 business days  |
+| Preliminary external statement (if user risk exists) | <= 4 hours                      | <= 1 business day  | <= 3 business days  | As needed           |
+| Full advisory with mitigation instructions           | <= 24 hours                     | <= 2 business days | <= 5 business days  | Optional            |
+| Post-incident report publication target              | <= 5 business days from closure | <= 7 business days | <= 10 business days | <= 15 business days |
 
 ### 4.3 Mandatory disclosure content
 
@@ -268,12 +268,12 @@ Incident intake MUST preserve:
 
 ### 6.2 Trigger mapping
 
-| Trigger ID | Upstream policy signal | Default incident class | Default severity floor | Required initial actions |
-| --- | --- | --- | --- | --- |
-| `IT-01` | `MPROV-002`, `MPROV-003`, `MPROV-005` | `INC-SIGN` or `INC-PAYLOAD` | `SEV-2` | Quarantine package, freeze release gate, notify security owner |
-| `IT-02` | Repeated `MPROV-009` across independent runners | `INC-PROV` | `SEV-2` | Freeze candidate release, begin forensics, open coordinated track |
-| `IT-03` | `MPROV-011`, `MPROV-012` | `INC-SOURCE` or `INC-TRUST` | `SEV-2` | Block source substitution path, verify trust-root sync, notify maintainers |
-| `IT-04` | Any enforced-mode policy override | `INC-COORD` | `SEV-3` | Open audit incident, validate override legitimacy, enforce expiry |
+| Trigger ID | Upstream policy signal                          | Default incident class      | Default severity floor | Required initial actions                                                   |
+| ---------- | ----------------------------------------------- | --------------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| `IT-01`    | `MPROV-002`, `MPROV-003`, `MPROV-005`           | `INC-SIGN` or `INC-PAYLOAD` | `SEV-2`                | Quarantine package, freeze release gate, notify security owner             |
+| `IT-02`    | Repeated `MPROV-009` across independent runners | `INC-PROV`                  | `SEV-2`                | Freeze candidate release, begin forensics, open coordinated track          |
+| `IT-03`    | `MPROV-011`, `MPROV-012`                        | `INC-SOURCE` or `INC-TRUST` | `SEV-2`                | Block source substitution path, verify trust-root sync, notify maintainers |
+| `IT-04`    | Any enforced-mode policy override               | `INC-COORD`                 | `SEV-3`                | Open audit incident, validate override legitimacy, enforce expiry          |
 
 ### 6.3 Recovery and closure provenance gates
 
@@ -288,13 +288,13 @@ Recovery and closure MUST be blocked until:
 
 ### 7.1 Required simulation set (`SIM-C07-*`)
 
-| Simulation ID | Scenario | Minimum cadence | Required success result |
-| --- | --- | --- | --- |
-| `SIM-C07-01` | Signing key compromise with forged metadata (`INC-SIGN`) | Quarterly | Correct severity (`>= SEV-2`), containment within SLA, communications emitted |
-| `SIM-C07-02` | Payload tamper in mirrored package (`INC-PAYLOAD`) | Quarterly | Digest mismatch quarantines package and blocks release gates |
-| `SIM-C07-03` | Source substitution plus stale trust roots (`INC-SOURCE`/`INC-TRUST`) | Semiannual | `IT-03` mapping executes and trust remediation plan is approved |
-| `SIM-C07-04` | Coordinated multi-vendor incident (`INC-COORD`) | Semiannual | Coordinated disclosure schedule is met and vendor comms are complete |
-| `SIM-C07-05` | Recovery regression drill with replay mismatch (`INC-PROV`) | Quarterly | Recovery gate remains blocked until replay checks pass |
+| Simulation ID | Scenario                                                              | Minimum cadence | Required success result                                                       |
+| ------------- | --------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| `SIM-C07-01`  | Signing key compromise with forged metadata (`INC-SIGN`)              | Quarterly       | Correct severity (`>= SEV-2`), containment within SLA, communications emitted |
+| `SIM-C07-02`  | Payload tamper in mirrored package (`INC-PAYLOAD`)                    | Quarterly       | Digest mismatch quarantines package and blocks release gates                  |
+| `SIM-C07-03`  | Source substitution plus stale trust roots (`INC-SOURCE`/`INC-TRUST`) | Semiannual      | `IT-03` mapping executes and trust remediation plan is approved               |
+| `SIM-C07-04`  | Coordinated multi-vendor incident (`INC-COORD`)                       | Semiannual      | Coordinated disclosure schedule is met and vendor comms are complete          |
+| `SIM-C07-05`  | Recovery regression drill with replay mismatch (`INC-PROV`)           | Quarterly       | Recovery gate remains blocked until replay checks pass                        |
 
 ### 7.2 Required simulation evidence artifacts
 
@@ -346,14 +346,14 @@ Audit evidence MUST maintain bidirectional references to:
 
 ## 9. C-07 Acceptance Mapping and Traceability
 
-| Acceptance / task group | Playbook coverage | Package coverage | Audit output |
-| --- | --- | --- | --- |
-| `AC-174-01` through `AC-174-04` (`SEV` + `CER`) | Sections `2` and `3` | Package Sections `4`, `6`, `14` | `E174-02`, `E174-03` |
-| `AC-174-05`, `AC-174-06` (disclosure + templates) | Sections `4` and `5` | Package Sections `7`, `8`, `14` | `E174-04` |
-| `AC-174-07` (`MPROV`/`IT` linkage) | Section `6` | Package Sections `9`, `14` | `E174-05` |
-| `AC-174-08` (simulation obligations) | Section `7` | Package Sections `12`, `14` | `E174-06` |
-| `AC-174-09`, `AC-174-10` (done mapping + validation) | Sections `8`, `9` | Package Sections `13`, `18` | `E174-07`, `E174-08` |
-| `SPT-0366` through `SPT-0374` closeout track | Sections `2` through `9` | Package Sections `16`, `17`, `19` | Deterministic checklist + evidence ledger |
+| Acceptance / task group                              | Playbook coverage        | Package coverage                  | Audit output                              |
+| ---------------------------------------------------- | ------------------------ | --------------------------------- | ----------------------------------------- |
+| `AC-174-01` through `AC-174-04` (`SEV` + `CER`)      | Sections `2` and `3`     | Package Sections `4`, `6`, `14`   | `E174-02`, `E174-03`                      |
+| `AC-174-05`, `AC-174-06` (disclosure + templates)    | Sections `4` and `5`     | Package Sections `7`, `8`, `14`   | `E174-04`                                 |
+| `AC-174-07` (`MPROV`/`IT` linkage)                   | Section `6`              | Package Sections `9`, `14`        | `E174-05`                                 |
+| `AC-174-08` (simulation obligations)                 | Section `7`              | Package Sections `12`, `14`       | `E174-06`                                 |
+| `AC-174-09`, `AC-174-10` (done mapping + validation) | Sections `8`, `9`        | Package Sections `13`, `18`       | `E174-07`, `E174-08`                      |
+| `SPT-0366` through `SPT-0374` closeout track         | Sections `2` through `9` | Package Sections `16`, `17`, `19` | Deterministic checklist + evidence ledger |
 
 ## 10. V013 Tabletop Scenario Matrix (Deterministic Addendum)
 
@@ -362,13 +362,13 @@ Audit evidence MUST maintain bidirectional references to:
 The following scenario matrix is mandatory for quarterly tabletop execution and
 policy drift checks:
 
-| Scenario ID | Incident class | Primary trigger(s) | Severity floor | Required response tier | Mandatory outputs |
-| --- | --- | --- | --- | --- | --- |
-| `SMT-V013-01` | `INC-SIGN` | `MPROV-002`, `MPROV-003` | `SEV-1` | `RT-V013-T1` | Immediate denylist, signer revocation, `COMM-T1` and `COMM-T2` within SLA |
-| `SMT-V013-02` | `INC-PAYLOAD` | `MPROV-005`, `IT-01` | `SEV-2` | `RT-V013-T2` | Quarantine package coordinates, lockfile freeze, release gate block |
-| `SMT-V013-03` | `INC-SOURCE` + `INC-TRUST` | `MPROV-011`, `MPROV-012`, `IT-03` | `SEV-2` | `RT-V013-T2` | Source-path block, trust-root refresh, maintainer notification |
-| `SMT-V013-04` | `INC-PROV` | `MPROV-009`, `IT-02` | `SEV-2` | `RT-V013-T2` | Recovery hold, replay forensics, updated guidance before unblock |
-| `SMT-V013-05` | `INC-COORD` | Coordinated vendor signal + `IT-04` | `SEV-1` | `RT-V013-T1` | Coordinated disclosure plan, vendor owner roster, deterministic update cadence |
+| Scenario ID   | Incident class             | Primary trigger(s)                  | Severity floor | Required response tier | Mandatory outputs                                                              |
+| ------------- | -------------------------- | ----------------------------------- | -------------- | ---------------------- | ------------------------------------------------------------------------------ |
+| `SMT-V013-01` | `INC-SIGN`                 | `MPROV-002`, `MPROV-003`            | `SEV-1`        | `RT-V013-T1`           | Immediate denylist, signer revocation, `COMM-T1` and `COMM-T2` within SLA      |
+| `SMT-V013-02` | `INC-PAYLOAD`              | `MPROV-005`, `IT-01`                | `SEV-2`        | `RT-V013-T2`           | Quarantine package coordinates, lockfile freeze, release gate block            |
+| `SMT-V013-03` | `INC-SOURCE` + `INC-TRUST` | `MPROV-011`, `MPROV-012`, `IT-03`   | `SEV-2`        | `RT-V013-T2`           | Source-path block, trust-root refresh, maintainer notification                 |
+| `SMT-V013-04` | `INC-PROV`                 | `MPROV-009`, `IT-02`                | `SEV-2`        | `RT-V013-T2`           | Recovery hold, replay forensics, updated guidance before unblock               |
+| `SMT-V013-05` | `INC-COORD`                | Coordinated vendor signal + `IT-04` | `SEV-1`        | `RT-V013-T1`           | Coordinated disclosure plan, vendor owner roster, deterministic update cadence |
 
 ### 10.2 Scenario pass and failure rules
 
@@ -381,12 +381,12 @@ policy drift checks:
 
 ### 11.1 Tier definitions
 
-| Tier ID | Bound severity | Initial SLA window | Mandatory controls | Required evidence |
-| --- | --- | --- | --- | --- |
-| `RT-V013-T1` | `SEV-1` | Acknowledge <= 15 minutes; containment <= 30 minutes | Release hard-stop, denylist, signer/trust revocation, coordinated vendor paging | `COMM-T1`, `COMM-T2`, `G-C1` approval record |
-| `RT-V013-T2` | `SEV-2` | Acknowledge <= 30 minutes; containment <= 60 minutes | Quarantine, lockfile freeze, targeted trust updates, forensic owner assignment | CER timeline, remediation plan, disclosure track record |
-| `RT-V013-T3` | `SEV-3` | Acknowledge <= 4 hours; containment <= 8 hours | Conditional release hold, replay checks, confidence updates | triage memo, containment status record |
-| `RT-V013-T4` | `SEV-4` | Acknowledge <= 1 business day; triage <= 2 business days | Audit-only incident with escalation watch conditions | audit trail and closure rationale |
+| Tier ID      | Bound severity | Initial SLA window                                       | Mandatory controls                                                              | Required evidence                                       |
+| ------------ | -------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `RT-V013-T1` | `SEV-1`        | Acknowledge <= 15 minutes; containment <= 30 minutes     | Release hard-stop, denylist, signer/trust revocation, coordinated vendor paging | `COMM-T1`, `COMM-T2`, `G-C1` approval record            |
+| `RT-V013-T2` | `SEV-2`        | Acknowledge <= 30 minutes; containment <= 60 minutes     | Quarantine, lockfile freeze, targeted trust updates, forensic owner assignment  | CER timeline, remediation plan, disclosure track record |
+| `RT-V013-T3` | `SEV-3`        | Acknowledge <= 4 hours; containment <= 8 hours           | Conditional release hold, replay checks, confidence updates                     | triage memo, containment status record                  |
+| `RT-V013-T4` | `SEV-4`        | Acknowledge <= 1 business day; triage <= 2 business days | Audit-only incident with escalation watch conditions                            | audit trail and closure rationale                       |
 
 ### 11.2 Tier transition and override rules
 
@@ -397,12 +397,12 @@ policy drift checks:
 
 ### 11.3 CER gates by tier
 
-| Tier | Gate requirements |
-| --- | --- |
-| `RT-V013-T1` | `G-C1`, `G-E1`, `G-E2`, `G-R1`, and `G-R2` are all mandatory; no waiver allowed. |
+| Tier         | Gate requirements                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `RT-V013-T1` | `G-C1`, `G-E1`, `G-E2`, `G-R1`, and `G-R2` are all mandatory; no waiver allowed.                           |
 | `RT-V013-T2` | `G-C1`, `G-E1`, `G-E2`, and `G-R2` are mandatory; `G-R1` may combine with `G-E2` when explicitly approved. |
-| `RT-V013-T3` | `G-C1` and `G-R2` are mandatory; `G-E1`/`G-E2` required when compromise is confirmed. |
-| `RT-V013-T4` | `G-C1` may be replaced by documented audit hold decision; `G-R2` required for closure. |
+| `RT-V013-T3` | `G-C1` and `G-R2` are mandatory; `G-E1`/`G-E2` required when compromise is confirmed.                      |
+| `RT-V013-T4` | `G-C1` may be replaced by documented audit hold decision; `G-R2` required for closure.                     |
 
 ## 12. Follow-Up Remediation Ledger and V013 Acceptance Mapping
 
@@ -420,23 +420,23 @@ remediation ledger where each row contains:
 
 ### 12.2 Published remediation baseline
 
-| Remediation ID | Linked scenario | Action | Owner | Due (UTC) | Status |
-| --- | --- | --- | --- | --- | --- |
-| `FRL-V013-01` | `SMT-V013-01` | Rotate signer keys and publish trust bundle pinning guidance. | security owner | `2026-03-02T18:00:00Z` | `in_progress` |
-| `FRL-V013-02` | `SMT-V013-02` | Add deterministic mirror quarantine replay runbook for containment. | tooling owner | `2026-03-04T18:00:00Z` | `open` |
-| `FRL-V013-03` | `SMT-V013-03` | Enforce trust-root freshness guardrail for release runners. | release owner | `2026-03-06T18:00:00Z` | `open` |
-| `FRL-V013-04` | `SMT-V013-04` | Add replay mismatch stop condition to recovery checklist. | provenance owner | `2026-03-03T18:00:00Z` | `in_progress` |
-| `FRL-V013-05` | `SMT-V013-05` | Publish coordinated vendor contact rota with fallback owners. | governance delegate | `2026-03-05T18:00:00Z` | `open` |
+| Remediation ID | Linked scenario | Action                                                              | Owner               | Due (UTC)              | Status        |
+| -------------- | --------------- | ------------------------------------------------------------------- | ------------------- | ---------------------- | ------------- |
+| `FRL-V013-01`  | `SMT-V013-01`   | Rotate signer keys and publish trust bundle pinning guidance.       | security owner      | `2026-03-02T18:00:00Z` | `in_progress` |
+| `FRL-V013-02`  | `SMT-V013-02`   | Add deterministic mirror quarantine replay runbook for containment. | tooling owner       | `2026-03-04T18:00:00Z` | `open`        |
+| `FRL-V013-03`  | `SMT-V013-03`   | Enforce trust-root freshness guardrail for release runners.         | release owner       | `2026-03-06T18:00:00Z` | `open`        |
+| `FRL-V013-04`  | `SMT-V013-04`   | Add replay mismatch stop condition to recovery checklist.           | provenance owner    | `2026-03-03T18:00:00Z` | `in_progress` |
+| `FRL-V013-05`  | `SMT-V013-05`   | Publish coordinated vendor contact rota with fallback owners.       | governance delegate | `2026-03-05T18:00:00Z` | `open`        |
 
 ### 12.3 Acceptance mapping for `AC-V013-GOV-04`
 
-| Acceptance row | Playbook evidence |
-| --- | --- |
-| `AC-V013-GOV-04-01` | Section `10.1` publishes deterministic scenario matrix rows `SMT-V013-01` through `SMT-V013-05`. |
-| `AC-V013-GOV-04-02` | Section `11.1` defines deterministic response tiers `RT-V013-T1` through `RT-V013-T4` bound to `SEV-*`. |
-| `AC-V013-GOV-04-03` | Sections `10` through `12` codify tabletop outputs as normative controls. |
-| `AC-V013-GOV-04-04` | Sections `12.1` and `12.2` define and publish follow-up remediation ledger requirements and baseline rows. |
-| `AC-V013-GOV-04-05` | Section `10.2` requires scenario execution outcomes and failure handling linkage to report artifacts. |
+| Acceptance row      | Playbook evidence                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `AC-V013-GOV-04-01` | Section `10.1` publishes deterministic scenario matrix rows `SMT-V013-01` through `SMT-V013-05`.            |
+| `AC-V013-GOV-04-02` | Section `11.1` defines deterministic response tiers `RT-V013-T1` through `RT-V013-T4` bound to `SEV-*`.     |
+| `AC-V013-GOV-04-03` | Sections `10` through `12` codify tabletop outputs as normative controls.                                   |
+| `AC-V013-GOV-04-04` | Sections `12.1` and `12.2` define and publish follow-up remediation ledger requirements and baseline rows.  |
+| `AC-V013-GOV-04-05` | Section `10.2` requires scenario execution outcomes and failure handling linkage to report artifacts.       |
 | `AC-V013-GOV-04-06` | Validation transcript requirement is satisfied in planning/report artifacts tied to this playbook addendum. |
 
 ### 12.4 Reseed metadata binding (`#790`, `BATCH-20260223-11S`)
@@ -444,10 +444,10 @@ remediation ledger where each row contains:
 The `V013-GOV-04` reseed execution MUST preserve the same issue metadata tuple
 across planning, governance, and reporting artifacts.
 
-| Field | Bound value |
-| --- | --- |
-| `seed_id` | `V013-GOV-04` |
-| `wave_id` | `W1` |
-| `issue_id` | `#790` |
-| `batch_id` | `BATCH-20260223-11S` |
-| `acceptance_gate_id` | `AC-V013-GOV-04` |
+| Field                | Bound value          |
+| -------------------- | -------------------- |
+| `seed_id`            | `V013-GOV-04`        |
+| `wave_id`            | `W1`                 |
+| `issue_id`           | `#790`               |
+| `batch_id`           | `BATCH-20260223-11S` |
+| `acceptance_gate_id` | `AC-V013-GOV-04`     |

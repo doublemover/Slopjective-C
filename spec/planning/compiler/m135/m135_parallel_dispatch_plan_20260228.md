@@ -8,14 +8,14 @@
 
 ## Lane Allocation
 
-| Lane | Issue | Focus |
-| --- | --- | --- |
-| A | [#4264](https://github.com/doublemover/Slopjective-C/issues/4264) | Replace clang IR object compile invocation with direct native LLVM object emission for `.objc3`. |
-| B | [#4265](https://github.com/doublemover/Slopjective-C/issues/4265) | Expand parser/sema support for richer Objective-C object declarator forms. |
-| C | [#4266](https://github.com/doublemover/Slopjective-C/issues/4266) | Extend lowering coverage for additional Objective-C dispatch patterns. |
-| D | [#4267](https://github.com/doublemover/Slopjective-C/issues/4267) | Harden runtime/link integration for native-emitted object artifacts. |
-| E | [#4268](https://github.com/doublemover/Slopjective-C/issues/4268) | Closeout gate packet, direct-LLVM contract docs, and CI/tooling fail-closed enforcement. |
-| INT | Lane E integration responsibility | No separate M135 INT issue; lane E owns closeout sequencing and regroup evidence. |
+| Lane | Issue                                                             | Focus                                                                                            |
+| ---- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| A    | [#4264](https://github.com/doublemover/Slopjective-C/issues/4264) | Replace clang IR object compile invocation with direct native LLVM object emission for `.objc3`. |
+| B    | [#4265](https://github.com/doublemover/Slopjective-C/issues/4265) | Expand parser/sema support for richer Objective-C object declarator forms.                       |
+| C    | [#4266](https://github.com/doublemover/Slopjective-C/issues/4266) | Extend lowering coverage for additional Objective-C dispatch patterns.                           |
+| D    | [#4267](https://github.com/doublemover/Slopjective-C/issues/4267) | Harden runtime/link integration for native-emitted object artifacts.                             |
+| E    | [#4268](https://github.com/doublemover/Slopjective-C/issues/4268) | Closeout gate packet, direct-LLVM contract docs, and CI/tooling fail-closed enforcement.         |
+| INT  | Lane E integration responsibility                                 | No separate M135 INT issue; lane E owns closeout sequencing and regroup evidence.                |
 
 ## Dispatch Order And Ownership
 

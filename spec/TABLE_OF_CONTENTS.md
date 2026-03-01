@@ -54,4 +54,3 @@ This draft is ambitious but implementable:
 - **v0.5:** locked major decisions for optionals/errors/concurrency ([D-001](#decisions-d-001)…[D-006](#decisions-d-006)).
 - **v0.8:** adds canonical surface spellings ([B](#b)) and a lowering/ABI/runtime contract ([C](#c)), and begins tightening ABI-impacting features for separate compilation.
 - **v0.9:** adds explicit module-metadata/ABI boundary tables ([D](#d)) and tightens `await` requirements for all potentially-suspending operations across executors/actors.
-

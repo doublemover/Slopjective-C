@@ -41,18 +41,18 @@ Recent movement since prior packet revision:
 
 GitHub state verified on `2026-02-28` via `gh api`.
 
-| ID | Issue | Lane | GitHub state | Completion evidence | Current status |
-| --- | --- | --- | --- | --- | --- |
-| `M134-A001` | [#4252](https://github.com/doublemover/Slopjective-C/issues/4252) | A | CLOSED | [bc1f3d0d](https://github.com/doublemover/Slopjective-C/commit/bc1f3d0d2ee65c7c3956e59ec86e03a37bec03c7) | Closed with commit evidence |
-| `M134-A002` | [#4253](https://github.com/doublemover/Slopjective-C/issues/4253) | A | CLOSED | [1506e325](https://github.com/doublemover/Slopjective-C/commit/1506e32566bc74da218f706bc22b08cb7e5de84b) | Closed with commit evidence |
-| `M134-B001` | [#4254](https://github.com/doublemover/Slopjective-C/issues/4254) | B | CLOSED | [c018fd72](https://github.com/doublemover/Slopjective-C/commit/c018fd72fbc9164a1e8d8134d0699f96eb57c832) | Closed with commit evidence |
-| `M134-B002` | [#4255](https://github.com/doublemover/Slopjective-C/issues/4255) | B | CLOSED | [466680ba](https://github.com/doublemover/Slopjective-C/commit/466680ba5d84e0b8f147ba6c7ed6662cc0fc5d26) | Closed with commit evidence |
-| `M134-C001` | [#4256](https://github.com/doublemover/Slopjective-C/issues/4256) | C | CLOSED | [7f177a1e](https://github.com/doublemover/Slopjective-C/commit/7f177a1e9326c94f72100d09bb92672f38c6630a) | Closed with commit evidence |
-| `M134-C002` | [#4257](https://github.com/doublemover/Slopjective-C/issues/4257) | C | CLOSED | [c86e6b83](https://github.com/doublemover/Slopjective-C/commit/c86e6b83f199609ba3cb1a574a07f41742b00060) | Closed with commit evidence |
-| `M134-D001` | [#4258](https://github.com/doublemover/Slopjective-C/issues/4258) | D | CLOSED | [0b9f9d8f](https://github.com/doublemover/Slopjective-C/commit/0b9f9d8fb62c8be992bef763be6e0c7e0b95654b) | Closed with commit evidence |
-| `M134-D002` | [#4259](https://github.com/doublemover/Slopjective-C/issues/4259) | D | CLOSED | [5c66eec6](https://github.com/doublemover/Slopjective-C/commit/5c66eec6d8b27fa8de0369a80989094df5437c1c) | Closed with commit evidence |
-| `M134-E001` | [#4260](https://github.com/doublemover/Slopjective-C/issues/4260) | E | CLOSED | [df948e2f](https://github.com/doublemover/Slopjective-C/commit/df948e2ffcd94d108015028794bf7c672d875c57) | Closed with commit evidence |
-| `M134-E002` | [#4261](https://github.com/doublemover/Slopjective-C/issues/4261) | E | CLOSED | [1a7ed63f](https://github.com/doublemover/Slopjective-C/commit/1a7ed63fce3a10696af754d7b4d1ad7025ebd637) | Closed with commit evidence |
+| ID          | Issue                                                             | Lane | GitHub state | Completion evidence                                                                                      | Current status              |
+| ----------- | ----------------------------------------------------------------- | ---- | ------------ | -------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `M134-A001` | [#4252](https://github.com/doublemover/Slopjective-C/issues/4252) | A    | CLOSED       | [bc1f3d0d](https://github.com/doublemover/Slopjective-C/commit/bc1f3d0d2ee65c7c3956e59ec86e03a37bec03c7) | Closed with commit evidence |
+| `M134-A002` | [#4253](https://github.com/doublemover/Slopjective-C/issues/4253) | A    | CLOSED       | [1506e325](https://github.com/doublemover/Slopjective-C/commit/1506e32566bc74da218f706bc22b08cb7e5de84b) | Closed with commit evidence |
+| `M134-B001` | [#4254](https://github.com/doublemover/Slopjective-C/issues/4254) | B    | CLOSED       | [c018fd72](https://github.com/doublemover/Slopjective-C/commit/c018fd72fbc9164a1e8d8134d0699f96eb57c832) | Closed with commit evidence |
+| `M134-B002` | [#4255](https://github.com/doublemover/Slopjective-C/issues/4255) | B    | CLOSED       | [466680ba](https://github.com/doublemover/Slopjective-C/commit/466680ba5d84e0b8f147ba6c7ed6662cc0fc5d26) | Closed with commit evidence |
+| `M134-C001` | [#4256](https://github.com/doublemover/Slopjective-C/issues/4256) | C    | CLOSED       | [7f177a1e](https://github.com/doublemover/Slopjective-C/commit/7f177a1e9326c94f72100d09bb92672f38c6630a) | Closed with commit evidence |
+| `M134-C002` | [#4257](https://github.com/doublemover/Slopjective-C/issues/4257) | C    | CLOSED       | [c86e6b83](https://github.com/doublemover/Slopjective-C/commit/c86e6b83f199609ba3cb1a574a07f41742b00060) | Closed with commit evidence |
+| `M134-D001` | [#4258](https://github.com/doublemover/Slopjective-C/issues/4258) | D    | CLOSED       | [0b9f9d8f](https://github.com/doublemover/Slopjective-C/commit/0b9f9d8fb62c8be992bef763be6e0c7e0b95654b) | Closed with commit evidence |
+| `M134-D002` | [#4259](https://github.com/doublemover/Slopjective-C/issues/4259) | D    | CLOSED       | [5c66eec6](https://github.com/doublemover/Slopjective-C/commit/5c66eec6d8b27fa8de0369a80989094df5437c1c) | Closed with commit evidence |
+| `M134-E001` | [#4260](https://github.com/doublemover/Slopjective-C/issues/4260) | E    | CLOSED       | [df948e2f](https://github.com/doublemover/Slopjective-C/commit/df948e2ffcd94d108015028794bf7c672d875c57) | Closed with commit evidence |
+| `M134-E002` | [#4261](https://github.com/doublemover/Slopjective-C/issues/4261) | E    | CLOSED       | [1a7ed63f](https://github.com/doublemover/Slopjective-C/commit/1a7ed63fce3a10696af754d7b4d1ad7025ebd637) | Closed with commit evidence |
 
 ## Open Dependency TODO Markers
 
@@ -81,25 +81,25 @@ Closed with direct commit linkage in branch:
 
 Executed on `2026-02-28`:
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| `gh api repos/doublemover/Slopjective-C/issues/4263` | PASS | `state=closed`; tooling baseline restoration issue closed with evidence comment. |
-| `gh api repos/doublemover/Slopjective-C/issues/4262` | PASS | `state=closed`; regroup gate issue closed with closeout evidence comment. |
-| `gh api repos/doublemover/Slopjective-C/milestones/219` | PASS | `state=open`, `open_issues=0`, `closed_issues=11` (all milestone issues closed). |
-| `python -m pytest tests/tooling -q` | PASS | `527 passed, 2 skipped` in `1000.68s`; deterministic full-suite baseline restored. |
-| `python scripts/spec_lint.py --glob "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"` | PASS | `spec-lint: OK` |
-| `npx --no-install markdownlint-cli2 "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"` | PASS | `markdownlint-cli2: 0 error(s)` |
+| Command                                                                                               | Result | Notes                                                                              |
+| ----------------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| `gh api repos/doublemover/Slopjective-C/issues/4263`                                                  | PASS   | `state=closed`; tooling baseline restoration issue closed with evidence comment.   |
+| `gh api repos/doublemover/Slopjective-C/issues/4262`                                                  | PASS   | `state=closed`; regroup gate issue closed with closeout evidence comment.          |
+| `gh api repos/doublemover/Slopjective-C/milestones/219`                                               | PASS   | `state=open`, `open_issues=0`, `closed_issues=11` (all milestone issues closed).   |
+| `python -m pytest tests/tooling -q`                                                                   | PASS   | `527 passed, 2 skipped` in `1000.68s`; deterministic full-suite baseline restored. |
+| `python scripts/spec_lint.py --glob "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"` | PASS   | `spec-lint: OK`                                                                    |
+| `npx --no-install markdownlint-cli2 "spec/planning/compiler/m134/m134_closeout_evidence_20260227.md"` | PASS   | `markdownlint-cli2: 0 error(s)`                                                    |
 
 ## Validation Evidence (Issue #4262 Command Set Snapshot)
 
 Executed on `2026-02-28` (UTC):
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| `npm run lint:md:all` | PASS | `build:spec`, `lint:spec`, and `lint:md` all passed (`markdownlint-cli2`: `0 error(s)`) |
-| `npm run check:task-hygiene` | PASS | Planning hygiene sequence completed; `issue-drift: OK` with `mismatch count: 0` |
-| `npm run test:objc3c:lane-e` | PASS | Sequence complete (`9 script(s)`); lowering regression/replay, typed ABI replay, execution smoke/replay all green. |
-| `python -m pytest tests/tooling -q` | PASS | `527 passed, 2 skipped`; matches #4263 closeout evidence and unblocks regroup gate closure. |
+| Command                             | Result | Notes                                                                                                              |
+| ----------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| `npm run lint:md:all`               | PASS   | `build:spec`, `lint:spec`, and `lint:md` all passed (`markdownlint-cli2`: `0 error(s)`)                            |
+| `npm run check:task-hygiene`        | PASS   | Planning hygiene sequence completed; `issue-drift: OK` with `mismatch count: 0`                                    |
+| `npm run test:objc3c:lane-e`        | PASS   | Sequence complete (`9 script(s)`); lowering regression/replay, typed ABI replay, execution smoke/replay all green. |
+| `python -m pytest tests/tooling -q` | PASS   | `527 passed, 2 skipped`; matches #4263 closeout evidence and unblocks regroup gate closure.                        |
 
 ## Remaining Blockers
 

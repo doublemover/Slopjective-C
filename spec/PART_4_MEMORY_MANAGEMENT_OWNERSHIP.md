@@ -187,4 +187,3 @@ Concrete names/spellings may differ, but module metadata and documentation shall
 ## 4.10 Open issues {#part-4-10}
 
 No open issues are tracked in this part for v1.
-

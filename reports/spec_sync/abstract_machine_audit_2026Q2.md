@@ -27,33 +27,33 @@ Interpretation rule for this audit refresh:
 
 ## Source inventory used for 2026Q2 baseline
 
-| Source ID | Artifact path | Signal consumed |
-| --- | --- | --- |
-| `SRC-V013-01` | `spec/FUTURE_WORK_V011.md` | Original AM sync task contract (`A-03`, `A-04`) and delta classification requirement. |
-| `SRC-V013-02` | `spec/IMPLEMENTATION_EXECUTION_ROADMAP.md` | Active W1 execution context and active batch snapshot (`BATCH-20260223-11A`). |
-| `SRC-V013-12` | `spec/planning/v013_future_work_seed_matrix.md` | Seed contract for `V013-SPEC-03`, `AC-V013-SPEC-03`, and `EDGE-V013-017` to `REL-03`. |
-| `RSRC-12/13` | `spec/planning/v013_seed_source_reconciliation_package.md` | Reconciled dependency binding and conflict decisions consumed by this audit run. |
-| `AM-Q1` | `reports/spec_sync/abstract_machine_audit_2026Q1.md` | Prior baseline for delta-to-delta comparison and carry-forward tracking. |
+| Source ID     | Artifact path                                              | Signal consumed                                                                       |
+| ------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `SRC-V013-01` | `spec/FUTURE_WORK_V011.md`                                 | Original AM sync task contract (`A-03`, `A-04`) and delta classification requirement. |
+| `SRC-V013-02` | `spec/IMPLEMENTATION_EXECUTION_ROADMAP.md`                 | Active W1 execution context and active batch snapshot (`BATCH-20260223-11A`).         |
+| `SRC-V013-12` | `spec/planning/v013_future_work_seed_matrix.md`            | Seed contract for `V013-SPEC-03`, `AC-V013-SPEC-03`, and `EDGE-V013-017` to `REL-03`. |
+| `RSRC-12/13`  | `spec/planning/v013_seed_source_reconciliation_package.md` | Reconciled dependency binding and conflict decisions consumed by this audit run.      |
+| `AM-Q1`       | `reports/spec_sync/abstract_machine_audit_2026Q1.md`       | Prior baseline for delta-to-delta comparison and carry-forward tracking.              |
 
 ## Anchor verification snapshot
 
-| File | Command | Result |
-| --- | --- | --- |
-| `spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md` | `rg -N "\{#am-2-2\}|\{#am-4-4\}|\{#am-5\}|\{#am-6-1\}|\{#am-6-2\}|\{#am-6-3\}|\{#am-6-4\}|\{#am-6-5\}|\{#am-6-6\}|\{#am-6-7\}|\{#am-7\}"` | `PASS AM count=11 expected=11` |
-| `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md` | `rg -N "\{#part-0-1\}|\{#part-0-2-1\}|\{#part-0-2-2\}|\{#part-0-2-4\}|\{#part-0-3-1\}|\{#part-0-3-2\}|\{#part-0-4-1\}|\{#part-0-4-6\}|\{#part-0-4-14\}|\{#part-0-4-16\}|\{#part-0-4-17\}|\{#part-0-4-18\}|\{#part-0-4-19\}|\{#part-0-4-20\}|\{#part-0-6\}"` | `PASS Part0 count=15 expected=15` |
-| `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md` | `rg -N "\{#part-3-4-1\}|\{#part-3-4-2\}|\{#part-3-4-5\}"` | `PASS Part3 count=3 expected=3` |
-| `spec/PART_6_ERRORS_RESULTS_THROWS.md` | `rg -N "\{#part-6-3\}|\{#part-6-4\}|\{#part-6-5\}|\{#part-6-6\}"` | `PASS Part6 count=4 expected=4` |
-| `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md` | `rg -N "\{#part-7-3-3\}|\{#part-7-6\}|\{#part-7-9-1\}|\{#part-7-9-2\}|\{#part-7-9-3\}|\{#part-7-9-4\}"` | `PASS Part7 count=6 expected=6` |
-| `spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md` | `rg -N "\{#part-8-1\}|\{#part-8-2-3\}|\{#part-8-3\}|\{#part-8-6\}"` | `PASS Part8 count=4 expected=4` |
-| AM matrix rows | `rg -n "AM-T0[1-9]|AM-T1[0-9]|Part 3|Part 6|Part 7|Part 8" spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md` | `PASS rows AM-T01..AM-T19 and cross-part links present` |
+| File                                                           | Command                 | Result          |
+| -------------------------------------------------------------- | ----------------------- | --------------- | ----------------- | ------------------------------- | ------------------------------- | --------------------------------------------------- | ------------------------------------------------------- | --------------- | ---------------- | ---------------- | ---------------- | ------------------------------ | ---------------- | ---------------- | --------------- | --------------------------------- |
+| `spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md`                   | `rg -N "\{#am-2-2\}     | \{#am-4-4\}     | \{#am-5\}         | \{#am-6-1\}                     | \{#am-6-2\}                     | \{#am-6-3\}                                         | \{#am-6-4\}                                             | \{#am-6-5\}     | \{#am-6-6\}      | \{#am-6-7\}      | \{#am-7\}"`      | `PASS AM count=11 expected=11` |
+| `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md`             | `rg -N "\{#part-0-1\}   | \{#part-0-2-1\} | \{#part-0-2-2\}   | \{#part-0-2-4\}                 | \{#part-0-3-1\}                 | \{#part-0-3-2\}                                     | \{#part-0-4-1\}                                         | \{#part-0-4-6\} | \{#part-0-4-14\} | \{#part-0-4-16\} | \{#part-0-4-17\} | \{#part-0-4-18\}               | \{#part-0-4-19\} | \{#part-0-4-20\} | \{#part-0-6\}"` | `PASS Part0 count=15 expected=15` |
+| `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md` | `rg -N "\{#part-3-4-1\} | \{#part-3-4-2\} | \{#part-3-4-5\}"` | `PASS Part3 count=3 expected=3` |
+| `spec/PART_6_ERRORS_RESULTS_THROWS.md`                         | `rg -N "\{#part-6-3\}   | \{#part-6-4\}   | \{#part-6-5\}     | \{#part-6-6\}"`                 | `PASS Part6 count=4 expected=4` |
+| `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`                | `rg -N "\{#part-7-3-3\} | \{#part-7-6\}   | \{#part-7-9-1\}   | \{#part-7-9-2\}                 | \{#part-7-9-3\}                 | \{#part-7-9-4\}"`                                   | `PASS Part7 count=6 expected=6`                         |
+| `spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md`                 | `rg -N "\{#part-8-1\}   | \{#part-8-2-3\} | \{#part-8-3\}     | \{#part-8-6\}"`                 | `PASS Part8 count=4 expected=4` |
+| AM matrix rows                                                 | `rg -n "AM-T0[1-9]      | AM-T1[0-9]      | Part 3            | Part 6                          | Part 7                          | Part 8" spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md` | `PASS rows AM-T01..AM-T19 and cross-part links present` |
 
 ## Drift findings table
 
-| drift_id | class | canonical_home | impacted_sections | am_matrix_rows | rel03_impact | summary | owner | target_date | status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `AM-AUDIT-2026Q2-01` | `normative conflict` | Part 6 (`#part-6-6`) | `#am-6-5`, `#part-6-6-1`, `#part-6-6-4` | `AM-T07`, `AM-T08`, `AM-T13` | `blocking` | Part 6 still states `T?` propagation may "early-return nil (or throw)" while AM + Part 6.6.4 require optional propagation to be optional-return-only and ill-formed in `throws`/`Result` contexts. | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-15` | `open` |
-| `AM-AUDIT-2026Q2-02` | `missing example` | Part 7 (`#part-7-6-5`) | `#part-7-6-5`, `#part-8-3`, `#part-8-6` | `AM-T12`, `AM-T14` | `advisory` | Normative cancellation unwind guarantees exist, but no worked cross-part example combines cancellation-driven unwind with `@cleanup` or `@resource` and explicit lifetime controls (`withLifetime` or `keepAlive`). | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-22` | `tracked` |
-| `AM-AUDIT-2026Q2-03` | `editorial mismatch` | Part 0 (`#part-0-4-1`) | `#part-0-4-1`, `#part-3-4-5` | `AM-T09` | `advisory` | Part 0 requires exact phrase `ill-formed; diagnostic required`; Part 3 restriction bullets still use shortened `ill-formed` wording. | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-29` | `tracked` |
+| drift_id             | class                | canonical_home         | impacted_sections                       | am_matrix_rows               | rel03_impact | summary                                                                                                                                                                                                             | owner                                                          | target_date  | status    |
+| -------------------- | -------------------- | ---------------------- | --------------------------------------- | ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------ | --------- |
+| `AM-AUDIT-2026Q2-01` | `normative conflict` | Part 6 (`#part-6-6`)   | `#am-6-5`, `#part-6-6-1`, `#part-6-6-4` | `AM-T07`, `AM-T08`, `AM-T13` | `blocking`   | Part 6 still states `T?` propagation may "early-return nil (or throw)" while AM + Part 6.6.4 require optional propagation to be optional-return-only and ill-formed in `throws`/`Result` contexts.                  | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-15` | `open`    |
+| `AM-AUDIT-2026Q2-02` | `missing example`    | Part 7 (`#part-7-6-5`) | `#part-7-6-5`, `#part-8-3`, `#part-8-6` | `AM-T12`, `AM-T14`           | `advisory`   | Normative cancellation unwind guarantees exist, but no worked cross-part example combines cancellation-driven unwind with `@cleanup` or `@resource` and explicit lifetime controls (`withLifetime` or `keepAlive`). | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-22` | `tracked` |
+| `AM-AUDIT-2026Q2-03` | `editorial mismatch` | Part 0 (`#part-0-4-1`) | `#part-0-4-1`, `#part-3-4-5`            | `AM-T09`                     | `advisory`   | Part 0 requires exact phrase `ill-formed; diagnostic required`; Part 3 restriction bullets still use shortened `ill-formed` wording.                                                                                | `doublemover <153689082+doublemover@users.noreply.github.com>` | `2026-03-29` | `tracked` |
 
 ## Detailed drift records
 
@@ -108,8 +108,8 @@ Interpretation rule for this audit refresh:
 
 ## REL-03 impact snapshot (`EDGE-V013-017`)
 
-| rel_dependency | requirement | impacted_drift_ids | current risk | release-note requirement |
-| --- | --- | --- | --- | --- |
+| rel_dependency                                  | requirement                                                    | impacted_drift_ids                                               | current risk                                    | release-note requirement                                                                          |
+| ----------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `EDGE-V013-017` (`V013-SPEC-03 -> V013-REL-03`) | Kickoff packet must cite current abstract-machine sync status. | `AM-AUDIT-2026Q2-01`, `AM-AUDIT-2026Q2-02`, `AM-AUDIT-2026Q2-03` | `medium` (`1` blocking + `2` advisory findings) | `V013-REL-03` must cite this report and include unresolved drift IDs/statuses in kickoff handoff. |
 
 ## Deterministic remediation priority order
@@ -121,18 +121,18 @@ Priority scoring model:
 - `am_row_count`: number of AM matrix rows directly touched by the finding
 - `priority_score = (100 * class_weight) + (10 * rel03_weight) + am_row_count`
 
-| priority_rank | drift_id | class_weight | rel03_weight | am_row_count | priority_score | deterministic_action |
-| --- | --- | ---: | ---: | ---: | ---: | --- |
-| `1` | `AM-AUDIT-2026Q2-01` | 3 | 2 | 3 | 323 | Patch Part 6 wording in `6.6.1` to remove optional-propagation throw ambiguity. |
-| `2` | `AM-AUDIT-2026Q2-02` | 2 | 1 | 2 | 212 | Add one cross-part cancellation + cleanup + lifetime control worked example and AM mapping notes. |
-| `3` | `AM-AUDIT-2026Q2-03` | 1 | 1 | 1 | 111 | Normalize Part 3 prohibition wording to exact Part 0 phrase standard. |
+| priority_rank | drift_id             | class_weight | rel03_weight | am_row_count | priority_score | deterministic_action                                                                              |
+| ------------- | -------------------- | -----------: | -----------: | -----------: | -------------: | ------------------------------------------------------------------------------------------------- |
+| `1`           | `AM-AUDIT-2026Q2-01` |            3 |            2 |            3 |            323 | Patch Part 6 wording in `6.6.1` to remove optional-propagation throw ambiguity.                   |
+| `2`           | `AM-AUDIT-2026Q2-02` |            2 |            1 |            2 |            212 | Add one cross-part cancellation + cleanup + lifetime control worked example and AM mapping notes. |
+| `3`           | `AM-AUDIT-2026Q2-03` |            1 |            1 |            1 |            111 | Normalize Part 3 prohibition wording to exact Part 0 phrase standard.                             |
 
 Tie-break rule: if scores are equal, sort by lexical `drift_id`.
 
 ## Validation transcript
 
-| Command | Output | Result |
-| --- | --- | --- |
+| Command                       | Output          | Result |
+| ----------------------------- | --------------- | ------ |
 | `python scripts/spec_lint.py` | `spec-lint: OK` | `PASS` |
 
 ## Open blockers

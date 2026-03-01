@@ -10,15 +10,15 @@ This directory defines the canonical source fragments for building `docs/objc3c-
 
 ## Canonical Fragment Taxonomy
 
-| Order | Fragment | Scope | Owner |
-| --- | --- | --- | --- |
-| 10 | `10-cli.md` | CLI surface, flags, invocation, defaults | compiler/tooling |
-| 20 | `20-grammar.md` | Parser/lexer grammar and token contracts | compiler/parser |
-| 30 | `30-semantics.md` | Semantic and lowering behavior contracts | compiler/semantics |
-| 40 | `40-diagnostics.md` | Diagnostic code and failure-surface contracts | compiler/diagnostics |
-| 50 | `50-artifacts.md` | Artifact paths, runtime contracts, determinism output surfaces | compiler/release |
-| 60 | `60-tests.md` | Validation commands, replay proofs, and fixture contracts | compiler/qa |
-| 70 | `library-api.md` | Embedding/library ABI and API stability contract | compiler/tooling |
+| Order | Fragment            | Scope                                                          | Owner                |
+| ----- | ------------------- | -------------------------------------------------------------- | -------------------- |
+| 10    | `10-cli.md`         | CLI surface, flags, invocation, defaults                       | compiler/tooling     |
+| 20    | `20-grammar.md`     | Parser/lexer grammar and token contracts                       | compiler/parser      |
+| 30    | `30-semantics.md`   | Semantic and lowering behavior contracts                       | compiler/semantics   |
+| 40    | `40-diagnostics.md` | Diagnostic code and failure-surface contracts                  | compiler/diagnostics |
+| 50    | `50-artifacts.md`   | Artifact paths, runtime contracts, determinism output surfaces | compiler/release     |
+| 60    | `60-tests.md`       | Validation commands, replay proofs, and fixture contracts      | compiler/qa          |
+| 70    | `library-api.md`    | Embedding/library ABI and API stability contract               | compiler/tooling     |
 
 ## Deterministic Stitch Order
 

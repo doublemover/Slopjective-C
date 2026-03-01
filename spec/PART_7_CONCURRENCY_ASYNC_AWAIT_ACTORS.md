@@ -624,18 +624,18 @@ Rules:
 
 A conforming implementation's test suite shall include, at minimum, the matrix below.
 
-| Case | Scenario | Expected result in strict concurrency mode | Notes |
-| ---- | -------- | ------------------------------------------ | ----- |
-| SND-01 | Spawned task captures only scalar/enum/aggregate values that are transitively Sendable-like | Accept | Validates default value-like sendability |
-| SND-02 | Spawned task captures actor reference and performs actor-isolated access with `await` | Accept | Actor references are Sendable-like; isolation still enforced |
-| SND-03 | Spawned/detached task captures ordinary mutable class instance with no `Sendable` conformance | Error | Non-actor class instances are non-Sendable by default |
-| SND-04 | Cross-actor call passes non-Sendable class argument or returns non-Sendable class value | Error | Boundary enforcement for arguments/returns |
-| SND-05 | `objc_nonisolated` member signature includes non-Sendable parameter/result type | Error | Enforced even if body is otherwise valid |
-| SND-06 | Concurrent closure uses `weak`/`unowned` capture of non-Sendable reference type | Error | `weak`/`unowned` does not bypass checking |
-| SND-07 | Borrowed pointer or cleanup-managed resource handle crosses task/actor boundary without safe wrapper | Error | Part 8 interaction rules remain in force |
-| SND-08 | Same as SND-03/SND-04 but type is marked `objc_unsafe_sendable` | Accept with required unchecked-transfer warning/note | Escape hatch is explicit and auditable |
-| SND-XM-01 | Module `A` exports `Sendable`/`objc_unsafe_sendable` metadata; module `B` imports and uses it at sendability boundaries | Import and checking behavior matches in-module behavior | Cross-module semantic preservation required by [D.3.1](#d-3-1) |
-| SND-XM-02 | Module metadata/interface omits or mismatches Sendable/task-spawn metadata, then imported under strict concurrency profile | Hard error on import or use-site validation | Required by [D.3.5](#d-3-5) |
+| Case      | Scenario                                                                                                                   | Expected result in strict concurrency mode              | Notes                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
+| SND-01    | Spawned task captures only scalar/enum/aggregate values that are transitively Sendable-like                                | Accept                                                  | Validates default value-like sendability                       |
+| SND-02    | Spawned task captures actor reference and performs actor-isolated access with `await`                                      | Accept                                                  | Actor references are Sendable-like; isolation still enforced   |
+| SND-03    | Spawned/detached task captures ordinary mutable class instance with no `Sendable` conformance                              | Error                                                   | Non-actor class instances are non-Sendable by default          |
+| SND-04    | Cross-actor call passes non-Sendable class argument or returns non-Sendable class value                                    | Error                                                   | Boundary enforcement for arguments/returns                     |
+| SND-05    | `objc_nonisolated` member signature includes non-Sendable parameter/result type                                            | Error                                                   | Enforced even if body is otherwise valid                       |
+| SND-06    | Concurrent closure uses `weak`/`unowned` capture of non-Sendable reference type                                            | Error                                                   | `weak`/`unowned` does not bypass checking                      |
+| SND-07    | Borrowed pointer or cleanup-managed resource handle crosses task/actor boundary without safe wrapper                       | Error                                                   | Part 8 interaction rules remain in force                       |
+| SND-08    | Same as SND-03/SND-04 but type is marked `objc_unsafe_sendable`                                                            | Accept with required unchecked-transfer warning/note    | Escape hatch is explicit and auditable                         |
+| SND-XM-01 | Module `A` exports `Sendable`/`objc_unsafe_sendable` metadata; module `B` imports and uses it at sendability boundaries    | Import and checking behavior matches in-module behavior | Cross-module semantic preservation required by [D.3.1](#d-3-1) |
+| SND-XM-02 | Module metadata/interface omits or mismatches Sendable/task-spawn metadata, then imported under strict concurrency profile | Hard error on import or use-site validation             | Required by [D.3.5](#d-3-5)                                    |
 
 ---
 
@@ -734,4 +734,3 @@ The concrete queue representation is implementation-defined, but the association
 ### 7.12.5 Autorelease pools at suspension points {#part-7-12-5}
 
 Autorelease pool boundaries at suspension points are required by [Decision D-006](#decisions-d-006) and defined normatively in [C.7](#c-7) and [§7.9.4](#part-7-9-4).
-

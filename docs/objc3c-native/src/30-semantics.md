@@ -2248,6 +2248,7 @@ Recommended M193 sema/type SIMD/vector type lowering validation command:
 - `python -m pytest tests/tooling/test_objc3c_m193_sema_simd_vector_lowering_contract.py -q`
 
 <a id="m188-sema-type-actor-isolation-sendability-checks-diagnostics-contract-m188-b001"></a>
+
 ## M188 sema/type actor isolation and sendability checks and diagnostics contract (M188-B001)
 
 M188-B wires parser-authored actor-isolation/sendability profiles into sema/type
@@ -2294,6 +2295,7 @@ Recommended M188 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m188_sema_actor_isolation_sendability_contract.py -q`
 
 <a id="m189-sema-type-task-runtime-interop-cancellation-contract-m189-b001"></a>
+
 ## M189 sema/type task runtime interop and cancellation contract (M189-B001)
 
 M189-B wires parser-authored task-runtime/cancellation profiles into sema/type
@@ -2342,6 +2344,7 @@ Recommended M189 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m189_sema_task_runtime_interop_cancellation_contract.py -q`
 
 <a id="m190-sema-type-concurrency-replay-proof-race-guard-contract-m190-b001"></a>
+
 ## M190 sema/type concurrency replay-proof and race-guard contract (M190-B001)
 
 M190-B wires parser-authored concurrency replay-proof and race-guard profiles into
@@ -2388,6 +2391,7 @@ Recommended M190 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m190_sema_concurrency_replay_race_guard_contract.py -q`
 
 <a id="m191-sema-type-unsafe-pointer-extension-gating-contract-m191-b001"></a>
+
 ## M191 sema/type unsafe-pointer extension gating contract (M191-B001)
 
 M191-B extends sema/type metadata and pass-manager parity surfaces for deterministic unsafe pointer-extension gating summaries replayed from integration surface into type-metadata handoff.
@@ -3383,7 +3387,7 @@ Recommended M167 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m167_sema_block_abi_invoke_trampoline_contract.py -q`
 
-## M168 sema/type __block storage and escape semantics contract (M168-B001)
+## M168 sema/type \_\_block storage and escape semantics contract (M168-B001)
 
 M168-B lifts parser-authored mutable-capture storage and escape-profile metadata
 into sema integration, type-metadata handoff, and pass-manager parity packets so
@@ -3795,6 +3799,7 @@ Recommended M179 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m179_sema_incremental_module_cache_contract.py -q`
 
 <a id="m180-sema-type-cross-module-conformance-contract-m180-b001"></a>
+
 ## M180 sema/type cross-module conformance contract (M180-B001)
 
 M180-B defines deterministic sema summaries for cross-module conformance
@@ -3829,6 +3834,7 @@ Recommended M180 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m180_sema_cross_module_conformance_contract.py -q`
 
 <a id="m181-sema-type-throws-propagation-contract-m181-b001"></a>
+
 ## M181 sema/type throws propagation contract (M181-B001)
 
 M181-B defines deterministic sema summaries for throws propagation handoff
@@ -3863,6 +3869,7 @@ Recommended M181 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m181_sema_throws_propagation_contract.py -q`
 
 <a id="m182-sema-type-result-like-lowering-contract-m182-b001"></a>
+
 ## M182 sema/type result-like lowering contract (M182-B001)
 
 M182-B defines deterministic sema summaries for result-like lowering handoff
@@ -3897,6 +3904,7 @@ Recommended M182 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m182_sema_result_like_contract.py -q`
 
 <a id="m183-sema-type-ns-error-bridging-contract-m183-b001"></a>
+
 ## M183 sema/type NSError bridging contract (M183-B001)
 
 M183-B defines deterministic sema summaries for Objective-C `NSError` bridging
@@ -3933,6 +3941,7 @@ Recommended M183 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m183_sema_ns_error_bridging_contract.py -q`
 
 <a id="m184-sema-type-unwind-cleanup-contract-m184-b001"></a>
+
 ## M184 sema/type unwind cleanup contract (M184-B001)
 
 M184-B defines deterministic sema summaries for unwind cleanup emission and
@@ -3969,6 +3978,7 @@ Recommended M184 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m184_sema_unwind_cleanup_contract.py -q`
 
 <a id="m185-sema-type-error-diagnostics-ux-recovery-contract-m185-b001"></a>
+
 ## M185 sema/type error diagnostics UX and recovery contract (M185-B001)
 
 M185-B defines deterministic sema summaries for error diagnostics and recovery
@@ -4005,6 +4015,7 @@ Recommended M185 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m185_sema_error_diagnostics_recovery_contract.py -q`
 
 <a id="m186-sema-type-async-continuation-contract-m186-b001"></a>
+
 ## M186 sema/type async continuation contract (M186-B001)
 
 M186-B defines deterministic sema summaries for async continuation lowering
@@ -4044,6 +4055,7 @@ Recommended M186 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m186_sema_async_continuation_contract.py -q`
 
 <a id="m187-sema-type-await-lowering-suspension-state-contract-m187-b001"></a>
+
 ## M187 sema/type await lowering and suspension state contract (M187-B001)
 
 M187-B defines deterministic sema summaries for await lowering and suspension
@@ -4083,6 +4095,7 @@ Recommended M187 sema contract check:
 - `python -m pytest tests/tooling/test_objc3c_m187_sema_await_suspension_contract.py -q`
 
 <a id="m192-sema-type-inline-asm-intrinsic-governance-contract-m192-b001"></a>
+
 ## M192 sema/type inline-asm+intrinsic governance contract (M192-B001)
 
 M192-B defines deterministic sema summaries for inline-asm and intrinsic

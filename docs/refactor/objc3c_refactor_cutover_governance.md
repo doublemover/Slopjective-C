@@ -11,20 +11,20 @@ Define cutover controls that make milestone transitions safe, reversible, and au
 
 ## 3. milestone release criteria
 
-| Milestone state | Required release criteria | Evidence owner |
-| --- | --- | --- |
-| `pre-cutover` | dependency issues closed, validation green, rollback path rehearsed | lane owner |
-| `canary` | scoped rollout enabled, no Sev-1/Sev-2 regressions for one full CI cycle | integrator |
-| `full-cutover` | canary stable, freeze checklist complete, sign-off recorded | release owner |
-| `post-cutover` | monitoring window complete and no unresolved rollback triggers | release owner |
+| Milestone state | Required release criteria                                                | Evidence owner |
+| --------------- | ------------------------------------------------------------------------ | -------------- |
+| `pre-cutover`   | dependency issues closed, validation green, rollback path rehearsed      | lane owner     |
+| `canary`        | scoped rollout enabled, no Sev-1/Sev-2 regressions for one full CI cycle | integrator     |
+| `full-cutover`  | canary stable, freeze checklist complete, sign-off recorded              | release owner  |
+| `post-cutover`  | monitoring window complete and no unresolved rollback triggers           | release owner  |
 
 A milestone cannot advance until all required criteria for the current state are met.
 
 ## 4. freeze windows
 
-| Freeze type | Duration | Entry condition | Exit condition |
-| --- | --- | --- | --- |
-| `soft-freeze` | 1 business day | cutover PR queued | only blocking fixes merge |
+| Freeze type   | Duration       | Entry condition     | Exit condition                                   |
+| ------------- | -------------- | ------------------- | ------------------------------------------------ |
+| `soft-freeze` | 1 business day | cutover PR queued   | only blocking fixes merge                        |
 | `hard-freeze` | 1 business day | final cutover start | no functional merges; governance-only exceptions |
 
 Freeze rules:
@@ -61,12 +61,12 @@ Recovery playbook (`RB-E002-01`..`RB-E002-06`):
 
 ## 7. rollback matrix
 
-| Severity | rollback trigger | Detection signal | Immediate action | Owner | SLA |
-| --- | --- | --- | --- | --- | --- |
-| `Sev-1` | compiler crash or incorrect codegen in canary/full-cutover | failing fixture or production crash report | immediate rollback to previous stable refactor commit | release owner + lane owner | 30 minutes |
-| `Sev-2` | deterministic CI failures across two consecutive pipelines | CI dashboard red on required jobs | suspend cutover and rollback latest refactor slice | integrator | 2 hours |
-| `Sev-3` | non-blocking regression with bounded workaround | triaged bug with workaround confirmed | hold rollout progression; optional partial rollback | lane owner | next business day |
-| `Gov-Block` | missing freeze/cutover evidence or unsigned checklist | governance checklist gap | stop promotion state until evidence complete; rollback if already promoted | release owner | same day |
+| Severity    | rollback trigger                                           | Detection signal                           | Immediate action                                                           | Owner                      | SLA               |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------- | -------------------------- | ----------------- |
+| `Sev-1`     | compiler crash or incorrect codegen in canary/full-cutover | failing fixture or production crash report | immediate rollback to previous stable refactor commit                      | release owner + lane owner | 30 minutes        |
+| `Sev-2`     | deterministic CI failures across two consecutive pipelines | CI dashboard red on required jobs          | suspend cutover and rollback latest refactor slice                         | integrator                 | 2 hours           |
+| `Sev-3`     | non-blocking regression with bounded workaround            | triaged bug with workaround confirmed      | hold rollout progression; optional partial rollback                        | lane owner                 | next business day |
+| `Gov-Block` | missing freeze/cutover evidence or unsigned checklist      | governance checklist gap                   | stop promotion state until evidence complete; rollback if already promoted | release owner              | same day          |
 
 Exit gate after rollback:
 

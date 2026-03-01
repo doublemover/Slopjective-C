@@ -10,12 +10,12 @@ This file defines source ownership for generated `site/index.md`.
 
 ## Source Ownership Matrix
 
-| Source file | Responsibility | Primary owner | Backup owner |
-| --- | --- | --- | --- |
-| `index.contract.json` | Generator contract, canonical input/output paths, front matter | compiler/docs | compiler/tooling |
-| `README.md` | Generated-only policy and contributor guidance | compiler/docs | compiler/release |
-| `spec/TABLE_OF_CONTENTS.md` | Deterministic include ordering consumed by generator | spec/maintainers | compiler/docs |
-| `spec/*.md` listed in TOC | Stitched normative content for site output | spec/maintainers | compiler/docs |
+| Source file                 | Responsibility                                                 | Primary owner    | Backup owner     |
+| --------------------------- | -------------------------------------------------------------- | ---------------- | ---------------- |
+| `index.contract.json`       | Generator contract, canonical input/output paths, front matter | compiler/docs    | compiler/tooling |
+| `README.md`                 | Generated-only policy and contributor guidance                 | compiler/docs    | compiler/release |
+| `spec/TABLE_OF_CONTENTS.md` | Deterministic include ordering consumed by generator           | spec/maintainers | compiler/docs    |
+| `spec/*.md` listed in TOC   | Stitched normative content for site output                     | spec/maintainers | compiler/docs    |
 
 ## Update Workflow
 

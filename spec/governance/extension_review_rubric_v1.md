@@ -21,12 +21,12 @@ This rubric governs:
 
 ## 2. Weighted Criteria
 
-| Criterion ID | Criterion | Weight | Minimum evidence expectation |
-| --- | --- | ---: | --- |
-| `R1` | Safety and security risk management | 35 | Threat analysis, deterministic negative tests, and failure-mode diagnostics. |
-| `R2` | Portability and cross-vendor interoperability | 25 | At least two independent implementations or one implementation plus independent verifier harness. |
-| `R3` | Ergonomics and developer experience | 20 | Diagnostic quality examples, migration guidance, and adoption cost assessment. |
-| `R4` | Tooling and operational cost | 20 | Build and CI cost profile, operational risk notes, and maintenance burden estimate. |
+| Criterion ID | Criterion                                     | Weight | Minimum evidence expectation                                                                      |
+| ------------ | --------------------------------------------- | -----: | ------------------------------------------------------------------------------------------------- |
+| `R1`         | Safety and security risk management           |     35 | Threat analysis, deterministic negative tests, and failure-mode diagnostics.                      |
+| `R2`         | Portability and cross-vendor interoperability |     25 | At least two independent implementations or one implementation plus independent verifier harness. |
+| `R3`         | Ergonomics and developer experience           |     20 | Diagnostic quality examples, migration guidance, and adoption cost assessment.                    |
+| `R4`         | Tooling and operational cost                  |     20 | Build and CI cost profile, operational risk notes, and maintenance burden estimate.               |
 
 Total weight is fixed at `100`.
 
@@ -34,14 +34,14 @@ Total weight is fixed at `100`.
 
 ### 3.1 Raw score scale
 
-| Raw score | Meaning |
-| --- | --- |
-| `0` | Unscorable or unacceptable due to missing evidence or blocking defect. |
-| `1` | High risk and not acceptable for transition approval. |
-| `2` | Weak quality with material unresolved gaps. |
-| `3` | Adequate baseline quality. |
-| `4` | Strong quality with reproducible evidence. |
-| `5` | Exemplary quality and broad confidence. |
+| Raw score | Meaning                                                                |
+| --------- | ---------------------------------------------------------------------- |
+| `0`       | Unscorable or unacceptable due to missing evidence or blocking defect. |
+| `1`       | High risk and not acceptable for transition approval.                  |
+| `2`       | Weak quality with material unresolved gaps.                            |
+| `3`       | Adequate baseline quality.                                             |
+| `4`       | Strong quality with reproducible evidence.                             |
+| `5`       | Exemplary quality and broad confidence.                                |
 
 ### 3.2 Computation
 
@@ -56,13 +56,13 @@ Overall adjusted score:
 
 ## 4. Decision Bands
 
-| Adjusted score band | Decision outcome |
-| --- | --- |
-| `90..100` | `ACCEPT-STRONG` |
-| `80..89.9` | `ACCEPT` |
-| `70..79.9` | `CONDITIONAL-ACCEPT` |
-| `60..69.9` | `DEFER` |
-| `< 60` | `REJECT` |
+| Adjusted score band | Decision outcome     |
+| ------------------- | -------------------- |
+| `90..100`           | `ACCEPT-STRONG`      |
+| `80..89.9`          | `ACCEPT`             |
+| `70..79.9`          | `CONDITIONAL-ACCEPT` |
+| `60..69.9`          | `DEFER`              |
+| `< 60`              | `REJECT`             |
 
 ## 5. Acceptance Threshold Rules
 
@@ -86,33 +86,33 @@ An extension review is accepted only if all checks pass:
 
 ## 6. Hard-Fail Conditions
 
-| Hard-fail ID | Trigger | Required disposition |
-| --- | --- | --- |
-| `HF-01` | Open critical security or safety issue without approved mitigation plan. | `REJECT` or emergency `hold`. |
-| `HF-02` | Non-deterministic behavior in required extension path without deterministic fallback. | Minimum `DEFER`. |
-| `HF-03` | Portability claims lack independent corroboration and replayable evidence. | `DEFER` until evidence is complete. |
-| `HF-04` | Tooling cost introduces release or CI instability above approved risk budget without mitigation. | `DEFER` or `REJECT`. |
-| `HF-05` | Provenance or traceability gap prevents audit replay. | `DEFER` until repaired. |
+| Hard-fail ID | Trigger                                                                                          | Required disposition                |
+| ------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `HF-01`      | Open critical security or safety issue without approved mitigation plan.                         | `REJECT` or emergency `hold`.       |
+| `HF-02`      | Non-deterministic behavior in required extension path without deterministic fallback.            | Minimum `DEFER`.                    |
+| `HF-03`      | Portability claims lack independent corroboration and replayable evidence.                       | `DEFER` until evidence is complete. |
+| `HF-04`      | Tooling cost introduces release or CI instability above approved risk budget without mitigation. | `DEFER` or `REJECT`.                |
+| `HF-05`      | Provenance or traceability gap prevents audit replay.                                            | `DEFER` until repaired.             |
 
 ## 7. Evidence-Quality Grades
 
 ### 7.1 Grade definitions
 
-| Grade | Meaning |
-| --- | --- |
-| `EQ0` | Missing, contradictory, stale, or non-reproducible evidence. |
-| `EQ1` | Weak evidence with partial coverage or replay gaps. |
-| `EQ2` | Sufficient reproducible evidence for decision support. |
+| Grade | Meaning                                                             |
+| ----- | ------------------------------------------------------------------- |
+| `EQ0` | Missing, contradictory, stale, or non-reproducible evidence.        |
+| `EQ1` | Weak evidence with partial coverage or replay gaps.                 |
+| `EQ2` | Sufficient reproducible evidence for decision support.              |
 | `EQ3` | Strong independently corroborated evidence with edge-case coverage. |
 
 ### 7.2 Multipliers
 
 | Grade | Multiplier |
-| --- | ---: |
-| `EQ3` | `1.00` |
-| `EQ2` | `0.95` |
-| `EQ1` | `0.80` |
-| `EQ0` | `0.00` |
+| ----- | ---------: |
+| `EQ3` |     `1.00` |
+| `EQ2` |     `0.95` |
+| `EQ1` |     `0.80` |
+| `EQ0` |     `0.00` |
 
 ### 7.3 Quality-gating rules
 
@@ -138,35 +138,35 @@ If still tied, default is `DEFER` and escalation to charter tie-break authority.
 
 Every rubric record MUST include:
 
-| Field | Requirement |
-| --- | --- |
-| `rubric_review_id` | Stable immutable identifier. |
-| `extension_id` | Candidate extension ID under review. |
-| `criteria_scores` | Raw scores for `R1` through `R4`. |
-| `evidence_grades` | `EQ*` grade per criterion. |
-| `computed_points` | Raw and adjusted points per criterion plus total score. |
-| `hard_fail_flags` | Explicit pass or fail state for `HF-01` through `HF-05`. |
+| Field              | Requirement                                                            |
+| ------------------ | ---------------------------------------------------------------------- |
+| `rubric_review_id` | Stable immutable identifier.                                           |
+| `extension_id`     | Candidate extension ID under review.                                   |
+| `criteria_scores`  | Raw scores for `R1` through `R4`.                                      |
+| `evidence_grades`  | `EQ*` grade per criterion.                                             |
+| `computed_points`  | Raw and adjusted points per criterion plus total score.                |
+| `hard_fail_flags`  | Explicit pass or fail state for `HF-01` through `HF-05`.               |
 | `decision_outcome` | `ACCEPT-STRONG`, `ACCEPT`, `CONDITIONAL-ACCEPT`, `DEFER`, or `REJECT`. |
-| `conditions` | Required only for conditional outcomes. |
-| `review_owner` | Responsible review owner. |
-| `review_date` | Absolute `YYYY-MM-DD`. |
+| `conditions`       | Required only for conditional outcomes.                                |
+| `review_owner`     | Responsible review owner.                                              |
+| `review_date`      | Absolute `YYYY-MM-DD`.                                                 |
 
 ## 10. Calibration Baselines
 
 Reference calculations:
 
-| Example ID | Outcome | Notes |
-| --- | --- | --- |
-| `CAL-A` | `ACCEPT` | `R1=5`, `R2=4`, `R3=4`, `R4=3`, all evidence `EQ2+`; adjusted score `81.6`. |
-| `CAL-B` | `REJECT` | Safety floor miss (`R1=2`) and safety evidence `EQ1`; adjusted score is irrelevant to acceptance. |
-| `CAL-C` | `CONDITIONAL-ACCEPT` | Floors pass with score `78.35`; owner and due date required for remediation items. |
+| Example ID | Outcome              | Notes                                                                                             |
+| ---------- | -------------------- | ------------------------------------------------------------------------------------------------- |
+| `CAL-A`    | `ACCEPT`             | `R1=5`, `R2=4`, `R3=4`, `R4=3`, all evidence `EQ2+`; adjusted score `81.6`.                       |
+| `CAL-B`    | `REJECT`             | Safety floor miss (`R1=2`) and safety evidence `EQ1`; adjusted score is irrelevant to acceptance. |
+| `CAL-C`    | `CONDITIONAL-ACCEPT` | Floors pass with score `78.35`; owner and due date required for remediation items.                |
 
 ## 11. Downstream Contract
 
-| Consumer | Required output from this rubric |
-| --- | --- |
-| `C-05` lifecycle policy | Deterministic promotion thresholds and hard-fail gating inputs. |
-| `C-09` test obligations | Evidence-quality requirements and fail-closed behavior for safety and portability claims. |
-| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions. |
+| Consumer                     | Required output from this rubric                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------------------- |
+| `C-05` lifecycle policy      | Deterministic promotion thresholds and hard-fail gating inputs.                           |
+| `C-09` test obligations      | Evidence-quality requirements and fail-closed behavior for safety and portability claims. |
+| `C-10` board operating model | Deterministic tie-break and defer behavior for tied dispositions.                         |
 
 No downstream consumer may reinterpret `HF-*` or criterion floors as advisory.

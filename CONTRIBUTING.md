@@ -23,11 +23,11 @@ Use this section for M132+ monolith decomposition work. It establishes one refac
 
 `PR slicing` is mandatory for refactor lanes.
 
-| Slice type | Maximum changed files | Maximum changed lines | Required notes |
-| --- | --- | --- | --- |
-| Docs-only | 3 | 500 | linked issue, validation command output |
-| Compiler + tests | 10 | 800 | risk notes, fallback behavior, test evidence |
-| Plumbing/chore | 6 | 400 | dependency map and follow-up issue IDs |
+| Slice type       | Maximum changed files | Maximum changed lines | Required notes                               |
+| ---------------- | --------------------- | --------------------- | -------------------------------------------- |
+| Docs-only        | 3                     | 500                   | linked issue, validation command output      |
+| Compiler + tests | 10                    | 800                   | risk notes, fallback behavior, test evidence |
+| Plumbing/chore   | 6                     | 400                   | dependency map and follow-up issue IDs       |
 
 If a change exceeds any cap, split into multiple PRs before review.
 

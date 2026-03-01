@@ -22,13 +22,13 @@ This contract is normative for toolchains claiming ObjC 3.0 Core/Strict/Strict C
 
 A conforming implementation shall provide the following modules (or aliases mapped to these canonical capability IDs):
 
-| Canonical module | Capability ID | Required for profile |
-| --- | --- | --- |
-| `objc3.core` | `objc3.cap.core` | Core and above |
-| `objc3.errors` | `objc3.cap.errors` | Core and above |
-| `objc3.concurrency` | `objc3.cap.concurrency` | Core and above |
-| `objc3.keypath` | `objc3.cap.keypath` | Core and above |
-| `objc3.system` | `objc3.cap.system` | Strict System |
+| Canonical module    | Capability ID           | Required for profile |
+| ------------------- | ----------------------- | -------------------- |
+| `objc3.core`        | `objc3.cap.core`        | Core and above       |
+| `objc3.errors`      | `objc3.cap.errors`      | Core and above       |
+| `objc3.concurrency` | `objc3.cap.concurrency` | Core and above       |
+| `objc3.keypath`     | `objc3.cap.keypath`     | Core and above       |
+| `objc3.system`      | `objc3.cap.system`      | Strict System        |
 
 If implementation-specific names are used, module metadata and conformance reports shall publish the canonical capability-ID mapping.
 
@@ -177,4 +177,3 @@ A conforming implementation shall include tests equivalent in coverage to:
 
 - [E.3](#e-3) profile checklist items that reference standard-library requirements shall be interpreted using this document.
 - Toolchains shall cite this contract in conformance manifests when claiming Core/Strict/Strict Concurrency/Strict System profiles.
-

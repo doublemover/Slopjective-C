@@ -174,13 +174,13 @@ This table names **conceptual hooks**. Implementations may use different symbol 
 
 ### D.3.4 Table D — Metadata version compatibility matrix (normative) {#d-3-4}
 
-| Producer metadata vs importer support / payload condition                     | Compatibility direction                      | Required importer behavior                                                                                    |
-| ----------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `schema_major` equal; producer `schema_minor` <= importer max minor           | backward (new importer reads older payload)  | Accept; treat absent newer fields as unavailable.                                                             |
-| `schema_major` equal; producer `schema_minor` > importer max minor            | forward (older importer reads newer payload) | Accept only if all unknown elements are ignorable extension fields and all `required_capabilities` are known. |
-| `schema_major` equal; producer minor newer with unknown required data         | forward                                      | Hard error: reject import; report unknown required field/capability.                                          |
-| `schema_major` equal; known-required field missing/invalid in payload         | both                                         | Diagnose per [Table E](#d-3-5); ABI-significant/effect-lowering omissions remain hard errors in all profiles. |
-| `schema_major` differs                                                        | both                                         | Hard error: reject import; report producer and importer major versions.                                       |
+| Producer metadata vs importer support / payload condition             | Compatibility direction                      | Required importer behavior                                                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `schema_major` equal; producer `schema_minor` <= importer max minor   | backward (new importer reads older payload)  | Accept; treat absent newer fields as unavailable.                                                             |
+| `schema_major` equal; producer `schema_minor` > importer max minor    | forward (older importer reads newer payload) | Accept only if all unknown elements are ignorable extension fields and all `required_capabilities` are known. |
+| `schema_major` equal; producer minor newer with unknown required data | forward                                      | Hard error: reject import; report unknown required field/capability.                                          |
+| `schema_major` equal; known-required field missing/invalid in payload | both                                         | Diagnose per [Table E](#d-3-5); ABI-significant/effect-lowering omissions remain hard errors in all profiles. |
+| `schema_major` differs                                                | both                                         | Hard error: reject import; report producer and importer major versions.                                       |
 
 For forward compatibility, ignorable extension fields are explicitly non-semantic for [Table A](#d-3-1) conformance and may be skipped.
 
@@ -209,16 +209,16 @@ When OCI-1 is the active interchange path, missing OCI-1 fields map into these s
 
 ### D.3.6 Table F — OCI-1 required concurrency metadata fields (normative) {#d-3-6}
 
-| OCI-1 field | Meaning | Required for profile |
-| --- | --- | --- |
-| `decl_id` | Stable declaration identity key for merge/join across interface payloads | Core and above |
-| `effects.async` | Whether declaration is async | Core and above |
-| `effects.throws` | Whether declaration is throwing | Core and above |
-| `isolation.executor` | Executor affinity (`objc_executor(...)` equivalent) | Core and above |
-| `isolation.actor` | Actor isolation binding for declarations/members | Core and above |
-| `isolation.nonisolated` | Explicit nonisolated marker | Core and above |
-| `sendable.boundary` | Whether Sendable-like checking applies at this boundary | Strict Concurrency and Strict System (diagnostic optional in Core/Strict) |
-| `sendable.unsafe_marker` | Unsafe-sendable escape marker metadata | Strict Concurrency and Strict System |
+| OCI-1 field              | Meaning                                                                  | Required for profile                                                      |
+| ------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `decl_id`                | Stable declaration identity key for merge/join across interface payloads | Core and above                                                            |
+| `effects.async`          | Whether declaration is async                                             | Core and above                                                            |
+| `effects.throws`         | Whether declaration is throwing                                          | Core and above                                                            |
+| `isolation.executor`     | Executor affinity (`objc_executor(...)` equivalent)                      | Core and above                                                            |
+| `isolation.actor`        | Actor isolation binding for declarations/members                         | Core and above                                                            |
+| `isolation.nonisolated`  | Explicit nonisolated marker                                              | Core and above                                                            |
+| `sendable.boundary`      | Whether Sendable-like checking applies at this boundary                  | Strict Concurrency and Strict System (diagnostic optional in Core/Strict) |
+| `sendable.unsafe_marker` | Unsafe-sendable escape marker metadata                                   | Strict Concurrency and Strict System                                      |
 
 ## D.4 Conformance tests (minimum) {#d-4}
 
@@ -271,4 +271,3 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - unknown required OCI-1 fields/capabilities trigger hard errors,
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
-

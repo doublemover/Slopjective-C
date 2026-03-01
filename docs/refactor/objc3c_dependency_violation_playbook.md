@@ -12,11 +12,11 @@ It is the single operational workflow for lane owners, reviewers, and integrator
 
 ## 2. Ownership
 
-| Responsibility | Primary owner | Backup owner | SLA |
-| --- | --- | --- | --- |
-| Violation triage and owner assignment | Lane owner for touched module | Lane E backup | 4 business hours |
-| Remediation implementation | Module owner lane | Integrator | 1 business day for Sev-2+, 2 business days for Sev-3 |
-| Governance/escalation updates | Lane E governance owner | Release owner | Same business day |
+| Responsibility                        | Primary owner                 | Backup owner  | SLA                                                  |
+| ------------------------------------- | ----------------------------- | ------------- | ---------------------------------------------------- |
+| Violation triage and owner assignment | Lane owner for touched module | Lane E backup | 4 business hours                                     |
+| Remediation implementation            | Module owner lane             | Integrator    | 1 business day for Sev-2+, 2 business days for Sev-3 |
+| Governance/escalation updates         | Lane E governance owner       | Release owner | Same business day                                    |
 
 ## 3. Trigger and expected CI behavior
 
@@ -56,12 +56,12 @@ python scripts/check_objc3c_dependency_boundaries.py --strict
 
 ## 6. Severity and escalation matrix
 
-| Severity | Detection criteria | Immediate action | Escalation path | Resolution target |
-| --- | --- | --- | --- | --- |
-| `Sev-1` | violation in release-cutover branch or multiple core modules (`pipeline`, `sema`, `lower`, `ir`) | freeze merges for impacted modules; hotfix PR | Integrator -> release owner immediately | same day |
-| `Sev-2` | single-module forbidden include in active development branch | block merge of violating PR; assign module owner | Lane owner -> integrator within 4 business hours | 1 business day |
-| `Sev-3` | non-critical or draft-branch violation without downstream impact | track in issue and remediate before review approval | Lane owner | 2 business days |
-| `Gov-Block` | repeated violation without owner/ETA or missing evidence updates | stop promotion/merge until governance fields are complete | Lane E governance owner -> release owner | same day |
+| Severity    | Detection criteria                                                                               | Immediate action                                          | Escalation path                                  | Resolution target |
+| ----------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------ | ----------------- |
+| `Sev-1`     | violation in release-cutover branch or multiple core modules (`pipeline`, `sema`, `lower`, `ir`) | freeze merges for impacted modules; hotfix PR             | Integrator -> release owner immediately          | same day          |
+| `Sev-2`     | single-module forbidden include in active development branch                                     | block merge of violating PR; assign module owner          | Lane owner -> integrator within 4 business hours | 1 business day    |
+| `Sev-3`     | non-critical or draft-branch violation without downstream impact                                 | track in issue and remediate before review approval       | Lane owner                                       | 2 business days   |
+| `Gov-Block` | repeated violation without owner/ETA or missing evidence updates                                 | stop promotion/merge until governance fields are complete | Lane E governance owner -> release owner         | same day          |
 
 ## 7. PR checklist for resolved violations
 

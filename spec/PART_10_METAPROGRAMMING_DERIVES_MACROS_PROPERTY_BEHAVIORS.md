@@ -223,5 +223,3 @@ No open issues are tracked in this part for v0.11.
 
 Resolved reference: macro/derive extension governance process
 (`spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`).
-
-

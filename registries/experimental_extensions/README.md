@@ -31,13 +31,13 @@ Policy overlays consumed by this registry:
 
 The top-level registry object requires these fields:
 
-| Field | Type | Requirement |
-| --- | --- | --- |
-| `schema_version` | semver string | Required. |
-| `registry_id` | string | Required and fixed to `experimental_extensions`. |
-| `generated_at_utc` | RFC3339 timestamp | Required. |
-| `governance_contract` | object | Required. |
-| `extensions` | array | Required; at least one row. |
+| Field                 | Type              | Requirement                                      |
+| --------------------- | ----------------- | ------------------------------------------------ |
+| `schema_version`      | semver string     | Required.                                        |
+| `registry_id`         | string            | Required and fixed to `experimental_extensions`. |
+| `generated_at_utc`    | RFC3339 timestamp | Required.                                        |
+| `governance_contract` | object            | Required.                                        |
+| `extensions`          | array             | Required; at least one row.                      |
 
 Top-level behavior:
 
@@ -49,48 +49,48 @@ Top-level behavior:
 
 Each `extensions[*]` row requires:
 
-| Field | Type | Requirement |
-| --- | --- | --- |
-| `extension_id` | string | Required. |
-| `extension_version` | semver string | Required. |
-| `lifecycle_state` | enum | Required; one of `experimental`, `provisional`, `stable`, `deprecated`, `retired`. |
-| `compatibility` | object | Required. |
+| Field               | Type          | Requirement                                                                        |
+| ------------------- | ------------- | ---------------------------------------------------------------------------------- |
+| `extension_id`      | string        | Required.                                                                          |
+| `extension_version` | semver string | Required.                                                                          |
+| `lifecycle_state`   | enum          | Required; one of `experimental`, `provisional`, `stable`, `deprecated`, `retired`. |
+| `compatibility`     | object        | Required.                                                                          |
 
 `compatibility` requires:
 
-| Field | Type | Requirement |
-| --- | --- | --- |
-| `min_consumer_schema` | semver string | Required. |
-| `max_consumer_schema` | semver string | Required. |
-| `backward_policy` | enum | Required; `compatible`, `conditional`, or `incompatible`. |
-| `forward_policy` | enum | Required; `compatible`, `conditional`, or `incompatible`. |
-| `required_fields` | array[string] | Required; non-empty and unique. |
+| Field                 | Type          | Requirement                                               |
+| --------------------- | ------------- | --------------------------------------------------------- |
+| `min_consumer_schema` | semver string | Required.                                                 |
+| `max_consumer_schema` | semver string | Required.                                                 |
+| `backward_policy`     | enum          | Required; `compatible`, `conditional`, or `incompatible`. |
+| `forward_policy`      | enum          | Required; `compatible`, `conditional`, or `incompatible`. |
+| `required_fields`     | array[string] | Required; non-empty and unique.                           |
 
 ## 4. Policy Overlay Rules (`C-02`, `C-05`)
 
 Schema acceptance is necessary but not sufficient. Governance policy validation
 must also pass:
 
-| Overlay rule ID | Rule |
-| --- | --- |
-| `OVL-01` | `extension_id` must satisfy `C-02` canonical namespace rules, even when schema regex is more permissive. |
-| `OVL-02` | `lifecycle_state` must be coherent with namespace class and transition posture from `C-05`. |
-| `OVL-03` | `stable` claims require portable namespace posture (`objc3.meta.*`) as defined by `C-02` and `C-05`. |
-| `OVL-04` | `deprecated` and `retired` rows must preserve non-reuse identity behavior. |
+| Overlay rule ID | Rule                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| `OVL-01`        | `extension_id` must satisfy `C-02` canonical namespace rules, even when schema regex is more permissive. |
+| `OVL-02`        | `lifecycle_state` must be coherent with namespace class and transition posture from `C-05`.              |
+| `OVL-03`        | `stable` claims require portable namespace posture (`objc3.meta.*`) as defined by `C-02` and `C-05`.     |
+| `OVL-04`        | `deprecated` and `retired` rows must preserve non-reuse identity behavior.                               |
 
 ## 5. Governance Contract Block Requirements
 
 The required `governance_contract` object must contain:
 
-| Field | Requirement |
-| --- | --- |
-| `contract_version` | Required semantic version. |
-| `acceptance_gate_id` | Required and fixed to `AC-V013-GOV-02`. |
-| `compatibility_matrix` | Required array with at least eight rows. |
-| `required_field_policy` | Required object. |
-| `validators` | Required array with at least six rows. |
-| `waiver_policy` | Required object. |
-| `acceptance_checklist` | Required array with at least five rows. |
+| Field                   | Requirement                              |
+| ----------------------- | ---------------------------------------- |
+| `contract_version`      | Required semantic version.               |
+| `acceptance_gate_id`    | Required and fixed to `AC-V013-GOV-02`.  |
+| `compatibility_matrix`  | Required array with at least eight rows. |
+| `required_field_policy` | Required object.                         |
+| `validators`            | Required array with at least six rows.   |
+| `waiver_policy`         | Required object.                         |
+| `acceptance_checklist`  | Required array with at least five rows.  |
 
 ### 5.1 Compatibility matrix IDs
 
@@ -139,41 +139,41 @@ Escalation levels in contract are fixed to `E1`, `E2`, `E3`, and `E4`.
 
 Run from repository root:
 
-| Validator ID | Command | Pass signal |
-| --- | --- | --- |
-| `VAL-RC-01` | `python scripts/spec_lint.py` | Output includes `spec-lint: OK`; exit `0`. |
-| `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | Exit `0` and no blocking drift. |
-| `VAL-RC-03` | `rg -n "compat\|version\|schema" spec/planning/v013_extension_registry_compat_validation_package.md` | Exit `0`. |
-| `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | Output includes `schema-json: OK`; exit `0`. |
-| `VAL-RC-05` | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | Output includes `contract-keys: OK`; exit `0`. |
-| `VAL-RC-06` | `rg -n "AC-V013-GOV-02\|VAL-RC-\|ESC-RC-" tests/governance/registry_compat/README.md` | Exit `0`. |
+| Validator ID | Command                                                                                                                                                                                                                                                                                                                                                                                                                                           | Pass signal                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `VAL-RC-01`  | `python scripts/spec_lint.py`                                                                                                                                                                                                                                                                                                                                                                                                                     | Output includes `spec-lint: OK`; exit `0`.     |
+| `VAL-RC-02`  | `python scripts/check_issue_checkbox_drift.py`                                                                                                                                                                                                                                                                                                                                                                                                    | Exit `0` and no blocking drift.                |
+| `VAL-RC-03`  | `rg -n "compat\|version\|schema" spec/planning/v013_extension_registry_compat_validation_package.md`                                                                                                                                                                                                                                                                                                                                              | Exit `0`.                                      |
+| `VAL-RC-04`  | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"`                                                                                                                                                                                                                                                                           | Output includes `schema-json: OK`; exit `0`.   |
+| `VAL-RC-05`  | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | Output includes `contract-keys: OK`; exit `0`. |
+| `VAL-RC-06`  | `rg -n "AC-V013-GOV-02\|VAL-RC-\|ESC-RC-" tests/governance/registry_compat/README.md`                                                                                                                                                                                                                                                                                                                                                             | Exit `0`.                                      |
 
 Validator ordering is fixed (`VAL-RC-01` through `VAL-RC-06`).
 
 ## 7. Publication Workflow
 
-| Stage ID | Stage | Required output |
-| --- | --- | --- |
-| `WF-RC-01` | Intake and row preparation | Candidate snapshot with complete top-level and extension-row fields. |
-| `WF-RC-02` | Schema and compatibility validation | Full validator run with archived outputs and exit codes. |
-| `WF-RC-03` | Governance review | Recorded disposition and any approved waiver records. |
-| `WF-RC-04` | Publication | Published snapshot and immutable revision reference. |
-| `WF-RC-05` | Post-publish verification | Replay validation and consumer notification record. |
+| Stage ID   | Stage                               | Required output                                                      |
+| ---------- | ----------------------------------- | -------------------------------------------------------------------- |
+| `WF-RC-01` | Intake and row preparation          | Candidate snapshot with complete top-level and extension-row fields. |
+| `WF-RC-02` | Schema and compatibility validation | Full validator run with archived outputs and exit codes.             |
+| `WF-RC-03` | Governance review                   | Recorded disposition and any approved waiver records.                |
+| `WF-RC-04` | Publication                         | Published snapshot and immutable revision reference.                 |
+| `WF-RC-05` | Post-publish verification           | Replay validation and consumer notification record.                  |
 
 Release-critical failures escalate via `E1` through `E4` with fail-closed posture.
 
 ## 8. Failure Taxonomy
 
-| Failure code | Trigger | Required disposition |
-| --- | --- | --- |
-| `REGVAL-001` | Missing required structural field. | Reject publish. |
-| `REGVAL-002` | Namespace violation or reserved-prefix misuse. | Reject row and require corrected identifier. |
-| `REGVAL-003` | Lifecycle metadata inconsistency. | Reject update and require corrected lifecycle metadata. |
-| `REGVAL-004` | Governance linkage gap. | Reject publish until decision linkage is complete. |
-| `REGVAL-005` | Evidence reference gap. | Reject publish until evidence is complete. |
-| `REGVAL-006` | Compatibility envelope error. | Reject row until corrected. |
-| `REGVAL-007` | Determinism, digest, or signature mismatch. | Block publish and escalate for integrity triage. |
-| `REGVAL-008` | Monotonicity violation in publication revisioning. | Reject publish and regenerate snapshot. |
+| Failure code | Trigger                                            | Required disposition                                    |
+| ------------ | -------------------------------------------------- | ------------------------------------------------------- |
+| `REGVAL-001` | Missing required structural field.                 | Reject publish.                                         |
+| `REGVAL-002` | Namespace violation or reserved-prefix misuse.     | Reject row and require corrected identifier.            |
+| `REGVAL-003` | Lifecycle metadata inconsistency.                  | Reject update and require corrected lifecycle metadata. |
+| `REGVAL-004` | Governance linkage gap.                            | Reject publish until decision linkage is complete.      |
+| `REGVAL-005` | Evidence reference gap.                            | Reject publish until evidence is complete.              |
+| `REGVAL-006` | Compatibility envelope error.                      | Reject row until corrected.                             |
+| `REGVAL-007` | Determinism, digest, or signature mismatch.        | Block publish and escalate for integrity triage.        |
+| `REGVAL-008` | Monotonicity violation in publication revisioning. | Reject publish and regenerate snapshot.                 |
 
 ## 9. Minimal Producer Example
 
@@ -187,7 +187,13 @@ Release-critical failures escalate via `E1` through `E4` with fail-closed postur
     "acceptance_gate_id": "AC-V013-GOV-02",
     "compatibility_matrix": [],
     "required_field_policy": {
-      "required_fields": ["extension_id", "extension_version", "lifecycle_state", "compatibility", "governance_contract"],
+      "required_fields": [
+        "extension_id",
+        "extension_version",
+        "lifecycle_state",
+        "compatibility",
+        "governance_contract"
+      ],
       "missing_required_field_behavior": "hard_fail",
       "added_required_field_policy": "major_only",
       "removed_required_field_policy": "major_only_with_migration",

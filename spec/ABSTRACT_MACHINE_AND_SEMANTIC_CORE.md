@@ -63,16 +63,16 @@ In particular, Objective-C 3.0 does not add a universal left-to-right argument e
 
 Objective-C 3.0 adds the following ordering/single-evaluation guarantees relative to the baseline:
 
-| Construct | Added guarantee | Primary source |
-| --- | --- | --- |
-| `x?.p` | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed. | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
-| `[receiver? sel:arg1 other:arg2]` | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
-| `a ?? b` | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`. | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
-| `e?` (postfix propagation) | `e` shall be evaluated exactly once before deciding unwrap vs early exit. | [Part 6](#part-6) [§6.6](#part-6-6) |
-| `if let` / `guard let` binding lists | Binding expressions shall be evaluated left-to-right. | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
-| `guard` condition lists | Conditions shall be evaluated left-to-right. | [Part 5](#part-5) [§5.3.2](#part-5-3-2) |
-| `match (expr)` | `expr` shall be evaluated exactly once; case tests are top-to-bottom. | [Part 5](#part-5) [§5.4.3](#part-5-4-3) |
-| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left-to-right at block creation time. | [Part 8](#part-8) [§8.8.3](#part-8-8-3) |
+| Construct                              | Added guarantee                                                                                                                   | Primary source                              |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `x?.p`                                 | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed.                         | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
+| `[receiver? sel:arg1 other:arg2]`      | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
+| `a ?? b`                               | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`.                                       | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
+| `e?` (postfix propagation)             | `e` shall be evaluated exactly once before deciding unwrap vs early exit.                                                         | [Part 6](#part-6) [§6.6](#part-6-6)         |
+| `if let` / `guard let` binding lists   | Binding expressions shall be evaluated left-to-right.                                                                             | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
+| `guard` condition lists                | Conditions shall be evaluated left-to-right.                                                                                      | [Part 5](#part-5) [§5.3.2](#part-5-3-2)     |
+| `match (expr)`                         | `expr` shall be evaluated exactly once; case tests are top-to-bottom.                                                             | [Part 5](#part-5) [§5.4.3](#part-5-4-3)     |
+| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left-to-right at block creation time.                                                            | [Part 8](#part-8) [§8.8.3](#part-8-8-3)     |
 
 No other new global expression-order guarantees are introduced in v1.
 
@@ -278,27 +278,27 @@ A conforming implementation shall provide tests equivalent in coverage to the fo
 
 ### AM.7.1 Matrix {#am-7-1}
 
-| ID | Combination under test | Required outcome |
-| --- | --- | --- |
-| AM-T01 | `defer` + normal return | Defers execute once, in LIFO order, before scope-final ARC releases. |
-| AM-T02 | `defer` + cleanup/resource local + return | Defer/resource actions follow per-scope LIFO registration order; all run before scope-final ARC releases. |
-| AM-T03 | `defer` + `throw` | Throw path runs scope-exit actions and ARC releases for all exited scopes (inner to outer). |
-| AM-T04 | `defer` + `try await` where awaited call throws | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind. |
-| AM-T05 | `try? await` | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5. |
-| AM-T06 | `try! await` throwing path | Program traps on thrown error; implementation is not required to provide post-trap cleanup guarantees. |
-| AM-T07 | `(await optionalProducer())?` in optional-returning function | Operand is evaluated once; on `nil`, function early-returns `nil` and runs scope-exit actions once. |
-| AM-T08 | `(await optionalProducer())?` in `throws` function | Compile-time error: optional postfix propagation is not a valid carrier in `throws` context. |
-| AM-T09 | `await x?.p` with `x == nil` path | `x` evaluated once; result `nil`; no member access and no suspension on nil path. |
-| AM-T10 | `await [r? m:sideEffect()]` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path. |
-| AM-T11 | `await [r? m:sideEffect()]` with `r != nil` path | `sideEffect()` evaluated in ordinary-send order; send occurs; suspension permitted only on this path. |
-| AM-T12 | `defer` around await cancellation point | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes. |
-| AM-T13 | Nested scopes with `defer` + postfix `?` early exit | Early exit unwinds innermost-to-outermost scopes; each scope uses LIFO action order. |
-| AM-T14 | `await` in scope without exit | Suspend/resume alone does not run scope-exit actions or scope-final ARC releases. |
-| AM-T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early-exits and runs cleanup ordering per AM.5. |
-| AM-T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws | Non-`nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early-exits; defer/cleanup actions run once before ARC scope-final releases. |
-| AM-T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5. |
-| AM-T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path | Nil short-circuit occurs before suspension; no throw occurs on nil path; postfix propagation early-exits `nil` and executes scope cleanups once. |
-| AM-T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order. |
+| ID     | Combination under test                                                     | Required outcome                                                                                                                                                    |
+| ------ | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AM-T01 | `defer` + normal return                                                    | Defers execute once, in LIFO order, before scope-final ARC releases.                                                                                                |
+| AM-T02 | `defer` + cleanup/resource local + return                                  | Defer/resource actions follow per-scope LIFO registration order; all run before scope-final ARC releases.                                                           |
+| AM-T03 | `defer` + `throw`                                                          | Throw path runs scope-exit actions and ARC releases for all exited scopes (inner to outer).                                                                         |
+| AM-T04 | `defer` + `try await` where awaited call throws                            | Error propagates from `await`; defer/cleanup actions still run exactly once during unwind.                                                                          |
+| AM-T05 | `try? await`                                                               | Throwing awaited call yields `nil`; no thrown error escapes; cleanup ordering remains per AM.5.                                                                     |
+| AM-T06 | `try! await` throwing path                                                 | Program traps on thrown error; implementation is not required to provide post-trap cleanup guarantees.                                                              |
+| AM-T07 | `(await optionalProducer())?` in optional-returning function               | Operand is evaluated once; on `nil`, function early-returns `nil` and runs scope-exit actions once.                                                                 |
+| AM-T08 | `(await optionalProducer())?` in `throws` function                         | Compile-time error: optional postfix propagation is not a valid carrier in `throws` context.                                                                        |
+| AM-T09 | `await x?.p` with `x == nil` path                                          | `x` evaluated once; result `nil`; no member access and no suspension on nil path.                                                                                   |
+| AM-T10 | `await [r? m:sideEffect()]` with `r == nil` path                           | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path.                                                                            |
+| AM-T11 | `await [r? m:sideEffect()]` with `r != nil` path                           | `sideEffect()` evaluated in ordinary-send order; send occurs; suspension permitted only on this path.                                                               |
+| AM-T12 | `defer` around await cancellation point                                    | If cancellation causes unwind/error at `await`, defer/cleanup actions execute exactly once before task/frame teardown completes.                                    |
+| AM-T13 | Nested scopes with `defer` + postfix `?` early exit                        | Early exit unwinds innermost-to-outermost scopes; each scope uses LIFO action order.                                                                                |
+| AM-T14 | `await` in scope without exit                                              | Suspend/resume alone does not run scope-exit actions or scope-final ARC releases.                                                                                   |
+| AM-T15 | `defer` + `return (try? await x?.f())?;` with `x == nil` path              | `x` evaluated once; `f`/arguments not evaluated; no suspension on nil path; postfix propagation early-exits and runs cleanup ordering per AM.5.                     |
+| AM-T16 | `defer` + `return (try? await x?.f())?;` with `x != nil`, `f` throws       | Non-`nil` path may suspend; throw is converted to `nil` by `try?`; postfix propagation early-exits; defer/cleanup actions run once before ARC scope-final releases. |
+| AM-T17 | `defer` + `return (try await x?.f())?;` with `x != nil`, `f` throws        | Throw propagates from `try await`; postfix propagation is not applied on throwing path; exited scopes still run cleanup ordering per AM.5.                          |
+| AM-T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path               | Nil short-circuit occurs before suspension; no throw occurs on nil path; postfix propagation early-exits `nil` and executes scope cleanups once.                    |
+| AM-T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order.                     |
 
 ### AM.7.2 Static diagnostics required by matrix {#am-7-2}
 
@@ -307,4 +307,3 @@ At minimum, matrix coverage shall include diagnostics for:
 - potentially suspending operations used without `await`;
 - invalid optional postfix propagation carrier context;
 - optional chaining/send restrictions from [Part 3](#part-3) (including scalar/struct restriction).
-

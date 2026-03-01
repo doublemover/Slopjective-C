@@ -2,18 +2,18 @@
 
 ## 0. Pilot metadata
 
-| Field | Value |
-| --- | --- |
-| `pilot_id` | `PILOT-001` |
-| `task_id` | `C-12` |
-| `proposal_id` | `EXT-PROP-PILOT-001` |
-| `extension_id` | `vendor.acme.meta.cache_key_v2` |
-| `target_transition_id` | `T-01` |
-| `current_state` | `LS-1 Experimental` |
-| `target_state` | `LS-2 Provisional` |
-| `pilot_status` | `published-packet` |
-| `owner` | `Lane C pilot operations owner` |
-| `last_verified_date` | `2026-02-23` |
+| Field                  | Value                           |
+| ---------------------- | ------------------------------- |
+| `pilot_id`             | `PILOT-001`                     |
+| `task_id`              | `C-12`                          |
+| `proposal_id`          | `EXT-PROP-PILOT-001`            |
+| `extension_id`         | `vendor.acme.meta.cache_key_v2` |
+| `target_transition_id` | `T-01`                          |
+| `current_state`        | `LS-1 Experimental`             |
+| `target_state`         | `LS-2 Provisional`              |
+| `pilot_status`         | `published-packet`              |
+| `owner`                | `Lane C pilot operations owner` |
+| `last_verified_date`   | `2026-02-23`                    |
 
 ## 1. Intake evidence (`PW-02` / `PW-03`)
 
@@ -60,6 +60,7 @@ trace.extension_id: vendor.acme.meta.cache_key_v2
 trace.capability_ids: ["objc3.cap.macro_cache_policy.v1"]
 trace.transition_id: T-01
 trace.gate_results:
+
 - PG-01: pass
 - PG-02: pass
 - PG-03: fail
@@ -67,9 +68,9 @@ trace.gate_results:
 - PG-05: pass
 - PG-06: fail
 - PG-07: fail
-trace.board_decision_id: pending-board-decision-record
-trace.registry_linkage_ref: pending-registry-update-after-gate-pass
-trace.last_verified_date: 2026-02-23
+  trace.board_decision_id: pending-board-decision-record
+  trace.registry_linkage_ref: pending-registry-update-after-gate-pass
+  trace.last_verified_date: 2026-02-23
 
 ## 6. Follow-ups
 

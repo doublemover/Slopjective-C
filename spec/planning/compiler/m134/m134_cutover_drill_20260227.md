@@ -6,22 +6,22 @@ Rehearse cutover rollback and fallback execution before final production promoti
 
 ## 2. ownership matrix
 
-| Drill function | Primary owner | Backup owner | Approval required |
-| --- | --- | --- | --- |
-| Drill commander and timeline control | Release owner | Integrator | Release owner |
-| Boundary integrity checks | Lane A owner | Lane B owner | Integrator |
-| Semantic/pipeline validation checks | Lane B owner | Integrator | Integrator |
-| Determinism/perf evidence capture | Lane D owner | Release owner | Release owner |
-| Governance artifact publication | Lane E owner | Release owner | Release owner |
+| Drill function                       | Primary owner | Backup owner  | Approval required |
+| ------------------------------------ | ------------- | ------------- | ----------------- |
+| Drill commander and timeline control | Release owner | Integrator    | Release owner     |
+| Boundary integrity checks            | Lane A owner  | Lane B owner  | Integrator        |
+| Semantic/pipeline validation checks  | Lane B owner  | Integrator    | Integrator        |
+| Determinism/perf evidence capture    | Lane D owner  | Release owner | Release owner     |
+| Governance artifact publication      | Lane E owner  | Release owner | Release owner     |
 
 ## 3. Drill scenarios (`DR-M134-01`..`DR-M134-04`)
 
-| Drill ID | Scenario | Pass criteria | Evidence artifact |
-| --- | --- | --- | --- |
-| `DR-M134-01` | Pre-cutover baseline snapshot | baseline checks all pass with stable outputs | baseline command transcript + summary paths |
-| `DR-M134-02` | Simulated cutover failure -> rollback | rollback initiated within SLA; stable baseline restored | rollback transcript + restored check outputs |
-| `DR-M134-03` | Fallback mode execution | fallback path completes and core subsystem checks pass | fallback command transcript + subsystem summaries |
-| `DR-M134-04` | Return-to-target cutover retry | target path can be re-attempted after remediation evidence | retry transcript + sign-off notes |
+| Drill ID     | Scenario                              | Pass criteria                                              | Evidence artifact                                 |
+| ------------ | ------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `DR-M134-01` | Pre-cutover baseline snapshot         | baseline checks all pass with stable outputs               | baseline command transcript + summary paths       |
+| `DR-M134-02` | Simulated cutover failure -> rollback | rollback initiated within SLA; stable baseline restored    | rollback transcript + restored check outputs      |
+| `DR-M134-03` | Fallback mode execution               | fallback path completes and core subsystem checks pass     | fallback command transcript + subsystem summaries |
+| `DR-M134-04` | Return-to-target cutover retry        | target path can be re-attempted after remediation evidence | retry transcript + sign-off notes                 |
 
 ## 4. Drill workflow
 
@@ -87,10 +87,10 @@ Success criteria:
 
 `M134-D001` and `M134-D002` evidence is dependency-bound and may be pending at draft time.
 
-| Pending ID | Dependency | Owner | Expected evidence | Unblock criteria | Status |
-| --- | --- | --- | --- | --- | --- |
-| `DR-PEND-D001` | `M134-D001` | Lane D owner | Deterministic replay proof on cutover candidate after rollback/fallback drill | attach signed replay summary and integrator acceptance | `PENDING` |
-| `DR-PEND-D002` | `M134-D002` | Lane D owner | Perf/regression confidence record after fallback drill | publish perf guard output with no hard breach and release-owner acceptance | `PENDING` |
+| Pending ID     | Dependency  | Owner        | Expected evidence                                                             | Unblock criteria                                                           | Status    |
+| -------------- | ----------- | ------------ | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------- |
+| `DR-PEND-D001` | `M134-D001` | Lane D owner | Deterministic replay proof on cutover candidate after rollback/fallback drill | attach signed replay summary and integrator acceptance                     | `PENDING` |
+| `DR-PEND-D002` | `M134-D002` | Lane D owner | Perf/regression confidence record after fallback drill                        | publish perf guard output with no hard breach and release-owner acceptance | `PENDING` |
 
 If either row remains `PENDING` at decision time, release owner must either:
 

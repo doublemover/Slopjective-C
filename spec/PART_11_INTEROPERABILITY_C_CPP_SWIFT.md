@@ -172,5 +172,3 @@ The mapping is implementation-defined but should preserve the core constraints.
 ## 11.6 Open issues {#part-11-6}
 
 None currently for the v1 portability baseline in this part.
-
-

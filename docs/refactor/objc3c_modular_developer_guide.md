@@ -15,17 +15,17 @@ It defines:
 
 The modular frontend is organized into stage modules plus integration subsystems:
 
-| module/subsystem | Primary paths | Allowed downstream dependencies | Primary lane ownership |
-| --- | --- | --- | --- |
-| `lex` subsystem | `native/objc3c/src/lex/*` | none | Lane A |
-| `parse` subsystem | `native/objc3c/src/parse/*` | `lex` | Lane A |
-| `sema` subsystem | `native/objc3c/src/sema/*` | `parse` | Lane B |
-| `lower` subsystem | `native/objc3c/src/lower/*` | `sema` | Lane A |
-| `ir` subsystem | `native/objc3c/src/ir/*` | `lower` | Lane A |
-| `pipeline` subsystem | `native/objc3c/src/pipeline/*` | `lex`, `parse`, `sema`, `lower`, `ir` | Lane B |
-| `libobjc3c_frontend` module | `native/objc3c/src/libobjc3c_frontend/*` | `pipeline` | Lane B |
-| `driver` subsystem | `native/objc3c/src/driver/*` | `libobjc3c_frontend`, `io` | Lane A |
-| `io` subsystem | `native/objc3c/src/io/*` | none | Lane A |
+| module/subsystem            | Primary paths                            | Allowed downstream dependencies       | Primary lane ownership |
+| --------------------------- | ---------------------------------------- | ------------------------------------- | ---------------------- |
+| `lex` subsystem             | `native/objc3c/src/lex/*`                | none                                  | Lane A                 |
+| `parse` subsystem           | `native/objc3c/src/parse/*`              | `lex`                                 | Lane A                 |
+| `sema` subsystem            | `native/objc3c/src/sema/*`               | `parse`                               | Lane B                 |
+| `lower` subsystem           | `native/objc3c/src/lower/*`              | `sema`                                | Lane A                 |
+| `ir` subsystem              | `native/objc3c/src/ir/*`                 | `lower`                               | Lane A                 |
+| `pipeline` subsystem        | `native/objc3c/src/pipeline/*`           | `lex`, `parse`, `sema`, `lower`, `ir` | Lane B                 |
+| `libobjc3c_frontend` module | `native/objc3c/src/libobjc3c_frontend/*` | `pipeline`                            | Lane B                 |
+| `driver` subsystem          | `native/objc3c/src/driver/*`             | `libobjc3c_frontend`, `io`            | Lane A                 |
+| `io` subsystem              | `native/objc3c/src/io/*`                 | none                                  | Lane A                 |
 
 Boundary rules are fail-closed through:
 
@@ -50,12 +50,12 @@ Use this workflow for every issue that touches a module or subsystem.
 
 Ownership is module-centric with explicit escalation.
 
-| ownership area | primary | backup | escalation trigger |
-| --- | --- | --- | --- |
-| Stage modules (`lex`, `parse`, `lower`, `ir`) | Lane A owner | Integrator | unresolved defect > 1 business day |
-| Semantic and orchestration (`sema`, `pipeline`, `libobjc3c_frontend`) | Lane B owner | Integrator | cross-module regressions or blocked merges |
-| Workflow/governance/docs and CI wiring | Lane E owner | Release owner | missing workflow evidence or stale onboarding docs |
-| Test and determinism signal checks | Lane D owner | Integrator | flaky or non-deterministic subsystem signal |
+| ownership area                                                        | primary      | backup        | escalation trigger                                 |
+| --------------------------------------------------------------------- | ------------ | ------------- | -------------------------------------------------- |
+| Stage modules (`lex`, `parse`, `lower`, `ir`)                         | Lane A owner | Integrator    | unresolved defect > 1 business day                 |
+| Semantic and orchestration (`sema`, `pipeline`, `libobjc3c_frontend`) | Lane B owner | Integrator    | cross-module regressions or blocked merges         |
+| Workflow/governance/docs and CI wiring                                | Lane E owner | Release owner | missing workflow evidence or stale onboarding docs |
+| Test and determinism signal checks                                    | Lane D owner | Integrator    | flaky or non-deterministic subsystem signal        |
 
 Cross-lane rule:
 
@@ -65,15 +65,15 @@ Cross-lane rule:
 
 Start with the smallest deterministic command set that covers the changed subsystem.
 
-| subsystem focus | default command | additional command(s) when needed |
-| --- | --- | --- |
-| `lex` | `npm run dev:objc3c:lex` | `npm run check:objc3c:boundaries` |
-| `parse` | `npm run dev:objc3c:parse` | `npm run check:objc3c:boundaries` |
-| `sema` | `npm run dev:objc3c:sema` | `npm run test:objc3c:execution-replay-proof` |
-| `lower` | `npm run dev:objc3c:lower` | `npm run test:objc3c:typed-abi-replay-proof` |
-| `ir` | `npm run dev:objc3c:ir` | `npm run test:objc3c:execution-smoke` |
-| `pipeline`/`libobjc3c_frontend` | `npm run dev:objc3c:sema` | `npm run dev:objc3c:lower`, `npm run dev:objc3c:ir` |
-| `driver`/`io` | `npm run check:objc3c:boundaries` | `npm run test:objc3c:execution-smoke` |
+| subsystem focus                 | default command                   | additional command(s) when needed                   |
+| ------------------------------- | --------------------------------- | --------------------------------------------------- |
+| `lex`                           | `npm run dev:objc3c:lex`          | `npm run check:objc3c:boundaries`                   |
+| `parse`                         | `npm run dev:objc3c:parse`        | `npm run check:objc3c:boundaries`                   |
+| `sema`                          | `npm run dev:objc3c:sema`         | `npm run test:objc3c:execution-replay-proof`        |
+| `lower`                         | `npm run dev:objc3c:lower`        | `npm run test:objc3c:typed-abi-replay-proof`        |
+| `ir`                            | `npm run dev:objc3c:ir`           | `npm run test:objc3c:execution-smoke`               |
+| `pipeline`/`libobjc3c_frontend` | `npm run dev:objc3c:sema`         | `npm run dev:objc3c:lower`, `npm run dev:objc3c:ir` |
+| `driver`/`io`                   | `npm run check:objc3c:boundaries` | `npm run test:objc3c:execution-smoke`               |
 
 Selection policy:
 

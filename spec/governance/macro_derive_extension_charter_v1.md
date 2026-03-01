@@ -28,13 +28,13 @@ Out of scope:
 
 ## 2. Governance Roles and Accountability
 
-| Role ID | Role | Core accountability | Decision rights |
-| --- | --- | --- | --- |
-| `GR-01` | Steering owners | Governance baseline ownership and tie-break authority. | Final ratification, emergency hold/release confirmation, exception approval. |
-| `GR-02` | Cross-vendor review board | Technical review and decision recommendations. | Lifecycle transition approval or rejection under quorum rules. |
-| `GR-03` | Spec editors | Normative text coherence and cross-spec consistency. | Publication block on unresolved normative conflict. |
-| `GR-04` | Conformance/tooling owners | Evidence quality and reproducibility assurance. | Transition block when mandatory evidence is missing or non-reproducible. |
-| `GR-05` | Security response owner | Supply-chain and security risk triage. | Emergency escalation trigger and temporary policy hold action. |
+| Role ID | Role                       | Core accountability                                    | Decision rights                                                              |
+| ------- | -------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `GR-01` | Steering owners            | Governance baseline ownership and tie-break authority. | Final ratification, emergency hold/release confirmation, exception approval. |
+| `GR-02` | Cross-vendor review board  | Technical review and decision recommendations.         | Lifecycle transition approval or rejection under quorum rules.               |
+| `GR-03` | Spec editors               | Normative text coherence and cross-spec consistency.   | Publication block on unresolved normative conflict.                          |
+| `GR-04` | Conformance/tooling owners | Evidence quality and reproducibility assurance.        | Transition block when mandatory evidence is missing or non-reproducible.     |
+| `GR-05` | Security response owner    | Supply-chain and security risk triage.                 | Emergency escalation trigger and temporary policy hold action.               |
 
 Minimum representation requirements:
 
@@ -45,34 +45,34 @@ Minimum representation requirements:
 
 ## 3. Decision Classes and Thresholds
 
-| Decision class | Decision ID | Required authority | Threshold |
-| --- | --- | --- | --- |
-| Charter ratification or charter update | `DC-01` | `GR-01` + `GR-02` | Quorum plus two-thirds yes, and no unresolved steering objection. |
-| Lifecycle transition decision (`Experimental`, `Provisional`, `Stable`, `Deprecated`, `Retired`) | `DC-02` | `GR-02` | Quorum plus simple majority; blockers must be resolved or explicitly waived. |
-| Process or timing waiver (non-behavioral) | `DC-03` | `GR-01` | Two steering approvals plus recorded rationale and expiry. |
-| Emergency hold | `DC-04` | `GR-05` + one steering owner | Immediate temporary hold plus steering confirmation within 24 hours. |
+| Decision class                                                                                   | Decision ID | Required authority           | Threshold                                                                    |
+| ------------------------------------------------------------------------------------------------ | ----------- | ---------------------------- | ---------------------------------------------------------------------------- |
+| Charter ratification or charter update                                                           | `DC-01`     | `GR-01` + `GR-02`            | Quorum plus two-thirds yes, and no unresolved steering objection.            |
+| Lifecycle transition decision (`Experimental`, `Provisional`, `Stable`, `Deprecated`, `Retired`) | `DC-02`     | `GR-02`                      | Quorum plus simple majority; blockers must be resolved or explicitly waived. |
+| Process or timing waiver (non-behavioral)                                                        | `DC-03`     | `GR-01`                      | Two steering approvals plus recorded rationale and expiry.                   |
+| Emergency hold                                                                                   | `DC-04`     | `GR-05` + one steering owner | Immediate temporary hold plus steering confirmation within 24 hours.         |
 
 No decision is binding until the required record in Section 8 is published.
 
 ## 4. Quorum and Conflict-of-Interest Rules
 
-| Rule ID | Rule |
-| --- | --- |
-| `QR-01` | Formal quorum is met only when at least three voting members are present. |
-| `QR-02` | At least two independent vendor organizations must be represented in voting members. |
+| Rule ID | Rule                                                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `QR-01` | Formal quorum is met only when at least three voting members are present.                                               |
+| `QR-02` | At least two independent vendor organizations must be represented in voting members.                                    |
 | `QR-03` | A proposal author may participate in technical discussion but is non-voting for the final disposition on that proposal. |
-| `QR-04` | Any decision made without quorum is non-binding and must be re-run in a valid session. |
+| `QR-04` | Any decision made without quorum is non-binding and must be re-run in a valid session.                                  |
 
 ## 5. Required Lifecycle Outputs
 
-| Event ID | Lifecycle event | Required output | Required owner | Exit rule |
-| --- | --- | --- | --- | --- |
-| `LO-01` | Proposal intake | Completed proposal packet with required evidence domains. | Proposal sponsor + lane owner | Intake completeness gate passes. |
-| `LO-02` | Intake triage | Triage record (`accept`, `defer`, `reject`) with due dates. | Review-board chair | Triage outcome is published and linked. |
-| `LO-03` | Transition request | Transition dossier with rubric, test, implementation, and compatibility evidence. | Proposal sponsor + tooling owner | All mandatory gate inputs exist. |
-| `LO-04` | Transition decision | Board decision record with vote tally, rationale, conditions, effective release, and effective date. | Review-board chair + spec editor | Decision record is published and immutable. |
-| `LO-05` | Post-decision publication | Registry and consumer updates with release-note linkage. | Tooling owner + release owner | Artifacts are published and reproducible. |
-| `LO-06` | Deprecation or retirement tracking | Sunset and migration status record. | Steering owners + release owner | Minimum deprecation window and migration obligations are satisfied. |
+| Event ID | Lifecycle event                    | Required output                                                                                      | Required owner                   | Exit rule                                                           |
+| -------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------- |
+| `LO-01`  | Proposal intake                    | Completed proposal packet with required evidence domains.                                            | Proposal sponsor + lane owner    | Intake completeness gate passes.                                    |
+| `LO-02`  | Intake triage                      | Triage record (`accept`, `defer`, `reject`) with due dates.                                          | Review-board chair               | Triage outcome is published and linked.                             |
+| `LO-03`  | Transition request                 | Transition dossier with rubric, test, implementation, and compatibility evidence.                    | Proposal sponsor + tooling owner | All mandatory gate inputs exist.                                    |
+| `LO-04`  | Transition decision                | Board decision record with vote tally, rationale, conditions, effective release, and effective date. | Review-board chair + spec editor | Decision record is published and immutable.                         |
+| `LO-05`  | Post-decision publication          | Registry and consumer updates with release-note linkage.                                             | Tooling owner + release owner    | Artifacts are published and reproducible.                           |
+| `LO-06`  | Deprecation or retirement tracking | Sunset and migration status record.                                                                  | Steering owners + release owner  | Minimum deprecation window and migration obligations are satisfied. |
 
 Any transition event MUST include:
 
@@ -83,23 +83,23 @@ Any transition event MUST include:
 
 ## 6. Cadence and Publication Windows
 
-| Cadence ID | Meeting/output | Required participants | Target SLA |
-| --- | --- | --- | --- |
-| `CD-01` | Weekly intake triage | Review-board chair + lane owner | New proposals triaged within five business days. |
-| `CD-02` | Biweekly formal board session | Voting board + spec editor + tooling owner | Decision or explicit defer rationale per in-review proposal. |
-| `CD-03` | Monthly governance status snapshot | Steering owner + release owner + tooling owner | Snapshot published on first business day each month. |
-| `CD-04` | Quarterly process audit | Steering owners + review board | Audit publication with open waivers and escalation trends. |
+| Cadence ID | Meeting/output                     | Required participants                          | Target SLA                                                   |
+| ---------- | ---------------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| `CD-01`    | Weekly intake triage               | Review-board chair + lane owner                | New proposals triaged within five business days.             |
+| `CD-02`    | Biweekly formal board session      | Voting board + spec editor + tooling owner     | Decision or explicit defer rationale per in-review proposal. |
+| `CD-03`    | Monthly governance status snapshot | Steering owner + release owner + tooling owner | Snapshot published on first business day each month.         |
+| `CD-04`    | Quarterly process audit            | Steering owners + review board                 | Audit publication with open waivers and escalation trends.   |
 
 ## 7. Escalation Model
 
 Escalation levels are fixed and map to `issue_138` governance behavior.
 
-| Level | Trigger | Owner | Required response |
-| --- | --- | --- | --- |
-| `E1` | Process delay with no immediate safety risk. | Lane owner | Recovery plan within two business days. |
-| `E2` | Deadlocked decision or unresolved blocker after two sessions. | Review-board chair -> steering owners | Tie-break session scheduled within five business days. |
-| `E3` | Security or soundness risk in active transition. | Security owner + steering owner | Temporary hold within 24 hours and incident plan publication. |
-| `E4` | Release-impacting unresolved governance item. | Steering owners + release integration owner | Explicit go or no-go disposition before milestone closure. |
+| Level | Trigger                                                       | Owner                                       | Required response                                             |
+| ----- | ------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------- |
+| `E1`  | Process delay with no immediate safety risk.                  | Lane owner                                  | Recovery plan within two business days.                       |
+| `E2`  | Deadlocked decision or unresolved blocker after two sessions. | Review-board chair -> steering owners       | Tie-break session scheduled within five business days.        |
+| `E3`  | Security or soundness risk in active transition.              | Security owner + steering owner             | Temporary hold within 24 hours and incident plan publication. |
+| `E4`  | Release-impacting unresolved governance item.                 | Steering owners + release integration owner | Explicit go or no-go disposition before milestone closure.    |
 
 Escalation records MUST include owner, date, trigger, and closure status.
 
@@ -107,31 +107,31 @@ Escalation records MUST include owner, date, trigger, and closure status.
 
 Each binding decision record MUST include all fields below.
 
-| Field | Requirement |
-| --- | --- |
-| `decision_id` | Stable immutable identifier. |
-| `decision_class` | One of `DC-01` through `DC-04`. |
-| `proposal_or_transition_ref` | Identifier for the governed item under review. |
-| `quorum_attestation` | Explicit statement of `QR-01` through `QR-04` pass state. |
-| `vote_tally` | Machine-readable tally including abstain and recusal counts. |
-| `disposition` | `accepted`, `conditional_accept`, `deferred`, `rejected`, or `hold`. |
-| `conditions` | Explicit owner and due date for any conditional disposition. |
-| `effective_release` | Required for accepted lifecycle transitions. |
-| `effective_date` | Required for accepted lifecycle transitions. |
-| `artifact_refs` | Immutable links to required evidence and downstream publication artifacts. |
+| Field                        | Requirement                                                                |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `decision_id`                | Stable immutable identifier.                                               |
+| `decision_class`             | One of `DC-01` through `DC-04`.                                            |
+| `proposal_or_transition_ref` | Identifier for the governed item under review.                             |
+| `quorum_attestation`         | Explicit statement of `QR-01` through `QR-04` pass state.                  |
+| `vote_tally`                 | Machine-readable tally including abstain and recusal counts.               |
+| `disposition`                | `accepted`, `conditional_accept`, `deferred`, `rejected`, or `hold`.       |
+| `conditions`                 | Explicit owner and due date for any conditional disposition.               |
+| `effective_release`          | Required for accepted lifecycle transitions.                               |
+| `effective_date`             | Required for accepted lifecycle transitions.                               |
+| `artifact_refs`              | Immutable links to required evidence and downstream publication artifacts. |
 
 ## 9. Downstream Governance Contract
 
 This charter provides mandatory process constraints to downstream artifacts.
 
-| Downstream task | Required charter output |
-| --- | --- |
-| `C-02` namespace policy | Prefix ownership, escalation envelope (`E1` to `E4`), and publication record requirements. |
-| `C-04` review rubric | Deterministic tie-break and threshold authority envelope. |
-| `C-05` lifecycle policy | Decision classes, quorum rules, and required publication obligations. |
-| `C-06` provenance policy | Escalation ownership and incident handoff authority chain. |
-| `C-09` test obligations | Board intake and transition publication rules. |
-| `C-11` registry format | Decision-link publication and immutable record obligations. |
+| Downstream task          | Required charter output                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `C-02` namespace policy  | Prefix ownership, escalation envelope (`E1` to `E4`), and publication record requirements. |
+| `C-04` review rubric     | Deterministic tie-break and threshold authority envelope.                                  |
+| `C-05` lifecycle policy  | Decision classes, quorum rules, and required publication obligations.                      |
+| `C-06` provenance policy | Escalation ownership and incident handoff authority chain.                                 |
+| `C-09` test obligations  | Board intake and transition publication rules.                                             |
+| `C-11` registry format   | Decision-link publication and immutable record obligations.                                |
 
 No downstream policy may weaken quorum, conflict, or publication constraints
 defined in this charter without a `DC-01` charter update decision.

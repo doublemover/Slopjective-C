@@ -10,15 +10,15 @@ This file defines source ownership for generated `docs/objc3c-native.md`.
 
 ## Fragment Ownership Matrix
 
-| Fragment | Responsibility | Primary owner | Backup owner |
-| --- | --- | --- | --- |
-| `10-cli.md` | CLI usage, flags, defaults, invocation examples | compiler/tooling | compiler/docs |
-| `20-grammar.md` | Lexer/parser grammar and token surface | compiler/parser | compiler/docs |
-| `30-semantics.md` | Semantic contracts and lowering behavior | compiler/semantics | compiler/docs |
-| `40-diagnostics.md` | Diagnostic codes and failure semantics | compiler/diagnostics | compiler/semantics |
-| `50-artifacts.md` | Artifact paths, runtime output contracts, exit surfaces | compiler/release | compiler/tooling |
-| `60-tests.md` | Replay proof and validation command contracts | compiler/qa | compiler/release |
-| `README.md` | Fragment taxonomy, stitch contract, author instructions | compiler/docs | compiler/tooling |
+| Fragment            | Responsibility                                          | Primary owner        | Backup owner       |
+| ------------------- | ------------------------------------------------------- | -------------------- | ------------------ |
+| `10-cli.md`         | CLI usage, flags, defaults, invocation examples         | compiler/tooling     | compiler/docs      |
+| `20-grammar.md`     | Lexer/parser grammar and token surface                  | compiler/parser      | compiler/docs      |
+| `30-semantics.md`   | Semantic contracts and lowering behavior                | compiler/semantics   | compiler/docs      |
+| `40-diagnostics.md` | Diagnostic codes and failure semantics                  | compiler/diagnostics | compiler/semantics |
+| `50-artifacts.md`   | Artifact paths, runtime output contracts, exit surfaces | compiler/release     | compiler/tooling   |
+| `60-tests.md`       | Replay proof and validation command contracts           | compiler/qa          | compiler/release   |
+| `README.md`         | Fragment taxonomy, stitch contract, author instructions | compiler/docs        | compiler/tooling   |
 
 ## Update Workflow
 

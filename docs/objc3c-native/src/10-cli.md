@@ -73,4 +73,3 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `objc3_objectivec_path` owns Objective-C translation-unit parse, diagnostics normalization, symbol-manifest emission, and object compilation.
 - CLI split boundaries remain stable; compatibility controls (`-fobjc-version`, `--objc3-language-version`,
   `--objc3-compat-mode`, `--objc3-migration-assist`) are parsed at the driver shell layer and validated fail-closed.
-

@@ -41,6 +41,7 @@ syntax.surface_summary:
 syntax.grammar_delta:
 syntax.parser_ambiguity_analysis:
 syntax.positive_examples:
+
 - id:
   input:
   expected_parse:
@@ -50,7 +51,7 @@ syntax.positive_examples:
 - id:
   input:
   expected_parse:
-syntax.negative_examples:
+  syntax.negative_examples:
 - id:
   input:
   expected_diagnostic:
@@ -60,7 +61,7 @@ syntax.negative_examples:
 - id:
   input:
   expected_diagnostic:
-syntax.compatibility_notes:
+  syntax.compatibility_notes:
 
 ## 4. Semantics evidence
 
@@ -70,6 +71,7 @@ semantics.profile_interactions:
 semantics.cross_feature_interactions:
 semantics.failure_modes:
 semantics.example_matrix:
+
 - success_cases:
 - failure_cases:
 
@@ -81,6 +83,7 @@ diagnostics.trigger_conditions:
 diagnostics.fixit_policy:
 diagnostics.localization_or_stability_note:
 diagnostics.sample_outputs:
+
 - output_id:
   expected_code:
   expected_severity:
@@ -95,6 +98,7 @@ diagnostics.sample_outputs:
 determinism.outputs_in_scope:
 determinism.repro_command:
 determinism.run_matrix:
+
 - run_id:
   input_fingerprint:
   output_fingerprint:
@@ -104,34 +108,36 @@ determinism.run_matrix:
 - run_id:
   input_fingerprint:
   output_fingerprint:
-determinism.acceptance_threshold:
-determinism.nondeterminism_risks:
-determinism.observed_results:
+  determinism.acceptance_threshold:
+  determinism.nondeterminism_risks:
+  determinism.observed_results:
 
 ## 7. Security evidence
 
 security.asset_and_boundary_model:
 security.threat_scenarios:
+
 - threat_id:
   scenario:
 - threat_id:
   scenario:
 - threat_id:
   scenario:
-security.mitigation_controls:
-security.provenance_requirements:
-security.failure_containment:
-security.incident_triggers:
+  security.mitigation_controls:
+  security.provenance_requirements:
+  security.failure_containment:
+  security.incident_triggers:
 
 ## 8. Validation and test plan
 
 validation.required_test_ids:
+
 - test_id:
 - test_id:
-validation.commands:
+  validation.commands:
 - command:
 - command:
-validation.acceptance_rules:
+  validation.acceptance_rules:
 - rule_id:
   pass_condition:
 
@@ -156,6 +162,7 @@ trace.last_verified_date: YYYY-MM-DD
 ## 10. Open questions and decision log
 
 open_questions:
+
 - id:
   owner:
   target_date: YYYY-MM-DD
@@ -163,6 +170,7 @@ open_questions:
   resolution_status:
 
 decision_log:
+
 - decision_id:
   date: YYYY-MM-DD
   disposition:
