@@ -269,9 +269,12 @@ if ($null -ne $cacheKey) {
 
     $entryDir = Join-Path $cacheRoot $cacheKey
     if (Test-Path -LiteralPath $entryDir) {
-      Remove-Item -LiteralPath $entryDir -Recurse -Force -ErrorAction SilentlyContinue
+      # Preserve existing entry and retain this write as a traceable collision artifact.
+      $collisionDir = Join-Path $cacheRoot ("_collision_" + $cacheKey + "_" + [Guid]::NewGuid().ToString("N"))
+      Move-Item -LiteralPath $stagingDir -Destination $collisionDir -Force
+    } else {
+      Move-Item -LiteralPath $stagingDir -Destination $entryDir -Force
     }
-    Move-Item -LiteralPath $stagingDir -Destination $entryDir -Force
   } catch {
     # Fail closed: cache population must never block compile wrapper.
   }
