@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
+    "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
     "m190-concurrency-replay-race-guard-lowering-v1";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
@@ -466,6 +468,19 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3TaskRuntimeInteropCancellationLoweringContract {
+  std::size_t task_runtime_sites = 0;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t cancellation_probe_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t runtime_resume_sites = 0;
+  std::size_t runtime_cancel_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3ConcurrencyReplayRaceGuardLoweringContract {
   std::size_t concurrency_replay_sites = 0;
   std::size_t replay_proof_sites = 0;
@@ -643,6 +658,10 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
+    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
+std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
+    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 bool IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
     const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract);
 std::string Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(

@@ -3726,6 +3726,35 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Task runtime interop and cancellation lowering artifact contract (M189-C001)
+
+M189-C publishes deterministic lowering replay metadata for task runtime
+interop and cancellation boundaries.
+
+M189-C lowering contract anchors:
+
+- `kObjc3TaskRuntimeInteropCancellationLoweringLaneContract`
+- `Objc3TaskRuntimeInteropCancellationLoweringContract`
+- `IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(...)`
+- `Objc3TaskRuntimeInteropCancellationLoweringReplayKey(...)`
+- `task_runtime_interop_cancellation_lowering = task_runtime_sites=<N>`
+- `frontend_objc_task_runtime_interop_cancellation_lowering_profile`
+- `!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + guard_blocked_sites == task_runtime_sites`
+- `runtime_resume_sites + runtime_cancel_sites <= task_runtime_sites`
+- each of `task_runtime_interop_sites`, `cancellation_probe_sites`,
+  `cancellation_handler_sites`, and `contract_violation_sites` is bounded by
+  `task_runtime_sites`
+- `deterministic_task_runtime_interop_cancellation_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m189_lowering_task_runtime_interop_cancellation_contract.py -q`
+
 ## Concurrency replay-proof and race-guard lowering artifact contract (M190-C001)
 
 M190-C publishes deterministic lowering replay metadata for concurrency

@@ -326,6 +326,25 @@ struct Objc3IRFrontendMetadata {
   std::size_t ns_error_bridging_lowering_bridge_boundary_sites = 0;
   std::size_t ns_error_bridging_lowering_contract_violation_sites = 0;
   bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::string lowering_task_runtime_interop_cancellation_replay_key;
+  std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
+  std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =
+      0;
+  std::size_t
+      task_runtime_interop_cancellation_lowering_cancellation_probe_sites = 0;
+  std::size_t
+      task_runtime_interop_cancellation_lowering_cancellation_handler_sites = 0;
+  std::size_t task_runtime_interop_cancellation_lowering_runtime_resume_sites =
+      0;
+  std::size_t task_runtime_interop_cancellation_lowering_runtime_cancel_sites =
+      0;
+  std::size_t task_runtime_interop_cancellation_lowering_normalized_sites = 0;
+  std::size_t task_runtime_interop_cancellation_lowering_guard_blocked_sites =
+      0;
+  std::size_t
+      task_runtime_interop_cancellation_lowering_contract_violation_sites = 0;
+  bool deterministic_task_runtime_interop_cancellation_lowering_handoff =
+      false;
   std::string lowering_concurrency_replay_race_guard_replay_key;
   std::size_t concurrency_replay_race_guard_lowering_sites = 0;
   std::size_t concurrency_replay_race_guard_lowering_replay_proof_sites = 0;

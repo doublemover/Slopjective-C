@@ -222,6 +222,13 @@ class Objc3IREmitter {
       out << "; ns_error_bridging_lowering = "
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
+      out << "; task_runtime_interop_cancellation_lowering = "
+          << frontend_metadata_
+                 .lowering_task_runtime_interop_cancellation_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_concurrency_replay_race_guard_replay_key
              .empty()) {
       out << "; concurrency_replay_race_guard_lowering = "
@@ -841,6 +848,38 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_task_runtime_interop_cancellation_lowering_profile = task_runtime_sites="
+        << frontend_metadata_.task_runtime_interop_cancellation_lowering_sites
+        << ", task_runtime_interop_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_runtime_interop_sites
+        << ", cancellation_probe_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_cancellation_probe_sites
+        << ", cancellation_handler_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_cancellation_handler_sites
+        << ", runtime_resume_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_runtime_resume_sites
+        << ", runtime_cancel_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_runtime_cancel_sites
+        << ", normalized_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_normalized_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .task_runtime_interop_cancellation_lowering_contract_violation_sites
+        << ", deterministic_task_runtime_interop_cancellation_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_task_runtime_interop_cancellation_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_concurrency_replay_race_guard_lowering_profile = concurrency_replay_sites="
         << frontend_metadata_.concurrency_replay_race_guard_lowering_sites
         << ", replay_proof_sites="
@@ -1128,6 +1167,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_unsafe_pointer_extension_lowering = !{!37}\n";
     out << "!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}\n";
     out << "!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}\n";
+    out << "!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -2024,6 +2064,47 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_concurrency_replay_race_guard_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!40 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.task_runtime_interop_cancellation_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_runtime_interop_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_cancellation_probe_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_cancellation_handler_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_runtime_resume_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_runtime_cancel_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_normalized_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .task_runtime_interop_cancellation_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_task_runtime_interop_cancellation_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
