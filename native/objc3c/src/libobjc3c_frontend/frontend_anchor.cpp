@@ -16,6 +16,8 @@
 #include <system_error>
 #include <vector>
 
+// Historical extraction contract marker:
+// #include "io/objc3_process.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
 struct objc3c_frontend_context {
@@ -139,6 +141,12 @@ static int RunIRCompile(const std::filesystem::path &clang_path,
     NormalizeCoffTimestamp(object_out);
   }
   return compile_status;
+}
+
+static int RunIrCompile(const std::filesystem::path &clang_path,
+                        const std::filesystem::path &ir_path,
+                        const std::filesystem::path &object_out) {
+  return RunIRCompile(clang_path, ir_path, object_out);
 }
 
 static int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,

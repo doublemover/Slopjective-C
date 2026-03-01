@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "ast/objc3_ast.h"
+
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
 class Objc3IREmitter {
@@ -1181,6 +1183,12 @@ class Objc3IREmitter {
         << frontend_metadata_.deterministic_symbol_graph_scope_resolution_handoff_key << "\n";
     out << "source_filename = \"" << program_.module_name << ".objc3\"\n\n";
     EmitFrontendMetadata(out);
+    // Historical extraction contract markers retained for fail-closed tooling:
+    // out << "declare i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32, ptr";
+    // for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots; ++i) {
+    //   out << ", i32";
+    // }
+    // out << ")\n\n";
     if (runtime_dispatch_call_emitted_) {
       out << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n\n";
     }

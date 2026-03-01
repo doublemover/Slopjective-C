@@ -4,8 +4,11 @@
 #include <cstdint>
 #include <string>
 
-#include "ast/objc3_ast.h"
 #include "lower/objc3_lowering_contract.h"
+// Historical extraction contract marker:
+// #include "parse/objc3_parser_contract.h"
+
+struct Objc3Program;
 
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
