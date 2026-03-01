@@ -17,13 +17,19 @@ def test_m199_frontend_foreign_type_diagnostics_section_exists() -> None:
         "## M199 frontend foreign type import diagnostics",
         "O3P108",
         "O3P114",
-        "'id', 'Class', 'SEL', 'Protocol', or 'instancetype'",
+        "O3S206",
         "param.id_spelling",
         "param.class_spelling",
         "param.instancetype_spelling",
+        "param.object_pointer_type_spelling",
+        "param.object_pointer_type_name",
         "fn.return_id_spelling",
         "fn.return_class_spelling",
         "fn.return_instancetype_spelling",
+        "fn.return_object_pointer_type_spelling",
+        "fn.return_object_pointer_type_name",
+        "SupportsGenericParamTypeSuffix",
+        "SupportsGenericReturnTypeSuffix",
         "python -m pytest tests/tooling/test_objc3c_m199_frontend_foreign_type_diagnostics_contract.py -q",
     ):
         assert text in fragment
@@ -37,23 +43,27 @@ def test_m199_frontend_foreign_type_diagnostics_markers_map_to_sources() -> None
         "bool id_spelling = false;",
         "bool class_spelling = false;",
         "bool instancetype_spelling = false;",
+        "bool object_pointer_type_spelling = false;",
         "bool return_id_spelling = false;",
         "bool return_class_spelling = false;",
         "bool return_instancetype_spelling = false;",
+        "bool return_object_pointer_type_spelling = false;",
     ):
         assert marker in ast_source
 
     for marker in (
-        'diagnostics_.push_back(MakeDiag(type_token.line, type_token.column, "O3P108",',
-        "\"unsupported parameter type '\" + type_token.text +",
-        "'Class', 'SEL', 'Protocol', or 'instancetype')\"));",
-        'diagnostics_.push_back(MakeDiag(type_token.line, type_token.column, "O3P114",',
-        "\"unsupported function return type '\" + type_token.text +",
+        'MakeDiag(token.line, token.column, "O3P108",',
+        'MakeDiag(open.line, open.column, "O3P108",',
+        'MakeDiag(token.line, token.column, "O3P114",',
         "param.id_spelling = true;",
         "param.class_spelling = true;",
         "param.instancetype_spelling = true;",
+        "param.object_pointer_type_spelling = true;",
+        "param.object_pointer_type_name = type_token.text;",
         "fn.return_id_spelling = true;",
         "fn.return_class_spelling = true;",
         "fn.return_instancetype_spelling = true;",
+        "fn.return_object_pointer_type_spelling = true;",
+        "fn.return_object_pointer_type_name = type_token.text;",
     ):
         assert marker in parser_source
