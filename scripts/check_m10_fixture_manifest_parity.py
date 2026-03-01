@@ -144,26 +144,37 @@ def validate_lane_manifest(spec: LaneSpec, bucket_dir: Path, problems: list[str]
 
     manifest_lane_files: set[str] = set()
     manifest_lane_issues: set[int] = set()
+    manifest_lane_file_owner: dict[str, str] = {}
 
     for index, group in enumerate(groups):
         files = group.get("files")
         if not isinstance(files, list):
             continue
         lane_files: list[str] = []
+        current_group_name = group_name(group, index)
         for entry in files:
             if isinstance(entry, str) and spec.lane_pattern.fullmatch(entry):
                 lane_files.append(entry)
             elif not isinstance(entry, str):
                 problems.append(
-                    f"{lane_tag}: manifest group '{group_name(group, index)}' has non-string file entry"
+                    f"{lane_tag}: manifest group '{current_group_name}' has non-string file entry"
                 )
         if not lane_files:
             continue
-        manifest_lane_files.update(lane_files)
+        for lane_file in lane_files:
+            if lane_file in manifest_lane_files:
+                prior_group = manifest_lane_file_owner.get(lane_file, "<unknown>")
+                problems.append(
+                    f"{lane_tag}: duplicate manifest lane file entry {lane_file} "
+                    f"(groups '{prior_group}' and '{current_group_name}')"
+                )
+                continue
+            manifest_lane_files.add(lane_file)
+            manifest_lane_file_owner[lane_file] = current_group_name
         issue_numbers = extract_issue_numbers(group)
         if not issue_numbers:
             problems.append(
-                f"{lane_tag}: manifest group '{group_name(group, index)}' has lane files but no issue anchors"
+                f"{lane_tag}: manifest group '{current_group_name}' has lane files but no issue anchors"
             )
         manifest_lane_issues.update(issue_numbers)
 

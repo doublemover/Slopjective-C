@@ -151,6 +151,29 @@ class CheckM10FixtureManifestParityTests(unittest.TestCase):
         self.assertIn("drift: semantic: missing fixture file", output)
         self.assertIn("drift: semantic: manifest missing issue 1636", output)
 
+    def test_fails_when_manifest_duplicates_lane_file_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            create_valid_conformance_tree(root)
+
+            semantic_spec = lane_spec_map()["B"]
+            manifest_path = root / semantic_spec.bucket / "manifest.json"
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            payload["groups"].append(
+                {
+                    "name": "duplicate_scope_group",
+                    "issues": [semantic_spec.first_issue],
+                    "files": [semantic_spec.expected_files[0]],
+                }
+            )
+            manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            code, output = self.run_main(["--conformance-root", tmp_dir])
+
+        self.assertEqual(code, 1)
+        self.assertIn("status: FAIL", output)
+        self.assertIn("drift: semantic: duplicate manifest lane file entry", output)
+
 
 if __name__ == "__main__":
     unittest.main()
