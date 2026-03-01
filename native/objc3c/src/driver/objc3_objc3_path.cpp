@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
-#include <vector>
 
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
@@ -18,21 +17,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   const std::string source = ReadText(cli_options.input);
   const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
   Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
-  std::vector<std::string> diagnostics;
-  diagnostics.reserve(artifacts.stage_diagnostics.size() + artifacts.post_pipeline_diagnostics.size());
-  diagnostics.insert(diagnostics.end(),
-                     artifacts.stage_diagnostics.lexer.begin(),
-                     artifacts.stage_diagnostics.lexer.end());
-  diagnostics.insert(diagnostics.end(),
-                     artifacts.stage_diagnostics.parser.begin(),
-                     artifacts.stage_diagnostics.parser.end());
-  diagnostics.insert(diagnostics.end(),
-                     artifacts.stage_diagnostics.semantic.begin(),
-                     artifacts.stage_diagnostics.semantic.end());
-  diagnostics.insert(diagnostics.end(),
-                     artifacts.post_pipeline_diagnostics.begin(),
-                     artifacts.post_pipeline_diagnostics.end());
-  WriteDiagnosticsArtifacts(cli_options.out_dir, cli_options.emit_prefix, diagnostics);
+  WriteDiagnosticsArtifacts(cli_options.out_dir,
+                            cli_options.emit_prefix,
+                            artifacts.stage_diagnostics,
+                            artifacts.post_pipeline_diagnostics);
   if (!artifacts.diagnostics.empty()) {
     return 1;
   }

@@ -2,9 +2,63 @@
 
 #include <process.h>
 
+#include <array>
+#include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
+
+namespace {
+
+bool IsRecognizedCoffMachine(std::uint16_t machine) {
+  switch (machine) {
+    case 0x014c:  // IMAGE_FILE_MACHINE_I386
+    case 0x8664:  // IMAGE_FILE_MACHINE_AMD64
+    case 0x01c0:  // IMAGE_FILE_MACHINE_ARM
+    case 0xaa64:  // IMAGE_FILE_MACHINE_ARM64
+      return true;
+    default:
+      return false;
+  }
+}
+
+void NormalizeCoffTimestamp(const std::filesystem::path &object_out) {
+  std::error_code file_size_error;
+  const std::uintmax_t size = std::filesystem::file_size(object_out, file_size_error);
+  if (file_size_error || size < 8) {
+    return;
+  }
+
+  std::fstream file(object_out, std::ios::in | std::ios::out | std::ios::binary);
+  if (!file.is_open()) {
+    return;
+  }
+
+  std::array<unsigned char, 8> header{};
+  file.read(reinterpret_cast<char *>(header.data()), static_cast<std::streamsize>(header.size()));
+  if (!file.good() && !file.eof()) {
+    return;
+  }
+  if (file.gcount() != static_cast<std::streamsize>(header.size())) {
+    return;
+  }
+
+  const std::uint16_t machine = static_cast<std::uint16_t>(header[0]) |
+                                static_cast<std::uint16_t>(static_cast<std::uint16_t>(header[1]) << 8u);
+  if (!IsRecognizedCoffMachine(machine)) {
+    return;
+  }
+
+  const char zero_timestamp[4] = {0, 0, 0, 0};
+  file.seekp(4, std::ios::beg);
+  if (!file.good()) {
+    return;
+  }
+  file.write(zero_timestamp, 4);
+}
+
+}  // namespace
 
 int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
@@ -50,16 +104,24 @@ int RunObjectiveCCompile(const std::filesystem::path &clang_path,
     return syntax_status;
   }
 
-  return RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c", input.string(), "-o",
-                                object_out.string(), "-fno-color-diagnostics"});
+  const int compile_status = RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c", input.string(), "-o",
+                                                    object_out.string(), "-fno-color-diagnostics"});
+  if (compile_status == 0) {
+    NormalizeCoffTimestamp(object_out);
+  }
+  return compile_status;
 }
 
 int RunIRCompile(const std::filesystem::path &clang_path,
                  const std::filesystem::path &ir_path,
                  const std::filesystem::path &object_out) {
   const std::string clang_exe = clang_path.string();
-  return RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
-                                "-fno-color-diagnostics"});
+  const int compile_status = RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
+                                                    "-fno-color-diagnostics"});
+  if (compile_status == 0) {
+    NormalizeCoffTimestamp(object_out);
+  }
+  return compile_status;
 }
 
 int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
@@ -70,6 +132,7 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {
+    NormalizeCoffTimestamp(object_out);
     return 0;
   }
   if (llc_status == 127) {
