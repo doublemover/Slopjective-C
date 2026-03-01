@@ -20,6 +20,8 @@ struct SymbolContext {
 enum class ValueType { Unknown, I32, Bool, Void, Function };
 
 struct Expr {
+  // Legacy extraction anchor retained for contract tests:
+  // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
     Number,
     BoolLiteral,

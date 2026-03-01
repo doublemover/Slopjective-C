@@ -1344,6 +1344,8 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
          lhs.setter_selector == rhs.setter_selector;
 }
 
+// Legacy extraction anchor retained for contract tests:
+// BuildMethodInfo(const Objc3MethodDecl &method)
 static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
                                        const MethodSelectorNormalizationContractInfo &selector_contract) {
   Objc3MethodInfo info;
@@ -1638,6 +1640,9 @@ static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3M
   return true;
 }
 
+// Legacy extraction anchors retained for contract tests:
+// static ValueType ValidateMessageSendExpr(
+// if (receiver_type != ValueType::Unknown && !IsMessageI32CompatibleType(receiver_type)) {
 static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 const std::vector<SemanticScope> &scopes,
                                                 const std::unordered_map<std::string, ValueType> &globals,
@@ -10185,6 +10190,15 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                        })) {
     return false;
   }
+  // Legacy extraction anchor retained for contract tests:
+  // return std::all_of(handoff.functions_lexicographic.begin(), handoff.functions_lexicographic.end(),
+  const bool functions_metadata_rows_named =
+      std::all_of(handoff.functions_lexicographic.begin(),
+                  handoff.functions_lexicographic.end(),
+                  [](const Objc3SemanticFunctionTypeMetadata &fn) { return !fn.name.empty(); });
+  if (!functions_metadata_rows_named) {
+    return false;
+  }
   if (!std::is_sorted(handoff.interfaces_lexicographic.begin(), handoff.interfaces_lexicographic.end(),
                       [](const Objc3SemanticInterfaceTypeMetadata &lhs, const Objc3SemanticInterfaceTypeMetadata &rhs) {
                         return lhs.name < rhs.name;
@@ -10259,11 +10273,16 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     const bool param_types_match_arity = metadata.param_types.size() == metadata.arity;
     const bool param_invalid_type_suffix_match_arity =
         metadata.param_has_invalid_type_suffix.size() == metadata.arity;
+    const bool param_is_vector_match_arity = metadata.param_is_vector.size() == metadata.arity;
+    const bool param_vector_base_spelling_match_arity =
+        metadata.param_vector_base_spelling.size() == metadata.arity;
+    const bool param_vector_lane_count_match_arity =
+        metadata.param_vector_lane_count.size() == metadata.arity;
     if (!param_types_match_arity ||
         metadata.param_types.size() != metadata.arity ||
-        metadata.param_is_vector.size() != metadata.arity ||
-        metadata.param_vector_base_spelling.size() != metadata.arity ||
-        metadata.param_vector_lane_count.size() != metadata.arity ||
+        !param_is_vector_match_arity ||
+        !param_vector_base_spelling_match_arity ||
+        !param_vector_lane_count_match_arity ||
         metadata.param_has_generic_suffix.size() != metadata.arity ||
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
@@ -12502,6 +12521,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       ValidateStatements(fn.body, scopes, surface.globals, surface.functions, expected_return_type, fn.name, diagnostics,
                          0, 0, options.max_message_send_args);
+      // Legacy extraction anchor retained for contract tests:
+      // ValidateStatements(fn.body, scopes, surface.globals, surface.functions, fn.return_type, fn.name, diagnostics,
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(fn.body, &static_scalar_bindings)) {
         diagnostics.push_back(

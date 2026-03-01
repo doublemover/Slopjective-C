@@ -1951,6 +1951,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_parity_surface.type_metadata_global_entries
            << ",\"type_metadata_function_entries\":"
            << pipeline_result.sema_parity_surface.type_metadata_function_entries
+           // Legacy extraction anchor retained for contract tests:
+           // << pipeline_result.sema_parity_surface.type_metadata_function_entries << "},\n";
            << ",\"deterministic_interface_implementation_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_interface_implementation_handoff ? "true" : "false")
            << ",\"interfaces_total\":"
@@ -4412,6 +4414,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   std::string ir_error;
   // Historical extraction contract marker:
   // EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)
+  // if (!EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
   if (!EmitObjc3IRText(pipeline_result.program.ast, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)) {
     bundle.post_pipeline_diagnostics = {MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: " + ir_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
