@@ -2,9 +2,7 @@
 title: Objective-C 3.0 Draft Specification
 layout: default
 ---
-
 <!-- BEGIN TABLE_OF_CONTENTS.md -->
-
 # Objective‑C 3.0 Draft Specification (Working Draft) — Table of Contents <a id="toc"></a>
 
 _Last generated: 2026-02-27_
@@ -66,7 +64,6 @@ This draft is ambitious but implementable:
 ---
 
 <!-- BEGIN INTRODUCTION.md -->
-
 # Objective‑C 3.0 Draft Specification (Working Draft) — Introduction <a id="intro"></a>
 
 _Last generated: 2026-02-27_
@@ -190,7 +187,6 @@ This pass makes the draft more “engineer-ready” by tightening the boundary b
 ---
 
 <!-- BEGIN DECISIONS_LOG.md -->
-
 # Objective‑C 3.0 — Design Decisions Log (v0.11) <a id="decisions"></a>
 
 _Last updated: 2026-02-23_
@@ -416,13 +412,11 @@ Conforming metadata/interface behavior shall preserve whether a declaration is e
 **Rationale:** Declaration-scoped control supports gradual adoption, avoids module-wide semantic surprises, and keeps mixed erased/reified codebases tractable.
 
 **Spec impact:** [Part 3](#part-3) [§3.5.5](#part-3-5-5) and [§3.9](#part-3-9).
-
 <!-- END DECISIONS_LOG.md -->
 
 ---
 
 <!-- BEGIN ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
-
 # Objective‑C 3.0 — Attribute and Syntax Catalog <a id="b"></a>
 
 _Working draft v0.11 — last updated 2026-02-23_
@@ -742,13 +736,11 @@ Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 - `let`, `var`
 
 Additional reserved keywords may be added by other parts.
-
 <!-- END ATTRIBUTE_AND_SYNTAX_CATALOG.md -->
 
 ---
 
 <!-- BEGIN LOWERING_AND_RUNTIME_CONTRACTS.md -->
-
 # Objective‑C 3.0 — Lowering, ABI, and Runtime Contracts <a id="c"></a>
 
 _Working draft v0.11 — last updated 2026-02-23_
@@ -1034,7 +1026,6 @@ Implementations are encouraged to provide a conformance suite that includes:
 ---
 
 <!-- BEGIN MODULE_METADATA_AND_ABI_TABLES.md -->
-
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables <a id="d"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -1313,7 +1304,6 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 ---
 
 <!-- BEGIN CONFORMANCE_PROFILE_CHECKLIST.md -->
-
 # Objective‑C 3.0 — Conformance Profile Checklist <a id="e"></a>
 
 _Working draft v0.11 — last updated 2026-02-23_
@@ -1572,7 +1562,6 @@ A serious conformance claim should ship with:
 ---
 
 <!-- BEGIN STANDARD_LIBRARY_CONTRACT.md -->
-
 # Objective-C 3.0 - Standard Library Contract (Minimum) <a id="s"></a>
 
 _Working draft v0.11 - last updated 2026-02-23_
@@ -1757,7 +1746,6 @@ A conforming implementation shall include tests equivalent in coverage to:
 ---
 
 <!-- BEGIN ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md -->
-
 # Objective-C 3.0 - Abstract Machine and Semantic Core <a id="am"></a>
 
 _Working draft v0.11 - last updated 2026-02-23_
@@ -2072,7 +2060,6 @@ At minimum, matrix coverage shall include diagnostics for:
 ---
 
 <!-- BEGIN FORMAL_GRAMMAR_AND_PRECEDENCE.md -->
-
 # Appendix F - Formal Grammar and Precedence for ObjC 3.0 Additions <a id="f"></a>
 
 This appendix integrates the grammar additions defined across [Part 2](#part-2), [Part 3](#part-3), [Part 5](#part-5), [Part 6](#part-6), [Part 7](#part-7), and [Part 8](#part-8) into a single EBNF reference.
@@ -2519,7 +2506,6 @@ For rows requiring rejection, a conforming implementation shall:
 ---
 
 <!-- BEGIN PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md -->
-
 # Part 0 — Baseline and Normative References <a id="part-0"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -2734,13 +2720,11 @@ manifest publication
 (`spec/conformance/objc3_abi_manifest_validation_v0.11_A02.md`), and
 abstract-machine synchronization protocol
 (`spec/process/ABSTRACT_MACHINE_SYNC_PROTOCOL.md`).
-
 <!-- END PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md -->
 
 ---
 
 <!-- BEGIN PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
-
 # Part 1 — Versioning, Compatibility, and Conformance <a id="part-1"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -2997,13 +2981,11 @@ Profiles may:
 This part defines the _hook point_ and selection mechanism; profile contents are specified in **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)**.
 
 When emitting a machine-readable conformance report, implementations shall report the selected profile set using the schema in [§12.4.5](#part-12-4-5).
-
 <!-- END PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md -->
 
 ---
 
 <!-- BEGIN PART_2_MODULES_NAMESPACING_API_SURFACES.md -->
-
 # Part 2 — Modules, Namespacing, and API Surfaces <a id="part-2"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -3217,7 +3199,6 @@ Toolchains may provide additional proprietary metadata formats, but they do not 
 ---
 
 <!-- BEGIN PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md -->
-
 # Part 3 — Types: Nullability, Optionals, Pragmatic Generics, and Typed Key Paths <a id="part-3"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -4106,13 +4087,11 @@ No open issues are tracked in this part for v0.11.
 Resolved by decisions [D-013](DECISIONS_LOG.md#decisions-d-013),
 [D-014](DECISIONS_LOG.md#decisions-d-014), and
 [D-015](DECISIONS_LOG.md#decisions-d-015).
-
 <!-- END PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md -->
 
 ---
 
 <!-- BEGIN PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md -->
-
 # Part 4 — Memory Management and Ownership <a id="part-4"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -4302,13 +4281,11 @@ Concrete names/spellings may differ, but module metadata and documentation shall
 ## 4.10 Open issues <a id="part-4-10"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md -->
 
 ---
 
 <!-- BEGIN PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md -->
-
 # Part 5 — Control Flow and Safety Constructs <a id="part-5"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -4622,13 +4599,11 @@ Minimum diagnostics include:
 ## 5.7 Open issues <a id="part-5-7"></a>
 
 None currently tracked in this part.
-
 <!-- END PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md -->
 
 ---
 
 <!-- BEGIN PART_6_ERRORS_RESULTS_THROWS.md -->
-
 # Part 6 — Errors: Result, throws, try, and Propagation <a id="part-6"></a>
 
 _Working draft v0.11 — last updated 2026-02-23_
@@ -5100,13 +5075,11 @@ Minimum diagnostics:
 
 A future revision may introduce typed throws syntax to restrict throwable error sets.
 ObjC 3.0 v1 intentionally ships only untyped `throws` and uses the reservation rules in [§6.3.7](#part-6-3-7) to preserve forward compatibility with that future work.
-
 <!-- END PART_6_ERRORS_RESULTS_THROWS.md -->
 
 ---
 
 <!-- BEGIN PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md -->
-
 # Part 7 — Concurrency: async/await, Executors, Cancellation, and Actors <a id="part-7"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -5843,13 +5816,11 @@ The concrete queue representation is implementation-defined, but the association
 ### 7.12.5 Autorelease pools at suspension points <a id="part-7-12-5"></a>
 
 Autorelease pool boundaries at suspension points are required by [Decision D-006](#decisions-d-006) and defined normatively in [C.7](#c-7) and [§7.9.4](#part-7-9-4).
-
 <!-- END PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md -->
 
 ---
 
 <!-- BEGIN PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md -->
-
 # Part 8 — System Programming Extensions <a id="part-8"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -6318,13 +6289,11 @@ In strict-system mode, toolchains should:
 ## 8.10 Open issues <a id="part-8-10"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md -->
 
 ---
 
 <!-- BEGIN PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md -->
-
 # Part 9 — Performance and Dynamism Controls <a id="part-9"></a>
 
 _Working draft v0.11 — last updated 2026-02-23_
@@ -6565,7 +6534,6 @@ A conforming implementation’s suite shall include at least:
 ---
 
 <!-- BEGIN PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md -->
-
 # Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors <a id="part-10"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -6791,13 +6759,11 @@ No open issues are tracked in this part for v0.11.
 
 Resolved reference: macro/derive extension governance process
 (`spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`).
-
 <!-- END PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md -->
 
 ---
 
 <!-- BEGIN PART_11_INTEROPERABILITY_C_CPP_SWIFT.md -->
-
 # Part 11 — Interoperability: C, C++, and Swift <a id="part-11"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -6972,13 +6938,11 @@ The mapping is implementation-defined but should preserve the core constraints.
 ## 11.6 Open issues <a id="part-11-6"></a>
 
 None currently for the v1 portability baseline in this part.
-
 <!-- END PART_11_INTEROPERABILITY_C_CPP_SWIFT.md -->
 
 ---
 
 <!-- BEGIN PART_12_DIAGNOSTICS_TOOLING_TESTS.md -->
-
 # Part 12 — Diagnostics, Tooling, and Test Suites <a id="part-12"></a>
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -7346,5 +7310,4 @@ For features like macros and async:
 ## 12.7 Open issues <a id="part-12-7"></a>
 
 No open issues are tracked in this part for v1.
-
 <!-- END PART_12_DIAGNOSTICS_TOOLING_TESTS.md -->
