@@ -37,6 +37,7 @@ def run_pytest(files: Sequence[str]) -> None:
 def main() -> None:
     # m223/m224 base prerequisites.
     run_npm_script("test:objc3c:m222-compatibility-migration")
+    run_npm_script("test:objc3c:perf-budget")
     run([sys.executable, "scripts/build_objc3c_native_docs.py", "--check"])
     run_npm_script("check:objc3c:library-cli-parity:golden")
 

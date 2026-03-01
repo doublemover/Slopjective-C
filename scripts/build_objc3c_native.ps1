@@ -3,12 +3,38 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
 $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
-$libclang = Join-Path $llvmRoot "lib\libclang.lib"
+
+if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
+  $clangCommand = Get-Command clang++ -ErrorAction SilentlyContinue
+  if ($null -ne $clangCommand -and (Test-Path -LiteralPath $clangCommand.Source -PathType Leaf)) {
+    $clangxx = $clangCommand.Source
+    $clangBinDir = Split-Path -Parent $clangxx
+    $llvmRoot = Split-Path -Parent $clangBinDir
+  }
+}
+
+$libclangCandidates = @(
+  (Join-Path $llvmRoot "lib\libclang.lib"),
+  (Join-Path $llvmRoot "lib\clang.lib")
+)
+$libclang = $null
+foreach ($candidate in $libclangCandidates) {
+  if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+    $libclang = $candidate
+    break
+  }
+}
+
 $includeDir = Join-Path $llvmRoot "include"
 $nativeSourceRoot = Join-Path $repoRoot "native/objc3c/src"
 
-if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) { throw "clang++ not found at $clangxx" }
-if (!(Test-Path -LiteralPath $libclang -PathType Leaf)) { throw "libclang not found at $libclang" }
+if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
+  throw ("clang++ not found. set LLVM_ROOT or ensure clang++ is on PATH (attempted: " + $clangxx + ")")
+}
+if ($null -eq $libclang) {
+  $attempted = [string]::Join(", ", $libclangCandidates)
+  throw ("LLVM import library not found. set LLVM_ROOT to a full LLVM install (attempted: " + $attempted + ")")
+}
 if (!(Test-Path -LiteralPath $includeDir -PathType Container)) { throw "LLVM include dir not found at $includeDir" }
 if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "native source root not found at $nativeSourceRoot" }
 
