@@ -898,6 +898,26 @@ int objc3c_frontend_startup_check(void) {
   - M183-B001 deterministic sema/type parity is fail-closed via validation packet replay anchors in this integration gate.
   - The integration gate fail-closes on frontend/lowering/validation/conformance surfaces plus this M183-E001 wiring contract.
 
+## M186 integration async grammar and continuation IR contract
+
+- Integration gate:
+  - `npm run check:objc3c:m186-async-continuation-contracts`
+- Lane-e closeout evidence hook:
+  - `npm run check:compiler-closeout:m186`
+- Compiler closeout workflow anchor:
+  - `.github/workflows/compiler-closeout.yml`
+- Gate coverage files:
+  - `tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py`
+  - `tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py`
+  - `tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py`
+- Assumptions:
+  - M186-A001 packet-specific artifacts are landed in this workspace.
+  - M186-B001, M186-C001, and M186-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+  - This initial M186-E001 gate deterministically replays currently landed lane surfaces via the M186-A001 frontend parser contract plus continuation IR replay anchors from the M187-D001 validation/conformance packet.
+  - M186-B001 sema surfaces, M186-C001 lowering surfaces, and M186-D001 packet-specific replay artifacts are fail-closed via continuation IR replay anchors in this integration gate.
+  - The integration gate fail-closes on these currently landed lane surfaces plus this M186-E001 wiring contract.
+
 ## M187 integration await lowering and suspension state contract
 
 - Integration gate:

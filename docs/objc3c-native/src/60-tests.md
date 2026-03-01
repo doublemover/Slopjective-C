@@ -2738,6 +2738,36 @@ Scope assumptions:
 - This runbook fail-closes M188-B001 sema surfaces and M188-C001 lowering surfaces via M188-D001 replay packet anchors.
 - This runbook enforces those currently landed lane surfaces plus M188-E001 integration wiring.
 
+## M186 integration async grammar and continuation IR contract runbook (M186-E001)
+
+Deterministic M186 integration sequence:
+
+```bash
+python -m pytest tests/tooling/test_objc3c_m186_frontend_async_continuation_parser_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_validation_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m187_conformance_await_lowering_suspension_state_contract.py -q
+python -m pytest tests/tooling/test_objc3c_m186_integration_async_continuation_contract.py -q
+```
+
+Deterministic gate commands:
+
+- `npm run check:objc3c:m186-async-continuation-contracts`
+- `npm run check:compiler-closeout:m186`
+
+Workflow anchor:
+
+- `.github/workflows/compiler-closeout.yml`:
+  - `Enforce M186 async grammar/continuation IR packet/docs contract`
+  - `Run M186 async grammar/continuation IR integration gate`
+
+Scope assumptions:
+
+- M186-A001 packet-specific artifacts are landed in this workspace.
+- M186-B001, M186-C001, and M186-D001 packet-specific artifacts are not landed in this workspace as of this wiring change.
+- This runbook replays currently landed lane surfaces via the M186-A001 frontend parser contract plus continuation IR replay anchors from the M187-D001 validation/conformance packet.
+- This runbook fail-closes M186-B001 sema surfaces, M186-C001 lowering surfaces, and M186-D001 packet-specific replay artifacts via continuation IR replay anchors.
+- This runbook enforces those currently landed lane surfaces plus M186-E001 integration wiring.
+
 ## M187 integration await lowering and suspension state contract runbook (M187-E001)
 
 Deterministic M187 integration sequence:
