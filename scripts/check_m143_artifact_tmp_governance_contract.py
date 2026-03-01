@@ -42,7 +42,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M143-TMP-01", 'std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native"'),
     ),
     "compile_wrapper": (
-        ("M143-TMP-01B", '$defaultOutDir = "tmp/artifacts/compilation/objc3c-native"'),
+        ("M143-TMP-01B", '$defaultOutDir = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native"'),
     ),
     "c_api_runner": (
         ("M143-TMP-02", 'fs::path("tmp") / "artifacts" / "compilation" / "objc3c-native"'),

@@ -4,7 +4,8 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
   $PSNativeCommandUseErrorActionPreference = $false
 }
 
-$defaultOutDir = "tmp/artifacts/compilation/objc3c-native"
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$defaultOutDir = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native"
 
 function Show-UsageAndExit {
   Write-Error "usage: objc3c_native_compile.ps1 <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--use-cache]"
@@ -188,7 +189,6 @@ function Invoke-NativeCompiler {
 }
 
 $parsed = Parse-WrapperArguments -RawArgs $args
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 
 if (-not $parsed.use_cache) {
