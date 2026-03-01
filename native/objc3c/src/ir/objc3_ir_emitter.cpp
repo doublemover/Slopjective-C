@@ -223,6 +223,13 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_ns_error_bridging_replay_key << "\n";
     }
     if (!frontend_metadata_
+             .lowering_actor_isolation_sendability_replay_key.empty()) {
+      out << "; actor_isolation_sendability_lowering = "
+          << frontend_metadata_
+                 .lowering_actor_isolation_sendability_replay_key
+          << "\n";
+    }
+    if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
       out << "; task_runtime_interop_cancellation_lowering = "
           << frontend_metadata_
@@ -848,6 +855,35 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_actor_isolation_sendability_lowering_profile = actor_isolation_sites="
+        << frontend_metadata_.actor_isolation_sendability_lowering_sites
+        << ", sendability_check_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_sendability_check_sites
+        << ", cross_actor_hop_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_cross_actor_hop_sites
+        << ", non_sendable_capture_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_non_sendable_capture_sites
+        << ", sendable_transfer_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_sendable_transfer_sites
+        << ", isolation_boundary_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_isolation_boundary_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .actor_isolation_sendability_lowering_contract_violation_sites
+        << ", deterministic_actor_isolation_sendability_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_actor_isolation_sendability_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_task_runtime_interop_cancellation_lowering_profile = task_runtime_sites="
         << frontend_metadata_.task_runtime_interop_cancellation_lowering_sites
         << ", task_runtime_interop_sites="
@@ -1168,6 +1204,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_inline_asm_intrinsic_governance_lowering = !{!38}\n";
     out << "!objc3.objc_concurrency_replay_race_guard_lowering = !{!39}\n";
     out << "!objc3.objc_task_runtime_interop_cancellation_lowering = !{!40}\n";
+    out << "!objc3.objc_actor_isolation_sendability_lowering = !{!41}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
         << EscapeCStringLiteral(frontend_metadata_.compatibility_mode) << "\", i1 "
         << (frontend_metadata_.migration_assist ? 1 : 0) << ", i64 "
@@ -2105,6 +2142,43 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_task_runtime_interop_cancellation_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!41 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_isolation_sendability_lowering_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_sendability_check_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_cross_actor_hop_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_non_sendable_capture_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_sendable_transfer_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_isolation_boundary_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .actor_isolation_sendability_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_actor_isolation_sendability_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

@@ -1364,6 +1364,49 @@ std::string Objc3NSErrorBridgingLoweringReplayKey(
          ";lane_contract=" + kObjc3NSErrorBridgingLoweringLaneContract;
 }
 
+bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract) {
+  if (contract.sendability_check_sites > contract.actor_isolation_sites ||
+      contract.cross_actor_hop_sites > contract.actor_isolation_sites ||
+      contract.non_sendable_capture_sites > contract.sendability_check_sites ||
+      contract.sendable_transfer_sites > contract.sendability_check_sites ||
+      contract.isolation_boundary_sites > contract.actor_isolation_sites ||
+      contract.guard_blocked_sites > contract.actor_isolation_sites ||
+      contract.contract_violation_sites > contract.actor_isolation_sites) {
+    return false;
+  }
+  if (contract.isolation_boundary_sites + contract.guard_blocked_sites !=
+      contract.actor_isolation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract) {
+  return std::string("actor_isolation_sites=") +
+             std::to_string(contract.actor_isolation_sites) +
+         ";sendability_check_sites=" +
+         std::to_string(contract.sendability_check_sites) +
+         ";cross_actor_hop_sites=" +
+         std::to_string(contract.cross_actor_hop_sites) +
+         ";non_sendable_capture_sites=" +
+         std::to_string(contract.non_sendable_capture_sites) +
+         ";sendable_transfer_sites=" +
+         std::to_string(contract.sendable_transfer_sites) +
+         ";isolation_boundary_sites=" +
+         std::to_string(contract.isolation_boundary_sites) +
+         ";guard_blocked_sites=" + std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3ActorIsolationSendabilityLoweringLaneContract;
+}
+
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract) {
   if (contract.task_runtime_interop_sites > contract.task_runtime_sites ||

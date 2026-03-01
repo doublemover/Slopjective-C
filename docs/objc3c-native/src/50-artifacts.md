@@ -3726,6 +3726,36 @@ Recommended M183 lowering contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m183_lowering_ns_error_bridging_contract.py -q`
 
+## Actor isolation and sendability lowering artifact contract (M188-C001)
+
+M188-C publishes deterministic lowering replay metadata for actor isolation and
+sendability boundary handoff.
+
+M188-C lowering contract anchors:
+
+- `kObjc3ActorIsolationSendabilityLoweringLaneContract`
+- `Objc3ActorIsolationSendabilityLoweringContract`
+- `IsValidObjc3ActorIsolationSendabilityLoweringContract(...)`
+- `Objc3ActorIsolationSendabilityLoweringReplayKey(...)`
+- `actor_isolation_sendability_lowering = actor_isolation_sites=<N>`
+- `frontend_objc_actor_isolation_sendability_lowering_profile`
+- `!objc3.objc_actor_isolation_sendability_lowering = !{!41}`
+
+Deterministic handoff checks:
+
+- `isolation_boundary_sites + guard_blocked_sites == actor_isolation_sites`
+- each of `sendability_check_sites`, `cross_actor_hop_sites`,
+  `isolation_boundary_sites`, and `contract_violation_sites` is bounded by
+  `actor_isolation_sites`
+- `non_sendable_capture_sites <= sendability_check_sites`
+- `sendable_transfer_sites <= sendability_check_sites`
+- `deterministic_actor_isolation_sendability_lowering_handoff` requires zero
+  contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m188_lowering_actor_isolation_sendability_contract.py -q`
+
 ## Task runtime interop and cancellation lowering artifact contract (M189-C001)
 
 M189-C publishes deterministic lowering replay metadata for task runtime

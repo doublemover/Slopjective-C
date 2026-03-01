@@ -326,6 +326,17 @@ struct Objc3IRFrontendMetadata {
   std::size_t ns_error_bridging_lowering_bridge_boundary_sites = 0;
   std::size_t ns_error_bridging_lowering_contract_violation_sites = 0;
   bool deterministic_ns_error_bridging_lowering_handoff = false;
+  std::string lowering_actor_isolation_sendability_replay_key;
+  std::size_t actor_isolation_sendability_lowering_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_sendability_check_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_cross_actor_hop_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_non_sendable_capture_sites =
+      0;
+  std::size_t actor_isolation_sendability_lowering_sendable_transfer_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_isolation_boundary_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_guard_blocked_sites = 0;
+  std::size_t actor_isolation_sendability_lowering_contract_violation_sites = 0;
+  bool deterministic_actor_isolation_sendability_lowering_handoff = false;
   std::string lowering_task_runtime_interop_cancellation_replay_key;
   std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
   std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =

@@ -78,6 +78,8 @@ inline constexpr const char *kObjc3ResultLikeLoweringLaneContract =
     "m182-result-like-lowering-v1";
 inline constexpr const char *kObjc3NSErrorBridgingLoweringLaneContract =
     "m183-ns-error-bridging-lowering-v1";
+inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
+    "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
@@ -468,6 +470,18 @@ struct Objc3NSErrorBridgingLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3ActorIsolationSendabilityLoweringContract {
+  std::size_t actor_isolation_sites = 0;
+  std::size_t sendability_check_sites = 0;
+  std::size_t cross_actor_hop_sites = 0;
+  std::size_t non_sendable_capture_sites = 0;
+  std::size_t sendable_transfer_sites = 0;
+  std::size_t isolation_boundary_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -658,6 +672,10 @@ bool IsValidObjc3NSErrorBridgingLoweringContract(
     const Objc3NSErrorBridgingLoweringContract &contract);
 std::string Objc3NSErrorBridgingLoweringReplayKey(
     const Objc3NSErrorBridgingLoweringContract &contract);
+bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract);
+std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract);
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
