@@ -10,6 +10,47 @@ function Add-Failure {
   $script:Failures.Add($Message) | Out-Null
 }
 
+function Has-Property {
+  param(
+    [object]$Object,
+    [string]$Name
+  )
+  if ($null -eq $Object) {
+    return $false
+  }
+  return $Object.PSObject.Properties.Name -contains $Name
+}
+
+function Is-ExecutableFixture {
+  param([object]$Payload)
+  return (Has-Property -Object $Payload -Name "source") -and (Has-Property -Object $Payload -Name "expect")
+}
+
+function Is-MetadataFixtureRecord {
+  param([object]$Payload)
+  if ($null -eq $Payload) {
+    return $false
+  }
+  if (-not (Has-Property -Object $Payload -Name "fixture_id")) {
+    return $false
+  }
+  if ($Payload.fixture_id -isnot [string]) {
+    return $false
+  }
+  return $Payload.fixture_id.Trim().Length -gt 0
+}
+
+function Resolve-FixtureId {
+  param(
+    [object]$Payload,
+    [string]$FallbackId
+  )
+  if ((Has-Property -Object $Payload -Name "fixture_id") -and ($Payload.fixture_id -is [string]) -and ($Payload.fixture_id.Trim().Length -gt 0)) {
+    return $Payload.fixture_id.Trim()
+  }
+  return $FallbackId
+}
+
 function Require-Id {
   param([string]$Id)
   if (-not $script:IdSet.Contains($Id)) {
@@ -40,6 +81,9 @@ $BucketMinima = [ordered]@{
   diagnostics = 20
 }
 
+$AllFixtureIds = [System.Collections.Generic.List[string]]::new()
+$MetadataOnlyFixtureCount = 0
+
 Write-Output "Conformance bucket minima check:"
 foreach ($bucket in $BucketMinima.Keys) {
   $bucketPath = Join-Path $RepoRoot "tests/conformance/$bucket"
@@ -47,21 +91,50 @@ foreach ($bucket in $BucketMinima.Keys) {
     Add-Failure "Missing required bucket directory: tests/conformance/$bucket"
     continue
   }
-  $count = (Get-ChildItem -LiteralPath $bucketPath -File -Filter "*.json" |
-    Where-Object { $_.Name -ne "manifest.json" } |
-    Measure-Object).Count
-  Write-Output ("- {0}: {1} fixtures (minimum {2})" -f $bucket, $count, $BucketMinima[$bucket])
-  if ($count -lt $BucketMinima[$bucket]) {
-    Add-Failure ("Bucket '{0}' has {1} fixtures, below minimum {2}" -f $bucket, $count, $BucketMinima[$bucket])
+  $bucketFiles = Get-ChildItem -LiteralPath $bucketPath -File -Filter "*.json" |
+    Where-Object { $_.Name -ne "manifest.json" }
+  $executableCount = 0
+  $metadataCount = 0
+  foreach ($file in $bucketFiles) {
+    $raw = $null
+    try {
+      $raw = Get-Content -LiteralPath $file.FullName -Raw -Encoding utf8
+      $payload = $raw | ConvertFrom-Json
+    } catch {
+      Add-Failure ("Bucket '{0}' fixture parse failure: {1} ({2})" -f $bucket, $file.FullName, $_.Exception.Message)
+      continue
+    }
+
+    if ($null -eq $payload -or ($payload -isnot [pscustomobject])) {
+      Add-Failure ("Bucket '{0}' fixture shape failure: {1} must be a JSON object" -f $bucket, $file.FullName)
+      continue
+    }
+
+    $fixtureId = Resolve-FixtureId -Payload $payload -FallbackId $file.BaseName
+    $AllFixtureIds.Add($fixtureId) | Out-Null
+
+    if (Is-ExecutableFixture -Payload $payload) {
+      $executableCount += 1
+      continue
+    }
+
+    if (Is-MetadataFixtureRecord -Payload $payload) {
+      $metadataCount += 1
+      $MetadataOnlyFixtureCount += 1
+      continue
+    }
+
+    Add-Failure ("Bucket '{0}' fixture shape failure: {1} must include ('source' and 'expect') or include a non-empty string 'fixture_id'" -f $bucket, $file.FullName)
+  }
+
+  Write-Output ("- {0}: executable={1} metadata_only={2} (minimum executable {3})" -f $bucket, $executableCount, $metadataCount, $BucketMinima[$bucket])
+  if ($executableCount -lt $BucketMinima[$bucket]) {
+    Add-Failure ("Bucket '{0}' has {1} executable fixtures, below minimum {2}" -f $bucket, $executableCount, $BucketMinima[$bucket])
   }
 }
 
-$allIds = Get-ChildItem -LiteralPath (Join-Path $RepoRoot "tests/conformance") -Recurse -File -Filter "*.json" |
-  Where-Object { $_.Name -ne "manifest.json" } |
-  ForEach-Object { $_.BaseName }
-
 $IdSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-foreach ($id in $allIds) {
+foreach ($id in $AllFixtureIds) {
   $IdSet.Add($id) | Out-Null
 }
 
@@ -101,4 +174,5 @@ if ($Failures.Count -gt 0) {
   exit 1
 }
 
+Write-Output ("metadata_only_fixtures_excluded_from_minima: {0}" -f $MetadataOnlyFixtureCount)
 Write-Output "Conformance suite check passed."
