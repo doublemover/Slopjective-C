@@ -37,12 +37,8 @@ def test_m210_integration_performance_regression_gate_is_wired() -> None:
 
     assert '"check:objc3c:m210-performance-regression"' in package_json
     assert (
-        "npm run check:objc3c:m211-lsp-semantics && python -m pytest "
-        "tests/tooling/test_objc3c_m210_frontend_perf_regression_contract.py "
-        "tests/tooling/test_objc3c_m210_sema_perf_regression_contract.py "
-        "tests/tooling/test_objc3c_m210_lowering_perf_regression_contract.py "
-        "tests/tooling/test_objc3c_m210_validation_perf_regression_contract.py "
-        "tests/tooling/test_objc3c_m210_integration_perf_regression_contract.py -q"
+        '"check:objc3c:m210-performance-regression": '
+        '"python scripts/check_objc3c_m210_performance_regression_chain.py"'
     ) in package_json
 
     assert "Run M210 performance-regression integration gate" in workflow
