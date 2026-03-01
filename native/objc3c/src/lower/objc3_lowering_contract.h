@@ -84,6 +84,9 @@ inline constexpr const char *kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract 
     "m185-error-diagnostics-recovery-lowering-v1";
 inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
     "m186-async-continuation-lowering-v1";
+inline constexpr const char
+    *kObjc3AwaitLoweringSuspensionStateLoweringLaneContract =
+        "m187-await-lowering-suspension-state-lowering-v1";
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
@@ -516,6 +519,19 @@ struct Objc3AsyncContinuationLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3AwaitLoweringSuspensionStateLoweringContract {
+  std::size_t await_suspension_sites = 0;
+  std::size_t await_keyword_sites = 0;
+  std::size_t await_suspension_point_sites = 0;
+  std::size_t await_resume_sites = 0;
+  std::size_t await_state_machine_sites = 0;
+  std::size_t await_continuation_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3ActorIsolationSendabilityLoweringContract {
   std::size_t actor_isolation_sites = 0;
   std::size_t sendability_check_sites = 0;
@@ -730,6 +746,10 @@ bool IsValidObjc3AsyncContinuationLoweringContract(
     const Objc3AsyncContinuationLoweringContract &contract);
 std::string Objc3AsyncContinuationLoweringReplayKey(
     const Objc3AsyncContinuationLoweringContract &contract);
+bool IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract);
+std::string Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract);
 bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
     const Objc3ActorIsolationSendabilityLoweringContract &contract);
 std::string Objc3ActorIsolationSendabilityLoweringReplayKey(

@@ -1502,6 +1502,50 @@ std::string Objc3AsyncContinuationLoweringReplayKey(
          ";lane_contract=" + kObjc3AsyncContinuationLoweringLaneContract;
 }
 
+bool IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract) {
+  if (contract.await_keyword_sites > contract.await_suspension_sites ||
+      contract.await_suspension_point_sites > contract.await_suspension_sites ||
+      contract.await_resume_sites > contract.await_suspension_point_sites ||
+      contract.await_state_machine_sites > contract.await_suspension_point_sites ||
+      contract.await_continuation_sites >
+          contract.await_suspension_point_sites ||
+      contract.normalized_sites > contract.await_suspension_sites ||
+      contract.gate_blocked_sites > contract.await_suspension_sites ||
+      contract.contract_violation_sites > contract.await_suspension_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.await_suspension_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract) {
+  return std::string("await_suspension_sites=") +
+             std::to_string(contract.await_suspension_sites) +
+         ";await_keyword_sites=" + std::to_string(contract.await_keyword_sites) +
+         ";await_suspension_point_sites=" +
+         std::to_string(contract.await_suspension_point_sites) +
+         ";await_resume_sites=" + std::to_string(contract.await_resume_sites) +
+         ";await_state_machine_sites=" +
+         std::to_string(contract.await_state_machine_sites) +
+         ";await_continuation_sites=" +
+         std::to_string(contract.await_continuation_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3AwaitLoweringSuspensionStateLoweringLaneContract;
+}
+
 bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
     const Objc3ActorIsolationSendabilityLoweringContract &contract) {
   if (contract.sendability_check_sites > contract.actor_isolation_sites ||

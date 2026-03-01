@@ -365,6 +365,23 @@ struct Objc3IRFrontendMetadata {
   std::size_t async_continuation_lowering_gate_blocked_sites = 0;
   std::size_t async_continuation_lowering_contract_violation_sites = 0;
   bool deterministic_async_continuation_lowering_handoff = false;
+  std::string lowering_await_lowering_suspension_state_replay_key;
+  std::size_t await_lowering_suspension_state_lowering_sites = 0;
+  std::size_t
+      await_lowering_suspension_state_lowering_await_keyword_sites = 0;
+  std::size_t
+      await_lowering_suspension_state_lowering_await_suspension_point_sites =
+          0;
+  std::size_t await_lowering_suspension_state_lowering_await_resume_sites = 0;
+  std::size_t
+      await_lowering_suspension_state_lowering_await_state_machine_sites = 0;
+  std::size_t
+      await_lowering_suspension_state_lowering_await_continuation_sites = 0;
+  std::size_t await_lowering_suspension_state_lowering_normalized_sites = 0;
+  std::size_t await_lowering_suspension_state_lowering_gate_blocked_sites = 0;
+  std::size_t
+      await_lowering_suspension_state_lowering_contract_violation_sites = 0;
+  bool deterministic_await_lowering_suspension_state_lowering_handoff = false;
   std::string lowering_actor_isolation_sendability_replay_key;
   std::size_t actor_isolation_sendability_lowering_sites = 0;
   std::size_t actor_isolation_sendability_lowering_sendability_check_sites = 0;

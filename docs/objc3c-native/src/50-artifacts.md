@@ -3815,6 +3815,38 @@ Lane-C validation command:
 
 - `python -m pytest tests/tooling/test_objc3c_m186_lowering_async_continuation_contract.py -q`
 
+## Await lowering and suspension state lowering artifact contract (M187-C001)
+
+M187-C publishes deterministic lowering replay metadata for await lowering and
+suspension state IR/runtime ABI handoff.
+
+M187-C lowering contract anchors:
+
+- `kObjc3AwaitLoweringSuspensionStateLoweringLaneContract`
+- `Objc3AwaitLoweringSuspensionStateLoweringContract`
+- `IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(...)`
+- `Objc3AwaitLoweringSuspensionStateLoweringReplayKey(...)`
+- `await_lowering_suspension_state_lowering = await_suspension_sites=<N>`
+- `frontend_objc_await_lowering_suspension_state_lowering_profile`
+- `!objc3.objc_await_lowering_suspension_state_lowering = !{!42}`
+
+Deterministic handoff checks:
+
+- `normalized_sites + gate_blocked_sites == await_suspension_sites`
+- each of `await_keyword_sites`, `await_suspension_point_sites`,
+  `await_resume_sites`, `await_state_machine_sites`,
+  `await_continuation_sites`, and `contract_violation_sites` is bounded by
+  `await_suspension_sites`
+- `await_resume_sites <= await_suspension_point_sites`
+- `await_state_machine_sites <= await_suspension_point_sites`
+- `await_continuation_sites <= await_suspension_point_sites`
+- `deterministic_await_lowering_suspension_state_lowering_handoff` requires
+  zero contract violations
+
+Lane-C validation command:
+
+- `python -m pytest tests/tooling/test_objc3c_m187_lowering_await_suspension_state_contract.py -q`
+
 ## Actor isolation and sendability lowering artifact contract (M188-C001)
 
 M188-C publishes deterministic lowering replay metadata for actor isolation and
