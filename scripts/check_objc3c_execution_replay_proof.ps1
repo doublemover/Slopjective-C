@@ -56,7 +56,7 @@ function Invoke-SmokeRun {
   }
   finally {
     if ($null -eq $previousRunId) {
-      Remove-Item Env:OBJC3C_NATIVE_EXECUTION_RUN_ID -ErrorAction SilentlyContinue
+      $env:OBJC3C_NATIVE_EXECUTION_RUN_ID = $null
     }
     else {
       $env:OBJC3C_NATIVE_EXECUTION_RUN_ID = $previousRunId

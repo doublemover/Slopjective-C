@@ -80,7 +80,7 @@ function Invoke-LoweringReplayRun {
     $exitCode = [int]$LASTEXITCODE
   } finally {
     if ($null -eq $previousRunId) {
-      Remove-Item Env:OBJC3C_NATIVE_LOWERING_RUN_ID -ErrorAction SilentlyContinue
+      $env:OBJC3C_NATIVE_LOWERING_RUN_ID = $null
     } else {
       $env:OBJC3C_NATIVE_LOWERING_RUN_ID = $previousRunId
     }
