@@ -268,7 +268,7 @@ if ($null -ne $cacheKey) {
     Set-Content -LiteralPath (Join-Path $stagingDir "ready.marker") -Value "ready" -Encoding ascii
 
     $entryDir = Join-Path $cacheRoot $cacheKey
-    if (Test-Path -LiteralPath $entryDir) {
+    if (Test-Path -LiteralPath $entryDir -PathType Container) {
       # Preserve existing entry and retain this write as a traceable collision artifact.
       $collisionDir = Join-Path $cacheRoot ("_collision_" + $cacheKey + "_" + [Guid]::NewGuid().ToString("N"))
       Move-Item -LiteralPath $stagingDir -Destination $collisionDir -Force
