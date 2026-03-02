@@ -753,6 +753,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
         BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                                result.sema_type_metadata_handoff);
     result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;
+    result.sema_pass_flow_summary = sema_result.sema_pass_flow_summary;
     result.sema_parity_surface = sema_result.parity_surface;
     if (result.stage_diagnostics.semantic.empty() && !sema_result.diagnostics.empty()) {
       result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);

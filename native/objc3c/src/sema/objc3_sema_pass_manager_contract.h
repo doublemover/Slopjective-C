@@ -46,6 +46,42 @@ inline bool IsMonotonicObjc3SemaDiagnosticsAfterPass(const std::array<std::size_
   return true;
 }
 
+struct Objc3SemaPassFlowSummary {
+  std::array<Objc3SemaPassId, 3> configured_pass_order = kObjc3SemaPassOrder;
+  std::array<bool, 3> pass_executed = {false, false, false};
+  std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
+  std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
+  std::size_t executed_pass_count = 0;
+  std::size_t symbol_globals_count = 0;
+  std::size_t symbol_functions_count = 0;
+  std::size_t symbol_interfaces_count = 0;
+  std::size_t symbol_implementations_count = 0;
+  std::size_t type_metadata_global_entries = 0;
+  std::size_t type_metadata_function_entries = 0;
+  std::size_t type_metadata_interface_entries = 0;
+  std::size_t type_metadata_implementation_entries = 0;
+  bool pass_order_matches_contract = false;
+  bool diagnostics_after_pass_monotonic = false;
+  bool symbol_flow_counts_consistent = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summary) {
+  return summary.pass_order_matches_contract &&
+         summary.configured_pass_count == kObjc3SemaPassOrder.size() &&
+         summary.executed_pass_count == summary.configured_pass_count &&
+         summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::BuildIntegrationSurface)] &&
+         summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidateBodies)] &&
+         summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidatePureContract)] &&
+         summary.diagnostics_after_pass_monotonic &&
+         summary.symbol_flow_counts_consistent &&
+         summary.symbol_globals_count == summary.type_metadata_global_entries &&
+         summary.symbol_functions_count == summary.type_metadata_function_entries &&
+         summary.symbol_interfaces_count == summary.type_metadata_interface_entries &&
+         summary.symbol_implementations_count == summary.type_metadata_implementation_entries &&
+         summary.deterministic;
+}
+
 struct Objc3SemaDiagnosticsBus {
   std::vector<std::string> *diagnostics = nullptr;
 
@@ -203,6 +239,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
   Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
+  Objc3SemaPassFlowSummary sema_pass_flow_summary;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   std::size_t diagnostics_total = 0;
@@ -712,6 +749,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
   return surface.ready && surface.deterministic_parser_sema_conformance_matrix &&
          surface.deterministic_parser_sema_conformance_corpus &&
          surface.deterministic_parser_sema_performance_quality_guardrails &&
+         IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
          surface.parser_sema_conformance_matrix.deterministic &&
          surface.parser_sema_conformance_corpus.deterministic &&
          surface.parser_sema_performance_quality_guardrails.deterministic &&
@@ -2373,6 +2411,7 @@ struct Objc3SemaPassManagerResult {
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;

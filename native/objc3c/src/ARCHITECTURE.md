@@ -30,6 +30,8 @@ Current-state note:
   `sema/objc3_sema_contract.h`.
 - M226 architecture-freeze work builds on this extracted layout and hardens
   parser completeness and parser-to-sema handoff determinism.
+- M227 extends the sema boundary with pass-order and symbol-flow freeze rules
+  in `sema/objc3_sema_pass_manager_contract.h` (`Objc3SemaPassFlowSummary`).
 
 ## Ownership Map
 

@@ -219,5 +219,6 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
+  Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;
 };
