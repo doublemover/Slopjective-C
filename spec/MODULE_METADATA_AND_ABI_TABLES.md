@@ -141,6 +141,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
       governance evidence fail-closed before lane A-D contract assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks modular split/scaffolding dependency anchors for
+     `M249-E001`, `M249-A002`, `M249-B002`, `M249-C002`, and `M249-D002`,
+     including pending-lane tokens needed to keep release-gate documentation/runbook modular split/scaffolding
+     governance evidence fail-closed before lane A-D modular split/scaffolding assets are seeded.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
