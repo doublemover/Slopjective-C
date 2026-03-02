@@ -486,6 +486,61 @@ function Write-FrontendEdgeRobustnessArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendDiagnosticsHardeningArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendEdgeRobustnessPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendEdgeRobustnessPath -PathType Leaf)) {
+    throw "frontend edge robustness artifact missing for diagnostics hardening artifact: $FrontendEdgeRobustnessPath"
+  }
+
+  try {
+    $edgeRobustnessPayload = Get-Content -LiteralPath $FrontendEdgeRobustnessPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend edge robustness artifact is not valid JSON for diagnostics hardening artifact: $FrontendEdgeRobustnessPath"
+  }
+
+  $expectedEdgeRobustnessContractId = "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1"
+  if ([string]$edgeRobustnessPayload.contract_id -ne $expectedEdgeRobustnessContractId) {
+    throw "frontend edge robustness contract id mismatch for diagnostics hardening artifact: $FrontendEdgeRobustnessPath"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-diagnostics-hardening/m226-d007-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedEdgeRobustnessContractId
+      "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+    )
+    wrapper_diagnostics = [ordered]@{
+      fail_closed_exit_code = 2
+      required_error_messages = @(
+        "--use-cache can be provided at most once"
+        "invalid --use-cache value"
+        "--out-dir can be provided at most once"
+        "missing value for --out-dir"
+        "empty value for --out-dir"
+        "missing value for --emit-prefix"
+        "empty value for --emit-prefix"
+        "missing value for --clang"
+        "empty value for --clang"
+      )
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -564,6 +619,7 @@ $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/f
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
 $frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_compat.json"
 $frontendEdgeRobustnessPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_robustness.json"
+$frontendDiagnosticsHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -642,6 +698,10 @@ Write-FrontendEdgeRobustnessArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendEdgeRobustnessPath `
   -FrontendEdgeCompatibilityPath $frontendEdgeCompatPath
+Write-FrontendDiagnosticsHardeningArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendDiagnosticsHardeningPath `
+  -FrontendEdgeRobustnessPath $frontendEdgeRobustnessPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
@@ -649,3 +709,4 @@ Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $rep
 Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))
 Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeCompatPath))
 Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeRobustnessPath))
+Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendDiagnosticsHardeningPath))

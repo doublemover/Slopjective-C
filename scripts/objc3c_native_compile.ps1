@@ -64,10 +64,15 @@ function Parse-WrapperArguments {
         exit 2
       }
       if (($i + 1) -ge $RawArgs.Count) {
-        Show-UsageAndExit
+        Write-Error "missing value for --out-dir"
+        exit 2
       }
       $i++
       $value = $RawArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($value)) {
+        Write-Error "empty value for --out-dir"
+        exit 2
+      }
       $compileArgs.Add("--out-dir")
       $compileArgs.Add($value)
       $outDir = $value
@@ -82,7 +87,8 @@ function Parse-WrapperArguments {
       }
       $value = $token.Substring("--out-dir=".Length)
       if ([string]::IsNullOrWhiteSpace($value)) {
-        Show-UsageAndExit
+        Write-Error "empty value for --out-dir"
+        exit 2
       }
       $compileArgs.Add("--out-dir")
       $compileArgs.Add($value)
@@ -268,6 +274,7 @@ function Invoke-BuildNativeCompiler {
   $frontendCoreFeatureExpansionRelativePath = $null
   $frontendEdgeCompatRelativePath = $null
   $frontendEdgeRobustnessRelativePath = $null
+  $frontendDiagnosticsHardeningRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -286,6 +293,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_edge_robustness=")) {
       $frontendEdgeRobustnessRelativePath = $lineText.Substring("frontend_edge_robustness=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_diagnostics_hardening=")) {
+      $frontendDiagnosticsHardeningRelativePath = $lineText.Substring("frontend_diagnostics_hardening=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -295,6 +305,7 @@ function Invoke-BuildNativeCompiler {
     frontend_core_feature_expansion_relative_path = $frontendCoreFeatureExpansionRelativePath
     frontend_edge_compat_relative_path = $frontendEdgeCompatRelativePath
     frontend_edge_robustness_relative_path = $frontendEdgeRobustnessRelativePath
+    frontend_diagnostics_hardening_relative_path = $frontendDiagnosticsHardeningRelativePath
   }
 }
 
@@ -396,6 +407,24 @@ function Resolve-FrontendEdgeRobustnessPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend edge robustness"
+}
+
+function Resolve-FrontendDiagnosticsHardeningPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_diagnostics_hardening_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend diagnostics hardening"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -1006,6 +1035,22 @@ function Assert-FrontendEdgeCompatibility {
       continue
     }
 
+    if ($token -eq "--emit-prefix") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --emit-prefix"
+        exit 2
+      }
+      $i++
+      $emitPrefix = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($emitPrefix)) {
+        Write-Error "empty value for --emit-prefix"
+        exit 2
+      }
+      $normalizedArgs.Add("--emit-prefix")
+      $normalizedArgs.Add($emitPrefix)
+      continue
+    }
+
     if ($token.StartsWith("--clang=", [System.StringComparison]::Ordinal)) {
       $clangPath = $token.Substring("--clang=".Length)
       if ([string]::IsNullOrWhiteSpace($clangPath)) {
@@ -1013,6 +1058,22 @@ function Assert-FrontendEdgeCompatibility {
         exit 2
       }
       $normalizedArgs.Add($token)
+      continue
+    }
+
+    if ($token -eq "--clang") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --clang"
+        exit 2
+      }
+      $i++
+      $clangPath = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($clangPath)) {
+        Write-Error "empty value for --clang"
+        exit 2
+      }
+      $normalizedArgs.Add("--clang")
+      $normalizedArgs.Add($clangPath)
       continue
     }
 
@@ -1165,6 +1226,89 @@ function Assert-FrontendEdgeRobustness {
   }
 }
 
+function Assert-FrontendDiagnosticsHardening {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $diagnosticsPath = Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $diagnosticsPath -PathType Leaf)) {
+    Write-Error "frontend diagnostics hardening artifact missing at $diagnosticsPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $diagnosticsPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend diagnostics hardening artifact is not valid JSON at $diagnosticsPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/m226-d007-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend diagnostics hardening contract id mismatch in $diagnosticsPath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1",
+    "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend diagnostics hardening missing dependency contract '$requiredContractId' in $diagnosticsPath"
+      exit 2
+    }
+  }
+
+  $wrapperDiagnostics = $payload.wrapper_diagnostics
+  if ($null -eq $wrapperDiagnostics) {
+    Write-Error "frontend diagnostics hardening wrapper_diagnostics metadata missing in $diagnosticsPath"
+    exit 2
+  }
+  if ([int]$wrapperDiagnostics.fail_closed_exit_code -ne 2) {
+    Write-Error "frontend diagnostics hardening fail_closed_exit_code must be 2 in $diagnosticsPath"
+    exit 2
+  }
+
+  $requiredMessages = @(
+    "--use-cache can be provided at most once",
+    "invalid --use-cache value",
+    "--out-dir can be provided at most once",
+    "missing value for --out-dir",
+    "empty value for --out-dir",
+    "missing value for --emit-prefix",
+    "empty value for --emit-prefix",
+    "missing value for --clang",
+    "empty value for --clang"
+  )
+  $messageSet = @{}
+  foreach ($message in @($wrapperDiagnostics.required_error_messages)) {
+    $messageText = [string]$message
+    if (-not [string]::IsNullOrWhiteSpace($messageText)) {
+      $messageSet[$messageText] = $true
+    }
+  }
+  foreach ($requiredMessage in $requiredMessages) {
+    if (-not $messageSet.ContainsKey($requiredMessage)) {
+      Write-Error "frontend diagnostics hardening missing required_error_messages entry '$requiredMessage' in $diagnosticsPath"
+      exit 2
+    }
+  }
+
+  return [pscustomobject]@{
+    diagnostics_hardening_path = $diagnosticsPath
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
@@ -1191,6 +1335,7 @@ if (-not $parsed.use_cache) {
     -ParsedArgs $parsed `
     -CoreFeatureGuard $coreFeatureGuard
   Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
+  Assert-FrontendDiagnosticsHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
   $effectiveCompileArgs = @($parsed.compile_args)
   if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
     $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
@@ -1206,7 +1351,8 @@ if (-not $needsBuild) {
     Resolve-FrontendInvocationLockPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult
+    Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult
   )
   foreach ($artifactPath in $requiredArtifacts) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -1242,6 +1388,7 @@ $edgeCompatGuard = Assert-FrontendEdgeCompatibility `
   -ParsedArgs $parsed `
   -CoreFeatureGuard $coreFeatureGuard
 Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
+Assert-FrontendDiagnosticsHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 $effectiveCompileArgs = @($parsed.compile_args)
 if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
   $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
