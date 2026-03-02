@@ -64,7 +64,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
     const std::string backend_text =
         cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
-    if (clang_backend_selected) {
+    if (cli_options.ir_object_backend == Objc3IrObjectBackend::kClang) {
       compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
     } else {
       std::string backend_error;

@@ -2170,7 +2170,7 @@ if (-not $parsed.use_cache) {
     -BuildResult $buildResult `
     -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
   Assert-FrontendIntegrationCloseout -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
-  $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
+  $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
   exit $compileExit
 }
 
