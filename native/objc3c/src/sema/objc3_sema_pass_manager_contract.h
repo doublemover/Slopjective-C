@@ -1341,6 +1341,10 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
                  .fail_closed_diagnostic_sites <=
              surface.error_diagnostics_recovery_summary
                  .error_diagnostics_recovery_sites &&
+         surface.error_diagnostics_recovery_summary
+                 .fail_closed_diagnostic_sites <=
+             surface.error_diagnostics_recovery_summary
+                 .diagnostic_emit_sites &&
          surface.error_diagnostics_recovery_summary.normalized_sites <=
              surface.error_diagnostics_recovery_summary
                  .error_diagnostics_recovery_sites &&

@@ -6,6 +6,7 @@ PARSER_SOURCE = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser.cpp
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMA_HEADER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
 PASS_MANAGER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager_contract.h"
+SEMA_PASS_MANAGER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.cpp"
 PIPELINE_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
 PIPELINE_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
 ARTIFACTS_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.h"
@@ -74,6 +75,17 @@ def test_parser_to_sema_type_metadata_handoff_contract_is_explicit() -> None:
     assert "bool deterministic_semantic_diagnostics = false;" in pass_manager_contract
     assert "bool deterministic_type_metadata_handoff = false;" in pass_manager_contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in pass_manager_contract
+
+
+def test_parser_to_sema_recovery_determinism_hardening_gate_is_explicit() -> None:
+    sema_pass_manager = _read(SEMA_PASS_MANAGER)
+    pass_manager_contract = _read(PASS_MANAGER_CONTRACT)
+
+    assert "AreEquivalentBlockDeterminismPerfBaselineSites(" in sema_pass_manager
+    assert "const bool recovery_and_block_determinism_hardening_consistent =" in sema_pass_manager
+    assert "if (!recovery_and_block_determinism_hardening_consistent) {" in sema_pass_manager
+    assert ".fail_closed_diagnostic_sites <=" in pass_manager_contract
+    assert ".diagnostic_emit_sites &&" in pass_manager_contract
 
 
 def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:

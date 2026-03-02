@@ -573,6 +573,30 @@ bool IsEquivalentBlockDeterminismPerfBaselineSummary(
          lhs.contract_violation_sites == rhs.contract_violation_sites;
 }
 
+bool IsEquivalentBlockDeterminismPerfBaselineSiteMetadata(
+    const Objc3BlockDeterminismPerfBaselineSiteMetadata &lhs,
+    const Objc3BlockDeterminismPerfBaselineSiteMetadata &rhs) {
+  return lhs.parameter_count == rhs.parameter_count &&
+         lhs.capture_count == rhs.capture_count &&
+         lhs.body_statement_count == rhs.body_statement_count &&
+         lhs.baseline_weight == rhs.baseline_weight &&
+         lhs.capture_set_deterministic == rhs.capture_set_deterministic &&
+         lhs.baseline_profile_is_normalized == rhs.baseline_profile_is_normalized &&
+         lhs.baseline_profile == rhs.baseline_profile &&
+         lhs.line == rhs.line &&
+         lhs.column == rhs.column;
+}
+
+bool AreEquivalentBlockDeterminismPerfBaselineSites(
+    const std::vector<Objc3BlockDeterminismPerfBaselineSiteMetadata> &lhs,
+    const std::vector<Objc3BlockDeterminismPerfBaselineSiteMetadata> &rhs) {
+  return lhs.size() == rhs.size() &&
+         std::equal(lhs.begin(),
+                    lhs.end(),
+                    rhs.begin(),
+                    IsEquivalentBlockDeterminismPerfBaselineSiteMetadata);
+}
+
 bool IsEquivalentMessageSendSelectorLoweringSummary(const Objc3MessageSendSelectorLoweringSummary &lhs,
                                                     const Objc3MessageSendSelectorLoweringSummary &rhs) {
   return lhs.message_send_sites == rhs.message_send_sites &&
@@ -1415,6 +1439,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.error_diagnostics_recovery_summary
               .error_diagnostics_recovery_sites &&
       result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .fail_closed_diagnostic_sites <=
+          result.type_metadata_handoff.error_diagnostics_recovery_summary
+              .diagnostic_emit_sites &&
+      result.type_metadata_handoff.error_diagnostics_recovery_summary
               .normalized_sites <=
           result.type_metadata_handoff.error_diagnostics_recovery_summary
               .error_diagnostics_recovery_sites &&
@@ -1828,6 +1856,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       IsEquivalentBlockDeterminismPerfBaselineSummary(
           result.integration_surface.block_determinism_perf_baseline_summary,
           result.type_metadata_handoff.block_determinism_perf_baseline_summary) &&
+      AreEquivalentBlockDeterminismPerfBaselineSites(
+          result.integration_surface.block_determinism_perf_baseline_sites_lexicographic,
+          result.type_metadata_handoff.block_determinism_perf_baseline_sites_lexicographic) &&
       result.type_metadata_handoff.block_determinism_perf_baseline_summary.deterministic_capture_sites <=
           result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
       result.type_metadata_handoff.block_determinism_perf_baseline_summary.heavy_tier_sites <=
@@ -1836,6 +1867,15 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites &&
       result.type_metadata_handoff.block_determinism_perf_baseline_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_determinism_perf_baseline_summary.block_literal_sites;
+  const bool recovery_and_block_determinism_hardening_consistent =
+      result.deterministic_error_diagnostics_recovery_handoff &&
+      result.deterministic_block_determinism_perf_baseline_handoff;
+  result.deterministic_type_metadata_handoff =
+      result.deterministic_type_metadata_handoff &&
+      recovery_and_block_determinism_hardening_consistent;
+  if (!recovery_and_block_determinism_hardening_consistent) {
+    return result;
+  }
   result.message_send_selector_lowering_summary =
       result.integration_surface.message_send_selector_lowering_summary;
   result.deterministic_message_send_selector_lowering_handoff =
@@ -3992,6 +4032,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               .fail_closed_diagnostic_sites <=
           result.parity_surface.error_diagnostics_recovery_summary
               .error_diagnostics_recovery_sites &&
+      result.parity_surface.error_diagnostics_recovery_summary
+              .fail_closed_diagnostic_sites <=
+          result.parity_surface.error_diagnostics_recovery_summary
+              .diagnostic_emit_sites &&
       result.parity_surface.error_diagnostics_recovery_summary
               .normalized_sites <=
           result.parity_surface.error_diagnostics_recovery_summary
