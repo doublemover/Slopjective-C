@@ -412,6 +412,12 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
+  bool conformance_matrix_consistent = false;
+  bool conformance_matrix_ready = false;
+  bool conformance_corpus_consistent = false;
+  bool conformance_corpus_ready = false;
   bool core_feature_impl_ready = false;
   std::string governance_key;
   std::string modular_split_key;
@@ -424,6 +430,9 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
+  std::string conformance_matrix_key;
+  std::string conformance_corpus_key;
   std::string failure_reason;
 };
 

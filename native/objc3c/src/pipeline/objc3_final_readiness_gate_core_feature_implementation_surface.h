@@ -73,6 +73,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.conformance_matrix_ready ? "true" : "false")
       << ";conformance_matrix_key_ready="
       << (!surface.conformance_matrix_key.empty() ? "true" : "false")
+      << ";conformance_corpus_consistent="
+      << (surface.conformance_corpus_consistent ? "true" : "false")
+      << ";conformance_corpus_ready="
+      << (surface.conformance_corpus_ready ? "true" : "false")
+      << ";conformance_corpus_key_ready="
+      << (!surface.conformance_corpus_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -210,6 +216,36 @@ inline std::string BuildObjc3FinalReadinessGateConformanceMatrixKey(
       << (surface.conformance_matrix_consistent ? "true" : "false")
       << ";conformance-matrix-ready="
       << (surface.conformance_matrix_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateConformanceCorpusKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_core_feature_expansion_ready,
+    bool lane_b_core_feature_expansion_ready,
+    bool lane_c_edge_case_compatibility_ready,
+    bool lane_d_recovery_determinism_ready,
+    bool lane_d_recovery_determinism_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-conformance-corpus:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";conformance-matrix-ready="
+      << (surface.conformance_matrix_ready ? "true" : "false")
+      << ";lane-a-core-feature-expansion-ready="
+      << (lane_a_core_feature_expansion_ready ? "true" : "false")
+      << ";lane-b-core-feature-expansion-ready="
+      << (lane_b_core_feature_expansion_ready ? "true" : "false")
+      << ";lane-c-edge-case-compatibility-ready="
+      << (lane_c_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-d-recovery-determinism-ready="
+      << (lane_d_recovery_determinism_ready ? "true" : "false")
+      << ";lane-d-recovery-determinism-key-ready="
+      << (lane_d_recovery_determinism_key_ready ? "true" : "false")
+      << ";conformance-corpus-consistent="
+      << (surface.conformance_corpus_consistent ? "true" : "false")
+      << ";conformance-corpus-ready="
+      << (surface.conformance_corpus_ready ? "true" : "false");
   return key.str();
 }
 
@@ -426,6 +462,36 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.conformance_matrix_ready =
       surface.conformance_matrix_ready &&
       !surface.conformance_matrix_key.empty();
+  const bool lane_conformance_corpus_consistent =
+      lane_a_surface.core_feature_expansion_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.edge_case_compatibility_ready &&
+      lane_d_surface.recovery_determinism_ready &&
+      !lane_d_surface.recovery_determinism_key.empty();
+  const bool conformance_corpus_consistent =
+      surface.conformance_matrix_ready &&
+      lane_conformance_corpus_consistent;
+  const bool conformance_corpus_ready =
+      conformance_corpus_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.conformance_matrix_key.empty() &&
+      !lane_d_surface.recovery_determinism_key.empty();
+  surface.conformance_corpus_consistent =
+      conformance_corpus_consistent;
+  surface.conformance_corpus_ready =
+      conformance_corpus_ready;
+  surface.conformance_corpus_key =
+      BuildObjc3FinalReadinessGateConformanceCorpusKey(
+          surface,
+          lane_a_surface.core_feature_expansion_ready,
+          lane_b_surface.expansion_ready,
+          lane_c_surface.edge_case_compatibility_ready,
+          lane_d_surface.recovery_determinism_ready,
+          !lane_d_surface.recovery_determinism_key.empty());
+  surface.conformance_corpus_ready =
+      surface.conformance_corpus_ready &&
+      !surface.conformance_corpus_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -436,6 +502,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.diagnostics_hardening_ready &&
       surface.recovery_determinism_ready &&
       surface.conformance_matrix_ready &&
+      surface.conformance_corpus_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -535,6 +602,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.conformance_matrix_key.empty()) {
     surface.failure_reason =
         "final readiness gate conformance matrix key is not ready";
+  } else if (!lane_conformance_corpus_consistent) {
+    surface.failure_reason =
+        "final readiness gate conformance corpus is inconsistent";
+  } else if (!surface.conformance_corpus_consistent) {
+    surface.failure_reason =
+        "final readiness gate conformance corpus consistency is not satisfied";
+  } else if (!surface.conformance_corpus_ready) {
+    surface.failure_reason =
+        "final readiness gate conformance corpus is not ready";
+  } else if (surface.conformance_corpus_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate conformance corpus key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

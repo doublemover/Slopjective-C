@@ -327,6 +327,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E008/A003/B004/C004/D007 conformance prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E010 conformance-corpus expansion anchors explicit final
+  readiness conformance-corpus guardrails (`conformance_corpus_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E009/A004/B004/C005/D008 conformance prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
