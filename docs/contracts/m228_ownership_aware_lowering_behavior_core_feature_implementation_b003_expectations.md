@@ -11,6 +11,18 @@ remains deterministic and fail-closed for direct LLVM IR emission hardening.
 Code/spec anchors and milestone optimization improvements are mandatory scope
 inputs for this closure.
 
+## Dependency Scope
+
+- Dependencies: `M228-B002`
+- M228-B002 modular split/scaffolding anchors remain mandatory prerequisites:
+  - `docs/contracts/m228_ownership_aware_lowering_behavior_modular_split_scaffolding_b002_expectations.md`
+  - `scripts/check_m228_b002_ownership_aware_lowering_behavior_modular_split_scaffolding_contract.py`
+  - `tests/tooling/test_check_m228_b002_ownership_aware_lowering_behavior_modular_split_scaffolding_contract.py`
+- Packet/checker/test assets for B003 remain mandatory:
+  - `spec/planning/compiler/m228/m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_packet.md`
+  - `scripts/check_m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_contract.py`
+  - `tests/tooling/test_check_m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_contract.py`
+
 ## Deterministic Invariants
 
 1. `Objc3OwnershipAwareLoweringBehaviorScaffold` remains the canonical

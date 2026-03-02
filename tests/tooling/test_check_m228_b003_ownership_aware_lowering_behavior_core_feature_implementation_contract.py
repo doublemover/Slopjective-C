@@ -34,6 +34,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m228-b003-ownership-aware-lowering-behavior-core-feature-implementation-contract-v1"
     assert payload["ok"] is True
+    assert payload["checks_total"] >= 50
     assert payload["checks_total"] == payload["checks_passed"]
 
 
@@ -90,3 +91,30 @@ def test_contract_fails_closed_when_forbidden_scaffold_shortcut_appears(
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M228-B003-FORB-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_planning_packet_dependency_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_packet = tmp_path / "m228_b003_packet.md"
+    drift_packet.write_text(
+        contract.ARTIFACTS["planning_packet"].read_text(encoding="utf-8").replace(
+            "Dependencies: `M228-B002`",
+            "Dependencies: `M228-B099`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifacts = dict(contract.ARTIFACTS)
+    artifacts["planning_packet"] = drift_packet
+    monkeypatch.setattr(contract, "ARTIFACTS", artifacts)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-B003-PKT-04" for failure in payload["failures"])

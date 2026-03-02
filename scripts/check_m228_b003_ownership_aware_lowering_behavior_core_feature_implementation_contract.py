@@ -41,6 +41,12 @@ ARTIFACTS: dict[str, Path] = {
     / "docs"
     / "contracts"
     / "m228_ownership_aware_lowering_behavior_core_feature_implementation_b003_expectations.md",
+    "planning_packet": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_packet.md",
 }
 
 REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
@@ -147,6 +153,45 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "tmp/reports/m228/M228-B003/ownership_aware_lowering_behavior_core_feature_implementation_contract_summary.json",
         ),
         ("M228-B003-DOC-10", "Code/spec anchors and milestone optimization improvements are mandatory scope"),
+        ("M228-B003-DOC-11", "Dependencies: `M228-B002`"),
+        (
+            "M228-B003-DOC-12",
+            "spec/planning/compiler/m228/m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_packet.md",
+        ),
+    ),
+    "planning_packet": (
+        (
+            "M228-B003-PKT-01",
+            "# M228-B003 Ownership-Aware Lowering Behavior Core Feature Implementation Packet",
+        ),
+        ("M228-B003-PKT-02", "Packet: `M228-B003`"),
+        ("M228-B003-PKT-03", "Milestone: `M228`"),
+        ("M228-B003-PKT-04", "Dependencies: `M228-B002`"),
+        (
+            "M228-B003-PKT-05",
+            "docs/contracts/m228_ownership_aware_lowering_behavior_core_feature_implementation_b003_expectations.md",
+        ),
+        (
+            "M228-B003-PKT-06",
+            "scripts/check_m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_contract.py",
+        ),
+        (
+            "M228-B003-PKT-07",
+            "tests/tooling/test_check_m228_b003_ownership_aware_lowering_behavior_core_feature_implementation_contract.py",
+        ),
+        ("M228-B003-PKT-08", "check:objc3c:m228-b003-lane-b-readiness"),
+        (
+            "M228-B003-PKT-09",
+            "tmp/reports/m228/M228-B003/ownership_aware_lowering_behavior_core_feature_implementation_contract_summary.json",
+        ),
+        (
+            "M228-B003-PKT-10",
+            "code/spec anchors and milestone optimization",
+        ),
+        (
+            "M228-B003-PKT-11",
+            "improvements as mandatory scope inputs",
+        ),
     ),
 }
 
