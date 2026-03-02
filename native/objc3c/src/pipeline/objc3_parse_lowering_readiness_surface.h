@@ -673,6 +673,75 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceCorpusKey(
          ";ready=" + (toolchain_runtime_ga_operations_conformance_corpus_ready ? "true" : "false");
 }
 
+inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsConsistent(
+    bool toolchain_runtime_ga_operations_conformance_corpus_consistent,
+    bool toolchain_runtime_ga_operations_conformance_corpus_ready,
+    bool parse_lowering_conformance_corpus_consistent,
+    bool parse_lowering_performance_quality_guardrails_consistent,
+    const std::string &parse_lowering_conformance_corpus_key,
+    const std::string &parse_lowering_performance_quality_guardrails_key,
+    const std::string &long_tail_grammar_conformance_matrix_key) {
+  return toolchain_runtime_ga_operations_conformance_corpus_consistent &&
+         toolchain_runtime_ga_operations_conformance_corpus_ready &&
+         parse_lowering_conformance_corpus_consistent &&
+         parse_lowering_performance_quality_guardrails_consistent &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             parse_lowering_conformance_corpus_key,
+             "case_count=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             parse_lowering_performance_quality_guardrails_key,
+             "case_count=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             long_tail_grammar_conformance_matrix_key,
+             "conformance_matrix_case_count=");
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady(
+    bool toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
+    const std::string &parse_lowering_performance_quality_guardrails_key) {
+  return toolchain_runtime_ga_operations_performance_quality_guardrails_consistent &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             parse_lowering_performance_quality_guardrails_key,
+             "case_count=");
+}
+
+inline std::string BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey(
+    bool parse_lowering_conformance_corpus_consistent,
+    bool parse_lowering_performance_quality_guardrails_consistent,
+    const std::string &parse_lowering_conformance_corpus_key,
+    const std::string &parse_lowering_performance_quality_guardrails_key,
+    const std::string &long_tail_grammar_conformance_matrix_key,
+    bool toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
+    bool toolchain_runtime_ga_operations_performance_quality_guardrails_ready) {
+  const bool parse_lowering_conformance_corpus_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          parse_lowering_conformance_corpus_key,
+          "case_count=");
+  const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          parse_lowering_performance_quality_guardrails_key,
+          "case_count=");
+  const bool long_tail_grammar_conformance_matrix_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          long_tail_grammar_conformance_matrix_key,
+          "conformance_matrix_case_count=");
+  return std::string("parse_lowering_conformance_corpus_consistent=") +
+         (parse_lowering_conformance_corpus_consistent ? "true" : "false") +
+         ";parse_lowering_performance_quality_guardrails_consistent=" +
+         (parse_lowering_performance_quality_guardrails_consistent ? "true" : "false") +
+         ";parse_lowering_conformance_corpus_key_shape_deterministic=" +
+         (parse_lowering_conformance_corpus_key_shape_deterministic ? "true" : "false") +
+         ";parse_lowering_performance_quality_guardrails_key_shape_deterministic=" +
+         (parse_lowering_performance_quality_guardrails_key_shape_deterministic ? "true" : "false") +
+         ";long_tail_grammar_conformance_matrix_key_shape_deterministic=" +
+         (long_tail_grammar_conformance_matrix_key_shape_deterministic ? "true" : "false") +
+         ";consistent=" +
+         (toolchain_runtime_ga_operations_performance_quality_guardrails_consistent ? "true"
+                                                                                    : "false") +
+         ";ready=" +
+         (toolchain_runtime_ga_operations_performance_quality_guardrails_ready ? "true" : "false");
+}
+
 inline std::string BuildObjc3LongTailGrammarIntegrationCloseoutKey(
     bool conformance_matrix_ready,
     bool conformance_corpus_consistent,
@@ -1569,8 +1638,40 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parse_recovery_determinism_hardening_consistent,
           surface.parse_lowering_conformance_corpus_consistent,
           surface.parse_lowering_performance_quality_guardrails_consistent);
+  const bool toolchain_runtime_ga_operations_performance_quality_guardrails_consistent =
+      IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsConsistent(
+          toolchain_runtime_ga_operations_conformance_corpus_consistent,
+          toolchain_runtime_ga_operations_conformance_corpus_ready,
+          surface.parse_lowering_conformance_corpus_consistent,
+          surface.parse_lowering_performance_quality_guardrails_consistent,
+          surface.parse_lowering_conformance_corpus_key,
+          surface.parse_lowering_performance_quality_guardrails_key,
+          surface.long_tail_grammar_conformance_matrix_key);
+  const bool toolchain_runtime_ga_operations_performance_quality_guardrails_ready =
+      IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady(
+          toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
+          surface.parse_lowering_performance_quality_guardrails_key);
+  const std::string toolchain_runtime_ga_operations_performance_quality_guardrails_key =
+      BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey(
+          surface.parse_lowering_conformance_corpus_consistent,
+          surface.parse_lowering_performance_quality_guardrails_consistent,
+          surface.parse_lowering_conformance_corpus_key,
+          surface.parse_lowering_performance_quality_guardrails_key,
+          surface.long_tail_grammar_conformance_matrix_key,
+          toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
+          toolchain_runtime_ga_operations_performance_quality_guardrails_ready);
+  surface.parse_lowering_performance_quality_guardrails_consistent =
+      surface.parse_lowering_performance_quality_guardrails_consistent &&
+      toolchain_runtime_ga_operations_performance_quality_guardrails_consistent;
+  surface.parse_lowering_performance_quality_guardrails_key +=
+      ";toolchain_runtime_ga_operations_performance_quality_guardrails_key=" +
+      toolchain_runtime_ga_operations_performance_quality_guardrails_key;
+  surface.long_tail_grammar_conformance_matrix_key +=
+      ";toolchain_runtime_ga_operations_performance_quality_guardrails_key=" +
+      toolchain_runtime_ga_operations_performance_quality_guardrails_key;
   const bool parse_lowering_performance_quality_guardrails_ready =
-      surface.parse_lowering_performance_quality_guardrails_consistent;
+      surface.parse_lowering_performance_quality_guardrails_consistent &&
+      toolchain_runtime_ga_operations_performance_quality_guardrails_ready;
   surface.long_tail_grammar_integration_closeout_consistent =
       surface.long_tail_grammar_conformance_matrix_ready &&
       surface.parse_lowering_conformance_corpus_consistent &&
@@ -1834,6 +1935,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parse-lowering conformance matrix is inconsistent";
   } else if (!surface.parse_lowering_conformance_corpus_consistent) {
     surface.failure_reason = "parse-lowering conformance corpus is inconsistent";
+  } else if (!toolchain_runtime_ga_operations_performance_quality_guardrails_consistent) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations performance quality guardrails are inconsistent";
+  } else if (!toolchain_runtime_ga_operations_performance_quality_guardrails_ready) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations performance quality guardrails are not ready";
   } else if (!surface.parse_lowering_performance_quality_guardrails_consistent) {
     surface.failure_reason = "parse-lowering performance/quality guardrails are inconsistent";
   } else if (!surface.long_tail_grammar_integration_closeout_consistent) {

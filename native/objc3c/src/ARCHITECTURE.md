@@ -224,6 +224,10 @@ Current-state note:
   toolchain/runtime conformance-corpus guardrails in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D conformance
   corpus drift fails closed before performance guardrails and sign-off gates.
+- M250 lane-D D011 performance and quality guardrails anchor explicit
+  toolchain/runtime performance/quality guardrail checks in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D guardrail
+  drift fails closed before integration closeout and sign-off gates.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
