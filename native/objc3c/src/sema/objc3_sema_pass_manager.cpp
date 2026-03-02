@@ -733,6 +733,13 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   if (!result.deterministic_parser_sema_performance_quality_guardrails) {
     return result;
   }
+  result.parser_sema_cross_lane_integration_sync =
+      handoff.parser_sema_cross_lane_integration_sync;
+  result.deterministic_parser_sema_cross_lane_integration_sync =
+      handoff.parser_sema_cross_lane_integration_sync.deterministic;
+  if (!result.deterministic_parser_sema_cross_lane_integration_sync) {
+    return result;
+  }
   result.deterministic_parser_sema_handoff = handoff.deterministic;
   if (!handoff.deterministic) {
     return result;
@@ -2181,6 +2188,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parser_sema_conformance_corpus;
   result.parity_surface.parser_sema_performance_quality_guardrails =
       result.parser_sema_performance_quality_guardrails;
+  result.parity_surface.parser_sema_cross_lane_integration_sync =
+      result.parser_sema_cross_lane_integration_sync;
   result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
@@ -3195,6 +3204,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.deterministic_parser_sema_performance_quality_guardrails =
       result.deterministic_parser_sema_performance_quality_guardrails &&
       result.parity_surface.parser_sema_performance_quality_guardrails.deterministic;
+  result.parity_surface.deterministic_parser_sema_cross_lane_integration_sync =
+      result.deterministic_parser_sema_cross_lane_integration_sync &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync.deterministic;
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
   result.parity_surface.deterministic_interface_implementation_handoff =
@@ -5079,10 +5091,13 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.deterministic_parser_sema_conformance_corpus &&
       result.parity_surface.deterministic_parser_sema_performance_quality_guardrails &&
+      result.parity_surface.deterministic_parser_sema_cross_lane_integration_sync &&
       IsReadyObjc3SemaPassFlowSummary(result.parity_surface.sema_pass_flow_summary) &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic &&
       result.parity_surface.parser_sema_conformance_corpus.deterministic &&
       result.parity_surface.parser_sema_performance_quality_guardrails
+          .deterministic &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
           .deterministic &&
       result.parity_surface.parser_sema_performance_quality_guardrails
           .required_guardrail_count == 7u &&
@@ -5106,6 +5121,22 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .matrix_subset_budget_consistent &&
       result.parity_surface.parser_sema_performance_quality_guardrails
           .corpus_case_budget_consistent &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .required_sync_count == 4u &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .passed_sync_count ==
+          result.parity_surface.parser_sema_cross_lane_integration_sync
+              .required_sync_count &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .failed_sync_count == 0u &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .matrix_consistent &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .corpus_consistent &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .performance_quality_guardrails_consistent &&
+      result.parity_surface.parser_sema_cross_lane_integration_sync
+          .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_conformance_matrix
           .top_level_declaration_count_matches &&
       result.parity_surface.parser_sema_conformance_matrix

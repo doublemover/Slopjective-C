@@ -932,6 +932,38 @@ inline Objc3ParserSemaPerformanceQualityGuardrails BuildObjc3ParserSemaPerforman
   return guardrails;
 }
 
+inline Objc3ParserSemaCrossLaneIntegrationSync BuildObjc3ParserSemaCrossLaneIntegrationSync(
+    const Objc3ParserSemaConformanceMatrix &matrix,
+    const Objc3ParserSemaConformanceCorpus &corpus,
+    const Objc3ParserSemaPerformanceQualityGuardrails &guardrails) {
+  Objc3ParserSemaCrossLaneIntegrationSync sync;
+  sync.matrix_consistent = matrix.deterministic;
+  sync.corpus_consistent = corpus.deterministic;
+  sync.performance_quality_guardrails_consistent = guardrails.deterministic;
+  sync.pass_manager_contract_surface_sync =
+      matrix.deterministic &&
+      corpus.deterministic &&
+      guardrails.deterministic &&
+      guardrails.required_guardrail_count == 7u &&
+      guardrails.passed_guardrail_count == guardrails.required_guardrail_count &&
+      guardrails.failed_guardrail_count == 0u;
+  sync.required_sync_count = 4u;
+  sync.passed_sync_count =
+      static_cast<std::size_t>(sync.matrix_consistent) +
+      static_cast<std::size_t>(sync.corpus_consistent) +
+      static_cast<std::size_t>(sync.performance_quality_guardrails_consistent) +
+      static_cast<std::size_t>(sync.pass_manager_contract_surface_sync);
+  sync.failed_sync_count =
+      sync.required_sync_count >= sync.passed_sync_count
+          ? (sync.required_sync_count - sync.passed_sync_count)
+          : sync.required_sync_count;
+  sync.deterministic =
+      sync.required_sync_count == 4u &&
+      sync.passed_sync_count == sync.required_sync_count &&
+      sync.failed_sync_count == 0u;
+  return sync;
+}
+
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
@@ -952,6 +984,7 @@ struct Objc3ParserSemaHandoffScaffold {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
   Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
+  Objc3ParserSemaCrossLaneIntegrationSync parser_sema_cross_lane_integration_sync;
   bool parser_contract_snapshot_matches_program = false;
   bool deterministic = false;
 };
@@ -1002,6 +1035,11 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
       BuildObjc3ParserSemaPerformanceQualityGuardrails(
           scaffold.parser_sema_conformance_matrix,
           scaffold.parser_sema_conformance_corpus);
+  scaffold.parser_sema_cross_lane_integration_sync =
+      BuildObjc3ParserSemaCrossLaneIntegrationSync(
+          scaffold.parser_sema_conformance_matrix,
+          scaffold.parser_sema_conformance_corpus,
+          scaffold.parser_sema_performance_quality_guardrails);
   scaffold.parser_contract_snapshot_matches_program =
       scaffold.parser_sema_conformance_matrix.deterministic;
   scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program;
@@ -1009,6 +1047,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.parser_sema_cross_lane_integration_sync.deterministic &&
                            scaffold.parser_sema_performance_quality_guardrails.deterministic &&
                            scaffold.parser_sema_conformance_corpus.deterministic &&
                            scaffold.parser_sema_conformance_matrix.deterministic;
