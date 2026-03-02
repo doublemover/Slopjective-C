@@ -154,6 +154,22 @@ static std::string BuildNilReceiverFoldingSymbol(bool nil_receiver_foldable,
   return out.str();
 }
 
+static std::string DescribeCompatDiagnosticToken(const Token &token) {
+  if (token.kind == TokenKind::Eof) {
+    return "end of file";
+  }
+  if (token.kind == TokenKind::Identifier) {
+    return "identifier '" + token.text + "'";
+  }
+  if (token.kind == TokenKind::Number) {
+    return "number '" + token.text + "'";
+  }
+  if (token.text.empty()) {
+    return "token";
+  }
+  return "token '" + token.text + "'";
+}
+
 static bool IsSuperDispatchReceiver(const Expr &receiver) {
   return receiver.kind == Expr::Kind::Identifier && receiver.ident == "super";
 }
@@ -5309,7 +5325,9 @@ class Objc3Parser {
       }
       if (!At(TokenKind::Identifier)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P101", "invalid parameter identifier"));
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P101",
+                     "expected parameter identifier, found " + DescribeCompatDiagnosticToken(token)));
         return false;
       }
 
@@ -5344,7 +5362,9 @@ class Objc3Parser {
 
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P101", "invalid function identifier"));
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P101",
+                   "expected function identifier, found " + DescribeCompatDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
@@ -5358,7 +5378,9 @@ class Objc3Parser {
 
     if (!Match(TokenKind::LParen)) {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after function name"));
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P106",
+                   "missing '(' after function name; found " + DescribeCompatDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
@@ -5370,7 +5392,9 @@ class Objc3Parser {
 
     if (!Match(TokenKind::RParen)) {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after parameters"));
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P109",
+                   "missing ')' after parameters; found " + DescribeCompatDiagnosticToken(token)));
       SynchronizeTopLevel();
       return;
     }
