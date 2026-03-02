@@ -80,12 +80,21 @@ At minimum, the pass-graph gate shall validate:
   replay keys before direct IR emission proceeds.
 - direct IR emission completeness for ObjC lowering patterns shall remain
   metadata-stable and fail closed on pass-graph or lowering-boundary drift.
+- IR-emission completeness modular split scaffolding shall remain deterministic
+  and fail closed while transporting pass-graph core/expansion/edge
+  compatibility replay keys into IR metadata evidence surfaces.
 - object emission and link-path routing (clang/llvm-direct) shall remain
   deterministic and fail closed when backend route selection or object artifact
   generation drifts.
 - toolchain/runtime modular split scaffolding shall synthesize deterministic
   backend selection/capability and IR/object compile-route readiness keys
   before backend object dispatch.
+- edge-case compatibility completion shall include deterministic compatibility
+  handoff and language-version/pragma coordinate ordering gates that fail
+  closed before IR emission.
+- replay-proof/performance closeout gate wiring shall preserve explicit lane-E
+  dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
+  fail closed when dependency references or closeout evidence commands drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
@@ -311,4 +320,3 @@ Implementations are encouraged to provide a conformance suite that includes:
 - correct argument evaluation semantics for optional sends,
 - `throws` propagation behavior in nested `do/catch`,
 - executor hop correctness and actor isolation enforcement across module boundaries.
-

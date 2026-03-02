@@ -64,13 +64,21 @@ A conforming implementation shall preserve, for all exported declarations:
      lane-contract replay-key determinism before lowering/emit handoff,
    - direct IR-emission completeness metadata keys for pass-graph core/expansion
      readiness suitable for replay-proof closeout evidence,
+   - deterministic IR-emission completeness modular split scaffold key/ready
+     anchors linking pass-graph core, expansion, and edge compatibility replay
+     evidence,
    - deterministic object-emission backend route keys and output markers for
      clang/llvm-direct compile routing reliability evidence,
-   - deterministic toolchain/runtime modular split scaffold keys for backend
-     selection, backend capability availability, and IR/object compile-route
-     readiness evidence,
+    - deterministic toolchain/runtime modular split scaffold keys for backend
+      selection, backend capability availability, and IR/object compile-route
+      readiness evidence,
+    - deterministic edge-case compatibility readiness/key anchors for lowering
+      compatibility handoff and pragma-order gating evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
-     fail closed when lowering/emit routing is inconsistent.
+     fail closed when lowering/emit routing is inconsistent,
+   - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,
+     `M228-C002`, and `M228-D001`, including pending-lane tokens needed to keep
+     replay-proof/performance gate evidence fail-closed before C002 asset seeding.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 
@@ -289,4 +297,3 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - unknown required OCI-1 fields/capabilities trigger hard errors,
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
-

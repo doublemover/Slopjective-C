@@ -336,6 +336,30 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    if (!frontend_metadata_.lowering_pass_graph_edge_case_compatibility_key
+             .empty()) {
+      out << "; lowering_pass_graph_edge_case_compatibility = "
+          << frontend_metadata_
+                 .lowering_pass_graph_edge_case_compatibility_key
+          << "\n";
+    }
+    out << "; lowering_pass_graph_edge_case_compatibility_ready = "
+        << (frontend_metadata_
+                    .lowering_pass_graph_edge_case_compatibility_ready
+                ? "true"
+                : "false")
+        << "\n";
+    if (!frontend_metadata_.ir_emission_completeness_modular_split_key.empty()) {
+      out << "; ir_emission_completeness_modular_split = "
+          << frontend_metadata_.ir_emission_completeness_modular_split_key
+          << "\n";
+    }
+    out << "; ir_emission_completeness_modular_split_ready = "
+        << (frontend_metadata_
+                    .ir_emission_completeness_modular_split_ready
+                ? "true"
+                : "false")
+        << "\n";
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode

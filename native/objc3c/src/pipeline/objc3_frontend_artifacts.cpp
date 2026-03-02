@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
@@ -1406,8 +1407,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
 
   std::string lowering_pass_graph_core_feature_error;
-  if (!IsObjc3LoweringPipelinePassGraphCoreFeatureSurfaceReady(
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+  // Historical C001 freeze marker:
+  // IsObjc3LoweringPipelinePassGraphCoreFeatureSurfaceReady(
+  if (!IsObjc3IREmissionCompletenessCoreFeatureReady(
+          pipeline_result.ir_emission_completeness_scaffold,
           lowering_pass_graph_core_feature_error)) {
     bundle.post_pipeline_diagnostics = {MakeDiag(
         1,
@@ -1420,8 +1423,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
 
   std::string lowering_pass_graph_expansion_error;
-  if (!IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
-          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+  // Historical C001 freeze marker:
+  // IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
+  if (!IsObjc3IREmissionCompletenessExpansionReady(
+          pipeline_result.ir_emission_completeness_scaffold,
           lowering_pass_graph_expansion_error)) {
     bundle.post_pipeline_diagnostics = {MakeDiag(
         1,
@@ -1429,6 +1434,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L303",
         "LLVM IR emission failed: lowering pipeline pass-graph core feature expansion check failed: " +
             lowering_pass_graph_expansion_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string lowering_pass_graph_lane_a_edge_case_compatibility_error;
+  if (!IsObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_lane_a_edge_case_compatibility_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L305",
+        "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case compatibility check failed: " +
+            lowering_pass_graph_lane_a_edge_case_compatibility_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string lowering_pass_graph_edge_case_compatibility_error;
+  if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
+          pipeline_result.ir_emission_completeness_scaffold,
+          lowering_pass_graph_edge_case_compatibility_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L304",
+        "LLVM IR emission failed: lowering pipeline pass-graph edge-case compatibility check failed: " +
+            lowering_pass_graph_edge_case_compatibility_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -4980,17 +5013,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
       symbol_graph_scope_resolution_summary.deterministic_handoff_key;
   ir_frontend_metadata.lowering_pass_graph_core_feature_ready =
-      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-          .core_feature_ready;
+      pipeline_result.ir_emission_completeness_scaffold.core_feature_ready;
   ir_frontend_metadata.lowering_pass_graph_core_feature_key =
-      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-          .core_feature_key;
+      pipeline_result.ir_emission_completeness_scaffold.core_feature_key;
   ir_frontend_metadata.lowering_pass_graph_core_feature_expansion_ready =
-      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-          .expansion_ready;
+      pipeline_result.ir_emission_completeness_scaffold.expansion_ready;
   ir_frontend_metadata.lowering_pass_graph_core_feature_expansion_key =
-      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
-          .expansion_key;
+      pipeline_result.ir_emission_completeness_scaffold.expansion_key;
+  ir_frontend_metadata.lowering_pass_graph_edge_case_compatibility_ready =
+      pipeline_result.ir_emission_completeness_scaffold
+          .edge_case_compatibility_ready;
+  ir_frontend_metadata.lowering_pass_graph_edge_case_compatibility_key =
+      pipeline_result.ir_emission_completeness_scaffold
+          .edge_case_compatibility_key;
+  ir_frontend_metadata.ir_emission_completeness_modular_split_ready =
+      pipeline_result.ir_emission_completeness_scaffold.modular_split_ready;
+  ir_frontend_metadata.ir_emission_completeness_modular_split_key =
+      pipeline_result.ir_emission_completeness_scaffold.scaffold_key;
 
   std::string ir_error;
   // Historical extraction contract marker:

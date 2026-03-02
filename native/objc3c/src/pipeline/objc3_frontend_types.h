@@ -332,12 +332,31 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   bool replay_proof_artifact_key_ready = false;
   bool edge_case_dispatch_shape_coverage_ready = false;
   bool replay_proof_expansion_ready = false;
+  bool compatibility_handoff_consistent = false;
+  bool language_version_pragma_coordinate_order_consistent = false;
+  bool edge_case_compatibility_ready = false;
   bool expansion_ready = false;
   bool core_feature_ready = false;
   std::string lowering_boundary_replay_key;
   std::string runtime_dispatch_declaration_replay_key;
+  std::string edge_case_compatibility_key;
   std::string expansion_key;
   std::string core_feature_key;
+  std::string failure_reason;
+};
+
+struct Objc3IREmissionCompletenessScaffold {
+  bool pass_graph_scaffold_ready = false;
+  bool core_feature_ready = false;
+  bool expansion_ready = false;
+  bool edge_case_compatibility_ready = false;
+  bool metadata_transport_ready = false;
+  bool modular_split_ready = false;
+  std::string pass_graph_key;
+  std::string core_feature_key;
+  std::string expansion_key;
+  std::string edge_case_compatibility_key;
+  std::string scaffold_key;
   std::string failure_reason;
 };
 
@@ -636,6 +655,7 @@ struct Objc3FrontendPipelineResult {
   Objc3LoweringRuntimeStabilityInvariantScaffold lowering_runtime_stability_invariant_scaffold;
   Objc3LoweringPipelinePassGraphScaffold lowering_pipeline_pass_graph_scaffold;
   Objc3LoweringPipelinePassGraphCoreFeatureSurface lowering_pipeline_pass_graph_core_feature_surface;
+  Objc3IREmissionCompletenessScaffold ir_emission_completeness_scaffold;
   Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
       lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;

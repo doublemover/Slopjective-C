@@ -42,6 +42,9 @@
     "check:objc3c:m228-a004-lowering-pipeline-pass-graph-core-feature-expansion-contract": "python scripts/check_m228_a004_lowering_pipeline_decomposition_pass_graph_core_feature_expansion_contract.py",
     "test:tooling:m228-a004-lowering-pipeline-pass-graph-core-feature-expansion-contract": "python -m pytest tests/tooling/test_check_m228_a004_lowering_pipeline_decomposition_pass_graph_core_feature_expansion_contract.py -q",
     "check:objc3c:m228-a004-lane-a-readiness": "npm run check:objc3c:m228-a003-lane-a-readiness && npm run check:objc3c:m228-a004-lowering-pipeline-pass-graph-core-feature-expansion-contract && npm run test:tooling:m228-a004-lowering-pipeline-pass-graph-core-feature-expansion-contract",
+    "check:objc3c:m228-a005-lowering-pipeline-pass-graph-edge-case-compatibility-contract": "python scripts/check_m228_a005_lowering_pipeline_decomposition_pass_graph_edge_case_compatibility_contract.py",
+    "test:tooling:m228-a005-lowering-pipeline-pass-graph-edge-case-compatibility-contract": "python -m pytest tests/tooling/test_check_m228_a005_lowering_pipeline_decomposition_pass_graph_edge_case_compatibility_contract.py -q",
+    "check:objc3c:m228-a005-lane-a-readiness": "npm run check:objc3c:m228-a004-lane-a-readiness && npm run check:objc3c:m228-a005-lowering-pipeline-pass-graph-edge-case-compatibility-contract && npm run test:tooling:m228-a005-lowering-pipeline-pass-graph-edge-case-compatibility-contract",
     "check:objc3c:m228-b001-ownership-aware-lowering-behavior-contract": "python scripts/check_m228_b001_ownership_aware_lowering_behavior_contract.py",
     "test:tooling:m228-b001-ownership-aware-lowering-behavior-contract": "python -m pytest tests/tooling/test_check_m228_b001_ownership_aware_lowering_behavior_contract.py -q",
     "check:objc3c:m228-b001-lane-b-readiness": "npm run check:objc3c:m228-b001-ownership-aware-lowering-behavior-contract && npm run test:tooling:m228-b001-ownership-aware-lowering-behavior-contract",
@@ -51,12 +54,18 @@
     "check:objc3c:m228-c001-ir-emission-completeness-contract": "python scripts/check_m228_c001_ir_emission_completeness_contract.py",
     "test:tooling:m228-c001-ir-emission-completeness-contract": "python -m pytest tests/tooling/test_check_m228_c001_ir_emission_completeness_contract.py -q",
     "check:objc3c:m228-c001-lane-c-readiness": "npm run check:objc3c:m228-c001-ir-emission-completeness-contract && npm run test:tooling:m228-c001-ir-emission-completeness-contract",
+    "check:objc3c:m228-c002-ir-emission-completeness-modular-split-scaffolding-contract": "python scripts/check_m228_c002_ir_emission_completeness_modular_split_scaffolding_contract.py",
+    "test:tooling:m228-c002-ir-emission-completeness-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m228_c002_ir_emission_completeness_modular_split_scaffolding_contract.py -q",
+    "check:objc3c:m228-c002-lane-c-readiness": "npm run check:objc3c:m228-c001-lane-c-readiness && npm run check:objc3c:m228-c002-ir-emission-completeness-modular-split-scaffolding-contract && npm run test:tooling:m228-c002-ir-emission-completeness-modular-split-scaffolding-contract",
     "check:objc3c:m228-d001-object-emission-link-path-reliability-contract": "python scripts/check_m228_d001_object_emission_link_path_reliability_contract.py",
     "test:tooling:m228-d001-object-emission-link-path-reliability-contract": "python -m pytest tests/tooling/test_check_m228_d001_object_emission_link_path_reliability_contract.py -q",
     "check:objc3c:m228-d001-lane-d-readiness": "npm run check:objc3c:m228-d001-object-emission-link-path-reliability-contract && npm run test:tooling:m228-d001-object-emission-link-path-reliability-contract",
     "check:objc3c:m228-d002-object-emission-link-path-modular-split-scaffolding-contract": "python scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
     "test:tooling:m228-d002-object-emission-link-path-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py -q",
     "check:objc3c:m228-d002-lane-d-readiness": "npm run check:objc3c:m228-d001-lane-d-readiness && npm run check:objc3c:m228-d002-object-emission-link-path-modular-split-scaffolding-contract && npm run test:tooling:m228-d002-object-emission-link-path-modular-split-scaffolding-contract",
+    "check:objc3c:m228-e001-replay-proof-performance-closeout-gate-contract": "python scripts/check_m228_e001_replay_proof_and_performance_closeout_gate_contract.py",
+    "test:tooling:m228-e001-replay-proof-performance-closeout-gate-contract": "python -m pytest tests/tooling/test_check_m228_e001_replay_proof_and_performance_closeout_gate_contract.py -q",
+    "check:objc3c:m228-e001-lane-e-readiness": "npm run check:objc3c:m228-e001-replay-proof-performance-closeout-gate-contract && npm run test:tooling:m228-e001-replay-proof-performance-closeout-gate-contract",
     "check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract": "python scripts/check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py",
     "test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract": "python -m pytest tests/tooling/test_check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py -q",
     "check:objc3c:m227-e001-lane-e-quality-gate-readiness": "npm run check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract && npm run test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract",
@@ -684,4 +693,3 @@
     "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
-

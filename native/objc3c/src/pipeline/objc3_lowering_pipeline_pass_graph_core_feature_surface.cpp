@@ -43,6 +43,24 @@ std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-edge-case-compatibility:v1:"
+      << "expansion-ready=" << (surface.expansion_ready ? "true" : "false")
+      << ";compatibility-handoff-consistent="
+      << (surface.compatibility_handoff_consistent ? "true" : "false")
+      << ";language-version-pragma-coordinate-order-consistent="
+      << (surface.language_version_pragma_coordinate_order_consistent ? "true"
+                                                                      : "false")
+      << ";edge-case-compatibility-ready="
+      << (surface.edge_case_compatibility_ready ? "true" : "false")
+      << ";lowering-boundary-replay-key=" << surface.lowering_boundary_replay_key
+      << ";runtime-dispatch-declaration-replay-key="
+      << surface.runtime_dispatch_declaration_replay_key;
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -99,6 +117,14 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
            .typed_core_feature_expansion_key.empty() &&
       !pipeline_result.parse_lowering_readiness_surface
            .long_tail_grammar_expansion_key.empty();
+  surface.compatibility_handoff_consistent =
+      pipeline_result.parse_lowering_readiness_surface
+          .compatibility_handoff_consistent &&
+      !pipeline_result.parse_lowering_readiness_surface.compatibility_handoff_key
+           .empty();
+  surface.language_version_pragma_coordinate_order_consistent =
+      pipeline_result.parse_lowering_readiness_surface
+          .language_version_pragma_coordinate_order_consistent;
   surface.core_feature_ready =
       surface.scaffold_ready &&
       surface.lowering_boundary_replay_key_consistent &&
@@ -110,12 +136,23 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
   surface.expansion_ready = surface.core_feature_ready &&
                             surface.edge_case_dispatch_shape_coverage_ready &&
                             surface.replay_proof_expansion_ready;
+  surface.edge_case_compatibility_ready =
+      surface.expansion_ready &&
+      surface.compatibility_handoff_consistent &&
+      surface.language_version_pragma_coordinate_order_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_edge_case_compatibility_ready &&
+      pipeline_result.typed_sema_to_lowering_contract_surface
+          .typed_core_feature_expansion_consistent;
+  surface.edge_case_compatibility_key =
+      BuildObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityKey(surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureKey(surface);
 
-  if (surface.core_feature_ready && surface.expansion_ready) {
+  if (surface.core_feature_ready && surface.expansion_ready &&
+      surface.edge_case_compatibility_ready) {
     return surface;
   }
 
@@ -139,6 +176,13 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "replay-proof expansion anchors are not ready";
   } else if (!surface.expansion_ready) {
     surface.failure_reason = "pass-graph core-feature expansion is not ready";
+  } else if (!surface.compatibility_handoff_consistent) {
+    surface.failure_reason = "compatibility handoff is inconsistent";
+  } else if (!surface.language_version_pragma_coordinate_order_consistent) {
+    surface.failure_reason =
+        "language version pragma coordinate order is inconsistent";
+  } else if (!surface.edge_case_compatibility_ready) {
+    surface.failure_reason = "pass-graph edge-case compatibility is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -168,6 +212,19 @@ bool IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph core feature expansion is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.edge_case_compatibility_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph edge-case compatibility is not ready"
                : surface.failure_reason;
   return false;
 }

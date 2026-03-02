@@ -481,6 +481,10 @@ struct Objc3IRFrontendMetadata {
   std::string lowering_pass_graph_core_feature_key;
   bool lowering_pass_graph_core_feature_expansion_ready = false;
   std::string lowering_pass_graph_core_feature_expansion_key;
+  bool lowering_pass_graph_edge_case_compatibility_ready = false;
+  std::string lowering_pass_graph_edge_case_compatibility_key;
+  bool ir_emission_completeness_modular_split_ready = false;
+  std::string ir_emission_completeness_modular_split_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };

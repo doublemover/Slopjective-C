@@ -61,6 +61,11 @@ Current-state note:
   deterministic expansion readiness/key synthesis and enforces an additional
   fail-closed artifact gate in `pipeline/objc3_frontend_artifacts.cpp` so
   pass-graph expansion drift cannot bypass direct IR emission hardening.
+- M228 lane-A A005 edge-case compatibility completion extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  compatibility-handoff and language-version/pragma coordinate ordering gates,
+  and enforces fail-closed compatibility gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
@@ -78,6 +83,11 @@ Current-state note:
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
   ObjC pattern lowering evidence remains deterministic before lane-C modular
   split work.
+- M228 lane-C C002 modular split scaffolding anchors IR emission completeness
+  closure in `pipeline/objc3_ir_emission_completeness_scaffold.cpp` and
+  `pipeline/objc3_ir_emission_completeness_scaffold.h` so pass-graph
+  core/expansion/edge compatibility evidence can be transported through a
+  deterministic fail-closed metadata scaffold.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and
@@ -88,6 +98,12 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` and fail-closed
   pre-dispatch enforcement in `libobjc3c_frontend/frontend_anchor.cpp` so
   object emission cannot bypass deterministic scaffold gating.
+- M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
+  references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
+  `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,
+  `spec/planning/compiler/m228/m228_e001_replay_proof_and_performance_closeout_gate_contract_freeze_packet.md`,
+  and `package.json` so closeout evidence remains deterministic and fail-closed
+  while lane-C C002 modular split assets are pending.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
@@ -553,4 +569,3 @@ Forbidden:
 - New modules must keep deterministic diagnostics ordering.
 - `main.cpp` remains orchestration-only and must not absorb parser/sema logic.
 - Parser recovery behavior must remain replay-proof and deterministic.
-
