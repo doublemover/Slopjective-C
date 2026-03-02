@@ -11,7 +11,9 @@ struct Objc3TypeFormScaffoldSummary {
   bool canonical_reference_forms_unique = false;
   bool canonical_message_scalar_forms_unique = false;
   bool canonical_bridge_top_forms_unique = false;
+  bool canonical_message_scalars_disjoint_from_reference = false;
   bool canonical_bridge_top_subset_of_reference = false;
+  bool canonical_bridge_top_excludes_sel = false;
   bool deterministic = false;
 };
 
