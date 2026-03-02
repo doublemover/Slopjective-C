@@ -51,6 +51,9 @@ struct Objc3SemaPassFlowSummary {
   std::array<bool, 3> pass_executed = {false, false, false};
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;
+  bool migration_assist_enabled = false;
+  std::size_t migration_legacy_literal_total = 0;
   std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
   std::size_t executed_pass_count = 0;
   std::size_t diagnostics_total = 0;
@@ -66,6 +69,7 @@ struct Objc3SemaPassFlowSummary {
   bool pass_order_matches_contract = false;
   bool diagnostics_after_pass_monotonic = false;
   bool diagnostics_emission_totals_consistent = false;
+  bool compatibility_handoff_consistent = false;
   bool symbol_flow_counts_consistent = false;
   std::uint64_t pass_execution_fingerprint = 1469598103934665603ull;
   std::string deterministic_handoff_key;
@@ -84,6 +88,7 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidatePureContract)] &&
          summary.diagnostics_after_pass_monotonic &&
          summary.diagnostics_emission_totals_consistent &&
+         summary.compatibility_handoff_consistent &&
          summary.symbol_flow_counts_consistent &&
          summary.pass_execution_fingerprint != 1469598103934665603ull &&
          !summary.deterministic_handoff_key.empty() &&

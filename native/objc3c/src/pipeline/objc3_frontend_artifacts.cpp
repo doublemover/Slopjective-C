@@ -2128,6 +2128,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_pass_flow_summary.configured_pass_count
            << ",\"pass_flow_executed_count\":"
            << pipeline_result.sema_pass_flow_summary.executed_pass_count
+           << ",\"pass_flow_compatibility_mode\":\""
+           << (pipeline_result.sema_pass_flow_summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical
+                   ? "canonical"
+                   : "legacy")
+           << "\",\"pass_flow_migration_assist_enabled\":"
+           << (pipeline_result.sema_pass_flow_summary.migration_assist_enabled ? "true" : "false")
+           << ",\"pass_flow_migration_legacy_literal_total\":"
+           << pipeline_result.sema_pass_flow_summary.migration_legacy_literal_total
            << ",\"pass_flow_diagnostics_total\":"
            << pipeline_result.sema_pass_flow_summary.diagnostics_total
            << ",\"pass_flow_diagnostics_emitted_by_build\":"
@@ -2142,6 +2150,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_pass_flow_summary.pass_order_matches_contract ? "true" : "false")
            << ",\"pass_flow_diagnostics_emission_totals_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.diagnostics_emission_totals_consistent ? "true" : "false")
+           << ",\"pass_flow_compatibility_handoff_consistent\":"
+           << (pipeline_result.sema_pass_flow_summary.compatibility_handoff_consistent ? "true" : "false")
            << ",\"pass_flow_symbol_counts_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.symbol_flow_counts_consistent ? "true" : "false")
            << ",\"pass_flow_fingerprint\":"

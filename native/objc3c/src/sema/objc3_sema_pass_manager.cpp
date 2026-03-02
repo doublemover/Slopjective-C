@@ -739,6 +739,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   }
 
   result.executed = true;
+  result.sema_pass_flow_summary.compatibility_mode = input.compatibility_mode;
+  result.sema_pass_flow_summary.migration_assist_enabled = input.migration_assist;
+  result.sema_pass_flow_summary.migration_legacy_literal_total = input.migration_hints.legacy_total();
   bool deterministic_semantic_diagnostics = handoff.deterministic;
   bool diagnostics_accounting_consistent = true;
   bool diagnostics_bus_publish_consistent = true;

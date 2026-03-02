@@ -44,6 +44,11 @@ void FinalizeObjc3SemaPassFlowSummary(
                                                                 static_cast<std::size_t>(0u));
   summary.diagnostics_emission_totals_consistent = diagnostics_emitted_total == summary.diagnostics_total;
   summary.transition_edge_count = summary.executed_pass_count > 0u ? summary.executed_pass_count - 1u : 0u;
+  summary.compatibility_handoff_consistent =
+      (!summary.migration_assist_enabled ||
+       summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical) &&
+      (summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ||
+       summary.compatibility_mode == Objc3SemaCompatibilityMode::Legacy);
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -65,6 +70,9 @@ void FinalizeObjc3SemaPassFlowSummary(
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.configured_pass_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.executed_pass_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_total));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_assist_enabled ? 1u : 0u));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_legacy_literal_total));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.compatibility_mode));
   for (std::size_t i = 0; i < summary.pass_executed.size(); ++i) {
     fingerprint = fnv1a_mix(fingerprint, summary.pass_executed[i] ? 1ull : 0ull);
     fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_after_pass[i]));
@@ -83,6 +91,7 @@ void FinalizeObjc3SemaPassFlowSummary(
   std::ostringstream handoff_key;
   handoff_key << "sema-pass-flow:v1:"
               << summary.executed_pass_count << "/" << summary.configured_pass_count
+              << ":compat=" << (summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ? "canonical" : "legacy")
               << ":diag=" << summary.diagnostics_total
               << ":fp=" << summary.pass_execution_fingerprint;
   summary.deterministic_handoff_key = handoff_key.str();
@@ -97,6 +106,7 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.diagnostics_after_pass_monotonic &&
       summary.diagnostics_emission_totals_consistent &&
       summary.transition_edge_count + 1u == summary.executed_pass_count &&
+      summary.compatibility_handoff_consistent &&
       summary.symbol_flow_counts_consistent &&
       summary.diagnostics_total == summary.diagnostics_after_pass.back() &&
       summary.pass_execution_fingerprint != 1469598103934665603ull &&
