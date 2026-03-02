@@ -102,6 +102,9 @@ At minimum, the pass-graph gate shall validate:
 - toolchain/runtime core feature implementation shall remain fail-closed on
   backend-output marker path/payload drift and core-feature readiness drift
   after backend object dispatch.
+- toolchain/runtime core feature expansion shall remain fail-closed on backend
+  marker-path determinism and backend marker payload-to-route consistency drift
+  before core-feature implementation readiness can pass.
 - edge-case compatibility completion shall include deterministic compatibility
   handoff and language-version/pragma coordinate ordering gates that fail
   closed before IR emission.

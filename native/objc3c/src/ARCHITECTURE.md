@@ -146,6 +146,12 @@ Current-state note:
   fail-closed post-dispatch enforcement in
   `libobjc3c_frontend/frontend_anchor.cpp` so object emission/link-path
   reliability remains deterministic after backend dispatch.
+- M228 lane-D D004 core feature expansion anchors explicit backend marker-path
+  and marker-payload determinism guardrails in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` and
+  fail-closed expansion evidence wiring in
+  `libobjc3c_frontend/frontend_anchor.cpp` so object emission/link-path
+  reliability remains deterministic when backend marker artifacts drift.
 - M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
   references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
   `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,
