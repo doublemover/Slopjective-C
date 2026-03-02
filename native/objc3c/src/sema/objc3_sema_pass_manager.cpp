@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "diag/objc3_diag_utils.h"
+#include "sema/objc3_parser_sema_handoff_scaffold.h"
 #include "sema/objc3_semantic_passes.h"
 
 namespace {
@@ -682,12 +683,18 @@ bool IsEquivalentAutoreleasePoolScopeSummary(const Objc3AutoreleasePoolScopeSumm
 
 Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input) {
   Objc3SemaPassManagerResult result;
+  const Objc3ParserSemaHandoffScaffold handoff = BuildObjc3ParserSemaHandoffScaffold(input);
   if (input.program == nullptr) {
+    return result;
+  }
+  result.parser_contract_snapshot = handoff.parser_contract_snapshot;
+  result.deterministic_parser_sema_handoff = handoff.deterministic;
+  if (!handoff.deterministic) {
     return result;
   }
 
   result.executed = true;
-  bool deterministic_semantic_diagnostics = true;
+  bool deterministic_semantic_diagnostics = handoff.deterministic;
   for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {

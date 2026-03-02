@@ -73,6 +73,7 @@ struct Objc3SemaDiagnosticsBus {
 
 struct Objc3SemaPassManagerInput {
   const Objc3ParsedProgram *program = nullptr;
+  const Objc3ParserContractSnapshot *parser_contract_snapshot = nullptr;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;
   bool migration_assist = false;
@@ -2159,6 +2160,8 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
 }
 
 struct Objc3SemaPassManagerResult {
+  Objc3ParserContractSnapshot parser_contract_snapshot;
+  bool deterministic_parser_sema_handoff = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};

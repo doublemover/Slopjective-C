@@ -1,0 +1,66 @@
+#pragma once
+
+#include <cstddef>
+
+#include "sema/objc3_sema_pass_manager_contract.h"
+
+inline Objc3ParserContractSnapshot ResolveObjc3ParserContractSnapshotForSemaHandoff(
+    const Objc3SemaPassManagerInput &input) {
+  if (input.parser_contract_snapshot != nullptr) {
+    return *input.parser_contract_snapshot;
+  }
+  if (input.program == nullptr) {
+    return Objc3ParserContractSnapshot{};
+  }
+  return BuildObjc3ParserContractSnapshot(*input.program, 0u, 0u);
+}
+
+inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3ParserContractSnapshot &snapshot,
+                                                               const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  const std::size_t top_level_count =
+      snapshot.global_decl_count + snapshot.protocol_decl_count + snapshot.interface_decl_count +
+      snapshot.implementation_decl_count + snapshot.function_decl_count;
+  return snapshot.global_decl_count == ast.globals.size() &&
+         snapshot.protocol_decl_count == ast.protocols.size() &&
+         snapshot.interface_decl_count == ast.interfaces.size() &&
+         snapshot.implementation_decl_count == ast.implementations.size() &&
+         snapshot.function_decl_count == ast.functions.size() &&
+         snapshot.top_level_declaration_count == top_level_count &&
+         snapshot.top_level_declaration_count ==
+             ast.globals.size() + ast.protocols.size() + ast.interfaces.size() + ast.implementations.size() +
+                 ast.functions.size() &&
+         snapshot.deterministic_handoff &&
+         snapshot.parser_recovery_replay_ready;
+}
+
+struct Objc3ParserSemaHandoffScaffold {
+  const Objc3ParsedProgram *program = nullptr;
+  Objc3SemanticValidationOptions validation_options;
+  Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;
+  bool migration_assist = false;
+  Objc3SemaMigrationHints migration_hints;
+  Objc3SemaDiagnosticsBus diagnostics_bus;
+  Objc3ParserContractSnapshot parser_contract_snapshot;
+  bool parser_contract_snapshot_matches_program = false;
+  bool deterministic = false;
+};
+
+inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const Objc3SemaPassManagerInput &input) {
+  Objc3ParserSemaHandoffScaffold scaffold;
+  scaffold.program = input.program;
+  scaffold.validation_options = input.validation_options;
+  scaffold.compatibility_mode = input.compatibility_mode;
+  scaffold.migration_assist = input.migration_assist;
+  scaffold.migration_hints = input.migration_hints;
+  scaffold.diagnostics_bus = input.diagnostics_bus;
+  if (input.program == nullptr) {
+    return scaffold;
+  }
+
+  scaffold.parser_contract_snapshot = ResolveObjc3ParserContractSnapshotForSemaHandoff(input);
+  scaffold.parser_contract_snapshot_matches_program =
+      IsObjc3ParserContractSnapshotConsistentWithProgram(scaffold.parser_contract_snapshot, *input.program);
+  scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program;
+  return scaffold;
+}
