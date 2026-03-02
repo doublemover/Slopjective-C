@@ -1553,6 +1553,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
+  std::string ir_emission_core_feature_expansion_error;
+  if (!IsObjc3IREmissionCoreFeatureExpansionReady(
+          ir_emission_core_feature_impl_surface,
+          ir_emission_core_feature_expansion_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L314",
+        "LLVM IR emission failed: IR emission core feature expansion check failed: " +
+            ir_emission_core_feature_expansion_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
   std::vector<const FunctionDecl *> manifest_functions;
   manifest_functions.reserve(program.functions.size());
   std::unordered_set<std::string> manifest_function_names;
@@ -5194,6 +5207,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ir_emission_core_feature_impl_surface.core_feature_impl_ready;
   ir_frontend_metadata.ir_emission_core_feature_impl_key =
       ir_emission_core_feature_impl_surface.core_feature_key;
+  ir_frontend_metadata.ir_emission_core_feature_expansion_ready =
+      ir_emission_core_feature_impl_surface.core_feature_expansion_ready;
+  ir_frontend_metadata.ir_emission_core_feature_expansion_key =
+      ir_emission_core_feature_impl_surface.expansion_key;
   std::string ir_error;
   // Historical extraction contract marker:
   // EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)

@@ -123,6 +123,9 @@ At minimum, the pass-graph gate shall validate:
 - conformance corpus expansion shall include deterministic conformance-corpus
   consistency and conformance-corpus readiness/key gates that fail closed
   before IR emission.
+- IR-emission core-feature expansion shall remain deterministic, preserve
+  expansion readiness/key continuity, and fail closed when pass-graph
+  expansion continuity or expansion metadata transport drifts.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.

@@ -146,6 +146,12 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` so direct LLVM IR emission fails
   closed when modular split transport, boundary handoff, or IR entrypoint
   readiness drifts.
+- M228 lane-C C004 core feature expansion anchors IR emission
+  expansion-readiness and expansion-key transport in
+  `pipeline/objc3_ir_emission_core_feature_implementation_surface.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
+  `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
+  pass-graph expansion continuity or expansion metadata transport drifts.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and

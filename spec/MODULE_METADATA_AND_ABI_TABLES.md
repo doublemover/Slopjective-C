@@ -101,6 +101,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic ownership-aware lowering edge-case robustness
      expansion/readiness and robustness-key anchors for lane-B expansion
      evidence,
+   - deterministic IR-emission core-feature expansion readiness/key anchors for
+     lane-C expansion evidence continuity,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
    - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,

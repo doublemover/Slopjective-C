@@ -9,12 +9,17 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool modular_split_ready = false;
   bool metadata_transport_ready = false;
   bool pass_graph_core_feature_ready = false;
+  bool pass_graph_expansion_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
+  bool expansion_metadata_transport_ready = false;
   bool core_feature_impl_ready = false;
+  bool core_feature_expansion_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
+  std::string expansion_key;
   std::string failure_reason;
+  std::string expansion_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -36,6 +41,26 @@ inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeatureExpansionKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-expansion:v1:"
+      << "core-feature-impl-ready="
+      << (surface.core_feature_impl_ready ? "true" : "false")
+      << ";pass-graph-expansion-ready="
+      << (surface.pass_graph_expansion_ready ? "true" : "false")
+      << ";runtime-boundary-handoff-ready="
+      << (surface.runtime_boundary_handoff_ready ? "true" : "false")
+      << ";direct-ir-entrypoint-ready="
+      << (surface.direct_ir_entrypoint_ready ? "true" : "false")
+      << ";expansion-metadata-transport-ready="
+      << (surface.expansion_metadata_transport_ready ? "true" : "false")
+      << ";core-feature-expansion-ready="
+      << (surface.core_feature_expansion_ready ? "true" : "false")
+      << ";core-feature-key=" << surface.core_feature_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -48,6 +73,7 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.modular_split_ready = scaffold.modular_split_ready;
   surface.metadata_transport_ready = scaffold.metadata_transport_ready;
   surface.pass_graph_core_feature_ready = scaffold.core_feature_ready;
+  surface.pass_graph_expansion_ready = scaffold.expansion_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -63,6 +89,33 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.direct_ir_entrypoint_ready && !surface.scaffold_key.empty();
   surface.core_feature_key =
       BuildObjc3IREmissionCoreFeatureImplementationKey(surface);
+  surface.expansion_metadata_transport_ready = !scaffold.expansion_key.empty();
+  surface.core_feature_expansion_ready =
+      surface.core_feature_impl_ready && surface.pass_graph_expansion_ready &&
+      surface.expansion_metadata_transport_ready &&
+      surface.runtime_boundary_handoff_ready &&
+      surface.direct_ir_entrypoint_ready;
+  surface.expansion_key = BuildObjc3IREmissionCoreFeatureExpansionKey(surface);
+
+  if (surface.core_feature_expansion_ready) {
+    surface.expansion_failure_reason.clear();
+  } else if (!surface.core_feature_impl_ready) {
+    surface.expansion_failure_reason =
+        "IR emission core feature implementation is not ready";
+  } else if (!surface.pass_graph_expansion_ready) {
+    surface.expansion_failure_reason = "pass-graph expansion is not ready";
+  } else if (!surface.expansion_metadata_transport_ready) {
+    surface.expansion_failure_reason =
+        "IR emission core feature expansion metadata transport is not ready";
+  } else if (!surface.runtime_boundary_handoff_ready) {
+    surface.expansion_failure_reason =
+        "runtime boundary handoff replay surface is not ready";
+  } else if (!surface.direct_ir_entrypoint_ready) {
+    surface.expansion_failure_reason = "direct IR entrypoint is not ready";
+  } else {
+    surface.expansion_failure_reason =
+        "IR emission core feature expansion surface is not ready";
+  }
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -99,5 +152,19 @@ inline bool IsObjc3IREmissionCoreFeatureImplementationReady(
       surface.failure_reason.empty()
           ? "IR emission core feature implementation surface is not ready"
           : surface.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeatureExpansionReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_expansion_ready) {
+    reason.clear();
+    return true;
+  }
+  reason =
+      surface.expansion_failure_reason.empty()
+          ? "IR emission core feature expansion surface is not ready"
+          : surface.expansion_failure_reason;
   return false;
 }
