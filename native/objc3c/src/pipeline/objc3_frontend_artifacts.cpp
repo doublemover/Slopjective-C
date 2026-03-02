@@ -1522,6 +1522,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
+  std::string lowering_pass_graph_lane_a_performance_quality_guardrails_error;
+  if (!IsObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_lane_a_performance_quality_guardrails_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L315",
+        "LLVM IR emission failed: lowering pipeline pass-graph lane-A performance quality guardrails check failed: " +
+            lowering_pass_graph_lane_a_performance_quality_guardrails_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
 
   std::string lowering_pass_graph_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
@@ -5199,6 +5212,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.lowering_pass_graph_conformance_corpus_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .conformance_corpus_key;
+  ir_frontend_metadata.lowering_pass_graph_performance_quality_guardrails_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_ready;
+  ir_frontend_metadata.lowering_pass_graph_performance_quality_guardrails_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_key;
   ir_frontend_metadata.ir_emission_completeness_modular_split_ready =
       pipeline_result.ir_emission_completeness_scaffold.modular_split_ready;
   ir_frontend_metadata.ir_emission_completeness_modular_split_key =

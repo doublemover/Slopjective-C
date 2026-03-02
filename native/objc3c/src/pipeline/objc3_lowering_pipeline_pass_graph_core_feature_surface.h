@@ -28,6 +28,9 @@ std::string BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(
 std::string BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
 
+std::string BuildObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -62,5 +65,9 @@ bool IsObjc3LoweringPipelinePassGraphConformanceMatrixReady(
     std::string &reason);
 
 bool IsObjc3LoweringPipelinePassGraphConformanceCorpusReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason);
+
+bool IsObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsReady(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
     std::string &reason);

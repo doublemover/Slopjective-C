@@ -96,6 +96,13 @@ Current-state note:
   (`conformance_corpus_consistent`, `conformance_corpus_*`) and enforces
   fail-closed conformance-corpus gating in
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
+- M228 lane-A A011 performance and quality guardrails extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  deterministic performance-quality guardrails
+  (`performance_quality_guardrails_consistent`,
+  `performance_quality_guardrails_*`) and enforces fail-closed
+  performance-quality guardrails gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,

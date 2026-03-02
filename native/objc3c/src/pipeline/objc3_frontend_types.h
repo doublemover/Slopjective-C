@@ -345,8 +345,13 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   bool conformance_matrix_ready = false;
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
   bool expansion_ready = false;
   bool core_feature_ready = false;
+  std::size_t parse_lowering_performance_quality_guardrails_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
   std::string lowering_boundary_replay_key;
   std::string runtime_dispatch_declaration_replay_key;
   std::string edge_case_compatibility_key;
@@ -355,6 +360,7 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string expansion_key;
   std::string core_feature_key;
   std::string failure_reason;

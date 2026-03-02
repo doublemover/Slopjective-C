@@ -148,6 +148,27 @@ std::string BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-performance-quality-guardrails:v1:"
+      << "conformance-corpus-ready="
+      << (surface.conformance_corpus_ready ? "true" : "false")
+      << ";performance-quality-guardrails-consistent="
+      << (surface.performance_quality_guardrails_consistent ? "true" : "false")
+      << ";performance-quality-guardrails-ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";performance-quality-guardrails-case-count="
+      << surface.parse_lowering_performance_quality_guardrails_case_count
+      << ";performance-quality-guardrails-passed-case-count="
+      << surface.parse_lowering_performance_quality_guardrails_passed_case_count
+      << ";performance-quality-guardrails-failed-case-count="
+      << surface.parse_lowering_performance_quality_guardrails_failed_case_count
+      << ";conformance-corpus-key-ready="
+      << (!surface.conformance_corpus_key.empty() ? "true" : "false");
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -325,6 +346,34 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
            .parse_lowering_conformance_corpus_key.empty();
   surface.conformance_corpus_key =
       BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(surface);
+  surface.parse_lowering_performance_quality_guardrails_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_performance_quality_guardrails_case_count;
+  surface.parse_lowering_performance_quality_guardrails_passed_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_performance_quality_guardrails_passed_case_count;
+  surface.parse_lowering_performance_quality_guardrails_failed_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_performance_quality_guardrails_failed_case_count;
+  const bool parse_lowering_performance_quality_guardrails_case_accounting_consistent =
+      surface.parse_lowering_performance_quality_guardrails_case_count > 0 &&
+      surface.parse_lowering_performance_quality_guardrails_case_count ==
+          surface.parse_lowering_performance_quality_guardrails_passed_case_count +
+              surface.parse_lowering_performance_quality_guardrails_failed_case_count;
+  surface.performance_quality_guardrails_consistent =
+      surface.conformance_corpus_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_performance_quality_guardrails_consistent;
+  surface.performance_quality_guardrails_ready =
+      surface.performance_quality_guardrails_consistent &&
+      surface.conformance_corpus_ready &&
+      parse_lowering_performance_quality_guardrails_case_accounting_consistent &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .parse_lowering_performance_quality_guardrails_key.empty() &&
+      !surface.conformance_corpus_key.empty();
+  surface.performance_quality_guardrails_key =
+      BuildObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsKey(
+          surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
@@ -336,7 +385,8 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       surface.diagnostics_hardening_ready &&
       surface.recovery_determinism_ready &&
       surface.conformance_matrix_ready &&
-      surface.conformance_corpus_ready) {
+      surface.conformance_corpus_ready &&
+      surface.performance_quality_guardrails_ready) {
     return surface;
   }
 
@@ -397,6 +447,15 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "pass-graph conformance corpus is not ready";
   } else if (surface.conformance_corpus_key.empty()) {
     surface.failure_reason = "pass-graph conformance corpus key is not ready";
+  } else if (!surface.performance_quality_guardrails_consistent) {
+    surface.failure_reason =
+        "pass-graph performance quality guardrails are inconsistent";
+  } else if (!surface.performance_quality_guardrails_ready) {
+    surface.failure_reason =
+        "pass-graph performance quality guardrails are not ready";
+  } else if (surface.performance_quality_guardrails_key.empty()) {
+    surface.failure_reason =
+        "pass-graph performance quality guardrails key is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -504,6 +563,19 @@ bool IsObjc3LoweringPipelinePassGraphConformanceCorpusReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph conformance corpus is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.performance_quality_guardrails_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph performance quality guardrails are not ready"
                : surface.failure_reason;
   return false;
 }
