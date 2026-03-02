@@ -881,6 +881,77 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncKey(
          ";ready=" + (toolchain_runtime_ga_operations_docs_runbook_sync_ready ? "true" : "false");
 }
 
+inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreConsistent(
+    bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
+    bool toolchain_runtime_ga_operations_docs_runbook_sync_ready,
+    bool long_tail_grammar_integration_closeout_consistent,
+    bool long_tail_grammar_gate_signoff_ready,
+    const std::string &toolchain_runtime_ga_operations_docs_runbook_sync_key,
+    const std::string &long_tail_grammar_integration_closeout_key,
+    const std::string &parse_lowering_performance_quality_guardrails_key) {
+  return toolchain_runtime_ga_operations_docs_runbook_sync_consistent &&
+         toolchain_runtime_ga_operations_docs_runbook_sync_ready &&
+         long_tail_grammar_integration_closeout_consistent &&
+         long_tail_grammar_gate_signoff_ready &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             toolchain_runtime_ga_operations_docs_runbook_sync_key,
+             "long_tail_grammar_integration_closeout_consistent=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             long_tail_grammar_integration_closeout_key,
+             "conformance_matrix_ready=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             parse_lowering_performance_quality_guardrails_key,
+             "case_count=");
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreReady(
+    bool toolchain_runtime_ga_operations_advanced_core_consistent,
+    const std::string &toolchain_runtime_ga_operations_docs_runbook_sync_key,
+    const std::string &long_tail_grammar_integration_closeout_key) {
+  return toolchain_runtime_ga_operations_advanced_core_consistent &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             toolchain_runtime_ga_operations_docs_runbook_sync_key,
+             "long_tail_grammar_integration_closeout_consistent=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             long_tail_grammar_integration_closeout_key,
+             "conformance_matrix_ready=");
+}
+
+inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreKey(
+    bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
+    bool toolchain_runtime_ga_operations_docs_runbook_sync_ready,
+    const std::string &toolchain_runtime_ga_operations_docs_runbook_sync_key,
+    const std::string &long_tail_grammar_integration_closeout_key,
+    const std::string &parse_lowering_performance_quality_guardrails_key,
+    bool toolchain_runtime_ga_operations_advanced_core_consistent,
+    bool toolchain_runtime_ga_operations_advanced_core_ready) {
+  const bool docs_runbook_sync_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          toolchain_runtime_ga_operations_docs_runbook_sync_key,
+          "long_tail_grammar_integration_closeout_consistent=");
+  const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          long_tail_grammar_integration_closeout_key,
+          "conformance_matrix_ready=");
+  const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          parse_lowering_performance_quality_guardrails_key,
+          "case_count=");
+  return std::string("toolchain_runtime_ga_operations_docs_runbook_sync_consistent=") +
+         (toolchain_runtime_ga_operations_docs_runbook_sync_consistent ? "true" : "false") +
+         ";toolchain_runtime_ga_operations_docs_runbook_sync_ready=" +
+         (toolchain_runtime_ga_operations_docs_runbook_sync_ready ? "true" : "false") +
+         ";docs_runbook_sync_key_shape_deterministic=" +
+         (docs_runbook_sync_key_shape_deterministic ? "true" : "false") +
+         ";long_tail_grammar_integration_closeout_key_shape_deterministic=" +
+         (long_tail_grammar_integration_closeout_key_shape_deterministic ? "true" : "false") +
+         ";parse_lowering_performance_quality_guardrails_key_shape_deterministic=" +
+         (parse_lowering_performance_quality_guardrails_key_shape_deterministic ? "true" : "false") +
+         ";consistent=" +
+         (toolchain_runtime_ga_operations_advanced_core_consistent ? "true" : "false") +
+         ";ready=" + (toolchain_runtime_ga_operations_advanced_core_ready ? "true" : "false");
+}
+
 inline std::string BuildObjc3LongTailGrammarIntegrationCloseoutKey(
     bool conformance_matrix_ready,
     bool conformance_corpus_consistent,
@@ -1900,6 +1971,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parse_lowering_performance_quality_guardrails_key,
           toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
           toolchain_runtime_ga_operations_docs_runbook_sync_ready);
+  surface.toolchain_runtime_ga_operations_docs_runbook_sync_consistent =
+      toolchain_runtime_ga_operations_docs_runbook_sync_consistent;
+  surface.toolchain_runtime_ga_operations_docs_runbook_sync_ready =
+      toolchain_runtime_ga_operations_docs_runbook_sync_ready;
+  surface.toolchain_runtime_ga_operations_docs_runbook_sync_key =
+      toolchain_runtime_ga_operations_docs_runbook_sync_key;
   surface.long_tail_grammar_integration_closeout_consistent =
       surface.long_tail_grammar_integration_closeout_consistent &&
       toolchain_runtime_ga_operations_docs_runbook_sync_consistent;
@@ -1912,6 +1989,47 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.parse_lowering_performance_quality_guardrails_key +=
       ";toolchain_runtime_ga_operations_docs_runbook_sync_key=" +
       toolchain_runtime_ga_operations_docs_runbook_sync_key;
+  const bool toolchain_runtime_ga_operations_advanced_core_consistent =
+      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreConsistent(
+          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
+          toolchain_runtime_ga_operations_docs_runbook_sync_ready,
+          surface.long_tail_grammar_integration_closeout_consistent,
+          surface.long_tail_grammar_gate_signoff_ready,
+          toolchain_runtime_ga_operations_docs_runbook_sync_key,
+          surface.long_tail_grammar_integration_closeout_key,
+          surface.parse_lowering_performance_quality_guardrails_key);
+  const bool toolchain_runtime_ga_operations_advanced_core_ready =
+      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreReady(
+          toolchain_runtime_ga_operations_advanced_core_consistent,
+          toolchain_runtime_ga_operations_docs_runbook_sync_key,
+          surface.long_tail_grammar_integration_closeout_key);
+  const std::string toolchain_runtime_ga_operations_advanced_core_key =
+      BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreKey(
+          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
+          toolchain_runtime_ga_operations_docs_runbook_sync_ready,
+          toolchain_runtime_ga_operations_docs_runbook_sync_key,
+          surface.long_tail_grammar_integration_closeout_key,
+          surface.parse_lowering_performance_quality_guardrails_key,
+          toolchain_runtime_ga_operations_advanced_core_consistent,
+          toolchain_runtime_ga_operations_advanced_core_ready);
+  surface.toolchain_runtime_ga_operations_advanced_core_consistent =
+      toolchain_runtime_ga_operations_advanced_core_consistent;
+  surface.toolchain_runtime_ga_operations_advanced_core_ready =
+      toolchain_runtime_ga_operations_advanced_core_ready;
+  surface.toolchain_runtime_ga_operations_advanced_core_key =
+      toolchain_runtime_ga_operations_advanced_core_key;
+  surface.long_tail_grammar_integration_closeout_consistent =
+      surface.long_tail_grammar_integration_closeout_consistent &&
+      toolchain_runtime_ga_operations_advanced_core_consistent;
+  surface.long_tail_grammar_gate_signoff_ready =
+      surface.long_tail_grammar_gate_signoff_ready &&
+      toolchain_runtime_ga_operations_advanced_core_ready;
+  surface.long_tail_grammar_integration_closeout_key +=
+      ";toolchain_runtime_ga_operations_advanced_core_key=" +
+      toolchain_runtime_ga_operations_advanced_core_key;
+  surface.parse_lowering_performance_quality_guardrails_key +=
+      ";toolchain_runtime_ga_operations_advanced_core_key=" +
+      toolchain_runtime_ga_operations_advanced_core_key;
   surface.ready_for_lowering = diagnostics_clear &&
                                parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
@@ -2170,6 +2288,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   } else if (!toolchain_runtime_ga_operations_docs_runbook_sync_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations docs and runbook synchronization is not ready";
+  } else if (!toolchain_runtime_ga_operations_advanced_core_consistent) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations advanced core workpack is inconsistent";
+  } else if (!toolchain_runtime_ga_operations_advanced_core_ready) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations advanced core workpack is not ready";
   } else if (!surface.long_tail_grammar_integration_closeout_consistent) {
     surface.failure_reason = "long-tail grammar integration closeout is inconsistent";
   } else if (!surface.long_tail_grammar_gate_signoff_ready) {

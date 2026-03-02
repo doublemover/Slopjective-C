@@ -2113,6 +2113,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_consistent
                    ? "true"
                    : "false")
+           << ",\"toolchain_runtime_ga_operations_docs_runbook_sync_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_docs_runbook_sync_consistent
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_docs_runbook_sync_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_docs_runbook_sync_ready
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_advanced_core_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_advanced_core_consistent
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_advanced_core_ready\": "
+           << (bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_ready
+                   ? "true"
+                   : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -2185,6 +2204,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_key
            << "\",\"parse_lowering_performance_quality_guardrails_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_key
+           << "\",\"toolchain_runtime_ga_operations_docs_runbook_sync_key\":\""
+           << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_docs_runbook_sync_key
+           << "\",\"toolchain_runtime_ga_operations_advanced_core_key\":\""
+           << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key

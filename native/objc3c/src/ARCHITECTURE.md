@@ -241,6 +241,12 @@ Current-state note:
   `scripts/run_m250_d014_toolchain_runtime_ga_operations_readiness_release_replay_dry_run.ps1`
   so lane-D release-candidate replay drift fails closed before downstream
   advanced workpacks.
+- M250 lane-D D015 advanced core workpack (shard 1) anchors explicit
+  toolchain/runtime advanced-core consistency/readiness guardrails
+  (`toolchain_runtime_ga_operations_advanced_core_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D
+  docs/runbook synchronization closure is promoted into a hardened
+  advanced-core gate before parse/lowering readiness can report ready.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
