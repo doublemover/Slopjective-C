@@ -2609,6 +2609,15 @@ struct Objc3ErrorDiagnosticsRecoveryProfile {
   bool deterministic_error_diagnostics_recovery_handoff = false;
 };
 
+static bool TryAddErrorDiagnosticsRecoverySiteCounts(
+    std::size_t lhs, std::size_t rhs, std::size_t &out) {
+  if (lhs > std::numeric_limits<std::size_t>::max() - rhs) {
+    return false;
+  }
+  out = lhs + rhs;
+  return true;
+}
+
 static std::string BuildErrorDiagnosticsRecoveryProfile(
     std::size_t error_diagnostics_recovery_sites,
     std::size_t diagnostic_emit_sites,
@@ -2652,7 +2661,12 @@ static bool IsErrorDiagnosticsRecoveryProfileNormalized(
       contract_violation_sites > error_diagnostics_recovery_sites) {
     return false;
   }
-  if (normalized_sites + gate_blocked_sites != error_diagnostics_recovery_sites) {
+  std::size_t normalized_total = 0u;
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          normalized_sites, gate_blocked_sites, normalized_total)) {
+    return false;
+  }
+  if (normalized_total != error_diagnostics_recovery_sites) {
     return false;
   }
   return contract_violation_sites == 0u;
@@ -2669,37 +2683,44 @@ static Objc3ErrorDiagnosticsRecoveryProfile BuildErrorDiagnosticsRecoveryProfile
   profile.recovery_boundary_sites = recovery_boundary_sites;
   profile.fail_closed_diagnostic_sites = fail_closed_diagnostic_sites;
   profile.error_diagnostics_recovery_sites = profile.diagnostic_emit_sites;
-  if (profile.error_diagnostics_recovery_sites >
-      std::numeric_limits<std::size_t>::max() - profile.recovery_anchor_sites) {
+  std::size_t summed_sites = 0u;
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          profile.error_diagnostics_recovery_sites,
+          profile.recovery_anchor_sites,
+          summed_sites)) {
     profile.error_diagnostics_recovery_sites = std::numeric_limits<std::size_t>::max();
     profile.contract_violation_sites += 1u;
   } else {
-    profile.error_diagnostics_recovery_sites += profile.recovery_anchor_sites;
+    profile.error_diagnostics_recovery_sites = summed_sites;
   }
-  if (profile.error_diagnostics_recovery_sites >
-      std::numeric_limits<std::size_t>::max() - profile.recovery_boundary_sites) {
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          profile.error_diagnostics_recovery_sites,
+          profile.recovery_boundary_sites,
+          summed_sites)) {
     profile.error_diagnostics_recovery_sites = std::numeric_limits<std::size_t>::max();
     profile.contract_violation_sites += 1u;
   } else {
-    profile.error_diagnostics_recovery_sites += profile.recovery_boundary_sites;
+    profile.error_diagnostics_recovery_sites = summed_sites;
   }
-  if (profile.error_diagnostics_recovery_sites >
-      std::numeric_limits<std::size_t>::max() - profile.fail_closed_diagnostic_sites) {
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          profile.error_diagnostics_recovery_sites,
+          profile.fail_closed_diagnostic_sites,
+          summed_sites)) {
     profile.error_diagnostics_recovery_sites = std::numeric_limits<std::size_t>::max();
     profile.contract_violation_sites += 1u;
   } else {
-    profile.error_diagnostics_recovery_sites += profile.fail_closed_diagnostic_sites;
+    profile.error_diagnostics_recovery_sites = summed_sites;
   }
 
   const bool gate_open =
       profile.diagnostic_emit_sites > 0u && profile.recovery_anchor_sites > 0u;
   std::size_t blocked_total = profile.recovery_boundary_sites;
-  if (blocked_total >
-      std::numeric_limits<std::size_t>::max() - profile.fail_closed_diagnostic_sites) {
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          blocked_total,
+          profile.fail_closed_diagnostic_sites,
+          blocked_total)) {
     blocked_total = std::numeric_limits<std::size_t>::max();
     profile.contract_violation_sites += 1u;
-  } else {
-    blocked_total += profile.fail_closed_diagnostic_sites;
   }
   profile.gate_blocked_sites = gate_open
                                    ? 0u
@@ -2716,8 +2737,12 @@ static Objc3ErrorDiagnosticsRecoveryProfile BuildErrorDiagnosticsRecoveryProfile
       profile.contract_violation_sites > profile.error_diagnostics_recovery_sites) {
     profile.contract_violation_sites += 1u;
   }
-  if (profile.normalized_sites + profile.gate_blocked_sites !=
-      profile.error_diagnostics_recovery_sites) {
+  std::size_t normalized_total = 0u;
+  if (!TryAddErrorDiagnosticsRecoverySiteCounts(
+          profile.normalized_sites,
+          profile.gate_blocked_sites,
+          normalized_total) ||
+      normalized_total != profile.error_diagnostics_recovery_sites) {
     profile.contract_violation_sites += 1u;
   }
   if (gate_open && profile.gate_blocked_sites != 0u) {
