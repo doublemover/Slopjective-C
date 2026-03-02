@@ -243,6 +243,12 @@ Current-state note:
   and `package.json` so installer/runtime operations boundaries and support
   tooling continuity remain deterministic and fail-closed for release
   governance readiness.
+- M249 lane-D D002 installer/runtime operations modular split/scaffolding
+  anchors explicit lane-D scaffolding artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m249/m249_d002_installer_runtime_operations_and_support_tooling_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split installer/runtime continuity remains
+  deterministic and fail-closed against `M249-D001` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in

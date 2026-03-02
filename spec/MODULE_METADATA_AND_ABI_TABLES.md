@@ -137,6 +137,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-D installer/runtime operations metadata anchors for `M249-D001`
      with runtime-route evidence and support-tooling continuity so installer/runtime
      drift fails closed.
+   - deterministic lane-D installer/runtime operations modular split metadata anchors for
+     `M249-D002` with explicit `M249-D001` dependency continuity so support-tooling
+     scaffolding drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
