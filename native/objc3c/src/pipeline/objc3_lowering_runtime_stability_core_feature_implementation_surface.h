@@ -42,6 +42,12 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << ";parse_ready_for_lowering=" << (surface.parse_ready_for_lowering ? "true" : "false")
       << ";invariant_proofs_ready=" << (surface.invariant_proofs_ready ? "true" : "false")
       << ";modular_split_ready=" << (surface.modular_split_ready ? "true" : "false")
+      << ";typed_expansion_accounting_consistent="
+      << (surface.typed_expansion_accounting_consistent ? "true" : "false")
+      << ";parse_conformance_accounting_consistent="
+      << (surface.parse_conformance_accounting_consistent ? "true" : "false")
+      << ";replay_keys_ready=" << (surface.replay_keys_ready ? "true" : "false")
+      << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
 }
@@ -126,6 +132,24 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       !surface.lowering_boundary_replay_key.empty() &&
       !surface.typed_handoff_key.empty() &&
       !surface.parse_artifact_replay_key.empty();
+  const bool typed_expansion_accounting_consistent =
+      typed_case_accounting_consistent &&
+      typed_expansion_case_accounting_consistent;
+  const bool parse_conformance_accounting_consistent =
+      parse_matrix_case_count_ready &&
+      parse_corpus_case_accounting_consistent &&
+      parse_guardrails_case_accounting_consistent;
+  const bool expansion_ready =
+      typed_expansion_accounting_consistent &&
+      parse_conformance_accounting_consistent &&
+      replay_keys_ready;
+
+  surface.typed_expansion_accounting_consistent =
+      typed_expansion_accounting_consistent;
+  surface.parse_conformance_accounting_consistent =
+      parse_conformance_accounting_consistent;
+  surface.replay_keys_ready = replay_keys_ready;
+  surface.expansion_ready = expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.lowering_boundary_ready &&
@@ -141,8 +165,18 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_corpus_case_accounting_consistent &&
       parse_guardrails_case_accounting_consistent &&
       replay_keys_ready;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && expansion_ready;
   surface.core_feature_key =
       BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKey(surface);
+  surface.expansion_key =
+      "lowering-runtime-stability-core-feature-expansion:v1:"
+      "typed-expansion-accounting-consistent=" +
+      std::string(typed_expansion_accounting_consistent ? "true" : "false") +
+      ";parse-conformance-accounting-consistent=" +
+      std::string(parse_conformance_accounting_consistent ? "true" : "false") +
+      ";replay-keys-ready=" + std::string(replay_keys_ready ? "true" : "false") +
+      ";expansion-ready=" + std::string(expansion_ready ? "true" : "false");
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -173,8 +207,17 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "parse conformance corpus case accounting is inconsistent";
   } else if (!parse_guardrails_case_accounting_consistent) {
     surface.failure_reason = "parse guardrails case accounting is inconsistent";
+  } else if (!typed_expansion_accounting_consistent) {
+    surface.failure_reason =
+        "typed core feature expansion accounting is inconsistent";
+  } else if (!parse_conformance_accounting_consistent) {
+    surface.failure_reason =
+        "parse conformance accounting is inconsistent";
   } else if (!replay_keys_ready) {
     surface.failure_reason = "lowering/runtime replay keys are not ready";
+  } else if (!expansion_ready) {
+    surface.failure_reason =
+        "lowering/runtime core feature expansion is not ready";
   } else {
     surface.failure_reason =
         "lowering/runtime core feature implementation is not ready";

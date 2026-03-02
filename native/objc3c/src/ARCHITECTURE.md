@@ -75,6 +75,10 @@ Current-state note:
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
   sema handoff and parse/lowering readiness surfaces share deterministic
   fail-closed runtime-proof gates.
+- M250 lane-C C004 core feature expansion anchors explicit lowering/runtime
+  expansion-accounting and replay-key guardrails in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so core feature readiness can fail closed on accounting drift.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
