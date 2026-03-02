@@ -60,6 +60,7 @@ add_library(objc3c_sema STATIC
   src/sema/objc3_sema_pass_flow_scaffold.cpp
   src/sema/objc3_sema_pass_manager.cpp
   src/sema/objc3_semantic_passes.cpp
+  src/sema/objc3_type_form_scaffold.cpp
   src/sema/objc3_static_analysis.cpp
   src/sema/objc3_pure_contract.cpp
 )

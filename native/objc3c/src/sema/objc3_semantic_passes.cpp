@@ -1,5 +1,6 @@
 #include "sema/objc3_semantic_passes.h"
 #include "sema/objc3_static_analysis.h"
+#include "sema/objc3_type_form_scaffold.h"
 
 #include <algorithm>
 #include <cctype>
@@ -126,7 +127,15 @@ static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
   return !info.is_vector && (info.type == ValueType::Bool || info.type == ValueType::I32);
 }
 
+static bool IsCanonicalObjc3TypeFormScaffoldReady() {
+  static const Objc3TypeFormScaffoldSummary summary = BuildObjc3TypeFormScaffoldSummary();
+  return IsReadyObjc3TypeFormScaffoldSummary(summary);
+}
+
 static bool IsObjCReferenceValueType(ValueType type) {
+  if (!IsCanonicalObjc3TypeFormScaffoldReady()) {
+    return false;
+  }
   return IsObjc3CanonicalReferenceTypeForm(type);
 }
 
@@ -135,11 +144,17 @@ static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
 }
 
 static bool IsMessageCompatibleType(const SemanticTypeInfo &info) {
+  if (!IsCanonicalObjc3TypeFormScaffoldReady()) {
+    return false;
+  }
   return !info.is_vector && IsObjc3CanonicalMessageSendTypeForm(info.type);
 }
 
 static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &target,
                                                       const SemanticTypeInfo &value) {
+  if (!IsCanonicalObjc3TypeFormScaffoldReady()) {
+    return false;
+  }
   if (!IsObjCReferenceSemanticType(target) || !IsObjCReferenceSemanticType(value)) {
     return false;
   }

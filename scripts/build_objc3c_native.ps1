@@ -1015,6 +1015,7 @@ $frontendModules = @(
       "native/objc3c/src/sema/objc3_sema_pass_flow_scaffold.cpp"
       "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
       "native/objc3c/src/sema/objc3_semantic_passes.cpp"
+      "native/objc3c/src/sema/objc3_type_form_scaffold.cpp"
       "native/objc3c/src/sema/objc3_static_analysis.cpp"
       "native/objc3c/src/sema/objc3_pure_contract.cpp"
     )
