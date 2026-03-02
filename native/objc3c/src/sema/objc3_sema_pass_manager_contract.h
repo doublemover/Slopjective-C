@@ -98,14 +98,26 @@ struct Objc3ParserSemaConformanceMatrix {
   std::size_t ast_protocol_property_decl_count = 0;
   std::size_t parser_protocol_method_decl_count = 0;
   std::size_t ast_protocol_method_decl_count = 0;
+  std::size_t parser_protocol_class_method_decl_count = 0;
+  std::size_t ast_protocol_class_method_decl_count = 0;
+  std::size_t parser_protocol_instance_method_decl_count = 0;
+  std::size_t ast_protocol_instance_method_decl_count = 0;
   std::size_t parser_interface_property_decl_count = 0;
   std::size_t ast_interface_property_decl_count = 0;
   std::size_t parser_interface_method_decl_count = 0;
   std::size_t ast_interface_method_decl_count = 0;
+  std::size_t parser_interface_class_method_decl_count = 0;
+  std::size_t ast_interface_class_method_decl_count = 0;
+  std::size_t parser_interface_instance_method_decl_count = 0;
+  std::size_t ast_interface_instance_method_decl_count = 0;
   std::size_t parser_implementation_property_decl_count = 0;
   std::size_t ast_implementation_property_decl_count = 0;
   std::size_t parser_implementation_method_decl_count = 0;
   std::size_t ast_implementation_method_decl_count = 0;
+  std::size_t parser_implementation_class_method_decl_count = 0;
+  std::size_t ast_implementation_class_method_decl_count = 0;
+  std::size_t parser_implementation_instance_method_decl_count = 0;
+  std::size_t ast_implementation_instance_method_decl_count = 0;
   std::size_t parser_interface_category_decl_count = 0;
   std::size_t ast_interface_category_decl_count = 0;
   std::size_t parser_implementation_category_decl_count = 0;
@@ -128,10 +140,16 @@ struct Objc3ParserSemaConformanceMatrix {
   bool function_decl_count_matches = false;
   bool protocol_property_decl_count_matches = false;
   bool protocol_method_decl_count_matches = false;
+  bool protocol_class_method_decl_count_matches = false;
+  bool protocol_instance_method_decl_count_matches = false;
   bool interface_property_decl_count_matches = false;
   bool interface_method_decl_count_matches = false;
+  bool interface_class_method_decl_count_matches = false;
+  bool interface_instance_method_decl_count_matches = false;
   bool implementation_property_decl_count_matches = false;
   bool implementation_method_decl_count_matches = false;
+  bool implementation_class_method_decl_count_matches = false;
+  bool implementation_instance_method_decl_count_matches = false;
   bool interface_category_decl_count_matches = false;
   bool implementation_category_decl_count_matches = false;
   bool function_prototype_count_matches = false;
@@ -147,8 +165,26 @@ struct Objc3ParserSemaConformanceMatrix {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaConformanceCorpus {
+  std::size_t required_case_count = 0;
+  std::size_t passed_case_count = 0;
+  std::size_t failed_case_count = 0;
+  bool has_top_level_declaration_count_case = false;
+  bool has_snapshot_fingerprint_case = false;
+  bool has_diagnostic_budget_case = false;
+  bool has_subset_count_case = false;
+  bool has_recovery_replay_case = false;
+  bool top_level_declaration_count_case_passed = false;
+  bool snapshot_fingerprint_case_passed = false;
+  bool diagnostic_budget_case_passed = false;
+  bool subset_count_case_passed = false;
+  bool recovery_replay_case_passed = false;
+  bool deterministic = false;
+};
+
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
+  Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   std::size_t diagnostics_total = 0;
@@ -550,6 +586,7 @@ struct Objc3SemaParityContractSurface {
   unsigned autoreleasepool_scope_max_depth_total = 0;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_parser_sema_conformance_matrix = false;
+  bool deterministic_parser_sema_conformance_corpus = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
@@ -654,7 +691,9 @@ struct Objc3SemaParityContractSurface {
 
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready && surface.deterministic_parser_sema_conformance_matrix &&
+         surface.deterministic_parser_sema_conformance_corpus &&
          surface.parser_sema_conformance_matrix.deterministic &&
+         surface.parser_sema_conformance_corpus.deterministic &&
          surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
          surface.parser_sema_conformance_matrix.global_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_decl_count_matches &&
@@ -663,10 +702,22 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_conformance_matrix.function_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_property_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .protocol_class_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .protocol_instance_method_decl_count_matches &&
          surface.parser_sema_conformance_matrix.interface_property_decl_count_matches &&
          surface.parser_sema_conformance_matrix.interface_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .interface_class_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .interface_instance_method_decl_count_matches &&
          surface.parser_sema_conformance_matrix.implementation_property_decl_count_matches &&
          surface.parser_sema_conformance_matrix.implementation_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .implementation_class_method_decl_count_matches &&
+         surface.parser_sema_conformance_matrix
+             .implementation_instance_method_decl_count_matches &&
          surface.parser_sema_conformance_matrix.interface_category_decl_count_matches &&
          surface.parser_sema_conformance_matrix.implementation_category_decl_count_matches &&
          surface.parser_sema_conformance_matrix.function_prototype_count_matches &&
@@ -679,6 +730,21 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_conformance_matrix.parser_subset_count_consistent &&
          surface.parser_sema_conformance_matrix.parser_contract_snapshot_deterministic &&
          surface.parser_sema_conformance_matrix.parser_recovery_replay_ready &&
+         surface.parser_sema_conformance_corpus.required_case_count == 5u &&
+         surface.parser_sema_conformance_corpus.passed_case_count ==
+             surface.parser_sema_conformance_corpus.required_case_count &&
+         surface.parser_sema_conformance_corpus.failed_case_count == 0u &&
+         surface.parser_sema_conformance_corpus.has_top_level_declaration_count_case &&
+         surface.parser_sema_conformance_corpus.has_snapshot_fingerprint_case &&
+         surface.parser_sema_conformance_corpus.has_diagnostic_budget_case &&
+         surface.parser_sema_conformance_corpus.has_subset_count_case &&
+         surface.parser_sema_conformance_corpus.has_recovery_replay_case &&
+         surface.parser_sema_conformance_corpus
+             .top_level_declaration_count_case_passed &&
+         surface.parser_sema_conformance_corpus.snapshot_fingerprint_case_passed &&
+         surface.parser_sema_conformance_corpus.diagnostic_budget_case_passed &&
+         surface.parser_sema_conformance_corpus.subset_count_case_passed &&
+         surface.parser_sema_conformance_corpus.recovery_replay_case_passed &&
          surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
          surface.deterministic_type_metadata_handoff && surface.deterministic_atomic_memory_order_mapping &&
          surface.deterministic_vector_type_lowering &&
@@ -2262,6 +2328,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_parser_sema_handoff = false;
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   bool deterministic_parser_sema_conformance_matrix = false;
+  Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
+  bool deterministic_parser_sema_conformance_corpus = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};

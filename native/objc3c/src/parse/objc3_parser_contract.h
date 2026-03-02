@@ -21,12 +21,18 @@ struct Objc3ParserContractSnapshot {
   std::size_t protocol_decl_count = 0;
   std::size_t protocol_property_decl_count = 0;
   std::size_t protocol_method_decl_count = 0;
+  std::size_t protocol_class_method_decl_count = 0;
+  std::size_t protocol_instance_method_decl_count = 0;
   std::size_t interface_decl_count = 0;
   std::size_t interface_property_decl_count = 0;
   std::size_t interface_method_decl_count = 0;
+  std::size_t interface_class_method_decl_count = 0;
+  std::size_t interface_instance_method_decl_count = 0;
   std::size_t implementation_decl_count = 0;
   std::size_t implementation_property_decl_count = 0;
   std::size_t implementation_method_decl_count = 0;
+  std::size_t implementation_class_method_decl_count = 0;
+  std::size_t implementation_instance_method_decl_count = 0;
   std::size_t function_decl_count = 0;
   std::size_t interface_category_decl_count = 0;
   std::size_t implementation_category_decl_count = 0;
@@ -195,12 +201,24 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.protocol_property_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.protocol_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.protocol_class_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.protocol_instance_method_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_property_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.interface_class_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.interface_instance_method_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.implementation_decl_count));
   fingerprint = MixObjc3ParserContractFingerprint(
@@ -209,6 +227,12 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
       static_cast<std::uint64_t>(snapshot.implementation_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.implementation_class_method_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.implementation_instance_method_decl_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_category_decl_count));
@@ -239,16 +263,37 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
   for (const auto &protocol_decl : ast.protocols) {
     snapshot.protocol_property_decl_count += protocol_decl.properties.size();
     snapshot.protocol_method_decl_count += protocol_decl.methods.size();
+    for (const auto &method_decl : protocol_decl.methods) {
+      if (method_decl.is_class_method) {
+        ++snapshot.protocol_class_method_decl_count;
+      } else {
+        ++snapshot.protocol_instance_method_decl_count;
+      }
+    }
   }
   snapshot.interface_decl_count = ast.interfaces.size();
   for (const auto &interface_decl : ast.interfaces) {
     snapshot.interface_property_decl_count += interface_decl.properties.size();
     snapshot.interface_method_decl_count += interface_decl.methods.size();
+    for (const auto &method_decl : interface_decl.methods) {
+      if (method_decl.is_class_method) {
+        ++snapshot.interface_class_method_decl_count;
+      } else {
+        ++snapshot.interface_instance_method_decl_count;
+      }
+    }
   }
   snapshot.implementation_decl_count = ast.implementations.size();
   for (const auto &implementation_decl : ast.implementations) {
     snapshot.implementation_property_decl_count += implementation_decl.properties.size();
     snapshot.implementation_method_decl_count += implementation_decl.methods.size();
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (method_decl.is_class_method) {
+        ++snapshot.implementation_class_method_decl_count;
+      } else {
+        ++snapshot.implementation_instance_method_decl_count;
+      }
+    }
   }
   snapshot.function_decl_count = ast.functions.size();
   snapshot.interface_category_decl_count = static_cast<std::size_t>(std::count_if(
