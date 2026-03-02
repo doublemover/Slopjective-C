@@ -2187,6 +2187,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_shard2_ready
                    ? "true"
                    : "false")
+           << ",\"toolchain_runtime_ga_operations_integration_closeout_signoff_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_integration_closeout_signoff_consistent
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_integration_closeout_signoff_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_integration_closeout_signoff_ready
+                   ? "true"
+                   : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -2275,6 +2285,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_performance_key
            << "\",\"toolchain_runtime_ga_operations_advanced_core_shard2_key\":\""
            << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_shard2_key
+           << "\",\"toolchain_runtime_ga_operations_integration_closeout_signoff_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .toolchain_runtime_ga_operations_integration_closeout_signoff_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
