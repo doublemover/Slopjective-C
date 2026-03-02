@@ -72,6 +72,9 @@ At minimum, the pass-graph gate shall validate:
 - an expansion readiness surface is emitted with deterministic expansion keys,
   and implementations shall fail closed before IR emission when expansion
   accounting/replay anchors drift.
+- ownership-aware lowering contracts (ownership qualifiers, retain/release,
+  autoreleasepool scope, ARC diagnostics/fixits) remain replay-key stable and
+  fail closed when ownership-lowering invariants drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

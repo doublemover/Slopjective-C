@@ -61,6 +61,12 @@ Current-state note:
   deterministic expansion readiness/key synthesis and enforces an additional
   fail-closed artifact gate in `pipeline/objc3_frontend_artifacts.cpp` so
   pass-graph expansion drift cannot bypass direct IR emission hardening.
+- M228 lane-B B001 ownership-aware lowering behavior freeze anchors
+  ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
+  replay surfaces in `lower/objc3_lowering_contract.h`,
+  `lower/objc3_lowering_contract.cpp`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so ownership-lowering routing remains
+  deterministic and fail-closed before modular split work.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

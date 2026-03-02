@@ -58,6 +58,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic replay keys for lowering-boundary normalization and runtime dispatch declaration synthesis used by direct IR emission,
    - explicit pass-graph core-feature readiness flag and replay key suitable for IR metadata emission,
    - explicit pass-graph core-feature expansion readiness flag and expansion key suitable for IR metadata emission and replay-proof closeout,
+   - deterministic ownership-aware lowering replay keys for ownership qualifier,
+     retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent.
 
