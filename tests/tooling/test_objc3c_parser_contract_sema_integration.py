@@ -95,16 +95,27 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     pass_manager_contract = _read(PASS_MANAGER_CONTRACT)
 
     assert "struct Objc3ParserSemaConformanceMatrix {" in pass_manager_contract
+    assert "struct Objc3ParserSemaConformanceCorpus {" in pass_manager_contract
     assert "Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;" in pass_manager_contract
+    assert "Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;" in pass_manager_contract
     assert "bool deterministic_parser_sema_conformance_matrix = false;" in pass_manager_contract
+    assert "bool deterministic_parser_sema_conformance_corpus = false;" in pass_manager_contract
     assert "BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
+    assert "BuildObjc3ParserSemaConformanceCorpus(" in sema_handoff
     assert "scaffold.parser_sema_conformance_matrix = BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
+    assert "scaffold.parser_sema_conformance_corpus =" in sema_handoff
     assert "result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;" in sema_pass_manager
+    assert "result.parser_sema_conformance_corpus = handoff.parser_sema_conformance_corpus;" in sema_pass_manager
     assert "result.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
+    assert "result.deterministic_parser_sema_conformance_corpus =" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_conformance_matrix) {" in sema_pass_manager
+    assert "if (!result.deterministic_parser_sema_conformance_corpus) {" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
+    assert "result.parity_surface.deterministic_parser_sema_conformance_corpus =" in sema_pass_manager
     assert "surface.deterministic_parser_sema_conformance_matrix &&" in pass_manager_contract
+    assert "surface.deterministic_parser_sema_conformance_corpus &&" in pass_manager_contract
     assert "surface.parser_sema_conformance_matrix.parser_subset_count_consistent &&" in pass_manager_contract
+    assert "surface.parser_sema_conformance_corpus.required_case_count == 5u &&" in pass_manager_contract
 
 
 def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:

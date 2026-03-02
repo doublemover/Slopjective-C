@@ -719,6 +719,12 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   if (!result.deterministic_parser_sema_conformance_matrix) {
     return result;
   }
+  result.parser_sema_conformance_corpus = handoff.parser_sema_conformance_corpus;
+  result.deterministic_parser_sema_conformance_corpus =
+      handoff.parser_sema_conformance_corpus.deterministic;
+  if (!result.deterministic_parser_sema_conformance_corpus) {
+    return result;
+  }
   result.deterministic_parser_sema_handoff = handoff.deterministic;
   if (!handoff.deterministic) {
     return result;
@@ -2070,6 +2076,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
   result.parity_surface.parser_sema_conformance_matrix =
       result.parser_sema_conformance_matrix;
+  result.parity_surface.parser_sema_conformance_corpus =
+      result.parser_sema_conformance_corpus;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
   result.parity_surface.diagnostics_total = result.diagnostics.size();
@@ -3060,6 +3068,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.deterministic_parser_sema_conformance_matrix =
       result.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic;
+  result.parity_surface.deterministic_parser_sema_conformance_corpus =
+      result.deterministic_parser_sema_conformance_corpus &&
+      result.parity_surface.parser_sema_conformance_corpus.deterministic;
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
   result.parity_surface.deterministic_interface_implementation_handoff =
@@ -4942,7 +4953,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.ready =
       result.executed &&
       result.parity_surface.deterministic_parser_sema_conformance_matrix &&
+      result.parity_surface.deterministic_parser_sema_conformance_corpus &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic &&
+      result.parity_surface.parser_sema_conformance_corpus.deterministic &&
       result.parity_surface.parser_sema_conformance_matrix
           .top_level_declaration_count_matches &&
       result.parity_surface.parser_sema_conformance_matrix
@@ -4991,6 +5004,32 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .parser_contract_snapshot_deterministic &&
       result.parity_surface.parser_sema_conformance_matrix
           .parser_recovery_replay_ready &&
+      result.parity_surface.parser_sema_conformance_corpus.required_case_count ==
+          5u &&
+      result.parity_surface.parser_sema_conformance_corpus.passed_case_count ==
+          result.parity_surface.parser_sema_conformance_corpus.required_case_count &&
+      result.parity_surface.parser_sema_conformance_corpus.failed_case_count ==
+          0u &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .has_top_level_declaration_count_case &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .has_snapshot_fingerprint_case &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .has_diagnostic_budget_case &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .has_subset_count_case &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .has_recovery_replay_case &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .top_level_declaration_count_case_passed &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .snapshot_fingerprint_case_passed &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .diagnostic_budget_case_passed &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .subset_count_case_passed &&
+      result.parity_surface.parser_sema_conformance_corpus
+          .recovery_replay_case_passed &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
