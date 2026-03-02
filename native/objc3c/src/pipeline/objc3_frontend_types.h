@@ -101,6 +101,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool long_tail_grammar_compatibility_handoff_ready = false;
   bool long_tail_grammar_edge_case_compatibility_consistent = false;
   bool long_tail_grammar_edge_case_compatibility_ready = false;
+  bool long_tail_grammar_edge_case_expansion_consistent = false;
+  bool long_tail_grammar_edge_case_robustness_ready = false;
   bool parse_artifact_handoff_consistent = false;
   bool parse_artifact_handoff_deterministic = false;
   bool parser_diagnostic_surface_consistent = false;
@@ -156,6 +158,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string long_tail_grammar_handoff_key;
   std::string long_tail_grammar_expansion_key;
   std::string long_tail_grammar_edge_case_compatibility_key;
+  std::string long_tail_grammar_edge_case_robustness_key;
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_edge_robustness_key;
   std::string parse_recovery_determinism_hardening_key;

@@ -56,6 +56,10 @@ Current-state note:
   (`long_tail_grammar_edge_case_compatibility_*`) in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so compatibility drift
   fails closed before lowering readiness is reported.
+- M250 lane-A A006 edge-case expansion and robustness anchors explicit
+  expansion/robustness guardrails (`long_tail_grammar_edge_case_*_robustness*`)
+  in `pipeline/objc3_parse_lowering_readiness_surface.h` so edge-case expansion
+  drift fails closed before conformance matrix readiness is reported.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
