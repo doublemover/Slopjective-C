@@ -84,6 +84,12 @@ Current-state note:
   (`recovery_determinism_consistent`, `recovery_determinism_*`) and enforces
   fail-closed recovery-determinism gating in
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
+- M228 lane-A A009 conformance matrix implementation extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  deterministic conformance-matrix guardrails
+  (`conformance_matrix_consistent`, `conformance_matrix_*`) and enforces
+  fail-closed conformance-matrix gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,

@@ -115,6 +115,24 @@ std::string BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-conformance-matrix:v1:"
+      << "recovery-determinism-ready="
+      << (surface.recovery_determinism_ready ? "true" : "false")
+      << ";conformance-matrix-consistent="
+      << (surface.conformance_matrix_consistent ? "true" : "false")
+      << ";conformance-matrix-ready="
+      << (surface.conformance_matrix_ready ? "true" : "false")
+      << ";lowering-boundary-replay-key=" << surface.lowering_boundary_replay_key
+      << ";runtime-dispatch-declaration-replay-key="
+      << surface.runtime_dispatch_declaration_replay_key
+      << ";recovery-determinism-key-ready="
+      << (!surface.recovery_determinism_key.empty() ? "true" : "false");
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -249,6 +267,23 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       !surface.diagnostics_hardening_key.empty();
   surface.recovery_determinism_key =
       BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(surface);
+  surface.conformance_matrix_consistent =
+      surface.recovery_determinism_ready &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_conformance_matrix_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_conformance_matrix_consistent;
+  surface.conformance_matrix_ready =
+      surface.conformance_matrix_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_conformance_matrix_ready &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .long_tail_grammar_conformance_matrix_key.empty() &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .parse_lowering_conformance_matrix_key.empty() &&
+      !surface.recovery_determinism_key.empty();
+  surface.conformance_matrix_key =
+      BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
@@ -258,7 +293,8 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       surface.edge_case_compatibility_ready &&
       surface.edge_case_robustness_ready &&
       surface.diagnostics_hardening_ready &&
-      surface.recovery_determinism_ready) {
+      surface.recovery_determinism_ready &&
+      surface.conformance_matrix_ready) {
     return surface;
   }
 
@@ -307,6 +343,12 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "pass-graph recovery determinism is not ready";
   } else if (surface.recovery_determinism_key.empty()) {
     surface.failure_reason = "pass-graph recovery determinism key is not ready";
+  } else if (!surface.conformance_matrix_consistent) {
+    surface.failure_reason = "pass-graph conformance matrix is inconsistent";
+  } else if (!surface.conformance_matrix_ready) {
+    surface.failure_reason = "pass-graph conformance matrix is not ready";
+  } else if (surface.conformance_matrix_key.empty()) {
+    surface.failure_reason = "pass-graph conformance matrix key is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -388,6 +430,19 @@ bool IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph recovery determinism is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphConformanceMatrixReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.conformance_matrix_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph conformance matrix is not ready"
                : surface.failure_reason;
   return false;
 }
