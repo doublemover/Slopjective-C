@@ -315,6 +315,19 @@ class Objc3IREmitter {
                  .lowering_inline_asm_intrinsic_governance_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .ownership_aware_lowering_core_feature_expansion_key.empty()) {
+      out << "; ownership_aware_lowering_core_feature_expansion = "
+          << frontend_metadata_
+                 .ownership_aware_lowering_core_feature_expansion_key
+          << "\n";
+    }
+    out << "; ownership_aware_lowering_core_feature_expansion_ready = "
+        << (frontend_metadata_
+                    .ownership_aware_lowering_core_feature_expansion_ready
+                ? "true"
+                : "false")
+        << "\n";
     if (!frontend_metadata_.lowering_pass_graph_core_feature_key.empty()) {
       out << "; lowering_pass_graph_core_feature = "
           << frontend_metadata_.lowering_pass_graph_core_feature_key << "\n";

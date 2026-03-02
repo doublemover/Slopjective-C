@@ -82,6 +82,9 @@ At minimum, the pass-graph gate shall validate:
   for ownership qualifier, retain/release, autoreleasepool, and ARC
   diagnostics/fixit lowering contracts so milestone optimization improvements
   cannot bypass direct LLVM IR emission hardening.
+- ownership-aware lowering core feature expansion shall remain fail-closed for
+  weak/unowned semantics integration, ownership profile accounting consistency,
+  and deterministic expansion replay keys before direct LLVM IR emission.
 - direct IR emission completeness for ObjC lowering patterns shall remain
   metadata-stable and fail closed on pass-graph or lowering-boundary drift.
 - IR-emission completeness modular split scaffolding shall remain deterministic

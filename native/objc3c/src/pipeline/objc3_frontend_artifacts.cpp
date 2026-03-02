@@ -1792,6 +1792,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           retain_release_operation_lowering_replay_key,
           autoreleasepool_scope_lowering_contract,
           autoreleasepool_scope_lowering_replay_key,
+          weak_unowned_semantics_lowering_contract,
+          weak_unowned_semantics_lowering_replay_key,
           arc_diagnostics_fixit_lowering_contract,
           arc_diagnostics_fixit_lowering_replay_key);
   std::string ownership_aware_lowering_behavior_error;
@@ -1804,6 +1806,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L305",
         "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
             ownership_aware_lowering_behavior_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_expansion_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_expansion_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L310",
+        "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
+            ownership_aware_lowering_behavior_expansion_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -5072,6 +5087,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
       symbol_graph_scope_resolution_summary.deterministic_handoff_key;
+  ir_frontend_metadata.ownership_aware_lowering_core_feature_expansion_ready =
+      ownership_aware_lowering_behavior_scaffold.expansion_ready;
+  ir_frontend_metadata.ownership_aware_lowering_core_feature_expansion_key =
+      ownership_aware_lowering_behavior_scaffold.expansion_key;
   ir_frontend_metadata.lowering_pass_graph_core_feature_ready =
       pipeline_result.ir_emission_completeness_scaffold.core_feature_ready;
   ir_frontend_metadata.lowering_pass_graph_core_feature_key =

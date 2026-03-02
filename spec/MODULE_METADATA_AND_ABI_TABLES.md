@@ -62,11 +62,14 @@ A conforming implementation shall preserve, for all exported declarations:
      retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
    - ownership-aware lowering modular split scaffold readiness keys proving
      lane-contract replay-key determinism before lowering/emit handoff,
-   - ownership-aware lowering core-feature implementation readiness markers
-     proving fail-closed ownership-lowering replay-key determinism and
-     milestone optimization improvements before direct IR emission hardening,
-   - direct IR-emission completeness metadata keys for pass-graph core/expansion
-     readiness suitable for replay-proof closeout evidence,
+    - ownership-aware lowering core-feature implementation readiness markers
+      proving fail-closed ownership-lowering replay-key determinism and
+      milestone optimization improvements before direct IR emission hardening,
+    - ownership-aware lowering core-feature expansion readiness/key markers
+      proving weak/unowned expansion-accounting consistency and deterministic
+      replay-proof key transport before direct IR emission,
+    - direct IR-emission completeness metadata keys for pass-graph core/expansion
+      readiness suitable for replay-proof closeout evidence,
    - deterministic IR-emission completeness modular split scaffold key/ready
      anchors linking pass-graph core, expansion, and edge compatibility replay
      evidence,

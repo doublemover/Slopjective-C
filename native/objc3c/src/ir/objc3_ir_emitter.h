@@ -477,6 +477,8 @@ struct Objc3IRFrontendMetadata {
   bool deterministic_symbol_graph_handoff = false;
   bool deterministic_scope_resolution_handoff = false;
   std::string deterministic_symbol_graph_scope_resolution_handoff_key;
+  bool ownership_aware_lowering_core_feature_expansion_ready = false;
+  std::string ownership_aware_lowering_core_feature_expansion_key;
   bool lowering_pass_graph_core_feature_ready = false;
   std::string lowering_pass_graph_core_feature_key;
   bool lowering_pass_graph_core_feature_expansion_ready = false;
