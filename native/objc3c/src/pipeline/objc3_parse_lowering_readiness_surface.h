@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "pipeline/objc3_frontend_types.h"
 
@@ -117,6 +119,85 @@ inline std::string BuildObjc3CompatibilityHandoffKey(
          ";consistent=" + (compatibility_handoff_consistent ? "true" : "false");
 }
 
+struct Objc3ParseLoweringDiagnosticCodeCoverage {
+  std::size_t unique_code_count = 0;
+  std::uint64_t unique_code_fingerprint = 1469598103934665603ull;
+  bool deterministic_surface = true;
+};
+
+inline std::string TryExtractObjc3ParseLoweringDiagnosticCode(
+    const std::string &diag_text,
+    bool &ok) {
+  ok = false;
+  const std::size_t end = diag_text.size();
+  if (end < 3u || diag_text[end - 1] != ']') {
+    return std::string{};
+  }
+  const std::size_t begin = diag_text.rfind('[');
+  if (begin == std::string::npos || begin + 2u >= end) {
+    return std::string{};
+  }
+  const std::string code = diag_text.substr(begin + 1u, end - begin - 2u);
+  if (code.empty()) {
+    return std::string{};
+  }
+  ok = true;
+  return code;
+}
+
+inline std::uint64_t MixObjc3ParseLoweringDiagnosticCodeFingerprint(
+    std::uint64_t fingerprint,
+    const std::string &code) {
+  constexpr std::uint64_t kFnvPrime = 1099511628211ull;
+  fingerprint = (fingerprint ^ static_cast<std::uint64_t>(code.size())) * kFnvPrime;
+  for (const unsigned char c : code) {
+    fingerprint = (fingerprint ^ static_cast<std::uint64_t>(c)) * kFnvPrime;
+  }
+  return fingerprint;
+}
+
+inline Objc3ParseLoweringDiagnosticCodeCoverage BuildObjc3ParseLoweringDiagnosticCodeCoverage(
+    const std::vector<std::string> &parser_diagnostics) {
+  Objc3ParseLoweringDiagnosticCodeCoverage coverage;
+  std::vector<std::string> sorted_codes;
+  sorted_codes.reserve(parser_diagnostics.size());
+  for (const auto &diag_text : parser_diagnostics) {
+    bool code_ok = false;
+    const std::string code = TryExtractObjc3ParseLoweringDiagnosticCode(diag_text, code_ok);
+    if (!code_ok) {
+      coverage.deterministic_surface = false;
+      continue;
+    }
+    sorted_codes.push_back(code);
+  }
+  std::sort(sorted_codes.begin(), sorted_codes.end());
+  sorted_codes.erase(std::unique(sorted_codes.begin(), sorted_codes.end()), sorted_codes.end());
+  coverage.unique_code_count = sorted_codes.size();
+  for (const auto &code : sorted_codes) {
+    coverage.unique_code_fingerprint =
+        MixObjc3ParseLoweringDiagnosticCodeFingerprint(coverage.unique_code_fingerprint, code);
+  }
+  return coverage;
+}
+
+inline std::string BuildObjc3ParseArtifactDiagnosticsHardeningKey(
+    std::size_t parser_diagnostic_count,
+    std::size_t parser_snapshot_diagnostic_count,
+    std::size_t parser_diagnostic_code_count,
+    std::uint64_t parser_diagnostic_code_fingerprint,
+    bool parser_diagnostic_surface_consistent,
+    bool parser_diagnostic_code_surface_deterministic,
+    bool parse_artifact_diagnostics_hardening_consistent) {
+  return "parser_diagnostics=" + std::to_string(parser_diagnostic_count) +
+         ";snapshot_parser_diagnostics=" + std::to_string(parser_snapshot_diagnostic_count) +
+         ";diagnostic_code_count=" + std::to_string(parser_diagnostic_code_count) +
+         ";diagnostic_code_fingerprint=" + std::to_string(parser_diagnostic_code_fingerprint) +
+         ";diagnostic_surface_consistent=" + (parser_diagnostic_surface_consistent ? "true" : "false") +
+         ";diagnostic_code_surface_deterministic=" +
+         (parser_diagnostic_code_surface_deterministic ? "true" : "false") +
+         ";consistent=" + (parse_artifact_diagnostics_hardening_consistent ? "true" : "false");
+}
+
 inline std::string BuildObjc3ParseArtifactEdgeRobustnessKey(
     std::size_t parser_token_count,
     std::size_t parser_snapshot_breakdown_count,
@@ -159,10 +240,20 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       Objc3ParserSnapshotDeclarationBreakdownCount(parser_snapshot);
   const std::size_t ast_top_level_declaration_count =
       Objc3ParsedProgramTopLevelDeclarationCount(pipeline_result.program);
+  const Objc3ParseLoweringDiagnosticCodeCoverage parser_diagnostic_code_coverage =
+      BuildObjc3ParseLoweringDiagnosticCodeCoverage(pipeline_result.stage_diagnostics.parser);
   const bool parser_snapshot_breakdown_consistent =
       parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
-  const bool parser_diagnostic_surface_consistent =
+  surface.parser_diagnostic_surface_consistent =
       parser_snapshot.parser_diagnostic_count == surface.parser_diagnostic_count;
+  surface.parser_diagnostic_code_count = parser_diagnostic_code_coverage.unique_code_count;
+  surface.parser_diagnostic_code_fingerprint = parser_diagnostic_code_coverage.unique_code_fingerprint;
+  surface.parser_diagnostic_code_surface_deterministic =
+      parser_diagnostic_code_coverage.deterministic_surface &&
+      surface.parser_diagnostic_code_count <= surface.parser_diagnostic_count;
+  surface.parse_artifact_diagnostics_hardening_consistent =
+      surface.parser_diagnostic_surface_consistent &&
+      surface.parser_diagnostic_code_surface_deterministic;
   surface.parser_token_count_budget_consistent =
       surface.parser_token_count >= parser_snapshot_breakdown_count &&
       surface.parser_token_count >= parser_snapshot.top_level_declaration_count &&
@@ -172,7 +263,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       ast_top_level_declaration_count == parser_snapshot.top_level_declaration_count;
   surface.parse_artifact_handoff_deterministic =
       surface.parse_artifact_handoff_consistent &&
-      parser_diagnostic_surface_consistent &&
+      surface.parser_diagnostic_surface_consistent &&
       surface.parser_contract_deterministic;
   surface.parse_artifact_layout_fingerprint_consistent =
       surface.parser_ast_top_level_layout_fingerprint == surface.ast_top_level_layout_fingerprint;
@@ -220,12 +311,23 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.compatibility_handoff_key,
       surface.parse_artifact_fingerprint_consistent,
       surface.parse_artifact_replay_key_deterministic);
+  surface.parse_artifact_diagnostics_hardening_key =
+      BuildObjc3ParseArtifactDiagnosticsHardeningKey(
+          surface.parser_diagnostic_count,
+          parser_snapshot.parser_diagnostic_count,
+          surface.parser_diagnostic_code_count,
+          surface.parser_diagnostic_code_fingerprint,
+          surface.parser_diagnostic_surface_consistent,
+          surface.parser_diagnostic_code_surface_deterministic,
+          surface.parse_artifact_diagnostics_hardening_consistent);
   surface.parse_artifact_edge_case_robustness_consistent =
       surface.parser_token_count_budget_consistent &&
       surface.language_version_pragma_coordinate_order_consistent &&
+      surface.parse_artifact_diagnostics_hardening_consistent &&
       !surface.parse_artifact_handoff_key.empty() &&
       !surface.compatibility_handoff_key.empty() &&
-      !surface.parse_artifact_replay_key.empty();
+      !surface.parse_artifact_replay_key.empty() &&
+      !surface.parse_artifact_diagnostics_hardening_key.empty();
   surface.parse_artifact_edge_robustness_key = BuildObjc3ParseArtifactEdgeRobustnessKey(
       surface.parser_token_count,
       parser_snapshot_breakdown_count,
@@ -263,9 +365,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_handoff_deterministic;
   const bool parse_artifact_replay_key_ready =
       surface.parse_artifact_replay_key_deterministic;
+  const bool parse_artifact_diagnostics_hardening_ready =
+      surface.parse_artifact_diagnostics_hardening_consistent;
   const bool parse_snapshot_replay_ready =
       parse_snapshot_ready &&
       parse_artifact_replay_key_ready &&
+      parse_artifact_diagnostics_hardening_ready &&
       surface.parse_artifact_edge_case_robustness_consistent;
   const bool sema_handoff_ready =
       surface.semantic_integration_surface_built &&
@@ -297,6 +402,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser recovery handoff is not replay ready";
   } else if (!surface.parse_artifact_handoff_consistent) {
     surface.failure_reason = "parse artifact handoff is inconsistent";
+  } else if (!surface.parser_diagnostic_surface_consistent) {
+    surface.failure_reason = "parser diagnostics surface is inconsistent";
+  } else if (!surface.parser_diagnostic_code_surface_deterministic) {
+    surface.failure_reason = "parser diagnostic code surface is not deterministic";
   } else if (!surface.parse_artifact_handoff_deterministic) {
     surface.failure_reason = "parse artifact handoff is not deterministic";
   } else if (!surface.parse_artifact_layout_fingerprint_consistent) {
@@ -307,6 +416,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "compatibility handoff is inconsistent";
   } else if (!surface.parse_artifact_replay_key_deterministic) {
     surface.failure_reason = "parse artifact replay key is not deterministic";
+  } else if (!surface.parse_artifact_diagnostics_hardening_consistent) {
+    surface.failure_reason = "parse artifact diagnostics hardening is inconsistent";
   } else if (!surface.parser_token_count_budget_consistent) {
     surface.failure_reason = "parser token count budget is inconsistent";
   } else if (!surface.language_version_pragma_coordinate_order_consistent) {

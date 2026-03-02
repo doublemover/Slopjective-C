@@ -62,12 +62,15 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parser_recovery_replay_ready = false;
   bool parse_artifact_handoff_consistent = false;
   bool parse_artifact_handoff_deterministic = false;
+  bool parser_diagnostic_surface_consistent = false;
+  bool parser_diagnostic_code_surface_deterministic = false;
   bool parser_token_count_budget_consistent = false;
   bool parse_artifact_layout_fingerprint_consistent = false;
   bool parse_artifact_fingerprint_consistent = false;
   bool compatibility_handoff_consistent = false;
   bool language_version_pragma_coordinate_order_consistent = false;
   bool parse_artifact_replay_key_deterministic = false;
+  bool parse_artifact_diagnostics_hardening_consistent = false;
   bool parse_artifact_edge_case_robustness_consistent = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
@@ -77,9 +80,12 @@ struct Objc3ParseLoweringReadinessSurface {
   bool object_pointer_type_handoff_deterministic = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
+  std::size_t parser_diagnostic_code_count = 0;
+  std::uint64_t parser_diagnostic_code_fingerprint = 1469598103934665603ull;
   std::string parse_artifact_handoff_key;
   std::string compatibility_handoff_key;
   std::string parse_artifact_replay_key;
+  std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_edge_robustness_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;

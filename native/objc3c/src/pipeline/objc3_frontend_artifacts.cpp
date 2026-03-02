@@ -2013,11 +2013,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_artifact_fingerprint_consistent ? "true" : "false")
            << ",\"compatibility_handoff_consistent\": "
            << (bundle.parse_lowering_readiness_surface.compatibility_handoff_consistent ? "true" : "false")
+           << ",\"parser_diagnostic_surface_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parser_diagnostic_surface_consistent ? "true" : "false")
+           << ",\"parser_diagnostic_code_surface_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface.parser_diagnostic_code_surface_deterministic ? "true"
+                                                                                                     : "false")
            << ",\"language_version_pragma_coordinate_order_consistent\": "
            << (bundle.parse_lowering_readiness_surface.language_version_pragma_coordinate_order_consistent ? "true"
                                                                                                             : "false")
            << ",\"parse_artifact_replay_key_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_replay_key_deterministic ? "true" : "false")
+           << ",\"parse_artifact_diagnostics_hardening_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_diagnostics_hardening_consistent ? "true"
+                                                                                                         : "false")
            << ",\"parse_artifact_edge_case_robustness_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_edge_case_robustness_consistent ? "true"
                                                                                                         : "false")
@@ -2025,6 +2033,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
            << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
+           << ",\"parser_diagnostic_code_count\": "
+           << bundle.parse_lowering_readiness_surface.parser_diagnostic_code_count
+           << ",\"parser_diagnostic_code_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.parser_diagnostic_code_fingerprint
            << ",\"parser_contract_snapshot_fingerprint\": "
            << bundle.parse_lowering_readiness_surface.parser_contract_snapshot_fingerprint
            << ",\"parser_ast_shape_fingerprint\": "
@@ -2041,6 +2053,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_replay_key
+           << "\",\"parse_artifact_diagnostics_hardening_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_artifact_diagnostics_hardening_key
            << "\",\"parse_artifact_edge_robustness_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_edge_robustness_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
