@@ -143,12 +143,21 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       parse_guardrails_case_accounting_consistent;
   const bool replay_keys_ready =
       !surface.typed_handoff_key.empty() && !surface.parse_artifact_replay_key.empty();
+  const bool edge_case_compatibility_ready =
+      parse_surface.compatibility_handoff_consistent &&
+      parse_surface.language_version_pragma_coordinate_order_consistent &&
+      parse_surface.parse_artifact_edge_case_robustness_consistent &&
+      parse_surface.parse_artifact_replay_key_deterministic &&
+      parse_surface.parse_recovery_determinism_hardening_consistent &&
+      !parse_surface.compatibility_handoff_key.empty() &&
+      !parse_surface.parse_artifact_edge_robustness_key.empty();
   const bool expansion_ready =
       typed_parse_core_feature_consistent &&
       parse_conformance_consistent &&
       typed_core_feature_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
-      replay_keys_ready;
+      replay_keys_ready &&
+      edge_case_compatibility_ready;
   surface.typed_core_feature_expansion_accounting_consistent =
       typed_core_feature_expansion_accounting_consistent;
   surface.parse_conformance_accounting_consistent =
@@ -169,7 +178,13 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       ";parse-accounting-consistent=" +
       std::string(surface.parse_conformance_accounting_consistent ? "true" : "false") +
       ";replay-keys-ready=" +
-      std::string(surface.replay_keys_ready ? "true" : "false");
+      std::string(surface.replay_keys_ready ? "true" : "false") +
+      ";edge-compat-ready=" +
+      std::string(edge_case_compatibility_ready ? "true" : "false") +
+      ";compat-handoff-consistent=" +
+      std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
+      ";parse-edge-robustness-consistent=" +
+      std::string(parse_surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false");
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -192,6 +207,8 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "parse guardrails case accounting is inconsistent";
   } else if (!replay_keys_ready) {
     surface.failure_reason = "typed/parse replay keys are not ready";
+  } else if (!edge_case_compatibility_ready) {
+    surface.failure_reason = "semantic stability edge-case compatibility is not ready";
   } else if (!expansion_ready) {
     surface.failure_reason = "semantic stability core feature expansion is not ready";
   } else {
