@@ -8,6 +8,7 @@
 
 #include "lex/objc3_lexer.h"
 #include "parse/objc3_ast_builder_contract.h"
+#include "pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -767,6 +768,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(result, options);
   result.semantic_stability_spec_delta_closure_scaffold =
       BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(
+          result.typed_sema_to_lowering_contract_surface,
+          result.parse_lowering_readiness_surface);
+  result.lowering_runtime_stability_invariant_scaffold =
+      BuildObjc3LoweringRuntimeStabilityInvariantScaffold(
           result.typed_sema_to_lowering_contract_surface,
           result.parse_lowering_readiness_surface);
   TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program);

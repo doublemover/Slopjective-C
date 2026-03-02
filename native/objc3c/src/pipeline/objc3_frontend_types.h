@@ -170,6 +170,23 @@ struct Objc3SemanticStabilitySpecDeltaClosureScaffold {
   std::string failure_reason;
 };
 
+struct Objc3LoweringRuntimeStabilityInvariantScaffold {
+  bool typed_surface_present = false;
+  bool parse_readiness_surface_present = false;
+  bool lowering_boundary_ready = false;
+  bool runtime_dispatch_contract_consistent = false;
+  bool typed_handoff_key_deterministic = false;
+  bool typed_core_feature_consistent = false;
+  bool parse_ready_for_lowering = false;
+  bool invariant_proofs_ready = false;
+  bool modular_split_ready = false;
+  std::string lowering_boundary_replay_key;
+  std::string typed_handoff_key;
+  std::string parse_artifact_replay_key;
+  std::string scaffold_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
@@ -274,6 +291,7 @@ struct Objc3FrontendPipelineResult {
   Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
+  Objc3LoweringRuntimeStabilityInvariantScaffold lowering_runtime_stability_invariant_scaffold;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
