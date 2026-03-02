@@ -1902,8 +1902,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.long_tail_grammar_recovery_determinism_consistent,
           surface.long_tail_grammar_recovery_determinism_ready,
           surface.long_tail_grammar_recovery_determinism_key);
-  surface.parse_recovery_determinism_hardening_consistent =
-      surface.parse_recovery_determinism_hardening_consistent &&
+  surface.parse_recovery_determinism_hardening_consistent &=
       toolchain_runtime_ga_operations_recovery_determinism_consistent;
   surface.long_tail_grammar_recovery_determinism_consistent =
       surface.long_tail_grammar_recovery_determinism_consistent &&
