@@ -248,6 +248,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_c002_ir_object_packaging_and_symbol_policy_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split artifact packaging and symbol policy continuity remain
   deterministic and fail-closed against `M249-C001` dependency drift.
+- M249 lane-C C003 IR/object packaging and symbol policy core feature implementation anchors
+  explicit lane-C core-feature artifacts in
+  `docs/contracts/m249_ir_object_packaging_and_symbol_policy_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m249/m249_c003_ir_object_packaging_and_symbol_policy_core_feature_implementation_packet.md`,
+  and `package.json` so core feature artifact packaging and symbol policy continuity remain
+  deterministic and fail-closed against `M249-C001` and `M249-C002` dependency drift.
 - M249 lane-D D001 installer/runtime operations and support tooling anchors
   explicit lane-D contract and architecture freeze artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_contract_and_architecture_freeze_d001_expectations.md`,

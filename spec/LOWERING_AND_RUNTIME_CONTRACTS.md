@@ -165,6 +165,9 @@ At minimum, the pass-graph gate shall validate:
 - IR/object packaging and symbol policy modular split/scaffolding shall preserve explicit
   lane-C dependency anchors (`M249-C001`) and fail closed on modular split
   evidence drift before execution and conformance replay validation advances.
+- IR/object packaging and symbol policy core feature implementation shall preserve explicit
+  lane-C dependency anchors (`M249-C001`, `M249-C002`) and fail closed on core-feature
+  evidence drift before execution and conformance replay validation advances.
 - installer/runtime operations and support tooling governance shall preserve
   explicit lane-D installer/runtime operation anchors and fail closed on
   support-tooling replay drift before architecture freeze readiness advances.

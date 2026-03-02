@@ -137,6 +137,9 @@ A conforming implementation shall preserve, for all exported declarations:
      packaging drift fails closed.
    - deterministic lane-C IR/object packaging modular split metadata anchors for `M249-C002`
      with explicit `M249-C001` dependency continuity so symbol-policy scaffolding drift fails closed.
+   - deterministic lane-C IR/object packaging core-feature metadata anchors for `M249-C003`
+     with explicit `M249-C001` and `M249-C002` dependency continuity so symbol-policy
+     core-feature drift fails closed.
    - deterministic lane-D installer/runtime operations metadata anchors for `M249-D001`
      with runtime-route evidence and support-tooling continuity so installer/runtime
      drift fails closed.
