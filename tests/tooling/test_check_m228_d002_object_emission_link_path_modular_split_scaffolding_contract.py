@@ -30,13 +30,13 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m228-d002-object-emission-link-path-modular-split-scaffolding-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 20
+    assert payload["checks_total"] >= 40
     assert payload["checks_total"] == payload["checks_passed"]
 
 
 def test_contract_default_summary_out_is_under_tmp() -> None:
     args = contract.parse_args([])
-    assert str(args.summary_out).replace("\\", "/").startswith("tmp/")
+    assert str(args.summary_out).replace("\\", "/").startswith("tmp/reports/m228/M228-D002/")
 
 
 def test_contract_fails_closed_when_contract_id_drifts(
@@ -95,3 +95,30 @@ def test_contract_fails_closed_when_scaffold_forces_modular_split_ready(
         failure["check_id"] in {"M228-D002-SCA-07", "M228-D002-FORB-02"}
         for failure in payload["failures"]
     )
+
+
+def test_contract_fails_closed_when_packet_dependency_token_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_packet = tmp_path / "m228_d002_object_emission_link_path_modular_split_scaffolding_packet.md"
+    drift_packet.write_text(
+        contract.ARTIFACTS["packet_doc"].read_text(encoding="utf-8").replace(
+            "Dependencies: `M228-D001`",
+            "Dependencies: `M228-D099`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifacts = dict(contract.ARTIFACTS)
+    artifacts["packet_doc"] = drift_packet
+    monkeypatch.setattr(contract, "ARTIFACTS", artifacts)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-D002-PKT-03" for failure in payload["failures"])

@@ -20,10 +20,21 @@ ARTIFACTS: dict[str, Path] = {
     "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
     "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
     "package_json": ROOT / "package.json",
+    "packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_d002_object_emission_link_path_modular_split_scaffolding_packet.md",
     "d001_contract_doc": ROOT
     / "docs"
     / "contracts"
     / "m228_object_emission_link_path_reliability_contract_freeze_d001_expectations.md",
+    "d001_checker": ROOT / "scripts" / "check_m228_d001_object_emission_link_path_reliability_contract.py",
+    "d001_tooling_test": ROOT
+    / "tests"
+    / "tooling"
+    / "test_check_m228_d001_object_emission_link_path_reliability_contract.py",
     "contract_doc": ROOT
     / "docs"
     / "contracts"
@@ -100,11 +111,73 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M228-D002-CFG-03",
             '"check:objc3c:m228-d002-lane-d-readiness"',
         ),
+        (
+            "M228-D002-CFG-04",
+            '"check:objc3c:m228-d002-lane-d-readiness": "npm run check:objc3c:m228-d001-lane-d-readiness && npm run check:objc3c:m228-d002-object-emission-link-path-modular-split-scaffolding-contract && npm run test:tooling:m228-d002-object-emission-link-path-modular-split-scaffolding-contract"',
+        ),
+        (
+            "M228-D002-CFG-05",
+            '"compile:objc3c":',
+        ),
+        (
+            "M228-D002-CFG-06",
+            '"proof:objc3c":',
+        ),
+        (
+            "M228-D002-CFG-07",
+            '"test:objc3c:execution-replay-proof":',
+        ),
+        (
+            "M228-D002-CFG-08",
+            '"test:objc3c:perf-budget":',
+        ),
+    ),
+    "packet_doc": (
+        (
+            "M228-D002-PKT-01",
+            "# M228-D002 Object Emission and Link Path Reliability Modular Split/Scaffolding Packet",
+        ),
+        (
+            "M228-D002-PKT-02",
+            "Packet: `M228-D002`",
+        ),
+        (
+            "M228-D002-PKT-03",
+            "Dependencies: `M228-D001`",
+        ),
+        (
+            "M228-D002-PKT-04",
+            "scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+        ),
+        (
+            "M228-D002-PKT-05",
+            "tests/tooling/test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+        ),
+        (
+            "M228-D002-PKT-06",
+            "`check:objc3c:m228-d002-lane-d-readiness`",
+        ),
+        (
+            "M228-D002-PKT-07",
+            "`proof:objc3c`",
+        ),
     ),
     "d001_contract_doc": (
         (
             "M228-D002-D001-01",
             "Contract ID: `objc3c-object-emission-link-path-reliability-freeze/m228-d001-v1`",
+        ),
+    ),
+    "d001_checker": (
+        (
+            "M228-D002-D001-02",
+            'MODE = "m228-d001-object-emission-link-path-reliability-freeze-contract-v1"',
+        ),
+    ),
+    "d001_tooling_test": (
+        (
+            "M228-D002-D001-03",
+            "check_m228_d001_object_emission_link_path_reliability_contract",
         ),
     ),
     "contract_doc": (
@@ -115,16 +188,28 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M228-D002-DOC-02", "BuildObjc3ToolchainRuntimeGaOperationsScaffold"),
         (
             "M228-D002-DOC-03",
-            "python scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+            "Dependencies: `M228-D001`",
         ),
         (
             "M228-D002-DOC-04",
-            "python -m pytest tests/tooling/test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py -q",
+            "spec/planning/compiler/m228/m228_d002_object_emission_link_path_modular_split_scaffolding_packet.md",
         ),
-        ("M228-D002-DOC-05", "npm run check:objc3c:m228-d002-lane-d-readiness"),
+        (
+            "M228-D002-DOC-05",
+            "python scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+        ),
         (
             "M228-D002-DOC-06",
+            "python -m pytest tests/tooling/test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py -q",
+        ),
+        ("M228-D002-DOC-07", "npm run check:objc3c:m228-d002-lane-d-readiness"),
+        (
+            "M228-D002-DOC-08",
             "tmp/reports/m228/M228-D002/object_emission_link_path_modular_split_scaffolding_contract_summary.json",
+        ),
+        (
+            "M228-D002-DOC-09",
+            "`proof:objc3c`",
         ),
     ),
 }
