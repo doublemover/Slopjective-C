@@ -22,6 +22,7 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
+  bool diagnostics_hardening_key_ready = false;
   bool core_feature_impl_ready = false;
   std::string backend_route_key;
   std::string scaffold_key;
@@ -107,7 +108,7 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(
       << ";diagnostics_hardening_ready="
       << (surface.diagnostics_hardening_ready ? "true" : "false")
       << ";diagnostics_hardening_key_ready="
-      << (!surface.diagnostics_hardening_key.empty() ? "true" : "false")
+      << (surface.diagnostics_hardening_key_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
 }
@@ -133,6 +134,9 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningKey
   std::ostringstream key;
   key << "toolchain-runtime-ga-operations-diagnostics-hardening:v1:"
       << "backend=" << surface.backend_route_key
+      << ";backend_output_path_deterministic="
+      << (surface.backend_output_path_deterministic ? "true" : "false")
+      << ";backend_output_path=" << surface.backend_output_path
       << ";edge_case_robustness_ready="
       << (surface.edge_case_robustness_ready ? "true" : "false")
       << ";diagnostics_hardening_consistent="
@@ -225,6 +229,14 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       surface.edge_case_robustness_ready &&
       !surface.backend_route_key.empty() &&
       !surface.backend_output_path.empty();
+  surface.diagnostics_hardening_key =
+      BuildObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningKey(surface);
+  surface.diagnostics_hardening_key_ready =
+      surface.diagnostics_hardening_ready &&
+      !surface.diagnostics_hardening_key.empty() &&
+      surface.diagnostics_hardening_key.find("backend=" + surface.backend_route_key) != std::string::npos &&
+      surface.diagnostics_hardening_key.find(";backend_output_path=" + surface.backend_output_path) !=
+          std::string::npos;
   surface.core_feature_impl_ready =
       surface.scaffold_ready &&
       surface.backend_route_deterministic &&
@@ -241,9 +253,8 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
   surface.core_feature_impl_ready =
       surface.core_feature_impl_ready && !surface.edge_case_robustness_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_ready;
+  surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_key_ready;
   surface.core_feature_expansion_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(surface);
-  surface.diagnostics_hardening_key =
-      BuildObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningKey(surface);
   surface.core_feature_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(surface);
 
   if (surface.core_feature_impl_ready) {
@@ -284,6 +295,8 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
     surface.failure_reason = "toolchain/runtime diagnostics hardening is inconsistent";
   } else if (!surface.diagnostics_hardening_ready) {
     surface.failure_reason = "toolchain/runtime diagnostics hardening is not ready";
+  } else if (!surface.diagnostics_hardening_key_ready) {
+    surface.failure_reason = "toolchain/runtime diagnostics hardening key is not ready";
   } else if (surface.scaffold_key.empty()) {
     surface.failure_reason = "toolchain/runtime scaffold key is empty";
   } else {
@@ -291,6 +304,26 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
   }
 
   return surface;
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningReady(
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (!surface.diagnostics_hardening_consistent) {
+    reason = "toolchain/runtime diagnostics hardening is inconsistent";
+    return false;
+  }
+  if (!surface.diagnostics_hardening_ready) {
+    reason = "toolchain/runtime diagnostics hardening is not ready";
+    return false;
+  }
+  if (!surface.diagnostics_hardening_key_ready) {
+    reason = "toolchain/runtime diagnostics hardening key is not ready";
+    return false;
+  }
+
+  reason.clear();
+  return true;
 }
 
 inline bool IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
