@@ -145,6 +145,7 @@ struct Objc3FrontendSymbolGraphScopeResolutionSummary {
 
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
+  Objc3ParserContractSnapshot parser_contract_snapshot;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;

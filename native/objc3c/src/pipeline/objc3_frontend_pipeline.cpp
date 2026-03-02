@@ -699,6 +699,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);
     result.program = std::move(parse_result.program);
     result.stage_diagnostics.parser = std::move(parse_result.diagnostics);
+    result.parser_contract_snapshot = parse_result.contract_snapshot;
   }
   result.selector_normalization_summary =
       BuildSelectorNormalizationSummary(Objc3ParsedProgramAst(result.program));

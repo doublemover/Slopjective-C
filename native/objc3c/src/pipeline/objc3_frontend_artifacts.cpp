@@ -1893,7 +1893,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\n";
   manifest << "      \"stages\": {\n";
   manifest << "        \"lexer\": {\"diagnostics\":" << bundle.stage_diagnostics.lexer.size() << "},\n";
-  manifest << "        \"parser\": {\"diagnostics\":" << bundle.stage_diagnostics.parser.size() << "},\n";
+  manifest << "        \"parser\": {\"diagnostics\":" << bundle.stage_diagnostics.parser.size()
+           << ",\"globals\":" << pipeline_result.parser_contract_snapshot.global_decl_count
+           << ",\"protocols\":" << pipeline_result.parser_contract_snapshot.protocol_decl_count
+           << ",\"interfaces\":" << pipeline_result.parser_contract_snapshot.interface_decl_count
+           << ",\"implementations\":" << pipeline_result.parser_contract_snapshot.implementation_decl_count
+           << ",\"functions\":" << pipeline_result.parser_contract_snapshot.function_decl_count
+           << ",\"deterministic_handoff\":"
+           << (pipeline_result.parser_contract_snapshot.deterministic_handoff ? "true" : "false")
+           << ",\"recovery_replay_ready\":"
+           << (pipeline_result.parser_contract_snapshot.parser_recovery_replay_ready ? "true" : "false") << "},\n";
   manifest << "        \"semantic\": {\"diagnostics\":" << bundle.stage_diagnostics.semantic.size()
            << "}\n";
   manifest << "      },\n";

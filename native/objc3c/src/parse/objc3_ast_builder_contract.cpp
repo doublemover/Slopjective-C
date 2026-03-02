@@ -9,5 +9,6 @@ Objc3AstBuilderResult BuildObjc3AstFromTokens(const Objc3LexTokenStream &tokens)
   Objc3AstBuilderResult builder_result;
   builder_result.program = std::move(parse_result.program);
   builder_result.diagnostics = std::move(parse_result.diagnostics);
+  builder_result.contract_snapshot = parse_result.contract_snapshot;
   return builder_result;
 }

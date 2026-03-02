@@ -8,6 +8,7 @@
 struct Objc3AstBuilderResult {
   Objc3ParsedProgram program;
   std::vector<std::string> diagnostics;
+  Objc3ParserContractSnapshot contract_snapshot;
 };
 
 Objc3AstBuilderResult BuildObjc3AstFromTokens(const Objc3LexTokenStream &tokens);

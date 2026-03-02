@@ -10103,5 +10103,6 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3ParseResult result;
   result.program = parser.Parse();
   result.diagnostics = parser.TakeDiagnostics();
+  result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());
   return result;
 }
