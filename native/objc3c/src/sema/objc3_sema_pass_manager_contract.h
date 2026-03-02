@@ -71,6 +71,10 @@ struct Objc3SemaPassFlowSummary {
   bool pass_order_matches_contract = false;
   bool diagnostics_after_pass_monotonic = false;
   bool diagnostics_emission_totals_consistent = false;
+  bool diagnostics_accounting_consistent = false;
+  bool diagnostics_bus_publish_consistent = false;
+  bool diagnostics_canonicalized = false;
+  bool diagnostics_hardening_satisfied = false;
   bool compatibility_handoff_consistent = false;
   bool robustness_guardrails_satisfied = false;
   bool symbol_flow_counts_consistent = false;
@@ -91,6 +95,10 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidatePureContract)] &&
          summary.diagnostics_after_pass_monotonic &&
          summary.diagnostics_emission_totals_consistent &&
+         summary.diagnostics_accounting_consistent &&
+         summary.diagnostics_bus_publish_consistent &&
+         summary.diagnostics_canonicalized &&
+         summary.diagnostics_hardening_satisfied &&
          summary.compatibility_handoff_consistent &&
          summary.robustness_guardrails_satisfied &&
          summary.symbol_flow_counts_consistent &&
@@ -661,6 +669,10 @@ struct Objc3SemaParityContractSurface {
   std::size_t autoreleasepool_scope_symbolized_sites_total = 0;
   std::size_t autoreleasepool_scope_contract_violation_sites_total = 0;
   unsigned autoreleasepool_scope_max_depth_total = 0;
+  bool diagnostics_accounting_consistent = false;
+  bool diagnostics_bus_publish_consistent = false;
+  bool diagnostics_canonicalized = false;
+  bool diagnostics_hardening_satisfied = false;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_parser_sema_conformance_matrix = false;
   bool deterministic_parser_sema_conformance_corpus = false;
@@ -842,6 +854,10 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_conformance_corpus.diagnostic_budget_case_passed &&
          surface.parser_sema_conformance_corpus.subset_count_case_passed &&
          surface.parser_sema_conformance_corpus.recovery_replay_case_passed &&
+         surface.diagnostics_accounting_consistent &&
+         surface.diagnostics_bus_publish_consistent &&
+         surface.diagnostics_canonicalized &&
+         surface.diagnostics_hardening_satisfied &&
          surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
          surface.deterministic_type_metadata_handoff && surface.deterministic_atomic_memory_order_mapping &&
          surface.deterministic_vector_type_lowering &&
@@ -2433,6 +2449,10 @@ struct Objc3SemaPassManagerResult {
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
+  bool diagnostics_accounting_consistent = false;
+  bool diagnostics_bus_publish_consistent = false;
+  bool diagnostics_canonicalized = false;
+  bool diagnostics_hardening_satisfied = false;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemanticTypeMetadataHandoff type_metadata_handoff;
   bool deterministic_semantic_diagnostics = false;

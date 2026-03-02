@@ -2122,6 +2122,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_parity_surface.diagnostics_total
            << ",\"deterministic_semantic_diagnostics\":"
            << (pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics ? "true" : "false")
+           << ",\"diagnostics_accounting_consistent\":"
+           << (pipeline_result.sema_parity_surface.diagnostics_accounting_consistent ? "true" : "false")
+           << ",\"diagnostics_bus_publish_consistent\":"
+           << (pipeline_result.sema_parity_surface.diagnostics_bus_publish_consistent ? "true" : "false")
+           << ",\"diagnostics_canonicalized\":"
+           << (pipeline_result.sema_parity_surface.diagnostics_canonicalized ? "true" : "false")
+           << ",\"diagnostics_hardening_satisfied\":"
+           << (pipeline_result.sema_parity_surface.diagnostics_hardening_satisfied ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
            << ",\"pass_flow_configured_count\":"
@@ -2154,6 +2162,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_pass_flow_summary.pass_order_matches_contract ? "true" : "false")
            << ",\"pass_flow_diagnostics_emission_totals_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.diagnostics_emission_totals_consistent ? "true" : "false")
+           << ",\"pass_flow_diagnostics_accounting_consistent\":"
+           << (pipeline_result.sema_pass_flow_summary.diagnostics_accounting_consistent ? "true" : "false")
+           << ",\"pass_flow_diagnostics_bus_publish_consistent\":"
+           << (pipeline_result.sema_pass_flow_summary.diagnostics_bus_publish_consistent ? "true" : "false")
+           << ",\"pass_flow_diagnostics_canonicalized\":"
+           << (pipeline_result.sema_pass_flow_summary.diagnostics_canonicalized ? "true" : "false")
+           << ",\"pass_flow_diagnostics_hardening_satisfied\":"
+           << (pipeline_result.sema_pass_flow_summary.diagnostics_hardening_satisfied ? "true" : "false")
            << ",\"pass_flow_compatibility_handoff_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.compatibility_handoff_consistent ? "true" : "false")
            << ",\"pass_flow_robustness_guardrails_satisfied\":"

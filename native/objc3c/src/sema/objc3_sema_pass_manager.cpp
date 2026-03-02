@@ -743,6 +743,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.sema_pass_flow_summary.migration_assist_enabled = input.migration_assist;
   result.sema_pass_flow_summary.migration_legacy_literal_total = input.migration_hints.legacy_total();
   bool deterministic_semantic_diagnostics = handoff.deterministic;
+  bool diagnostics_canonicalized = true;
   bool diagnostics_accounting_consistent = true;
   bool diagnostics_bus_publish_consistent = true;
   bool pass_order_matches_contract = true;
@@ -768,7 +769,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       AppendMigrationAssistDiagnostics(input, pass_diagnostics);
     }
     CanonicalizePassDiagnostics(pass_diagnostics);
-    deterministic_semantic_diagnostics = deterministic_semantic_diagnostics && IsCanonicalPassDiagnostics(pass_diagnostics);
+    const bool pass_diagnostics_canonical = IsCanonicalPassDiagnostics(pass_diagnostics);
+    diagnostics_canonicalized = diagnostics_canonicalized && pass_diagnostics_canonical;
+    deterministic_semantic_diagnostics =
+        deterministic_semantic_diagnostics && pass_diagnostics_canonical;
 
     const std::size_t diagnostics_bus_count_before_publish = input.diagnostics_bus.Count();
     result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());
@@ -791,10 +795,18 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   const bool diagnostics_emission_totals_consistent = diagnostics_emitted_total == result.diagnostics.size();
   const bool diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
-  result.deterministic_semantic_diagnostics =
-      deterministic_semantic_diagnostics && diagnostics_accounting_consistent &&
-      diagnostics_bus_publish_consistent && diagnostics_emission_totals_consistent &&
+  result.diagnostics_accounting_consistent = diagnostics_accounting_consistent;
+  result.diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent;
+  result.diagnostics_canonicalized = diagnostics_canonicalized;
+  result.diagnostics_hardening_satisfied =
+      result.diagnostics_accounting_consistent &&
+      result.diagnostics_bus_publish_consistent &&
+      result.diagnostics_canonicalized &&
+      diagnostics_emission_totals_consistent &&
       diagnostics_after_pass_monotonic;
+  result.deterministic_semantic_diagnostics =
+      deterministic_semantic_diagnostics &&
+      result.diagnostics_hardening_satisfied;
   if (!result.deterministic_semantic_diagnostics) {
     return result;
   }
@@ -2098,6 +2110,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
   result.sema_pass_flow_summary.diagnostics_after_pass = result.diagnostics_after_pass;
   result.sema_pass_flow_summary.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
+  result.sema_pass_flow_summary.diagnostics_accounting_consistent = result.diagnostics_accounting_consistent;
+  result.sema_pass_flow_summary.diagnostics_bus_publish_consistent = result.diagnostics_bus_publish_consistent;
+  result.sema_pass_flow_summary.diagnostics_canonicalized = result.diagnostics_canonicalized;
+  result.sema_pass_flow_summary.diagnostics_hardening_satisfied = result.diagnostics_hardening_satisfied;
   FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,
                                    result.integration_surface,
                                    result.type_metadata_handoff,
@@ -3099,8 +3115,17 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.autoreleasepool_scope_summary.contract_violation_sites;
   result.parity_surface.autoreleasepool_scope_max_depth_total =
       result.parity_surface.autoreleasepool_scope_summary.max_scope_depth;
+  result.parity_surface.diagnostics_accounting_consistent = result.diagnostics_accounting_consistent;
+  result.parity_surface.diagnostics_bus_publish_consistent = result.diagnostics_bus_publish_consistent;
+  result.parity_surface.diagnostics_canonicalized = result.diagnostics_canonicalized;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  result.parity_surface.diagnostics_hardening_satisfied =
+      result.diagnostics_hardening_satisfied &&
+      result.parity_surface.diagnostics_accounting_consistent &&
+      result.parity_surface.diagnostics_bus_publish_consistent &&
+      result.parity_surface.diagnostics_canonicalized &&
+      result.parity_surface.diagnostics_after_pass_monotonic;
   result.parity_surface.deterministic_parser_sema_conformance_matrix =
       result.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic;
@@ -5095,6 +5120,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           .subset_count_case_passed &&
       result.parity_surface.parser_sema_conformance_corpus
           .recovery_replay_case_passed &&
+      result.parity_surface.diagnostics_accounting_consistent &&
+      result.parity_surface.diagnostics_bus_publish_consistent &&
+      result.parity_surface.diagnostics_canonicalized &&
+      result.parity_surface.diagnostics_hardening_satisfied &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
