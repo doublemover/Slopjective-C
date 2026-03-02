@@ -110,6 +110,9 @@ A conforming implementation shall preserve, for all exported declarations:
      evidence continuity,
    - deterministic lane-D toolchain/runtime edge-case compatibility
      consistency/readiness and compatibility-key anchors for closeout evidence,
+   - deterministic lane-D toolchain/runtime edge-case robustness
+     consistency/readiness and robustness-key anchors for expansion evidence
+     continuity,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
    - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,
