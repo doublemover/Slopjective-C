@@ -605,6 +605,136 @@ function Write-FrontendRecoveryDeterminismHardeningArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendConformanceMatrixArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendRecoveryDeterminismHardeningPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendRecoveryDeterminismHardeningPath -PathType Leaf)) {
+    throw "frontend recovery determinism hardening artifact missing for conformance matrix artifact: $FrontendRecoveryDeterminismHardeningPath"
+  }
+
+  try {
+    $recoveryPayload = Get-Content -LiteralPath $FrontendRecoveryDeterminismHardeningPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend recovery determinism hardening artifact is not valid JSON for conformance matrix artifact: $FrontendRecoveryDeterminismHardeningPath"
+  }
+
+  $expectedRecoveryContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1"
+  if ([string]$recoveryPayload.contract_id -ne $expectedRecoveryContractId) {
+    throw "frontend recovery determinism hardening contract id mismatch for conformance matrix artifact: $FrontendRecoveryDeterminismHardeningPath"
+  }
+
+  $cacheModes = @("no-cache", "cache-aware")
+  $backendModes = @("default", "clang", "llvm-direct")
+  $summaryModes = @("none", "present")
+  $acceptRows = New-Object System.Collections.Generic.List[object]
+  $caseOrdinal = 1
+  foreach ($cacheMode in $cacheModes) {
+    foreach ($backendMode in $backendModes) {
+      foreach ($summaryMode in $summaryModes) {
+        $profileKey = "{0}|{1}|manual|{2}" -f $cacheMode, $backendMode, $summaryMode
+        $acceptRows.Add([ordered]@{
+          case_id = ("D009-C{0:D3}" -f $caseOrdinal)
+          profile_key = $profileKey
+          expected_result = "accept"
+          cache_mode = $cacheMode
+          backend_mode = $backendMode
+          routing_mode = "manual"
+          capability_summary_mode = $summaryMode
+        })
+        $caseOrdinal++
+      }
+
+      $profileKey = "{0}|{1}|capability-route|present" -f $cacheMode, $backendMode
+      $acceptRows.Add([ordered]@{
+        case_id = ("D009-C{0:D3}" -f $caseOrdinal)
+        profile_key = $profileKey
+        expected_result = "accept"
+        cache_mode = $cacheMode
+        backend_mode = $backendMode
+        routing_mode = "capability-route"
+        capability_summary_mode = "present"
+      })
+      $caseOrdinal++
+    }
+  }
+
+  $rejectRows = @(
+    [ordered]@{
+      case_id = "D009-R001"
+      profile_key = "any|any|capability-route|none"
+      expected_result = "reject"
+      required_diagnostic = "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
+      fail_closed_exit_code = 2
+    }
+    [ordered]@{
+      case_id = "D009-R002"
+      profile_key = "any|unsupported-backend|any|any"
+      expected_result = "reject"
+      required_diagnostic = "unsupported value '<backend>' for --objc3-ir-object-backend"
+      fail_closed_exit_code = 2
+    }
+    [ordered]@{
+      case_id = "D009-R003"
+      profile_key = "any|any|any|any"
+      expected_result = "reject"
+      required_diagnostic = "--objc3-ir-object-backend can be provided at most once"
+      fail_closed_exit_code = 2
+    }
+    [ordered]@{
+      case_id = "D009-R004"
+      profile_key = "any|any|any|path-parent-segment"
+      expected_result = "reject"
+      required_diagnostic = "--llvm-capabilities-summary must not contain '..' relative segments"
+      fail_closed_exit_code = 2
+    }
+    [ordered]@{
+      case_id = "D009-R005"
+      profile_key = "any|any|duplicate-route-flag|any"
+      expected_result = "reject"
+      required_diagnostic = "--objc3-route-backend-from-capabilities can be provided at most once"
+      fail_closed_exit_code = 2
+    }
+  )
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-conformance-matrix/m226-d009-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedRecoveryContractId
+      "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+    )
+    profile_key_fields = @(
+      "cache_mode"
+      "backend_mode"
+      "routing_mode"
+      "capability_summary_mode"
+    )
+    matrix_dimensions = [ordered]@{
+      cache_modes = $cacheModes
+      backend_modes = $backendModes
+      routing_modes = @("manual", "capability-route")
+      capability_summary_modes = $summaryModes
+    }
+    acceptance_profile_count = $acceptRows.Count
+    rejection_profile_count = $rejectRows.Count
+    acceptance_matrix = $acceptRows.ToArray()
+    rejection_matrix = $rejectRows
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 10) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -685,6 +815,7 @@ $frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/front
 $frontendEdgeRobustnessPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_robustness.json"
 $frontendDiagnosticsHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json"
 $frontendRecoveryDeterminismHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json"
+$frontendConformanceMatrixPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -771,6 +902,10 @@ Write-FrontendRecoveryDeterminismHardeningArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendRecoveryDeterminismHardeningPath `
   -FrontendDiagnosticsHardeningPath $frontendDiagnosticsHardeningPath
+Write-FrontendConformanceMatrixArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendConformanceMatrixPath `
+  -FrontendRecoveryDeterminismHardeningPath $frontendRecoveryDeterminismHardeningPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
@@ -780,3 +915,4 @@ Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoo
 Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeRobustnessPath))
 Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendDiagnosticsHardeningPath))
 Write-Output ("frontend_recovery_determinism_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendRecoveryDeterminismHardeningPath))
+Write-Output ("frontend_conformance_matrix=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceMatrixPath))

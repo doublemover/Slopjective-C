@@ -425,6 +425,7 @@ function Invoke-BuildNativeCompiler {
   $frontendEdgeRobustnessRelativePath = $null
   $frontendDiagnosticsHardeningRelativePath = $null
   $frontendRecoveryDeterminismHardeningRelativePath = $null
+  $frontendConformanceMatrixRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -449,6 +450,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_recovery_determinism_hardening=")) {
       $frontendRecoveryDeterminismHardeningRelativePath = $lineText.Substring("frontend_recovery_determinism_hardening=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_conformance_matrix=")) {
+      $frontendConformanceMatrixRelativePath = $lineText.Substring("frontend_conformance_matrix=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -460,6 +464,7 @@ function Invoke-BuildNativeCompiler {
     frontend_edge_robustness_relative_path = $frontendEdgeRobustnessRelativePath
     frontend_diagnostics_hardening_relative_path = $frontendDiagnosticsHardeningRelativePath
     frontend_recovery_determinism_hardening_relative_path = $frontendRecoveryDeterminismHardeningRelativePath
+    frontend_conformance_matrix_relative_path = $frontendConformanceMatrixRelativePath
   }
 }
 
@@ -597,6 +602,24 @@ function Resolve-FrontendRecoveryDeterminismHardeningPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend recovery determinism hardening"
+}
+
+function Resolve-FrontendConformanceMatrixPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_conformance_matrix_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend conformance matrix"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -1596,6 +1619,247 @@ function Assert-FrontendRecoveryDeterminismHardening {
   }
 }
 
+function Assert-FrontendConformanceMatrix {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult,
+    [object]$ParsedArgs,
+    [string[]]$EffectiveCompileArgs
+  )
+
+  $conformancePath = Resolve-FrontendConformanceMatrixPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $conformancePath -PathType Leaf)) {
+    Write-Error "frontend conformance matrix artifact missing at $conformancePath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $conformancePath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend conformance matrix artifact is not valid JSON at $conformancePath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-conformance-matrix/m226-d009-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend conformance matrix contract id mismatch in $conformancePath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1",
+    "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend conformance matrix missing dependency contract '$requiredContractId' in $conformancePath"
+      exit 2
+    }
+  }
+
+  if ([int]$payload.acceptance_profile_count -le 0) {
+    Write-Error "frontend conformance matrix acceptance_profile_count must be positive in $conformancePath"
+    exit 2
+  }
+  if ([int]$payload.rejection_profile_count -le 0) {
+    Write-Error "frontend conformance matrix rejection_profile_count must be positive in $conformancePath"
+    exit 2
+  }
+
+  $acceptanceRows = @($payload.acceptance_matrix)
+  $acceptanceProfileSet = @{}
+  foreach ($row in $acceptanceRows) {
+    $caseId = [string]$row.case_id
+    $profileKey = [string]$row.profile_key
+    $expectedResult = [string]$row.expected_result
+    if ([string]::IsNullOrWhiteSpace($caseId) -or [string]::IsNullOrWhiteSpace($profileKey)) {
+      Write-Error "frontend conformance matrix acceptance rows must define case_id and profile_key in $conformancePath"
+      exit 2
+    }
+    if ($expectedResult -ne "accept") {
+      Write-Error "frontend conformance matrix acceptance row '$caseId' must declare expected_result='accept' in $conformancePath"
+      exit 2
+    }
+    if ($acceptanceProfileSet.ContainsKey($profileKey)) {
+      Write-Error "frontend conformance matrix duplicate acceptance profile '$profileKey' in $conformancePath"
+      exit 2
+    }
+    $acceptanceProfileSet[$profileKey] = $caseId
+  }
+  if ([int]$payload.acceptance_profile_count -ne $acceptanceRows.Count) {
+    Write-Error "frontend conformance matrix acceptance_profile_count mismatch in $conformancePath"
+    exit 2
+  }
+
+  $expectedProfileSet = @{}
+  foreach ($cacheMode in @("no-cache", "cache-aware")) {
+    foreach ($backendMode in @("default", "clang", "llvm-direct")) {
+      foreach ($summaryMode in @("none", "present")) {
+        $profileKey = "{0}|{1}|manual|{2}" -f $cacheMode, $backendMode, $summaryMode
+        $expectedProfileSet[$profileKey] = $true
+      }
+      $profileKey = "{0}|{1}|capability-route|present" -f $cacheMode, $backendMode
+      $expectedProfileSet[$profileKey] = $true
+    }
+  }
+  foreach ($expectedProfile in $expectedProfileSet.Keys) {
+    if (-not $acceptanceProfileSet.ContainsKey($expectedProfile)) {
+      Write-Error "frontend conformance matrix missing acceptance profile '$expectedProfile' in $conformancePath"
+      exit 2
+    }
+  }
+
+  $requiredRejectDiagnostics = @(
+    "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary",
+    "unsupported value '<backend>' for --objc3-ir-object-backend",
+    "--objc3-ir-object-backend can be provided at most once",
+    "--llvm-capabilities-summary must not contain '..' relative segments",
+    "--objc3-route-backend-from-capabilities can be provided at most once"
+  )
+  $rejectRows = @($payload.rejection_matrix)
+  if ([int]$payload.rejection_profile_count -ne $rejectRows.Count) {
+    Write-Error "frontend conformance matrix rejection_profile_count mismatch in $conformancePath"
+    exit 2
+  }
+  $rejectDiagnosticSet = @{}
+  foreach ($row in $rejectRows) {
+    $caseId = [string]$row.case_id
+    $expectedResult = [string]$row.expected_result
+    $requiredDiagnostic = [string]$row.required_diagnostic
+    if ([string]::IsNullOrWhiteSpace($caseId) -or [string]::IsNullOrWhiteSpace($requiredDiagnostic)) {
+      Write-Error "frontend conformance matrix rejection rows must define case_id and required_diagnostic in $conformancePath"
+      exit 2
+    }
+    if ($expectedResult -ne "reject") {
+      Write-Error "frontend conformance matrix rejection row '$caseId' must declare expected_result='reject' in $conformancePath"
+      exit 2
+    }
+    $rejectDiagnosticSet[$requiredDiagnostic] = $true
+  }
+  foreach ($requiredDiagnostic in $requiredRejectDiagnostics) {
+    if (-not $rejectDiagnosticSet.ContainsKey($requiredDiagnostic)) {
+      Write-Error "frontend conformance matrix missing rejection diagnostic '$requiredDiagnostic' in $conformancePath"
+      exit 2
+    }
+  }
+
+  $compileArgs = @($EffectiveCompileArgs)
+  $cacheMode = if ($null -ne $ParsedArgs -and [bool]$ParsedArgs.use_cache) { "cache-aware" } else { "no-cache" }
+  $backendMode = "default"
+  $routingMode = "manual"
+  $summaryMode = "none"
+  $routeEnabled = $false
+
+  for ($i = 0; $i -lt $compileArgs.Count; $i++) {
+    $token = [string]$compileArgs[$i]
+
+    if ($token -eq "--objc3-ir-object-backend") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $i++
+      $backendValue = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($backendValue)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendKey = $backendValue.Trim().ToLowerInvariant().Replace("_", "-")
+      if (@("clang", "llvm-direct") -notcontains $backendKey) {
+        Write-Error "unsupported value '$backendValue' for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendMode = $backendKey
+      continue
+    }
+
+    if ($token.StartsWith("--objc3-ir-object-backend=", [System.StringComparison]::Ordinal)) {
+      $backendValue = $token.Substring("--objc3-ir-object-backend=".Length)
+      if ([string]::IsNullOrWhiteSpace($backendValue)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendKey = $backendValue.Trim().ToLowerInvariant().Replace("_", "-")
+      if (@("clang", "llvm-direct") -notcontains $backendKey) {
+        Write-Error "unsupported value '$backendValue' for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendMode = $backendKey
+      continue
+    }
+
+    if ($token -eq "--llvm-capabilities-summary") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $i++
+      $summaryValue = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($summaryValue)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $summaryMode = "present"
+      continue
+    }
+
+    if ($token.StartsWith("--llvm-capabilities-summary=", [System.StringComparison]::Ordinal)) {
+      $summaryValue = $token.Substring("--llvm-capabilities-summary=".Length)
+      if ([string]::IsNullOrWhiteSpace($summaryValue)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $summaryMode = "present"
+      continue
+    }
+
+    if ($token -eq "--objc3-route-backend-from-capabilities") {
+      $routeEnabled = $true
+      continue
+    }
+
+    if ($token.StartsWith("--objc3-route-backend-from-capabilities=", [System.StringComparison]::Ordinal)) {
+      $routeBoolean = $token.Substring("--objc3-route-backend-from-capabilities=".Length).Trim().ToLowerInvariant()
+      if (@("1", "true", "yes", "on") -contains $routeBoolean) {
+        $routeEnabled = $true
+        continue
+      }
+      if (@("0", "false", "no", "off") -contains $routeBoolean) {
+        continue
+      }
+      Write-Error "invalid boolean value '$routeBoolean' for --objc3-route-backend-from-capabilities"
+      exit 2
+    }
+  }
+
+  if ($routeEnabled) {
+    $routingMode = "capability-route"
+  }
+  if ($routingMode -eq "capability-route" -and $summaryMode -ne "present") {
+    Write-Error "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
+    exit 2
+  }
+
+  $invocationProfileKey = "{0}|{1}|{2}|{3}" -f $cacheMode, $backendMode, $routingMode, $summaryMode
+  if (-not $acceptanceProfileSet.ContainsKey($invocationProfileKey)) {
+    Write-Error "frontend conformance matrix has no acceptance row for invocation profile '$invocationProfileKey' in $conformancePath"
+    exit 2
+  }
+
+  return [pscustomobject]@{
+    conformance_matrix_path = $conformancePath
+    profile_key = $invocationProfileKey
+    case_id = [string]$acceptanceProfileSet[$invocationProfileKey]
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
@@ -1628,6 +1892,11 @@ if (-not $parsed.use_cache) {
   if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
     $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
   }
+  Assert-FrontendConformanceMatrix `
+    -RepoRoot $repoRoot `
+    -BuildResult $buildResult `
+    -ParsedArgs $parsed `
+    -EffectiveCompileArgs $effectiveCompileArgs | Out-Null
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
   exit $compileExit
 }
@@ -1641,7 +1910,8 @@ if (-not $needsBuild) {
     Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult
+    Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendConformanceMatrixPath -RepoRoot $repoRoot -BuildResult $buildResult
   )
   foreach ($artifactPath in $requiredArtifacts) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -1683,6 +1953,11 @@ $effectiveCompileArgs = @($parsed.compile_args)
 if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
   $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
 }
+Assert-FrontendConformanceMatrix `
+  -RepoRoot $repoRoot `
+  -BuildResult $buildResult `
+  -ParsedArgs $parsed `
+  -EffectiveCompileArgs $effectiveCompileArgs | Out-Null
 
 $argsWithoutOutDir = Get-ArgsWithoutOutDir -CompileArgs $effectiveCompileArgs
 $inputPath = $null
