@@ -149,6 +149,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_a001_suite_partitioning_and_fixture_ownership_contract_freeze_packet.md`,
   and `package.json` so suite partition boundaries and fixture ownership evidence
   remain deterministic and fail-closed for CI sharding governance.
+- M248 lane-B B001 semantic/lowering test architecture anchors explicit lane-B
+  contract freeze artifacts in
+  `docs/contracts/m248_semantic_lowering_test_architecture_contract_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m248/m248_b001_semantic_lowering_test_architecture_contract_freeze_packet.md`,
+  and `package.json` so semantic fixture boundaries and lowering replay evidence
+  remain deterministic and fail-closed for CI sharding governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

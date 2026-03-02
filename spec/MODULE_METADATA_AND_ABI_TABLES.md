@@ -99,6 +99,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
      with fixture ownership boundary evidence and parser replay-budget continuity
      so CI sharding partition drift fails closed.
+   - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
+     with semantic fixture ownership evidence and lowering replay continuity so
+     CI sharding semantic drift fails closed.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

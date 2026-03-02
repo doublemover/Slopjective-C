@@ -119,6 +119,9 @@ At minimum, the pass-graph gate shall validate:
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
+- semantic/lowering test architecture governance shall preserve explicit lane-B
+  diagnostic replay anchors and fail closed on semantic fixture drift before
+  lowering matrix and conformance expansion validation advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
