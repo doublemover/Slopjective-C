@@ -222,6 +222,8 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   bool diagnostics_hardening_ready = false;
   bool recovery_determinism_consistent = false;
   bool recovery_determinism_ready = false;
+  bool conformance_matrix_consistent = false;
+  bool conformance_matrix_ready = false;
   std::size_t typed_core_feature_case_count = 0;
   std::size_t typed_core_feature_passed_case_count = 0;
   std::size_t typed_core_feature_failed_case_count = 0;
@@ -242,6 +244,7 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
   std::string recovery_determinism_key;
+  std::string conformance_matrix_key;
   std::string failure_reason;
 };
 
