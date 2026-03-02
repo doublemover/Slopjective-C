@@ -406,6 +406,32 @@ inline std::string BuildObjc3LongTailGrammarConformanceMatrixKey(
          std::string(conformance_matrix_ready ? "true" : "false");
 }
 
+inline std::string BuildObjc3LongTailGrammarIntegrationCloseoutKey(
+    bool conformance_matrix_ready,
+    bool conformance_corpus_consistent,
+    bool performance_guardrails_consistent,
+    bool recovery_determinism_ready,
+    bool semantic_handoff_ready,
+    bool lowering_boundary_ready,
+    bool integration_closeout_consistent,
+    bool gate_signoff_ready) {
+  return std::string("conformance_matrix_ready=") +
+         (conformance_matrix_ready ? "true" : "false") +
+         ";conformance_corpus_consistent=" +
+         (conformance_corpus_consistent ? "true" : "false") +
+         ";performance_guardrails_consistent=" +
+         (performance_guardrails_consistent ? "true" : "false") +
+         ";recovery_determinism_ready=" +
+         (recovery_determinism_ready ? "true" : "false") +
+         ";semantic_handoff_ready=" +
+         (semantic_handoff_ready ? "true" : "false") +
+         ";lowering_boundary_ready=" +
+         (lowering_boundary_ready ? "true" : "false") +
+         ";integration_closeout_consistent=" +
+         (integration_closeout_consistent ? "true" : "false") +
+         ";gate_signoff_ready=" + (gate_signoff_ready ? "true" : "false");
+}
+
 inline constexpr std::size_t kObjc3ParseLoweringConformanceMatrixCaseCount = 8u;
 inline constexpr std::size_t kObjc3ParseLoweringConformanceCorpusCaseCount = 8u;
 inline constexpr std::size_t kObjc3ParseLoweringPerformanceQualityGuardrailsCaseCount = 6u;
@@ -1128,13 +1154,39 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parse_lowering_performance_quality_guardrails_consistent);
   const bool parse_lowering_performance_quality_guardrails_ready =
       surface.parse_lowering_performance_quality_guardrails_consistent;
+  surface.long_tail_grammar_integration_closeout_consistent =
+      surface.long_tail_grammar_conformance_matrix_ready &&
+      surface.parse_lowering_conformance_corpus_consistent &&
+      surface.parse_lowering_performance_quality_guardrails_consistent &&
+      surface.long_tail_grammar_recovery_determinism_ready &&
+      !surface.long_tail_grammar_conformance_matrix_key.empty() &&
+      !surface.parse_lowering_conformance_corpus_key.empty() &&
+      !surface.parse_lowering_performance_quality_guardrails_key.empty();
+  surface.long_tail_grammar_gate_signoff_ready =
+      surface.long_tail_grammar_integration_closeout_consistent &&
+      diagnostics_clear &&
+      sema_handoff_ready &&
+      surface.lowering_boundary_ready &&
+      !surface.parse_artifact_replay_key.empty() &&
+      !surface.lowering_boundary_replay_key.empty();
+  surface.long_tail_grammar_integration_closeout_key =
+      BuildObjc3LongTailGrammarIntegrationCloseoutKey(
+          surface.long_tail_grammar_conformance_matrix_ready,
+          surface.parse_lowering_conformance_corpus_consistent,
+          surface.parse_lowering_performance_quality_guardrails_consistent,
+          surface.long_tail_grammar_recovery_determinism_ready,
+          sema_handoff_ready,
+          surface.lowering_boundary_ready,
+          surface.long_tail_grammar_integration_closeout_consistent,
+          surface.long_tail_grammar_gate_signoff_ready);
   surface.ready_for_lowering = diagnostics_clear &&
                                parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
                                surface.lowering_boundary_ready &&
                                parse_lowering_conformance_matrix_ready &&
                                parse_lowering_conformance_corpus_ready &&
-                               parse_lowering_performance_quality_guardrails_ready;
+                               parse_lowering_performance_quality_guardrails_ready &&
+                               surface.long_tail_grammar_gate_signoff_ready;
 
   if (surface.ready_for_lowering || !surface.failure_reason.empty()) {
     return surface;
@@ -1246,6 +1298,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parse-lowering conformance corpus is inconsistent";
   } else if (!surface.parse_lowering_performance_quality_guardrails_consistent) {
     surface.failure_reason = "parse-lowering performance/quality guardrails are inconsistent";
+  } else if (!surface.long_tail_grammar_integration_closeout_consistent) {
+    surface.failure_reason = "long-tail grammar integration closeout is inconsistent";
+  } else if (!surface.long_tail_grammar_gate_signoff_ready) {
+    surface.failure_reason = "long-tail grammar gate sign-off is not ready";
   } else {
     surface.failure_reason = "parse-lowering readiness failed";
   }

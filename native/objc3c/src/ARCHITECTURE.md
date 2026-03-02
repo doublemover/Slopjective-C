@@ -73,6 +73,11 @@ Current-state note:
   grammar matrix gates (`long_tail_grammar_conformance_matrix_*`) in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so matrix drift fails
   closed before corpus and guardrail readiness are reported.
+- M250 lane-A A010 integration closeout and gate sign-off anchors explicit
+  closeout/sign-off gates (`long_tail_grammar_integration_closeout_*`,
+  `long_tail_grammar_gate_signoff_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-A cannot report
+  ready-for-lowering before deterministic integration closeout is satisfied.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
