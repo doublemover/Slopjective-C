@@ -13,6 +13,9 @@ std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(
 std::string BuildObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityKey(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
 
+std::string BuildObjc3LoweringPipelinePassGraphEdgeCaseRobustnessKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -27,5 +30,9 @@ bool IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
     std::string &reason);
 
 bool IsObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason);
+
+bool IsObjc3LoweringPipelinePassGraphEdgeCaseRobustnessReady(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
     std::string &reason);
