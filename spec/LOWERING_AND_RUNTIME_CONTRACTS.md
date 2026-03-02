@@ -129,6 +129,9 @@ At minimum, the pass-graph gate shall validate:
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.
+- feature packaging modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M249-A001`) and fail closed on scaffolding evidence drift
+  before semantic migration and IR/object policy validation advances.
 - semantic/lowering test architecture governance shall preserve explicit lane-B
   diagnostic replay anchors and fail closed on semantic fixture drift before
   lowering matrix and conformance expansion validation advances.
@@ -149,6 +152,9 @@ At minimum, the pass-graph gate shall validate:
   lane-C object packaging and symbol policy anchors and fail closed on
   artifact packaging or symbol-policy drift before execution and conformance
   replay validation advances.
+- IR/object packaging and symbol policy modular split/scaffolding shall preserve explicit
+  lane-C dependency anchors (`M249-C001`) and fail closed on modular split
+  evidence drift before execution and conformance replay validation advances.
 - installer/runtime operations and support tooling governance shall preserve
   explicit lane-D installer/runtime operation anchors and fail closed on
   support-tooling replay drift before architecture freeze readiness advances.

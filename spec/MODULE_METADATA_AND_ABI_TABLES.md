@@ -109,6 +109,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-A feature packaging metadata anchors for `M249-A001`
      with release packaging compatibility evidence and parser replay-budget continuity
      so distribution surface drift fails closed.
+   - deterministic lane-A feature packaging modular split metadata anchors for `M249-A002`
+     with explicit `M249-A001` dependency continuity so compatibility scaffolding drift fails closed.
    - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
      with semantic fixture ownership evidence and lowering replay continuity so
      CI sharding semantic drift fails closed.
@@ -127,6 +129,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
      with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.
+   - deterministic lane-C IR/object packaging modular split metadata anchors for `M249-C002`
+     with explicit `M249-C001` dependency continuity so symbol-policy scaffolding drift fails closed.
    - deterministic lane-D installer/runtime operations metadata anchors for `M249-D001`
      with runtime-route evidence and support-tooling continuity so installer/runtime
      drift fails closed.

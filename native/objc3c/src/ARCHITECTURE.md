@@ -212,12 +212,24 @@ Current-state note:
   `spec/planning/compiler/m249/m249_a001_feature_packaging_surface_and_compatibility_contracts_contract_freeze_packet.md`,
   and `package.json` so release packaging surface compatibility evidence remains
   deterministic and fail-closed for distribution boundary governance.
+- M249 lane-A A002 feature packaging modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m249/m249_a002_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split compatibility continuity remains
+  deterministic and fail-closed against `M249-A001` dependency drift.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,
   `spec/planning/compiler/m249/m249_c001_ir_object_packaging_and_symbol_policy_contract_freeze_packet.md`,
   and `package.json` so artifact packaging boundaries and symbol policy
   continuity remain deterministic and fail-closed for CI replay governance.
+- M249 lane-C C002 IR/object packaging and symbol policy modular split/scaffolding anchors
+  explicit lane-C scaffolding artifacts in
+  `docs/contracts/m249_ir_object_packaging_and_symbol_policy_modular_split_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m249/m249_c002_ir_object_packaging_and_symbol_policy_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split artifact packaging and symbol policy continuity remain
+  deterministic and fail-closed against `M249-C001` dependency drift.
 - M249 lane-D D001 installer/runtime operations and support tooling anchors
   explicit lane-D contract and architecture freeze artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_contract_and_architecture_freeze_d001_expectations.md`,
