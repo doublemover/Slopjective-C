@@ -236,10 +236,42 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
          ";consistent=" + (parse_recovery_determinism_hardening_consistent ? "true" : "false");
 }
 
+inline constexpr std::size_t kObjc3ParseLoweringConformanceMatrixCaseCount = 8u;
+
+inline std::string BuildObjc3ParseLoweringConformanceMatrixKey(
+    std::size_t case_count,
+    bool parser_contract_snapshot_present,
+    bool parse_artifact_handoff_deterministic,
+    bool parse_artifact_replay_key_deterministic,
+    bool parse_artifact_diagnostics_hardening_consistent,
+    bool parse_artifact_edge_case_robustness_consistent,
+    bool parse_recovery_determinism_hardening_consistent,
+    bool semantic_integration_surface_built,
+    bool semantic_handoff_deterministic,
+    bool lowering_boundary_ready,
+    bool parse_lowering_conformance_matrix_consistent) {
+  return "case_count=" + std::to_string(case_count) +
+         ";parser_contract_snapshot_present=" + (parser_contract_snapshot_present ? "true" : "false") +
+         ";parse_artifact_handoff_deterministic=" + (parse_artifact_handoff_deterministic ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" + (parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";parse_artifact_diagnostics_hardening_consistent=" +
+         (parse_artifact_diagnostics_hardening_consistent ? "true" : "false") +
+         ";parse_artifact_edge_case_robustness_consistent=" +
+         (parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
+         ";parse_recovery_determinism_hardening_consistent=" +
+         (parse_recovery_determinism_hardening_consistent ? "true" : "false") +
+         ";semantic_integration_surface_built=" + (semantic_integration_surface_built ? "true" : "false") +
+         ";semantic_handoff_deterministic=" + (semantic_handoff_deterministic ? "true" : "false") +
+         ";lowering_boundary_ready=" + (lowering_boundary_ready ? "true" : "false") +
+         ";consistent=" + (parse_lowering_conformance_matrix_consistent ? "true" : "false");
+}
+
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
   Objc3ParseLoweringReadinessSurface surface;
+  surface.parse_lowering_conformance_matrix_case_count =
+      kObjc3ParseLoweringConformanceMatrixCaseCount;
   const Objc3ParserContractSnapshot &parser_snapshot = pipeline_result.parser_contract_snapshot;
   surface.lexer_diagnostic_count = pipeline_result.stage_diagnostics.lexer.size();
   surface.parser_diagnostic_count = pipeline_result.stage_diagnostics.parser.size();
@@ -425,10 +457,52 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.symbol_graph_deterministic &&
       surface.scope_resolution_deterministic &&
       surface.object_pointer_type_handoff_deterministic;
+  const bool semantic_handoff_deterministic =
+      surface.semantic_diagnostics_deterministic &&
+      surface.semantic_type_metadata_deterministic &&
+      surface.symbol_graph_deterministic &&
+      surface.scope_resolution_deterministic &&
+      surface.object_pointer_type_handoff_deterministic;
+  surface.parse_lowering_conformance_matrix_consistent =
+      surface.parse_lowering_conformance_matrix_case_count ==
+          kObjc3ParseLoweringConformanceMatrixCaseCount &&
+      surface.parse_lowering_conformance_matrix_case_count > 0 &&
+      surface.parser_contract_snapshot_present &&
+      surface.parse_artifact_handoff_deterministic &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.parse_artifact_diagnostics_hardening_consistent &&
+      surface.parse_artifact_edge_case_robustness_consistent &&
+      surface.parse_recovery_determinism_hardening_consistent &&
+      surface.semantic_integration_surface_built &&
+      semantic_handoff_deterministic &&
+      sema_handoff_ready &&
+      surface.lowering_boundary_ready &&
+      !surface.parse_artifact_handoff_key.empty() &&
+      !surface.parse_artifact_replay_key.empty() &&
+      !surface.parse_artifact_diagnostics_hardening_key.empty() &&
+      !surface.parse_artifact_edge_robustness_key.empty() &&
+      !surface.parse_recovery_determinism_hardening_key.empty() &&
+      !surface.lowering_boundary_replay_key.empty();
+  surface.parse_lowering_conformance_matrix_key =
+      BuildObjc3ParseLoweringConformanceMatrixKey(
+          surface.parse_lowering_conformance_matrix_case_count,
+          surface.parser_contract_snapshot_present,
+          surface.parse_artifact_handoff_deterministic,
+          surface.parse_artifact_replay_key_deterministic,
+          surface.parse_artifact_diagnostics_hardening_consistent,
+          surface.parse_artifact_edge_case_robustness_consistent,
+          surface.parse_recovery_determinism_hardening_consistent,
+          surface.semantic_integration_surface_built,
+          semantic_handoff_deterministic,
+          surface.lowering_boundary_ready,
+          surface.parse_lowering_conformance_matrix_consistent);
+  const bool parse_lowering_conformance_matrix_ready =
+      surface.parse_lowering_conformance_matrix_consistent;
   surface.ready_for_lowering = diagnostics_clear &&
                                parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
-                               surface.lowering_boundary_ready;
+                               surface.lowering_boundary_ready &&
+                               parse_lowering_conformance_matrix_ready;
 
   if (surface.ready_for_lowering || !surface.failure_reason.empty()) {
     return surface;
@@ -486,6 +560,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "object pointer/nullability handoff is not deterministic";
   } else if (!surface.lowering_boundary_ready) {
     surface.failure_reason = "lowering boundary is not ready";
+  } else if (!surface.parse_lowering_conformance_matrix_consistent) {
+    surface.failure_reason = "parse-lowering conformance matrix is inconsistent";
   } else {
     surface.failure_reason = "parse-lowering readiness failed";
   }

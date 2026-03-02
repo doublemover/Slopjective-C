@@ -73,6 +73,7 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parse_artifact_diagnostics_hardening_consistent = false;
   bool parse_artifact_edge_case_robustness_consistent = false;
   bool parse_recovery_determinism_hardening_consistent = false;
+  bool parse_lowering_conformance_matrix_consistent = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
   bool semantic_type_metadata_deterministic = false;
@@ -81,6 +82,7 @@ struct Objc3ParseLoweringReadinessSurface {
   bool object_pointer_type_handoff_deterministic = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
+  std::size_t parse_lowering_conformance_matrix_case_count = 0;
   std::size_t parser_diagnostic_code_count = 0;
   std::uint64_t parser_diagnostic_code_fingerprint = 1469598103934665603ull;
   std::string parse_artifact_handoff_key;
@@ -89,6 +91,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_edge_robustness_key;
   std::string parse_recovery_determinism_hardening_key;
+  std::string parse_lowering_conformance_matrix_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
