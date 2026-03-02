@@ -29,17 +29,44 @@ function Parse-WrapperArguments {
       $useCache = $true
       continue
     }
+    if ($token.StartsWith("--use-cache=", [System.StringComparison]::OrdinalIgnoreCase)) {
+      $rawBoolean = $token.Substring("--use-cache=".Length).Trim().ToLowerInvariant()
+      if (@("1", "true", "yes", "on") -contains $rawBoolean) {
+        $useCache = $true
+        continue
+      }
+      if (@("0", "false", "no", "off") -contains $rawBoolean) {
+        $useCache = $false
+        continue
+      }
+      Write-Error "invalid --use-cache value '$rawBoolean' (expected true/false style token)"
+      exit 2
+    }
 
-    $compileArgs.Add($token)
     if ($token -eq "--out-dir") {
       if (($i + 1) -ge $RawArgs.Count) {
         Show-UsageAndExit
       }
       $i++
       $value = $RawArgs[$i]
+      $compileArgs.Add("--out-dir")
       $compileArgs.Add($value)
       $outDir = $value
+      continue
     }
+
+    if ($token.StartsWith("--out-dir=", [System.StringComparison]::Ordinal)) {
+      $value = $token.Substring("--out-dir=".Length)
+      if ([string]::IsNullOrWhiteSpace($value)) {
+        Show-UsageAndExit
+      }
+      $compileArgs.Add("--out-dir")
+      $compileArgs.Add($value)
+      $outDir = $value
+      continue
+    }
+
+    $compileArgs.Add($token)
   }
 
   if ($compileArgs.Count -lt 1) {
@@ -115,6 +142,42 @@ function Get-OptionalFileHash {
   return Get-FileSha256Hex -Path $Path
 }
 
+function Resolve-RepoBoundPath {
+  param(
+    [string]$RepoRoot,
+    [string]$RelativeOrAbsolutePath,
+    [string]$Label
+  )
+
+  if ([string]::IsNullOrWhiteSpace($RelativeOrAbsolutePath)) {
+    Write-Error "$Label path is empty"
+    exit 2
+  }
+
+  $candidatePath = $RelativeOrAbsolutePath
+  if (-not [System.IO.Path]::IsPathRooted($candidatePath)) {
+    $normalizedRelative = $candidatePath.Replace('\', '/')
+    foreach ($segment in $normalizedRelative.Split('/')) {
+      if ($segment -eq "..") {
+        Write-Error "$Label path must not contain '..' relative segments: $RelativeOrAbsolutePath"
+        exit 2
+      }
+    }
+    $candidatePath = Join-Path $RepoRoot $candidatePath
+  }
+
+  $resolvedRoot = [System.IO.Path]::GetFullPath($RepoRoot).TrimEnd('\', '/')
+  $resolvedCandidate = [System.IO.Path]::GetFullPath($candidatePath)
+  $rootPrefix = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+  if (($resolvedCandidate -ne $resolvedRoot) -and
+      (-not $resolvedCandidate.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase))) {
+    Write-Error "$Label path escapes repository root: $RelativeOrAbsolutePath"
+    exit 2
+  }
+
+  return $resolvedCandidate
+}
+
 function Get-CacheKey {
   param(
     [string]$InputPath,
@@ -179,6 +242,7 @@ function Invoke-BuildNativeCompiler {
   $frontendScaffoldRelativePath = $null
   $frontendInvocationLockRelativePath = $null
   $frontendCoreFeatureExpansionRelativePath = $null
+  $frontendEdgeCompatRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -191,6 +255,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_core_feature_expansion=")) {
       $frontendCoreFeatureExpansionRelativePath = $lineText.Substring("frontend_core_feature_expansion=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_edge_compat=")) {
+      $frontendEdgeCompatRelativePath = $lineText.Substring("frontend_edge_compat=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -198,6 +265,7 @@ function Invoke-BuildNativeCompiler {
     frontend_scaffold_relative_path = $frontendScaffoldRelativePath
     frontend_invocation_lock_relative_path = $frontendInvocationLockRelativePath
     frontend_core_feature_expansion_relative_path = $frontendCoreFeatureExpansionRelativePath
+    frontend_edge_compat_relative_path = $frontendEdgeCompatRelativePath
   }
 }
 
@@ -226,10 +294,7 @@ function Resolve-FrontendScaffoldPath {
     }
   }
 
-  if ([System.IO.Path]::IsPathRooted($relativePath)) {
-    return $relativePath
-  }
-  return Join-Path $RepoRoot $relativePath
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend modular scaffold"
 }
 
 function Resolve-FrontendInvocationLockPath {
@@ -247,10 +312,7 @@ function Resolve-FrontendInvocationLockPath {
     }
   }
 
-  if ([System.IO.Path]::IsPathRooted($relativePath)) {
-    return $relativePath
-  }
-  return Join-Path $RepoRoot $relativePath
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend invocation lock"
 }
 
 function Resolve-FrontendCoreFeatureExpansionPath {
@@ -268,10 +330,25 @@ function Resolve-FrontendCoreFeatureExpansionPath {
     }
   }
 
-  if ([System.IO.Path]::IsPathRooted($relativePath)) {
-    return $relativePath
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend core feature expansion"
+}
+
+function Resolve-FrontendEdgeCompatibilityPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_edge_compat.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_edge_compat_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
   }
-  return Join-Path $RepoRoot $relativePath
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend edge compatibility"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -545,9 +622,9 @@ function Assert-FrontendCoreFeatureExpansion {
 
   $allowedBackends = @{}
   foreach ($backend in @($backendRouting.allowed_ir_object_backends)) {
-    $backendText = [string]$backend
+    $backendText = ([string]$backend).Trim()
     if (-not [string]::IsNullOrWhiteSpace($backendText)) {
-      $allowedBackends[$backendText] = $true
+      $allowedBackends[$backendText.ToLowerInvariant()] = $backendText
     }
   }
   foreach ($requiredBackend in @("clang", "llvm-direct")) {
@@ -580,9 +657,30 @@ function Assert-FrontendCoreFeatureExpansion {
       }
       continue
     }
+    if ($token.StartsWith("--objc3-ir-object-backend=", [System.StringComparison]::Ordinal)) {
+      $requestedBackend = $token.Substring("--objc3-ir-object-backend=".Length)
+      if ([string]::IsNullOrWhiteSpace($requestedBackend)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      continue
+    }
     if ($token -eq "--objc3-route-backend-from-capabilities") {
       $usesCapabilityRouting = $true
       continue
+    }
+    if ($token.StartsWith("--objc3-route-backend-from-capabilities=", [System.StringComparison]::Ordinal)) {
+      $routeBoolean = $token.Substring("--objc3-route-backend-from-capabilities=".Length).Trim().ToLowerInvariant()
+      if (@("1", "true", "yes", "on") -contains $routeBoolean) {
+        $usesCapabilityRouting = $true
+        continue
+      }
+      if (@("0", "false", "no", "off") -contains $routeBoolean) {
+        $usesCapabilityRouting = $false
+        continue
+      }
+      Write-Error "invalid boolean value '$routeBoolean' for --objc3-route-backend-from-capabilities"
+      exit 2
     }
     if ($token -eq "--llvm-capabilities-summary") {
       if (($i + 1) -ge $compileArgs.Count) {
@@ -598,10 +696,20 @@ function Assert-FrontendCoreFeatureExpansion {
       $hasCapabilitySummary = $true
       continue
     }
+    if ($token.StartsWith("--llvm-capabilities-summary=", [System.StringComparison]::Ordinal)) {
+      $summaryPath = $token.Substring("--llvm-capabilities-summary=".Length)
+      if ([string]::IsNullOrWhiteSpace($summaryPath)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $hasCapabilitySummary = $true
+      continue
+    }
   }
 
   if (-not [string]::IsNullOrWhiteSpace($requestedBackend)) {
-    if (-not $allowedBackends.ContainsKey($requestedBackend)) {
+    $normalizedRequestedBackend = $requestedBackend.Trim().ToLowerInvariant().Replace("_", "-")
+    if (-not $allowedBackends.ContainsKey($normalizedRequestedBackend)) {
       Write-Error "requested --objc3-ir-object-backend '$requestedBackend' is not allowed by frontend core feature expansion in $featurePath"
       exit 2
     }
@@ -609,6 +717,274 @@ function Assert-FrontendCoreFeatureExpansion {
   if ($usesCapabilityRouting -and -not $hasCapabilitySummary) {
     Write-Error "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
     exit 2
+  }
+
+  return [pscustomobject]@{
+    feature_path = $featurePath
+    allowed_ir_object_backends = @($allowedBackends.Keys)
+  }
+}
+
+function Assert-FrontendEdgeCompatibility {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult,
+    [object]$ParsedArgs,
+    [object]$CoreFeatureGuard
+  )
+
+  $compatPath = Resolve-FrontendEdgeCompatibilityPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $compatPath -PathType Leaf)) {
+    Write-Error "frontend edge compatibility artifact missing at $compatPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $compatPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend edge compatibility artifact is not valid JSON at $compatPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend edge compatibility contract id mismatch in $compatPath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1",
+    "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend edge compatibility missing dependency contract '$requiredContractId' in $compatPath"
+      exit 2
+    }
+  }
+
+  $edgeCompat = $payload.invocation_edge_compat
+  if ($null -eq $edgeCompat) {
+    Write-Error "frontend edge compatibility invocation_edge_compat metadata missing in $compatPath"
+    exit 2
+  }
+  if ([int]$edgeCompat.fail_closed_exit_code -ne 2) {
+    Write-Error "frontend edge compatibility fail_closed_exit_code must be 2 in $compatPath"
+    exit 2
+  }
+  if (-not [bool]$edgeCompat.disallow_relative_parent_segments) {
+    Write-Error "frontend edge compatibility disallow_relative_parent_segments must be true in $compatPath"
+    exit 2
+  }
+  if ([string]$edgeCompat.route_flag -ne "--objc3-route-backend-from-capabilities") {
+    Write-Error "frontend edge compatibility route_flag mismatch in $compatPath"
+    exit 2
+  }
+  if ([string]$edgeCompat.capability_summary_flag -ne "--llvm-capabilities-summary") {
+    Write-Error "frontend edge compatibility capability_summary_flag mismatch in $compatPath"
+    exit 2
+  }
+
+  $backendCompat = $payload.backend_compat
+  if ($null -eq $backendCompat) {
+    Write-Error "frontend edge compatibility backend_compat metadata missing in $compatPath"
+    exit 2
+  }
+
+  $canonicalBackends = @{}
+  foreach ($backend in @($backendCompat.canonical_allowed_backends)) {
+    $backendText = ([string]$backend).Trim().ToLowerInvariant()
+    if (-not [string]::IsNullOrWhiteSpace($backendText)) {
+      $canonicalBackends[$backendText] = $true
+    }
+  }
+  if ($canonicalBackends.Count -eq 0) {
+    Write-Error "frontend edge compatibility canonical_allowed_backends must be non-empty in $compatPath"
+    exit 2
+  }
+  if ($null -ne $CoreFeatureGuard) {
+    foreach ($coreBackend in @($CoreFeatureGuard.allowed_ir_object_backends)) {
+      $coreBackendText = ([string]$coreBackend).Trim().ToLowerInvariant()
+      if (-not [string]::IsNullOrWhiteSpace($coreBackendText) -and
+          -not $canonicalBackends.ContainsKey($coreBackendText)) {
+        Write-Error "frontend edge compatibility missing backend '$coreBackendText' declared by frontend core feature expansion"
+        exit 2
+      }
+    }
+  }
+
+  $aliasMap = @{}
+  $aliasPayload = $backendCompat.alias_to_canonical
+  if ($null -eq $aliasPayload) {
+    Write-Error "frontend edge compatibility alias_to_canonical mapping missing in $compatPath"
+    exit 2
+  }
+  foreach ($property in $aliasPayload.PSObject.Properties) {
+    $alias = ([string]$property.Name).Trim().ToLowerInvariant().Replace("_", "-")
+    $canonical = ([string]$property.Value).Trim().ToLowerInvariant().Replace("_", "-")
+    if ([string]::IsNullOrWhiteSpace($alias) -or [string]::IsNullOrWhiteSpace($canonical)) {
+      Write-Error "frontend edge compatibility alias_to_canonical entries must be non-empty in $compatPath"
+      exit 2
+    }
+    if (-not $canonicalBackends.ContainsKey($canonical)) {
+      Write-Error "frontend edge compatibility alias '$alias' maps to unknown canonical backend '$canonical' in $compatPath"
+      exit 2
+    }
+    $aliasMap[$alias] = $canonical
+  }
+  foreach ($canonicalBackend in $canonicalBackends.Keys) {
+    if (-not $aliasMap.ContainsKey($canonicalBackend)) {
+      $aliasMap[$canonicalBackend] = $canonicalBackend
+    }
+  }
+
+  $singleValueFlags = @{}
+  foreach ($flag in @($backendCompat.single_value_flags)) {
+    $flagText = [string]$flag
+    if (-not [string]::IsNullOrWhiteSpace($flagText)) {
+      $singleValueFlags[$flagText] = 0
+    }
+  }
+  foreach ($requiredSingleValueFlag in @("--objc3-ir-object-backend", "--llvm-capabilities-summary")) {
+    if (-not $singleValueFlags.ContainsKey($requiredSingleValueFlag)) {
+      Write-Error "frontend edge compatibility missing single-value flag '$requiredSingleValueFlag' in $compatPath"
+      exit 2
+    }
+  }
+
+  $compileArgs = @()
+  if ($null -ne $ParsedArgs) {
+    $compileArgs = @($ParsedArgs.compile_args)
+  }
+  $normalizedArgs = New-Object System.Collections.Generic.List[string]
+  $usesCapabilityRouting = $false
+  $hasCapabilitySummary = $false
+
+  for ($i = 0; $i -lt $compileArgs.Count; $i++) {
+    $token = [string]$compileArgs[$i]
+
+    if ($token -eq "--objc3-ir-object-backend") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $i++
+      $backendValue = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($backendValue)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendKey = $backendValue.Trim().ToLowerInvariant().Replace("_", "-")
+      if (-not $aliasMap.ContainsKey($backendKey)) {
+        Write-Error "unsupported value '$backendValue' for --objc3-ir-object-backend"
+        exit 2
+      }
+      $singleValueFlags["--objc3-ir-object-backend"] = [int]$singleValueFlags["--objc3-ir-object-backend"] + 1
+      $normalizedArgs.Add("--objc3-ir-object-backend")
+      $normalizedArgs.Add([string]$aliasMap[$backendKey])
+      continue
+    }
+
+    if ($token.StartsWith("--objc3-ir-object-backend=", [System.StringComparison]::Ordinal)) {
+      $backendValue = $token.Substring("--objc3-ir-object-backend=".Length)
+      if ([string]::IsNullOrWhiteSpace($backendValue)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $backendKey = $backendValue.Trim().ToLowerInvariant().Replace("_", "-")
+      if (-not $aliasMap.ContainsKey($backendKey)) {
+        Write-Error "unsupported value '$backendValue' for --objc3-ir-object-backend"
+        exit 2
+      }
+      $singleValueFlags["--objc3-ir-object-backend"] = [int]$singleValueFlags["--objc3-ir-object-backend"] + 1
+      $normalizedArgs.Add("--objc3-ir-object-backend")
+      $normalizedArgs.Add([string]$aliasMap[$backendKey])
+      continue
+    }
+
+    if ($token -eq "--llvm-capabilities-summary") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $i++
+      $summaryPath = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($summaryPath)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      if (-not [System.IO.Path]::IsPathRooted($summaryPath) -and $summaryPath.Replace('\', '/').Split('/') -contains "..") {
+        Write-Error "--llvm-capabilities-summary must not contain '..' relative segments"
+        exit 2
+      }
+      $singleValueFlags["--llvm-capabilities-summary"] = [int]$singleValueFlags["--llvm-capabilities-summary"] + 1
+      $hasCapabilitySummary = $true
+      $normalizedArgs.Add("--llvm-capabilities-summary")
+      $normalizedArgs.Add($summaryPath)
+      continue
+    }
+
+    if ($token.StartsWith("--llvm-capabilities-summary=", [System.StringComparison]::Ordinal)) {
+      $summaryPath = $token.Substring("--llvm-capabilities-summary=".Length)
+      if ([string]::IsNullOrWhiteSpace($summaryPath)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      if (-not [System.IO.Path]::IsPathRooted($summaryPath) -and $summaryPath.Replace('\', '/').Split('/') -contains "..") {
+        Write-Error "--llvm-capabilities-summary must not contain '..' relative segments"
+        exit 2
+      }
+      $singleValueFlags["--llvm-capabilities-summary"] = [int]$singleValueFlags["--llvm-capabilities-summary"] + 1
+      $hasCapabilitySummary = $true
+      $normalizedArgs.Add("--llvm-capabilities-summary")
+      $normalizedArgs.Add($summaryPath)
+      continue
+    }
+
+    if ($token -eq "--objc3-route-backend-from-capabilities") {
+      $usesCapabilityRouting = $true
+      $normalizedArgs.Add("--objc3-route-backend-from-capabilities")
+      continue
+    }
+
+    if ($token.StartsWith("--objc3-route-backend-from-capabilities=", [System.StringComparison]::Ordinal)) {
+      $routeBoolean = $token.Substring("--objc3-route-backend-from-capabilities=".Length).Trim().ToLowerInvariant()
+      if (@("1", "true", "yes", "on") -contains $routeBoolean) {
+        $usesCapabilityRouting = $true
+        $normalizedArgs.Add("--objc3-route-backend-from-capabilities")
+        continue
+      }
+      if (@("0", "false", "no", "off") -contains $routeBoolean) {
+        continue
+      }
+      Write-Error "invalid boolean value '$routeBoolean' for --objc3-route-backend-from-capabilities"
+      exit 2
+    }
+
+    $normalizedArgs.Add($token)
+  }
+
+  foreach ($flag in $singleValueFlags.Keys) {
+    if ([int]$singleValueFlags[$flag] -gt 1) {
+      Write-Error "$flag can be provided at most once"
+      exit 2
+    }
+  }
+  if ($usesCapabilityRouting -and -not $hasCapabilitySummary) {
+    Write-Error "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
+    exit 2
+  }
+
+  return [pscustomobject]@{
+    edge_compat_path = $compatPath
+    normalized_compile_args = $normalizedArgs.ToArray()
   }
 }
 
@@ -631,12 +1007,67 @@ if (-not $parsed.use_cache) {
 
   Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
   Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
-  Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
-  $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
+  $coreFeatureGuard = Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
+  $edgeCompatGuard = Assert-FrontendEdgeCompatibility `
+    -RepoRoot $repoRoot `
+    -BuildResult $buildResult `
+    -ParsedArgs $parsed `
+    -CoreFeatureGuard $coreFeatureGuard
+  $effectiveCompileArgs = @($parsed.compile_args)
+  if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
+    $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
+  }
+  $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
   exit $compileExit
 }
 
-$argsWithoutOutDir = Get-ArgsWithoutOutDir -CompileArgs $parsed.compile_args
+$needsBuild = -not (Test-Path -LiteralPath $exe -PathType Leaf)
+if (-not $needsBuild) {
+  $requiredArtifacts = @(
+    Resolve-FrontendScaffoldPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendInvocationLockPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult
+  )
+  foreach ($artifactPath in $requiredArtifacts) {
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      $needsBuild = $true
+      break
+    }
+  }
+}
+
+if ($needsBuild) {
+  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  foreach ($lineText in @($buildResult.build_output_lines)) {
+    Write-Output $lineText
+  }
+  $buildExit = [int]$buildResult.exit_code
+  if ($buildExit -ne 0) {
+    Write-Output "cache_hit=false"
+    exit $buildExit
+  }
+}
+
+if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+  Write-Error "native compiler executable missing at $exe"
+  exit 2
+}
+
+Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
+Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
+$coreFeatureGuard = Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
+$edgeCompatGuard = Assert-FrontendEdgeCompatibility `
+  -RepoRoot $repoRoot `
+  -BuildResult $buildResult `
+  -ParsedArgs $parsed `
+  -CoreFeatureGuard $coreFeatureGuard
+$effectiveCompileArgs = @($parsed.compile_args)
+if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
+  $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
+}
+
+$argsWithoutOutDir = Get-ArgsWithoutOutDir -CompileArgs $effectiveCompileArgs
 $inputPath = $null
 if ($argsWithoutOutDir.Count -gt 0) {
   $inputCandidate = $argsWithoutOutDir[0]
@@ -673,27 +1104,7 @@ if ($null -ne $cacheKey) {
   }
 }
 
-if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
-  foreach ($lineText in @($buildResult.build_output_lines)) {
-    Write-Output $lineText
-  }
-  $buildExit = [int]$buildResult.exit_code
-  if ($buildExit -ne 0) {
-    Write-Output "cache_hit=false"
-    exit $buildExit
-  }
-}
-
-if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-  Write-Error "native compiler executable missing at $exe"
-  exit 2
-}
-
-Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
-Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
-Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
-$compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
+$compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
 
 if ($null -ne $cacheKey) {
   try {

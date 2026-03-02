@@ -342,6 +342,89 @@ function Write-FrontendCoreFeatureExpansionArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendEdgeCompatibilityArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendCoreFeatureExpansionPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendCoreFeatureExpansionPath -PathType Leaf)) {
+    throw "frontend core feature expansion missing for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
+  }
+
+  try {
+    $coreFeaturePayload = Get-Content -LiteralPath $FrontendCoreFeatureExpansionPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend core feature expansion is not valid JSON for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
+  }
+
+  $expectedCoreFeatureContractId = "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1"
+  if ([string]$coreFeaturePayload.contract_id -ne $expectedCoreFeatureContractId) {
+    throw "frontend core feature contract id mismatch for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
+  }
+
+  $allowedBackends = @()
+  foreach ($backend in @($coreFeaturePayload.backend_routing.allowed_ir_object_backends)) {
+    $backendText = [string]$backend
+    if (![string]::IsNullOrWhiteSpace($backendText)) {
+      $allowedBackends += $backendText
+    }
+  }
+  if ($allowedBackends.Count -eq 0) {
+    throw "frontend core feature expansion allowed_ir_object_backends missing for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedCoreFeatureContractId
+      "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+    )
+    backend_compat = [ordered]@{
+      canonical_allowed_backends = $allowedBackends
+      alias_to_canonical = [ordered]@{
+        "clang" = "clang"
+        "clang++" = "clang"
+        "clang-cl" = "clang"
+        "llvm-direct" = "llvm-direct"
+        "llvm_direct" = "llvm-direct"
+        "llvmdirect" = "llvm-direct"
+        "llvm" = "llvm-direct"
+      }
+      single_value_flags = @(
+        "--objc3-ir-object-backend"
+        "--llvm-capabilities-summary"
+      )
+    }
+    invocation_edge_compat = [ordered]@{
+      supports_equals_form_flags = @(
+        "--out-dir"
+        "--objc3-ir-object-backend"
+        "--llvm-capabilities-summary"
+      )
+      supports_boolean_equals_flags = @(
+        "--use-cache"
+        "--objc3-route-backend-from-capabilities"
+      )
+      route_flag = "--objc3-route-backend-from-capabilities"
+      capability_summary_flag = "--llvm-capabilities-summary"
+      fail_closed_exit_code = 2
+      disallow_relative_parent_segments = $true
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -418,6 +501,7 @@ $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModule
 $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
+$frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_compat.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -488,8 +572,13 @@ Write-FrontendCoreFeatureExpansionArtifact `
   -CapiBinaryPath $outCapiExe `
   -FrontendScaffoldPath $frontendScaffoldPath `
   -FrontendInvocationLockPath $frontendInvocationLockPath
+Write-FrontendEdgeCompatibilityArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendEdgeCompatPath `
+  -FrontendCoreFeatureExpansionPath $frontendCoreFeatureExpansionPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
 Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
 Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))
+Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeCompatPath))
