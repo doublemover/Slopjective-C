@@ -335,8 +335,10 @@ inline std::string BuildObjc3ParseLoweringPerformanceQualityGuardrailsKey(
 inline bool HasObjc3TypedSemaToLoweringCoreFeatureSurface(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   return surface.typed_core_feature_case_count > 0 ||
+         surface.typed_core_feature_expansion_case_count > 0 ||
          !surface.typed_handoff_key.empty() ||
          !surface.typed_core_feature_key.empty() ||
+         !surface.typed_core_feature_expansion_key.empty() ||
          surface.ready_for_lowering ||
          !surface.failure_reason.empty();
 }
@@ -500,6 +502,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic =
       typed_sema_to_lowering_contract_surface.semantic_type_metadata_handoff_deterministic;
+  surface.protocol_category_deterministic =
+      typed_sema_to_lowering_contract_surface.protocol_category_handoff_deterministic;
+  surface.class_protocol_category_linking_deterministic =
+      typed_sema_to_lowering_contract_surface.class_protocol_category_linking_handoff_deterministic;
+  surface.selector_normalization_deterministic =
+      typed_sema_to_lowering_contract_surface.selector_normalization_handoff_deterministic;
+  surface.property_attribute_deterministic =
+      typed_sema_to_lowering_contract_surface.property_attribute_handoff_deterministic;
   surface.symbol_graph_deterministic =
       typed_sema_to_lowering_contract_surface.symbol_graph_handoff_deterministic;
   surface.scope_resolution_deterministic =
@@ -510,14 +520,24 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_sema_to_lowering_contract_surface.typed_handoff_key_deterministic;
   surface.typed_sema_core_feature_consistent =
       typed_sema_to_lowering_contract_surface.typed_core_feature_consistent;
+  surface.typed_sema_core_feature_expansion_consistent =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_consistent;
   surface.typed_sema_core_feature_case_count =
       typed_sema_to_lowering_contract_surface.typed_core_feature_case_count;
   surface.typed_sema_core_feature_passed_case_count =
       typed_sema_to_lowering_contract_surface.typed_core_feature_passed_case_count;
   surface.typed_sema_core_feature_failed_case_count =
       typed_sema_to_lowering_contract_surface.typed_core_feature_failed_case_count;
+  surface.typed_sema_core_feature_expansion_case_count =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_case_count;
+  surface.typed_sema_core_feature_expansion_passed_case_count =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_passed_case_count;
+  surface.typed_sema_core_feature_expansion_failed_case_count =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_failed_case_count;
   surface.typed_sema_core_feature_key =
       typed_sema_to_lowering_contract_surface.typed_core_feature_key;
+  surface.typed_sema_core_feature_expansion_key =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_key;
   surface.lowering_boundary_ready =
       typed_sema_to_lowering_contract_surface.lowering_boundary_ready;
   surface.lowering_boundary_replay_key =
@@ -547,9 +567,23 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       parse_artifact_diagnostics_hardening_ready &&
       surface.parse_artifact_edge_case_robustness_consistent &&
       parse_recovery_determinism_hardening_ready;
+  const bool typed_core_feature_expansion_case_accounting_consistent =
+      surface.typed_sema_core_feature_expansion_case_count ==
+          kObjc3TypedSemaToLoweringCoreFeatureExpansionCaseCount &&
+      surface.typed_sema_core_feature_expansion_case_count > 0 &&
+      surface.typed_sema_core_feature_expansion_case_count >=
+          surface.typed_sema_core_feature_expansion_passed_case_count &&
+      surface.typed_sema_core_feature_expansion_failed_case_count ==
+          (surface.typed_sema_core_feature_expansion_case_count -
+           surface.typed_sema_core_feature_expansion_passed_case_count);
+  const bool typed_core_feature_expansion_ready =
+      typed_core_feature_expansion_case_accounting_consistent &&
+      surface.typed_sema_core_feature_expansion_consistent &&
+      !surface.typed_sema_core_feature_expansion_key.empty();
   const bool typed_core_feature_ready =
       surface.typed_handoff_key_deterministic &&
       surface.typed_sema_core_feature_consistent &&
+      typed_core_feature_expansion_ready &&
       !surface.typed_sema_core_feature_key.empty();
   const bool sema_handoff_ready =
       typed_sema_to_lowering_contract_surface.ready_for_lowering &&
@@ -557,6 +591,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   const bool semantic_handoff_deterministic =
       surface.semantic_diagnostics_deterministic &&
       surface.semantic_type_metadata_deterministic &&
+      surface.protocol_category_deterministic &&
+      surface.class_protocol_category_linking_deterministic &&
+      surface.selector_normalization_deterministic &&
+      surface.property_attribute_deterministic &&
       surface.symbol_graph_deterministic &&
       surface.scope_resolution_deterministic &&
       surface.object_pointer_type_handoff_deterministic;
@@ -581,6 +619,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.parse_artifact_edge_robustness_key.empty() &&
       !surface.parse_recovery_determinism_hardening_key.empty() &&
       !surface.typed_sema_core_feature_key.empty() &&
+      !surface.typed_sema_core_feature_expansion_key.empty() &&
       !surface.lowering_boundary_replay_key.empty();
   surface.parse_lowering_conformance_matrix_key =
       BuildObjc3ParseLoweringConformanceMatrixKey(
@@ -776,6 +815,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "semantic diagnostics handoff is not deterministic";
   } else if (!surface.semantic_type_metadata_deterministic) {
     surface.failure_reason = "semantic type metadata handoff is not deterministic";
+  } else if (!surface.protocol_category_deterministic) {
+    surface.failure_reason = "protocol/category handoff is not deterministic";
+  } else if (!surface.class_protocol_category_linking_deterministic) {
+    surface.failure_reason = "class/protocol/category linking handoff is not deterministic";
+  } else if (!surface.selector_normalization_deterministic) {
+    surface.failure_reason = "selector normalization handoff is not deterministic";
+  } else if (!surface.property_attribute_deterministic) {
+    surface.failure_reason = "property attribute handoff is not deterministic";
   } else if (!surface.symbol_graph_deterministic) {
     surface.failure_reason = "symbol graph handoff is not deterministic";
   } else if (!surface.scope_resolution_deterministic) {
@@ -786,6 +833,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "typed sema-to-lowering handoff key is not deterministic";
   } else if (!surface.typed_sema_core_feature_consistent) {
     surface.failure_reason = "typed sema-to-lowering core feature contract is inconsistent";
+  } else if (!surface.typed_sema_core_feature_expansion_consistent) {
+    surface.failure_reason = "typed sema-to-lowering core feature expansion is inconsistent";
+  } else if (surface.typed_sema_core_feature_expansion_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering core feature expansion key is empty";
   } else if (!surface.lowering_boundary_ready) {
     surface.failure_reason = "lowering boundary is not ready";
   } else if (!surface.parse_lowering_conformance_matrix_consistent) {
