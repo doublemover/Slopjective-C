@@ -161,6 +161,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_c001_replay_harness_and_artifact_contracts_contract_freeze_packet.md`,
   and `package.json` so replay artifact boundaries and evidence routing remain
   deterministic and fail-closed for CI replay governance.
+- M248 lane-D D001 runner reliability and platform operations anchors explicit
+  lane-D contract freeze artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_contract_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m248/m248_d001_runner_reliability_and_platform_operations_contract_freeze_packet.md`,
+  and `package.json` so runner/platform operation evidence remains deterministic
+  and fail-closed for CI sharding and replay governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

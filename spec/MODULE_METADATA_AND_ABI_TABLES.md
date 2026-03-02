@@ -105,6 +105,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
      contract evidence and execution replay continuity so CI replay drift fails
      closed.
+   - deterministic lane-D runner operations metadata anchors for `M248-D001`
+     with compile-route evidence and perf-budget continuity so platform
+     operation drift fails closed.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

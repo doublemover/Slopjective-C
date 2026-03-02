@@ -125,6 +125,9 @@ At minimum, the pass-graph gate shall validate:
 - replay harness/artifact governance shall preserve explicit lane-C artifact
   replay anchors and fail closed on replay evidence drift before execution and
   conformance replay validation advances.
+- runner/platform operations governance shall preserve explicit lane-D
+  compile-route anchors and fail closed on platform replay drift before
+  performance budget and execution replay validation advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
