@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+"""Fail-closed validator for M226-C016 parse/lowering advanced edge compatibility shard1."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+MODE = "m226-c016-parse-lowering-advanced-edge-compatibility-workpack-shard1-contract-v1"
+
+ARTIFACTS: dict[str, Path] = {
+    "readiness_surface_header": ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "pipeline"
+    / "objc3_parse_lowering_readiness_surface.h",
+    "frontend_types_header": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h",
+    "artifacts_source": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp",
+    "c015_contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m226_parse_lowering_advanced_core_workpack_shard1_c015_expectations.md",
+    "contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m226_parse_lowering_advanced_edge_compatibility_workpack_shard1_c016_expectations.md",
+}
+
+REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "readiness_surface_header": (
+        ("M226-C016-RDY-01", "IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityConsistent("),
+        ("M226-C016-RDY-02", "IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityReady("),
+        ("M226-C016-RDY-03", "BuildObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityKey("),
+        (
+            "M226-C016-RDY-04",
+            "surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent =",
+        ),
+        ("M226-C016-RDY-05", "surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_ready ="),
+        ("M226-C016-RDY-06", "surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_key ="),
+        ("M226-C016-RDY-07", ";toolchain_runtime_ga_operations_advanced_edge_compatibility_key="),
+        (
+            "M226-C016-RDY-08",
+            "surface.failure_reason =\n        \"toolchain/runtime GA operations advanced edge compatibility workpack is inconsistent\";",
+        ),
+        (
+            "M226-C016-RDY-09",
+            "surface.failure_reason =\n        \"toolchain/runtime GA operations advanced edge compatibility workpack is not ready\";",
+        ),
+    ),
+    "frontend_types_header": (
+        (
+            "M226-C016-TYP-01",
+            "bool toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent = false;",
+        ),
+        ("M226-C016-TYP-02", "bool toolchain_runtime_ga_operations_advanced_edge_compatibility_ready = false;"),
+        ("M226-C016-TYP-03", "std::string toolchain_runtime_ga_operations_advanced_edge_compatibility_key;"),
+    ),
+    "artifacts_source": (
+        (
+            "M226-C016-ART-01",
+            '\\"toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent\\": ',
+        ),
+        (
+            "M226-C016-ART-02",
+            '\\"toolchain_runtime_ga_operations_advanced_edge_compatibility_ready\\": ',
+        ),
+        (
+            "M226-C016-ART-03",
+            '\\"toolchain_runtime_ga_operations_advanced_edge_compatibility_key\\":\\"',
+        ),
+    ),
+    "c015_contract_doc": (
+        (
+            "M226-C016-DEP-01",
+            "Contract ID: `objc3c-parse-lowering-advanced-core-workpack-shard1-contract/m226-c015-v1`",
+        ),
+    ),
+    "contract_doc": (
+        (
+            "M226-C016-DOC-01",
+            "Contract ID: `objc3c-parse-lowering-advanced-edge-compatibility-workpack-shard1-contract/m226-c016-v1`",
+        ),
+        ("M226-C016-DOC-02", "toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent"),
+        ("M226-C016-DOC-03", "IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityConsistent"),
+        ("M226-C016-DOC-04", "BuildObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityKey"),
+        (
+            "M226-C016-DOC-05",
+            "python scripts/check_m226_c016_parse_lowering_advanced_edge_compatibility_workpack_shard1_contract.py",
+        ),
+        (
+            "M226-C016-DOC-06",
+            "python -m pytest tests/tooling/test_check_m226_c016_parse_lowering_advanced_edge_compatibility_workpack_shard1_contract.py -q",
+        ),
+        (
+            "M226-C016-DOC-07",
+            "tmp/reports/m226/m226_c016_parse_lowering_advanced_edge_compatibility_workpack_shard1_contract_summary.json",
+        ),
+    ),
+}
+
+FORBIDDEN_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "readiness_surface_header": (
+        (
+            "M226-C016-FORB-01",
+            "surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent = true;",
+        ),
+    ),
+}
+
+
+@dataclass(frozen=True)
+class Finding:
+    artifact: str
+    check_id: str
+    detail: str
+
+
+def canonical_json(payload: object) -> str:
+    return json.dumps(payload, indent=2) + "\n"
+
+
+def parse_args(argv: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--summary-out",
+        type=Path,
+        default=Path(
+            "tmp/reports/m226/m226_c016_parse_lowering_advanced_edge_compatibility_workpack_shard1_contract_summary.json"
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def load_text(path: Path, *, artifact: str) -> str:
+    if not path.exists() or not path.is_file():
+        raise ValueError(f"{artifact} missing file: {path.as_posix()}")
+    return path.read_text(encoding="utf-8")
+
+
+def run(argv: Sequence[str]) -> int:
+    args = parse_args(argv)
+
+    findings: list[Finding] = []
+    total_checks = 0
+    passed_checks = 0
+
+    for artifact, path in ARTIFACTS.items():
+        text = load_text(path, artifact=artifact)
+        for check_id, snippet in REQUIRED_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                passed_checks += 1
+            else:
+                findings.append(Finding(artifact, check_id, f"expected snippet missing: {snippet}"))
+        for check_id, snippet in FORBIDDEN_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                findings.append(Finding(artifact, check_id, f"forbidden snippet present: {snippet}"))
+            else:
+                passed_checks += 1
+
+    summary = {
+        "mode": MODE,
+        "ok": not findings,
+        "checks_total": total_checks,
+        "checks_passed": passed_checks,
+        "failures": [
+            {
+                "artifact": finding.artifact,
+                "check_id": finding.check_id,
+                "detail": finding.detail,
+            }
+            for finding in findings
+        ],
+    }
+
+    args.summary_out.parent.mkdir(parents=True, exist_ok=True)
+    args.summary_out.write_text(canonical_json(summary), encoding="utf-8")
+
+    if findings:
+        for finding in findings:
+            print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(run(sys.argv[1:]))
