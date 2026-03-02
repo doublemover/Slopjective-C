@@ -104,6 +104,10 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-E core-feature closeout dependency anchors for `M228-E002`, `M228-A003`,
      `M228-B003`, `M228-C003`, and `M228-D003`, including cross-lane core-feature readiness tokens
      needed to keep replay-proof/performance core-feature gate evidence fail-closed.
+   - deterministic lane-E core-feature expansion dependency anchors for `M228-E003`, `M228-A003`,
+     `M228-B004`, `M228-C003`, `M228-D003`, and pending token `M228-C008`,
+     including cross-lane expansion-readiness continuity needed to keep
+     replay-proof/performance core-feature expansion gate evidence fail-closed.
    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
      backend marker-path and marker payload-to-route consistency evidence.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
