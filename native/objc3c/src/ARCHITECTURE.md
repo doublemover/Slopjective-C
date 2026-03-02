@@ -127,6 +127,10 @@ Current-state note:
   `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so edge-case expansion drift fails closed before runtime readiness is
   reported.
+- M250 lane-C C007 diagnostics hardening anchors explicit lowering/runtime
+  diagnostics guardrails (`diagnostics_hardening_*`) in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so diagnostics drift fails closed before runtime readiness is reported.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
