@@ -142,6 +142,10 @@ At minimum, the pass-graph gate shall validate:
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before
   semantic stability expansion validation advances.
+- semantic compatibility and migration checks modular split scaffolding shall
+  preserve explicit lane-B dependency anchors (`M249-B001`) and fail closed on
+  modular split evidence drift before semantic stability expansion validation
+  advances.
 - replay harness/artifact governance shall preserve explicit lane-C artifact
   replay anchors and fail closed on replay evidence drift before execution and
   conformance replay validation advances.

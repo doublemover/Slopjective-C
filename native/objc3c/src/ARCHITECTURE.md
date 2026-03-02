@@ -182,6 +182,12 @@ Current-state note:
   and `package.json` so compatibility-mode and migration-assist sema/parse
   handoff evidence remains deterministic and fail-closed before lane-B modular
   split/scaffolding expansion.
+- M249 lane-B B002 semantic compatibility/migration modular split/scaffolding
+  anchors explicit lane-B scaffolding artifacts in
+  `docs/contracts/m249_semantic_compatibility_and_migration_checks_modular_split_scaffolding_b002_expectations.md`,
+  `spec/planning/compiler/m249/m249_b002_semantic_compatibility_and_migration_checks_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split compatibility continuity remains
+  deterministic and fail-closed against `M249-B001` dependency drift.
 - M248 lane-C C001 replay harness and artifact contract anchors explicit lane-C
   contract freeze artifacts in
   `docs/contracts/m248_replay_harness_and_artifact_contracts_contract_freeze_c001_expectations.md`,

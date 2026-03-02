@@ -120,6 +120,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
      with sema pass-flow compatibility evidence and parse/lowering compatibility handoff continuity
      so migration drift fails closed.
+   - deterministic lane-B semantic compatibility/migration modular split metadata anchors for
+     `M249-B002` with explicit `M249-B001` dependency continuity so migration
+     scaffolding drift fails closed.
    - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
      contract evidence and execution replay continuity so CI replay drift fails
      closed.
