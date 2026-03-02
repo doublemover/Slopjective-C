@@ -43,6 +43,11 @@ Current-state note:
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so diagnostic coordinate
   fidelity and deterministic parser diagnostic surfaces remain fail-closed.
+- M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
+  sema diagnostics bus and pass-flow freeze in
+  `sema/objc3_sema_pass_manager_contract.h` and
+  `sema/objc3_sema_pass_flow_scaffold.h` so semantic diagnostics accounting and
+  fix-it deterministic handoff remain fail-closed.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
