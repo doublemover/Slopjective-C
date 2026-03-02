@@ -737,6 +737,43 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   if (!handoff.deterministic) {
     return result;
   }
+  const bool parser_recovery_replay_ready =
+      result.parser_sema_conformance_matrix.parser_recovery_replay_ready;
+  const bool parser_recovery_replay_case_present =
+      result.parser_sema_conformance_corpus.has_recovery_replay_case;
+  const bool parser_recovery_replay_case_passed =
+      result.parser_sema_conformance_corpus.recovery_replay_case_passed;
+  const bool parser_recovery_replay_contract_satisfied =
+      parser_recovery_replay_ready &&
+      parser_recovery_replay_case_present &&
+      parser_recovery_replay_case_passed &&
+      result.parser_sema_conformance_corpus.required_case_count > 0u &&
+      result.parser_sema_conformance_corpus.passed_case_count ==
+          result.parser_sema_conformance_corpus.required_case_count &&
+      result.parser_sema_conformance_corpus.failed_case_count == 0u;
+  std::ostringstream recovery_replay_key_stream;
+  recovery_replay_key_stream
+      << "sema-pass-recovery:v1:"
+      << "matrix_recovery_replay_ready="
+      << (parser_recovery_replay_ready ? "true" : "false")
+      << ";corpus_recovery_replay_case_present="
+      << (parser_recovery_replay_case_present ? "true" : "false")
+      << ";corpus_recovery_replay_case_passed="
+      << (parser_recovery_replay_case_passed ? "true" : "false")
+      << ";corpus_required_case_count="
+      << result.parser_sema_conformance_corpus.required_case_count
+      << ";corpus_passed_case_count="
+      << result.parser_sema_conformance_corpus.passed_case_count
+      << ";corpus_failed_case_count="
+      << result.parser_sema_conformance_corpus.failed_case_count;
+  const std::string recovery_replay_key = recovery_replay_key_stream.str();
+  const bool recovery_replay_key_deterministic =
+      result.deterministic_parser_sema_conformance_matrix &&
+      result.deterministic_parser_sema_conformance_corpus &&
+      !recovery_replay_key.empty();
+  const bool recovery_determinism_hardening_satisfied =
+      parser_recovery_replay_contract_satisfied &&
+      recovery_replay_key_deterministic;
 
   result.executed = true;
   result.sema_pass_flow_summary.compatibility_mode = input.compatibility_mode;
@@ -2114,6 +2151,15 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.sema_pass_flow_summary.diagnostics_bus_publish_consistent = result.diagnostics_bus_publish_consistent;
   result.sema_pass_flow_summary.diagnostics_canonicalized = result.diagnostics_canonicalized;
   result.sema_pass_flow_summary.diagnostics_hardening_satisfied = result.diagnostics_hardening_satisfied;
+  result.sema_pass_flow_summary.parser_recovery_replay_ready = parser_recovery_replay_ready;
+  result.sema_pass_flow_summary.parser_recovery_replay_case_present = parser_recovery_replay_case_present;
+  result.sema_pass_flow_summary.parser_recovery_replay_case_passed = parser_recovery_replay_case_passed;
+  result.sema_pass_flow_summary.recovery_replay_contract_satisfied =
+      parser_recovery_replay_contract_satisfied;
+  result.sema_pass_flow_summary.recovery_replay_key = recovery_replay_key;
+  result.sema_pass_flow_summary.recovery_replay_key_deterministic = recovery_replay_key_deterministic;
+  result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied =
+      recovery_determinism_hardening_satisfied;
   FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,
                                    result.integration_surface,
                                    result.type_metadata_handoff,
@@ -2122,6 +2168,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                                        pass_iteration_index == kObjc3SemaPassOrder.size(),
                                    result.deterministic_semantic_diagnostics,
                                    result.deterministic_type_metadata_handoff);
+  result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied =
+      result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied &&
+      result.sema_pass_flow_summary.diagnostics_hardening_satisfied &&
+      result.sema_pass_flow_summary.robustness_guardrails_satisfied;
 
   result.parity_surface.parser_sema_conformance_matrix =
       result.parser_sema_conformance_matrix;
@@ -3126,6 +3176,14 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.diagnostics_bus_publish_consistent &&
       result.parity_surface.diagnostics_canonicalized &&
       result.parity_surface.diagnostics_after_pass_monotonic;
+  result.parity_surface.pass_flow_recovery_replay_contract_satisfied =
+      result.sema_pass_flow_summary.recovery_replay_contract_satisfied;
+  result.parity_surface.pass_flow_recovery_replay_key =
+      result.sema_pass_flow_summary.recovery_replay_key;
+  result.parity_surface.pass_flow_recovery_replay_key_deterministic =
+      result.sema_pass_flow_summary.recovery_replay_key_deterministic;
+  result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied =
+      result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied;
   result.parity_surface.deterministic_parser_sema_conformance_matrix =
       result.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic;
@@ -5124,6 +5182,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.diagnostics_bus_publish_consistent &&
       result.parity_surface.diagnostics_canonicalized &&
       result.parity_surface.diagnostics_hardening_satisfied &&
+      result.parity_surface.pass_flow_recovery_replay_contract_satisfied &&
+      !result.parity_surface.pass_flow_recovery_replay_key.empty() &&
+      result.parity_surface.pass_flow_recovery_replay_key_deterministic &&
+      result.parity_surface.pass_flow_recovery_determinism_hardening_satisfied &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&

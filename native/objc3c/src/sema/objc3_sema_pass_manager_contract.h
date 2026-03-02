@@ -75,6 +75,13 @@ struct Objc3SemaPassFlowSummary {
   bool diagnostics_bus_publish_consistent = false;
   bool diagnostics_canonicalized = false;
   bool diagnostics_hardening_satisfied = false;
+  bool parser_recovery_replay_ready = false;
+  bool parser_recovery_replay_case_present = false;
+  bool parser_recovery_replay_case_passed = false;
+  bool recovery_replay_contract_satisfied = false;
+  std::string recovery_replay_key;
+  bool recovery_replay_key_deterministic = false;
+  bool recovery_determinism_hardening_satisfied = false;
   bool compatibility_handoff_consistent = false;
   bool robustness_guardrails_satisfied = false;
   bool symbol_flow_counts_consistent = false;
@@ -99,6 +106,13 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.diagnostics_bus_publish_consistent &&
          summary.diagnostics_canonicalized &&
          summary.diagnostics_hardening_satisfied &&
+         summary.parser_recovery_replay_ready &&
+         summary.parser_recovery_replay_case_present &&
+         summary.parser_recovery_replay_case_passed &&
+         summary.recovery_replay_contract_satisfied &&
+         !summary.recovery_replay_key.empty() &&
+         summary.recovery_replay_key_deterministic &&
+         summary.recovery_determinism_hardening_satisfied &&
          summary.compatibility_handoff_consistent &&
          summary.robustness_guardrails_satisfied &&
          summary.symbol_flow_counts_consistent &&
@@ -673,6 +687,10 @@ struct Objc3SemaParityContractSurface {
   bool diagnostics_bus_publish_consistent = false;
   bool diagnostics_canonicalized = false;
   bool diagnostics_hardening_satisfied = false;
+  bool pass_flow_recovery_replay_contract_satisfied = false;
+  std::string pass_flow_recovery_replay_key;
+  bool pass_flow_recovery_replay_key_deterministic = false;
+  bool pass_flow_recovery_determinism_hardening_satisfied = false;
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_parser_sema_conformance_matrix = false;
   bool deterministic_parser_sema_conformance_corpus = false;
@@ -858,6 +876,10 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.diagnostics_bus_publish_consistent &&
          surface.diagnostics_canonicalized &&
          surface.diagnostics_hardening_satisfied &&
+         surface.pass_flow_recovery_replay_contract_satisfied &&
+         !surface.pass_flow_recovery_replay_key.empty() &&
+         surface.pass_flow_recovery_replay_key_deterministic &&
+         surface.pass_flow_recovery_determinism_hardening_satisfied &&
          surface.diagnostics_after_pass_monotonic && surface.deterministic_semantic_diagnostics &&
          surface.deterministic_type_metadata_handoff && surface.deterministic_atomic_memory_order_mapping &&
          surface.deterministic_vector_type_lowering &&

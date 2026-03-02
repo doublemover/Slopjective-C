@@ -2130,6 +2130,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_parity_surface.diagnostics_canonicalized ? "true" : "false")
            << ",\"diagnostics_hardening_satisfied\":"
            << (pipeline_result.sema_parity_surface.diagnostics_hardening_satisfied ? "true" : "false")
+           << ",\"pass_flow_recovery_replay_contract_satisfied\":"
+           << (pipeline_result.sema_parity_surface.pass_flow_recovery_replay_contract_satisfied ? "true" : "false")
+           << ",\"pass_flow_recovery_replay_key\":\""
+           << pipeline_result.sema_parity_surface.pass_flow_recovery_replay_key
+           << "\",\"pass_flow_recovery_replay_key_deterministic\":"
+           << (pipeline_result.sema_parity_surface.pass_flow_recovery_replay_key_deterministic ? "true" : "false")
+           << ",\"pass_flow_recovery_determinism_hardening_satisfied\":"
+           << (pipeline_result.sema_parity_surface.pass_flow_recovery_determinism_hardening_satisfied ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
            << ",\"pass_flow_configured_count\":"
@@ -2170,6 +2178,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_pass_flow_summary.diagnostics_canonicalized ? "true" : "false")
            << ",\"pass_flow_diagnostics_hardening_satisfied\":"
            << (pipeline_result.sema_pass_flow_summary.diagnostics_hardening_satisfied ? "true" : "false")
+           << ",\"pass_flow_parser_recovery_replay_ready\":"
+           << (pipeline_result.sema_pass_flow_summary.parser_recovery_replay_ready ? "true" : "false")
+           << ",\"pass_flow_parser_recovery_replay_case_present\":"
+           << (pipeline_result.sema_pass_flow_summary.parser_recovery_replay_case_present ? "true" : "false")
+           << ",\"pass_flow_parser_recovery_replay_case_passed\":"
+           << (pipeline_result.sema_pass_flow_summary.parser_recovery_replay_case_passed ? "true" : "false")
+           << ",\"pass_flow_recovery_replay_contract_satisfied\":"
+           << (pipeline_result.sema_pass_flow_summary.recovery_replay_contract_satisfied ? "true" : "false")
+           << ",\"pass_flow_recovery_replay_key\":\""
+           << pipeline_result.sema_pass_flow_summary.recovery_replay_key
+           << "\",\"pass_flow_recovery_replay_key_deterministic\":"
+           << (pipeline_result.sema_pass_flow_summary.recovery_replay_key_deterministic ? "true" : "false")
+           << ",\"pass_flow_recovery_determinism_hardening_satisfied\":"
+           << (pipeline_result.sema_pass_flow_summary.recovery_determinism_hardening_satisfied ? "true" : "false")
            << ",\"pass_flow_compatibility_handoff_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.compatibility_handoff_consistent ? "true" : "false")
            << ",\"pass_flow_robustness_guardrails_satisfied\":"
