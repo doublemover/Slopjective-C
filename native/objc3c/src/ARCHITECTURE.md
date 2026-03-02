@@ -216,6 +216,10 @@ Current-state note:
   toolchain/runtime recovery guardrails in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D recovery and
   replay determinism drift fails closed before conformance and sign-off gates.
+- M250 lane-D D009 conformance matrix implementation anchors explicit
+  toolchain/runtime conformance-matrix guardrails in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D conformance
+  matrix drift fails closed before corpus and sign-off gates.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`

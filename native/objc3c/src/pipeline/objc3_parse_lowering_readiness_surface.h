@@ -543,6 +543,69 @@ inline std::string BuildObjc3LongTailGrammarConformanceMatrixKey(
          std::string(conformance_matrix_ready ? "true" : "false");
 }
 
+inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixConsistent(
+    bool toolchain_runtime_ga_operations_recovery_determinism_consistent,
+    bool toolchain_runtime_ga_operations_recovery_determinism_ready,
+    bool parse_lowering_conformance_matrix_consistent,
+    bool long_tail_grammar_conformance_matrix_consistent,
+    bool long_tail_grammar_conformance_matrix_ready,
+    const std::string &parse_recovery_determinism_hardening_key,
+    const std::string &long_tail_grammar_recovery_determinism_key) {
+  return toolchain_runtime_ga_operations_recovery_determinism_consistent &&
+         toolchain_runtime_ga_operations_recovery_determinism_ready &&
+         parse_lowering_conformance_matrix_consistent &&
+         long_tail_grammar_conformance_matrix_consistent &&
+         long_tail_grammar_conformance_matrix_ready &&
+         parse_recovery_determinism_hardening_key.find(
+             "toolchain_runtime_ga_operations_recovery_determinism_key=") != std::string::npos &&
+         long_tail_grammar_recovery_determinism_key.find(
+             "toolchain_runtime_ga_operations_recovery_determinism_key=") != std::string::npos;
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixReady(
+    bool toolchain_runtime_ga_operations_conformance_matrix_consistent,
+    const std::string &parse_lowering_conformance_matrix_key,
+    const std::string &long_tail_grammar_conformance_matrix_key) {
+  return toolchain_runtime_ga_operations_conformance_matrix_consistent &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             parse_lowering_conformance_matrix_key,
+             "case_count=") &&
+         Objc3ParseLoweringReadinessKeyHasPrefix(
+             long_tail_grammar_conformance_matrix_key,
+             "conformance_matrix_case_count=");
+}
+
+inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceMatrixKey(
+    bool parse_lowering_conformance_matrix_consistent,
+    bool long_tail_grammar_conformance_matrix_consistent,
+    bool long_tail_grammar_conformance_matrix_ready,
+    const std::string &parse_lowering_conformance_matrix_key,
+    const std::string &long_tail_grammar_conformance_matrix_key,
+    bool toolchain_runtime_ga_operations_conformance_matrix_consistent,
+    bool toolchain_runtime_ga_operations_conformance_matrix_ready) {
+  const bool parse_lowering_conformance_matrix_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          parse_lowering_conformance_matrix_key,
+          "case_count=");
+  const bool long_tail_grammar_conformance_matrix_key_shape_deterministic =
+      Objc3ParseLoweringReadinessKeyHasPrefix(
+          long_tail_grammar_conformance_matrix_key,
+          "conformance_matrix_case_count=");
+  return std::string("parse_lowering_conformance_matrix_consistent=") +
+         (parse_lowering_conformance_matrix_consistent ? "true" : "false") +
+         ";long_tail_grammar_conformance_matrix_consistent=" +
+         (long_tail_grammar_conformance_matrix_consistent ? "true" : "false") +
+         ";long_tail_grammar_conformance_matrix_ready=" +
+         (long_tail_grammar_conformance_matrix_ready ? "true" : "false") +
+         ";parse_lowering_conformance_matrix_key_shape_deterministic=" +
+         (parse_lowering_conformance_matrix_key_shape_deterministic ? "true" : "false") +
+         ";long_tail_grammar_conformance_matrix_key_shape_deterministic=" +
+         (long_tail_grammar_conformance_matrix_key_shape_deterministic ? "true" : "false") +
+         ";consistent=" +
+         (toolchain_runtime_ga_operations_conformance_matrix_consistent ? "true" : "false") +
+         ";ready=" + (toolchain_runtime_ga_operations_conformance_matrix_ready ? "true" : "false");
+}
+
 inline std::string BuildObjc3LongTailGrammarIntegrationCloseoutKey(
     bool conformance_matrix_ready,
     bool conformance_corpus_consistent,
@@ -1241,8 +1304,44 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           semantic_handoff_deterministic,
           surface.lowering_boundary_ready,
           surface.parse_lowering_conformance_matrix_consistent);
+  const bool toolchain_runtime_ga_operations_conformance_matrix_consistent =
+      IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixConsistent(
+          toolchain_runtime_ga_operations_recovery_determinism_consistent,
+          toolchain_runtime_ga_operations_recovery_determinism_ready,
+          surface.parse_lowering_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_ready,
+          surface.parse_recovery_determinism_hardening_key,
+          surface.long_tail_grammar_recovery_determinism_key);
+  const bool toolchain_runtime_ga_operations_conformance_matrix_ready =
+      IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixReady(
+          toolchain_runtime_ga_operations_conformance_matrix_consistent,
+          surface.parse_lowering_conformance_matrix_key,
+          surface.long_tail_grammar_conformance_matrix_key);
+  const std::string toolchain_runtime_ga_operations_conformance_matrix_key =
+      BuildObjc3ToolchainRuntimeGaOperationsConformanceMatrixKey(
+          surface.parse_lowering_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_ready,
+          surface.parse_lowering_conformance_matrix_key,
+          surface.long_tail_grammar_conformance_matrix_key,
+          toolchain_runtime_ga_operations_conformance_matrix_consistent,
+          toolchain_runtime_ga_operations_conformance_matrix_ready);
+  surface.long_tail_grammar_conformance_matrix_consistent =
+      surface.long_tail_grammar_conformance_matrix_consistent &&
+      toolchain_runtime_ga_operations_conformance_matrix_consistent;
+  surface.long_tail_grammar_conformance_matrix_ready =
+      surface.long_tail_grammar_conformance_matrix_ready &&
+      toolchain_runtime_ga_operations_conformance_matrix_ready;
+  surface.long_tail_grammar_conformance_matrix_key +=
+      ";toolchain_runtime_ga_operations_conformance_matrix_key=" +
+      toolchain_runtime_ga_operations_conformance_matrix_key;
+  surface.parse_lowering_conformance_matrix_key +=
+      ";toolchain_runtime_ga_operations_conformance_matrix_key=" +
+      toolchain_runtime_ga_operations_conformance_matrix_key;
   const bool parse_lowering_conformance_matrix_ready =
-      surface.parse_lowering_conformance_matrix_consistent;
+      surface.parse_lowering_conformance_matrix_consistent &&
+      toolchain_runtime_ga_operations_conformance_matrix_ready;
   const bool parser_contract_snapshot_case_passed =
       surface.parser_contract_snapshot_present;
   const bool parse_artifact_handoff_case_passed =
@@ -1509,6 +1608,87 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "long-tail grammar recovery/determinism hardening is inconsistent";
   } else if (!surface.long_tail_grammar_recovery_determinism_ready) {
     surface.failure_reason = "long-tail grammar recovery/determinism hardening is not ready";
+  } else if (
+      !IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixConsistent(
+          IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+              surface.parser_recovery_replay_ready,
+              surface.parse_artifact_replay_key_deterministic,
+              surface.long_tail_grammar_replay_keys_ready,
+              surface.long_tail_grammar_diagnostics_hardening_ready,
+              surface.parse_recovery_determinism_hardening_consistent,
+              surface.parse_artifact_handoff_key,
+              surface.parse_artifact_replay_key,
+              surface.parse_artifact_diagnostics_hardening_key,
+              surface.parse_artifact_edge_robustness_key,
+              surface.long_tail_grammar_handoff_key,
+              surface.long_tail_grammar_diagnostics_hardening_key,
+              surface.parse_recovery_determinism_hardening_key),
+          IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
+              IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+                  surface.parser_recovery_replay_ready,
+                  surface.parse_artifact_replay_key_deterministic,
+                  surface.long_tail_grammar_replay_keys_ready,
+                  surface.long_tail_grammar_diagnostics_hardening_ready,
+                  surface.parse_recovery_determinism_hardening_consistent,
+                  surface.parse_artifact_handoff_key,
+                  surface.parse_artifact_replay_key,
+                  surface.parse_artifact_diagnostics_hardening_key,
+                  surface.parse_artifact_edge_robustness_key,
+                  surface.long_tail_grammar_handoff_key,
+                  surface.long_tail_grammar_diagnostics_hardening_key,
+                  surface.parse_recovery_determinism_hardening_key),
+              surface.long_tail_grammar_recovery_determinism_consistent,
+              surface.long_tail_grammar_recovery_determinism_ready,
+              surface.long_tail_grammar_recovery_determinism_key),
+          surface.parse_lowering_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_ready,
+          surface.parse_recovery_determinism_hardening_key,
+          surface.long_tail_grammar_recovery_determinism_key)) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations conformance matrix is inconsistent";
+  } else if (
+      !IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixReady(
+          IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixConsistent(
+              IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+                  surface.parser_recovery_replay_ready,
+                  surface.parse_artifact_replay_key_deterministic,
+                  surface.long_tail_grammar_replay_keys_ready,
+                  surface.long_tail_grammar_diagnostics_hardening_ready,
+                  surface.parse_recovery_determinism_hardening_consistent,
+                  surface.parse_artifact_handoff_key,
+                  surface.parse_artifact_replay_key,
+                  surface.parse_artifact_diagnostics_hardening_key,
+                  surface.parse_artifact_edge_robustness_key,
+                  surface.long_tail_grammar_handoff_key,
+                  surface.long_tail_grammar_diagnostics_hardening_key,
+                  surface.parse_recovery_determinism_hardening_key),
+              IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
+                  IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
+                      surface.parser_recovery_replay_ready,
+                      surface.parse_artifact_replay_key_deterministic,
+                      surface.long_tail_grammar_replay_keys_ready,
+                      surface.long_tail_grammar_diagnostics_hardening_ready,
+                      surface.parse_recovery_determinism_hardening_consistent,
+                      surface.parse_artifact_handoff_key,
+                      surface.parse_artifact_replay_key,
+                      surface.parse_artifact_diagnostics_hardening_key,
+                      surface.parse_artifact_edge_robustness_key,
+                      surface.long_tail_grammar_handoff_key,
+                      surface.long_tail_grammar_diagnostics_hardening_key,
+                      surface.parse_recovery_determinism_hardening_key),
+                  surface.long_tail_grammar_recovery_determinism_consistent,
+                  surface.long_tail_grammar_recovery_determinism_ready,
+                  surface.long_tail_grammar_recovery_determinism_key),
+              surface.parse_lowering_conformance_matrix_consistent,
+              surface.long_tail_grammar_conformance_matrix_consistent,
+              surface.long_tail_grammar_conformance_matrix_ready,
+              surface.parse_recovery_determinism_hardening_key,
+              surface.long_tail_grammar_recovery_determinism_key),
+          surface.parse_lowering_conformance_matrix_key,
+          surface.long_tail_grammar_conformance_matrix_key)) {
+    surface.failure_reason =
+        "toolchain/runtime GA operations conformance matrix is not ready";
   } else if (!surface.long_tail_grammar_conformance_matrix_consistent) {
     surface.failure_reason = "long-tail grammar conformance matrix is inconsistent";
   } else if (!surface.long_tail_grammar_conformance_matrix_ready) {
