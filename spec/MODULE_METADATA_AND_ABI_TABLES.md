@@ -111,6 +111,8 @@ A conforming implementation shall preserve, for all exported declarations:
      so distribution surface drift fails closed.
    - deterministic lane-A feature packaging modular split metadata anchors for `M249-A002`
      with explicit `M249-A001` dependency continuity so compatibility scaffolding drift fails closed.
+   - deterministic lane-A feature packaging core feature metadata anchors for `M249-A003`
+     with explicit `M249-A002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
      with semantic fixture ownership evidence and lowering replay continuity so
      CI sharding semantic drift fails closed.
