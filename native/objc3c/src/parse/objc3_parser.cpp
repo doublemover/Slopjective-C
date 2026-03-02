@@ -5342,6 +5342,21 @@ class Objc3Parser {
       if (!Match(TokenKind::Comma)) {
         return true;
       }
+      if (At(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P104",
+                     "trailing ',' in C-style compatibility parameter list is not allowed"));
+        return false;
+      }
+      if (!AtCompatBuiltinType() && !At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P100",
+                     "expected parameter declaration after ',' in C-style compatibility parameter list, found " +
+                         DescribeCompatDiagnosticToken(token)));
+        return false;
+      }
     }
   }
 
