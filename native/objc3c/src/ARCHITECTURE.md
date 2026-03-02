@@ -232,6 +232,10 @@ Current-state note:
   toolchain/runtime cross-lane integration guards in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D integration
   drift fails closed before integration closeout and gate sign-off.
+- M250 lane-D D013 docs and operator runbook synchronization anchors explicit
+  toolchain/runtime docs/runbook synchronization guardrails in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D docs-signoff
+  drift fails closed before final gate sign-off.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
