@@ -493,6 +493,8 @@ struct Objc3IRFrontendMetadata {
   std::string lowering_pass_graph_recovery_determinism_key;
   bool lowering_pass_graph_conformance_matrix_ready = false;
   std::string lowering_pass_graph_conformance_matrix_key;
+  bool lowering_pass_graph_conformance_corpus_ready = false;
+  std::string lowering_pass_graph_conformance_corpus_key;
   bool ir_emission_completeness_modular_split_ready = false;
   std::string ir_emission_completeness_modular_split_key;
   bool ir_emission_core_feature_impl_ready = false;

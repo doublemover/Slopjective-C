@@ -133,6 +133,21 @@ std::string BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-conformance-corpus:v1:"
+      << "conformance-matrix-ready="
+      << (surface.conformance_matrix_ready ? "true" : "false")
+      << ";conformance-corpus-consistent="
+      << (surface.conformance_corpus_consistent ? "true" : "false")
+      << ";conformance-corpus-ready="
+      << (surface.conformance_corpus_ready ? "true" : "false")
+      << ";conformance-matrix-key-ready="
+      << (!surface.conformance_matrix_key.empty() ? "true" : "false");
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -284,6 +299,32 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       !surface.recovery_determinism_key.empty();
   surface.conformance_matrix_key =
       BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(surface);
+  const std::size_t parse_lowering_conformance_corpus_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_conformance_corpus_case_count;
+  const std::size_t parse_lowering_conformance_corpus_passed_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_conformance_corpus_passed_case_count;
+  const std::size_t parse_lowering_conformance_corpus_failed_case_count =
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_conformance_corpus_failed_case_count;
+  const bool parse_lowering_conformance_corpus_case_accounting_consistent =
+      parse_lowering_conformance_corpus_case_count > 0 &&
+      parse_lowering_conformance_corpus_case_count ==
+          parse_lowering_conformance_corpus_passed_case_count +
+              parse_lowering_conformance_corpus_failed_case_count;
+  surface.conformance_corpus_consistent =
+      surface.conformance_matrix_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_lowering_conformance_corpus_consistent;
+  surface.conformance_corpus_ready =
+      surface.conformance_corpus_consistent &&
+      surface.conformance_matrix_ready &&
+      parse_lowering_conformance_corpus_case_accounting_consistent &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .parse_lowering_conformance_corpus_key.empty();
+  surface.conformance_corpus_key =
+      BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
@@ -294,7 +335,8 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       surface.edge_case_robustness_ready &&
       surface.diagnostics_hardening_ready &&
       surface.recovery_determinism_ready &&
-      surface.conformance_matrix_ready) {
+      surface.conformance_matrix_ready &&
+      surface.conformance_corpus_ready) {
     return surface;
   }
 
@@ -349,6 +391,12 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "pass-graph conformance matrix is not ready";
   } else if (surface.conformance_matrix_key.empty()) {
     surface.failure_reason = "pass-graph conformance matrix key is not ready";
+  } else if (!surface.conformance_corpus_consistent) {
+    surface.failure_reason = "pass-graph conformance corpus is inconsistent";
+  } else if (!surface.conformance_corpus_ready) {
+    surface.failure_reason = "pass-graph conformance corpus is not ready";
+  } else if (surface.conformance_corpus_key.empty()) {
+    surface.failure_reason = "pass-graph conformance corpus key is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -443,6 +491,19 @@ bool IsObjc3LoweringPipelinePassGraphConformanceMatrixReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph conformance matrix is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphConformanceCorpusReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.conformance_corpus_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph conformance corpus is not ready"
                : surface.failure_reason;
   return false;
 }

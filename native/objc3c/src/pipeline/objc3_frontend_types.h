@@ -343,6 +343,8 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   bool recovery_determinism_ready = false;
   bool conformance_matrix_consistent = false;
   bool conformance_matrix_ready = false;
+  bool conformance_corpus_consistent = false;
+  bool conformance_corpus_ready = false;
   bool expansion_ready = false;
   bool core_feature_ready = false;
   std::string lowering_boundary_replay_key;
@@ -352,6 +354,7 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   std::string diagnostics_hardening_key;
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
+  std::string conformance_corpus_key;
   std::string expansion_key;
   std::string core_feature_key;
   std::string failure_reason;

@@ -90,6 +90,12 @@ Current-state note:
   (`conformance_matrix_consistent`, `conformance_matrix_*`) and enforces
   fail-closed conformance-matrix gating in
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
+- M228 lane-A A010 conformance corpus expansion extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  deterministic conformance-corpus guardrails
+  (`conformance_corpus_consistent`, `conformance_corpus_*`) and enforces
+  fail-closed conformance-corpus gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,

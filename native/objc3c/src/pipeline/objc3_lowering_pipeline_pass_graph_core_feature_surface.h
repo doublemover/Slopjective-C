@@ -25,6 +25,9 @@ std::string BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(
 std::string BuildObjc3LoweringPipelinePassGraphConformanceMatrixKey(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
 
+std::string BuildObjc3LoweringPipelinePassGraphConformanceCorpusKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -55,5 +58,9 @@ bool IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
     std::string &reason);
 
 bool IsObjc3LoweringPipelinePassGraphConformanceMatrixReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason);
+
+bool IsObjc3LoweringPipelinePassGraphConformanceCorpusReady(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
     std::string &reason);
