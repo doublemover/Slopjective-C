@@ -1,6 +1,6 @@
 # M226 Lane E Contract Freeze (2026-03-02)
 
-Packet: `M226-E001`, `M226-E002`, `M226-E003`, `M226-E004`, `M226-E005`
+Packet: `M226-E001`, `M226-E002`, `M226-E003`, `M226-E004`, `M226-E005`, `M226-E006`
 Freeze date: `2026-03-02`
 Owner lane: `E`
 
@@ -8,9 +8,9 @@ Owner lane: `E`
 
 Freeze lane-E integration gate contract surfaces for M226, including the E001
 gate prerequisites, E002 evidence modular split/scaffolding, E003 core
-evidence indexing, E004 evidence core feature expansion, and E005 edge
-compatibility evidence completion, and fail closed if expected packet assets
-drift or disappear.
+evidence indexing, E004 evidence core feature expansion, E005 edge
+compatibility evidence completion, and E006 edge robustness evidence expansion,
+and fail closed if expected packet assets drift or disappear.
 
 ## Packet Registry
 
@@ -21,6 +21,7 @@ drift or disappear.
 | `M226-E003` | `objc3c-lane-e-integration-gate-core-evidence-contract/m226-e003-v1` | `docs/contracts/m226_lane_e_integration_gate_e003_core_evidence_expectations.md` |
 | `M226-E004` | `objc3c-lane-e-integration-gate-evidence-core-feature-expansion-contract/m226-e004-v1` | `docs/contracts/m226_lane_e_integration_gate_e004_evidence_core_feature_expansion_expectations.md` |
 | `M226-E005` | `objc3c-lane-e-integration-gate-edge-compat-evidence-contract/m226-e005-v1` | `docs/contracts/m226_lane_e_integration_gate_e005_edge_compatibility_evidence_expectations.md` |
+| `M226-E006` | `objc3c-lane-e-integration-gate-edge-robustness-evidence-contract/m226-e006-v1` | `docs/contracts/m226_lane_e_integration_gate_e006_edge_robustness_evidence_expectations.md` |
 
 ## Packet: `M226-E001`
 
@@ -84,6 +85,31 @@ drift or disappear.
 | Fail-closed checker | `scripts/check_m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract.py` |
 | Checker tests | `tests/tooling/test_check_m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract.py` |
 
+## Packet: `M226-E006`
+
+### Frozen Edge Robustness Evidence Assets
+
+| Module | Contract Asset(s) |
+| --- | --- |
+| Expectations | `docs/contracts/m226_lane_e_integration_gate_e006_edge_robustness_evidence_expectations.md` |
+| Packet doc | `spec/planning/compiler/m226/m226_e006_lane_e_integration_gate_edge_robustness_evidence_packet.md` |
+| Evidence scaffold doc | `spec/planning/compiler/m226/m226_e006_lane_e_integration_gate_edge_robustness_evidence_scaffold.md` |
+| Fail-closed checker | `scripts/check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.py` |
+| Checker tests | `tests/tooling/test_check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.py` |
+
+#### Upstream Robustness Anchors
+
+- Contract doc anchors:
+  `docs/contracts/m226_parser_advanced_core_workpack_a015_expectations.md`;
+  `docs/contracts/m226_parser_sema_edge_robustness_b006_expectations.md`;
+  `docs/contracts/m226_lane_e_integration_gate_e005_edge_compatibility_evidence_expectations.md`
+- Evidence artifact anchors:
+  `tmp/reports/m226/M226-A015/parser_advanced_core_workpack_summary.json`;
+  `tmp/reports/m226/M226-B006/parser_sema_edge_robustness_summary.json`;
+  `tmp/reports/m226/M226-C006/parse_lowering_edge_robustness_summary.json`;
+  `tmp/reports/m226/M226-D006/frontend_build_invocation_edge_robustness_summary.json`;
+  `tmp/reports/m226/m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract_summary.json`
+
 ## Gate Commands
 
 - `python scripts/check_m226_e001_lane_e_integration_gate_contract.py`
@@ -96,6 +122,8 @@ drift or disappear.
 - `python -m pytest tests/tooling/test_check_m226_e004_lane_e_integration_gate_evidence_core_feature_expansion_contract.py -q`
 - `python scripts/check_m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract.py -q`
+- `python scripts/check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.py`
+- `python -m pytest tests/tooling/test_check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.py -q`
 
 ## Evidence Output
 
@@ -112,3 +140,6 @@ drift or disappear.
 - `tmp/reports/m226/m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract_summary.json`
 - `tmp/reports/m226/e005/validation/pytest_check_m226_e005_lane_e_integration_gate_edge_compatibility_evidence_contract.txt`
 - `tmp/reports/m226/e005/evidence_index.json`
+- `tmp/reports/m226/m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract_summary.json`
+- `tmp/reports/m226/e006/validation/pytest_check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.txt`
+- `tmp/reports/m226/e006/evidence_index.json`
