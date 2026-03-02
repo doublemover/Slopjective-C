@@ -735,6 +735,162 @@ function Write-FrontendConformanceMatrixArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 10) -Encoding utf8
 }
 
+function Write-FrontendConformanceCorpusArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendConformanceMatrixPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendConformanceMatrixPath -PathType Leaf)) {
+    throw "frontend conformance matrix artifact missing for conformance corpus artifact: $FrontendConformanceMatrixPath"
+  }
+
+  try {
+    $matrixPayload = Get-Content -LiteralPath $FrontendConformanceMatrixPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend conformance matrix artifact is not valid JSON for conformance corpus artifact: $FrontendConformanceMatrixPath"
+  }
+
+  $expectedMatrixContractId = "objc3c-frontend-build-invocation-conformance-matrix/m226-d009-v1"
+  if ([string]$matrixPayload.contract_id -ne $expectedMatrixContractId) {
+    throw "frontend conformance matrix contract id mismatch for conformance corpus artifact: $FrontendConformanceMatrixPath"
+  }
+
+  $acceptRows = New-Object System.Collections.Generic.List[object]
+  $acceptOrdinal = 1
+  foreach ($row in @($matrixPayload.acceptance_matrix)) {
+    $profileKey = [string]$row.profile_key
+    if ([string]::IsNullOrWhiteSpace($profileKey)) {
+      continue
+    }
+    $segments = $profileKey.Split("|")
+    if ($segments.Length -ne 4) {
+      continue
+    }
+    $cacheMode = [string]$segments[0]
+    $backendMode = [string]$segments[1]
+    $routingMode = [string]$segments[2]
+    $summaryMode = [string]$segments[3]
+    $compileArgs = New-Object System.Collections.Generic.List[string]
+    $compileArgs.Add("tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3")
+    $compileArgs.Add("--out-dir=tmp/reports/m226/M226-D010/out")
+    if ($backendMode -ne "default") {
+      $compileArgs.Add("--objc3-ir-object-backend=$backendMode")
+    }
+    if ($summaryMode -eq "present") {
+      $compileArgs.Add("--llvm-capabilities-summary=tmp/artifacts/objc3c-native/llvm_capabilities_summary.json")
+    }
+    if ($routingMode -eq "capability-route") {
+      $compileArgs.Add("--objc3-route-backend-from-capabilities")
+    }
+    $acceptRows.Add([ordered]@{
+      corpus_case_id = ("D010-C{0:D3}" -f $acceptOrdinal)
+      profile_key = $profileKey
+      expected_result = "accept"
+      use_cache = ($cacheMode -eq "cache-aware")
+      expected_exit_code = 0
+      compile_args = $compileArgs.ToArray()
+    })
+    $acceptOrdinal++
+  }
+
+  $rejectRows = @(
+    [ordered]@{
+      corpus_case_id = "D010-R001"
+      matrix_case_id = "D009-R001"
+      expected_result = "reject"
+      expected_exit_code = 2
+      expected_diagnostic = "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
+      compile_args = @(
+        "tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3"
+        "--out-dir=tmp/reports/m226/M226-D010/out"
+        "--objc3-route-backend-from-capabilities"
+      )
+    }
+    [ordered]@{
+      corpus_case_id = "D010-R002"
+      matrix_case_id = "D009-R002"
+      expected_result = "reject"
+      expected_exit_code = 2
+      expected_diagnostic = "unsupported value '<backend>' for --objc3-ir-object-backend"
+      compile_args = @(
+        "tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3"
+        "--out-dir=tmp/reports/m226/M226-D010/out"
+        "--objc3-ir-object-backend=unsupported-backend"
+      )
+    }
+    [ordered]@{
+      corpus_case_id = "D010-R003"
+      matrix_case_id = "D009-R003"
+      expected_result = "reject"
+      expected_exit_code = 2
+      expected_diagnostic = "--objc3-ir-object-backend can be provided at most once"
+      compile_args = @(
+        "tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3"
+        "--out-dir=tmp/reports/m226/M226-D010/out"
+        "--objc3-ir-object-backend=clang"
+        "--objc3-ir-object-backend=llvm-direct"
+      )
+    }
+    [ordered]@{
+      corpus_case_id = "D010-R004"
+      matrix_case_id = "D009-R004"
+      expected_result = "reject"
+      expected_exit_code = 2
+      expected_diagnostic = "--llvm-capabilities-summary must not contain '..' relative segments"
+      compile_args = @(
+        "tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3"
+        "--out-dir=tmp/reports/m226/M226-D010/out"
+        "--llvm-capabilities-summary=../outside/capabilities.json"
+      )
+    }
+    [ordered]@{
+      corpus_case_id = "D010-R005"
+      matrix_case_id = "D009-R005"
+      expected_result = "reject"
+      expected_exit_code = 2
+      expected_diagnostic = "--objc3-route-backend-from-capabilities can be provided at most once"
+      compile_args = @(
+        "tests/tooling/fixtures/m226_a010_parser_conformance_corpus/accept_void_pointer_param.objc3"
+        "--out-dir=tmp/reports/m226/M226-D010/out"
+        "--llvm-capabilities-summary=tmp/artifacts/objc3c-native/llvm_capabilities_summary.json"
+        "--objc3-route-backend-from-capabilities"
+        "--objc3-route-backend-from-capabilities"
+      )
+    }
+  )
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-conformance-corpus/m226-d010-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedMatrixContractId
+      "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+    )
+    profile_key_fields = @(
+      "cache_mode"
+      "backend_mode"
+      "routing_mode"
+      "capability_summary_mode"
+    )
+    acceptance_corpus_count = $acceptRows.Count
+    rejection_corpus_count = $rejectRows.Count
+    corpus_case_count = $acceptRows.Count + $rejectRows.Count
+    acceptance_corpus = $acceptRows.ToArray()
+    rejection_corpus = $rejectRows
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 12) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -816,6 +972,7 @@ $frontendEdgeRobustnessPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/f
 $frontendDiagnosticsHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json"
 $frontendRecoveryDeterminismHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json"
 $frontendConformanceMatrixPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json"
+$frontendConformanceCorpusPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -906,6 +1063,10 @@ Write-FrontendConformanceMatrixArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendConformanceMatrixPath `
   -FrontendRecoveryDeterminismHardeningPath $frontendRecoveryDeterminismHardeningPath
+Write-FrontendConformanceCorpusArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendConformanceCorpusPath `
+  -FrontendConformanceMatrixPath $frontendConformanceMatrixPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
@@ -916,3 +1077,4 @@ Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $rep
 Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendDiagnosticsHardeningPath))
 Write-Output ("frontend_recovery_determinism_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendRecoveryDeterminismHardeningPath))
 Write-Output ("frontend_conformance_matrix=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceMatrixPath))
+Write-Output ("frontend_conformance_corpus=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceCorpusPath))
