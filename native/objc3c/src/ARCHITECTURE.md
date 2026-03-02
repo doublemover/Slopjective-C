@@ -267,6 +267,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d002_installer_runtime_operations_and_support_tooling_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split installer/runtime continuity remains
   deterministic and fail-closed against `M249-D001` dependency drift.
+- M249 lane-D D003 installer/runtime operations core feature implementation anchors
+  explicit lane-D core-feature artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_core_feature_implementation_d003_expectations.md`,
+  `spec/planning/compiler/m249/m249_d003_installer_runtime_operations_and_support_tooling_core_feature_implementation_packet.md`,
+  and `package.json` so core feature installer/runtime continuity remains
+  deterministic and fail-closed against `M249-D002` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in

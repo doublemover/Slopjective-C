@@ -174,6 +174,9 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling modular split scaffolding shall
   preserve explicit lane-D dependency anchors (`M249-D001`) and fail closed on
   scaffolding evidence drift before architecture freeze readiness advances.
+- installer/runtime operations and support tooling core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M249-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
