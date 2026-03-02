@@ -770,13 +770,11 @@ inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
   matrix.parser_contract_snapshot_fingerprint_matches =
       matrix.parser_contract_snapshot_fingerprint ==
       matrix.expected_parser_contract_snapshot_fingerprint;
-  matrix.parser_diagnostic_budget_consistent =
-      snapshot.token_count == 0u ||
-      snapshot.parser_diagnostic_count <= snapshot.token_count;
-  matrix.parser_token_top_level_budget_consistent =
-      snapshot.token_count == 0u ||
-      snapshot.token_count >= snapshot.top_level_declaration_count;
-  matrix.parser_subset_count_consistent =
+  const bool parser_diagnostic_budget_consistent =
+      snapshot.token_count == 0u || snapshot.parser_diagnostic_count <= snapshot.token_count;
+  const bool parser_token_top_level_budget_consistent =
+      snapshot.token_count == 0u || snapshot.token_count >= snapshot.top_level_declaration_count;
+  const bool parser_subset_count_consistent =
       AreObjc3ParserMethodDeclBucketsConsistent(
           snapshot.protocol_class_method_decl_count,
           snapshot.protocol_instance_method_decl_count,
@@ -793,6 +791,9 @@ inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
       snapshot.implementation_category_decl_count <= snapshot.implementation_decl_count &&
       snapshot.function_prototype_count <= snapshot.function_decl_count &&
       snapshot.function_pure_count <= snapshot.function_decl_count;
+  matrix.parser_diagnostic_budget_consistent = parser_diagnostic_budget_consistent;
+  matrix.parser_token_top_level_budget_consistent = parser_token_top_level_budget_consistent;
+  matrix.parser_subset_count_consistent = parser_subset_count_consistent;
   matrix.parser_contract_snapshot_deterministic = snapshot.deterministic_handoff;
   matrix.parser_recovery_replay_ready = snapshot.parser_recovery_replay_ready;
   matrix.deterministic =

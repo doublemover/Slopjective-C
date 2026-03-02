@@ -832,6 +832,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   const bool diagnostics_emission_totals_consistent = diagnostics_emitted_total == result.diagnostics.size();
   const bool diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  const bool diagnostics_hardening_has_required_budgets =
+      diagnostics_bus_publish_consistent && diagnostics_emission_totals_consistent &&
+      diagnostics_after_pass_monotonic;
   result.diagnostics_accounting_consistent = diagnostics_accounting_consistent;
   result.diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent;
   result.diagnostics_canonicalized = diagnostics_canonicalized;
@@ -839,8 +842,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.diagnostics_accounting_consistent &&
       result.diagnostics_bus_publish_consistent &&
       result.diagnostics_canonicalized &&
-      diagnostics_emission_totals_consistent &&
-      diagnostics_after_pass_monotonic;
+      diagnostics_hardening_has_required_budgets;
   result.deterministic_semantic_diagnostics =
       deterministic_semantic_diagnostics &&
       result.diagnostics_hardening_satisfied;
