@@ -2,13 +2,15 @@
 
 Contract ID: `objc3c-ir-emission-completeness-core-feature-implementation/m228-c003-v1`
 Status: Accepted
-Scope: lane-C core feature implementation for IR emission completeness over direct LLVM IR emission hardening.
+Scope: lane-C core feature implementation for IR emission completeness over direct LLVM IR emission hardening, with explicit `M228-C001` and `M228-C002` dependency governance.
 
 ## Objective
 
 Establish an explicit IR-emission core-feature implementation surface that fails
 closed when modular split readiness, metadata transport, boundary handoff, or
 direct IR entrypoint readiness drifts.
+Code/spec anchors and milestone optimization improvements are mandatory scope
+inputs for this closure.
 
 ## Required Invariants
 
@@ -30,7 +32,16 @@ direct IR entrypoint readiness drifts.
    - IR text lines:
      - `; ir_emission_core_feature_impl = ...`
      - `; ir_emission_core_feature_impl_ready = ...`
-5. Architecture/spec anchors include C003 core-feature implementation scope.
+5. C001 and C002 remain mandatory prerequisites:
+   - `docs/contracts/m228_ir_emission_completeness_contract_freeze_c001_expectations.md`
+   - `docs/contracts/m228_ir_emission_completeness_modular_split_scaffolding_c002_expectations.md`
+   - `scripts/check_m228_c001_ir_emission_completeness_contract.py`
+   - `scripts/check_m228_c002_ir_emission_completeness_modular_split_scaffolding_contract.py`
+6. C003 planning/checker/test anchors remain mandatory:
+   - `spec/planning/compiler/m228/m228_c003_ir_emission_completeness_core_feature_implementation_packet.md`
+   - `scripts/check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py`
+   - `tests/tooling/test_check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py`
+7. Architecture/spec anchors include C003 core-feature implementation scope.
 
 ## Validation
 
@@ -42,3 +53,4 @@ direct IR entrypoint readiness drifts.
 ## Evidence Path
 
 - `tmp/reports/m228/M228-C003/ir_emission_completeness_core_feature_implementation_contract_summary.json`
+- `tmp/reports/m228/M228-C003/closeout_validation_report.md`

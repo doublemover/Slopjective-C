@@ -26,14 +26,28 @@ ARTIFACTS: dict[str, Path] = {
     "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
     "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
     "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+    "c001_contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m228_ir_emission_completeness_contract_freeze_c001_expectations.md",
     "c002_contract_doc": ROOT
     / "docs"
     / "contracts"
     / "m228_ir_emission_completeness_modular_split_scaffolding_c002_expectations.md",
+    "c001_checker": ROOT / "scripts" / "check_m228_c001_ir_emission_completeness_contract.py",
+    "c002_checker": ROOT
+    / "scripts"
+    / "check_m228_c002_ir_emission_completeness_modular_split_scaffolding_contract.py",
     "contract_doc": ROOT
     / "docs"
     / "contracts"
     / "m228_ir_emission_completeness_core_feature_implementation_c003_expectations.md",
+    "packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_c003_ir_emission_completeness_core_feature_implementation_packet.md",
     "package_json": ROOT / "package.json",
 }
 
@@ -69,6 +83,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     ),
     "architecture_doc": (
         ("M228-C003-ARCH-01", "M228 lane-C C003 core feature implementation anchors IR emission"),
+        ("M228-C003-ARCH-02", "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"),
     ),
     "lowering_spec": (
         ("M228-C003-SPC-01", "IR-emission core-feature implementation shall remain deterministic"),
@@ -79,10 +94,22 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "deterministic IR-emission core-feature implementation readiness/key anchors",
         ),
     ),
+    "c001_contract_doc": (
+        ("M228-C003-C001-01", "Contract ID: `objc3c-ir-emission-completeness-freeze/m228-c001-v1`"),
+    ),
     "c002_contract_doc": (
         (
             "M228-C003-C002-01",
             "Contract ID: `objc3c-ir-emission-completeness-modular-split-scaffolding/m228-c002-v1`",
+        ),
+    ),
+    "c001_checker": (
+        ("M228-C003-C001-02", 'MODE = "m228-c001-ir-emission-completeness-freeze-contract-v1"'),
+    ),
+    "c002_checker": (
+        (
+            "M228-C003-C002-02",
+            'MODE = "m228-c002-ir-emission-completeness-modular-split-scaffolding-contract-v1"',
         ),
     ),
     "contract_doc": (
@@ -90,12 +117,50 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M228-C003-DOC-01",
             "Contract ID: `objc3c-ir-emission-completeness-core-feature-implementation/m228-c003-v1`",
         ),
-        ("M228-C003-DOC-02", "O3L306"),
-        ("M228-C003-DOC-03", "ir_emission_core_feature_impl_key"),
+        ("M228-C003-DOC-02", "Objc3IREmissionCoreFeatureImplementationSurface"),
+        ("M228-C003-DOC-03", "BuildObjc3IREmissionCoreFeatureImplementationSurface"),
+        ("M228-C003-DOC-04", "O3L306"),
         (
-            "M228-C003-DOC-04",
+            "M228-C003-DOC-05",
+            "scripts/check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py",
+        ),
+        (
+            "M228-C003-DOC-06",
+            "tests/tooling/test_check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py",
+        ),
+        (
+            "M228-C003-DOC-07",
+            "spec/planning/compiler/m228/m228_c003_ir_emission_completeness_core_feature_implementation_packet.md",
+        ),
+        ("M228-C003-DOC-08", "npm run check:objc3c:m228-c003-lane-c-readiness"),
+        ("M228-C003-DOC-09", "npm run build:objc3c-native"),
+        (
+            "M228-C003-DOC-10",
             "tmp/reports/m228/M228-C003/ir_emission_completeness_core_feature_implementation_contract_summary.json",
         ),
+        ("M228-C003-DOC-11", "Code/spec anchors and milestone optimization improvements are mandatory scope"),
+    ),
+    "packet_doc": (
+        (
+            "M228-C003-PKT-01",
+            "# M228-C003 IR Emission Completeness Core Feature Implementation Packet",
+        ),
+        ("M228-C003-PKT-02", "Packet: `M228-C003`"),
+        ("M228-C003-PKT-03", "Dependencies: `M228-C001`, `M228-C002`"),
+        (
+            "M228-C003-PKT-04",
+            "m228_ir_emission_completeness_core_feature_implementation_c003_expectations.md",
+        ),
+        (
+            "M228-C003-PKT-05",
+            "scripts/check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py",
+        ),
+        (
+            "M228-C003-PKT-06",
+            "tests/tooling/test_check_m228_c003_ir_emission_completeness_core_feature_implementation_contract.py",
+        ),
+        ("M228-C003-PKT-07", "`check:objc3c:m228-c003-lane-c-readiness`"),
+        ("M228-C003-PKT-08", "`test:objc3c:lowering-replay-proof`"),
     ),
     "package_json": (
         (
@@ -107,6 +172,17 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             '"test:tooling:m228-c003-ir-emission-completeness-core-feature-implementation-contract"',
         ),
         ("M228-C003-CFG-03", '"check:objc3c:m228-c003-lane-c-readiness"'),
+        (
+            "M228-C003-CFG-04",
+            "npm run check:objc3c:m228-c002-lane-c-readiness && npm run check:objc3c:m228-c003-ir-emission-completeness-core-feature-implementation-contract && npm run test:tooling:m228-c003-ir-emission-completeness-core-feature-implementation-contract",
+        ),
+        ("M228-C003-CFG-05", '"test:objc3c:lowering-replay-proof": '),
+    ),
+}
+
+FORBIDDEN_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "core_surface_header": (
+        ("M228-C003-FORB-01", "surface.core_feature_impl_ready = true;"),
     ),
 }
 
@@ -150,12 +226,18 @@ def run(argv: Sequence[str]) -> int:
     for artifact, path in ARTIFACTS.items():
         text = load_text(path, artifact=artifact)
 
-        for check_id, snippet in REQUIRED_SNIPPETS.get(artifact, ()): 
+        for check_id, snippet in REQUIRED_SNIPPETS.get(artifact, ()):
             total_checks += 1
             if snippet in text:
                 passed_checks += 1
             else:
                 findings.append(Finding(artifact, check_id, f"expected snippet missing: {snippet}"))
+        for check_id, snippet in FORBIDDEN_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                findings.append(Finding(artifact, check_id, f"forbidden snippet present: {snippet}"))
+            else:
+                passed_checks += 1
 
     summary = {
         "mode": MODE,

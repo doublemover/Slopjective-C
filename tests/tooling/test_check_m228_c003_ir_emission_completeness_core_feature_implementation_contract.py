@@ -30,6 +30,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m228-c003-ir-emission-completeness-core-feature-implementation-contract-v1"
     assert payload["ok"] is True
+    assert payload["checks_total"] >= 35
     assert payload["checks_total"] == payload["checks_passed"]
 
 
@@ -90,3 +91,54 @@ def test_contract_fails_closed_when_ir_metadata_line_drifts(
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M228-C003-IRS-02" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_packet_dependency_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_packet = tmp_path / "m228_c003_ir_emission_completeness_core_feature_implementation_packet.md"
+    drift_packet.write_text(
+        contract.ARTIFACTS["packet_doc"].read_text(encoding="utf-8").replace(
+            "Dependencies: `M228-C001`, `M228-C002`",
+            "Dependencies: `M228-C001`, `M228-C099`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifacts = dict(contract.ARTIFACTS)
+    artifacts["packet_doc"] = drift_packet
+    monkeypatch.setattr(contract, "ARTIFACTS", artifacts)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-C003-PKT-03" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_forbidden_core_feature_shortcut_appears(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_surface = tmp_path / "objc3_ir_emission_core_feature_implementation_surface.h"
+    drift_surface.write_text(
+        contract.ARTIFACTS["core_surface_header"].read_text(encoding="utf-8")
+        + "\nsurface.core_feature_impl_ready = true;\n",
+        encoding="utf-8",
+    )
+
+    artifacts = dict(contract.ARTIFACTS)
+    artifacts["core_surface_header"] = drift_surface
+    monkeypatch.setattr(contract, "ARTIFACTS", artifacts)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-C003-FORB-01" for failure in payload["failures"])
