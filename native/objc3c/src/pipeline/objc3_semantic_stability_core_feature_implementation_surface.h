@@ -52,6 +52,11 @@ inline std::string BuildObjc3SemanticStabilityCoreFeatureImplementationKey(
       << ";diagnostics_hardening_ready="
       << (surface.diagnostics_hardening_ready ? "true" : "false")
       << ";diagnostics_hardening_key=" << surface.diagnostics_hardening_key
+      << ";recovery_determinism_consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery_determinism_ready="
+      << (surface.recovery_determinism_ready ? "true" : "false")
+      << ";recovery_determinism_key=" << surface.recovery_determinism_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -109,6 +114,8 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       parse_surface.long_tail_grammar_edge_case_robustness_key;
   surface.diagnostics_hardening_key =
       parse_surface.long_tail_grammar_diagnostics_hardening_key;
+  surface.recovery_determinism_key =
+      parse_surface.long_tail_grammar_recovery_determinism_key;
 
   const bool typed_core_feature_case_accounting_consistent =
       surface.typed_core_feature_case_count > 0 &&
@@ -188,6 +195,19 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       parse_surface.semantic_diagnostics_deterministic &&
       !parse_surface.long_tail_grammar_diagnostics_hardening_key.empty() &&
       !parse_surface.parse_artifact_diagnostics_hardening_key.empty();
+  const bool recovery_determinism_consistent =
+      diagnostics_hardening_consistent &&
+      parse_surface.long_tail_grammar_recovery_determinism_consistent &&
+      parse_surface.parse_recovery_determinism_hardening_consistent &&
+      parse_surface.parser_recovery_replay_ready &&
+      parse_surface.parse_artifact_replay_key_deterministic;
+  const bool recovery_determinism_ready =
+      recovery_determinism_consistent &&
+      diagnostics_hardening_ready &&
+      parse_surface.long_tail_grammar_recovery_determinism_ready &&
+      parse_surface.semantic_diagnostics_deterministic &&
+      !parse_surface.long_tail_grammar_recovery_determinism_key.empty() &&
+      !parse_surface.parse_recovery_determinism_hardening_key.empty();
   const bool edge_case_compatibility_expansion_ready =
       typed_parse_core_feature_consistent &&
       parse_conformance_consistent &&
@@ -210,13 +230,18 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
   surface.edge_case_robustness_ready = edge_case_robustness_ready;
   surface.diagnostics_hardening_consistent = diagnostics_hardening_consistent;
   surface.diagnostics_hardening_ready = diagnostics_hardening_ready;
+  surface.recovery_determinism_consistent = recovery_determinism_consistent;
+  surface.recovery_determinism_ready = recovery_determinism_ready;
   surface.expansion_ready = diagnostics_hardening_expansion_ready;
+  const bool recovery_determinism_expansion_ready =
+      surface.expansion_ready && recovery_determinism_ready;
+  surface.expansion_ready = recovery_determinism_expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.semantic_handoff_deterministic &&
       surface.spec_delta_closed &&
       surface.modular_split_ready &&
-      expansion_ready;
+      surface.expansion_ready;
   surface.core_feature_key =
       BuildObjc3SemanticStabilityCoreFeatureImplementationKey(surface);
   surface.expansion_key =
@@ -242,12 +267,22 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       std::string(!surface.diagnostics_hardening_key.empty() ? "true" : "false") +
       ";diag-hardening-expansion-ready=" +
       std::string(diagnostics_hardening_expansion_ready ? "true" : "false") +
+      ";recovery-determinism-consistent=" +
+      std::string(recovery_determinism_consistent ? "true" : "false") +
+      ";recovery-determinism-ready=" +
+      std::string(recovery_determinism_ready ? "true" : "false") +
+      ";recovery-determinism-key-ready=" +
+      std::string(!surface.recovery_determinism_key.empty() ? "true" : "false") +
+      ";recovery-determinism-expansion-ready=" +
+      std::string(recovery_determinism_expansion_ready ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parser-diagnostic-surface-consistent=" +
       std::string(parse_surface.parser_diagnostic_surface_consistent ? "true" : "false") +
       ";semantic-diagnostics-deterministic=" +
       std::string(parse_surface.semantic_diagnostics_deterministic ? "true" : "false") +
+      ";parser-recovery-replay-ready=" +
+      std::string(parse_surface.parser_recovery_replay_ready ? "true" : "false") +
       ";parse-edge-robustness-consistent=" +
       std::string(parse_surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false");
 
@@ -282,8 +317,14 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "semantic stability diagnostics hardening is inconsistent";
   } else if (!diagnostics_hardening_ready) {
     surface.failure_reason = "semantic stability diagnostics hardening is not ready";
+  } else if (!recovery_determinism_consistent) {
+    surface.failure_reason = "semantic stability recovery determinism is inconsistent";
+  } else if (!recovery_determinism_ready) {
+    surface.failure_reason = "semantic stability recovery determinism is not ready";
   } else if (!diagnostics_hardening_expansion_ready) {
     surface.failure_reason = "semantic stability core feature expansion is not ready";
+  } else if (!recovery_determinism_expansion_ready) {
+    surface.failure_reason = "semantic stability recovery determinism expansion is not ready";
   } else {
     surface.failure_reason = "semantic stability core feature implementation is not ready";
   }
