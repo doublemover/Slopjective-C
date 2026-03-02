@@ -9,6 +9,7 @@
 #include "lex/objc3_lexer.h"
 #include "parse/objc3_ast_builder_contract.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
+#include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 #include "sema/objc3_sema_pass_manager.h"
 
 namespace {
@@ -760,6 +761,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     }
   }
 
+  result.typed_sema_to_lowering_contract_surface =
+      BuildObjc3TypedSemaToLoweringContractSurface(result, options);
   result.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(result, options);
   TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program);
   return result;

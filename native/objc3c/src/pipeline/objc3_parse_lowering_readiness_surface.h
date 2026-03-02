@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 
 inline std::size_t Objc3ParserSnapshotDeclarationBreakdownCount(const Objc3ParserContractSnapshot &snapshot) {
   return snapshot.global_decl_count + snapshot.protocol_decl_count +
@@ -479,23 +480,26 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_diagnostics_hardening_consistent,
       surface.parse_artifact_edge_case_robustness_consistent,
       surface.parse_recovery_determinism_hardening_consistent);
-  surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
-  surface.semantic_diagnostics_deterministic = pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
-  surface.semantic_type_metadata_deterministic = pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff;
-  surface.symbol_graph_deterministic = pipeline_result.symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff;
+  const Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface =
+      BuildObjc3TypedSemaToLoweringContractSurface(pipeline_result, options);
+  surface.semantic_integration_surface_built =
+      typed_sema_to_lowering_contract_surface.semantic_integration_surface_built;
+  surface.semantic_diagnostics_deterministic =
+      pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
+  surface.semantic_type_metadata_deterministic =
+      typed_sema_to_lowering_contract_surface.semantic_type_metadata_handoff_deterministic;
+  surface.symbol_graph_deterministic =
+      typed_sema_to_lowering_contract_surface.symbol_graph_handoff_deterministic;
   surface.scope_resolution_deterministic =
-      pipeline_result.symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
+      typed_sema_to_lowering_contract_surface.scope_resolution_handoff_deterministic;
   surface.object_pointer_type_handoff_deterministic =
-      pipeline_result.object_pointer_nullability_generics_summary.deterministic_object_pointer_nullability_generics_handoff;
-
-  Objc3LoweringIRBoundary lowering_boundary;
-  std::string lowering_error;
-  if (TryBuildObjc3LoweringIRBoundary(options.lowering, lowering_boundary, lowering_error)) {
-    surface.lowering_boundary_ready = true;
-    surface.lowering_boundary_replay_key = Objc3LoweringIRBoundaryReplayKey(lowering_boundary);
-  } else {
-    surface.lowering_boundary_ready = false;
-    surface.failure_reason = "invalid lowering contract: " + lowering_error;
+      typed_sema_to_lowering_contract_surface.object_pointer_type_handoff_deterministic;
+  surface.lowering_boundary_ready =
+      typed_sema_to_lowering_contract_surface.lowering_boundary_ready;
+  surface.lowering_boundary_replay_key =
+      typed_sema_to_lowering_contract_surface.lowering_boundary_replay_key;
+  if (!typed_sema_to_lowering_contract_surface.failure_reason.empty()) {
+    surface.failure_reason = typed_sema_to_lowering_contract_surface.failure_reason;
   }
 
   const bool diagnostics_clear =
@@ -520,12 +524,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_edge_case_robustness_consistent &&
       parse_recovery_determinism_hardening_ready;
   const bool sema_handoff_ready =
-      surface.semantic_integration_surface_built &&
-      surface.semantic_diagnostics_deterministic &&
-      surface.semantic_type_metadata_deterministic &&
-      surface.symbol_graph_deterministic &&
-      surface.scope_resolution_deterministic &&
-      surface.object_pointer_type_handoff_deterministic;
+      typed_sema_to_lowering_contract_surface.ready_for_lowering;
   const bool semantic_handoff_deterministic =
       surface.semantic_diagnostics_deterministic &&
       surface.semantic_type_metadata_deterministic &&

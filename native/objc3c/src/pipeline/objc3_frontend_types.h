@@ -46,6 +46,22 @@ struct Objc3FrontendLanguageVersionPragmaContract {
   unsigned last_column = 0;
 };
 
+struct Objc3TypedSemaToLoweringContractSurface {
+  bool semantic_integration_surface_built = false;
+  bool semantic_type_metadata_handoff_deterministic = false;
+  bool sema_parity_surface_ready = false;
+  bool sema_parity_surface_deterministic = false;
+  bool object_pointer_type_handoff_deterministic = false;
+  bool symbol_graph_handoff_deterministic = false;
+  bool scope_resolution_handoff_deterministic = false;
+  bool runtime_dispatch_contract_consistent = false;
+  bool lowering_boundary_ready = false;
+  bool ready_for_lowering = false;
+  std::string typed_handoff_key;
+  std::string lowering_boundary_replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3ParseLoweringReadinessSurface {
   std::size_t lexer_diagnostic_count = 0;
   std::size_t parser_diagnostic_count = 0;
@@ -207,6 +223,7 @@ struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
+  Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
