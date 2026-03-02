@@ -1276,6 +1276,35 @@ BuildObjc3ParserSemaAdvancedDiagnosticsShard2(
   return sync;
 }
 
+inline Objc3ParserSemaIntegrationCloseoutSignoff
+BuildObjc3ParserSemaIntegrationCloseoutSignoff(
+    const Objc3ParserSemaAdvancedDiagnosticsShard2 &diagnostics_shard2_sync) {
+  Objc3ParserSemaIntegrationCloseoutSignoff sync;
+  sync.advanced_diagnostics_shard2_ready = diagnostics_shard2_sync.deterministic;
+  sync.pass_manager_contract_surface_sync =
+      diagnostics_shard2_sync.required_sync_count == 3u &&
+      diagnostics_shard2_sync.passed_sync_count ==
+          diagnostics_shard2_sync.required_sync_count &&
+      diagnostics_shard2_sync.failed_sync_count == 0u;
+  sync.gate_signoff_surface_sync =
+      sync.advanced_diagnostics_shard2_ready &&
+      sync.pass_manager_contract_surface_sync;
+  sync.required_sync_count = 3u;
+  sync.passed_sync_count =
+      static_cast<std::size_t>(sync.advanced_diagnostics_shard2_ready) +
+      static_cast<std::size_t>(sync.pass_manager_contract_surface_sync) +
+      static_cast<std::size_t>(sync.gate_signoff_surface_sync);
+  sync.failed_sync_count =
+      sync.required_sync_count >= sync.passed_sync_count
+          ? (sync.required_sync_count - sync.passed_sync_count)
+          : sync.required_sync_count;
+  sync.deterministic =
+      sync.required_sync_count == 3u &&
+      sync.passed_sync_count == sync.required_sync_count &&
+      sync.failed_sync_count == 0u;
+  return sync;
+}
+
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
@@ -1308,6 +1337,7 @@ struct Objc3ParserSemaHandoffScaffold {
   Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
   Objc3ParserSemaAdvancedEdgeCompatibilityShard2 parser_sema_advanced_edge_compatibility_shard2;
   Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
+  Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   bool parser_contract_snapshot_matches_program = false;
   bool deterministic = false;
 };
@@ -1396,6 +1426,9 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.parser_sema_advanced_diagnostics_shard2 =
       BuildObjc3ParserSemaAdvancedDiagnosticsShard2(
           scaffold.parser_sema_advanced_edge_compatibility_shard2);
+  scaffold.parser_sema_integration_closeout_signoff =
+      BuildObjc3ParserSemaIntegrationCloseoutSignoff(
+          scaffold.parser_sema_advanced_diagnostics_shard2);
   scaffold.parser_contract_snapshot_matches_program =
       scaffold.parser_sema_conformance_matrix.deterministic;
   scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program;
@@ -1403,6 +1436,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.parser_sema_integration_closeout_signoff.deterministic &&
                            scaffold.parser_sema_advanced_diagnostics_shard2.deterministic &&
                            scaffold.parser_sema_advanced_edge_compatibility_shard2.deterministic &&
                            scaffold.parser_sema_advanced_core_shard2.deterministic &&

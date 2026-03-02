@@ -109,6 +109,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "struct Objc3ParserSemaAdvancedCoreShard2 {" in pass_manager_contract
     assert "struct Objc3ParserSemaAdvancedEdgeCompatibilityShard2 {" in pass_manager_contract
     assert "struct Objc3ParserSemaAdvancedDiagnosticsShard2 {" in pass_manager_contract
+    assert "struct Objc3ParserSemaIntegrationCloseoutSignoff {" in pass_manager_contract
+    assert "struct Objc3ParserSemaIntegrationCloseoutSignoff {" in pass_manager_contract
     assert "Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;" in pass_manager_contract
     assert "Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;" in pass_manager_contract
     assert "Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;" in pass_manager_contract
@@ -124,6 +126,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;" in pass_manager_contract
     assert "Objc3ParserSemaAdvancedEdgeCompatibilityShard2 parser_sema_advanced_edge_compatibility_shard2;" in pass_manager_contract
     assert "Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;" in pass_manager_contract
+    assert "Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;" in pass_manager_contract
+    assert "Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;" in pass_manager_contract
     assert "bool deterministic_parser_sema_conformance_matrix = false;" in pass_manager_contract
     assert "bool deterministic_parser_sema_conformance_corpus = false;" in pass_manager_contract
     assert "bool deterministic_parser_sema_performance_quality_guardrails = false;" in pass_manager_contract
@@ -139,6 +143,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "bool deterministic_parser_sema_advanced_core_shard2 = false;" in pass_manager_contract
     assert "bool deterministic_parser_sema_advanced_edge_compatibility_shard2 = false;" in pass_manager_contract
     assert "bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;" in pass_manager_contract
+    assert "bool deterministic_parser_sema_integration_closeout_signoff = false;" in pass_manager_contract
+    assert "bool deterministic_parser_sema_integration_closeout_signoff = false;" in pass_manager_contract
     assert "BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
     assert "BuildObjc3ParserSemaConformanceCorpus(" in sema_handoff
     assert "BuildObjc3ParserSemaPerformanceQualityGuardrails(" in sema_handoff
@@ -154,6 +160,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "BuildObjc3ParserSemaAdvancedCoreShard2(" in sema_handoff
     assert "BuildObjc3ParserSemaAdvancedEdgeCompatibilityShard2(" in sema_handoff
     assert "BuildObjc3ParserSemaAdvancedDiagnosticsShard2(" in sema_handoff
+    assert "BuildObjc3ParserSemaIntegrationCloseoutSignoff(" in sema_handoff
+    assert "BuildObjc3ParserSemaIntegrationCloseoutSignoff(" in sema_handoff
     assert "scaffold.parser_sema_conformance_matrix = BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
     assert "scaffold.parser_sema_conformance_corpus =" in sema_handoff
     assert "scaffold.parser_sema_performance_quality_guardrails =" in sema_handoff
@@ -169,6 +177,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "scaffold.parser_sema_advanced_core_shard2 =" in sema_handoff
     assert "scaffold.parser_sema_advanced_edge_compatibility_shard2 =" in sema_handoff
     assert "scaffold.parser_sema_advanced_diagnostics_shard2 =" in sema_handoff
+    assert "scaffold.parser_sema_integration_closeout_signoff =" in sema_handoff
+    assert "scaffold.parser_sema_integration_closeout_signoff =" in sema_handoff
     assert "result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;" in sema_pass_manager
     assert "result.parser_sema_conformance_corpus = handoff.parser_sema_conformance_corpus;" in sema_pass_manager
     assert "result.parser_sema_performance_quality_guardrails =" in sema_pass_manager
@@ -184,6 +194,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "result.parser_sema_advanced_core_shard2 =" in sema_pass_manager
     assert "result.parser_sema_advanced_edge_compatibility_shard2 =" in sema_pass_manager
     assert "result.parser_sema_advanced_diagnostics_shard2 =" in sema_pass_manager
+    assert "result.parser_sema_integration_closeout_signoff =" in sema_pass_manager
+    assert "result.parser_sema_integration_closeout_signoff =" in sema_pass_manager
     assert "result.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
     assert "result.deterministic_parser_sema_conformance_corpus =" in sema_pass_manager
     assert "result.deterministic_parser_sema_performance_quality_guardrails =" in sema_pass_manager
@@ -199,6 +211,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "result.deterministic_parser_sema_advanced_core_shard2 =" in sema_pass_manager
     assert "result.deterministic_parser_sema_advanced_edge_compatibility_shard2 =" in sema_pass_manager
     assert "result.deterministic_parser_sema_advanced_diagnostics_shard2 =" in sema_pass_manager
+    assert "result.deterministic_parser_sema_integration_closeout_signoff =" in sema_pass_manager
+    assert "result.deterministic_parser_sema_integration_closeout_signoff =" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_conformance_matrix) {" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_conformance_corpus) {" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_performance_quality_guardrails) {" in sema_pass_manager
@@ -214,6 +228,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "if (!result.deterministic_parser_sema_advanced_core_shard2) {" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_advanced_edge_compatibility_shard2) {" in sema_pass_manager
     assert "if (!result.deterministic_parser_sema_advanced_diagnostics_shard2) {" in sema_pass_manager
+    assert "if (!result.deterministic_parser_sema_integration_closeout_signoff) {" in sema_pass_manager
+    assert "if (!result.deterministic_parser_sema_integration_closeout_signoff) {" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_conformance_corpus =" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_performance_quality_guardrails =" in sema_pass_manager
@@ -229,6 +245,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "result.parity_surface.deterministic_parser_sema_advanced_core_shard2 =" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_advanced_edge_compatibility_shard2 =" in sema_pass_manager
     assert "result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard2 =" in sema_pass_manager
+    assert "result.parity_surface.deterministic_parser_sema_integration_closeout_signoff =" in sema_pass_manager
+    assert "result.parity_surface.deterministic_parser_sema_integration_closeout_signoff =" in sema_pass_manager
     assert "surface.deterministic_parser_sema_conformance_matrix &&" in pass_manager_contract
     assert "surface.deterministic_parser_sema_conformance_corpus &&" in pass_manager_contract
     assert "surface.deterministic_parser_sema_performance_quality_guardrails &&" in pass_manager_contract
@@ -244,6 +262,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "surface.deterministic_parser_sema_advanced_core_shard2 &&" in pass_manager_contract
     assert "surface.deterministic_parser_sema_advanced_edge_compatibility_shard2 &&" in pass_manager_contract
     assert "surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&" in pass_manager_contract
+    assert "surface.deterministic_parser_sema_integration_closeout_signoff &&" in pass_manager_contract
+    assert "surface.deterministic_parser_sema_integration_closeout_signoff &&" in pass_manager_contract
     assert "surface.parser_sema_conformance_matrix.parser_subset_count_consistent &&" in pass_manager_contract
     assert "surface.parser_sema_conformance_corpus.required_case_count == 5u &&" in pass_manager_contract
     assert "surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&" in pass_manager_contract
@@ -259,6 +279,8 @@ def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
     assert "surface.parser_sema_advanced_core_shard2.required_sync_count == 3u &&" in pass_manager_contract
     assert "surface.parser_sema_advanced_edge_compatibility_shard2.required_sync_count == 3u &&" in pass_manager_contract
     assert "surface.parser_sema_advanced_diagnostics_shard2.required_sync_count == 3u &&" in pass_manager_contract
+    assert "surface.parser_sema_integration_closeout_signoff.required_sync_count == 3u &&" in pass_manager_contract
+    assert "surface.parser_sema_integration_closeout_signoff.required_sync_count == 3u &&" in pass_manager_contract
 
 
 def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:
