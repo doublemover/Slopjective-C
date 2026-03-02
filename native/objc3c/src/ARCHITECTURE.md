@@ -169,6 +169,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_c001_replay_harness_and_artifact_contracts_contract_freeze_packet.md`,
   and `package.json` so replay artifact boundaries and evidence routing remain
   deterministic and fail-closed for CI replay governance.
+- M248 lane-C C002 replay harness and artifact modular split/scaffolding
+  anchors explicit lane-C scaffolding artifacts in
+  `docs/contracts/m248_replay_harness_and_artifact_contracts_modular_split_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m248/m248_c002_replay_harness_and_artifact_contracts_modular_split_scaffolding_packet.md`,
+  and `package.json` so replay artifact scaffolding continuity remains
+  deterministic and fail-closed against `M248-C001` dependency drift.
 - M248 lane-D D001 runner reliability and platform operations anchors explicit
   lane-D contract freeze artifacts in
   `docs/contracts/m248_runner_reliability_and_platform_operations_contract_freeze_d001_expectations.md`,
