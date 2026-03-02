@@ -219,6 +219,8 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
     bool parser_contract_snapshot_present,
     bool parser_contract_deterministic,
     bool parser_recovery_replay_ready,
+    bool long_tail_grammar_core_feature_consistent,
+    bool long_tail_grammar_handoff_key_deterministic,
     bool parse_artifact_handoff_deterministic,
     bool parse_artifact_replay_key_deterministic,
     bool parse_artifact_diagnostics_hardening_consistent,
@@ -227,6 +229,10 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
   return std::string("snapshot_present=") + (parser_contract_snapshot_present ? "true" : "false") +
          ";parser_handoff_deterministic=" + (parser_contract_deterministic ? "true" : "false") +
          ";parser_recovery_replay_ready=" + (parser_recovery_replay_ready ? "true" : "false") +
+         ";long_tail_grammar_core_feature_consistent=" +
+         (long_tail_grammar_core_feature_consistent ? "true" : "false") +
+         ";long_tail_grammar_handoff_key_deterministic=" +
+         (long_tail_grammar_handoff_key_deterministic ? "true" : "false") +
          ";parse_artifact_handoff_deterministic=" + (parse_artifact_handoff_deterministic ? "true" : "false") +
          ";parse_artifact_replay_key_deterministic=" +
          (parse_artifact_replay_key_deterministic ? "true" : "false") +
@@ -371,6 +377,19 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       parser_snapshot.parser_diagnostic_count > 0;
   surface.parser_contract_deterministic = parser_snapshot.deterministic_handoff;
   surface.parser_recovery_replay_ready = parser_snapshot.parser_recovery_replay_ready;
+  surface.long_tail_grammar_construct_count = parser_snapshot.long_tail_grammar_construct_count;
+  surface.long_tail_grammar_covered_construct_count = parser_snapshot.long_tail_grammar_covered_construct_count;
+  surface.long_tail_grammar_fingerprint = parser_snapshot.long_tail_grammar_fingerprint;
+  surface.long_tail_grammar_handoff_key = parser_snapshot.long_tail_grammar_handoff_key;
+  surface.long_tail_grammar_core_feature_consistent =
+      parser_snapshot.long_tail_grammar_covered_construct_count <=
+          parser_snapshot.long_tail_grammar_construct_count &&
+      parser_snapshot.long_tail_grammar_fingerprint != 0 &&
+      !parser_snapshot.long_tail_grammar_handoff_key.empty() &&
+      parser_snapshot.long_tail_grammar_handoff_deterministic;
+  surface.long_tail_grammar_handoff_key_deterministic =
+      parser_snapshot.long_tail_grammar_handoff_deterministic &&
+      surface.long_tail_grammar_core_feature_consistent;
   const std::size_t parser_snapshot_breakdown_count =
       Objc3ParserSnapshotDeclarationBreakdownCount(parser_snapshot);
   const std::size_t ast_top_level_declaration_count =
@@ -474,10 +493,13 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_contract_snapshot_present &&
       surface.parser_contract_deterministic &&
       surface.parser_recovery_replay_ready &&
+      surface.long_tail_grammar_core_feature_consistent &&
+      surface.long_tail_grammar_handoff_key_deterministic &&
       surface.parse_artifact_handoff_deterministic &&
       surface.parse_artifact_replay_key_deterministic &&
       surface.parse_artifact_diagnostics_hardening_consistent &&
       surface.parse_artifact_edge_case_robustness_consistent &&
+      !surface.long_tail_grammar_handoff_key.empty() &&
       !surface.parse_artifact_handoff_key.empty() &&
       !surface.parse_artifact_replay_key.empty() &&
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
@@ -486,6 +508,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_contract_snapshot_present,
       surface.parser_contract_deterministic,
       surface.parser_recovery_replay_ready,
+      surface.long_tail_grammar_core_feature_consistent,
+      surface.long_tail_grammar_handoff_key_deterministic,
       surface.parse_artifact_handoff_deterministic,
       surface.parse_artifact_replay_key_deterministic,
       surface.parse_artifact_diagnostics_hardening_consistent,
@@ -554,6 +578,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_contract_snapshot_present &&
       surface.parser_contract_deterministic &&
       surface.parser_recovery_replay_ready &&
+      surface.long_tail_grammar_core_feature_consistent &&
+      surface.long_tail_grammar_handoff_key_deterministic &&
       surface.parse_artifact_handoff_deterministic;
   const bool parse_artifact_replay_key_ready =
       surface.parse_artifact_replay_key_deterministic;
@@ -783,6 +809,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser handoff is not deterministic";
   } else if (!surface.parser_recovery_replay_ready) {
     surface.failure_reason = "parser recovery handoff is not replay ready";
+  } else if (!surface.long_tail_grammar_core_feature_consistent) {
+    surface.failure_reason = "long-tail grammar core feature is inconsistent";
+  } else if (!surface.long_tail_grammar_handoff_key_deterministic) {
+    surface.failure_reason = "long-tail grammar handoff key is not deterministic";
   } else if (!surface.parse_artifact_handoff_consistent) {
     surface.failure_reason = "parse artifact handoff is inconsistent";
   } else if (!surface.parser_diagnostic_surface_consistent) {

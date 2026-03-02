@@ -1996,6 +1996,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.parser_contract_snapshot.function_prototype_count
            << ",\"function_pure\":"
            << pipeline_result.parser_contract_snapshot.function_pure_count
+           << ",\"long_tail_grammar_constructs\":"
+           << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count
+           << ",\"long_tail_grammar_covered_constructs\":"
+           << pipeline_result.parser_contract_snapshot.long_tail_grammar_covered_construct_count
+           << ",\"long_tail_grammar_fingerprint\":"
+           << pipeline_result.parser_contract_snapshot.long_tail_grammar_fingerprint
+           << ",\"long_tail_grammar_handoff_key\":\""
+           << pipeline_result.parser_contract_snapshot.long_tail_grammar_handoff_key
+           << "\",\"long_tail_grammar_deterministic\":"
+           << (pipeline_result.parser_contract_snapshot.long_tail_grammar_handoff_deterministic ? "true" : "false")
            << ",\"diagnostic_code_count\":"
            << parser_diag_code_coverage.unique_code_count
            << ",\"diagnostic_code_fingerprint\":"
@@ -2013,6 +2023,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.ready_for_lowering ? "true" : "false")
            << ",\"parser_contract_snapshot_present\": "
            << (bundle.parse_lowering_readiness_surface.parser_contract_snapshot_present ? "true" : "false")
+           << ",\"long_tail_grammar_core_feature_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_core_feature_consistent ? "true" : "false")
+           << ",\"long_tail_grammar_handoff_key_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_handoff_key_deterministic ? "true"
+                                                                                                     : "false")
            << ",\"parse_artifact_handoff_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
@@ -2074,8 +2089,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_failed_case_count
            << ",\"parser_diagnostic_code_count\": "
            << bundle.parse_lowering_readiness_surface.parser_diagnostic_code_count
+           << ",\"long_tail_grammar_construct_count\": "
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_construct_count
+           << ",\"long_tail_grammar_covered_construct_count\": "
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_covered_construct_count
            << ",\"parser_diagnostic_code_fingerprint\": "
            << bundle.parse_lowering_readiness_surface.parser_diagnostic_code_fingerprint
+           << ",\"long_tail_grammar_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_fingerprint
            << ",\"parser_contract_snapshot_fingerprint\": "
            << bundle.parse_lowering_readiness_surface.parser_contract_snapshot_fingerprint
            << ",\"parser_ast_shape_fingerprint\": "
@@ -2088,6 +2109,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.ast_top_level_layout_fingerprint
            << ",\"parse_artifact_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_handoff_key
+           << "\",\"long_tail_grammar_handoff_key\":\""
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_handoff_key
            << "\",\"compatibility_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""

@@ -43,6 +43,10 @@ Current-state note:
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
   so parser determinism and recovery coverage remain fail-closed for GA
   readiness.
+- M250 lane-A A003 core feature implementation anchors long-tail grammar
+  closure identity (`long_tail_grammar_*`) in
+  `parse/objc3_parser_contract.h` and wires fail-closed handoff enforcement in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
