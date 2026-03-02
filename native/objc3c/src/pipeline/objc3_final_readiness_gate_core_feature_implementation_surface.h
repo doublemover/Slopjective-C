@@ -55,6 +55,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.edge_case_robustness_ready ? "true" : "false")
       << ";edge_case_robustness_key_ready="
       << (!surface.edge_case_robustness_key.empty() ? "true" : "false")
+      << ";diagnostics_hardening_consistent="
+      << (surface.diagnostics_hardening_consistent ? "true" : "false")
+      << ";diagnostics_hardening_ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false")
+      << ";diagnostics_hardening_key_ready="
+      << (!surface.diagnostics_hardening_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -111,6 +117,33 @@ inline std::string BuildObjc3FinalReadinessGateEdgeCaseRobustnessKey(
       << (surface.edge_case_expansion_consistent ? "true" : "false")
       << ";edge-case-robustness-ready="
       << (surface.edge_case_robustness_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateDiagnosticsHardeningKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_core_feature_ready,
+    bool lane_b_core_feature_ready,
+    bool lane_c_core_feature_ready,
+    bool lane_d_edge_case_robustness_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-diagnostics-hardening:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";edge-case-robustness-ready="
+      << (surface.edge_case_robustness_ready ? "true" : "false")
+      << ";lane-a-core-feature-ready="
+      << (lane_a_core_feature_ready ? "true" : "false")
+      << ";lane-b-core-feature-ready="
+      << (lane_b_core_feature_ready ? "true" : "false")
+      << ";lane-c-core-feature-ready="
+      << (lane_c_core_feature_ready ? "true" : "false")
+      << ";lane-d-edge-case-robustness-ready="
+      << (lane_d_edge_case_robustness_ready ? "true" : "false")
+      << ";diagnostics-hardening-consistent="
+      << (surface.diagnostics_hardening_consistent ? "true" : "false")
+      << ";diagnostics-hardening-ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false");
   return key.str();
 }
 
@@ -246,6 +279,33 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.edge_case_robustness_ready =
       surface.edge_case_robustness_ready &&
       !surface.edge_case_robustness_key.empty();
+  const bool lane_diagnostics_hardening_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.core_feature_impl_ready &&
+      lane_c_surface.core_feature_impl_ready &&
+      lane_d_surface.edge_case_robustness_ready;
+  const bool diagnostics_hardening_consistent =
+      surface.edge_case_robustness_ready &&
+      lane_diagnostics_hardening_consistent;
+  const bool diagnostics_hardening_ready =
+      diagnostics_hardening_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.edge_case_robustness_key.empty();
+  surface.diagnostics_hardening_consistent =
+      diagnostics_hardening_consistent;
+  surface.diagnostics_hardening_ready =
+      diagnostics_hardening_ready;
+  surface.diagnostics_hardening_key =
+      BuildObjc3FinalReadinessGateDiagnosticsHardeningKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.core_feature_impl_ready,
+          lane_c_surface.core_feature_impl_ready,
+          lane_d_surface.edge_case_robustness_ready);
+  surface.diagnostics_hardening_ready =
+      surface.diagnostics_hardening_ready &&
+      !surface.diagnostics_hardening_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -253,6 +313,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.core_feature_expansion_ready &&
       surface.edge_case_compatibility_ready &&
       surface.edge_case_robustness_ready &&
+      surface.diagnostics_hardening_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -316,6 +377,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.edge_case_robustness_key.empty()) {
     surface.failure_reason =
         "final readiness gate edge-case robustness key is not ready";
+  } else if (!lane_diagnostics_hardening_consistent) {
+    surface.failure_reason =
+        "final readiness gate diagnostics hardening is inconsistent";
+  } else if (!surface.diagnostics_hardening_consistent) {
+    surface.failure_reason =
+        "final readiness gate diagnostics hardening consistency is not satisfied";
+  } else if (!surface.diagnostics_hardening_ready) {
+    surface.failure_reason =
+        "final readiness gate diagnostics hardening is not ready";
+  } else if (surface.diagnostics_hardening_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate diagnostics hardening key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

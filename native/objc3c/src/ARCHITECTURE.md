@@ -312,6 +312,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E005/A002/B003/C003/D005 robustness prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E007 diagnostics hardening anchors explicit final readiness
+  diagnostics-hardening guardrails (`diagnostics_hardening_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E006/A003/B003/C003/D006 diagnostics hardening
+  prerequisites drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
