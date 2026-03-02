@@ -788,6 +788,13 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   if (!result.deterministic_parser_sema_advanced_integration_shard1) {
     return result;
   }
+  result.parser_sema_advanced_performance_shard1 =
+      handoff.parser_sema_advanced_performance_shard1;
+  result.deterministic_parser_sema_advanced_performance_shard1 =
+      handoff.parser_sema_advanced_performance_shard1.deterministic;
+  if (!result.deterministic_parser_sema_advanced_performance_shard1) {
+    return result;
+  }
   result.deterministic_parser_sema_handoff = handoff.deterministic;
   if (!handoff.deterministic) {
     return result;
@@ -2252,6 +2259,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parser_sema_advanced_conformance_shard1;
   result.parity_surface.parser_sema_advanced_integration_shard1 =
       result.parser_sema_advanced_integration_shard1;
+  result.parity_surface.parser_sema_advanced_performance_shard1 =
+      result.parser_sema_advanced_performance_shard1;
   result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
@@ -3294,6 +3303,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.deterministic_parser_sema_advanced_integration_shard1 =
       result.deterministic_parser_sema_advanced_integration_shard1 &&
       result.parity_surface.parser_sema_advanced_integration_shard1
+          .deterministic;
+  result.parity_surface.deterministic_parser_sema_advanced_performance_shard1 =
+      result.deterministic_parser_sema_advanced_performance_shard1 &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
           .deterministic;
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
@@ -5187,6 +5200,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.deterministic_parser_sema_advanced_diagnostics_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_conformance_shard1 &&
       result.parity_surface.deterministic_parser_sema_advanced_integration_shard1 &&
+      result.parity_surface.deterministic_parser_sema_advanced_performance_shard1 &&
       IsReadyObjc3SemaPassFlowSummary(result.parity_surface.sema_pass_flow_summary) &&
       result.parity_surface.parser_sema_conformance_matrix.deterministic &&
       result.parity_surface.parser_sema_conformance_corpus.deterministic &&
@@ -5207,6 +5221,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.parser_sema_advanced_conformance_shard1
           .deterministic &&
       result.parity_surface.parser_sema_advanced_integration_shard1
+          .deterministic &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
           .deterministic &&
       result.parity_surface.parser_sema_performance_quality_guardrails
           .required_guardrail_count == 7u &&
@@ -5343,6 +5359,20 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.parser_sema_advanced_integration_shard1
           .pass_manager_contract_surface_sync &&
       result.parity_surface.parser_sema_advanced_integration_shard1
+          .shard_surface_sync &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .required_sync_count == 3u &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .passed_sync_count ==
+          result.parity_surface.parser_sema_advanced_performance_shard1
+              .required_sync_count &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .failed_sync_count == 0u &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .advanced_integration_shard1_ready &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
+          .pass_manager_contract_surface_sync &&
+      result.parity_surface.parser_sema_advanced_performance_shard1
           .shard_surface_sync &&
       result.parity_surface.parser_sema_conformance_matrix
           .top_level_declaration_count_matches &&
