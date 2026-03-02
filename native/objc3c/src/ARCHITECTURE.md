@@ -230,6 +230,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when upstream lane expansion readiness drifts before
   final sign-off can remain green.
+- M250 lane-E E005 edge-case compatibility completion anchors explicit final
+  readiness edge-case compatibility guardrails
+  (`edge_case_compatibility_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E004/A005/B005/C005/D005 compatibility readiness
+  drifts before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

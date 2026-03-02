@@ -43,8 +43,41 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.core_feature_expansion_ready ? "true" : "false")
       << ";core_feature_expansion_key_ready="
       << (!surface.core_feature_expansion_key.empty() ? "true" : "false")
+      << ";edge_case_compatibility_consistent="
+      << (surface.edge_case_compatibility_consistent ? "true" : "false")
+      << ";edge_case_compatibility_ready="
+      << (surface.edge_case_compatibility_ready ? "true" : "false")
+      << ";edge_case_compatibility_key_ready="
+      << (!surface.edge_case_compatibility_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateEdgeCaseCompatibilityKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_edge_case_compatibility_ready,
+    bool lane_b_edge_case_compatibility_ready,
+    bool lane_c_edge_case_compatibility_ready,
+    bool lane_d_edge_case_compatibility_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-edge-case-compatibility:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";core-feature-expansion-ready="
+      << (surface.core_feature_expansion_ready ? "true" : "false")
+      << ";lane-a-edge-case-compatibility-ready="
+      << (lane_a_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-b-edge-case-compatibility-ready="
+      << (lane_b_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-c-edge-case-compatibility-ready="
+      << (lane_c_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-d-edge-case-compatibility-ready="
+      << (lane_d_edge_case_compatibility_ready ? "true" : "false")
+      << ";edge-case-compatibility-consistent="
+      << (surface.edge_case_compatibility_consistent ? "true" : "false")
+      << ";edge-case-compatibility-ready="
+      << (surface.edge_case_compatibility_ready ? "true" : "false");
   return key.str();
 }
 
@@ -120,12 +153,45 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       std::string(core_feature_expansion_consistent ? "true" : "false") +
       ";core-feature-expansion-ready=" +
       std::string(core_feature_expansion_ready ? "true" : "false");
+
+  const bool lane_edge_case_compatibility_consistent =
+      lane_a_surface.edge_case_compatibility_ready &&
+      lane_b_surface.edge_case_compatibility_ready &&
+      lane_c_surface.edge_case_compatibility_ready &&
+      lane_d_surface.edge_case_compatibility_ready;
+  const bool edge_case_compatibility_consistent =
+      surface.core_feature_expansion_ready &&
+      lane_edge_case_compatibility_consistent;
+  const bool edge_case_compatibility_ready =
+      edge_case_compatibility_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.core_feature_expansion_key.empty();
+
   surface.core_feature_expansion_ready =
       surface.core_feature_expansion_ready &&
-      !surface.core_feature_key.empty() &&
       !surface.core_feature_expansion_key.empty();
+  surface.edge_case_compatibility_consistent =
+      edge_case_compatibility_consistent;
+  surface.edge_case_compatibility_ready =
+      edge_case_compatibility_ready;
+  surface.edge_case_compatibility_key =
+      BuildObjc3FinalReadinessGateEdgeCaseCompatibilityKey(
+          surface,
+          lane_a_surface.edge_case_compatibility_ready,
+          lane_b_surface.edge_case_compatibility_ready,
+          lane_c_surface.edge_case_compatibility_ready,
+          lane_d_surface.edge_case_compatibility_ready);
+  surface.edge_case_compatibility_ready =
+      surface.edge_case_compatibility_ready &&
+      !surface.edge_case_compatibility_key.empty();
+  surface.core_feature_key =
+      BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
-      surface.core_feature_impl_ready && surface.core_feature_expansion_ready;
+      surface.core_feature_impl_ready &&
+      surface.core_feature_expansion_ready &&
+      surface.edge_case_compatibility_ready &&
+      !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -164,6 +230,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.core_feature_expansion_key.empty()) {
     surface.failure_reason =
         "final readiness gate core feature expansion key is not ready";
+  } else if (!lane_edge_case_compatibility_consistent) {
+    surface.failure_reason =
+        "final readiness gate edge-case compatibility is inconsistent";
+  } else if (!surface.edge_case_compatibility_consistent) {
+    surface.failure_reason =
+        "final readiness gate edge-case compatibility consistency is not satisfied";
+  } else if (!surface.edge_case_compatibility_ready) {
+    surface.failure_reason =
+        "final readiness gate edge-case compatibility is not ready";
+  } else if (surface.edge_case_compatibility_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate edge-case compatibility key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";
