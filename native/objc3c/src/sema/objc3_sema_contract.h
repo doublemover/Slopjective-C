@@ -518,6 +518,9 @@ struct Objc3PropertySynthesisIvarBindingSummary {
 };
 
 struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
+  std::size_t canonical_reference_form_count = 0;
+  std::size_t canonical_message_scalar_form_count = 0;
+  std::size_t canonical_bridge_top_form_count = 0;
   std::size_t param_type_sites = 0;
   std::size_t param_id_spelling_sites = 0;
   std::size_t param_class_spelling_sites = 0;
@@ -536,6 +539,11 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   std::size_t property_sel_spelling_sites = 0;
   std::size_t property_instancetype_spelling_sites = 0;
   std::size_t property_object_pointer_type_sites = 0;
+  bool canonical_reference_forms_unique = false;
+  bool canonical_message_scalar_forms_unique = false;
+  bool canonical_bridge_top_forms_unique = false;
+  bool canonical_bridge_top_subset_of_reference = false;
+  bool canonical_type_form_scaffold_ready = false;
   bool deterministic = true;
 };
 

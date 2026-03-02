@@ -7781,9 +7781,23 @@ BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(const Objc3SemanticTypeM
   return BuildAutoreleasePoolScopeSummaryFromSites(handoff.autoreleasepool_scope_sites_lexicographic);
 }
 
+static void ApplyTypeFormScaffoldSummaryToIdClassSelObjectPointerTypeCheckingSummary(
+    Objc3IdClassSelObjectPointerTypeCheckingSummary &summary) {
+  const Objc3TypeFormScaffoldSummary scaffold = BuildObjc3TypeFormScaffoldSummary();
+  summary.canonical_reference_form_count = scaffold.canonical_reference_form_count;
+  summary.canonical_message_scalar_form_count = scaffold.canonical_message_scalar_form_count;
+  summary.canonical_bridge_top_form_count = scaffold.canonical_bridge_top_form_count;
+  summary.canonical_reference_forms_unique = scaffold.canonical_reference_forms_unique;
+  summary.canonical_message_scalar_forms_unique = scaffold.canonical_message_scalar_forms_unique;
+  summary.canonical_bridge_top_forms_unique = scaffold.canonical_bridge_top_forms_unique;
+  summary.canonical_bridge_top_subset_of_reference = scaffold.canonical_bridge_top_subset_of_reference;
+  summary.canonical_type_form_scaffold_ready = IsReadyObjc3TypeFormScaffoldSummary(scaffold);
+}
+
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
 BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc3SemanticIntegrationSurface &surface) {
   Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
+  ApplyTypeFormScaffoldSummaryToIdClassSelObjectPointerTypeCheckingSummary(summary);
 
   const auto accumulate_function = [&summary](const FunctionInfo &info) {
     ++summary.return_type_sites;
@@ -7905,6 +7919,14 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
 
   summary.deterministic =
       summary.deterministic &&
+      summary.canonical_reference_form_count == kObjc3CanonicalReferenceTypeForms.size() &&
+      summary.canonical_message_scalar_form_count == kObjc3CanonicalScalarMessageSendTypeForms.size() &&
+      summary.canonical_bridge_top_form_count == kObjc3CanonicalBridgeTopReferenceTypeForms.size() &&
+      summary.canonical_reference_forms_unique &&
+      summary.canonical_message_scalar_forms_unique &&
+      summary.canonical_bridge_top_forms_unique &&
+      summary.canonical_bridge_top_subset_of_reference &&
+      summary.canonical_type_form_scaffold_ready &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -7936,6 +7958,7 @@ static Objc3IdClassSelObjectPointerTypeCheckingSummary
 BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   Objc3IdClassSelObjectPointerTypeCheckingSummary summary;
+  ApplyTypeFormScaffoldSummaryToIdClassSelObjectPointerTypeCheckingSummary(summary);
 
   const auto accumulate_function = [&summary](const Objc3SemanticFunctionTypeMetadata &metadata) {
     ++summary.return_type_sites;
@@ -8057,6 +8080,14 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
 
   summary.deterministic =
       summary.deterministic &&
+      summary.canonical_reference_form_count == kObjc3CanonicalReferenceTypeForms.size() &&
+      summary.canonical_message_scalar_form_count == kObjc3CanonicalScalarMessageSendTypeForms.size() &&
+      summary.canonical_bridge_top_form_count == kObjc3CanonicalBridgeTopReferenceTypeForms.size() &&
+      summary.canonical_reference_forms_unique &&
+      summary.canonical_message_scalar_forms_unique &&
+      summary.canonical_bridge_top_forms_unique &&
+      summary.canonical_bridge_top_subset_of_reference &&
+      summary.canonical_type_form_scaffold_ready &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -12073,6 +12104,22 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  handoff.property_synthesis_ivar_binding_summary.ivar_binding_conflicts ==
              handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites &&
          handoff.id_class_sel_object_pointer_type_checking_summary.deterministic &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_reference_form_count ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_reference_form_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_form_count ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_form_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_form_count ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_form_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_reference_forms_unique ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_reference_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_forms_unique ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_forms_unique ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_subset_of_reference ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_subset_of_reference &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready ==
+             id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites ==
              id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites ==
@@ -12127,6 +12174,17 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  handoff.id_class_sel_object_pointer_type_checking_summary.property_instancetype_spelling_sites +
                  handoff.id_class_sel_object_pointer_type_checking_summary.property_object_pointer_type_sites <=
              handoff.id_class_sel_object_pointer_type_checking_summary.property_type_sites &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_reference_form_count ==
+             kObjc3CanonicalReferenceTypeForms.size() &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_form_count ==
+             kObjc3CanonicalScalarMessageSendTypeForms.size() &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_form_count ==
+             kObjc3CanonicalBridgeTopReferenceTypeForms.size() &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_reference_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_message_scalar_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_forms_unique &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_subset_of_reference &&
+         handoff.id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready &&
          handoff.block_literal_capture_semantics_summary.deterministic &&
          handoff.block_literal_capture_semantics_summary.block_literal_sites ==
              block_literal_capture_semantics_summary.block_literal_sites &&
