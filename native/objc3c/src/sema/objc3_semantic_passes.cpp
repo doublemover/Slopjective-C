@@ -127,12 +127,7 @@ static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
 }
 
 static bool IsObjCReferenceValueType(ValueType type) {
-  return type == ValueType::ObjCId ||
-         type == ValueType::ObjCClass ||
-         type == ValueType::ObjCSel ||
-         type == ValueType::ObjCProtocol ||
-         type == ValueType::ObjCInstancetype ||
-         type == ValueType::ObjCObjectPtr;
+  return IsObjc3CanonicalReferenceTypeForm(type);
 }
 
 static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
@@ -140,8 +135,7 @@ static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
 }
 
 static bool IsMessageCompatibleType(const SemanticTypeInfo &info) {
-  return !info.is_vector && (info.type == ValueType::I32 || info.type == ValueType::Bool ||
-                             IsObjCReferenceValueType(info.type));
+  return !info.is_vector && IsObjc3CanonicalMessageSendTypeForm(info.type);
 }
 
 static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &target,
@@ -152,22 +146,9 @@ static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &ta
   if (target.type == value.type) {
     return true;
   }
-  // `id`/`instancetype` behave as bridge-capable reference tops for now.
-  if (target.type == ValueType::ObjCId || value.type == ValueType::ObjCId) {
-    return true;
-  }
-  if (target.type == ValueType::ObjCInstancetype || value.type == ValueType::ObjCInstancetype) {
-    return true;
-  }
-  // Unknown object-pointer spellings and class/protocol-typed handles are
-  // conservatively accepted as ObjC reference-compatible.
-  if (target.type == ValueType::ObjCObjectPtr || value.type == ValueType::ObjCObjectPtr) {
-    return true;
-  }
-  if (target.type == ValueType::ObjCClass || value.type == ValueType::ObjCClass) {
-    return true;
-  }
-  if (target.type == ValueType::ObjCProtocol || value.type == ValueType::ObjCProtocol) {
+  // Canonical ObjC bridge-top forms are assignment-compatible by design.
+  if (IsObjc3CanonicalBridgeTopReferenceTypeForm(target.type) ||
+      IsObjc3CanonicalBridgeTopReferenceTypeForm(value.type)) {
     return true;
   }
   return false;

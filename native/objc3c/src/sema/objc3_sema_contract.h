@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -12,6 +13,52 @@ inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMinor = 0;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionPatch = 0;
 inline constexpr const char *kObjc3RuntimeShimHostLinkDefaultDispatchSymbol = "objc3_msgsend_i32";
+inline constexpr std::array<ValueType, 6> kObjc3CanonicalReferenceTypeForms = {
+    ValueType::ObjCId,
+    ValueType::ObjCClass,
+    ValueType::ObjCSel,
+    ValueType::ObjCProtocol,
+    ValueType::ObjCInstancetype,
+    ValueType::ObjCObjectPtr,
+};
+inline constexpr std::array<ValueType, 2> kObjc3CanonicalScalarMessageSendTypeForms = {
+    ValueType::I32,
+    ValueType::Bool,
+};
+inline constexpr std::array<ValueType, 5> kObjc3CanonicalBridgeTopReferenceTypeForms = {
+    ValueType::ObjCId,
+    ValueType::ObjCClass,
+    ValueType::ObjCProtocol,
+    ValueType::ObjCInstancetype,
+    ValueType::ObjCObjectPtr,
+};
+
+inline bool IsObjc3CanonicalReferenceTypeForm(ValueType type) {
+  for (const ValueType candidate : kObjc3CanonicalReferenceTypeForms) {
+    if (candidate == type) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline bool IsObjc3CanonicalMessageSendTypeForm(ValueType type) {
+  for (const ValueType candidate : kObjc3CanonicalScalarMessageSendTypeForms) {
+    if (candidate == type) {
+      return true;
+    }
+  }
+  return IsObjc3CanonicalReferenceTypeForm(type);
+}
+
+inline bool IsObjc3CanonicalBridgeTopReferenceTypeForm(ValueType type) {
+  for (const ValueType candidate : kObjc3CanonicalBridgeTopReferenceTypeForms) {
+    if (candidate == type) {
+      return true;
+    }
+  }
+  return false;
+}
 
 enum class Objc3SemaAtomicMemoryOrder : std::uint8_t {
   Relaxed = 0,

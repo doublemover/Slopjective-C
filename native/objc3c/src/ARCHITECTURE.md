@@ -32,6 +32,12 @@ Current-state note:
   parser completeness and parser-to-sema handoff determinism.
 - M227 extends the sema boundary with pass-order and symbol-flow freeze rules
   in `sema/objc3_sema_pass_manager_contract.h` (`Objc3SemaPassFlowSummary`).
+- M227 lane-B type-system freeze anchors canonical ObjC form sets in
+  `sema/objc3_sema_contract.h` (`kObjc3CanonicalReferenceTypeForms`,
+  `kObjc3CanonicalScalarMessageSendTypeForms`,
+  `kObjc3CanonicalBridgeTopReferenceTypeForms`) to keep semantic checking
+  deterministic across `id`/`Class`/`SEL`/`Protocol`/`instancetype` and
+  object-pointer forms.
 
 ## Ownership Map
 
