@@ -438,6 +438,8 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool advanced_integration_shard1_ready = false;
   bool advanced_performance_shard1_consistent = false;
   bool advanced_performance_shard1_ready = false;
+  bool advanced_core_shard2_consistent = false;
+  bool advanced_core_shard2_ready = false;
   bool core_feature_impl_ready = false;
   std::string governance_key;
   std::string modular_split_key;
@@ -463,6 +465,7 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string advanced_conformance_shard1_key;
   std::string advanced_integration_shard1_key;
   std::string advanced_performance_shard1_key;
+  std::string advanced_core_shard2_key;
   std::string failure_reason;
 };
 
