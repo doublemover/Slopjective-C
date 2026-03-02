@@ -332,6 +332,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E009/A004/B004/C005/D008 conformance prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E011 performance and quality guardrails anchors explicit final
+  readiness performance/quality guardrails (`performance_quality_guardrails_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E010/A004/B005/C005/D009 quality prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
