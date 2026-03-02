@@ -55,6 +55,13 @@ inline std::size_t BuildObjc3ParserContractTopLevelCountFromDeclBuckets(
   return top_level_count;
 }
 
+inline bool IsObjc3ParserContractTopLevelDeclBucketOverflow(
+    const Objc3ParserContractSnapshot &snapshot) {
+  std::size_t top_level_count = 0u;
+  return !TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(
+      snapshot, top_level_count);
+}
+
 inline std::size_t BuildObjc3ParserContractTopLevelCountFromProgram(
     const Objc3ParsedProgram &program) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -124,10 +131,13 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
       BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
   const std::size_t function_pure_count =
       BuildObjc3ParserFunctionPureCountFromProgram(program);
+  const bool decl_bucket_overflow =
+      IsObjc3ParserContractTopLevelDeclBucketOverflow(snapshot);
   const bool missing_decl_buckets =
       IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(snapshot, program);
   return snapshot.ast_shape_fingerprint == 0u ||
          snapshot.ast_top_level_layout_fingerprint == 0u ||
+         decl_bucket_overflow ||
          missing_decl_buckets ||
          (snapshot.top_level_declaration_count == 0u &&
           BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u) ||
@@ -151,7 +161,8 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
 
   Objc3ParserContractSnapshot normalized_snapshot = snapshot;
   if (IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(
-          normalized_snapshot, program)) {
+          normalized_snapshot, program) ||
+      IsObjc3ParserContractTopLevelDeclBucketOverflow(normalized_snapshot)) {
     const Objc3Program &ast = Objc3ParsedProgramAst(program);
     normalized_snapshot.global_decl_count = ast.globals.size();
     normalized_snapshot.protocol_decl_count = ast.protocols.size();
