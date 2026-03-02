@@ -37,6 +37,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << ";lane_b_key_ready=" << (!surface.lane_b_key.empty() ? "true" : "false")
       << ";lane_c_key_ready=" << (!surface.lane_c_key.empty() ? "true" : "false")
       << ";lane_d_key_ready=" << (!surface.lane_d_key.empty() ? "true" : "false")
+      << ";core_feature_expansion_consistent="
+      << (surface.core_feature_expansion_consistent ? "true" : "false")
+      << ";core_feature_expansion_ready="
+      << (surface.core_feature_expansion_ready ? "true" : "false")
+      << ";core_feature_expansion_key_ready="
+      << (!surface.core_feature_expansion_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -82,8 +88,44 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       upstream_lanes_ready &&
       replay_keys_ready;
   surface.core_feature_impl_ready = surface.dependency_chain_ready;
+  const bool lane_expansion_consistent =
+      lane_a_surface.expansion_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.expansion_ready &&
+      lane_d_surface.core_feature_expansion_ready;
+  const bool core_feature_expansion_consistent =
+      surface.core_feature_impl_ready &&
+      lane_expansion_consistent;
+  const bool core_feature_expansion_ready =
+      core_feature_expansion_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty();
+  surface.core_feature_expansion_consistent = core_feature_expansion_consistent;
+  surface.core_feature_expansion_ready = core_feature_expansion_ready;
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
+  surface.core_feature_expansion_key =
+      "final-readiness-gate-core-feature-expansion:v1:"
+      "dependency-chain-ready=" +
+      std::string(surface.dependency_chain_ready ? "true" : "false") +
+      ";lane-a-expansion-ready=" +
+      std::string(lane_a_surface.expansion_ready ? "true" : "false") +
+      ";lane-b-expansion-ready=" +
+      std::string(lane_b_surface.expansion_ready ? "true" : "false") +
+      ";lane-c-expansion-ready=" +
+      std::string(lane_c_surface.expansion_ready ? "true" : "false") +
+      ";lane-d-core-feature-expansion-ready=" +
+      std::string(lane_d_surface.core_feature_expansion_ready ? "true" : "false") +
+      ";core-feature-expansion-consistent=" +
+      std::string(core_feature_expansion_consistent ? "true" : "false") +
+      ";core-feature-expansion-ready=" +
+      std::string(core_feature_expansion_ready ? "true" : "false");
+  surface.core_feature_expansion_ready =
+      surface.core_feature_expansion_ready &&
+      !surface.core_feature_key.empty() &&
+      !surface.core_feature_expansion_key.empty();
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.core_feature_expansion_ready;
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -110,6 +152,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (!replay_keys_ready) {
     surface.failure_reason =
         "final readiness gate dependency replay keys are not ready";
+  } else if (!lane_expansion_consistent) {
+    surface.failure_reason =
+        "final readiness gate core feature expansion is inconsistent";
+  } else if (!surface.core_feature_expansion_consistent) {
+    surface.failure_reason =
+        "final readiness gate core feature expansion consistency is not satisfied";
+  } else if (!surface.core_feature_expansion_ready) {
+    surface.failure_reason =
+        "final readiness gate core feature expansion is not ready";
+  } else if (surface.core_feature_expansion_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate core feature expansion key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

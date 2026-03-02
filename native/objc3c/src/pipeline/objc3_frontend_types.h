@@ -371,6 +371,8 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool lane_c_core_feature_ready = false;
   bool lane_d_core_feature_ready = false;
   bool dependency_chain_ready = false;
+  bool core_feature_expansion_consistent = false;
+  bool core_feature_expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::string governance_key;
   std::string modular_split_key;
@@ -379,6 +381,7 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string lane_c_key;
   std::string lane_d_key;
   std::string core_feature_key;
+  std::string core_feature_expansion_key;
   std::string failure_reason;
 };
 

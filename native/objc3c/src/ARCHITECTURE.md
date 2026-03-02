@@ -217,6 +217,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E sign-off fails closed when E002/A003/B003/C003/D003 dependency
   readiness drifts.
+- M250 lane-E E004 core feature expansion anchors explicit final readiness
+  expansion guardrails (`core_feature_expansion_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when upstream lane expansion readiness drifts before
+  final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
