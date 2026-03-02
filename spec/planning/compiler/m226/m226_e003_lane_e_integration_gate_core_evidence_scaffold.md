@@ -28,6 +28,7 @@ pin a stable evidence index schema for milestone closeout.
 - Path: `tmp/reports/m226/e003/evidence_index.json`
 - Status: `pending`
 - Required top-level keys: `packet`, `generated_at_utc`, `upstream_packets`, `artifacts`.
+- `generated_at_utc` format: RFC3339 UTC with trailing `Z`.
 
 ## Required Artifact Anchors
 

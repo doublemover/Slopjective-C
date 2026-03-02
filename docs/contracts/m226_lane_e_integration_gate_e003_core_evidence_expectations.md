@@ -17,6 +17,7 @@ are discoverable via a single pinned evidence index schema.
    - `spec/planning/compiler/m226/m226_e003_lane_e_integration_gate_core_evidence_scaffold.md`
 2. Core evidence index schema is pinned:
    - Required top-level keys: `packet`, `generated_at_utc`, `upstream_packets`, `artifacts`.
+   - `generated_at_utc` uses RFC3339 UTC format with trailing `Z`.
    - Index path remains `tmp/reports/m226/e003/evidence_index.json`.
 3. Freeze registry includes E003 packet wiring:
    - `spec/planning/compiler/m226/m226_lane_e_contract_freeze_20260302.md`

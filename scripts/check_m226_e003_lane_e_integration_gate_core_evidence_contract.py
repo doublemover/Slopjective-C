@@ -123,6 +123,10 @@ CONTRACT_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M226-E003-DOC-CON-09",
         "`python scripts/check_m226_e003_lane_e_integration_gate_core_evidence_contract.py`",
     ),
+    SnippetCheck(
+        "M226-E003-DOC-CON-10",
+        "`generated_at_utc` uses RFC3339 UTC format with trailing `Z`.",
+    ),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -143,6 +147,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M226-E003-DOC-PKT-07",
         "`python -m pytest tests/tooling/test_check_m226_e003_lane_e_integration_gate_core_evidence_contract.py -q`",
+    ),
+    SnippetCheck(
+        "M226-E003-DOC-PKT-08",
+        "`generated_at_utc` must be RFC3339 UTC with a trailing `Z`.",
     ),
 )
 
@@ -179,6 +187,10 @@ EVIDENCE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M226-E003-DOC-EVI-10",
         "Path: `tmp/reports/m226/e003/evidence_index.json`",
+    ),
+    SnippetCheck(
+        "M226-E003-DOC-EVI-11",
+        "- `generated_at_utc` format: RFC3339 UTC with trailing `Z`.",
     ),
 )
 

@@ -12,6 +12,8 @@ Capture lane-E integration-gate core evidence indexing requirements so summary,
 validation transcript, and evidence index artifacts remain deterministic and
 fail closed during milestone integration gate runs.
 
+The evidence index metadata remains strict: `generated_at_utc` must be RFC3339 UTC with a trailing `Z`.
+
 ## Core Evidence Surface
 
 | Module | Required Artifact(s) |

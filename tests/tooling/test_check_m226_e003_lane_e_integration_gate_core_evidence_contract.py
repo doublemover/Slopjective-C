@@ -112,3 +112,30 @@ def test_contract_fails_closed_when_evidence_doc_drops_required_schema_keys(tmp_
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M226-E003-DOC-EVI-06" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_evidence_doc_drops_generated_at_utc_format_rule(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "m226_e003_lane_e_integration_gate_core_evidence_scaffold.md"
+    drift_doc.write_text(
+        contract.DEFAULT_EVIDENCE_DOC.read_text(encoding="utf-8").replace(
+            "- `generated_at_utc` format: RFC3339 UTC with trailing `Z`.",
+            "- `generated_at_utc` format: local timestamp.",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--evidence-doc",
+            str(drift_doc),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M226-E003-DOC-EVI-11" for failure in payload["failures"])
