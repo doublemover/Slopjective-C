@@ -113,6 +113,11 @@ Current-state note:
   `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
   so matrix drift fails closed before semantic stability readiness is
   reported.
+- M250 lane-B B010 conformance corpus expansion anchors explicit semantic
+  conformance-corpus guardrails (`conformance_corpus_*`) in
+  `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
+  so corpus drift fails closed before semantic stability readiness is
+  reported.
 - M250 lane-C C002 modular split scaffolding anchors lowering/runtime stability
   and invariant-proof closure in
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
