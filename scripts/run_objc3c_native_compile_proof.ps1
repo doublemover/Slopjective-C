@@ -9,6 +9,35 @@ $run2 = Join-Path $proofDir "run2"
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 
+function Get-RepoRelativePathCompat {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPath
+  )
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
+  $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+
+  if ($resolvedRoot.EndsWith('\') -or $resolvedRoot.EndsWith('/')) {
+    $rootWithSeparator = $resolvedRoot
+  } else {
+    $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+  }
+
+  $relativePath = $null
+  $getRelativeMethod = [System.IO.Path].GetMethod("GetRelativePath", [Type[]]@([string], [string]))
+  if ($null -ne $getRelativeMethod) {
+    $relativePath = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
+  } else {
+    $rootUri = New-Object System.Uri($rootWithSeparator)
+    $targetUri = New-Object System.Uri($resolvedTarget)
+    $relativeUri = $rootUri.MakeRelativeUri($targetUri)
+    $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
+  }
+
+  return $relativePath.Replace('\', '/')
+}
+
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
   throw "missing source fixture: $source"
 }
@@ -48,14 +77,14 @@ $bytes = [System.IO.File]::ReadAllBytes((Join-Path $run1 "module.obj"))
 $hashBytes = $sha.ComputeHash($bytes)
 $objHash = ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
 $digest = [ordered]@{
-  source = [System.IO.Path]::GetRelativePath($repoRoot, $source).Replace("\", "/")
+  source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   deterministic = [ordered]@{
     manifest = $true
     diagnostics = $true
     llvm_ir = $true
   }
   object_sha256 = $objHash
-  proof_dir = [System.IO.Path]::GetRelativePath($repoRoot, $proofDir).Replace("\", "/")
+  proof_dir = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $proofDir
 }
 $digest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $proofDir "digest.json") -Encoding utf8
 
