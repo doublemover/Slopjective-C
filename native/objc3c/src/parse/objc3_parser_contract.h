@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "ast/objc3_ast.h"
 
@@ -21,6 +24,7 @@ struct Objc3ParserContractSnapshot {
   std::size_t function_decl_count = 0;
   std::size_t parser_diagnostic_count = 0;
   std::uint64_t ast_shape_fingerprint = 0;
+  std::uint64_t ast_top_level_layout_fingerprint = 0;
   bool deterministic_handoff = true;
   bool parser_recovery_replay_ready = true;
 };
@@ -112,6 +116,63 @@ inline std::uint64_t BuildObjc3ParsedProgramAstShapeFingerprint(const Objc3Parse
   return fingerprint;
 }
 
+inline std::uint64_t BuildObjc3ParsedProgramTopLevelLayoutFingerprint(const Objc3ParsedProgram &program) {
+  constexpr std::uint64_t kInitialFingerprint = 1469598103934665603ull;
+
+  struct Objc3TopLevelLayoutEntry {
+    std::uint64_t kind_tag = 0;
+    std::string symbol;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::vector<Objc3TopLevelLayoutEntry> entries;
+  entries.reserve(ast.globals.size() + ast.protocols.size() + ast.interfaces.size() + ast.implementations.size() +
+                  ast.functions.size());
+
+  for (const auto &global : ast.globals) {
+    entries.push_back(Objc3TopLevelLayoutEntry{1ull, global.name, global.line, global.column});
+  }
+  for (const auto &protocol_decl : ast.protocols) {
+    entries.push_back(Objc3TopLevelLayoutEntry{2ull, protocol_decl.name, protocol_decl.line, protocol_decl.column});
+  }
+  for (const auto &interface_decl : ast.interfaces) {
+    entries.push_back(Objc3TopLevelLayoutEntry{3ull, interface_decl.name, interface_decl.line, interface_decl.column});
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    entries.push_back(
+        Objc3TopLevelLayoutEntry{4ull, implementation_decl.name, implementation_decl.line, implementation_decl.column});
+  }
+  for (const auto &function_decl : ast.functions) {
+    entries.push_back(Objc3TopLevelLayoutEntry{5ull, function_decl.name, function_decl.line, function_decl.column});
+  }
+
+  std::sort(entries.begin(), entries.end(), [](const Objc3TopLevelLayoutEntry &lhs, const Objc3TopLevelLayoutEntry &rhs) {
+    if (lhs.line != rhs.line) {
+      return lhs.line < rhs.line;
+    }
+    if (lhs.column != rhs.column) {
+      return lhs.column < rhs.column;
+    }
+    if (lhs.kind_tag != rhs.kind_tag) {
+      return lhs.kind_tag < rhs.kind_tag;
+    }
+    return lhs.symbol < rhs.symbol;
+  });
+
+  std::uint64_t fingerprint = kInitialFingerprint;
+  fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, ast.module_name);
+  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(entries.size()));
+  for (const auto &entry : entries) {
+    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, entry.kind_tag);
+    fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, entry.symbol);
+    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(entry.line));
+    fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(entry.column));
+  }
+  return fingerprint;
+}
+
 inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3ParserContractSnapshot &snapshot) {
   constexpr std::uint64_t kInitialFingerprint = 1469598103934665603ull;
   std::uint64_t fingerprint = kInitialFingerprint;
@@ -128,6 +189,7 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.parser_diagnostic_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_shape_fingerprint);
+  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_top_level_layout_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.deterministic_handoff ? 1ull : 0ull);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.parser_recovery_replay_ready ? 1ull : 0ull);
   return fingerprint;
@@ -146,6 +208,7 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
   snapshot.implementation_decl_count = ast.implementations.size();
   snapshot.function_decl_count = ast.functions.size();
   snapshot.ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(program);
+  snapshot.ast_top_level_layout_fingerprint = BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
   snapshot.top_level_declaration_count = snapshot.global_decl_count + snapshot.protocol_decl_count +
                                          snapshot.interface_decl_count + snapshot.implementation_decl_count +
                                          snapshot.function_decl_count;
