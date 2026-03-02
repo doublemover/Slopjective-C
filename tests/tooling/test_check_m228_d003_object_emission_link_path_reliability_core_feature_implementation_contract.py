@@ -34,7 +34,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m228-d003-object-emission-link-path-reliability-core-feature-implementation-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 25
+    assert payload["checks_total"] >= 45
     assert payload["checks_total"] == payload["checks_passed"]
 
 
@@ -95,3 +95,30 @@ def test_contract_fails_closed_when_surface_forces_core_feature_ready(
         failure["check_id"] in {"M228-D003-SUR-11", "M228-D003-FORB-01"}
         for failure in payload["failures"]
     )
+
+
+def test_contract_fails_closed_when_planning_packet_dependency_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_packet = tmp_path / "m228_d003_object_emission_link_path_reliability_core_feature_implementation_packet.md"
+    drift_packet.write_text(
+        contract.ARTIFACTS["planning_packet"].read_text(encoding="utf-8").replace(
+            "Dependencies: `M228-D002`",
+            "Dependencies: `M228-D099`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["planning_packet"] = drift_packet
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-D003-PKT-04" for failure in payload["failures"])

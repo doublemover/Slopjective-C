@@ -36,11 +36,27 @@ ARTIFACTS: dict[str, Path] = {
     "d002_checker": ROOT
     / "scripts"
     / "check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+    "d002_tooling_test": ROOT
+    / "tests"
+    / "tooling"
+    / "test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py",
+    "d002_packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_d002_object_emission_link_path_modular_split_scaffolding_packet.md",
     "package_json": ROOT / "package.json",
     "contract_doc": ROOT
     / "docs"
     / "contracts"
     / "m228_object_emission_link_path_reliability_core_feature_implementation_d003_expectations.md",
+    "planning_packet": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_d003_object_emission_link_path_reliability_core_feature_implementation_packet.md",
 }
 
 REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
@@ -135,6 +151,16 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             'MODE = "m228-d002-object-emission-link-path-modular-split-scaffolding-contract-v1"',
         ),
     ),
+    "d002_tooling_test": (
+        (
+            "M228-D003-DEP-05",
+            "check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract",
+        ),
+    ),
+    "d002_packet_doc": (
+        ("M228-D003-DEP-06", "Packet: `M228-D002`"),
+        ("M228-D003-DEP-07", "Dependencies: `M228-D001`"),
+    ),
     "package_json": (
         (
             "M228-D003-CFG-01",
@@ -152,6 +178,10 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M228-D003-CFG-04",
             "check:objc3c:m228-d002-lane-d-readiness && npm run check:objc3c:m228-d003-object-emission-link-path-reliability-core-feature-implementation-contract && npm run test:tooling:m228-d003-object-emission-link-path-reliability-core-feature-implementation-contract",
         ),
+        ("M228-D003-CFG-05", '"compile:objc3c":'),
+        ("M228-D003-CFG-06", '"proof:objc3c":'),
+        ("M228-D003-CFG-07", '"test:objc3c:execution-replay-proof":'),
+        ("M228-D003-CFG-08", '"test:objc3c:perf-budget":'),
     ),
     "contract_doc": (
         (
@@ -175,6 +205,43 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M228-D003-DOC-09",
             "tmp/reports/m228/M228-D003/object_emission_link_path_reliability_core_feature_implementation_contract_summary.json",
         ),
+        (
+            "M228-D003-DOC-10",
+            "Code/spec anchors and milestone optimization improvements are mandatory scope",
+        ),
+        ("M228-D003-DOC-11", "Dependencies: `M228-D002`"),
+        (
+            "M228-D003-DOC-12",
+            "spec/planning/compiler/m228/m228_d003_object_emission_link_path_reliability_core_feature_implementation_packet.md",
+        ),
+    ),
+    "planning_packet": (
+        (
+            "M228-D003-PKT-01",
+            "# M228-D003 Object Emission and Link Path Reliability Core Feature Implementation Packet",
+        ),
+        ("M228-D003-PKT-02", "Packet: `M228-D003`"),
+        ("M228-D003-PKT-03", "Milestone: `M228`"),
+        ("M228-D003-PKT-04", "Dependencies: `M228-D002`"),
+        (
+            "M228-D003-PKT-05",
+            "docs/contracts/m228_object_emission_link_path_reliability_core_feature_implementation_d003_expectations.md",
+        ),
+        (
+            "M228-D003-PKT-06",
+            "scripts/check_m228_d003_object_emission_link_path_reliability_core_feature_implementation_contract.py",
+        ),
+        (
+            "M228-D003-PKT-07",
+            "tests/tooling/test_check_m228_d003_object_emission_link_path_reliability_core_feature_implementation_contract.py",
+        ),
+        ("M228-D003-PKT-08", "check:objc3c:m228-d003-lane-d-readiness"),
+        (
+            "M228-D003-PKT-09",
+            "tmp/reports/m228/M228-D003/object_emission_link_path_reliability_core_feature_implementation_contract_summary.json",
+        ),
+        ("M228-D003-PKT-10", "code/spec anchors and milestone optimization"),
+        ("M228-D003-PKT-11", "improvements as mandatory scope inputs"),
     ),
 }
 

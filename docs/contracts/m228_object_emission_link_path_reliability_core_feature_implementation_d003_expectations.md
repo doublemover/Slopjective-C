@@ -9,6 +9,21 @@ Scope: lane-D object emission/link-path core-feature implementation anchors only
 Implement lane-D core feature closure so object emission/link-path reliability
 remains deterministic and fail-closed after D002 modular split scaffold
 validation and backend dispatch.
+Code/spec anchors and milestone optimization improvements are mandatory scope
+inputs for this closure.
+
+## Dependency Scope
+
+- Dependencies: `M228-D002`
+- M228-D002 modular split/scaffolding anchors remain mandatory prerequisites:
+  - `docs/contracts/m228_object_emission_link_path_modular_split_scaffolding_d002_expectations.md`
+  - `spec/planning/compiler/m228/m228_d002_object_emission_link_path_modular_split_scaffolding_packet.md`
+  - `scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py`
+  - `tests/tooling/test_check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py`
+- Packet/checker/test assets for D003 remain mandatory:
+  - `spec/planning/compiler/m228/m228_d003_object_emission_link_path_reliability_core_feature_implementation_packet.md`
+  - `scripts/check_m228_d003_object_emission_link_path_reliability_core_feature_implementation_contract.py`
+  - `tests/tooling/test_check_m228_d003_object_emission_link_path_reliability_core_feature_implementation_contract.py`
 
 ## Scope Anchors
 
@@ -40,6 +55,13 @@ validation and backend dispatch.
    - `scripts/check_m228_d002_object_emission_link_path_modular_split_scaffolding_contract.py`
 5. Architecture/spec anchors explicitly mention M228 lane-D D003 core feature
    implementation closure.
+
+## Milestone Optimization Inputs
+
+- `compile:objc3c`
+- `proof:objc3c`
+- `test:objc3c:execution-replay-proof`
+- `test:objc3c:perf-budget`
 
 ## Validation
 
