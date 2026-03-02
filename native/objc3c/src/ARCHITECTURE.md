@@ -289,6 +289,14 @@ Current-state note:
   and `package.json` so release-gate documentation/runbook modular split/scaffolding
   governance evidence remains deterministic and fail-closed while lane A-D modular
   split/scaffolding assets are pending GH seed.
+- M249 lane-E E003 release gate/docs/runbooks core feature implementation
+  anchors dependency references (`M249-E002`, `M249-A003`, `M249-B003`,
+  `M249-C003`, and `M249-D003`) in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_core_feature_implementation_e003_expectations.md`,
+  `spec/planning/compiler/m249/m249_e003_lane_e_release_gate_docs_and_runbooks_core_feature_implementation_packet.md`,
+  and `package.json` so release-gate documentation/runbook core-feature
+  governance evidence remains deterministic and fail-closed while lane A-D core
+  feature assets are pending GH seed.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

@@ -186,6 +186,10 @@ At minimum, the pass-graph gate shall validate:
   `M249-C002`, and `M249-D002`) and fail closed when dependency references,
   docs/runbook modular split/scaffolding evidence commands, or release gate
   readiness hooks drift.
+- release gate/docs/runbooks core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M249-E002`, `M249-A003`, `M249-B003`,
+  `M249-C003`, and `M249-D003`) and fail closed when dependency references,
+  docs/runbook core-feature evidence commands, or release gate readiness hooks drift.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.
