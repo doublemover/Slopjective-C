@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
@@ -1399,6 +1400,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L301",
         "LLVM IR emission failed: lowering pipeline pass-graph scaffold check failed: " +
             lowering_pass_graph_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string lowering_pass_graph_core_feature_error;
+  if (!IsObjc3LoweringPipelinePassGraphCoreFeatureSurfaceReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_core_feature_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L302",
+        "LLVM IR emission failed: lowering pipeline pass-graph core feature check failed: " +
+            lowering_pass_graph_core_feature_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -4926,6 +4941,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
   ir_frontend_metadata.deterministic_symbol_graph_scope_resolution_handoff_key =
       symbol_graph_scope_resolution_summary.deterministic_handoff_key;
+  ir_frontend_metadata.lowering_pass_graph_core_feature_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .core_feature_ready;
+  ir_frontend_metadata.lowering_pass_graph_core_feature_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .core_feature_key;
 
   std::string ir_error;
   // Historical extraction contract marker:

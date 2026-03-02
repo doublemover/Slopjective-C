@@ -67,6 +67,8 @@ At minimum, the pass-graph gate shall validate:
   replay-key stable for the active lowering options; and
 - the direct IR emission route remains enabled as the first-class path (no
   implicit fail-open bypass).
+- a core-feature readiness surface is emitted with deterministic replay keys
+  that can be carried into IR metadata closeout evidence.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

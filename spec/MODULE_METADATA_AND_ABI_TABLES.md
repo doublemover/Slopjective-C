@@ -56,6 +56,7 @@ A conforming implementation shall preserve, for all exported declarations:
 
 7. **Lowering pass-graph replay anchors**:
    - deterministic replay keys for lowering-boundary normalization and runtime dispatch declaration synthesis used by direct IR emission,
+   - explicit pass-graph core-feature readiness flag and replay key suitable for IR metadata emission,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent.
 

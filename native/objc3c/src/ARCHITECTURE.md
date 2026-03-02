@@ -51,6 +51,11 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission so lex/parse/sema,
   lowering-boundary normalization, and runtime dispatch declaration contracts
   remain deterministically synchronized.
+- M228 lane-A A003 core feature implementation layers
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` over
+  the A002 scaffold and propagates core-feature replay evidence into
+  `ir/objc3_ir_emitter.h`/`ir/objc3_ir_emitter.cpp` metadata output so direct
+  LLVM IR emission can fail closed on pass-graph core-feature drift.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
