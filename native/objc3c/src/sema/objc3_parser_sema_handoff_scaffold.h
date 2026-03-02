@@ -238,6 +238,15 @@ inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3Parser
       BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
   const std::size_t function_pure_count =
       BuildObjc3ParserFunctionPureCountFromProgram(program);
+  const bool parser_diagnostic_budget_consistent =
+      snapshot.token_count == 0u || snapshot.parser_diagnostic_count <= snapshot.token_count;
+  const bool parser_token_top_level_budget_consistent =
+      snapshot.token_count == 0u || snapshot.token_count >= snapshot.top_level_declaration_count;
+  const bool parser_subset_count_consistent =
+      snapshot.interface_category_decl_count <= snapshot.interface_decl_count &&
+      snapshot.implementation_category_decl_count <= snapshot.implementation_decl_count &&
+      snapshot.function_prototype_count <= snapshot.function_decl_count &&
+      snapshot.function_pure_count <= snapshot.function_decl_count;
   return snapshot.global_decl_count == ast.globals.size() &&
          snapshot.protocol_decl_count == ast.protocols.size() &&
          snapshot.interface_decl_count == ast.interfaces.size() &&
@@ -253,6 +262,9 @@ inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3Parser
                  ast.functions.size() &&
          snapshot.ast_shape_fingerprint == ast_shape_fingerprint &&
          snapshot.ast_top_level_layout_fingerprint == ast_top_level_layout_fingerprint &&
+         parser_diagnostic_budget_consistent &&
+         parser_token_top_level_budget_consistent &&
+         parser_subset_count_consistent &&
          BuildObjc3ParserContractSnapshotFingerprint(snapshot) ==
              BuildObjc3ParserContractSnapshotFingerprint(expected_snapshot) &&
          snapshot.deterministic_handoff &&
