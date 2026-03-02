@@ -5252,7 +5252,14 @@ class Objc3Parser {
     }
 
     if (pointer_depth > 0u) {
-      if (type == ValueType::Void || type == ValueType::I32 || type == ValueType::Bool) {
+      if (type == ValueType::Void) {
+        // Compatibility mode accepts void* as an opaque object-pointer boundary.
+        type = ValueType::ObjCObjectPtr;
+        object_pointer_spelling = true;
+        if (object_pointer_name.empty()) {
+          object_pointer_name = "void";
+        }
+      } else if (type == ValueType::I32 || type == ValueType::Bool) {
         diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
                                         "unsupported pointer type in C-style compatibility declaration"));
         return false;
