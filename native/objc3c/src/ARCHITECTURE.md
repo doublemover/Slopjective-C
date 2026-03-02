@@ -74,6 +74,12 @@ Current-state note:
   `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
   so typed semantic case accounting and parse conformance accounting remain
   deterministic and fail-closed behind the B002 scaffold.
+- M250 lane-B B006 edge-case expansion and robustness anchors explicit
+  semantic edge-case expansion/robustness guardrails
+  (`edge_case_*_robustness*`) in
+  `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
+  so edge-case expansion drift fails closed before semantic stability
+  readiness is reported.
 - M250 lane-C C002 modular split scaffolding anchors lowering/runtime stability
   and invariant-proof closure in
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
