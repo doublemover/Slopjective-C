@@ -330,9 +330,13 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   bool dispatch_shape_sharding_ready = false;
   bool llc_object_emission_route_deterministic = false;
   bool replay_proof_artifact_key_ready = false;
+  bool edge_case_dispatch_shape_coverage_ready = false;
+  bool replay_proof_expansion_ready = false;
+  bool expansion_ready = false;
   bool core_feature_ready = false;
   std::string lowering_boundary_replay_key;
   std::string runtime_dispatch_declaration_replay_key;
+  std::string expansion_key;
   std::string core_feature_key;
   std::string failure_reason;
 };

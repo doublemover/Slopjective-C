@@ -7,11 +7,18 @@
 std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureKey(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
 
+std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options);
 
 bool IsObjc3LoweringPipelinePassGraphCoreFeatureSurfaceReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason);
+
+bool IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
     std::string &reason);

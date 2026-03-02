@@ -27,6 +27,22 @@ std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-core-feature-expansion:v1:"
+      << "core-feature-ready=" << (surface.core_feature_ready ? "true" : "false")
+      << ";edge-case-dispatch-shape-coverage-ready="
+      << (surface.edge_case_dispatch_shape_coverage_ready ? "true" : "false")
+      << ";replay-proof-expansion-ready="
+      << (surface.replay_proof_expansion_ready ? "true" : "false")
+      << ";expansion-ready=" << (surface.expansion_ready ? "true" : "false")
+      << ";lowering-boundary-replay-key=" << surface.lowering_boundary_replay_key
+      << ";runtime-dispatch-declaration-replay-key="
+      << surface.runtime_dispatch_declaration_replay_key;
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -70,6 +86,19 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
            .parse_artifact_replay_key.empty() &&
       !surface.lowering_boundary_replay_key.empty() &&
       !surface.runtime_dispatch_declaration_replay_key.empty();
+  surface.edge_case_dispatch_shape_coverage_ready =
+      pipeline_result.typed_sema_to_lowering_contract_surface
+          .typed_core_feature_expansion_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_expansion_ready &&
+      options.lowering.max_message_send_args >= kObjc3RuntimeDispatchDefaultArgs &&
+      options.lowering.max_message_send_args <= kObjc3RuntimeDispatchMaxArgs;
+  surface.replay_proof_expansion_ready =
+      surface.replay_proof_artifact_key_ready &&
+      !pipeline_result.typed_sema_to_lowering_contract_surface
+           .typed_core_feature_expansion_key.empty() &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .long_tail_grammar_expansion_key.empty();
   surface.core_feature_ready =
       surface.scaffold_ready &&
       surface.lowering_boundary_replay_key_consistent &&
@@ -78,10 +107,15 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       surface.dispatch_shape_sharding_ready &&
       surface.llc_object_emission_route_deterministic &&
       surface.replay_proof_artifact_key_ready;
+  surface.expansion_ready = surface.core_feature_ready &&
+                            surface.edge_case_dispatch_shape_coverage_ready &&
+                            surface.replay_proof_expansion_ready;
+  surface.expansion_key =
+      BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureKey(surface);
 
-  if (surface.core_feature_ready) {
+  if (surface.core_feature_ready && surface.expansion_ready) {
     return surface;
   }
 
@@ -99,6 +133,12 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "llc object-emission route is not deterministic";
   } else if (!surface.replay_proof_artifact_key_ready) {
     surface.failure_reason = "replay-proof artifact keys are not ready";
+  } else if (!surface.edge_case_dispatch_shape_coverage_ready) {
+    surface.failure_reason = "edge-case dispatch-shape coverage is not ready";
+  } else if (!surface.replay_proof_expansion_ready) {
+    surface.failure_reason = "replay-proof expansion anchors are not ready";
+  } else if (!surface.expansion_ready) {
+    surface.failure_reason = "pass-graph core-feature expansion is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -115,6 +155,19 @@ bool IsObjc3LoweringPipelinePassGraphCoreFeatureSurfaceReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph core feature is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.expansion_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph core feature expansion is not ready"
                : surface.failure_reason;
   return false;
 }

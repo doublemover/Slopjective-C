@@ -1418,6 +1418,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string lowering_pass_graph_expansion_error;
+  if (!IsObjc3LoweringPipelinePassGraphCoreFeatureExpansionReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_expansion_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L303",
+        "LLVM IR emission failed: lowering pipeline pass-graph core feature expansion check failed: " +
+            lowering_pass_graph_expansion_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
   std::vector<const FunctionDecl *> manifest_functions;
   manifest_functions.reserve(program.functions.size());
   std::unordered_set<std::string> manifest_function_names;
@@ -4947,6 +4961,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.lowering_pass_graph_core_feature_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .core_feature_key;
+  ir_frontend_metadata.lowering_pass_graph_core_feature_expansion_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .expansion_ready;
+  ir_frontend_metadata.lowering_pass_graph_core_feature_expansion_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .expansion_key;
 
   std::string ir_error;
   // Historical extraction contract marker:

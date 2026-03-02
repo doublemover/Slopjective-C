@@ -479,6 +479,8 @@ struct Objc3IRFrontendMetadata {
   std::string deterministic_symbol_graph_scope_resolution_handoff_key;
   bool lowering_pass_graph_core_feature_ready = false;
   std::string lowering_pass_graph_core_feature_key;
+  bool lowering_pass_graph_core_feature_expansion_ready = false;
+  std::string lowering_pass_graph_core_feature_expansion_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };

@@ -69,6 +69,9 @@ At minimum, the pass-graph gate shall validate:
   implicit fail-open bypass).
 - a core-feature readiness surface is emitted with deterministic replay keys
   that can be carried into IR metadata closeout evidence.
+- an expansion readiness surface is emitted with deterministic expansion keys,
+  and implementations shall fail closed before IR emission when expansion
+  accounting/replay anchors drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
