@@ -139,6 +139,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool toolchain_runtime_ga_operations_advanced_conformance_ready = false;
   bool toolchain_runtime_ga_operations_advanced_integration_consistent = false;
   bool toolchain_runtime_ga_operations_advanced_integration_ready = false;
+  bool toolchain_runtime_ga_operations_advanced_performance_consistent = false;
+  bool toolchain_runtime_ga_operations_advanced_performance_ready = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
   bool semantic_type_metadata_deterministic = false;
@@ -195,6 +197,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string toolchain_runtime_ga_operations_advanced_diagnostics_key;
   std::string toolchain_runtime_ga_operations_advanced_conformance_key;
   std::string toolchain_runtime_ga_operations_advanced_integration_key;
+  std::string toolchain_runtime_ga_operations_advanced_performance_key;
   std::string typed_sema_core_feature_key;
   std::string typed_sema_core_feature_expansion_key;
   std::string lowering_boundary_replay_key;
