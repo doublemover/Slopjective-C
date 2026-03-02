@@ -1,6 +1,8 @@
 #include "sema/objc3_sema_pass_flow_scaffold.h"
 
 #include <cstddef>
+#include <cstdint>
+#include <sstream>
 
 void MarkObjc3SemaPassExecuted(Objc3SemaPassFlowSummary &summary, Objc3SemaPassId pass) {
   const std::size_t pass_index = static_cast<std::size_t>(pass);
@@ -21,9 +23,21 @@ void FinalizeObjc3SemaPassFlowSummary(
     bool pass_order_matches_contract,
     bool deterministic_semantic_diagnostics,
     bool deterministic_type_metadata_handoff) {
+  const auto fnv1a_mix = [](std::uint64_t seed, std::uint64_t value) {
+    constexpr std::uint64_t kFnvPrime = 1099511628211ull;
+    std::uint64_t mixed = seed;
+    for (int i = 0; i < 8; ++i) {
+      const std::uint8_t byte = static_cast<std::uint8_t>((value >> (i * 8)) & 0xffu);
+      mixed ^= static_cast<std::uint64_t>(byte);
+      mixed *= kFnvPrime;
+    }
+    return mixed;
+  };
+
   summary.pass_order_matches_contract =
       pass_order_matches_contract && summary.configured_pass_order == kObjc3SemaPassOrder;
   summary.diagnostics_after_pass_monotonic = diagnostics_after_pass_monotonic;
+  summary.diagnostics_total = summary.diagnostics_after_pass.back();
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -41,12 +55,40 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.symbol_interfaces_count == summary.type_metadata_interface_entries &&
       summary.symbol_implementations_count == summary.type_metadata_implementation_entries;
 
+  std::uint64_t fingerprint = 1469598103934665603ull;
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.configured_pass_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.executed_pass_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_total));
+  for (std::size_t i = 0; i < summary.pass_executed.size(); ++i) {
+    fingerprint = fnv1a_mix(fingerprint, summary.pass_executed[i] ? 1ull : 0ull);
+    fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_after_pass[i]));
+  }
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.symbol_globals_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.symbol_functions_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.symbol_interfaces_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.symbol_implementations_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.type_metadata_global_entries));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.type_metadata_function_entries));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.type_metadata_interface_entries));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.type_metadata_implementation_entries));
+  summary.pass_execution_fingerprint = fingerprint;
+
+  std::ostringstream handoff_key;
+  handoff_key << "sema-pass-flow:v1:"
+              << summary.executed_pass_count << "/" << summary.configured_pass_count
+              << ":diag=" << summary.diagnostics_total
+              << ":fp=" << summary.pass_execution_fingerprint;
+  summary.deterministic_handoff_key = handoff_key.str();
+
   summary.deterministic =
       summary.pass_order_matches_contract &&
       summary.configured_pass_count == kObjc3SemaPassOrder.size() &&
       summary.executed_pass_count == summary.configured_pass_count &&
       summary.diagnostics_after_pass_monotonic &&
       summary.symbol_flow_counts_consistent &&
+      summary.diagnostics_total == summary.diagnostics_after_pass.back() &&
+      summary.pass_execution_fingerprint != 1469598103934665603ull &&
+      !summary.deterministic_handoff_key.empty() &&
       deterministic_semantic_diagnostics &&
       deterministic_type_metadata_handoff;
 }

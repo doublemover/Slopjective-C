@@ -2124,6 +2124,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics ? "true" : "false")
            << ",\"deterministic_type_metadata_handoff\":"
            << (pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff ? "true" : "false")
+           << ",\"pass_flow_configured_count\":"
+           << pipeline_result.sema_pass_flow_summary.configured_pass_count
+           << ",\"pass_flow_executed_count\":"
+           << pipeline_result.sema_pass_flow_summary.executed_pass_count
+           << ",\"pass_flow_diagnostics_total\":"
+           << pipeline_result.sema_pass_flow_summary.diagnostics_total
+           << ",\"pass_flow_order_matches_contract\":"
+           << (pipeline_result.sema_pass_flow_summary.pass_order_matches_contract ? "true" : "false")
+           << ",\"pass_flow_symbol_counts_consistent\":"
+           << (pipeline_result.sema_pass_flow_summary.symbol_flow_counts_consistent ? "true" : "false")
+           << ",\"pass_flow_fingerprint\":"
+           << pipeline_result.sema_pass_flow_summary.pass_execution_fingerprint
+           << ",\"pass_flow_deterministic_handoff_key\":\""
+           << pipeline_result.sema_pass_flow_summary.deterministic_handoff_key
+           << "\",\"pass_flow_deterministic\":"
+           << (pipeline_result.sema_pass_flow_summary.deterministic ? "true" : "false")
            << ",\"deterministic_atomic_memory_order_mapping\":"
            << (pipeline_result.sema_parity_surface.deterministic_atomic_memory_order_mapping ? "true" : "false")
            << ",\"atomic_memory_order_mapping_total\":"
