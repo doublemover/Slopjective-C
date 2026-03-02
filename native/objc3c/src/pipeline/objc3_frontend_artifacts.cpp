@@ -2049,6 +2049,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                                                                                           : "false")
            << ",\"long_tail_grammar_edge_case_robustness_ready\": "
            << (bundle.parse_lowering_readiness_surface.long_tail_grammar_edge_case_robustness_ready ? "true" : "false")
+           << ",\"long_tail_grammar_diagnostics_hardening_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_diagnostics_hardening_consistent ? "true"
+                                                                                                            : "false")
+           << ",\"long_tail_grammar_diagnostics_hardening_ready\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_diagnostics_hardening_ready ? "true"
+                                                                                                       : "false")
            << ",\"parse_artifact_handoff_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
@@ -2138,6 +2144,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.long_tail_grammar_edge_case_compatibility_key
            << "\",\"long_tail_grammar_edge_case_robustness_key\":\""
            << bundle.parse_lowering_readiness_surface.long_tail_grammar_edge_case_robustness_key
+           << "\",\"long_tail_grammar_diagnostics_hardening_key\":\""
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_diagnostics_hardening_key
            << "\",\"compatibility_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""

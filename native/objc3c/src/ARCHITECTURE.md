@@ -60,6 +60,11 @@ Current-state note:
   expansion/robustness guardrails (`long_tail_grammar_edge_case_*_robustness*`)
   in `pipeline/objc3_parse_lowering_readiness_surface.h` so edge-case expansion
   drift fails closed before conformance matrix readiness is reported.
+- M250 lane-A A007 diagnostics hardening anchors explicit long-tail grammar
+  diagnostics guardrails (`long_tail_grammar_diagnostics_hardening_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so diagnostics drift fails
+  closed before recovery/determinism and conformance-readiness gates are
+  reported.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
