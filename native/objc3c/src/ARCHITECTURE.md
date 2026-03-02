@@ -247,6 +247,13 @@ Current-state note:
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D
   docs/runbook synchronization closure is promoted into a hardened
   advanced-core gate before parse/lowering readiness can report ready.
+- M250 lane-D D016 advanced edge compatibility workpack (shard 1) anchors
+  explicit toolchain/runtime advanced edge-compatibility
+  consistency/readiness guardrails
+  (`toolchain_runtime_ga_operations_advanced_edge_compatibility_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D advanced
+  core closure is promoted into hardened edge-compatibility sign-off before
+  parse/lowering readiness can report ready.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
