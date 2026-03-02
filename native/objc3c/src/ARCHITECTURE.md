@@ -218,6 +218,13 @@ Current-state note:
   `spec/planning/compiler/m249/m249_c001_ir_object_packaging_and_symbol_policy_contract_freeze_packet.md`,
   and `package.json` so artifact packaging boundaries and symbol policy
   continuity remain deterministic and fail-closed for CI replay governance.
+- M249 lane-D D001 installer/runtime operations and support tooling anchors
+  explicit lane-D contract and architecture freeze artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m249/m249_d001_installer_runtime_operations_and_support_tooling_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so installer/runtime operations boundaries and support
+  tooling continuity remain deterministic and fail-closed for release
+  governance readiness.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

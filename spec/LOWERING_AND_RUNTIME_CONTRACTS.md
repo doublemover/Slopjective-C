@@ -149,6 +149,9 @@ At minimum, the pass-graph gate shall validate:
   lane-C object packaging and symbol policy anchors and fail closed on
   artifact packaging or symbol-policy drift before execution and conformance
   replay validation advances.
+- installer/runtime operations and support tooling governance shall preserve
+  explicit lane-D installer/runtime operation anchors and fail closed on
+  support-tooling replay drift before architecture freeze readiness advances.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.
