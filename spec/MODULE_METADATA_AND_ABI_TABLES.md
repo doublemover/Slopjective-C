@@ -96,6 +96,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
      assets are seeded.
+   - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
+     `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
+     pending-lane tokens needed to keep modular split governance evidence
+     fail-closed before lane A-D modular split assets are seeded.
    - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
      with fixture ownership boundary evidence and parser replay-budget continuity
      so CI sharding partition drift fails closed.

@@ -143,6 +143,14 @@ Current-state note:
   and `package.json` so compile-time/perf budget governance evidence remains
   deterministic and fail-closed while lane A-D contract-freeze assets are
   pending GH seed.
+- M247 lane-E E002 performance SLO modular split/scaffolding anchors
+  dependency references (`M247-E001`, `M247-A002`, `M247-B002`, `M247-C002`,
+  and `M247-D002`) in
+  `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_modular_split_scaffolding_e002_expectations.md`,
+  `spec/planning/compiler/m247/m247_e002_performance_slo_gate_and_reporting_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split/scaffolding governance evidence remains
+  deterministic and fail-closed while lane A-D modular split assets are pending
+  GH seed.
 - M248 lane-A A001 suite partitioning and fixture ownership anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m248_suite_partitioning_and_fixture_ownership_contract_freeze_a001_expectations.md`,
