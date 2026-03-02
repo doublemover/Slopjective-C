@@ -208,6 +208,14 @@ Current-state note:
   and `package.json` so core-feature expansion closeout evidence remains
   deterministic and fail-closed across lane-A through lane-D expansion
   dependencies.
+- M228 lane-E E005 replay-proof/performance closeout edge-case and compatibility completion anchors
+  dependency references (`M228-E004`, `M228-A004`, `M228-B006`, `M228-C004`,
+  `M228-D005`, and pending token `M228-C010`) in
+  `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_edge_case_and_compatibility_completion_e005_expectations.md`,
+  `spec/planning/compiler/m228/m228_e005_replay_proof_and_performance_closeout_gate_edge_case_and_compatibility_completion_packet.md`,
+  and `package.json` so edge-case compatibility completion closeout evidence
+  remains deterministic and fail-closed across lane-A through lane-D
+  dependencies.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
