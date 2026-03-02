@@ -50,9 +50,11 @@ struct Objc3SemaPassFlowSummary {
   std::array<Objc3SemaPassId, 3> configured_pass_order = kObjc3SemaPassOrder;
   std::array<bool, 3> pass_executed = {false, false, false};
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
+  std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
   std::size_t executed_pass_count = 0;
   std::size_t diagnostics_total = 0;
+  std::size_t transition_edge_count = 0;
   std::size_t symbol_globals_count = 0;
   std::size_t symbol_functions_count = 0;
   std::size_t symbol_interfaces_count = 0;
@@ -63,9 +65,11 @@ struct Objc3SemaPassFlowSummary {
   std::size_t type_metadata_implementation_entries = 0;
   bool pass_order_matches_contract = false;
   bool diagnostics_after_pass_monotonic = false;
+  bool diagnostics_emission_totals_consistent = false;
   bool symbol_flow_counts_consistent = false;
   std::uint64_t pass_execution_fingerprint = 1469598103934665603ull;
   std::string deterministic_handoff_key;
+  bool replay_key_deterministic = false;
   bool deterministic = false;
 };
 
@@ -74,13 +78,16 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.configured_pass_count == kObjc3SemaPassOrder.size() &&
          summary.executed_pass_count == summary.configured_pass_count &&
          summary.diagnostics_total == summary.diagnostics_after_pass.back() &&
+         summary.transition_edge_count + 1u == summary.executed_pass_count &&
          summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::BuildIntegrationSurface)] &&
          summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidateBodies)] &&
          summary.pass_executed[static_cast<std::size_t>(Objc3SemaPassId::ValidatePureContract)] &&
          summary.diagnostics_after_pass_monotonic &&
+         summary.diagnostics_emission_totals_consistent &&
          summary.symbol_flow_counts_consistent &&
          summary.pass_execution_fingerprint != 1469598103934665603ull &&
          !summary.deterministic_handoff_key.empty() &&
+         summary.replay_key_deterministic &&
          summary.symbol_globals_count == summary.type_metadata_global_entries &&
          summary.symbol_functions_count == summary.type_metadata_function_entries &&
          summary.symbol_interfaces_count == summary.type_metadata_interface_entries &&

@@ -2094,6 +2094,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
   result.sema_pass_flow_summary.diagnostics_after_pass = result.diagnostics_after_pass;
+  result.sema_pass_flow_summary.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
   FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,
                                    result.integration_surface,
                                    result.type_metadata_handoff,

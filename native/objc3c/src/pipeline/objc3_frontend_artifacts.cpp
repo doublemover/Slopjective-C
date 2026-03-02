@@ -2130,15 +2130,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.sema_pass_flow_summary.executed_pass_count
            << ",\"pass_flow_diagnostics_total\":"
            << pipeline_result.sema_pass_flow_summary.diagnostics_total
+           << ",\"pass_flow_diagnostics_emitted_by_build\":"
+           << pipeline_result.sema_pass_flow_summary.diagnostics_emitted_by_pass[0]
+           << ",\"pass_flow_diagnostics_emitted_by_validate_bodies\":"
+           << pipeline_result.sema_pass_flow_summary.diagnostics_emitted_by_pass[1]
+           << ",\"pass_flow_diagnostics_emitted_by_validate_pure_contract\":"
+           << pipeline_result.sema_pass_flow_summary.diagnostics_emitted_by_pass[2]
+           << ",\"pass_flow_transition_edge_count\":"
+           << pipeline_result.sema_pass_flow_summary.transition_edge_count
            << ",\"pass_flow_order_matches_contract\":"
            << (pipeline_result.sema_pass_flow_summary.pass_order_matches_contract ? "true" : "false")
+           << ",\"pass_flow_diagnostics_emission_totals_consistent\":"
+           << (pipeline_result.sema_pass_flow_summary.diagnostics_emission_totals_consistent ? "true" : "false")
            << ",\"pass_flow_symbol_counts_consistent\":"
            << (pipeline_result.sema_pass_flow_summary.symbol_flow_counts_consistent ? "true" : "false")
            << ",\"pass_flow_fingerprint\":"
            << pipeline_result.sema_pass_flow_summary.pass_execution_fingerprint
            << ",\"pass_flow_deterministic_handoff_key\":\""
            << pipeline_result.sema_pass_flow_summary.deterministic_handoff_key
-           << "\",\"pass_flow_deterministic\":"
+           << "\",\"pass_flow_replay_key_deterministic\":"
+           << (pipeline_result.sema_pass_flow_summary.replay_key_deterministic ? "true" : "false")
+           << ",\"pass_flow_deterministic\":"
            << (pipeline_result.sema_pass_flow_summary.deterministic ? "true" : "false")
            << ",\"deterministic_atomic_memory_order_mapping\":"
            << (pipeline_result.sema_parity_surface.deterministic_atomic_memory_order_mapping ? "true" : "false")
