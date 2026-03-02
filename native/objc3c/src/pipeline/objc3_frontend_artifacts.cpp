@@ -1931,8 +1931,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_deterministic ? "true" : "false")
+           << ",\"parse_artifact_layout_fingerprint_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_layout_fingerprint_consistent ? "true" : "false")
            << ",\"parse_artifact_fingerprint_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_fingerprint_consistent ? "true" : "false")
+           << ",\"compatibility_handoff_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.compatibility_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_replay_key_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_replay_key_deterministic ? "true" : "false")
            << ",\"semantic_integration_surface_built\": "
@@ -1943,10 +1947,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parser_contract_snapshot_fingerprint
            << ",\"parser_ast_shape_fingerprint\": "
            << bundle.parse_lowering_readiness_surface.parser_ast_shape_fingerprint
+           << ",\"parser_ast_top_level_layout_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.parser_ast_top_level_layout_fingerprint
            << ",\"ast_shape_fingerprint\": "
            << bundle.parse_lowering_readiness_surface.ast_shape_fingerprint
+           << ",\"ast_top_level_layout_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.ast_top_level_layout_fingerprint
            << ",\"parse_artifact_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_handoff_key
+           << "\",\"compatibility_handoff_key\":\""
+           << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_replay_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason

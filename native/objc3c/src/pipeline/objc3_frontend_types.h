@@ -54,13 +54,17 @@ struct Objc3ParseLoweringReadinessSurface {
   std::size_t parser_top_level_declaration_count = 0;
   std::uint64_t parser_contract_snapshot_fingerprint = 0;
   std::uint64_t parser_ast_shape_fingerprint = 0;
+  std::uint64_t parser_ast_top_level_layout_fingerprint = 0;
   std::uint64_t ast_shape_fingerprint = 0;
+  std::uint64_t ast_top_level_layout_fingerprint = 0;
   bool parser_contract_snapshot_present = false;
   bool parser_contract_deterministic = false;
   bool parser_recovery_replay_ready = false;
   bool parse_artifact_handoff_consistent = false;
   bool parse_artifact_handoff_deterministic = false;
+  bool parse_artifact_layout_fingerprint_consistent = false;
   bool parse_artifact_fingerprint_consistent = false;
+  bool compatibility_handoff_consistent = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
@@ -71,6 +75,7 @@ struct Objc3ParseLoweringReadinessSurface {
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::string parse_artifact_handoff_key;
+  std::string compatibility_handoff_key;
   std::string parse_artifact_replay_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
