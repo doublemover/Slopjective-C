@@ -2384,8 +2384,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.long_tail_grammar_conformance_matrix_key,
           toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
           toolchain_runtime_ga_operations_performance_quality_guardrails_ready);
-  surface.parse_lowering_performance_quality_guardrails_consistent =
-      surface.parse_lowering_performance_quality_guardrails_consistent &&
+  surface.parse_lowering_performance_quality_guardrails_consistent &=
       toolchain_runtime_ga_operations_performance_quality_guardrails_consistent;
   surface.parse_lowering_performance_quality_guardrails_key +=
       ";toolchain_runtime_ga_operations_performance_quality_guardrails_key=" +
@@ -2396,6 +2395,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   const bool parse_lowering_performance_quality_guardrails_ready =
       surface.parse_lowering_performance_quality_guardrails_consistent &&
       toolchain_runtime_ga_operations_performance_quality_guardrails_ready;
+  const bool parse_lowering_performance_quality_guardrails_ready_gate =
+      parse_lowering_performance_quality_guardrails_ready;
   const bool toolchain_runtime_ga_operations_cross_lane_integration_consistent =
       IsObjc3ToolchainRuntimeGaOperationsCrossLaneIntegrationConsistent(
           toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
@@ -2835,7 +2836,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
                                surface.lowering_boundary_ready &&
                                parse_lowering_conformance_matrix_ready &&
                                parse_lowering_conformance_corpus_ready &&
-                               parse_lowering_performance_quality_guardrails_ready &&
+                               parse_lowering_performance_quality_guardrails_ready_gate &&
                                surface.long_tail_grammar_gate_signoff_ready;
 
   if (surface.ready_for_lowering || !surface.failure_reason.empty()) {
