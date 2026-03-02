@@ -7807,6 +7807,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
     if (info.return_class_spelling) {
       ++summary.return_class_spelling_sites;
     }
+    if (info.return_type == ValueType::ObjCSel) {
+      ++summary.return_sel_spelling_sites;
+    }
     if (info.return_instancetype_spelling) {
       ++summary.return_instancetype_spelling_sites;
     }
@@ -7827,6 +7830,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
       }
       if (info.param_class_spelling[i]) {
         ++summary.param_class_spelling_sites;
+      }
+      if (info.param_types[i] == ValueType::ObjCSel) {
+        ++summary.param_sel_spelling_sites;
       }
       if (info.param_instancetype_spelling[i]) {
         ++summary.param_instancetype_spelling_sites;
@@ -7848,6 +7854,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
     if (info.return_class_spelling) {
       ++summary.return_class_spelling_sites;
     }
+    if (info.return_type == ValueType::ObjCSel) {
+      ++summary.return_sel_spelling_sites;
+    }
     if (info.return_instancetype_spelling) {
       ++summary.return_instancetype_spelling_sites;
     }
@@ -7869,6 +7878,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
       if (info.param_class_spelling[i]) {
         ++summary.param_class_spelling_sites;
       }
+      if (info.param_types[i] == ValueType::ObjCSel) {
+        ++summary.param_sel_spelling_sites;
+      }
       if (info.param_instancetype_spelling[i]) {
         ++summary.param_instancetype_spelling_sites;
       }
@@ -7888,6 +7900,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
     }
     if (info.class_spelling) {
       ++summary.property_class_spelling_sites;
+    }
+    if (info.type == ValueType::ObjCSel) {
+      ++summary.property_sel_spelling_sites;
     }
     if (info.instancetype_spelling) {
       ++summary.property_instancetype_spelling_sites;
@@ -7968,6 +7983,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
     if (metadata.return_class_spelling) {
       ++summary.return_class_spelling_sites;
     }
+    if (metadata.return_type == ValueType::ObjCSel) {
+      ++summary.return_sel_spelling_sites;
+    }
     if (metadata.return_instancetype_spelling) {
       ++summary.return_instancetype_spelling_sites;
     }
@@ -7988,6 +8006,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
       }
       if (metadata.param_class_spelling[i]) {
         ++summary.param_class_spelling_sites;
+      }
+      if (metadata.param_types[i] == ValueType::ObjCSel) {
+        ++summary.param_sel_spelling_sites;
       }
       if (metadata.param_instancetype_spelling[i]) {
         ++summary.param_instancetype_spelling_sites;
@@ -8009,6 +8030,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
     if (metadata.return_class_spelling) {
       ++summary.return_class_spelling_sites;
     }
+    if (metadata.return_type == ValueType::ObjCSel) {
+      ++summary.return_sel_spelling_sites;
+    }
     if (metadata.return_instancetype_spelling) {
       ++summary.return_instancetype_spelling_sites;
     }
@@ -8030,6 +8054,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
       if (metadata.param_class_spelling[i]) {
         ++summary.param_class_spelling_sites;
       }
+      if (metadata.param_types[i] == ValueType::ObjCSel) {
+        ++summary.param_sel_spelling_sites;
+      }
       if (metadata.param_instancetype_spelling[i]) {
         ++summary.param_instancetype_spelling_sites;
       }
@@ -8049,6 +8076,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
     }
     if (metadata.class_spelling) {
       ++summary.property_class_spelling_sites;
+    }
+    if (metadata.type == ValueType::ObjCSel) {
+      ++summary.property_sel_spelling_sites;
     }
     if (metadata.instancetype_spelling) {
       ++summary.property_instancetype_spelling_sites;
