@@ -1,6 +1,7 @@
 #include "sema/objc3_sema_pass_manager.h"
 
 #include <algorithm>
+#include <numeric>
 #include <sstream>
 #include <vector>
 
@@ -695,6 +696,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
 
   result.executed = true;
   bool deterministic_semantic_diagnostics = handoff.deterministic;
+  bool diagnostics_accounting_consistent = true;
+  bool diagnostics_bus_publish_consistent = true;
+  std::size_t expected_diagnostics_size = 0u;
   for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
@@ -708,12 +712,34 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     CanonicalizePassDiagnostics(pass_diagnostics);
     deterministic_semantic_diagnostics = deterministic_semantic_diagnostics && IsCanonicalPassDiagnostics(pass_diagnostics);
 
+    const std::size_t diagnostics_bus_count_before_publish = input.diagnostics_bus.Count();
     result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());
+    expected_diagnostics_size += pass_diagnostics.size();
+    diagnostics_accounting_consistent =
+        diagnostics_accounting_consistent && result.diagnostics.size() == expected_diagnostics_size;
     input.diagnostics_bus.PublishBatch(pass_diagnostics);
+    const std::size_t diagnostics_bus_count_after_publish = input.diagnostics_bus.Count();
+    const bool pass_bus_publish_consistent = input.diagnostics_bus.diagnostics == nullptr ||
+                                             diagnostics_bus_count_after_publish ==
+                                                 diagnostics_bus_count_before_publish + pass_diagnostics.size();
+    diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent && pass_bus_publish_consistent;
     result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();
     result.diagnostics_emitted_by_pass[static_cast<std::size_t>(pass)] = pass_diagnostics.size();
   }
-  result.deterministic_semantic_diagnostics = deterministic_semantic_diagnostics;
+  const std::size_t diagnostics_emitted_total = std::accumulate(
+      result.diagnostics_emitted_by_pass.begin(),
+      result.diagnostics_emitted_by_pass.end(),
+      static_cast<std::size_t>(0u));
+  const bool diagnostics_emission_totals_consistent = diagnostics_emitted_total == result.diagnostics.size();
+  const bool diagnostics_after_pass_monotonic =
+      IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  result.deterministic_semantic_diagnostics =
+      deterministic_semantic_diagnostics && diagnostics_accounting_consistent &&
+      diagnostics_bus_publish_consistent && diagnostics_emission_totals_consistent &&
+      diagnostics_after_pass_monotonic;
+  if (!result.deterministic_semantic_diagnostics) {
+    return result;
+  }
   result.type_metadata_handoff = BuildSemanticTypeMetadataHandoff(result.integration_surface);
   result.deterministic_type_metadata_handoff =
       IsDeterministicSemanticTypeMetadataHandoff(result.type_metadata_handoff);
