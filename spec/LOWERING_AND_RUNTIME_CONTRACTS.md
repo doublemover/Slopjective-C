@@ -75,6 +75,8 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering contracts (ownership qualifiers, retain/release,
   autoreleasepool scope, ARC diagnostics/fixits) remain replay-key stable and
   fail closed when ownership-lowering invariants drift.
+- direct IR emission completeness for ObjC lowering patterns shall remain
+  metadata-stable and fail closed on pass-graph or lowering-boundary drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

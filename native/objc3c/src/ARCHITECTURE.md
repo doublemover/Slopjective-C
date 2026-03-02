@@ -67,6 +67,11 @@ Current-state note:
   `lower/objc3_lowering_contract.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so ownership-lowering routing remains
   deterministic and fail-closed before modular split work.
+- M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
+  and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
+  ObjC pattern lowering evidence remains deterministic before lane-C modular
+  split work.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
