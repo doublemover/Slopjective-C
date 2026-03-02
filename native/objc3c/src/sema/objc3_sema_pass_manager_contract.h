@@ -56,6 +56,8 @@ struct Objc3SemaPassFlowSummary {
   std::size_t migration_legacy_literal_total = 0;
   std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
   std::size_t executed_pass_count = 0;
+  std::size_t duplicate_pass_execution_count = 0;
+  std::size_t missing_pass_execution_count = 0;
   std::size_t diagnostics_total = 0;
   std::size_t transition_edge_count = 0;
   std::size_t symbol_globals_count = 0;
@@ -70,6 +72,7 @@ struct Objc3SemaPassFlowSummary {
   bool diagnostics_after_pass_monotonic = false;
   bool diagnostics_emission_totals_consistent = false;
   bool compatibility_handoff_consistent = false;
+  bool robustness_guardrails_satisfied = false;
   bool symbol_flow_counts_consistent = false;
   std::uint64_t pass_execution_fingerprint = 1469598103934665603ull;
   std::string deterministic_handoff_key;
@@ -89,6 +92,7 @@ inline bool IsReadyObjc3SemaPassFlowSummary(const Objc3SemaPassFlowSummary &summ
          summary.diagnostics_after_pass_monotonic &&
          summary.diagnostics_emission_totals_consistent &&
          summary.compatibility_handoff_consistent &&
+         summary.robustness_guardrails_satisfied &&
          summary.symbol_flow_counts_consistent &&
          summary.pass_execution_fingerprint != 1469598103934665603ull &&
          !summary.deterministic_handoff_key.empty() &&

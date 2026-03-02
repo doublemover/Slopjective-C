@@ -13,6 +13,8 @@ void MarkObjc3SemaPassExecuted(Objc3SemaPassFlowSummary &summary, Objc3SemaPassI
   if (!summary.pass_executed[pass_index]) {
     summary.pass_executed[pass_index] = true;
     ++summary.executed_pass_count;
+  } else {
+    ++summary.duplicate_pass_execution_count;
   }
 }
 
@@ -49,6 +51,19 @@ void FinalizeObjc3SemaPassFlowSummary(
        summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical) &&
       (summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ||
        summary.compatibility_mode == Objc3SemaCompatibilityMode::Legacy);
+  summary.missing_pass_execution_count = 0;
+  for (const bool pass_executed : summary.pass_executed) {
+    if (!pass_executed) {
+      ++summary.missing_pass_execution_count;
+    }
+  }
+  summary.robustness_guardrails_satisfied =
+      summary.duplicate_pass_execution_count == 0u &&
+      summary.missing_pass_execution_count == 0u &&
+      summary.executed_pass_count == summary.configured_pass_count &&
+      summary.transition_edge_count + 1u == summary.executed_pass_count &&
+      summary.diagnostics_after_pass_monotonic &&
+      summary.diagnostics_emission_totals_consistent;
 
   summary.symbol_globals_count = integration_surface.globals.size();
   summary.symbol_functions_count = integration_surface.functions.size();
@@ -69,6 +84,8 @@ void FinalizeObjc3SemaPassFlowSummary(
   std::uint64_t fingerprint = 1469598103934665603ull;
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.configured_pass_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.executed_pass_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.duplicate_pass_execution_count));
+  fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.missing_pass_execution_count));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.diagnostics_total));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_assist_enabled ? 1u : 0u));
   fingerprint = fnv1a_mix(fingerprint, static_cast<std::uint64_t>(summary.migration_legacy_literal_total));
@@ -107,6 +124,7 @@ void FinalizeObjc3SemaPassFlowSummary(
       summary.diagnostics_emission_totals_consistent &&
       summary.transition_edge_count + 1u == summary.executed_pass_count &&
       summary.compatibility_handoff_consistent &&
+      summary.robustness_guardrails_satisfied &&
       summary.symbol_flow_counts_consistent &&
       summary.diagnostics_total == summary.diagnostics_after_pass.back() &&
       summary.pass_execution_fingerprint != 1469598103934665603ull &&
