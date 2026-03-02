@@ -127,6 +127,11 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so scaffold
   readiness, compile dispatch outcomes, and backend marker recording stay
   deterministic and fail-closed before success exit status is returned.
+- M250 lane-D D004 core feature expansion anchors explicit backend marker-path
+  and marker-payload guardrails in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` plus
+  `pipeline/objc3_frontend_types.h` so toolchain/runtime GA readiness fails
+  closed on marker determinism drift before success exit status is returned.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

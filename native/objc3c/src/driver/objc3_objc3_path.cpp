@@ -61,6 +61,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
 
     int compile_status = 0;
+    const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
+    const std::string backend_text =
+        cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
     if (clang_backend_selected) {
       compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
     } else {
@@ -72,19 +75,20 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
 
     bool backend_output_recorded = false;
+    std::string backend_output_payload;
     if (compile_status == 0) {
-      const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
-      const std::string backend_text =
-          cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
       WriteText(backend_out, backend_text);
       backend_output_recorded = true;
+      backend_output_payload = backend_text;
     }
 
     const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =
         BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureSurface(
             toolchain_runtime_ga_operations_scaffold,
             compile_status,
-            backend_output_recorded);
+            backend_output_recorded,
+            backend_out,
+            backend_output_payload);
     std::string toolchain_runtime_core_feature_reason;
     if (!IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
             toolchain_runtime_core_feature_surface,

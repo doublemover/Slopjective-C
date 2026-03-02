@@ -298,6 +298,23 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   std::string failure_reason;
 };
 
+struct Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface {
+  bool scaffold_ready = false;
+  bool backend_route_deterministic = false;
+  bool compile_status_success = false;
+  bool backend_output_recorded = false;
+  bool backend_dispatch_consistent = false;
+  bool backend_output_path_deterministic = false;
+  bool backend_output_payload_consistent = false;
+  bool core_feature_expansion_ready = false;
+  bool core_feature_impl_ready = false;
+  std::string backend_route_key;
+  std::string scaffold_key;
+  std::string core_feature_key;
+  std::string core_feature_expansion_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
