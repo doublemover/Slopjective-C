@@ -33,6 +33,8 @@
     "test:objc3c:lexer-extraction-token-contract": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1 || pwsh -NoProfile -File scripts/check_objc3c_lexer_extraction_token_contract.ps1",
     "test:objc3c:lexer-parity": "python -m pytest tests/tooling/test_objc3c_lexer_parity.py -q",
     "check:objc3c:boundaries": "python scripts/check_objc3c_dependency_boundaries.py --strict",
+    "check:objc3c:m227-c001-typed-sema-to-lowering-contract": "python scripts/check_m227_c001_typed_sema_to_lowering_contract.py",
+    "test:tooling:m227-c001-typed-sema-to-lowering-contract": "python -m pytest tests/tooling/test_check_m227_c001_typed_sema_to_lowering_contract.py -q",
     "check:objc3c:library-cli-parity": "npm run check:objc3c:library-cli-parity:source -- --allow-stale-source-mode-outputs",
     "check:objc3c:library-cli-parity:source": "python scripts/check_objc3c_library_cli_parity.py --source tests/tooling/fixtures/native/hello.objc3 --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --work-dir tmp/artifacts/objc3c-native/m142/library-cli-parity/work --summary-out tmp/artifacts/objc3c-native/m142/library-cli-parity/summary.json --cli-ir-object-backend clang",
     "check:objc3c:library-cli-parity:source:m143": "python scripts/check_objc3c_library_cli_parity.py --source tests/tooling/fixtures/native/hello.objc3 --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --work-dir tmp/artifacts/objc3c-native/m143/library-cli-parity/work --work-key hello-default --summary-out tmp/artifacts/compilation/objc3c-native/m143/library-cli-parity/summary.json --cli-ir-object-backend clang",
