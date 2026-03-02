@@ -385,6 +385,27 @@ inline std::string BuildObjc3LongTailGrammarRecoveryDeterminismKey(
          (recovery_determinism_ready ? "true" : "false");
 }
 
+inline std::string BuildObjc3LongTailGrammarConformanceMatrixKey(
+    std::size_t conformance_matrix_case_count,
+    std::size_t conformance_corpus_case_count,
+    std::size_t performance_guardrail_case_count,
+    bool parse_replay_key_deterministic,
+    bool recovery_determinism_ready,
+    bool conformance_matrix_consistent,
+    bool conformance_matrix_ready) {
+  return "conformance_matrix_case_count=" + std::to_string(conformance_matrix_case_count) +
+         ";conformance_corpus_case_count=" + std::to_string(conformance_corpus_case_count) +
+         ";performance_guardrail_case_count=" + std::to_string(performance_guardrail_case_count) +
+         ";parse_replay_key_deterministic=" +
+         std::string(parse_replay_key_deterministic ? "true" : "false") +
+         ";recovery_determinism_ready=" +
+         std::string(recovery_determinism_ready ? "true" : "false") +
+         ";conformance_matrix_consistent=" +
+         std::string(conformance_matrix_consistent ? "true" : "false") +
+         ";conformance_matrix_ready=" +
+         std::string(conformance_matrix_ready ? "true" : "false");
+}
+
 inline constexpr std::size_t kObjc3ParseLoweringConformanceMatrixCaseCount = 8u;
 inline constexpr std::size_t kObjc3ParseLoweringConformanceCorpusCaseCount = 8u;
 inline constexpr std::size_t kObjc3ParseLoweringPerformanceQualityGuardrailsCaseCount = 6u;
@@ -943,6 +964,25 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.typed_sema_core_feature_key.empty() &&
       !surface.typed_sema_core_feature_expansion_key.empty() &&
       !surface.lowering_boundary_replay_key.empty();
+  surface.long_tail_grammar_conformance_matrix_consistent =
+      surface.long_tail_grammar_recovery_determinism_ready &&
+      surface.parse_lowering_conformance_matrix_consistent &&
+      surface.parse_artifact_replay_key_deterministic &&
+      !surface.long_tail_grammar_recovery_determinism_key.empty() &&
+      !surface.parse_artifact_replay_key.empty();
+  surface.long_tail_grammar_conformance_matrix_ready =
+      surface.long_tail_grammar_conformance_matrix_consistent &&
+      surface.parse_lowering_conformance_corpus_case_count > 0 &&
+      surface.parse_lowering_performance_quality_guardrails_case_count > 0;
+  surface.long_tail_grammar_conformance_matrix_key =
+      BuildObjc3LongTailGrammarConformanceMatrixKey(
+          surface.parse_lowering_conformance_matrix_case_count,
+          surface.parse_lowering_conformance_corpus_case_count,
+          surface.parse_lowering_performance_quality_guardrails_case_count,
+          surface.parse_artifact_replay_key_deterministic,
+          surface.long_tail_grammar_recovery_determinism_ready,
+          surface.long_tail_grammar_conformance_matrix_consistent,
+          surface.long_tail_grammar_conformance_matrix_ready);
   surface.parse_lowering_conformance_matrix_key =
       BuildObjc3ParseLoweringConformanceMatrixKey(
           surface.parse_lowering_conformance_matrix_case_count,
@@ -994,6 +1034,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           : surface.parse_lowering_conformance_corpus_case_count;
   surface.parse_lowering_conformance_corpus_consistent =
       surface.parse_lowering_conformance_matrix_consistent &&
+      surface.long_tail_grammar_conformance_matrix_ready &&
       surface.parse_lowering_conformance_corpus_case_count ==
           kObjc3ParseLoweringConformanceCorpusCaseCount &&
       surface.parse_lowering_conformance_corpus_case_count > 0 &&
@@ -1065,11 +1106,13 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       parse_lowering_conformance_corpus_guardrail_case_passed &&
       surface.long_tail_grammar_diagnostics_hardening_ready &&
       surface.long_tail_grammar_recovery_determinism_ready &&
+      surface.long_tail_grammar_conformance_matrix_ready &&
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
       !surface.parse_artifact_edge_robustness_key.empty() &&
       !surface.parse_recovery_determinism_hardening_key.empty() &&
       !surface.long_tail_grammar_diagnostics_hardening_key.empty() &&
       !surface.long_tail_grammar_recovery_determinism_key.empty() &&
+      !surface.long_tail_grammar_conformance_matrix_key.empty() &&
       !surface.parse_lowering_conformance_corpus_key.empty();
   surface.parse_lowering_performance_quality_guardrails_key =
       BuildObjc3ParseLoweringPerformanceQualityGuardrailsKey(
@@ -1161,6 +1204,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "long-tail grammar recovery/determinism hardening is inconsistent";
   } else if (!surface.long_tail_grammar_recovery_determinism_ready) {
     surface.failure_reason = "long-tail grammar recovery/determinism hardening is not ready";
+  } else if (!surface.long_tail_grammar_conformance_matrix_consistent) {
+    surface.failure_reason = "long-tail grammar conformance matrix is inconsistent";
+  } else if (!surface.long_tail_grammar_conformance_matrix_ready) {
+    surface.failure_reason = "long-tail grammar conformance matrix is not ready";
   } else if (!surface.parse_recovery_determinism_hardening_consistent) {
     surface.failure_reason = "parse recovery/determinism hardening is inconsistent";
   } else if (!surface.semantic_integration_surface_built) {

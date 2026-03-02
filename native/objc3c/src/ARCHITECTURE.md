@@ -69,6 +69,10 @@ Current-state note:
   grammar replay-hardening gates (`long_tail_grammar_recovery_determinism_*`)
   in `pipeline/objc3_parse_lowering_readiness_surface.h` so replay drift fails
   closed before conformance and guardrail readiness are reported.
+- M250 lane-A A009 conformance matrix implementation anchors explicit long-tail
+  grammar matrix gates (`long_tail_grammar_conformance_matrix_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so matrix drift fails
+  closed before corpus and guardrail readiness are reported.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
