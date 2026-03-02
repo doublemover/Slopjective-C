@@ -18,13 +18,21 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   bool expansion_replay_keys_ready = false;
   bool expansion_deterministic_replay_surface = false;
   bool expansion_ready = false;
+  bool compatibility_handoff_consistent = false;
+  bool language_version_pragma_coordinate_order_consistent = false;
+  bool parse_artifact_edge_case_robustness_consistent = false;
+  bool parse_artifact_replay_key_deterministic = false;
+  bool edge_case_compatibility_ready = false;
   std::string ownership_qualifier_replay_key;
   std::string retain_release_replay_key;
   std::string autoreleasepool_scope_replay_key;
   std::string weak_unowned_semantics_replay_key;
   std::string arc_diagnostics_fixit_replay_key;
+  std::string compatibility_handoff_key;
+  std::string parse_artifact_edge_robustness_key;
   std::string scaffold_key;
   std::string expansion_key;
+  std::string edge_case_compatibility_key;
   std::string failure_reason;
 };
 
@@ -72,6 +80,31 @@ inline std::string BuildObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionK
   return key.str();
 }
 
+inline std::string BuildObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityKey(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold) {
+  std::ostringstream key;
+  key << "ownership-aware-lowering-edge-case-compatibility:v1:"
+      << "expansion-ready=" << (scaffold.expansion_ready ? "true" : "false")
+      << ";compatibility-handoff-consistent="
+      << (scaffold.compatibility_handoff_consistent ? "true" : "false")
+      << ";language-version-pragma-coordinate-order-consistent="
+      << (scaffold.language_version_pragma_coordinate_order_consistent ? "true"
+                                                                       : "false")
+      << ";parse-artifact-edge-case-robustness-consistent="
+      << (scaffold.parse_artifact_edge_case_robustness_consistent ? "true"
+                                                                  : "false")
+      << ";parse-artifact-replay-key-deterministic="
+      << (scaffold.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";edge-case-compatibility-ready="
+      << (scaffold.edge_case_compatibility_ready ? "true" : "false")
+      << ";compatibility-handoff-key=" << scaffold.compatibility_handoff_key
+      << ";parse-artifact-edge-robustness-key="
+      << scaffold.parse_artifact_edge_robustness_key
+      << ";weak-unowned-semantics-replay-key="
+      << scaffold.weak_unowned_semantics_replay_key;
+  return key.str();
+}
+
 inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
     const Objc3OwnershipQualifierLoweringContract &ownership_qualifier_contract,
     const std::string &ownership_qualifier_replay_key,
@@ -82,7 +115,13 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     const Objc3WeakUnownedSemanticsLoweringContract &weak_unowned_semantics_contract,
     const std::string &weak_unowned_semantics_replay_key,
     const Objc3ArcDiagnosticsFixitLoweringContract &arc_diagnostics_fixit_contract,
-    const std::string &arc_diagnostics_fixit_replay_key) {
+    const std::string &arc_diagnostics_fixit_replay_key,
+    bool compatibility_handoff_consistent,
+    bool language_version_pragma_coordinate_order_consistent,
+    bool parse_artifact_edge_case_robustness_consistent,
+    bool parse_artifact_replay_key_deterministic,
+    const std::string &compatibility_handoff_key,
+    const std::string &parse_artifact_edge_robustness_key) {
   Objc3OwnershipAwareLoweringBehaviorScaffold scaffold;
   scaffold.ownership_qualifier_contract_ready =
       IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_contract) &&
@@ -104,6 +143,16 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
   scaffold.autoreleasepool_scope_replay_key = autoreleasepool_scope_replay_key;
   scaffold.weak_unowned_semantics_replay_key = weak_unowned_semantics_replay_key;
   scaffold.arc_diagnostics_fixit_replay_key = arc_diagnostics_fixit_replay_key;
+  scaffold.compatibility_handoff_consistent = compatibility_handoff_consistent;
+  scaffold.language_version_pragma_coordinate_order_consistent =
+      language_version_pragma_coordinate_order_consistent;
+  scaffold.parse_artifact_edge_case_robustness_consistent =
+      parse_artifact_edge_case_robustness_consistent;
+  scaffold.parse_artifact_replay_key_deterministic =
+      parse_artifact_replay_key_deterministic;
+  scaffold.compatibility_handoff_key = compatibility_handoff_key;
+  scaffold.parse_artifact_edge_robustness_key =
+      parse_artifact_edge_robustness_key;
   scaffold.ownership_profile_accounting_consistent =
       ownership_qualifier_contract.object_pointer_type_annotation_sites >=
           ownership_qualifier_contract.ownership_qualifier_sites &&
@@ -160,8 +209,20 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.expansion_deterministic_replay_surface;
   scaffold.expansion_key =
       BuildObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionKey(scaffold);
+  scaffold.edge_case_compatibility_ready =
+      scaffold.expansion_ready &&
+      scaffold.compatibility_handoff_consistent &&
+      scaffold.language_version_pragma_coordinate_order_consistent &&
+      scaffold.parse_artifact_edge_case_robustness_consistent &&
+      scaffold.parse_artifact_replay_key_deterministic &&
+      !scaffold.compatibility_handoff_key.empty() &&
+      !scaffold.parse_artifact_edge_robustness_key.empty();
+  scaffold.edge_case_compatibility_key =
+      BuildObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityKey(scaffold);
 
-  if (scaffold.modular_split_ready && scaffold.expansion_ready) {
+  if (scaffold.modular_split_ready &&
+      scaffold.expansion_ready &&
+      scaffold.edge_case_compatibility_ready) {
     return scaffold;
   }
 
@@ -187,6 +248,20 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     scaffold.failure_reason = "ownership-aware lowering expansion replay keys are not lane-contract deterministic";
   } else if (!scaffold.expansion_ready) {
     scaffold.failure_reason = "ownership-aware lowering core feature expansion is not ready";
+  } else if (!scaffold.compatibility_handoff_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering compatibility handoff is inconsistent";
+  } else if (!scaffold.language_version_pragma_coordinate_order_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering language version pragma coordinate order is inconsistent";
+  } else if (!scaffold.parse_artifact_edge_case_robustness_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering parse artifact edge-case robustness is inconsistent";
+  } else if (!scaffold.parse_artifact_replay_key_deterministic) {
+    scaffold.failure_reason = "ownership-aware lowering parse artifact replay key is not deterministic";
+  } else if (scaffold.compatibility_handoff_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering compatibility handoff key is empty";
+  } else if (scaffold.parse_artifact_edge_robustness_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering parse artifact edge robustness key is empty";
+  } else if (!scaffold.edge_case_compatibility_ready) {
+    scaffold.failure_reason = "ownership-aware lowering edge-case compatibility is not ready";
   } else {
     scaffold.failure_reason = "ownership-aware lowering modular split scaffold not ready";
   }
@@ -218,6 +293,20 @@ inline bool IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
 
   reason = scaffold.failure_reason.empty()
                ? "ownership-aware lowering core feature expansion is not ready"
+               : scaffold.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold,
+    std::string &reason) {
+  if (scaffold.edge_case_compatibility_ready) {
+    reason.clear();
+    return true;
+  }
+
+  reason = scaffold.failure_reason.empty()
+               ? "ownership-aware lowering edge-case compatibility is not ready"
                : scaffold.failure_reason;
   return false;
 }

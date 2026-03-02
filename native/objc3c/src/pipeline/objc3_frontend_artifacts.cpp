@@ -1809,7 +1809,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           weak_unowned_semantics_lowering_contract,
           weak_unowned_semantics_lowering_replay_key,
           arc_diagnostics_fixit_lowering_contract,
-          arc_diagnostics_fixit_lowering_replay_key);
+          arc_diagnostics_fixit_lowering_replay_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .compatibility_handoff_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .language_version_pragma_coordinate_order_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_artifact_edge_case_robustness_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_artifact_replay_key_deterministic,
+          pipeline_result.parse_lowering_readiness_surface.compatibility_handoff_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_artifact_edge_robustness_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -1833,6 +1844,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L310",
         "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
             ownership_aware_lowering_behavior_expansion_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_edge_case_compatibility_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_edge_case_compatibility_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L312",
+        "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
+            ownership_aware_lowering_behavior_edge_case_compatibility_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
