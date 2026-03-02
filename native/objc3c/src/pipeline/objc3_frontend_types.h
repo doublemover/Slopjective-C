@@ -330,12 +330,15 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface {
   bool core_feature_expansion_ready = false;
   bool edge_case_compatibility_consistent = false;
   bool edge_case_compatibility_ready = false;
+  bool edge_case_expansion_consistent = false;
+  bool edge_case_robustness_ready = false;
   bool core_feature_impl_ready = false;
   std::string backend_route_key;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string core_feature_expansion_key;
   std::string edge_case_compatibility_key;
+  std::string edge_case_robustness_key;
   std::string failure_reason;
 };
 
