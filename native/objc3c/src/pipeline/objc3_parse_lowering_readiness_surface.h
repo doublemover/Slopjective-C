@@ -1727,7 +1727,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.long_tail_grammar_expansion_ready);
   surface.long_tail_grammar_compatibility_handoff_ready =
       surface.long_tail_grammar_expansion_ready &&
-      surface.compatibility_handoff_consistent &&
+      (surface.compatibility_handoff_consistent) &&
       !surface.compatibility_handoff_key.empty();
   surface.parse_artifact_diagnostics_hardening_key =
       BuildObjc3ParseArtifactDiagnosticsHardeningKey(
@@ -1760,7 +1760,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_edge_case_robustness_consistent;
   surface.long_tail_grammar_edge_case_compatibility_ready =
       surface.long_tail_grammar_edge_case_compatibility_consistent &&
-      surface.parse_artifact_replay_key_deterministic;
+      (surface.parse_artifact_replay_key_deterministic);
   surface.long_tail_grammar_edge_case_compatibility_key =
       BuildObjc3LongTailGrammarEdgeCaseCompatibilityKey(
           surface.compatibility_handoff_consistent,
@@ -1780,7 +1780,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.long_tail_grammar_edge_case_compatibility_key.empty();
   surface.long_tail_grammar_edge_case_robustness_ready =
       surface.long_tail_grammar_edge_case_expansion_consistent &&
-      surface.parse_artifact_replay_key_deterministic &&
+      (surface.parse_artifact_replay_key_deterministic) &&
       surface.language_version_pragma_coordinate_order_consistent;
   surface.long_tail_grammar_edge_case_robustness_key =
       BuildObjc3LongTailGrammarEdgeCaseRobustnessKey(
@@ -1801,7 +1801,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.long_tail_grammar_edge_case_robustness_key.empty();
   surface.long_tail_grammar_diagnostics_hardening_ready =
       surface.long_tail_grammar_diagnostics_hardening_consistent &&
-      surface.parse_artifact_replay_key_deterministic;
+      (surface.parse_artifact_replay_key_deterministic);
   surface.long_tail_grammar_diagnostics_hardening_key =
       BuildObjc3LongTailGrammarDiagnosticsHardeningKey(
           surface.parser_diagnostic_count,
@@ -2206,9 +2206,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   const bool parser_contract_snapshot_case_passed =
       surface.parser_contract_snapshot_present;
   const bool parse_artifact_handoff_case_passed =
-      surface.parse_artifact_handoff_deterministic;
+      (surface.parse_artifact_handoff_deterministic);
   const bool parse_artifact_replay_case_passed =
-      surface.parse_artifact_replay_key_deterministic;
+      (surface.parse_artifact_replay_key_deterministic);
   const bool parse_artifact_diagnostics_hardening_case_passed =
       surface.parse_artifact_diagnostics_hardening_consistent;
   const bool parse_artifact_edge_robustness_case_passed =

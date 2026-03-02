@@ -694,7 +694,7 @@ function Assert-FrontendModuleScaffold {
   }
 
   $modules = @($payload.modules)
-  $requiredModules = @("driver", "diagnostics-io", "ir", "lex-parse", "frontend-api", "lowering", "pipeline", "sema")
+  $requiredModules = @("driver","diagnostics-io","ir","lex-parse","frontend-api","lowering","pipeline","sema")
   $presentModules = @{}
   foreach ($module in $modules) {
     $moduleName = [string]$module.name
