@@ -73,8 +73,37 @@ inline std::string BuildObjc3SemanticStabilityCoreFeatureImplementationKey(
       << (surface.performance_quality_guardrails_ready ? "true" : "false")
       << ";performance_quality_guardrails_key="
       << surface.performance_quality_guardrails_key
+      << ";integration_closeout_consistent="
+      << (surface.integration_closeout_consistent ? "true" : "false")
+      << ";gate_signoff_ready="
+      << (surface.gate_signoff_ready ? "true" : "false")
+      << ";integration_closeout_key=" << surface.integration_closeout_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3SemanticStabilityIntegrationCloseoutKey(
+    const Objc3SemanticStabilityCoreFeatureImplementationSurface &surface,
+    bool integration_closeout_consistent,
+    bool gate_signoff_ready) {
+  std::ostringstream key;
+  key << "semantic-stability-integration-closeout:v1:"
+      << "typed-parse-core-consistent="
+      << (surface.typed_core_feature_consistent &&
+                  surface.typed_core_feature_expansion_consistent &&
+                  surface.typed_sema_core_feature_consistent &&
+                  surface.typed_sema_core_feature_expansion_consistent
+              ? "true"
+              : "false")
+      << ";parse-conformance-accounting-consistent="
+      << (surface.parse_conformance_accounting_consistent ? "true" : "false")
+      << ";replay-keys-ready=" << (surface.replay_keys_ready ? "true" : "false")
+      << ";performance-quality-guardrails-ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";integration-closeout-consistent="
+      << (integration_closeout_consistent ? "true" : "false")
+      << ";gate-signoff-ready=" << (gate_signoff_ready ? "true" : "false");
   return key.str();
 }
 
@@ -260,6 +289,15 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       conformance_corpus_ready &&
       parse_guardrails_case_accounting_consistent &&
       !parse_surface.parse_lowering_performance_quality_guardrails_key.empty();
+  const bool integration_closeout_consistent =
+      performance_quality_guardrails_consistent &&
+      typed_parse_core_feature_consistent &&
+      parse_conformance_accounting_consistent &&
+      replay_keys_ready;
+  const bool gate_signoff_ready =
+      integration_closeout_consistent &&
+      performance_quality_guardrails_ready &&
+      !surface.performance_quality_guardrails_key.empty();
   const bool edge_case_compatibility_expansion_ready =
       typed_parse_core_feature_consistent &&
       parse_conformance_consistent &&
@@ -292,6 +330,11 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       performance_quality_guardrails_consistent;
   surface.performance_quality_guardrails_ready =
       performance_quality_guardrails_ready;
+  surface.integration_closeout_consistent = integration_closeout_consistent;
+  surface.gate_signoff_ready = gate_signoff_ready;
+  surface.integration_closeout_key =
+      BuildObjc3SemanticStabilityIntegrationCloseoutKey(
+          surface, integration_closeout_consistent, gate_signoff_ready);
   surface.expansion_ready = diagnostics_hardening_expansion_ready;
   const bool recovery_determinism_expansion_ready =
       surface.expansion_ready && recovery_determinism_ready;
@@ -306,6 +349,11 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       conformance_corpus_expansion_ready &&
       performance_quality_guardrails_ready;
   surface.expansion_ready = performance_quality_guardrails_expansion_ready;
+  const bool integration_closeout_expansion_ready =
+      performance_quality_guardrails_expansion_ready &&
+      gate_signoff_ready &&
+      !surface.integration_closeout_key.empty();
+  surface.expansion_ready = integration_closeout_expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.semantic_handoff_deterministic &&
@@ -369,6 +417,14 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       std::string(!surface.performance_quality_guardrails_key.empty() ? "true" : "false") +
       ";performance-quality-guardrails-expansion-ready=" +
       std::string(performance_quality_guardrails_expansion_ready ? "true" : "false") +
+      ";integration-closeout-consistent=" +
+      std::string(integration_closeout_consistent ? "true" : "false") +
+      ";gate-signoff-ready=" +
+      std::string(gate_signoff_ready ? "true" : "false") +
+      ";integration-closeout-key-ready=" +
+      std::string(!surface.integration_closeout_key.empty() ? "true" : "false") +
+      ";integration-closeout-expansion-ready=" +
+      std::string(integration_closeout_expansion_ready ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parser-diagnostic-surface-consistent=" +
@@ -429,6 +485,10 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
   } else if (!performance_quality_guardrails_ready) {
     surface.failure_reason =
         "semantic stability performance quality guardrails are not ready";
+  } else if (!integration_closeout_consistent) {
+    surface.failure_reason = "semantic stability integration closeout is inconsistent";
+  } else if (!gate_signoff_ready) {
+    surface.failure_reason = "semantic stability gate sign-off is not ready";
   } else if (!diagnostics_hardening_expansion_ready) {
     surface.failure_reason = "semantic stability core feature expansion is not ready";
   } else if (!recovery_determinism_expansion_ready) {
@@ -440,6 +500,9 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
   } else if (!performance_quality_guardrails_expansion_ready) {
     surface.failure_reason =
         "semantic stability performance quality guardrails expansion is not ready";
+  } else if (!integration_closeout_expansion_ready) {
+    surface.failure_reason =
+        "semantic stability integration closeout expansion is not ready";
   } else {
     surface.failure_reason = "semantic stability core feature implementation is not ready";
   }

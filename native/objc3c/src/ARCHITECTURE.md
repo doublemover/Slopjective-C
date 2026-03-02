@@ -123,6 +123,11 @@ Current-state note:
   `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
   so guardrail drift fails closed before semantic stability readiness is
   reported.
+- M250 lane-B B012 integration closeout and gate sign-off anchors explicit semantic
+  closeout/sign-off guardrails (`integration_closeout_*`, `gate_signoff_*`) in
+  `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
+  so semantic stability cannot report final readiness before deterministic
+  integration closeout is satisfied.
 - M250 lane-C C002 modular split scaffolding anchors lowering/runtime stability
   and invariant-proof closure in
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
