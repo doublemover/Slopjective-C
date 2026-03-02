@@ -228,6 +228,10 @@ Current-state note:
   toolchain/runtime performance/quality guardrail checks in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D guardrail
   drift fails closed before integration closeout and sign-off gates.
+- M250 lane-D D012 cross-lane integration sync anchors explicit
+  toolchain/runtime cross-lane integration guards in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D integration
+  drift fails closed before integration closeout and gate sign-off.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
