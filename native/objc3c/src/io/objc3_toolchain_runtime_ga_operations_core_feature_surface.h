@@ -18,6 +18,7 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   bool edge_case_compatibility_consistent = false;
   bool edge_case_compatibility_ready = false;
   bool edge_case_expansion_consistent = false;
+  bool edge_case_robustness_consistent = false;
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
@@ -95,6 +96,8 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(
       << (!surface.edge_case_compatibility_key.empty() ? "true" : "false")
       << ";edge_case_expansion_consistent="
       << (surface.edge_case_expansion_consistent ? "true" : "false")
+      << ";edge_case_robustness_consistent="
+      << (surface.edge_case_robustness_consistent ? "true" : "false")
       << ";edge_case_robustness_ready="
       << (surface.edge_case_robustness_ready ? "true" : "false")
       << ";edge_case_robustness_key_ready="
@@ -118,6 +121,8 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseRobustnessKey(
       << (surface.edge_case_compatibility_ready ? "true" : "false")
       << ";edge_case_expansion_consistent="
       << (surface.edge_case_expansion_consistent ? "true" : "false")
+      << ";edge_case_robustness_consistent="
+      << (surface.edge_case_robustness_consistent ? "true" : "false")
       << ";edge_case_robustness_ready="
       << (surface.edge_case_robustness_ready ? "true" : "false");
   return key.str();
@@ -200,11 +205,16 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       scaffold.object_artifact_ready &&
       surface.backend_dispatch_consistent &&
       surface.backend_output_payload_consistent;
-  surface.edge_case_robustness_ready =
+  surface.edge_case_robustness_consistent =
       surface.edge_case_expansion_consistent &&
       surface.edge_case_compatibility_ready &&
       surface.backend_output_path_deterministic &&
       !surface.backend_output_path.empty();
+  surface.edge_case_robustness_ready =
+      surface.edge_case_robustness_consistent &&
+      !surface.backend_route_key.empty();
+  surface.edge_case_robustness_key =
+      BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseRobustnessKey(surface);
   surface.diagnostics_hardening_consistent =
       surface.edge_case_expansion_consistent &&
       surface.backend_dispatch_consistent &&
@@ -226,10 +236,12 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
   surface.core_feature_impl_ready =
       surface.core_feature_impl_ready && !surface.edge_case_compatibility_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.edge_case_robustness_ready;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.edge_case_robustness_consistent;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && !surface.edge_case_robustness_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_ready;
   surface.core_feature_expansion_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(surface);
-  surface.edge_case_robustness_key =
-      BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseRobustnessKey(surface);
   surface.diagnostics_hardening_key =
       BuildObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningKey(surface);
   surface.core_feature_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(surface);
@@ -262,8 +274,12 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
     surface.failure_reason = "toolchain/runtime edge-case compatibility key is not ready";
   } else if (!surface.edge_case_expansion_consistent) {
     surface.failure_reason = "toolchain/runtime edge-case expansion is inconsistent";
+  } else if (!surface.edge_case_robustness_consistent) {
+    surface.failure_reason = "toolchain/runtime edge-case robustness is inconsistent";
   } else if (!surface.edge_case_robustness_ready) {
     surface.failure_reason = "toolchain/runtime edge-case robustness is not ready";
+  } else if (surface.edge_case_robustness_key.empty()) {
+    surface.failure_reason = "toolchain/runtime edge-case robustness key is not ready";
   } else if (!surface.diagnostics_hardening_consistent) {
     surface.failure_reason = "toolchain/runtime diagnostics hardening is inconsistent";
   } else if (!surface.diagnostics_hardening_ready) {
