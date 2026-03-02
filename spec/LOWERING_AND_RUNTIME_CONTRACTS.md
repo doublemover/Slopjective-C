@@ -77,6 +77,9 @@ At minimum, the pass-graph gate shall validate:
   fail closed when ownership-lowering invariants drift.
 - direct IR emission completeness for ObjC lowering patterns shall remain
   metadata-stable and fail closed on pass-graph or lowering-boundary drift.
+- object emission and link-path routing (clang/llvm-direct) shall remain
+  deterministic and fail closed when backend route selection or object artifact
+  generation drifts.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

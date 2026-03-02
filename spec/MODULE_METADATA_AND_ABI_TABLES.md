@@ -62,6 +62,8 @@ A conforming implementation shall preserve, for all exported declarations:
      retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
    - direct IR-emission completeness metadata keys for pass-graph core/expansion
      readiness suitable for replay-proof closeout evidence,
+   - deterministic object-emission backend route keys and output markers for
+     clang/llvm-direct compile routing reliability evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent.
 

@@ -72,6 +72,11 @@ Current-state note:
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
   ObjC pattern lowering evidence remains deterministic before lane-C modular
   split work.
+- M228 lane-D D001 object emission/link-path reliability freeze anchors compile
+  route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
+  `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so clang
+  and llvm-direct object emission remain deterministic and fail-closed.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
