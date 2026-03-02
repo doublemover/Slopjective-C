@@ -342,6 +342,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E011/A004/B005/C006/D010 sync prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E013 docs/runbook synchronization anchors explicit final
+  readiness docs/runbook synchronization guardrails (`docs_runbook_sync_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E012/A005/B006/C006/D011 sync prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

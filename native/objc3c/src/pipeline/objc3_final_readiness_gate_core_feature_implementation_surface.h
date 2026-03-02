@@ -91,6 +91,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.cross_lane_integration_ready ? "true" : "false")
       << ";cross_lane_integration_key_ready="
       << (!surface.cross_lane_integration_key.empty() ? "true" : "false")
+      << ";docs_runbook_sync_consistent="
+      << (surface.docs_runbook_sync_consistent ? "true" : "false")
+      << ";docs_runbook_sync_ready="
+      << (surface.docs_runbook_sync_ready ? "true" : "false")
+      << ";docs_runbook_sync_key_ready="
+      << (!surface.docs_runbook_sync_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -318,6 +324,36 @@ inline std::string BuildObjc3FinalReadinessGateCrossLaneIntegrationKey(
       << (surface.cross_lane_integration_consistent ? "true" : "false")
       << ";cross-lane-integration-ready="
       << (surface.cross_lane_integration_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateDocsRunbookSyncKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_edge_case_compatibility_ready,
+    bool lane_b_edge_case_robustness_ready,
+    bool lane_c_edge_case_robustness_ready,
+    bool lane_d_conformance_matrix_ready,
+    bool lane_d_conformance_matrix_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-docs-runbook-sync:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";cross-lane-integration-ready="
+      << (surface.cross_lane_integration_ready ? "true" : "false")
+      << ";lane-a-edge-case-compatibility-ready="
+      << (lane_a_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-b-edge-case-robustness-ready="
+      << (lane_b_edge_case_robustness_ready ? "true" : "false")
+      << ";lane-c-edge-case-robustness-ready="
+      << (lane_c_edge_case_robustness_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-ready="
+      << (lane_d_conformance_matrix_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-key-ready="
+      << (lane_d_conformance_matrix_key_ready ? "true" : "false")
+      << ";docs-runbook-sync-consistent="
+      << (surface.docs_runbook_sync_consistent ? "true" : "false")
+      << ";docs-runbook-sync-ready="
+      << (surface.docs_runbook_sync_ready ? "true" : "false");
   return key.str();
 }
 
@@ -624,6 +660,36 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.cross_lane_integration_ready =
       surface.cross_lane_integration_ready &&
       !surface.cross_lane_integration_key.empty();
+  const bool lane_docs_runbook_sync_consistent =
+      lane_a_surface.edge_case_compatibility_ready &&
+      lane_b_surface.edge_case_robustness_ready &&
+      lane_c_surface.edge_case_robustness_ready &&
+      lane_d_surface.conformance_matrix_ready &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  const bool docs_runbook_sync_consistent =
+      surface.cross_lane_integration_ready &&
+      lane_docs_runbook_sync_consistent;
+  const bool docs_runbook_sync_ready =
+      docs_runbook_sync_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.cross_lane_integration_key.empty() &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  surface.docs_runbook_sync_consistent =
+      docs_runbook_sync_consistent;
+  surface.docs_runbook_sync_ready =
+      docs_runbook_sync_ready;
+  surface.docs_runbook_sync_key =
+      BuildObjc3FinalReadinessGateDocsRunbookSyncKey(
+          surface,
+          lane_a_surface.edge_case_compatibility_ready,
+          lane_b_surface.edge_case_robustness_ready,
+          lane_c_surface.edge_case_robustness_ready,
+          lane_d_surface.conformance_matrix_ready,
+          !lane_d_surface.conformance_matrix_key.empty());
+  surface.docs_runbook_sync_ready =
+      surface.docs_runbook_sync_ready &&
+      !surface.docs_runbook_sync_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -637,6 +703,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.conformance_corpus_ready &&
       surface.performance_quality_guardrails_ready &&
       surface.cross_lane_integration_ready &&
+      surface.docs_runbook_sync_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -772,6 +839,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.cross_lane_integration_key.empty()) {
     surface.failure_reason =
         "final readiness gate cross-lane integration sync key is not ready";
+  } else if (!lane_docs_runbook_sync_consistent) {
+    surface.failure_reason =
+        "final readiness gate docs and operator runbook sync is inconsistent";
+  } else if (!surface.docs_runbook_sync_consistent) {
+    surface.failure_reason =
+        "final readiness gate docs and operator runbook sync consistency is not satisfied";
+  } else if (!surface.docs_runbook_sync_ready) {
+    surface.failure_reason =
+        "final readiness gate docs and operator runbook sync is not ready";
+  } else if (surface.docs_runbook_sync_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate docs and operator runbook sync key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

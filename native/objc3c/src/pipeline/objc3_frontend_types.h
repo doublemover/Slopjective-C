@@ -422,6 +422,8 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool performance_quality_guardrails_ready = false;
   bool cross_lane_integration_consistent = false;
   bool cross_lane_integration_ready = false;
+  bool docs_runbook_sync_consistent = false;
+  bool docs_runbook_sync_ready = false;
   bool core_feature_impl_ready = false;
   std::string governance_key;
   std::string modular_split_key;
@@ -439,6 +441,7 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string conformance_corpus_key;
   std::string performance_quality_guardrails_key;
   std::string cross_lane_integration_key;
+  std::string docs_runbook_sync_key;
   std::string failure_reason;
 };
 
