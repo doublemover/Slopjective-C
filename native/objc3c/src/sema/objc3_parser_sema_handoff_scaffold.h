@@ -696,7 +696,9 @@ inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
   matrix.parser_ast_shape_fingerprint = snapshot.ast_shape_fingerprint;
   matrix.ast_shape_fingerprint = expected_snapshot.ast_shape_fingerprint;
   matrix.parser_ast_top_level_layout_fingerprint = snapshot.ast_top_level_layout_fingerprint;
-  matrix.ast_top_level_layout_fingerprint = expected_snapshot.ast_top_level_layout_fingerprint;
+  const std::uint64_t ast_top_level_layout_fingerprint =
+      expected_snapshot.ast_top_level_layout_fingerprint;
+  matrix.ast_top_level_layout_fingerprint = ast_top_level_layout_fingerprint;
   matrix.parser_contract_snapshot_fingerprint =
       BuildObjc3ParserContractSnapshotFingerprint(snapshot);
   matrix.expected_parser_contract_snapshot_fingerprint =
@@ -764,8 +766,7 @@ inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
   matrix.ast_shape_fingerprint_matches =
       snapshot.ast_shape_fingerprint == expected_snapshot.ast_shape_fingerprint;
   matrix.ast_top_level_layout_fingerprint_matches =
-      snapshot.ast_top_level_layout_fingerprint ==
-      expected_snapshot.ast_top_level_layout_fingerprint;
+      snapshot.ast_top_level_layout_fingerprint == ast_top_level_layout_fingerprint;
   matrix.parser_contract_snapshot_fingerprint_matches =
       matrix.parser_contract_snapshot_fingerprint ==
       matrix.expected_parser_contract_snapshot_fingerprint;
@@ -993,7 +994,8 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
           scaffold.parser_sema_conformance_corpus);
   scaffold.parser_contract_snapshot_matches_program =
       scaffold.parser_sema_conformance_matrix.deterministic;
-  scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program &&
+  scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program;
+  scaffold.deterministic = scaffold.deterministic &&
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
