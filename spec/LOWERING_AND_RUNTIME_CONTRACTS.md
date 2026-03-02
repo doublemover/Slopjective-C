@@ -123,9 +123,15 @@ At minimum, the pass-graph gate shall validate:
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
+- suite partitioning modular split/scaffolding shall preserve explicit lane-A
+  dependency anchors (`M248-A001`) and fail closed on scaffolding evidence drift
+  before parser replay readiness advances.
 - semantic/lowering test architecture governance shall preserve explicit lane-B
   diagnostic replay anchors and fail closed on semantic fixture drift before
   lowering matrix and conformance expansion validation advances.
+- semantic/lowering modular split scaffolding shall preserve explicit lane-B
+  dependency anchors (`M248-B001`) and fail closed on modular split evidence
+  drift before semantic replay readiness advances.
 - replay harness/artifact governance shall preserve explicit lane-C artifact
   replay anchors and fail closed on replay evidence drift before execution and
   conformance replay validation advances.
@@ -135,6 +141,9 @@ At minimum, the pass-graph gate shall validate:
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.
+- runner/platform operations modular split scaffolding shall preserve explicit
+  lane-D dependency anchors (`M248-D001`) and fail closed on scaffolding
+  evidence drift before platform replay readiness advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

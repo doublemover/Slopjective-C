@@ -157,12 +157,24 @@ Current-state note:
   `spec/planning/compiler/m248/m248_a001_suite_partitioning_and_fixture_ownership_contract_freeze_packet.md`,
   and `package.json` so suite partition boundaries and fixture ownership evidence
   remain deterministic and fail-closed for CI sharding governance.
+- M248 lane-A A002 suite partitioning modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m248_suite_partitioning_and_fixture_ownership_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m248/m248_a002_suite_partitioning_and_fixture_ownership_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split fixture continuity remains deterministic
+  and fail-closed against `M248-A001` dependency drift.
 - M248 lane-B B001 semantic/lowering test architecture anchors explicit lane-B
   contract freeze artifacts in
   `docs/contracts/m248_semantic_lowering_test_architecture_contract_freeze_b001_expectations.md`,
   `spec/planning/compiler/m248/m248_b001_semantic_lowering_test_architecture_contract_freeze_packet.md`,
   and `package.json` so semantic fixture boundaries and lowering replay evidence
   remain deterministic and fail-closed for CI sharding governance.
+- M248 lane-B B002 semantic/lowering modular split/scaffolding anchors explicit
+  lane-B scaffolding artifacts in
+  `docs/contracts/m248_semantic_lowering_test_architecture_modular_split_scaffolding_b002_expectations.md`,
+  `spec/planning/compiler/m248/m248_b002_semantic_lowering_test_architecture_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split semantic continuity remains deterministic
+  and fail-closed against `M248-B001` dependency drift.
 - M248 lane-C C001 replay harness and artifact contract anchors explicit lane-C
   contract freeze artifacts in
   `docs/contracts/m248_replay_harness_and_artifact_contracts_contract_freeze_c001_expectations.md`,
@@ -181,6 +193,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d001_runner_reliability_and_platform_operations_contract_freeze_packet.md`,
   and `package.json` so runner/platform operation evidence remains deterministic
   and fail-closed for CI sharding and replay governance.
+- M248 lane-D D002 runner modular split/scaffolding anchors explicit lane-D
+  scaffolding artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m248/m248_d002_runner_reliability_and_platform_operations_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split runner continuity remains deterministic
+  and fail-closed against `M248-D001` dependency drift.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
