@@ -176,6 +176,37 @@ struct Objc3SemanticStabilitySpecDeltaClosureScaffold {
   std::string failure_reason;
 };
 
+struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
+  bool semantic_handoff_deterministic = false;
+  bool typed_core_feature_consistent = false;
+  bool typed_core_feature_expansion_consistent = false;
+  bool typed_sema_core_feature_consistent = false;
+  bool typed_sema_core_feature_expansion_consistent = false;
+  bool parse_lowering_conformance_matrix_consistent = false;
+  bool parse_lowering_conformance_corpus_consistent = false;
+  bool parse_lowering_performance_quality_guardrails_consistent = false;
+  bool spec_delta_closed = false;
+  bool modular_split_ready = false;
+  bool core_feature_impl_ready = false;
+  std::size_t typed_core_feature_case_count = 0;
+  std::size_t typed_core_feature_passed_case_count = 0;
+  std::size_t typed_core_feature_failed_case_count = 0;
+  std::size_t typed_core_feature_expansion_case_count = 0;
+  std::size_t typed_core_feature_expansion_passed_case_count = 0;
+  std::size_t typed_core_feature_expansion_failed_case_count = 0;
+  std::size_t parse_lowering_conformance_matrix_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_passed_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_failed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
+  std::string typed_handoff_key;
+  std::string parse_artifact_replay_key;
+  std::string core_feature_key;
+  std::string failure_reason;
+};
+
 struct Objc3LoweringRuntimeStabilityInvariantScaffold {
   bool typed_surface_present = false;
   bool parse_readiness_surface_present = false;
@@ -297,6 +328,8 @@ struct Objc3FrontendPipelineResult {
   Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
+  Objc3SemanticStabilityCoreFeatureImplementationSurface
+      semantic_stability_core_feature_implementation_surface;
   Objc3LoweringRuntimeStabilityInvariantScaffold lowering_runtime_stability_invariant_scaffold;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
