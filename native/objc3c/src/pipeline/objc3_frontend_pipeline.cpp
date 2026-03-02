@@ -10,6 +10,7 @@
 #include "parse/objc3_ast_builder_contract.h"
 #include "pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h"
+#include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
@@ -787,6 +788,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildObjc3LoweringPipelinePassGraphScaffold(result, options);
   result.lowering_pipeline_pass_graph_core_feature_surface =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(result, options);
+  result.ir_emission_completeness_scaffold =
+      BuildObjc3IREmissionCompletenessScaffold(result);
   result.lowering_runtime_stability_core_feature_implementation_surface =
       BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
           result.typed_sema_to_lowering_contract_surface,

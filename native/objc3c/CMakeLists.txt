@@ -98,6 +98,7 @@ target_link_libraries(objc3c_ir PUBLIC
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
   src/pipeline/objc3_frontend_artifacts.cpp
+  src/pipeline/objc3_ir_emission_completeness_scaffold.cpp
   src/pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
   src/pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp
 )
