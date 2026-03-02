@@ -3,8 +3,7 @@
 Status: Accepted (M132-A001)
 Scope: `native/objc3c/src/*`
 
-This document defines the dependency rules for decomposing `main.cpp` into a
-modular native frontend while preserving behavior.
+This document defines dependency rules for the modular native frontend.
 
 ## Layer Model
 
@@ -25,8 +24,12 @@ Adapter and integration modules:
 
 Current-state note:
 
-- The repository currently has a monolithic `main.cpp`. This contract is the
-  ratified target shape used by M132-M134 extraction tasks.
+- `main.cpp` is now driver-only and delegates to `driver/objc3_driver_main.h`.
+- Parser/sema boundaries are enforced through explicit contracts in
+  `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
+  `sema/objc3_sema_contract.h`.
+- M226 architecture-freeze work builds on this extracted layout and hardens
+  parser completeness and parser-to-sema handoff determinism.
 
 ## Ownership Map
 
@@ -90,4 +93,5 @@ Forbidden:
 
 - Behavior parity is enforced outside this file by Lane D gates.
 - New modules must keep deterministic diagnostics ordering.
-- `main.cpp` must converge to orchestration-only responsibilities by M134.
+- `main.cpp` remains orchestration-only and must not absorb parser/sema logic.
+- Parser recovery behavior must remain replay-proof and deterministic.
