@@ -10,6 +10,7 @@
 #include "io/objc3_file_io.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
+#include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
@@ -70,14 +71,30 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       }
     }
 
+    bool backend_output_recorded = false;
     if (compile_status == 0) {
       const fs::path backend_out = cli_options.out_dir / (cli_options.emit_prefix + ".object-backend.txt");
       const std::string backend_text =
           cli_options.ir_object_backend == Objc3IrObjectBackend::kClang ? "clang\n" : "llvm-direct\n";
       WriteText(backend_out, backend_text);
+      backend_output_recorded = true;
     }
 
-    return compile_status == 0 ? 0 : 3;
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =
+        BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureSurface(
+            toolchain_runtime_ga_operations_scaffold,
+            compile_status,
+            backend_output_recorded);
+    std::string toolchain_runtime_core_feature_reason;
+    if (!IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
+            toolchain_runtime_core_feature_surface,
+            toolchain_runtime_core_feature_reason)) {
+      std::cerr << "toolchain/runtime core feature fail-closed: "
+                << toolchain_runtime_core_feature_reason << "\n";
+      return 3;
+    }
+
+    return 0;
   } catch (const std::exception &io_error) {
     std::cerr << "artifact io failure: " << io_error.what() << "\n";
     return 3;
