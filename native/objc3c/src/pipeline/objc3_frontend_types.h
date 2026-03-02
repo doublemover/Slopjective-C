@@ -55,6 +55,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parser_contract_snapshot_present = false;
   bool parser_contract_deterministic = false;
   bool parser_recovery_replay_ready = false;
+  bool parse_artifact_handoff_consistent = false;
+  bool parse_artifact_handoff_deterministic = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
   bool semantic_type_metadata_deterministic = false;
@@ -63,6 +65,7 @@ struct Objc3ParseLoweringReadinessSurface {
   bool object_pointer_type_handoff_deterministic = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
+  std::string parse_artifact_handoff_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

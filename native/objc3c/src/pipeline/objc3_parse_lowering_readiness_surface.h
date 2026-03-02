@@ -4,21 +4,70 @@
 
 #include "pipeline/objc3_frontend_types.h"
 
+inline std::size_t Objc3ParserSnapshotDeclarationBreakdownCount(const Objc3ParserContractSnapshot &snapshot) {
+  return snapshot.global_decl_count + snapshot.protocol_decl_count +
+         snapshot.interface_decl_count + snapshot.implementation_decl_count +
+         snapshot.function_decl_count;
+}
+
+inline std::size_t Objc3ParsedProgramTopLevelDeclarationCount(const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return ast.globals.size() + ast.protocols.size() + ast.interfaces.size() +
+         ast.implementations.size() + ast.functions.size();
+}
+
+inline std::string BuildObjc3ParseArtifactHandoffKey(
+    const Objc3ParserContractSnapshot &snapshot,
+    std::size_t ast_top_level_declaration_count,
+    std::size_t parser_diagnostic_count,
+    bool handoff_deterministic) {
+  return "parser_snapshot=" + std::to_string(snapshot.top_level_declaration_count) + ":" +
+         std::to_string(snapshot.global_decl_count) + ":" +
+         std::to_string(snapshot.protocol_decl_count) + ":" +
+         std::to_string(snapshot.interface_decl_count) + ":" +
+         std::to_string(snapshot.implementation_decl_count) + ":" +
+         std::to_string(snapshot.function_decl_count) + ";ast_top_level=" +
+         std::to_string(ast_top_level_declaration_count) + ";parser_diagnostics=" +
+         std::to_string(parser_diagnostic_count) + ";deterministic=" +
+         (handoff_deterministic ? "true" : "false");
+}
+
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
   Objc3ParseLoweringReadinessSurface surface;
+  const Objc3ParserContractSnapshot &parser_snapshot = pipeline_result.parser_contract_snapshot;
   surface.lexer_diagnostic_count = pipeline_result.stage_diagnostics.lexer.size();
   surface.parser_diagnostic_count = pipeline_result.stage_diagnostics.parser.size();
   surface.semantic_diagnostic_count = pipeline_result.stage_diagnostics.semantic.size();
-  surface.parser_token_count = pipeline_result.parser_contract_snapshot.token_count;
-  surface.parser_top_level_declaration_count = pipeline_result.parser_contract_snapshot.top_level_declaration_count;
+  surface.parser_token_count = parser_snapshot.token_count;
+  surface.parser_top_level_declaration_count = parser_snapshot.top_level_declaration_count;
   surface.parser_contract_snapshot_present =
-      pipeline_result.parser_contract_snapshot.token_count > 0 ||
-      pipeline_result.parser_contract_snapshot.top_level_declaration_count > 0 ||
-      pipeline_result.parser_contract_snapshot.parser_diagnostic_count > 0;
-  surface.parser_contract_deterministic = pipeline_result.parser_contract_snapshot.deterministic_handoff;
-  surface.parser_recovery_replay_ready = pipeline_result.parser_contract_snapshot.parser_recovery_replay_ready;
+      parser_snapshot.token_count > 0 ||
+      parser_snapshot.top_level_declaration_count > 0 ||
+      parser_snapshot.parser_diagnostic_count > 0;
+  surface.parser_contract_deterministic = parser_snapshot.deterministic_handoff;
+  surface.parser_recovery_replay_ready = parser_snapshot.parser_recovery_replay_ready;
+  const std::size_t parser_snapshot_breakdown_count =
+      Objc3ParserSnapshotDeclarationBreakdownCount(parser_snapshot);
+  const std::size_t ast_top_level_declaration_count =
+      Objc3ParsedProgramTopLevelDeclarationCount(pipeline_result.program);
+  const bool parser_snapshot_breakdown_consistent =
+      parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
+  const bool parser_diagnostic_surface_consistent =
+      parser_snapshot.parser_diagnostic_count == surface.parser_diagnostic_count;
+  surface.parse_artifact_handoff_consistent =
+      parser_snapshot_breakdown_consistent &&
+      ast_top_level_declaration_count == parser_snapshot.top_level_declaration_count;
+  surface.parse_artifact_handoff_deterministic =
+      surface.parse_artifact_handoff_consistent &&
+      parser_diagnostic_surface_consistent &&
+      surface.parser_contract_deterministic;
+  surface.parse_artifact_handoff_key = BuildObjc3ParseArtifactHandoffKey(
+      parser_snapshot,
+      ast_top_level_declaration_count,
+      surface.parser_diagnostic_count,
+      surface.parse_artifact_handoff_deterministic);
   surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
   surface.semantic_diagnostics_deterministic = pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic = pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff;
@@ -45,7 +94,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   const bool parse_snapshot_ready =
       surface.parser_contract_snapshot_present &&
       surface.parser_contract_deterministic &&
-      surface.parser_recovery_replay_ready;
+      surface.parser_recovery_replay_ready &&
+      surface.parse_artifact_handoff_deterministic;
   const bool sema_handoff_ready =
       surface.semantic_integration_surface_built &&
       surface.semantic_diagnostics_deterministic &&
@@ -74,6 +124,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser handoff is not deterministic";
   } else if (!surface.parser_recovery_replay_ready) {
     surface.failure_reason = "parser recovery handoff is not replay ready";
+  } else if (!surface.parse_artifact_handoff_consistent) {
+    surface.failure_reason = "parse artifact handoff is inconsistent";
+  } else if (!surface.parse_artifact_handoff_deterministic) {
+    surface.failure_reason = "parse artifact handoff is not deterministic";
   } else if (!surface.semantic_integration_surface_built) {
     surface.failure_reason = "semantic integration surface not built";
   } else if (!surface.semantic_diagnostics_deterministic) {

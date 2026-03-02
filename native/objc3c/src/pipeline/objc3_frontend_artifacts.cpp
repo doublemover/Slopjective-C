@@ -1927,11 +1927,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.ready_for_lowering ? "true" : "false")
            << ",\"parser_contract_snapshot_present\": "
            << (bundle.parse_lowering_readiness_surface.parser_contract_snapshot_present ? "true" : "false")
+           << ",\"parse_artifact_handoff_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
+           << ",\"parse_artifact_handoff_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_deterministic ? "true" : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
            << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
-           << ",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
+           << ",\"parse_artifact_handoff_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_artifact_handoff_key
+           << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
            << "\"},\n";
