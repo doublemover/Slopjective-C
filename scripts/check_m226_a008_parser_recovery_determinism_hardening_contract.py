@@ -25,7 +25,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M226-A008-PARSE-02",
             "expected parameter declaration after ',' in C-style compatibility parameter list, found ",
         ),
-        ("M226-A008-PARSE-03", "if (!AtCompatBuiltinType() && !At(TokenKind::Identifier))"),
+        ("M226-A008-PARSE-03", "if (!AtCStyleTypeLeadToken() && !At(TokenKind::Identifier))"),
         ("M226-A008-PARSE-04", "MakeDiag(token.line, token.column, \"O3P104\""),
         ("M226-A008-PARSE-05", "MakeDiag(token.line, token.column, \"O3P100\""),
     ),

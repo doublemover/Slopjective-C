@@ -5349,7 +5349,7 @@ class Objc3Parser {
                      "trailing ',' in C-style compatibility parameter list is not allowed"));
         return false;
       }
-      if (!AtCompatBuiltinType() && !At(TokenKind::Identifier)) {
+      if (!AtCStyleTypeLeadToken() && !At(TokenKind::Identifier)) {
         const Token &token = Peek();
         diagnostics_.push_back(
             MakeDiag(token.line, token.column, "O3P100",
