@@ -1018,6 +1018,33 @@ BuildObjc3ParserSemaReleaseCandidateReplayDryRun(
   return sync;
 }
 
+inline Objc3ParserSemaAdvancedCoreShard1 BuildObjc3ParserSemaAdvancedCoreShard1(
+    const Objc3ParserSemaReleaseCandidateReplayDryRun &release_sync) {
+  Objc3ParserSemaAdvancedCoreShard1 sync;
+  sync.release_candidate_replay_dry_run_ready = release_sync.deterministic;
+  sync.pass_manager_contract_surface_sync =
+      release_sync.required_sync_count == 3u &&
+      release_sync.passed_sync_count == release_sync.required_sync_count &&
+      release_sync.failed_sync_count == 0u;
+  sync.shard_surface_sync =
+      sync.release_candidate_replay_dry_run_ready &&
+      sync.pass_manager_contract_surface_sync;
+  sync.required_sync_count = 3u;
+  sync.passed_sync_count =
+      static_cast<std::size_t>(sync.release_candidate_replay_dry_run_ready) +
+      static_cast<std::size_t>(sync.pass_manager_contract_surface_sync) +
+      static_cast<std::size_t>(sync.shard_surface_sync);
+  sync.failed_sync_count =
+      sync.required_sync_count >= sync.passed_sync_count
+          ? (sync.required_sync_count - sync.passed_sync_count)
+          : sync.required_sync_count;
+  sync.deterministic =
+      sync.required_sync_count == 3u &&
+      sync.passed_sync_count == sync.required_sync_count &&
+      sync.failed_sync_count == 0u;
+  return sync;
+}
+
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
@@ -1041,6 +1068,7 @@ struct Objc3ParserSemaHandoffScaffold {
   Objc3ParserSemaCrossLaneIntegrationSync parser_sema_cross_lane_integration_sync;
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
+  Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
   bool parser_contract_snapshot_matches_program = false;
   bool deterministic = false;
 };
@@ -1102,6 +1130,9 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.parser_sema_release_candidate_replay_dry_run =
       BuildObjc3ParserSemaReleaseCandidateReplayDryRun(
           scaffold.parser_sema_docs_runbook_sync);
+  scaffold.parser_sema_advanced_core_shard1 =
+      BuildObjc3ParserSemaAdvancedCoreShard1(
+          scaffold.parser_sema_release_candidate_replay_dry_run);
   scaffold.parser_contract_snapshot_matches_program =
       scaffold.parser_sema_conformance_matrix.deterministic;
   scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program;
@@ -1109,6 +1140,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.parser_sema_advanced_core_shard1.deterministic &&
                            scaffold.parser_sema_release_candidate_replay_dry_run.deterministic &&
                            scaffold.parser_sema_docs_runbook_sync.deterministic &&
                            scaffold.parser_sema_cross_lane_integration_sync.deterministic &&
