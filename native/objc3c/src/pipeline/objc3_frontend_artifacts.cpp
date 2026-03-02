@@ -1894,6 +1894,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "      \"stages\": {\n";
   manifest << "        \"lexer\": {\"diagnostics\":" << bundle.stage_diagnostics.lexer.size() << "},\n";
   manifest << "        \"parser\": {\"diagnostics\":" << bundle.stage_diagnostics.parser.size()
+           << ",\"token_count\":" << pipeline_result.parser_contract_snapshot.token_count
+           << ",\"top_level_declarations\":" << pipeline_result.parser_contract_snapshot.top_level_declaration_count
            << ",\"globals\":" << pipeline_result.parser_contract_snapshot.global_decl_count
            << ",\"protocols\":" << pipeline_result.parser_contract_snapshot.protocol_decl_count
            << ",\"interfaces\":" << pipeline_result.parser_contract_snapshot.interface_decl_count

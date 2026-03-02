@@ -11,6 +11,8 @@ struct Objc3ParsedProgram {
 };
 
 struct Objc3ParserContractSnapshot {
+  std::size_t token_count = 0;
+  std::size_t top_level_declaration_count = 0;
   std::size_t global_decl_count = 0;
   std::size_t protocol_decl_count = 0;
   std::size_t interface_decl_count = 0;
@@ -37,14 +39,19 @@ inline const Objc3Program &Objc3ParsedProgramAst(const Objc3ParsedProgram &progr
 
 inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
     const Objc3ParsedProgram &program,
-    const std::size_t parser_diagnostic_count) {
+    const std::size_t parser_diagnostic_count,
+    const std::size_t token_count) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3ParserContractSnapshot snapshot;
+  snapshot.token_count = token_count;
   snapshot.global_decl_count = ast.globals.size();
   snapshot.protocol_decl_count = ast.protocols.size();
   snapshot.interface_decl_count = ast.interfaces.size();
   snapshot.implementation_decl_count = ast.implementations.size();
   snapshot.function_decl_count = ast.functions.size();
+  snapshot.top_level_declaration_count = snapshot.global_decl_count + snapshot.protocol_decl_count +
+                                         snapshot.interface_decl_count + snapshot.implementation_decl_count +
+                                         snapshot.function_decl_count;
   snapshot.parser_diagnostic_count = parser_diagnostic_count;
   snapshot.deterministic_handoff = true;
   snapshot.parser_recovery_replay_ready = true;
