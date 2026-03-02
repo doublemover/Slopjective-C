@@ -2011,12 +2011,28 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_sema_to_lowering_contract_surface.typed_core_feature_key;
   surface.typed_sema_core_feature_expansion_key =
       typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_key;
+  Objc3LoweringIRBoundary lowering_boundary;
+  std::string lowering_error;
+  const bool lowering_boundary_from_options_ready =
+      TryBuildObjc3LoweringIRBoundary(options.lowering, lowering_boundary, lowering_error);
+  const bool lowering_boundary_replay_key_matches_typed_surface =
+      !lowering_boundary_from_options_ready ||
+      lowering_boundary.replay_key == typed_sema_to_lowering_contract_surface.lowering_boundary_replay_key;
   surface.lowering_boundary_ready =
-      typed_sema_to_lowering_contract_surface.lowering_boundary_ready;
+      typed_sema_to_lowering_contract_surface.lowering_boundary_ready &&
+      lowering_boundary_from_options_ready &&
+      lowering_boundary_replay_key_matches_typed_surface;
   surface.lowering_boundary_replay_key =
       typed_sema_to_lowering_contract_surface.lowering_boundary_replay_key;
+  if (surface.lowering_boundary_replay_key.empty() && lowering_boundary_from_options_ready) {
+    surface.lowering_boundary_replay_key = lowering_boundary.replay_key;
+  }
   if (!typed_sema_to_lowering_contract_surface.failure_reason.empty()) {
     surface.failure_reason = typed_sema_to_lowering_contract_surface.failure_reason;
+  } else if (!lowering_boundary_from_options_ready && !lowering_error.empty()) {
+    surface.failure_reason = lowering_error;
+  } else if (!lowering_boundary_replay_key_matches_typed_surface) {
+    surface.failure_reason = "typed sema/lowering boundary replay key does not match lowering contract";
   }
 
   const bool diagnostics_clear =
