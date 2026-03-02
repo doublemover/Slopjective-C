@@ -105,6 +105,9 @@ A conforming implementation shall preserve, for all exported declarations:
      evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
+   - deterministic IR-emission edge-case compatibility completion
+     consistency/readiness and compatibility-key anchors for lane-C closeout
+     evidence continuity,
    - deterministic lane-D toolchain/runtime edge-case compatibility
      consistency/readiness and compatibility-key anchors for closeout evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to

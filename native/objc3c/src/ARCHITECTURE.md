@@ -159,6 +159,12 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
   `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
   pass-graph expansion continuity or expansion metadata transport drifts.
+- M228 lane-C C005 edge-case and compatibility completion anchors deterministic
+  compatibility handoff consistency/readiness and compatibility-key transport
+  in `pipeline/objc3_ir_emission_core_feature_implementation_surface.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
+  `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
+  pass-graph compatibility evidence or metadata continuity drifts.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and
