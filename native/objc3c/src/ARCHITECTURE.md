@@ -65,6 +65,10 @@ Current-state note:
   `pipeline/objc3_parse_lowering_readiness_surface.h` so diagnostics drift fails
   closed before recovery/determinism and conformance-readiness gates are
   reported.
+- M250 lane-A A008 recovery/determinism hardening anchors explicit long-tail
+  grammar replay-hardening gates (`long_tail_grammar_recovery_determinism_*`)
+  in `pipeline/objc3_parse_lowering_readiness_surface.h` so replay drift fails
+  closed before conformance and guardrail readiness are reported.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
