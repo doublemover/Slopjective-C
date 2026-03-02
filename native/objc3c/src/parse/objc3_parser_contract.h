@@ -19,8 +19,14 @@ struct Objc3ParserContractSnapshot {
   std::size_t top_level_declaration_count = 0;
   std::size_t global_decl_count = 0;
   std::size_t protocol_decl_count = 0;
+  std::size_t protocol_property_decl_count = 0;
+  std::size_t protocol_method_decl_count = 0;
   std::size_t interface_decl_count = 0;
+  std::size_t interface_property_decl_count = 0;
+  std::size_t interface_method_decl_count = 0;
   std::size_t implementation_decl_count = 0;
+  std::size_t implementation_property_decl_count = 0;
+  std::size_t implementation_method_decl_count = 0;
   std::size_t function_decl_count = 0;
   std::size_t interface_category_decl_count = 0;
   std::size_t implementation_category_decl_count = 0;
@@ -186,9 +192,23 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.global_decl_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.protocol_decl_count));
   fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.protocol_property_decl_count));
+  fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.protocol_method_decl_count));
+  fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_decl_count));
   fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_property_decl_count));
+  fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_method_decl_count));
+  fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.implementation_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.implementation_property_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.implementation_method_decl_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_decl_count));
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_category_decl_count));
@@ -216,8 +236,20 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
   snapshot.token_count = token_count;
   snapshot.global_decl_count = ast.globals.size();
   snapshot.protocol_decl_count = ast.protocols.size();
+  for (const auto &protocol_decl : ast.protocols) {
+    snapshot.protocol_property_decl_count += protocol_decl.properties.size();
+    snapshot.protocol_method_decl_count += protocol_decl.methods.size();
+  }
   snapshot.interface_decl_count = ast.interfaces.size();
+  for (const auto &interface_decl : ast.interfaces) {
+    snapshot.interface_property_decl_count += interface_decl.properties.size();
+    snapshot.interface_method_decl_count += interface_decl.methods.size();
+  }
   snapshot.implementation_decl_count = ast.implementations.size();
+  for (const auto &implementation_decl : ast.implementations) {
+    snapshot.implementation_property_decl_count += implementation_decl.properties.size();
+    snapshot.implementation_method_decl_count += implementation_decl.methods.size();
+  }
   snapshot.function_decl_count = ast.functions.size();
   snapshot.interface_category_decl_count = static_cast<std::size_t>(std::count_if(
       ast.interfaces.begin(),

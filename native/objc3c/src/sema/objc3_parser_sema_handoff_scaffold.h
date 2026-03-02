@@ -84,6 +84,66 @@ inline bool IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(
          BuildObjc3ParserContractTopLevelCountFromProgram(program) != 0u;
 }
 
+inline std::size_t BuildObjc3ParserProtocolPropertyDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t property_count = 0u;
+  for (const auto &protocol_decl : ast.protocols) {
+    property_count += protocol_decl.properties.size();
+  }
+  return property_count;
+}
+
+inline std::size_t BuildObjc3ParserProtocolMethodDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t method_count = 0u;
+  for (const auto &protocol_decl : ast.protocols) {
+    method_count += protocol_decl.methods.size();
+  }
+  return method_count;
+}
+
+inline std::size_t BuildObjc3ParserInterfacePropertyDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t property_count = 0u;
+  for (const auto &interface_decl : ast.interfaces) {
+    property_count += interface_decl.properties.size();
+  }
+  return property_count;
+}
+
+inline std::size_t BuildObjc3ParserInterfaceMethodDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t method_count = 0u;
+  for (const auto &interface_decl : ast.interfaces) {
+    method_count += interface_decl.methods.size();
+  }
+  return method_count;
+}
+
+inline std::size_t BuildObjc3ParserImplementationPropertyDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t property_count = 0u;
+  for (const auto &implementation_decl : ast.implementations) {
+    property_count += implementation_decl.properties.size();
+  }
+  return property_count;
+}
+
+inline std::size_t BuildObjc3ParserImplementationMethodDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::size_t method_count = 0u;
+  for (const auto &implementation_decl : ast.implementations) {
+    method_count += implementation_decl.methods.size();
+  }
+  return method_count;
+}
+
 inline std::size_t BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(
     const Objc3ParsedProgram &program) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -123,6 +183,18 @@ inline std::size_t BuildObjc3ParserFunctionPureCountFromProgram(
 inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
     const Objc3ParserContractSnapshot &snapshot,
     const Objc3ParsedProgram &program) {
+  const std::size_t protocol_property_count =
+      BuildObjc3ParserProtocolPropertyDeclCountFromProgram(program);
+  const std::size_t protocol_method_count =
+      BuildObjc3ParserProtocolMethodDeclCountFromProgram(program);
+  const std::size_t interface_property_count =
+      BuildObjc3ParserInterfacePropertyDeclCountFromProgram(program);
+  const std::size_t interface_method_count =
+      BuildObjc3ParserInterfaceMethodDeclCountFromProgram(program);
+  const std::size_t implementation_property_count =
+      BuildObjc3ParserImplementationPropertyDeclCountFromProgram(program);
+  const std::size_t implementation_method_count =
+      BuildObjc3ParserImplementationMethodDeclCountFromProgram(program);
   const std::size_t interface_category_count =
       BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
   const std::size_t implementation_category_count =
@@ -141,6 +213,14 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
          missing_decl_buckets ||
          (snapshot.top_level_declaration_count == 0u &&
           BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u) ||
+         (snapshot.protocol_property_decl_count == 0u && protocol_property_count != 0u) ||
+         (snapshot.protocol_method_decl_count == 0u && protocol_method_count != 0u) ||
+         (snapshot.interface_property_decl_count == 0u && interface_property_count != 0u) ||
+         (snapshot.interface_method_decl_count == 0u && interface_method_count != 0u) ||
+         (snapshot.implementation_property_decl_count == 0u &&
+          implementation_property_count != 0u) ||
+         (snapshot.implementation_method_decl_count == 0u &&
+          implementation_method_count != 0u) ||
          (snapshot.interface_category_decl_count == 0u && interface_category_count != 0u) ||
          (snapshot.implementation_category_decl_count == 0u && implementation_category_count != 0u) ||
          (snapshot.function_prototype_count == 0u && function_prototype_count != 0u) ||
@@ -173,6 +253,18 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   }
   const std::size_t top_level_count =
       BuildObjc3ParserContractTopLevelCountFromDeclBuckets(normalized_snapshot);
+  const std::size_t protocol_property_count =
+      BuildObjc3ParserProtocolPropertyDeclCountFromProgram(program);
+  const std::size_t protocol_method_count =
+      BuildObjc3ParserProtocolMethodDeclCountFromProgram(program);
+  const std::size_t interface_property_count =
+      BuildObjc3ParserInterfacePropertyDeclCountFromProgram(program);
+  const std::size_t interface_method_count =
+      BuildObjc3ParserInterfaceMethodDeclCountFromProgram(program);
+  const std::size_t implementation_property_count =
+      BuildObjc3ParserImplementationPropertyDeclCountFromProgram(program);
+  const std::size_t implementation_method_count =
+      BuildObjc3ParserImplementationMethodDeclCountFromProgram(program);
   const std::size_t interface_category_count =
       BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
   const std::size_t implementation_category_count =
@@ -184,6 +276,36 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   if (normalized_snapshot.top_level_declaration_count == 0u &&
       top_level_count != 0u) {
     normalized_snapshot.top_level_declaration_count = top_level_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.protocol_property_decl_count == 0u &&
+      protocol_property_count != 0u) {
+    normalized_snapshot.protocol_property_decl_count = protocol_property_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.protocol_method_decl_count == 0u &&
+      protocol_method_count != 0u) {
+    normalized_snapshot.protocol_method_decl_count = protocol_method_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.interface_property_decl_count == 0u &&
+      interface_property_count != 0u) {
+    normalized_snapshot.interface_property_decl_count = interface_property_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.interface_method_decl_count == 0u &&
+      interface_method_count != 0u) {
+    normalized_snapshot.interface_method_decl_count = interface_method_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.implementation_property_decl_count == 0u &&
+      implementation_property_count != 0u) {
+    normalized_snapshot.implementation_property_decl_count = implementation_property_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.implementation_method_decl_count == 0u &&
+      implementation_method_count != 0u) {
+    normalized_snapshot.implementation_method_decl_count = implementation_method_count;
     normalized = true;
   }
   if (normalized_snapshot.interface_category_decl_count == 0u &&
@@ -230,6 +352,18 @@ inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3Parser
   if (!TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot, top_level_count)) {
     return false;
   }
+  const std::size_t protocol_property_count =
+      BuildObjc3ParserProtocolPropertyDeclCountFromProgram(program);
+  const std::size_t protocol_method_count =
+      BuildObjc3ParserProtocolMethodDeclCountFromProgram(program);
+  const std::size_t interface_property_count =
+      BuildObjc3ParserInterfacePropertyDeclCountFromProgram(program);
+  const std::size_t interface_method_count =
+      BuildObjc3ParserInterfaceMethodDeclCountFromProgram(program);
+  const std::size_t implementation_property_count =
+      BuildObjc3ParserImplementationPropertyDeclCountFromProgram(program);
+  const std::size_t implementation_method_count =
+      BuildObjc3ParserImplementationMethodDeclCountFromProgram(program);
   const std::size_t interface_category_count =
       BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
   const std::size_t implementation_category_count =
@@ -249,8 +383,14 @@ inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3Parser
       snapshot.function_pure_count <= snapshot.function_decl_count;
   return snapshot.global_decl_count == ast.globals.size() &&
          snapshot.protocol_decl_count == ast.protocols.size() &&
+         snapshot.protocol_property_decl_count == protocol_property_count &&
+         snapshot.protocol_method_decl_count == protocol_method_count &&
          snapshot.interface_decl_count == ast.interfaces.size() &&
+         snapshot.interface_property_decl_count == interface_property_count &&
+         snapshot.interface_method_decl_count == interface_method_count &&
          snapshot.implementation_decl_count == ast.implementations.size() &&
+         snapshot.implementation_property_decl_count == implementation_property_count &&
+         snapshot.implementation_method_decl_count == implementation_method_count &&
          snapshot.function_decl_count == ast.functions.size() &&
          snapshot.interface_category_decl_count == interface_category_count &&
          snapshot.implementation_category_decl_count == implementation_category_count &&
