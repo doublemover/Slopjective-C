@@ -5303,8 +5303,8 @@ class Objc3Parser {
       } else if (type == ValueType::I32 || type == ValueType::Bool) {
         const char *pointer_type = type == ValueType::I32 ? "i32*" : "bool*";
         diagnostics_.push_back(MakeDiag(diag_line, diag_column, "O3P114",
-                                        std::string("unsupported pointer type '") + pointer_type +
-                                            "' in C-style compatibility declaration"));
+                                        std::string("unsupported pointer type in C-style compatibility declaration: '") +
+                                            pointer_type + "'"));
         return false;
       }
       if (!object_pointer_spelling && !id_spelling && !class_spelling && !sel_spelling && !instancetype_spelling) {
@@ -10176,6 +10176,7 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3ParseResult result;
   result.program = parser.Parse();
   result.diagnostics = parser.TakeDiagnostics();
-  result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
+  result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());
+  result.contract_snapshot.token_count = tokens.size();
   return result;
 }
