@@ -306,6 +306,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E004/A005/B005/C005/D005 compatibility readiness
   drifts before final sign-off can remain green.
+- M250 lane-E E006 edge-case expansion and robustness anchors explicit final
+  readiness edge-case expansion and robustness guardrails
+  (`edge_case_expansion_*`, `edge_case_robustness_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E005/A002/B003/C003/D005 robustness prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
