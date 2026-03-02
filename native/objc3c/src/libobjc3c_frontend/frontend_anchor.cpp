@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "io/objc3_process.h"
+#include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
 struct objc3c_frontend_context {
@@ -494,32 +495,60 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     } else {
       const std::filesystem::path object_out = out_dir / (emit_prefix + ".obj");
       int compile_status = 0;
-      std::string backend_error;
-      if (wants_clang_backend) {
-        compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
-      } else {
-        compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
-      }
-      if (compile_status != 0) {
+#if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+      const bool llvm_direct_backend_enabled = true;
+#else
+      const bool llvm_direct_backend_enabled = false;
+#endif
+      const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
+          BuildObjc3ToolchainRuntimeGaOperationsScaffold(
+              wants_clang_backend,
+              wants_llvm_direct_backend,
+              std::filesystem::path(options->clang_path),
+              std::filesystem::path(options->llc_path),
+              llvm_direct_backend_enabled,
+              ir_out,
+              object_out);
+      std::string toolchain_runtime_scaffold_reason;
+      if (!IsObjc3ToolchainRuntimeGaOperationsScaffoldReady(
+              toolchain_runtime_ga_operations_scaffold,
+              toolchain_runtime_scaffold_reason)) {
         result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
-        result->process_exit_code = compile_status;
+        result->process_exit_code = 125;
         result->success = 0;
-        std::string emit_error;
-        if (!backend_error.empty()) {
-          emit_error = "error:1:1: LLVM object emission failed: " + backend_error + " [O3E002]";
-        } else if (wants_clang_backend) {
-          emit_error =
-              "error:1:1: LLVM object emission failed: clang exited with status " + std::to_string(compile_status) +
-              " [O3E002]";
-        } else {
-          emit_error =
-              "error:1:1: LLVM object emission failed: llc exited with status " + std::to_string(compile_status) +
-              " [O3E002]";
-        }
+        const std::string emit_error =
+            "error:1:1: LLVM object emission failed: toolchain/runtime readiness scaffold fail-closed: " +
+            toolchain_runtime_scaffold_reason + " [O3E002]";
         emit_diagnostics.push_back(emit_error);
         objc3c_frontend_set_error(context, emit_error.c_str());
       } else {
-        context->object_path = object_out.generic_string();
+        std::string backend_error;
+        if (wants_clang_backend) {
+          compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+        } else {
+          compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
+        }
+        if (compile_status != 0) {
+          result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
+          result->process_exit_code = compile_status;
+          result->success = 0;
+          std::string emit_error;
+          if (!backend_error.empty()) {
+            emit_error = "error:1:1: LLVM object emission failed: " + backend_error + " [O3E002]";
+          } else if (wants_clang_backend) {
+            emit_error =
+                "error:1:1: LLVM object emission failed: clang exited with status " + std::to_string(compile_status) +
+                " [O3E002]";
+          } else {
+            emit_error =
+                "error:1:1: LLVM object emission failed: llc exited with status " + std::to_string(compile_status) +
+                " [O3E002]";
+          }
+          emit_diagnostics.push_back(emit_error);
+          objc3c_frontend_set_error(context, emit_error.c_str());
+        } else {
+          context->object_path = object_out.generic_string();
+        }
       }
     }
   }

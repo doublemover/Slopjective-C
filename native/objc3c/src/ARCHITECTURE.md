@@ -83,6 +83,11 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so clang
   and llvm-direct object emission remain deterministic and fail-closed.
+- M228 lane-D D002 modular split scaffolding anchors toolchain/runtime
+  backend selection/capability and artifact compile-route readiness in
+  `io/objc3_toolchain_runtime_ga_operations_scaffold.h` and fail-closed
+  pre-dispatch enforcement in `libobjc3c_frontend/frontend_anchor.cpp` so
+  object emission cannot bypass deterministic scaffold gating.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
@@ -548,3 +553,4 @@ Forbidden:
 - New modules must keep deterministic diagnostics ordering.
 - `main.cpp` remains orchestration-only and must not absorb parser/sema logic.
 - Parser recovery behavior must remain replay-proof and deterministic.
+

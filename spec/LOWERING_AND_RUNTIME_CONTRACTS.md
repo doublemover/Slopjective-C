@@ -83,6 +83,9 @@ At minimum, the pass-graph gate shall validate:
 - object emission and link-path routing (clang/llvm-direct) shall remain
   deterministic and fail closed when backend route selection or object artifact
   generation drifts.
+- toolchain/runtime modular split scaffolding shall synthesize deterministic
+  backend selection/capability and IR/object compile-route readiness keys
+  before backend object dispatch.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
@@ -308,3 +311,4 @@ Implementations are encouraged to provide a conformance suite that includes:
 - correct argument evaluation semantics for optional sends,
 - `throws` propagation behavior in nested `do/catch`,
 - executor hop correctness and actor isolation enforcement across module boundaries.
+

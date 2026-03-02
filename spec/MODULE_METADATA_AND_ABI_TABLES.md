@@ -66,6 +66,9 @@ A conforming implementation shall preserve, for all exported declarations:
      readiness suitable for replay-proof closeout evidence,
    - deterministic object-emission backend route keys and output markers for
      clang/llvm-direct compile routing reliability evidence,
+   - deterministic toolchain/runtime modular split scaffold keys for backend
+     selection, backend capability availability, and IR/object compile-route
+     readiness evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent.
 
@@ -286,3 +289,4 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - unknown required OCI-1 fields/capabilities trigger hard errors,
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
+
