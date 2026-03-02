@@ -320,6 +320,16 @@ struct Objc3ParserSemaAdvancedCoreShard1 {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaAdvancedEdgeCompatibilityShard1 {
+  bool advanced_core_shard1_ready = false;
+  bool pass_manager_contract_surface_sync = false;
+  bool shard_surface_sync = false;
+  std::size_t required_sync_count = 0;
+  std::size_t passed_sync_count = 0;
+  std::size_t failed_sync_count = 0;
+  bool deterministic = false;
+};
+
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
@@ -328,6 +338,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaDocsRunbookSync parser_sema_docs_runbook_sync;
   Objc3ParserSemaReleaseCandidateReplayDryRun parser_sema_release_candidate_replay_dry_run;
   Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
+  Objc3ParserSemaAdvancedEdgeCompatibilityShard1 parser_sema_advanced_edge_compatibility_shard1;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
@@ -744,6 +755,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_docs_runbook_sync = false;
   bool deterministic_parser_sema_release_candidate_replay_dry_run = false;
   bool deterministic_parser_sema_advanced_core_shard1 = false;
+  bool deterministic_parser_sema_advanced_edge_compatibility_shard1 = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
@@ -854,6 +866,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_parser_sema_docs_runbook_sync &&
          surface.deterministic_parser_sema_release_candidate_replay_dry_run &&
          surface.deterministic_parser_sema_advanced_core_shard1 &&
+         surface.deterministic_parser_sema_advanced_edge_compatibility_shard1 &&
          IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
          surface.parser_sema_conformance_matrix.deterministic &&
          surface.parser_sema_conformance_corpus.deterministic &&
@@ -862,6 +875,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_docs_runbook_sync.deterministic &&
          surface.parser_sema_release_candidate_replay_dry_run.deterministic &&
          surface.parser_sema_advanced_core_shard1.deterministic &&
+         surface.parser_sema_advanced_edge_compatibility_shard1.deterministic &&
          surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&
          surface.parser_sema_performance_quality_guardrails.passed_guardrail_count ==
              surface.parser_sema_performance_quality_guardrails.required_guardrail_count &&
@@ -917,6 +931,19 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_advanced_core_shard1
              .pass_manager_contract_surface_sync &&
          surface.parser_sema_advanced_core_shard1.shard_surface_sync &&
+         surface.parser_sema_advanced_edge_compatibility_shard1.required_sync_count == 3u &&
+         surface.parser_sema_advanced_edge_compatibility_shard1
+             .passed_sync_count ==
+             surface.parser_sema_advanced_edge_compatibility_shard1
+                 .required_sync_count &&
+         surface.parser_sema_advanced_edge_compatibility_shard1
+             .failed_sync_count == 0u &&
+         surface.parser_sema_advanced_edge_compatibility_shard1
+             .advanced_core_shard1_ready &&
+         surface.parser_sema_advanced_edge_compatibility_shard1
+             .pass_manager_contract_surface_sync &&
+         surface.parser_sema_advanced_edge_compatibility_shard1
+             .shard_surface_sync &&
          surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
          surface.parser_sema_conformance_matrix.global_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_decl_count_matches &&
@@ -2571,6 +2598,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_parser_sema_release_candidate_replay_dry_run = false;
   Objc3ParserSemaAdvancedCoreShard1 parser_sema_advanced_core_shard1;
   bool deterministic_parser_sema_advanced_core_shard1 = false;
+  Objc3ParserSemaAdvancedEdgeCompatibilityShard1 parser_sema_advanced_edge_compatibility_shard1;
+  bool deterministic_parser_sema_advanced_edge_compatibility_shard1 = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
