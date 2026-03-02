@@ -57,6 +57,7 @@ target_link_libraries(objc3c_parse PUBLIC
 )
 add_library(objc3c_sema STATIC
   src/sema/objc3_sema_diagnostics_bus.cpp
+  src/sema/objc3_sema_pass_flow_scaffold.cpp
   src/sema/objc3_sema_pass_manager.cpp
   src/sema/objc3_semantic_passes.cpp
   src/sema/objc3_static_analysis.cpp

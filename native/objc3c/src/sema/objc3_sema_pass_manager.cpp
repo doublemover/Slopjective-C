@@ -7,6 +7,7 @@
 
 #include "diag/objc3_diag_utils.h"
 #include "sema/objc3_parser_sema_handoff_scaffold.h"
+#include "sema/objc3_sema_pass_flow_scaffold.h"
 #include "sema/objc3_semantic_passes.h"
 
 namespace {
@@ -752,8 +753,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     ++pass_iteration_index;
 
     const std::size_t pass_index = static_cast<std::size_t>(pass);
-    result.sema_pass_flow_summary.pass_executed[pass_index] = true;
-    ++result.sema_pass_flow_summary.executed_pass_count;
+    MarkObjc3SemaPassExecuted(result.sema_pass_flow_summary, pass);
 
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
@@ -2094,38 +2094,14 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
   result.sema_pass_flow_summary.diagnostics_after_pass = result.diagnostics_after_pass;
-  result.sema_pass_flow_summary.pass_order_matches_contract =
-      pass_order_matches_contract &&
-      pass_iteration_index == kObjc3SemaPassOrder.size();
-  result.sema_pass_flow_summary.diagnostics_after_pass_monotonic =
-      diagnostics_after_pass_monotonic;
-  result.sema_pass_flow_summary.symbol_globals_count = result.integration_surface.globals.size();
-  result.sema_pass_flow_summary.symbol_functions_count = result.integration_surface.functions.size();
-  result.sema_pass_flow_summary.symbol_interfaces_count = result.integration_surface.interfaces.size();
-  result.sema_pass_flow_summary.symbol_implementations_count = result.integration_surface.implementations.size();
-  result.sema_pass_flow_summary.type_metadata_global_entries =
-      result.type_metadata_handoff.global_names_lexicographic.size();
-  result.sema_pass_flow_summary.type_metadata_function_entries =
-      result.type_metadata_handoff.functions_lexicographic.size();
-  result.sema_pass_flow_summary.type_metadata_interface_entries =
-      result.type_metadata_handoff.interfaces_lexicographic.size();
-  result.sema_pass_flow_summary.type_metadata_implementation_entries =
-      result.type_metadata_handoff.implementations_lexicographic.size();
-  result.sema_pass_flow_summary.symbol_flow_counts_consistent =
-      result.sema_pass_flow_summary.symbol_globals_count ==
-          result.sema_pass_flow_summary.type_metadata_global_entries &&
-      result.sema_pass_flow_summary.symbol_functions_count ==
-          result.sema_pass_flow_summary.type_metadata_function_entries &&
-      result.sema_pass_flow_summary.symbol_interfaces_count ==
-          result.sema_pass_flow_summary.type_metadata_interface_entries &&
-      result.sema_pass_flow_summary.symbol_implementations_count ==
-          result.sema_pass_flow_summary.type_metadata_implementation_entries;
-  result.sema_pass_flow_summary.deterministic =
-      result.sema_pass_flow_summary.pass_order_matches_contract &&
-      result.sema_pass_flow_summary.diagnostics_after_pass_monotonic &&
-      result.sema_pass_flow_summary.symbol_flow_counts_consistent &&
-      result.deterministic_semantic_diagnostics &&
-      result.deterministic_type_metadata_handoff;
+  FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,
+                                   result.integration_surface,
+                                   result.type_metadata_handoff,
+                                   diagnostics_after_pass_monotonic,
+                                   pass_order_matches_contract &&
+                                       pass_iteration_index == kObjc3SemaPassOrder.size(),
+                                   result.deterministic_semantic_diagnostics,
+                                   result.deterministic_type_metadata_handoff);
 
   result.parity_surface.parser_sema_conformance_matrix =
       result.parser_sema_conformance_matrix;

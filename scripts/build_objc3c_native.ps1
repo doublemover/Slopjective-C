@@ -1012,6 +1012,7 @@ $frontendModules = @(
     name = "sema"
     sources = @(
       "native/objc3c/src/sema/objc3_sema_diagnostics_bus.cpp"
+      "native/objc3c/src/sema/objc3_sema_pass_flow_scaffold.cpp"
       "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
       "native/objc3c/src/sema/objc3_semantic_passes.cpp"
       "native/objc3c/src/sema/objc3_static_analysis.cpp"
