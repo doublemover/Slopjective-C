@@ -38,6 +38,11 @@ Current-state note:
   `kObjc3CanonicalBridgeTopReferenceTypeForms`) to keep semantic checking
   deterministic across `id`/`Class`/`SEL`/`Protocol`/`instancetype` and
   object-pointer forms.
+- M250 lane-A frontend stability freeze anchors long-tail grammar closure to
+  parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
+  readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
+  so parser determinism and recovery coverage remain fail-closed for GA
+  readiness.
 
 ## Ownership Map
 
