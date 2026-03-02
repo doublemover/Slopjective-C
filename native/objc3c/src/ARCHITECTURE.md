@@ -83,11 +83,20 @@ Current-state note:
   expansion-accounting and replay-key guardrails in
   `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so core feature readiness can fail closed on accounting drift.
+- M250 lane-C C005 edge compatibility completion anchors parse/runtime
+  compatibility handoff and edge-robustness gates in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so edge-case compatibility drift fails closed before runtime readiness.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
   IR/object artifact compile gating stay deterministic and fail-closed before
   runtime object emission dispatch.
+- M250 lane-D D003 core feature implementation anchors toolchain/runtime GA
+  operations readiness closure in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so scaffold
+  readiness, compile dispatch outcomes, and backend marker recording stay
+  deterministic and fail-closed before success exit status is returned.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

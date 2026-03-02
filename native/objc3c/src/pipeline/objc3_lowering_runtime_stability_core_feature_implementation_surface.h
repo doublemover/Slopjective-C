@@ -47,6 +47,14 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << ";parse_conformance_accounting_consistent="
       << (surface.parse_conformance_accounting_consistent ? "true" : "false")
       << ";replay_keys_ready=" << (surface.replay_keys_ready ? "true" : "false")
+      << ";compatibility_handoff_consistent="
+      << (surface.compatibility_handoff_consistent ? "true" : "false")
+      << ";pragma_coordinate_order_consistent="
+      << (surface.language_version_pragma_coordinate_order_consistent ? "true" : "false")
+      << ";parse_edge_case_robustness_consistent="
+      << (surface.parse_edge_case_robustness_consistent ? "true" : "false")
+      << ";edge_case_compatibility_ready="
+      << (surface.edge_case_compatibility_ready ? "true" : "false")
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -93,6 +101,12 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_surface.parse_lowering_performance_quality_guardrails_passed_case_count;
   surface.parse_lowering_performance_quality_guardrails_failed_case_count =
       parse_surface.parse_lowering_performance_quality_guardrails_failed_case_count;
+  surface.compatibility_handoff_consistent =
+      parse_surface.compatibility_handoff_consistent;
+  surface.language_version_pragma_coordinate_order_consistent =
+      parse_surface.language_version_pragma_coordinate_order_consistent;
+  surface.parse_edge_case_robustness_consistent =
+      parse_surface.parse_artifact_edge_case_robustness_consistent;
 
   surface.lowering_boundary_replay_key = scaffold.lowering_boundary_replay_key;
   surface.typed_handoff_key = scaffold.typed_handoff_key;
@@ -139,16 +153,26 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_matrix_case_count_ready &&
       parse_corpus_case_accounting_consistent &&
       parse_guardrails_case_accounting_consistent;
+  const bool edge_case_compatibility_ready =
+      parse_surface.compatibility_handoff_consistent &&
+      parse_surface.language_version_pragma_coordinate_order_consistent &&
+      parse_surface.parse_artifact_edge_case_robustness_consistent &&
+      parse_surface.parse_artifact_replay_key_deterministic &&
+      parse_surface.parse_recovery_determinism_hardening_consistent &&
+      !parse_surface.compatibility_handoff_key.empty() &&
+      !parse_surface.parse_artifact_edge_robustness_key.empty();
   const bool expansion_ready =
       typed_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
-      replay_keys_ready;
+      replay_keys_ready &&
+      edge_case_compatibility_ready;
 
   surface.typed_expansion_accounting_consistent =
       typed_expansion_accounting_consistent;
   surface.parse_conformance_accounting_consistent =
       parse_conformance_accounting_consistent;
   surface.replay_keys_ready = replay_keys_ready;
+  surface.edge_case_compatibility_ready = edge_case_compatibility_ready;
   surface.expansion_ready = expansion_ready;
 
   surface.core_feature_impl_ready =
@@ -176,7 +200,21 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       ";parse-conformance-accounting-consistent=" +
       std::string(parse_conformance_accounting_consistent ? "true" : "false") +
       ";replay-keys-ready=" + std::string(replay_keys_ready ? "true" : "false") +
+      ";edge-compat-ready=" +
+      std::string(edge_case_compatibility_ready ? "true" : "false") +
+      ";compat-handoff-consistent=" +
+      std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
+      ";parse-edge-robustness-consistent=" +
+      std::string(parse_surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
       ";expansion-ready=" + std::string(expansion_ready ? "true" : "false");
+  surface.edge_case_compatibility_key =
+      "lowering-runtime-edge-compatibility:v1:compatibility-handoff-consistent=" +
+      std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
+      ";pragma-coordinate-order-consistent=" +
+      std::string(parse_surface.language_version_pragma_coordinate_order_consistent ? "true" : "false") +
+      ";parse-edge-robustness-consistent=" +
+      std::string(parse_surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
+      ";edge-compat-ready=" + std::string(edge_case_compatibility_ready ? "true" : "false");
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -215,6 +253,8 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
         "parse conformance accounting is inconsistent";
   } else if (!replay_keys_ready) {
     surface.failure_reason = "lowering/runtime replay keys are not ready";
+  } else if (!edge_case_compatibility_ready) {
+    surface.failure_reason = "lowering/runtime edge-case compatibility is not ready";
   } else if (!expansion_ready) {
     surface.failure_reason =
         "lowering/runtime core feature expansion is not ready";
