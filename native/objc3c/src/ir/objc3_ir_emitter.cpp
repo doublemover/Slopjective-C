@@ -359,6 +359,18 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    if (!frontend_metadata_
+             .lowering_pass_graph_diagnostics_hardening_key.empty()) {
+      out << "; lowering_pass_graph_diagnostics_hardening = "
+          << frontend_metadata_
+                 .lowering_pass_graph_diagnostics_hardening_key
+          << "\n";
+    }
+    out << "; lowering_pass_graph_diagnostics_hardening_ready = "
+        << (frontend_metadata_.lowering_pass_graph_diagnostics_hardening_ready
+                ? "true"
+                : "false")
+        << "\n";
     if (!frontend_metadata_.ir_emission_completeness_modular_split_key.empty()) {
       out << "; ir_emission_completeness_modular_split = "
           << frontend_metadata_.ir_emission_completeness_modular_split_key

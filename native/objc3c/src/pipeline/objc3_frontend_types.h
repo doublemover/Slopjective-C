@@ -337,12 +337,15 @@ struct Objc3LoweringPipelinePassGraphCoreFeatureSurface {
   bool edge_case_compatibility_ready = false;
   bool edge_case_expansion_consistent = false;
   bool edge_case_robustness_ready = false;
+  bool diagnostics_hardening_consistent = false;
+  bool diagnostics_hardening_ready = false;
   bool expansion_ready = false;
   bool core_feature_ready = false;
   std::string lowering_boundary_replay_key;
   std::string runtime_dispatch_declaration_replay_key;
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
+  std::string diagnostics_hardening_key;
   std::string expansion_key;
   std::string core_feature_key;
   std::string failure_reason;

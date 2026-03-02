@@ -1467,6 +1467,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string lowering_pass_graph_lane_a_diagnostics_hardening_error;
+  if (!IsObjc3LoweringPipelinePassGraphDiagnosticsHardeningReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_lane_a_diagnostics_hardening_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L308",
+        "LLVM IR emission failed: lowering pipeline pass-graph lane-A diagnostics hardening check failed: " +
+            lowering_pass_graph_lane_a_diagnostics_hardening_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
   std::string lowering_pass_graph_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
           pipeline_result.ir_emission_completeness_scaffold,
@@ -5064,6 +5078,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.lowering_pass_graph_edge_case_robustness_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .edge_case_robustness_key;
+  ir_frontend_metadata.lowering_pass_graph_diagnostics_hardening_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .diagnostics_hardening_ready;
+  ir_frontend_metadata.lowering_pass_graph_diagnostics_hardening_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .diagnostics_hardening_key;
   ir_frontend_metadata.ir_emission_completeness_modular_split_ready =
       pipeline_result.ir_emission_completeness_scaffold.modular_split_ready;
   ir_frontend_metadata.ir_emission_completeness_modular_split_key =

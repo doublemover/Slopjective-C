@@ -485,6 +485,8 @@ struct Objc3IRFrontendMetadata {
   std::string lowering_pass_graph_edge_case_compatibility_key;
   bool lowering_pass_graph_edge_case_robustness_ready = false;
   std::string lowering_pass_graph_edge_case_robustness_key;
+  bool lowering_pass_graph_diagnostics_hardening_ready = false;
+  std::string lowering_pass_graph_diagnostics_hardening_key;
   bool ir_emission_completeness_modular_split_ready = false;
   std::string ir_emission_completeness_modular_split_key;
   bool ir_emission_core_feature_impl_ready = false;

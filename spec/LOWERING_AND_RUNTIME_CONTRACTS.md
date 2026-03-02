@@ -105,6 +105,9 @@ At minimum, the pass-graph gate shall validate:
 - edge-case expansion and robustness shall include deterministic expansion
   consistency and robustness readiness/key gates that fail closed before IR
   emission.
+- diagnostics hardening shall include deterministic diagnostics consistency and
+  diagnostics hardening readiness/key gates that fail closed before IR
+  emission.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.

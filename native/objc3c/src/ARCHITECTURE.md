@@ -72,6 +72,12 @@ Current-state note:
   (`edge_case_expansion_consistent`, `edge_case_robustness_*`) and enforces
   fail-closed robustness gating in `pipeline/objc3_frontend_artifacts.cpp`
   before IR emission.
+- M228 lane-A A007 diagnostics hardening extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  deterministic diagnostics hardening guardrails
+  (`diagnostics_hardening_consistent`, `diagnostics_hardening_*`) and enforces
+  fail-closed diagnostics-hardening gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,

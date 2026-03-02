@@ -79,6 +79,24 @@ std::string BuildObjc3LoweringPipelinePassGraphEdgeCaseRobustnessKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphDiagnosticsHardeningKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-diagnostics-hardening:v1:"
+      << "edge-case-robustness-ready="
+      << (surface.edge_case_robustness_ready ? "true" : "false")
+      << ";diagnostics-hardening-consistent="
+      << (surface.diagnostics_hardening_consistent ? "true" : "false")
+      << ";diagnostics-hardening-ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false")
+      << ";lowering-boundary-replay-key=" << surface.lowering_boundary_replay_key
+      << ";runtime-dispatch-declaration-replay-key="
+      << surface.runtime_dispatch_declaration_replay_key
+      << ";edge-case-robustness-key-ready="
+      << (!surface.edge_case_robustness_key.empty() ? "true" : "false");
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -179,6 +197,23 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       !surface.edge_case_compatibility_key.empty();
   surface.edge_case_robustness_key =
       BuildObjc3LoweringPipelinePassGraphEdgeCaseRobustnessKey(surface);
+  surface.diagnostics_hardening_consistent =
+      surface.edge_case_robustness_ready &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_diagnostics_hardening_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_artifact_diagnostics_hardening_consistent;
+  surface.diagnostics_hardening_ready =
+      surface.diagnostics_hardening_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_diagnostics_hardening_ready &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .long_tail_grammar_diagnostics_hardening_key.empty() &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .parse_artifact_diagnostics_hardening_key.empty() &&
+      !surface.edge_case_robustness_key.empty();
+  surface.diagnostics_hardening_key =
+      BuildObjc3LoweringPipelinePassGraphDiagnosticsHardeningKey(surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
@@ -186,7 +221,8 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
 
   if (surface.core_feature_ready && surface.expansion_ready &&
       surface.edge_case_compatibility_ready &&
-      surface.edge_case_robustness_ready) {
+      surface.edge_case_robustness_ready &&
+      surface.diagnostics_hardening_ready) {
     return surface;
   }
 
@@ -223,6 +259,12 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "pass-graph edge-case robustness is not ready";
   } else if (surface.edge_case_robustness_key.empty()) {
     surface.failure_reason = "pass-graph edge-case robustness key is not ready";
+  } else if (!surface.diagnostics_hardening_consistent) {
+    surface.failure_reason = "pass-graph diagnostics hardening is inconsistent";
+  } else if (!surface.diagnostics_hardening_ready) {
+    surface.failure_reason = "pass-graph diagnostics hardening is not ready";
+  } else if (surface.diagnostics_hardening_key.empty()) {
+    surface.failure_reason = "pass-graph diagnostics hardening key is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -278,6 +320,19 @@ bool IsObjc3LoweringPipelinePassGraphEdgeCaseRobustnessReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph edge-case robustness is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphDiagnosticsHardeningReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.diagnostics_hardening_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph diagnostics hardening is not ready"
                : surface.failure_reason;
   return false;
 }

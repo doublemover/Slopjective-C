@@ -84,6 +84,8 @@ A conforming implementation shall preserve, for all exported declarations:
       compatibility handoff and pragma-order gating evidence,
     - deterministic edge-case expansion/robustness readiness/key anchors for
       lowering pass-graph robustness evidence,
+    - deterministic diagnostics hardening readiness/key anchors for lowering
+      pass-graph diagnostics-hardening evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
    - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,
