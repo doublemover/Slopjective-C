@@ -66,6 +66,11 @@ Current-state note:
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
   sema handoff and parse/lowering readiness surfaces share deterministic
   fail-closed runtime-proof gates.
+- M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
+  operations readiness in
+  `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
+  IR/object artifact compile gating stay deterministic and fail-closed before
+  runtime object emission dispatch.
 
 ## Ownership Map
 

@@ -10,6 +10,7 @@
 #include "io/objc3_file_io.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
+#include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
 namespace fs = std::filesystem;
@@ -33,8 +34,33 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     WriteText(ir_out, artifacts.ir_text);
 
     const fs::path object_out = cli_options.out_dir / (cli_options.emit_prefix + ".obj");
+    const bool clang_backend_selected = cli_options.ir_object_backend == Objc3IrObjectBackend::kClang;
+    const bool llvm_direct_backend_selected = cli_options.ir_object_backend == Objc3IrObjectBackend::kLLVMDirect;
+#if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+    const bool llvm_direct_backend_enabled = true;
+#else
+    const bool llvm_direct_backend_enabled = false;
+#endif
+    const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
+        BuildObjc3ToolchainRuntimeGaOperationsScaffold(
+            clang_backend_selected,
+            llvm_direct_backend_selected,
+            cli_options.clang_path,
+            cli_options.llc_path,
+            llvm_direct_backend_enabled,
+            ir_out,
+            object_out);
+    std::string toolchain_runtime_scaffold_reason;
+    if (!IsObjc3ToolchainRuntimeGaOperationsScaffoldReady(
+            toolchain_runtime_ga_operations_scaffold,
+            toolchain_runtime_scaffold_reason)) {
+      std::cerr << "toolchain/runtime readiness scaffold fail-closed: "
+                << toolchain_runtime_scaffold_reason << "\n";
+      return 3;
+    }
+
     int compile_status = 0;
-    if (cli_options.ir_object_backend == Objc3IrObjectBackend::kClang) {
+    if (clang_backend_selected) {
       compile_status = RunIRCompile(cli_options.clang_path, ir_out, object_out);
     } else {
       std::string backend_error;
