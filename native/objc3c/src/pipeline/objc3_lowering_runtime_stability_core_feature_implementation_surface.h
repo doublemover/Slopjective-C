@@ -75,6 +75,11 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << ";conformance_matrix_ready="
       << (surface.conformance_matrix_ready ? "true" : "false")
       << ";conformance_matrix_key=" << surface.conformance_matrix_key
+      << ";conformance_corpus_consistent="
+      << (surface.conformance_corpus_consistent ? "true" : "false")
+      << ";conformance_corpus_ready="
+      << (surface.conformance_corpus_ready ? "true" : "false")
+      << ";conformance_corpus_key=" << surface.conformance_corpus_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -135,6 +140,8 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_surface.long_tail_grammar_recovery_determinism_key;
   surface.conformance_matrix_key =
       parse_surface.long_tail_grammar_conformance_matrix_key;
+  surface.conformance_corpus_key =
+      parse_surface.parse_lowering_conformance_corpus_key;
 
   surface.lowering_boundary_replay_key = scaffold.lowering_boundary_replay_key;
   surface.typed_handoff_key = scaffold.typed_handoff_key;
@@ -235,6 +242,15 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_matrix_case_count_ready &&
       !parse_surface.long_tail_grammar_conformance_matrix_key.empty() &&
       !parse_surface.parse_lowering_conformance_matrix_key.empty();
+  const bool conformance_corpus_consistent =
+      conformance_matrix_consistent &&
+      parse_surface.parse_lowering_conformance_corpus_consistent &&
+      parse_surface.parse_artifact_replay_key_deterministic;
+  const bool conformance_corpus_ready =
+      conformance_corpus_consistent &&
+      conformance_matrix_ready &&
+      parse_corpus_case_accounting_consistent &&
+      !parse_surface.parse_lowering_conformance_corpus_key.empty();
   const bool edge_case_compatibility_expansion_ready =
       typed_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
@@ -262,6 +278,8 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   surface.recovery_determinism_ready = recovery_determinism_ready;
   surface.conformance_matrix_consistent = conformance_matrix_consistent;
   surface.conformance_matrix_ready = conformance_matrix_ready;
+  surface.conformance_corpus_consistent = conformance_corpus_consistent;
+  surface.conformance_corpus_ready = conformance_corpus_ready;
   surface.expansion_ready = expansion_ready;
   const bool recovery_determinism_expansion_ready =
       surface.expansion_ready &&
@@ -271,6 +289,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       recovery_determinism_expansion_ready &&
       conformance_matrix_ready;
   surface.expansion_ready = conformance_matrix_expansion_ready;
+  const bool conformance_corpus_expansion_ready =
+      conformance_matrix_expansion_ready &&
+      conformance_corpus_ready;
+  surface.expansion_ready = conformance_corpus_expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.lowering_boundary_ready &&
@@ -329,6 +351,14 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       std::string(!surface.conformance_matrix_key.empty() ? "true" : "false") +
       ";conformance-matrix-expansion-ready=" +
       std::string(conformance_matrix_expansion_ready ? "true" : "false") +
+      ";conformance-corpus-consistent=" +
+      std::string(conformance_corpus_consistent ? "true" : "false") +
+      ";conformance-corpus-ready=" +
+      std::string(conformance_corpus_ready ? "true" : "false") +
+      ";conformance-corpus-key-ready=" +
+      std::string(!surface.conformance_corpus_key.empty() ? "true" : "false") +
+      ";conformance-corpus-expansion-ready=" +
+      std::string(conformance_corpus_expansion_ready ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parser-diagnostic-surface-consistent=" +
@@ -402,6 +432,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "lowering/runtime conformance matrix is inconsistent";
   } else if (!conformance_matrix_ready) {
     surface.failure_reason = "lowering/runtime conformance matrix is not ready";
+  } else if (!conformance_corpus_consistent) {
+    surface.failure_reason = "lowering/runtime conformance corpus is inconsistent";
+  } else if (!conformance_corpus_ready) {
+    surface.failure_reason = "lowering/runtime conformance corpus is not ready";
   } else if (!diagnostics_hardening_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime core feature expansion is not ready";
@@ -411,6 +445,9 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   } else if (!conformance_matrix_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime conformance matrix expansion is not ready";
+  } else if (!conformance_corpus_expansion_ready) {
+    surface.failure_reason =
+        "lowering/runtime conformance corpus expansion is not ready";
   } else {
     surface.failure_reason =
         "lowering/runtime core feature implementation is not ready";

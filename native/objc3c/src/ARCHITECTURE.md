@@ -155,6 +155,11 @@ Current-state note:
   `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so conformance-matrix drift fails closed before runtime readiness is
   reported.
+- M250 lane-C C010 conformance corpus expansion anchors explicit lowering/runtime
+  conformance-corpus guardrails (`conformance_corpus_*`) in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so conformance-corpus drift fails closed before runtime readiness is
+  reported.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
