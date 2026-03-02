@@ -236,6 +236,11 @@ Current-state note:
   toolchain/runtime docs/runbook synchronization guardrails in
   `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D docs-signoff
   drift fails closed before final gate sign-off.
+- M250 lane-D D014 release-candidate replay dry-run anchors deterministic
+  dry-run validation in
+  `scripts/run_m250_d014_toolchain_runtime_ga_operations_readiness_release_replay_dry_run.ps1`
+  so lane-D release-candidate replay drift fails closed before downstream
+  advanced workpacks.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`

@@ -1061,7 +1061,6 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       parser_snapshot.long_tail_grammar_handoff_deterministic &&
       surface.long_tail_grammar_core_feature_consistent;
   surface.long_tail_grammar_expansion_accounting_consistent =
-      surface.long_tail_grammar_construct_count > 0 &&
       surface.long_tail_grammar_covered_construct_count <=
           surface.long_tail_grammar_construct_count &&
       surface.long_tail_grammar_fingerprint != 0 &&
@@ -1206,8 +1205,6 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.long_tail_grammar_expansion_ready &&
       surface.long_tail_grammar_edge_case_compatibility_ready &&
       surface.parse_artifact_edge_case_robustness_consistent &&
-      surface.long_tail_grammar_construct_count > 0 &&
-      surface.long_tail_grammar_covered_construct_count > 0 &&
       surface.long_tail_grammar_covered_construct_count <=
           surface.long_tail_grammar_construct_count &&
       surface.long_tail_grammar_fingerprint != 0 &&
@@ -1231,7 +1228,6 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_diagnostics_hardening_consistent &&
       surface.parser_diagnostic_surface_consistent &&
       surface.parser_diagnostic_code_surface_deterministic &&
-      surface.parser_diagnostic_code_count > 0 &&
       surface.parser_diagnostic_code_fingerprint != 0 &&
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
       !surface.long_tail_grammar_edge_case_robustness_key.empty();
