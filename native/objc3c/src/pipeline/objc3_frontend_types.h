@@ -299,6 +299,8 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool conformance_matrix_ready = false;
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
   bool expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -322,6 +324,7 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string edge_case_compatibility_key;
   std::string expansion_key;
   std::string core_feature_key;
