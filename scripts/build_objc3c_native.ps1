@@ -425,6 +425,67 @@ function Write-FrontendEdgeCompatibilityArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendEdgeRobustnessArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendEdgeCompatibilityPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendEdgeCompatibilityPath -PathType Leaf)) {
+    throw "frontend edge compatibility artifact missing for edge robustness artifact: $FrontendEdgeCompatibilityPath"
+  }
+
+  try {
+    $edgeCompatPayload = Get-Content -LiteralPath $FrontendEdgeCompatibilityPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend edge compatibility artifact is not valid JSON for edge robustness artifact: $FrontendEdgeCompatibilityPath"
+  }
+
+  $expectedEdgeCompatContractId = "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1"
+  if ([string]$edgeCompatPayload.contract_id -ne $expectedEdgeCompatContractId) {
+    throw "frontend edge compatibility contract id mismatch for edge robustness artifact: $FrontendEdgeCompatibilityPath"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedEdgeCompatContractId
+      "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1"
+    )
+    wrapper_guardrails = [ordered]@{
+      wrapper_single_value_flags = @(
+        "--use-cache"
+        "--out-dir"
+      )
+      compile_single_value_flags = @(
+        "--objc3-ir-object-backend"
+        "--llvm-capabilities-summary"
+        "--objc3-route-backend-from-capabilities"
+      )
+      reject_empty_equals_value_flags = @(
+        "--out-dir"
+        "--emit-prefix"
+        "--clang"
+        "--objc3-ir-object-backend"
+        "--llvm-capabilities-summary"
+        "--objc3-route-backend-from-capabilities"
+        "--use-cache"
+      )
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -502,6 +563,7 @@ $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/fronten
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
 $frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_compat.json"
+$frontendEdgeRobustnessPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_robustness.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -576,9 +638,14 @@ Write-FrontendEdgeCompatibilityArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendEdgeCompatPath `
   -FrontendCoreFeatureExpansionPath $frontendCoreFeatureExpansionPath
+Write-FrontendEdgeRobustnessArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendEdgeRobustnessPath `
+  -FrontendEdgeCompatibilityPath $frontendEdgeCompatPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
 Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
 Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))
 Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeCompatPath))
+Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeRobustnessPath))

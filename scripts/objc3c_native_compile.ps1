@@ -22,14 +22,28 @@ function Parse-WrapperArguments {
   $useCache = $false
   $compileArgs = New-Object System.Collections.Generic.List[string]
   $outDir = $null
+  $wrapperFlagCounts = @{
+    "--use-cache" = 0
+    "--out-dir" = 0
+  }
 
   for ($i = 0; $i -lt $RawArgs.Count; $i++) {
     $token = $RawArgs[$i]
     if ($token -eq "--use-cache") {
+      $wrapperFlagCounts["--use-cache"] = [int]$wrapperFlagCounts["--use-cache"] + 1
+      if ([int]$wrapperFlagCounts["--use-cache"] -gt 1) {
+        Write-Error "--use-cache can be provided at most once"
+        exit 2
+      }
       $useCache = $true
       continue
     }
     if ($token.StartsWith("--use-cache=", [System.StringComparison]::OrdinalIgnoreCase)) {
+      $wrapperFlagCounts["--use-cache"] = [int]$wrapperFlagCounts["--use-cache"] + 1
+      if ([int]$wrapperFlagCounts["--use-cache"] -gt 1) {
+        Write-Error "--use-cache can be provided at most once"
+        exit 2
+      }
       $rawBoolean = $token.Substring("--use-cache=".Length).Trim().ToLowerInvariant()
       if (@("1", "true", "yes", "on") -contains $rawBoolean) {
         $useCache = $true
@@ -44,6 +58,11 @@ function Parse-WrapperArguments {
     }
 
     if ($token -eq "--out-dir") {
+      $wrapperFlagCounts["--out-dir"] = [int]$wrapperFlagCounts["--out-dir"] + 1
+      if ([int]$wrapperFlagCounts["--out-dir"] -gt 1) {
+        Write-Error "--out-dir can be provided at most once"
+        exit 2
+      }
       if (($i + 1) -ge $RawArgs.Count) {
         Show-UsageAndExit
       }
@@ -56,6 +75,11 @@ function Parse-WrapperArguments {
     }
 
     if ($token.StartsWith("--out-dir=", [System.StringComparison]::Ordinal)) {
+      $wrapperFlagCounts["--out-dir"] = [int]$wrapperFlagCounts["--out-dir"] + 1
+      if ([int]$wrapperFlagCounts["--out-dir"] -gt 1) {
+        Write-Error "--out-dir can be provided at most once"
+        exit 2
+      }
       $value = $token.Substring("--out-dir=".Length)
       if ([string]::IsNullOrWhiteSpace($value)) {
         Show-UsageAndExit
@@ -243,6 +267,7 @@ function Invoke-BuildNativeCompiler {
   $frontendInvocationLockRelativePath = $null
   $frontendCoreFeatureExpansionRelativePath = $null
   $frontendEdgeCompatRelativePath = $null
+  $frontendEdgeRobustnessRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -258,6 +283,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_edge_compat=")) {
       $frontendEdgeCompatRelativePath = $lineText.Substring("frontend_edge_compat=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_edge_robustness=")) {
+      $frontendEdgeRobustnessRelativePath = $lineText.Substring("frontend_edge_robustness=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -266,6 +294,7 @@ function Invoke-BuildNativeCompiler {
     frontend_invocation_lock_relative_path = $frontendInvocationLockRelativePath
     frontend_core_feature_expansion_relative_path = $frontendCoreFeatureExpansionRelativePath
     frontend_edge_compat_relative_path = $frontendEdgeCompatRelativePath
+    frontend_edge_robustness_relative_path = $frontendEdgeRobustnessRelativePath
   }
 }
 
@@ -349,6 +378,24 @@ function Resolve-FrontendEdgeCompatibilityPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend edge compatibility"
+}
+
+function Resolve-FrontendEdgeRobustnessPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_edge_robustness.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_edge_robustness_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend edge robustness"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -866,6 +913,7 @@ function Assert-FrontendEdgeCompatibility {
   $normalizedArgs = New-Object System.Collections.Generic.List[string]
   $usesCapabilityRouting = $false
   $hasCapabilitySummary = $false
+  $routeFlagOccurrences = 0
 
   for ($i = 0; $i -lt $compileArgs.Count; $i++) {
     $token = [string]$compileArgs[$i]
@@ -948,13 +996,35 @@ function Assert-FrontendEdgeCompatibility {
       continue
     }
 
+    if ($token.StartsWith("--emit-prefix=", [System.StringComparison]::Ordinal)) {
+      $emitPrefix = $token.Substring("--emit-prefix=".Length)
+      if ([string]::IsNullOrWhiteSpace($emitPrefix)) {
+        Write-Error "empty value for --emit-prefix"
+        exit 2
+      }
+      $normalizedArgs.Add($token)
+      continue
+    }
+
+    if ($token.StartsWith("--clang=", [System.StringComparison]::Ordinal)) {
+      $clangPath = $token.Substring("--clang=".Length)
+      if ([string]::IsNullOrWhiteSpace($clangPath)) {
+        Write-Error "empty value for --clang"
+        exit 2
+      }
+      $normalizedArgs.Add($token)
+      continue
+    }
+
     if ($token -eq "--objc3-route-backend-from-capabilities") {
+      $routeFlagOccurrences++
       $usesCapabilityRouting = $true
       $normalizedArgs.Add("--objc3-route-backend-from-capabilities")
       continue
     }
 
     if ($token.StartsWith("--objc3-route-backend-from-capabilities=", [System.StringComparison]::Ordinal)) {
+      $routeFlagOccurrences++
       $routeBoolean = $token.Substring("--objc3-route-backend-from-capabilities=".Length).Trim().ToLowerInvariant()
       if (@("1", "true", "yes", "on") -contains $routeBoolean) {
         $usesCapabilityRouting = $true
@@ -977,6 +1047,10 @@ function Assert-FrontendEdgeCompatibility {
       exit 2
     }
   }
+  if ($routeFlagOccurrences -gt 1) {
+    Write-Error "--objc3-route-backend-from-capabilities can be provided at most once"
+    exit 2
+  }
   if ($usesCapabilityRouting -and -not $hasCapabilitySummary) {
     Write-Error "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
     exit 2
@@ -985,6 +1059,109 @@ function Assert-FrontendEdgeCompatibility {
   return [pscustomobject]@{
     edge_compat_path = $compatPath
     normalized_compile_args = $normalizedArgs.ToArray()
+  }
+}
+
+function Assert-FrontendEdgeRobustness {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $robustnessPath = Resolve-FrontendEdgeRobustnessPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $robustnessPath -PathType Leaf)) {
+    Write-Error "frontend edge robustness artifact missing at $robustnessPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $robustnessPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend edge robustness artifact is not valid JSON at $robustnessPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend edge robustness contract id mismatch in $robustnessPath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-edge-compat-completion/m226-d005-v1",
+    "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend edge robustness missing dependency contract '$requiredContractId' in $robustnessPath"
+      exit 2
+    }
+  }
+
+  $guardrails = $payload.wrapper_guardrails
+  if ($null -eq $guardrails) {
+    Write-Error "frontend edge robustness wrapper_guardrails metadata missing in $robustnessPath"
+    exit 2
+  }
+
+  $requiredWrapperSingleFlags = @("--use-cache", "--out-dir")
+  $wrapperSingleSet = @{}
+  foreach ($flag in @($guardrails.wrapper_single_value_flags)) {
+    $flagText = [string]$flag
+    if (-not [string]::IsNullOrWhiteSpace($flagText)) {
+      $wrapperSingleSet[$flagText] = $true
+    }
+  }
+  foreach ($requiredFlag in $requiredWrapperSingleFlags) {
+    if (-not $wrapperSingleSet.ContainsKey($requiredFlag)) {
+      Write-Error "frontend edge robustness missing wrapper_single_value flag '$requiredFlag' in $robustnessPath"
+      exit 2
+    }
+  }
+
+  $requiredCompileSingleFlags = @(
+    "--objc3-ir-object-backend",
+    "--llvm-capabilities-summary",
+    "--objc3-route-backend-from-capabilities"
+  )
+  $compileSingleSet = @{}
+  foreach ($flag in @($guardrails.compile_single_value_flags)) {
+    $flagText = [string]$flag
+    if (-not [string]::IsNullOrWhiteSpace($flagText)) {
+      $compileSingleSet[$flagText] = $true
+    }
+  }
+  foreach ($requiredFlag in $requiredCompileSingleFlags) {
+    if (-not $compileSingleSet.ContainsKey($requiredFlag)) {
+      Write-Error "frontend edge robustness missing compile_single_value flag '$requiredFlag' in $robustnessPath"
+      exit 2
+    }
+  }
+
+  $requiredRejectEmptyFlags = @("--emit-prefix", "--clang", "--use-cache")
+  $rejectEmptySet = @{}
+  foreach ($flag in @($guardrails.reject_empty_equals_value_flags)) {
+    $flagText = [string]$flag
+    if (-not [string]::IsNullOrWhiteSpace($flagText)) {
+      $rejectEmptySet[$flagText] = $true
+    }
+  }
+  foreach ($requiredFlag in $requiredRejectEmptyFlags) {
+    if (-not $rejectEmptySet.ContainsKey($requiredFlag)) {
+      Write-Error "frontend edge robustness missing reject_empty_equals_value flag '$requiredFlag' in $robustnessPath"
+      exit 2
+    }
+  }
+
+  return [pscustomobject]@{
+    edge_robustness_path = $robustnessPath
   }
 }
 
@@ -1013,6 +1190,7 @@ if (-not $parsed.use_cache) {
     -BuildResult $buildResult `
     -ParsedArgs $parsed `
     -CoreFeatureGuard $coreFeatureGuard
+  Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
   $effectiveCompileArgs = @($parsed.compile_args)
   if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
     $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
@@ -1027,7 +1205,8 @@ if (-not $needsBuild) {
     Resolve-FrontendScaffoldPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendInvocationLockPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult
+    Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult
   )
   foreach ($artifactPath in $requiredArtifacts) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -1062,6 +1241,7 @@ $edgeCompatGuard = Assert-FrontendEdgeCompatibility `
   -BuildResult $buildResult `
   -ParsedArgs $parsed `
   -CoreFeatureGuard $coreFeatureGuard
+Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 $effectiveCompileArgs = @($parsed.compile_args)
 if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
   $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
