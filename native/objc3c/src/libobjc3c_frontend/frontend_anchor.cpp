@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "io/objc3_process.h"
+#include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
 
@@ -494,6 +495,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
           "error:1:1: emit_object requires llc_path in compile options for llvm-direct backend [O3E001]");
     } else {
       const std::filesystem::path object_out = out_dir / (emit_prefix + ".obj");
+      const std::filesystem::path backend_out = out_dir / (emit_prefix + ".object-backend.txt");
+      const std::string backend_text = wants_clang_backend ? "clang\n" : "llvm-direct\n";
       int compile_status = 0;
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
       const bool llvm_direct_backend_enabled = true;
@@ -522,18 +525,43 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         emit_diagnostics.push_back(emit_error);
         objc3c_frontend_set_error(context, emit_error.c_str());
       } else {
+        bool backend_output_recorded = false;
+        std::string backend_output_payload;
+        std::string backend_output_error;
         std::string backend_error;
         if (wants_clang_backend) {
           compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
         } else {
           compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
         }
+        if (compile_status == 0) {
+          if (!WriteTextFile(backend_out, backend_text, backend_output_error)) {
+            compile_status = 125;
+          } else {
+            backend_output_recorded = true;
+            backend_output_payload = backend_text;
+          }
+        }
+        const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =
+            BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureSurface(
+                toolchain_runtime_ga_operations_scaffold,
+                compile_status,
+                backend_output_recorded,
+                backend_out,
+                backend_output_payload);
+        std::string toolchain_runtime_core_feature_reason;
+        const bool toolchain_runtime_core_feature_ready =
+            IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
+                toolchain_runtime_core_feature_surface,
+                toolchain_runtime_core_feature_reason);
         if (compile_status != 0) {
           result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
           result->process_exit_code = compile_status;
           result->success = 0;
           std::string emit_error;
-          if (!backend_error.empty()) {
+          if (!backend_output_error.empty()) {
+            emit_error = "error:1:1: LLVM object emission failed: " + backend_output_error + " [O3E002]";
+          } else if (!backend_error.empty()) {
             emit_error = "error:1:1: LLVM object emission failed: " + backend_error + " [O3E002]";
           } else if (wants_clang_backend) {
             emit_error =
@@ -544,6 +572,15 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                 "error:1:1: LLVM object emission failed: llc exited with status " + std::to_string(compile_status) +
                 " [O3E002]";
           }
+          emit_diagnostics.push_back(emit_error);
+          objc3c_frontend_set_error(context, emit_error.c_str());
+        } else if (!toolchain_runtime_core_feature_ready) {
+          result->status = OBJC3C_FRONTEND_STATUS_EMIT_ERROR;
+          result->process_exit_code = 125;
+          result->success = 0;
+          const std::string emit_error =
+              "error:1:1: LLVM object emission failed: toolchain/runtime core feature fail-closed: " +
+              toolchain_runtime_core_feature_reason + " [O3E002]";
           emit_diagnostics.push_back(emit_error);
           objc3c_frontend_set_error(context, emit_error.c_str());
         } else {
