@@ -304,6 +304,24 @@ struct Objc3LoweringRuntimeStabilityInvariantScaffold {
   std::string failure_reason;
 };
 
+struct Objc3LoweringPipelinePassGraphScaffold {
+  bool lex_stage_ready = false;
+  bool parse_stage_ready = false;
+  bool sema_stage_ready = false;
+  bool typed_surface_ready = false;
+  bool parse_lowering_readiness_ready = false;
+  bool semantic_stability_scaffold_ready = false;
+  bool lowering_runtime_invariant_scaffold_ready = false;
+  bool lowering_ir_boundary_ready = false;
+  bool runtime_dispatch_declaration_ready = false;
+  bool ir_emission_entrypoint_ready = false;
+  bool pass_graph_ready = false;
+  std::string lowering_boundary_replay_key;
+  std::string runtime_dispatch_declaration_replay_key;
+  std::string pass_graph_key;
+  std::string failure_reason;
+};
+
 struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool lowering_boundary_ready = false;
   bool runtime_dispatch_contract_consistent = false;
@@ -597,6 +615,7 @@ struct Objc3FrontendPipelineResult {
   Objc3SemanticStabilityCoreFeatureImplementationSurface
       semantic_stability_core_feature_implementation_surface;
   Objc3LoweringRuntimeStabilityInvariantScaffold lowering_runtime_stability_invariant_scaffold;
+  Objc3LoweringPipelinePassGraphScaffold lowering_pipeline_pass_graph_scaffold;
   Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
       lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;

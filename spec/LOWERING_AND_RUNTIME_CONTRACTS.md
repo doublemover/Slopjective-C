@@ -54,6 +54,20 @@ This requirement is intentionally testable: if importing a module can change whe
 
 ## C.3 Canonical lowering patterns (mixed; see subsection tags) {#c-3}
 
+### C.3.0 Lowering pass-graph scaffold (normative for implementations) {#c-3-0}
+
+Implementations shall maintain a deterministic lowering pass graph from
+frontend stage handoff (`lex -> parse -> sema`) through lowering-boundary
+normalization and direct IR-emission entrypoint enablement (`lower -> emit`).
+
+At minimum, the pass-graph gate shall validate:
+
+- lexer/parser/semantic diagnostic surfaces are fail-closed clean before emit;
+- lowering boundary normalization and runtime dispatch declaration synthesis are
+  replay-key stable for the active lowering options; and
+- the direct IR emission route remains enabled as the first-class path (no
+  implicit fail-open bypass).
+
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
 Optional message send semantics are defined in [Part 3](#part-3). Conforming implementations shall lower:

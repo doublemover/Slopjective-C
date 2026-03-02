@@ -45,6 +45,12 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp`, and
   `lower/objc3_lowering_contract.cpp` so direct LLVM IR emission hardening can
   build on deterministic decomposition boundaries.
+- M228 lane-A A002 modular split scaffolding extracts pass-graph readiness
+  synthesis into `pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp`
+  and enforces fail-closed pass-graph gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission so lex/parse/sema,
+  lowering-boundary normalization, and runtime dispatch declaration contracts
+  remain deterministically synchronized.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

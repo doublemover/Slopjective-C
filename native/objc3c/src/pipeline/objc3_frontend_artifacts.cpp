@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
 namespace {
@@ -1384,6 +1385,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L300",
         "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
             parse_lowering_readiness_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string lowering_pass_graph_error;
+  if (!IsObjc3LoweringPipelinePassGraphScaffoldReady(
+          pipeline_result.lowering_pipeline_pass_graph_scaffold,
+          lowering_pass_graph_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L301",
+        "LLVM IR emission failed: lowering pipeline pass-graph scaffold check failed: " +
+            lowering_pass_graph_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }

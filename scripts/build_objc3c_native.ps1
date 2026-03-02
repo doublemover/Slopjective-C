@@ -1006,6 +1006,7 @@ $frontendModules = @(
     sources = @(
       "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
       "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
+      "native/objc3c/src/pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp"
     )
   }
   [ordered]@{

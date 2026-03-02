@@ -54,6 +54,11 @@ A conforming implementation shall preserve, for all exported declarations:
    - the owning module of each exported declaration ([Part 2](#part-2)),
    - API partition membership (public/SPI/private) if the toolchain supports it ([Part 2](#part-2)).
 
+7. **Lowering pass-graph replay anchors**:
+   - deterministic replay keys for lowering-boundary normalization and runtime dispatch declaration synthesis used by direct IR emission,
+   - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
+     fail closed when lowering/emit routing is inconsistent.
+
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 
 Each module metadata payload shall carry a version header with:
