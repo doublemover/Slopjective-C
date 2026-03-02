@@ -212,6 +212,10 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime GA readiness fails closed on diagnostics drift before
   success exit status is returned.
+- M250 lane-D D008 recovery/determinism hardening anchors explicit
+  toolchain/runtime recovery guardrails in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so lane-D recovery and
+  replay determinism drift fails closed before conformance and sign-off gates.
 - M250 lane-E E003 core feature implementation anchors explicit final readiness
   core-feature dependency guardrails in
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
