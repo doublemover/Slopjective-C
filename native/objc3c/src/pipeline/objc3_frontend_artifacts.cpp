@@ -2178,6 +2178,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_performance_ready
                    ? "true"
                    : "false")
+           << ",\"toolchain_runtime_ga_operations_advanced_core_shard2_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_advanced_core_shard2_consistent
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_advanced_core_shard2_ready\": "
+           << (bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_shard2_ready
+                   ? "true"
+                   : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -2264,6 +2273,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_integration_key
            << "\",\"toolchain_runtime_ga_operations_advanced_performance_key\":\""
            << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_performance_key
+           << "\",\"toolchain_runtime_ga_operations_advanced_core_shard2_key\":\""
+           << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_advanced_core_shard2_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
