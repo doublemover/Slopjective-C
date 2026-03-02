@@ -61,6 +61,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.diagnostics_hardening_ready ? "true" : "false")
       << ";diagnostics_hardening_key_ready="
       << (!surface.diagnostics_hardening_key.empty() ? "true" : "false")
+      << ";recovery_determinism_consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery_determinism_ready="
+      << (surface.recovery_determinism_ready ? "true" : "false")
+      << ";recovery_determinism_key_ready="
+      << (!surface.recovery_determinism_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -144,6 +150,33 @@ inline std::string BuildObjc3FinalReadinessGateDiagnosticsHardeningKey(
       << (surface.diagnostics_hardening_consistent ? "true" : "false")
       << ";diagnostics-hardening-ready="
       << (surface.diagnostics_hardening_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateRecoveryDeterminismKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_core_feature_ready,
+    bool lane_b_core_feature_expansion_ready,
+    bool lane_c_core_feature_expansion_ready,
+    bool lane_d_diagnostics_hardening_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-recovery-determinism:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";diagnostics-hardening-ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false")
+      << ";lane-a-core-feature-ready="
+      << (lane_a_core_feature_ready ? "true" : "false")
+      << ";lane-b-core-feature-expansion-ready="
+      << (lane_b_core_feature_expansion_ready ? "true" : "false")
+      << ";lane-c-core-feature-expansion-ready="
+      << (lane_c_core_feature_expansion_ready ? "true" : "false")
+      << ";lane-d-diagnostics-hardening-ready="
+      << (lane_d_diagnostics_hardening_ready ? "true" : "false")
+      << ";recovery-determinism-consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery-determinism-ready="
+      << (surface.recovery_determinism_ready ? "true" : "false");
   return key.str();
 }
 
@@ -306,6 +339,33 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.diagnostics_hardening_ready =
       surface.diagnostics_hardening_ready &&
       !surface.diagnostics_hardening_key.empty();
+  const bool lane_recovery_determinism_consistent =
+      lane_a_surface.core_feature_ready &&
+      lane_b_surface.expansion_ready &&
+      lane_c_surface.expansion_ready &&
+      lane_d_surface.diagnostics_hardening_ready;
+  const bool recovery_determinism_consistent =
+      surface.diagnostics_hardening_ready &&
+      lane_recovery_determinism_consistent;
+  const bool recovery_determinism_ready =
+      recovery_determinism_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.diagnostics_hardening_key.empty();
+  surface.recovery_determinism_consistent =
+      recovery_determinism_consistent;
+  surface.recovery_determinism_ready =
+      recovery_determinism_ready;
+  surface.recovery_determinism_key =
+      BuildObjc3FinalReadinessGateRecoveryDeterminismKey(
+          surface,
+          lane_a_surface.core_feature_ready,
+          lane_b_surface.expansion_ready,
+          lane_c_surface.expansion_ready,
+          lane_d_surface.diagnostics_hardening_ready);
+  surface.recovery_determinism_ready =
+      surface.recovery_determinism_ready &&
+      !surface.recovery_determinism_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -314,6 +374,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.edge_case_compatibility_ready &&
       surface.edge_case_robustness_ready &&
       surface.diagnostics_hardening_ready &&
+      surface.recovery_determinism_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -389,6 +450,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.diagnostics_hardening_key.empty()) {
     surface.failure_reason =
         "final readiness gate diagnostics hardening key is not ready";
+  } else if (!lane_recovery_determinism_consistent) {
+    surface.failure_reason =
+        "final readiness gate recovery and determinism hardening is inconsistent";
+  } else if (!surface.recovery_determinism_consistent) {
+    surface.failure_reason =
+        "final readiness gate recovery and determinism consistency is not satisfied";
+  } else if (!surface.recovery_determinism_ready) {
+    surface.failure_reason =
+        "final readiness gate recovery and determinism hardening is not ready";
+  } else if (surface.recovery_determinism_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate recovery and determinism key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

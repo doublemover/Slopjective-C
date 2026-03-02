@@ -379,6 +379,8 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface {
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
   bool core_feature_impl_ready = false;
   std::string backend_route_key;
   std::string scaffold_key;
@@ -387,6 +389,7 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface {
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
   std::string failure_reason;
 };
 
