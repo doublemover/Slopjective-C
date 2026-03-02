@@ -1,6 +1,6 @@
 # M226 Lane E Contract Freeze (2026-03-02)
 
-Packet: `M226-E001`, `M226-E002`, `M226-E003`, `M226-E004`, `M226-E005`, `M226-E006`, `M226-E007`
+Packet: `M226-E001`, `M226-E002`, `M226-E003`, `M226-E004`, `M226-E005`, `M226-E006`, `M226-E007`, `M226-E008`
 Freeze date: `2026-03-02`
 Owner lane: `E`
 
@@ -9,9 +9,10 @@ Owner lane: `E`
 Freeze lane-E integration gate contract surfaces for M226, including the E001
 gate prerequisites, E002 evidence modular split/scaffolding, E003 core
 evidence indexing, E004 evidence core feature expansion, E005 edge
-compatibility evidence completion, E006 edge robustness evidence expansion, and
-E007 diagnostics hardening evidence expansion, and fail closed if expected
-packet assets drift or disappear.
+compatibility evidence completion, E006 edge robustness evidence expansion,
+E007 diagnostics hardening evidence expansion, and E008 recovery determinism
+evidence expansion, and fail closed if expected packet assets drift or
+disappear.
 
 ## Packet Registry
 
@@ -24,6 +25,7 @@ packet assets drift or disappear.
 | `M226-E005` | `objc3c-lane-e-integration-gate-edge-compat-evidence-contract/m226-e005-v1` | `docs/contracts/m226_lane_e_integration_gate_e005_edge_compatibility_evidence_expectations.md` |
 | `M226-E006` | `objc3c-lane-e-integration-gate-edge-robustness-evidence-contract/m226-e006-v1` | `docs/contracts/m226_lane_e_integration_gate_e006_edge_robustness_evidence_expectations.md` |
 | `M226-E007` | `objc3c-lane-e-integration-gate-diagnostics-hardening-evidence-contract/m226-e007-v1` | `docs/contracts/m226_lane_e_integration_gate_e007_diagnostics_hardening_evidence_expectations.md` |
+| `M226-E008` | `objc3c-lane-e-integration-gate-recovery-determinism-evidence-contract/m226-e008-v1` | `docs/contracts/m226_lane_e_integration_gate_e008_recovery_determinism_evidence_expectations.md` |
 
 ## Packet: `M226-E001`
 
@@ -137,6 +139,33 @@ packet assets drift or disappear.
   `tmp/reports/m226/M226-D007/frontend_build_invocation_diagnostics_hardening_summary.json`;
   `tmp/reports/m226/m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract_summary.json`
 
+## Packet: `M226-E008`
+
+### Frozen Recovery Determinism Evidence Assets
+
+| Module | Contract Asset(s) |
+| --- | --- |
+| Expectations | `docs/contracts/m226_lane_e_integration_gate_e008_recovery_determinism_evidence_expectations.md` |
+| Packet doc | `spec/planning/compiler/m226/m226_e008_lane_e_integration_gate_recovery_determinism_evidence_packet.md` |
+| Evidence scaffold doc | `spec/planning/compiler/m226/m226_e008_lane_e_integration_gate_recovery_determinism_evidence_scaffold.md` |
+| Fail-closed checker | `scripts/check_m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract.py` |
+| Checker tests | `tests/tooling/test_check_m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract.py` |
+
+#### Upstream Recovery Determinism Anchors
+
+- Contract doc anchors:
+  `docs/contracts/m226_parser_advanced_conformance_workpack_a024_expectations.md`;
+  `docs/contracts/m226_parser_sema_recovery_determinism_hardening_b008_expectations.md`;
+  `docs/contracts/m226_parse_lowering_recovery_determinism_hardening_c008_expectations.md`;
+  `docs/contracts/m226_frontend_build_invocation_recovery_determinism_hardening_d008_expectations.md`;
+  `docs/contracts/m226_lane_e_integration_gate_e007_diagnostics_hardening_evidence_expectations.md`
+- Evidence artifact anchors:
+  `tmp/reports/m226/M226-A024/parser_conformance_shard2_summary.json`;
+  `tmp/reports/m226/M226-B008/parser_sema_recovery_determinism_hardening_summary.json`;
+  `tmp/reports/m226/m226_c008_parse_lowering_recovery_determinism_hardening_contract_summary.json`;
+  `tmp/reports/m226/M226-D008/frontend_build_invocation_recovery_determinism_hardening_summary.json`;
+  `tmp/reports/m226/m226_e007_lane_e_integration_gate_diagnostics_hardening_evidence_contract_summary.json`
+
 ## Gate Commands
 
 - `python scripts/check_m226_e001_lane_e_integration_gate_contract.py`
@@ -153,6 +182,8 @@ packet assets drift or disappear.
 - `python -m pytest tests/tooling/test_check_m226_e006_lane_e_integration_gate_edge_robustness_evidence_contract.py -q`
 - `python scripts/check_m226_e007_lane_e_integration_gate_diagnostics_hardening_evidence_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_e007_lane_e_integration_gate_diagnostics_hardening_evidence_contract.py -q`
+- `python scripts/check_m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract.py`
+- `python -m pytest tests/tooling/test_check_m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract.py -q`
 
 ## Evidence Output
 
@@ -175,3 +206,6 @@ packet assets drift or disappear.
 - `tmp/reports/m226/m226_e007_lane_e_integration_gate_diagnostics_hardening_evidence_contract_summary.json`
 - `tmp/reports/m226/e007/validation/pytest_check_m226_e007_lane_e_integration_gate_diagnostics_hardening_evidence_contract.txt`
 - `tmp/reports/m226/e007/evidence_index.json`
+- `tmp/reports/m226/m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract_summary.json`
+- `tmp/reports/m226/e008/validation/pytest_check_m226_e008_lane_e_integration_gate_recovery_determinism_evidence_contract.txt`
+- `tmp/reports/m226/e008/evidence_index.json`
