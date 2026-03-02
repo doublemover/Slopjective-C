@@ -96,6 +96,9 @@ A conforming implementation shall preserve, for all exported declarations:
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
      assets are seeded.
+   - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
+     with fixture ownership boundary evidence and parser replay-budget continuity
+     so CI sharding partition drift fails closed.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

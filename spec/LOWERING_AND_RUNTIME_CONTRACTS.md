@@ -116,6 +116,9 @@ At minimum, the pass-graph gate shall validate:
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or
   perf-budget evidence commands drift.
+- suite partitioning and fixture ownership governance shall preserve explicit
+  lane-A dependency boundary anchors and fail closed on fixture partition drift
+  before parser and recovery replay validation advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

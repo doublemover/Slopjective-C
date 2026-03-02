@@ -143,6 +143,12 @@ Current-state note:
   and `package.json` so compile-time/perf budget governance evidence remains
   deterministic and fail-closed while lane A-D contract-freeze assets are
   pending GH seed.
+- M248 lane-A A001 suite partitioning and fixture ownership anchors explicit
+  lane-A contract freeze artifacts in
+  `docs/contracts/m248_suite_partitioning_and_fixture_ownership_contract_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m248/m248_a001_suite_partitioning_and_fixture_ownership_contract_freeze_packet.md`,
+  and `package.json` so suite partition boundaries and fixture ownership evidence
+  remain deterministic and fail-closed for CI sharding governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
