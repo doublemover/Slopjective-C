@@ -212,6 +212,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_a001_feature_packaging_surface_and_compatibility_contracts_contract_freeze_packet.md`,
   and `package.json` so release packaging surface compatibility evidence remains
   deterministic and fail-closed for distribution boundary governance.
+- M249 lane-C C001 IR/object packaging and symbol policy contract anchors
+  explicit lane-C contract freeze artifacts in
+  `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m249/m249_c001_ir_object_packaging_and_symbol_policy_contract_freeze_packet.md`,
+  and `package.json` so artifact packaging boundaries and symbol policy
+  continuity remain deterministic and fail-closed for CI replay governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

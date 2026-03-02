@@ -145,6 +145,10 @@ At minimum, the pass-graph gate shall validate:
 - replay harness/artifact modular split scaffolding shall preserve explicit
   lane-C dependency anchors (`M248-C001`) and fail closed on modular split
   evidence drift before replay readiness advances.
+- IR/object packaging and symbol policy governance shall preserve explicit
+  lane-C object packaging and symbol policy anchors and fail closed on
+  artifact packaging or symbol-policy drift before execution and conformance
+  replay validation advances.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

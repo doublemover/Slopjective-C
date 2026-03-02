@@ -124,6 +124,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C replay modular split metadata anchors for `M248-C002`
      with explicit `M248-C001` dependency continuity so modular split replay
      drift fails closed.
+   - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
+     with symbol policy evidence and object package continuity so CI artifact
+     packaging drift fails closed.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
