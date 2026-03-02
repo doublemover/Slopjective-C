@@ -214,6 +214,28 @@ inline std::string BuildObjc3ParseArtifactEdgeRobustnessKey(
          ";consistent=" + (parse_artifact_edge_case_robustness_consistent ? "true" : "false");
 }
 
+inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
+    bool parser_contract_snapshot_present,
+    bool parser_contract_deterministic,
+    bool parser_recovery_replay_ready,
+    bool parse_artifact_handoff_deterministic,
+    bool parse_artifact_replay_key_deterministic,
+    bool parse_artifact_diagnostics_hardening_consistent,
+    bool parse_artifact_edge_case_robustness_consistent,
+    bool parse_recovery_determinism_hardening_consistent) {
+  return std::string("snapshot_present=") + (parser_contract_snapshot_present ? "true" : "false") +
+         ";parser_handoff_deterministic=" + (parser_contract_deterministic ? "true" : "false") +
+         ";parser_recovery_replay_ready=" + (parser_recovery_replay_ready ? "true" : "false") +
+         ";parse_artifact_handoff_deterministic=" + (parse_artifact_handoff_deterministic ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         (parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";parse_artifact_diagnostics_hardening_consistent=" +
+         (parse_artifact_diagnostics_hardening_consistent ? "true" : "false") +
+         ";parse_artifact_edge_case_robustness_consistent=" +
+         (parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
+         ";consistent=" + (parse_recovery_determinism_hardening_consistent ? "true" : "false");
+}
+
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
@@ -335,6 +357,27 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_token_count_budget_consistent,
       surface.language_version_pragma_coordinate_order_consistent,
       surface.parse_artifact_edge_case_robustness_consistent);
+  surface.parse_recovery_determinism_hardening_consistent =
+      surface.parser_contract_snapshot_present &&
+      surface.parser_contract_deterministic &&
+      surface.parser_recovery_replay_ready &&
+      surface.parse_artifact_handoff_deterministic &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.parse_artifact_diagnostics_hardening_consistent &&
+      surface.parse_artifact_edge_case_robustness_consistent &&
+      !surface.parse_artifact_handoff_key.empty() &&
+      !surface.parse_artifact_replay_key.empty() &&
+      !surface.parse_artifact_diagnostics_hardening_key.empty() &&
+      !surface.parse_artifact_edge_robustness_key.empty();
+  surface.parse_recovery_determinism_hardening_key = BuildObjc3ParseRecoveryDeterminismHardeningKey(
+      surface.parser_contract_snapshot_present,
+      surface.parser_contract_deterministic,
+      surface.parser_recovery_replay_ready,
+      surface.parse_artifact_handoff_deterministic,
+      surface.parse_artifact_replay_key_deterministic,
+      surface.parse_artifact_diagnostics_hardening_consistent,
+      surface.parse_artifact_edge_case_robustness_consistent,
+      surface.parse_recovery_determinism_hardening_consistent);
   surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
   surface.semantic_diagnostics_deterministic = pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic = pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff;
@@ -367,11 +410,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_replay_key_deterministic;
   const bool parse_artifact_diagnostics_hardening_ready =
       surface.parse_artifact_diagnostics_hardening_consistent;
+  const bool parse_recovery_determinism_hardening_ready =
+      surface.parse_recovery_determinism_hardening_consistent;
   const bool parse_snapshot_replay_ready =
       parse_snapshot_ready &&
       parse_artifact_replay_key_ready &&
       parse_artifact_diagnostics_hardening_ready &&
-      surface.parse_artifact_edge_case_robustness_consistent;
+      surface.parse_artifact_edge_case_robustness_consistent &&
+      parse_recovery_determinism_hardening_ready;
   const bool sema_handoff_ready =
       surface.semantic_integration_surface_built &&
       surface.semantic_diagnostics_deterministic &&
@@ -424,6 +470,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "language-version pragma coordinate order is inconsistent";
   } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
     surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
+  } else if (!surface.parse_recovery_determinism_hardening_consistent) {
+    surface.failure_reason = "parse recovery/determinism hardening is inconsistent";
   } else if (!surface.semantic_integration_surface_built) {
     surface.failure_reason = "semantic integration surface not built";
   } else if (!surface.semantic_diagnostics_deterministic) {

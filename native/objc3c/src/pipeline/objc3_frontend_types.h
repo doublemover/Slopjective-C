@@ -72,6 +72,7 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parse_artifact_replay_key_deterministic = false;
   bool parse_artifact_diagnostics_hardening_consistent = false;
   bool parse_artifact_edge_case_robustness_consistent = false;
+  bool parse_recovery_determinism_hardening_consistent = false;
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
   bool semantic_type_metadata_deterministic = false;
@@ -87,6 +88,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string parse_artifact_replay_key;
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_edge_robustness_key;
+  std::string parse_recovery_determinism_hardening_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
