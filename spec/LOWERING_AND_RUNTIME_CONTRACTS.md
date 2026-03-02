@@ -126,6 +126,9 @@ At minimum, the pass-graph gate shall validate:
 - suite partitioning modular split/scaffolding shall preserve explicit lane-A
   dependency anchors (`M248-A001`) and fail closed on scaffolding evidence drift
   before parser replay readiness advances.
+- feature packaging surface and compatibility governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on release packaging drift
+  before semantic migration and IR/object policy validation advances.
 - semantic/lowering test architecture governance shall preserve explicit lane-B
   diagnostic replay anchors and fail closed on semantic fixture drift before
   lowering matrix and conformance expansion validation advances.

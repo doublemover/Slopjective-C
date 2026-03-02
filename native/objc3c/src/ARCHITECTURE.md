@@ -199,6 +199,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d002_runner_reliability_and_platform_operations_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split runner continuity remains deterministic
   and fail-closed against `M248-D001` dependency drift.
+- M249 lane-A A001 feature packaging surface and compatibility anchors explicit
+  lane-A contract freeze artifacts in
+  `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m249/m249_a001_feature_packaging_surface_and_compatibility_contracts_contract_freeze_packet.md`,
+  and `package.json` so release packaging surface compatibility evidence remains
+  deterministic and fail-closed for distribution boundary governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
