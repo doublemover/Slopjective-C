@@ -347,6 +347,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E012/A005/B006/C006/D011 sync prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E014 release-candidate replay dry-run anchors explicit final
+  readiness release-candidate replay dry-run guardrails
+  (`release_candidate_replay_dry_run_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E013/A005/B006/C007/D011 replay prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

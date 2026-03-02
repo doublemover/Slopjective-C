@@ -97,6 +97,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.docs_runbook_sync_ready ? "true" : "false")
       << ";docs_runbook_sync_key_ready="
       << (!surface.docs_runbook_sync_key.empty() ? "true" : "false")
+      << ";release_candidate_replay_dry_run_consistent="
+      << (surface.release_candidate_replay_dry_run_consistent ? "true" : "false")
+      << ";release_candidate_replay_dry_run_ready="
+      << (surface.release_candidate_replay_dry_run_ready ? "true" : "false")
+      << ";release_candidate_replay_dry_run_key_ready="
+      << (!surface.release_candidate_replay_dry_run_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -354,6 +360,36 @@ inline std::string BuildObjc3FinalReadinessGateDocsRunbookSyncKey(
       << (surface.docs_runbook_sync_consistent ? "true" : "false")
       << ";docs-runbook-sync-ready="
       << (surface.docs_runbook_sync_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateReleaseCandidateReplayDryRunKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_edge_case_compatibility_ready,
+    bool lane_b_edge_case_robustness_ready,
+    bool lane_c_diagnostics_hardening_ready,
+    bool lane_d_core_feature_impl_ready,
+    bool lane_d_core_feature_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-release-candidate-replay-dry-run:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";docs-runbook-sync-ready="
+      << (surface.docs_runbook_sync_ready ? "true" : "false")
+      << ";lane-a-edge-case-compatibility-ready="
+      << (lane_a_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-b-edge-case-robustness-ready="
+      << (lane_b_edge_case_robustness_ready ? "true" : "false")
+      << ";lane-c-diagnostics-hardening-ready="
+      << (lane_c_diagnostics_hardening_ready ? "true" : "false")
+      << ";lane-d-core-feature-ready="
+      << (lane_d_core_feature_impl_ready ? "true" : "false")
+      << ";lane-d-core-feature-key-ready="
+      << (lane_d_core_feature_key_ready ? "true" : "false")
+      << ";release-candidate-replay-dry-run-consistent="
+      << (surface.release_candidate_replay_dry_run_consistent ? "true" : "false")
+      << ";release-candidate-replay-dry-run-ready="
+      << (surface.release_candidate_replay_dry_run_ready ? "true" : "false");
   return key.str();
 }
 
@@ -690,6 +726,36 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.docs_runbook_sync_ready =
       surface.docs_runbook_sync_ready &&
       !surface.docs_runbook_sync_key.empty();
+  const bool lane_release_candidate_replay_dry_run_consistent =
+      lane_a_surface.edge_case_compatibility_ready &&
+      lane_b_surface.edge_case_robustness_ready &&
+      lane_c_surface.diagnostics_hardening_ready &&
+      lane_d_surface.core_feature_impl_ready &&
+      !lane_d_surface.core_feature_key.empty();
+  const bool release_candidate_replay_dry_run_consistent =
+      surface.docs_runbook_sync_ready &&
+      lane_release_candidate_replay_dry_run_consistent;
+  const bool release_candidate_replay_dry_run_ready =
+      release_candidate_replay_dry_run_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.docs_runbook_sync_key.empty() &&
+      !lane_d_surface.core_feature_key.empty();
+  surface.release_candidate_replay_dry_run_consistent =
+      release_candidate_replay_dry_run_consistent;
+  surface.release_candidate_replay_dry_run_ready =
+      release_candidate_replay_dry_run_ready;
+  surface.release_candidate_replay_dry_run_key =
+      BuildObjc3FinalReadinessGateReleaseCandidateReplayDryRunKey(
+          surface,
+          lane_a_surface.edge_case_compatibility_ready,
+          lane_b_surface.edge_case_robustness_ready,
+          lane_c_surface.diagnostics_hardening_ready,
+          lane_d_surface.core_feature_impl_ready,
+          !lane_d_surface.core_feature_key.empty());
+  surface.release_candidate_replay_dry_run_ready =
+      surface.release_candidate_replay_dry_run_ready &&
+      !surface.release_candidate_replay_dry_run_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -704,6 +770,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.performance_quality_guardrails_ready &&
       surface.cross_lane_integration_ready &&
       surface.docs_runbook_sync_ready &&
+      surface.release_candidate_replay_dry_run_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -851,6 +918,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.docs_runbook_sync_key.empty()) {
     surface.failure_reason =
         "final readiness gate docs and operator runbook sync key is not ready";
+  } else if (!lane_release_candidate_replay_dry_run_consistent) {
+    surface.failure_reason =
+        "final readiness gate release candidate replay dry-run is inconsistent";
+  } else if (!surface.release_candidate_replay_dry_run_consistent) {
+    surface.failure_reason =
+        "final readiness gate release candidate replay dry-run consistency is not satisfied";
+  } else if (!surface.release_candidate_replay_dry_run_ready) {
+    surface.failure_reason =
+        "final readiness gate release candidate replay dry-run is not ready";
+  } else if (surface.release_candidate_replay_dry_run_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate release candidate replay dry-run key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";
