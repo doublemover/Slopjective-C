@@ -102,6 +102,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
      with semantic fixture ownership evidence and lowering replay continuity so
      CI sharding semantic drift fails closed.
+   - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
+     contract evidence and execution replay continuity so CI replay drift fails
+     closed.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

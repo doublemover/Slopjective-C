@@ -155,6 +155,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_b001_semantic_lowering_test_architecture_contract_freeze_packet.md`,
   and `package.json` so semantic fixture boundaries and lowering replay evidence
   remain deterministic and fail-closed for CI sharding governance.
+- M248 lane-C C001 replay harness and artifact contract anchors explicit lane-C
+  contract freeze artifacts in
+  `docs/contracts/m248_replay_harness_and_artifact_contracts_contract_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m248/m248_c001_replay_harness_and_artifact_contracts_contract_freeze_packet.md`,
+  and `package.json` so replay artifact boundaries and evidence routing remain
+  deterministic and fail-closed for CI replay governance.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

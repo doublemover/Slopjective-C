@@ -122,6 +122,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic/lowering test architecture governance shall preserve explicit lane-B
   diagnostic replay anchors and fail closed on semantic fixture drift before
   lowering matrix and conformance expansion validation advances.
+- replay harness/artifact governance shall preserve explicit lane-C artifact
+  replay anchors and fail closed on replay evidence drift before execution and
+  conformance replay validation advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
