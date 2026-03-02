@@ -43,6 +43,11 @@ Current-state note:
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
   so parser determinism and recovery coverage remain fail-closed for GA
   readiness.
+- M250 lane-B semantic stability freeze closes spec delta between
+  `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
+  determinism, conformance corpus closure, and performance guardrail gating are
+  fail-closed under a single readiness boundary.
 
 ## Ownership Map
 
