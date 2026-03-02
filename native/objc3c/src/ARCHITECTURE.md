@@ -191,6 +191,11 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime GA readiness fails closed on diagnostics drift before
   success exit status is returned.
+- M250 lane-E E003 core feature implementation anchors explicit final readiness
+  core-feature dependency guardrails in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E sign-off fails closed when E002/A003/B003/C003/D003 dependency
+  readiness drifts.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

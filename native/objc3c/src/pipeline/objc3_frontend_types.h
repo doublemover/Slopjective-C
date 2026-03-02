@@ -351,6 +351,25 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureExpansionSurface {
   std::string failure_reason;
 };
 
+struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
+  bool governance_contract_ready = false;
+  bool modular_split_ready = false;
+  bool lane_a_core_feature_ready = false;
+  bool lane_b_core_feature_ready = false;
+  bool lane_c_core_feature_ready = false;
+  bool lane_d_core_feature_ready = false;
+  bool dependency_chain_ready = false;
+  bool core_feature_impl_ready = false;
+  std::string governance_key;
+  std::string modular_split_key;
+  std::string lane_a_key;
+  std::string lane_b_key;
+  std::string lane_c_key;
+  std::string lane_d_key;
+  std::string core_feature_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
