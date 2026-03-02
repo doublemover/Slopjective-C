@@ -349,6 +349,16 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    if (!frontend_metadata_.lowering_pass_graph_edge_case_robustness_key.empty()) {
+      out << "; lowering_pass_graph_edge_case_robustness = "
+          << frontend_metadata_.lowering_pass_graph_edge_case_robustness_key
+          << "\n";
+    }
+    out << "; lowering_pass_graph_edge_case_robustness_ready = "
+        << (frontend_metadata_.lowering_pass_graph_edge_case_robustness_ready
+                ? "true"
+                : "false")
+        << "\n";
     if (!frontend_metadata_.ir_emission_completeness_modular_split_key.empty()) {
       out << "; ir_emission_completeness_modular_split = "
           << frontend_metadata_.ir_emission_completeness_modular_split_key
@@ -357,6 +367,16 @@ class Objc3IREmitter {
     out << "; ir_emission_completeness_modular_split_ready = "
         << (frontend_metadata_
                     .ir_emission_completeness_modular_split_ready
+                ? "true"
+                : "false")
+        << "\n";
+    if (!frontend_metadata_.ir_emission_core_feature_impl_key.empty()) {
+      out << "; ir_emission_core_feature_impl = "
+          << frontend_metadata_.ir_emission_core_feature_impl_key
+          << "\n";
+    }
+    out << "; ir_emission_core_feature_impl_ready = "
+        << (frontend_metadata_.ir_emission_core_feature_impl_ready
                 ? "true"
                 : "false")
         << "\n";

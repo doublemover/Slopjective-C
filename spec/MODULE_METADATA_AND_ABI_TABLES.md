@@ -62,23 +62,36 @@ A conforming implementation shall preserve, for all exported declarations:
      retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
    - ownership-aware lowering modular split scaffold readiness keys proving
      lane-contract replay-key determinism before lowering/emit handoff,
+   - ownership-aware lowering core-feature implementation readiness markers
+     proving fail-closed ownership-lowering replay-key determinism and
+     milestone optimization improvements before direct IR emission hardening,
    - direct IR-emission completeness metadata keys for pass-graph core/expansion
      readiness suitable for replay-proof closeout evidence,
    - deterministic IR-emission completeness modular split scaffold key/ready
      anchors linking pass-graph core, expansion, and edge compatibility replay
      evidence,
+   - deterministic IR-emission core-feature implementation readiness/key anchors
+     proving modular split transport and direct-IR boundary handoff stability,
    - deterministic object-emission backend route keys and output markers for
      clang/llvm-direct compile routing reliability evidence,
     - deterministic toolchain/runtime modular split scaffold keys for backend
       selection, backend capability availability, and IR/object compile-route
       readiness evidence,
+    - deterministic toolchain/runtime core-feature implementation keys for
+      backend dispatch consistency and backend-output marker path/payload
+      readiness evidence,
     - deterministic edge-case compatibility readiness/key anchors for lowering
       compatibility handoff and pragma-order gating evidence,
+    - deterministic edge-case expansion/robustness readiness/key anchors for
+      lowering pass-graph robustness evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
    - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,
      `M228-C002`, and `M228-D001`, including pending-lane tokens needed to keep
      replay-proof/performance gate evidence fail-closed before C002 asset seeding.
+   - deterministic lane-E modular split/scaffolding closeout dependency anchors for `M228-E001`, `M228-A002`,
+     `M228-B002`, `M228-C004`, and `M228-D002`, including pending-lane tokens needed to keep replay-proof/performance
+     modular split/scaffolding gate evidence fail-closed before C004 asset seeding.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

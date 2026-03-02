@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
@@ -1452,6 +1453,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string lowering_pass_graph_lane_a_edge_case_robustness_error;
+  if (!IsObjc3LoweringPipelinePassGraphEdgeCaseRobustnessReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_lane_a_edge_case_robustness_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L307",
+        "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case robustness check failed: " +
+            lowering_pass_graph_lane_a_edge_case_robustness_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
   std::string lowering_pass_graph_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
           pipeline_result.ir_emission_completeness_scaffold,
@@ -1462,6 +1477,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L304",
         "LLVM IR emission failed: lowering pipeline pass-graph edge-case compatibility check failed: " +
             lowering_pass_graph_edge_case_compatibility_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  const Objc3IREmissionCoreFeatureImplementationSurface
+      ir_emission_core_feature_impl_surface =
+          BuildObjc3IREmissionCoreFeatureImplementationSurface(pipeline_result);
+  std::string ir_emission_core_feature_impl_error;
+  if (!IsObjc3IREmissionCoreFeatureImplementationReady(
+          ir_emission_core_feature_impl_surface,
+          ir_emission_core_feature_impl_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L306",
+        "LLVM IR emission failed: IR emission core feature implementation check failed: " +
+            ir_emission_core_feature_impl_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -5026,10 +5058,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.lowering_pass_graph_edge_case_compatibility_key =
       pipeline_result.ir_emission_completeness_scaffold
           .edge_case_compatibility_key;
+  ir_frontend_metadata.lowering_pass_graph_edge_case_robustness_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .edge_case_robustness_ready;
+  ir_frontend_metadata.lowering_pass_graph_edge_case_robustness_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .edge_case_robustness_key;
   ir_frontend_metadata.ir_emission_completeness_modular_split_ready =
       pipeline_result.ir_emission_completeness_scaffold.modular_split_ready;
   ir_frontend_metadata.ir_emission_completeness_modular_split_key =
       pipeline_result.ir_emission_completeness_scaffold.scaffold_key;
+  ir_frontend_metadata.ir_emission_core_feature_impl_ready =
+      ir_emission_core_feature_impl_surface.core_feature_impl_ready;
+  ir_frontend_metadata.ir_emission_core_feature_impl_key =
+      ir_emission_core_feature_impl_surface.core_feature_key;
 
   std::string ir_error;
   // Historical extraction contract marker:

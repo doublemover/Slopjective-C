@@ -78,23 +78,40 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering modular split scaffolding shall validate ownership
   qualifier, retain/release, autoreleasepool, and ARC diagnostics lane-contract
   replay keys before direct IR emission proceeds.
+- ownership-aware lowering core feature implementation shall remain fail-closed
+  for ownership qualifier, retain/release, autoreleasepool, and ARC
+  diagnostics/fixit lowering contracts so milestone optimization improvements
+  cannot bypass direct LLVM IR emission hardening.
 - direct IR emission completeness for ObjC lowering patterns shall remain
   metadata-stable and fail closed on pass-graph or lowering-boundary drift.
 - IR-emission completeness modular split scaffolding shall remain deterministic
   and fail closed while transporting pass-graph core/expansion/edge
   compatibility replay keys into IR metadata evidence surfaces.
+- IR-emission core-feature implementation shall remain deterministic and fail
+  closed when modular split transport, runtime boundary handoff, or direct IR
+  entrypoint readiness drifts.
 - object emission and link-path routing (clang/llvm-direct) shall remain
   deterministic and fail closed when backend route selection or object artifact
   generation drifts.
 - toolchain/runtime modular split scaffolding shall synthesize deterministic
   backend selection/capability and IR/object compile-route readiness keys
   before backend object dispatch.
+- toolchain/runtime core feature implementation shall remain fail-closed on
+  backend-output marker path/payload drift and core-feature readiness drift
+  after backend object dispatch.
 - edge-case compatibility completion shall include deterministic compatibility
   handoff and language-version/pragma coordinate ordering gates that fail
   closed before IR emission.
+- edge-case expansion and robustness shall include deterministic expansion
+  consistency and robustness readiness/key gates that fail closed before IR
+  emission.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.
+- replay-proof/performance modular split and scaffolding closeout gate wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E001`, `M228-A002`,
+  `M228-B002`, `M228-C004`, `M228-D002`) and fail closed when dependency
+  references or closeout evidence commands drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
