@@ -174,8 +174,19 @@ function Invoke-BuildNativeCompiler {
   param([string]$RepoRoot)
 
   $buildScript = Join-Path $RepoRoot "scripts/build_objc3c_native.ps1"
-  $null = & $buildScript
-  return [int]$LASTEXITCODE
+  $buildOutput = @(& $buildScript)
+  $frontendScaffoldRelativePath = $null
+  foreach ($line in $buildOutput) {
+    $lineText = [string]$line
+    Write-Output $lineText
+    if ($lineText.StartsWith("frontend_scaffold=")) {
+      $frontendScaffoldRelativePath = $lineText.Substring("frontend_scaffold=".Length).Trim()
+    }
+  }
+  return [pscustomobject]@{
+    exit_code = [int]$LASTEXITCODE
+    frontend_scaffold_relative_path = $frontendScaffoldRelativePath
+  }
 }
 
 function Invoke-NativeCompiler {
@@ -188,11 +199,97 @@ function Invoke-NativeCompiler {
   return [int]$process.ExitCode
 }
 
+function Resolve-FrontendScaffoldPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_scaffold_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  if ([System.IO.Path]::IsPathRooted($relativePath)) {
+    return $relativePath
+  }
+  return Join-Path $RepoRoot $relativePath
+}
+
+function Assert-FrontendModuleScaffold {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $scaffoldPath = Resolve-FrontendScaffoldPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $scaffoldPath -PathType Leaf)) {
+    Write-Error "frontend modular scaffold artifact missing at $scaffoldPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $scaffoldPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend modular scaffold artifact is not valid JSON at $scaffoldPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend modular scaffold contract id mismatch in $scaffoldPath"
+    exit 2
+  }
+
+  $modules = @($payload.modules)
+  $requiredModules = @("driver", "diagnostics-io", "ir", "lex-parse", "frontend-api", "lowering", "pipeline", "sema")
+  $presentModules = @{}
+  foreach ($module in $modules) {
+    $moduleName = [string]$module.name
+    if ([string]::IsNullOrWhiteSpace($moduleName)) {
+      Write-Error "frontend modular scaffold has module with missing name in $scaffoldPath"
+      exit 2
+    }
+    $moduleSources = @($module.sources)
+    if ($moduleSources.Count -eq 0) {
+      Write-Error "frontend modular scaffold module '$moduleName' has no sources in $scaffoldPath"
+      exit 2
+    }
+    $presentModules[$moduleName] = $true
+  }
+  foreach ($moduleName in $requiredModules) {
+    if (-not $presentModules.ContainsKey($moduleName)) {
+      Write-Error "frontend modular scaffold missing required module '$moduleName' in $scaffoldPath"
+      exit 2
+    }
+  }
+
+  $sharedSources = @($payload.shared_sources)
+  if ($sharedSources.Count -eq 0) {
+    Write-Error "frontend modular scaffold shared_sources must be non-empty in $scaffoldPath"
+    exit 2
+  }
+  if ([int]$payload.module_count -ne $modules.Count) {
+    Write-Error "frontend modular scaffold module_count mismatch in $scaffoldPath"
+    exit 2
+  }
+  if ([int]$payload.shared_source_count -ne $sharedSources.Count) {
+    Write-Error "frontend modular scaffold shared_source_count mismatch in $scaffoldPath"
+    exit 2
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$buildResult = $null
 
 if (-not $parsed.use_cache) {
-  $buildExit = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  $buildExit = [int]$buildResult.exit_code
   if ($buildExit -ne 0) { exit $buildExit }
 
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
@@ -200,6 +297,7 @@ if (-not $parsed.use_cache) {
     exit 2
   }
 
+  Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
   exit $compileExit
 }
@@ -242,7 +340,8 @@ if ($null -ne $cacheKey) {
 }
 
 if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-  $buildExit = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  $buildExit = [int]$buildResult.exit_code
   if ($buildExit -ne 0) {
     Write-Output "cache_hit=false"
     exit $buildExit
@@ -254,6 +353,7 @@ if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
   exit 2
 }
 
+Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
 $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
 
 if ($null -ne $cacheKey) {

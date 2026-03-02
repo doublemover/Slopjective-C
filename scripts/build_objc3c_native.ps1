@@ -87,38 +87,150 @@ function Get-RepoRelativePath {
   return $relative.Replace('\', '/')
 }
 
-$sharedSources = @(
-  "native/objc3c/src/driver/objc3_cli_options.cpp"
-  "native/objc3c/src/driver/objc3_driver_main.cpp"
-  "native/objc3c/src/driver/objc3_driver_shell.cpp"
-  "native/objc3c/src/driver/objc3_frontend_options.cpp"
-  "native/objc3c/src/driver/objc3_llvm_capability_routing.cpp"
-  "native/objc3c/src/driver/objc3_objc3_path.cpp"
-  "native/objc3c/src/driver/objc3_objectivec_path.cpp"
-  "native/objc3c/src/driver/objc3_compilation_driver.cpp"
-  "native/objc3c/src/diag/objc3_diag_utils.cpp"
-  "native/objc3c/src/io/objc3_diagnostics_artifacts.cpp"
-  "native/objc3c/src/io/objc3_file_io.cpp"
-  "native/objc3c/src/io/objc3_manifest_artifacts.cpp"
-  "native/objc3c/src/io/objc3_process.cpp"
-  "native/objc3c/src/ir/objc3_ir_emitter.cpp"
-  "native/objc3c/src/lex/objc3_lexer.cpp"
-  "native/objc3c/src/libobjc3c_frontend/c_api.cpp"
-  "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp"
-  "native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp"
-  "native/objc3c/src/lower/objc3_lowering_contract.cpp"
-  "native/objc3c/src/parse/objc3_ast_builder.cpp"
-  "native/objc3c/src/parse/objc3_ast_builder_contract.cpp"
-  "native/objc3c/src/parse/objc3_parse_support.cpp"
-  "native/objc3c/src/parse/objc3_parser.cpp"
-  "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
-  "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
-  "native/objc3c/src/sema/objc3_sema_diagnostics_bus.cpp"
-  "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
-  "native/objc3c/src/sema/objc3_semantic_passes.cpp"
-  "native/objc3c/src/sema/objc3_static_analysis.cpp"
-  "native/objc3c/src/sema/objc3_pure_contract.cpp"
+function Get-FrontendSharedSourcesFromModules {
+  param([object[]]$Modules)
+
+  $seen = @{}
+  $flattened = New-Object System.Collections.Generic.List[string]
+  foreach ($module in $Modules) {
+    $name = [string]$module.name
+    $sources = @($module.sources)
+    if ([string]::IsNullOrWhiteSpace($name)) {
+      throw "frontend module entry missing name"
+    }
+    if ($sources.Count -eq 0) {
+      throw "frontend module '$name' must declare at least one source"
+    }
+    foreach ($source in $sources) {
+      if ($seen.ContainsKey($source)) {
+        throw "duplicate frontend shared source entry: $source"
+      }
+      $seen[$source] = $true
+      $flattened.Add($source)
+    }
+  }
+  return $flattened.ToArray()
+}
+
+function Write-FrontendModuleScaffoldArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [object[]]$Modules,
+    [Parameter(Mandatory = $true)]
+    [string[]]$SharedSources,
+    [Parameter(Mandatory = $true)]
+    [string[]]$BinaryTargets
+  )
+
+  $modulePayload = New-Object System.Collections.Generic.List[object]
+  foreach ($module in $Modules) {
+    $name = [string]$module.name
+    $sources = @($module.sources)
+    if ([string]::IsNullOrWhiteSpace($name) -or $sources.Count -eq 0) {
+      throw "frontend scaffold module metadata is invalid"
+    }
+    $modulePayload.Add([ordered]@{
+      name = $name
+      source_count = $sources.Count
+      sources = $sources
+    })
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1"
+    schema_version = 1
+    module_count = $modulePayload.Count
+    shared_source_count = $SharedSources.Count
+    modules = $modulePayload.ToArray()
+    shared_sources = $SharedSources
+    binary_targets = $BinaryTargets
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
+$frontendModules = @(
+  [ordered]@{
+    name = "driver"
+    sources = @(
+      "native/objc3c/src/driver/objc3_cli_options.cpp"
+      "native/objc3c/src/driver/objc3_driver_main.cpp"
+      "native/objc3c/src/driver/objc3_driver_shell.cpp"
+      "native/objc3c/src/driver/objc3_frontend_options.cpp"
+      "native/objc3c/src/driver/objc3_llvm_capability_routing.cpp"
+      "native/objc3c/src/driver/objc3_objc3_path.cpp"
+      "native/objc3c/src/driver/objc3_objectivec_path.cpp"
+      "native/objc3c/src/driver/objc3_compilation_driver.cpp"
+    )
+  }
+  [ordered]@{
+    name = "diagnostics-io"
+    sources = @(
+      "native/objc3c/src/diag/objc3_diag_utils.cpp"
+      "native/objc3c/src/io/objc3_diagnostics_artifacts.cpp"
+      "native/objc3c/src/io/objc3_file_io.cpp"
+      "native/objc3c/src/io/objc3_manifest_artifacts.cpp"
+      "native/objc3c/src/io/objc3_process.cpp"
+    )
+  }
+  [ordered]@{
+    name = "ir"
+    sources = @(
+      "native/objc3c/src/ir/objc3_ir_emitter.cpp"
+    )
+  }
+  [ordered]@{
+    name = "lex-parse"
+    sources = @(
+      "native/objc3c/src/lex/objc3_lexer.cpp"
+      "native/objc3c/src/parse/objc3_ast_builder.cpp"
+      "native/objc3c/src/parse/objc3_ast_builder_contract.cpp"
+      "native/objc3c/src/parse/objc3_parse_support.cpp"
+      "native/objc3c/src/parse/objc3_parser.cpp"
+    )
+  }
+  [ordered]@{
+    name = "frontend-api"
+    sources = @(
+      "native/objc3c/src/libobjc3c_frontend/c_api.cpp"
+      "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp"
+      "native/objc3c/src/libobjc3c_frontend/objc3_cli_frontend.cpp"
+    )
+  }
+  [ordered]@{
+    name = "lowering"
+    sources = @(
+      "native/objc3c/src/lower/objc3_lowering_contract.cpp"
+    )
+  }
+  [ordered]@{
+    name = "pipeline"
+    sources = @(
+      "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+      "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
+    )
+  }
+  [ordered]@{
+    name = "sema"
+    sources = @(
+      "native/objc3c/src/sema/objc3_sema_diagnostics_bus.cpp"
+      "native/objc3c/src/sema/objc3_sema_pass_manager.cpp"
+      "native/objc3c/src/sema/objc3_semantic_passes.cpp"
+      "native/objc3c/src/sema/objc3_static_analysis.cpp"
+      "native/objc3c/src/sema/objc3_pure_contract.cpp"
+    )
+  }
 )
+$sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
+$frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -165,5 +277,15 @@ Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
+Write-FrontendModuleScaffoldArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendScaffoldPath `
+  -Modules $frontendModules `
+  -SharedSources $sharedSources `
+  -BinaryTargets @(
+    (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe),
+    (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe)
+  )
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
