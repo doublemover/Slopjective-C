@@ -33,7 +33,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M226-C009-RDY-04", "surface.parse_lowering_conformance_matrix_consistent ="),
         ("M226-C009-RDY-05", "surface.parse_lowering_conformance_matrix_key ="),
         ("M226-C009-RDY-06", "const bool parse_lowering_conformance_matrix_ready ="),
-        ("M226-C009-RDY-07", "parse_lowering_conformance_matrix_ready;"),
+        ("M226-C009-RDY-07", "parse_lowering_conformance_matrix_ready &&"),
         ("M226-C009-RDY-08", "surface.failure_reason = \"parse-lowering conformance matrix is inconsistent\";"),
     ),
     "frontend_types_header": (

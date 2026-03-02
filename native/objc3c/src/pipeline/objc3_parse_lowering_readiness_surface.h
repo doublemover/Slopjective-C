@@ -237,6 +237,7 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
 }
 
 inline constexpr std::size_t kObjc3ParseLoweringConformanceMatrixCaseCount = 8u;
+inline constexpr std::size_t kObjc3ParseLoweringConformanceCorpusCaseCount = 8u;
 
 inline std::string BuildObjc3ParseLoweringConformanceMatrixKey(
     std::size_t case_count,
@@ -266,12 +267,47 @@ inline std::string BuildObjc3ParseLoweringConformanceMatrixKey(
          ";consistent=" + (parse_lowering_conformance_matrix_consistent ? "true" : "false");
 }
 
+inline std::string BuildObjc3ParseLoweringConformanceCorpusKey(
+    std::size_t case_count,
+    std::size_t passed_case_count,
+    std::size_t failed_case_count,
+    bool parser_contract_snapshot_case_passed,
+    bool parse_artifact_handoff_case_passed,
+    bool parse_artifact_replay_case_passed,
+    bool parse_artifact_diagnostics_hardening_case_passed,
+    bool parse_artifact_edge_robustness_case_passed,
+    bool parse_recovery_determinism_hardening_case_passed,
+    bool semantic_handoff_case_passed,
+    bool lowering_boundary_case_passed,
+    bool parse_lowering_conformance_matrix_consistent,
+    bool parse_lowering_conformance_corpus_consistent) {
+  return "case_count=" + std::to_string(case_count) +
+         ";passed_case_count=" + std::to_string(passed_case_count) +
+         ";failed_case_count=" + std::to_string(failed_case_count) +
+         ";parser_contract_snapshot_case_passed=" + (parser_contract_snapshot_case_passed ? "true" : "false") +
+         ";parse_artifact_handoff_case_passed=" + (parse_artifact_handoff_case_passed ? "true" : "false") +
+         ";parse_artifact_replay_case_passed=" + (parse_artifact_replay_case_passed ? "true" : "false") +
+         ";parse_artifact_diagnostics_hardening_case_passed=" +
+         (parse_artifact_diagnostics_hardening_case_passed ? "true" : "false") +
+         ";parse_artifact_edge_robustness_case_passed=" +
+         (parse_artifact_edge_robustness_case_passed ? "true" : "false") +
+         ";parse_recovery_determinism_hardening_case_passed=" +
+         (parse_recovery_determinism_hardening_case_passed ? "true" : "false") +
+         ";semantic_handoff_case_passed=" + (semantic_handoff_case_passed ? "true" : "false") +
+         ";lowering_boundary_case_passed=" + (lowering_boundary_case_passed ? "true" : "false") +
+         ";parse_lowering_conformance_matrix_consistent=" +
+         (parse_lowering_conformance_matrix_consistent ? "true" : "false") +
+         ";consistent=" + (parse_lowering_conformance_corpus_consistent ? "true" : "false");
+}
+
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
   Objc3ParseLoweringReadinessSurface surface;
   surface.parse_lowering_conformance_matrix_case_count =
       kObjc3ParseLoweringConformanceMatrixCaseCount;
+  surface.parse_lowering_conformance_corpus_case_count =
+      kObjc3ParseLoweringConformanceCorpusCaseCount;
   const Objc3ParserContractSnapshot &parser_snapshot = pipeline_result.parser_contract_snapshot;
   surface.lexer_diagnostic_count = pipeline_result.stage_diagnostics.lexer.size();
   surface.parser_diagnostic_count = pipeline_result.stage_diagnostics.parser.size();
@@ -498,11 +534,79 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parse_lowering_conformance_matrix_consistent);
   const bool parse_lowering_conformance_matrix_ready =
       surface.parse_lowering_conformance_matrix_consistent;
+  const bool parser_contract_snapshot_case_passed =
+      surface.parser_contract_snapshot_present;
+  const bool parse_artifact_handoff_case_passed =
+      surface.parse_artifact_handoff_deterministic;
+  const bool parse_artifact_replay_case_passed =
+      surface.parse_artifact_replay_key_deterministic;
+  const bool parse_artifact_diagnostics_hardening_case_passed =
+      surface.parse_artifact_diagnostics_hardening_consistent;
+  const bool parse_artifact_edge_robustness_case_passed =
+      surface.parse_artifact_edge_case_robustness_consistent;
+  const bool parse_recovery_determinism_hardening_case_passed =
+      surface.parse_recovery_determinism_hardening_consistent;
+  const bool semantic_handoff_case_passed =
+      surface.semantic_integration_surface_built &&
+      semantic_handoff_deterministic &&
+      sema_handoff_ready;
+  const bool lowering_boundary_case_passed =
+      surface.lowering_boundary_ready &&
+      !surface.lowering_boundary_replay_key.empty();
+  surface.parse_lowering_conformance_corpus_passed_case_count =
+      static_cast<std::size_t>(parser_contract_snapshot_case_passed) +
+      static_cast<std::size_t>(parse_artifact_handoff_case_passed) +
+      static_cast<std::size_t>(parse_artifact_replay_case_passed) +
+      static_cast<std::size_t>(parse_artifact_diagnostics_hardening_case_passed) +
+      static_cast<std::size_t>(parse_artifact_edge_robustness_case_passed) +
+      static_cast<std::size_t>(parse_recovery_determinism_hardening_case_passed) +
+      static_cast<std::size_t>(semantic_handoff_case_passed) +
+      static_cast<std::size_t>(lowering_boundary_case_passed);
+  surface.parse_lowering_conformance_corpus_failed_case_count =
+      surface.parse_lowering_conformance_corpus_case_count >=
+              surface.parse_lowering_conformance_corpus_passed_case_count
+          ? (surface.parse_lowering_conformance_corpus_case_count -
+             surface.parse_lowering_conformance_corpus_passed_case_count)
+          : surface.parse_lowering_conformance_corpus_case_count;
+  surface.parse_lowering_conformance_corpus_consistent =
+      surface.parse_lowering_conformance_matrix_consistent &&
+      surface.parse_lowering_conformance_corpus_case_count ==
+          kObjc3ParseLoweringConformanceCorpusCaseCount &&
+      surface.parse_lowering_conformance_corpus_case_count > 0 &&
+      surface.parse_lowering_conformance_corpus_passed_case_count ==
+          surface.parse_lowering_conformance_corpus_case_count &&
+      surface.parse_lowering_conformance_corpus_failed_case_count == 0 &&
+      parser_contract_snapshot_case_passed &&
+      parse_artifact_handoff_case_passed &&
+      parse_artifact_replay_case_passed &&
+      parse_artifact_diagnostics_hardening_case_passed &&
+      parse_artifact_edge_robustness_case_passed &&
+      parse_recovery_determinism_hardening_case_passed &&
+      semantic_handoff_case_passed &&
+      lowering_boundary_case_passed;
+  surface.parse_lowering_conformance_corpus_key =
+      BuildObjc3ParseLoweringConformanceCorpusKey(
+          surface.parse_lowering_conformance_corpus_case_count,
+          surface.parse_lowering_conformance_corpus_passed_case_count,
+          surface.parse_lowering_conformance_corpus_failed_case_count,
+          parser_contract_snapshot_case_passed,
+          parse_artifact_handoff_case_passed,
+          parse_artifact_replay_case_passed,
+          parse_artifact_diagnostics_hardening_case_passed,
+          parse_artifact_edge_robustness_case_passed,
+          parse_recovery_determinism_hardening_case_passed,
+          semantic_handoff_case_passed,
+          lowering_boundary_case_passed,
+          surface.parse_lowering_conformance_matrix_consistent,
+          surface.parse_lowering_conformance_corpus_consistent);
+  const bool parse_lowering_conformance_corpus_ready =
+      surface.parse_lowering_conformance_corpus_consistent;
   surface.ready_for_lowering = diagnostics_clear &&
                                parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
                                surface.lowering_boundary_ready &&
-                               parse_lowering_conformance_matrix_ready;
+                               parse_lowering_conformance_matrix_ready &&
+                               parse_lowering_conformance_corpus_ready;
 
   if (surface.ready_for_lowering || !surface.failure_reason.empty()) {
     return surface;
@@ -562,6 +666,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "lowering boundary is not ready";
   } else if (!surface.parse_lowering_conformance_matrix_consistent) {
     surface.failure_reason = "parse-lowering conformance matrix is inconsistent";
+  } else if (!surface.parse_lowering_conformance_corpus_consistent) {
+    surface.failure_reason = "parse-lowering conformance corpus is inconsistent";
   } else {
     surface.failure_reason = "parse-lowering readiness failed";
   }
