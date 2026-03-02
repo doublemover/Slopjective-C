@@ -154,6 +154,22 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string failure_reason;
 };
 
+struct Objc3SemanticStabilitySpecDeltaClosureScaffold {
+  bool typed_surface_present = false;
+  bool parse_readiness_surface_present = false;
+  bool semantic_handoff_deterministic = false;
+  bool typed_core_feature_expansion_consistent = false;
+  bool parse_lowering_conformance_matrix_consistent = false;
+  bool parse_lowering_conformance_corpus_consistent = false;
+  bool parse_lowering_performance_quality_guardrails_consistent = false;
+  bool spec_delta_closed = false;
+  bool modular_split_ready = false;
+  std::string typed_handoff_key;
+  std::string parse_artifact_replay_key;
+  std::string scaffold_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
@@ -257,6 +273,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendDiagnosticsBus stage_diagnostics;
   Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
+  Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;

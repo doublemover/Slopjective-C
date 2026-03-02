@@ -48,6 +48,10 @@ Current-state note:
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
   determinism, conformance corpus closure, and performance guardrail gating are
   fail-closed under a single readiness boundary.
+- M250 lane-B B002 modular split scaffolding anchors semantic-stability closure
+  in `pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h` so
+  typed sema handoff and parse/lowering readiness surfaces stay split while
+  sharing a deterministic fail-closed scaffold key.
 
 ## Ownership Map
 
