@@ -35,6 +35,12 @@ inline std::string BuildObjc3SemanticStabilityCoreFeatureImplementationKey(
       << (surface.semantic_handoff_deterministic ? "true" : "false")
       << ";spec_delta_closed=" << (surface.spec_delta_closed ? "true" : "false")
       << ";modular_split_ready=" << (surface.modular_split_ready ? "true" : "false")
+      << ";typed_core_feature_expansion_accounting_consistent="
+      << (surface.typed_core_feature_expansion_accounting_consistent ? "true" : "false")
+      << ";parse_conformance_accounting_consistent="
+      << (surface.parse_conformance_accounting_consistent ? "true" : "false")
+      << ";replay_keys_ready=" << (surface.replay_keys_ready ? "true" : "false")
+      << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
 }
@@ -119,8 +125,6 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
 
   const bool parse_matrix_case_count_ready =
       surface.parse_lowering_conformance_matrix_case_count > 0;
-  const bool typed_keys_ready =
-      !surface.typed_handoff_key.empty() && !surface.parse_artifact_replay_key.empty();
   const bool typed_parse_core_feature_consistent =
       surface.typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -130,21 +134,42 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
       surface.parse_lowering_conformance_matrix_consistent &&
       surface.parse_lowering_conformance_corpus_consistent &&
       surface.parse_lowering_performance_quality_guardrails_consistent;
+  const bool typed_core_feature_expansion_accounting_consistent =
+      typed_core_feature_case_accounting_consistent &&
+      typed_core_feature_expansion_case_accounting_consistent;
+  const bool parse_conformance_accounting_consistent =
+      parse_matrix_case_count_ready &&
+      parse_corpus_case_accounting_consistent &&
+      parse_guardrails_case_accounting_consistent;
+  const bool replay_keys_ready =
+      !surface.typed_handoff_key.empty() && !surface.parse_artifact_replay_key.empty();
+  const bool expansion_ready =
+      typed_parse_core_feature_consistent &&
+      parse_conformance_consistent &&
+      typed_core_feature_expansion_accounting_consistent &&
+      parse_conformance_accounting_consistent &&
+      replay_keys_ready;
+  surface.typed_core_feature_expansion_accounting_consistent =
+      typed_core_feature_expansion_accounting_consistent;
+  surface.parse_conformance_accounting_consistent =
+      parse_conformance_accounting_consistent;
+  surface.replay_keys_ready = replay_keys_ready;
+  surface.expansion_ready = expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.semantic_handoff_deterministic &&
       surface.spec_delta_closed &&
       surface.modular_split_ready &&
-      typed_parse_core_feature_consistent &&
-      parse_conformance_consistent &&
-      typed_core_feature_case_accounting_consistent &&
-      typed_core_feature_expansion_case_accounting_consistent &&
-      parse_matrix_case_count_ready &&
-      parse_corpus_case_accounting_consistent &&
-      parse_guardrails_case_accounting_consistent &&
-      typed_keys_ready;
+      expansion_ready;
   surface.core_feature_key =
       BuildObjc3SemanticStabilityCoreFeatureImplementationKey(surface);
+  surface.expansion_key =
+      "semantic-stability-core-feature-expansion:v1:typed-expansion-consistent=" +
+      std::string(surface.typed_core_feature_expansion_accounting_consistent ? "true" : "false") +
+      ";parse-accounting-consistent=" +
+      std::string(surface.parse_conformance_accounting_consistent ? "true" : "false") +
+      ";replay-keys-ready=" +
+      std::string(surface.replay_keys_ready ? "true" : "false");
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -160,19 +185,15 @@ BuildObjc3SemanticStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "typed/parse core feature consistency is incomplete";
   } else if (!parse_conformance_consistent) {
     surface.failure_reason = "parse conformance consistency is incomplete";
-  } else if (!typed_core_feature_case_accounting_consistent) {
-    surface.failure_reason = "typed core feature case accounting is inconsistent";
-  } else if (!typed_core_feature_expansion_case_accounting_consistent) {
+  } else if (!typed_core_feature_expansion_accounting_consistent) {
     surface.failure_reason =
         "typed core feature expansion case accounting is inconsistent";
-  } else if (!parse_matrix_case_count_ready) {
-    surface.failure_reason = "parse conformance matrix case count is not ready";
-  } else if (!parse_corpus_case_accounting_consistent) {
-    surface.failure_reason = "parse conformance corpus case accounting is inconsistent";
-  } else if (!parse_guardrails_case_accounting_consistent) {
+  } else if (!parse_conformance_accounting_consistent) {
     surface.failure_reason = "parse guardrails case accounting is inconsistent";
-  } else if (!typed_keys_ready) {
+  } else if (!replay_keys_ready) {
     surface.failure_reason = "typed/parse replay keys are not ready";
+  } else if (!expansion_ready) {
+    surface.failure_reason = "semantic stability core feature expansion is not ready";
   } else {
     surface.failure_reason = "semantic stability core feature implementation is not ready";
   }

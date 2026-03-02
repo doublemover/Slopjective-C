@@ -75,7 +75,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ),
         (
             "M250-B003-SUR-06",
-            "surface.failure_reason = \"typed core feature case accounting is inconsistent\";",
+            "typed core feature expansion case accounting is inconsistent",
         ),
         (
             "M250-B003-SUR-07",

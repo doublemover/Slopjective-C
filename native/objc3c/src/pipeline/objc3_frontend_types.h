@@ -187,6 +187,10 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   bool parse_lowering_performance_quality_guardrails_consistent = false;
   bool spec_delta_closed = false;
   bool modular_split_ready = false;
+  bool typed_core_feature_expansion_accounting_consistent = false;
+  bool parse_conformance_accounting_consistent = false;
+  bool replay_keys_ready = false;
+  bool expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::size_t typed_core_feature_case_count = 0;
   std::size_t typed_core_feature_passed_case_count = 0;
@@ -204,6 +208,7 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   std::string typed_handoff_key;
   std::string parse_artifact_replay_key;
   std::string core_feature_key;
+  std::string expansion_key;
   std::string failure_reason;
 };
 
