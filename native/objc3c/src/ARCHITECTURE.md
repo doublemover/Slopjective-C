@@ -174,6 +174,11 @@ Current-state note:
   fail-closed expansion evidence wiring in
   `libobjc3c_frontend/frontend_anchor.cpp` so object emission/link-path
   reliability remains deterministic when backend marker artifacts drift.
+- M228 lane-D D005 edge-case and compatibility completion anchors deterministic
+  compatibility consistency/readiness and compatibility-key transport in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
+  toolchain/runtime object emission/link-path routing remains fail-closed when
+  backend route/output compatibility evidence drifts.
 - M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
   references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
   `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,

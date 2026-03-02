@@ -132,6 +132,10 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering edge-case expansion and robustness shall include
   deterministic robustness expansion/readiness and robustness-key transport
   gates that fail closed before IR emission.
+- toolchain/runtime edge-case compatibility completion shall remain
+  deterministic, preserve compatibility consistency/readiness and
+  compatibility-key continuity, and fail closed when backend route/output
+  compatibility evidence drifts.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.

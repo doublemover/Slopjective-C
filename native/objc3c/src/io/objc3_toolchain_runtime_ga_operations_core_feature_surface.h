@@ -192,6 +192,8 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       surface.edge_case_compatibility_consistent &&
       !surface.backend_route_key.empty() &&
       scaffold.object_artifact_ready;
+  surface.edge_case_compatibility_key =
+      BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseCompatibilityKey(surface);
   surface.edge_case_expansion_consistent =
       surface.edge_case_compatibility_consistent &&
       scaffold.compile_route_ready &&
@@ -221,11 +223,11 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       !surface.scaffold_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.core_feature_expansion_ready;
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.edge_case_compatibility_ready;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && !surface.edge_case_compatibility_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.edge_case_robustness_ready;
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_ready;
   surface.core_feature_expansion_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(surface);
-  surface.edge_case_compatibility_key =
-      BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseCompatibilityKey(surface);
   surface.edge_case_robustness_key =
       BuildObjc3ToolchainRuntimeGaOperationsEdgeCaseRobustnessKey(surface);
   surface.diagnostics_hardening_key =
@@ -256,6 +258,8 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
     surface.failure_reason = "toolchain/runtime edge-case compatibility is inconsistent";
   } else if (!surface.edge_case_compatibility_ready) {
     surface.failure_reason = "toolchain/runtime edge-case compatibility is not ready";
+  } else if (surface.edge_case_compatibility_key.empty()) {
+    surface.failure_reason = "toolchain/runtime edge-case compatibility key is not ready";
   } else if (!surface.edge_case_expansion_consistent) {
     surface.failure_reason = "toolchain/runtime edge-case expansion is inconsistent";
   } else if (!surface.edge_case_robustness_ready) {
