@@ -2028,6 +2028,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"long_tail_grammar_handoff_key_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.long_tail_grammar_handoff_key_deterministic ? "true"
                                                                                                      : "false")
+           << ",\"long_tail_grammar_expansion_accounting_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_expansion_accounting_consistent ? "true"
+                                                                                                           : "false")
+           << ",\"long_tail_grammar_replay_keys_ready\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_replay_keys_ready ? "true" : "false")
+           << ",\"long_tail_grammar_expansion_ready\": "
+           << (bundle.parse_lowering_readiness_surface.long_tail_grammar_expansion_ready ? "true" : "false")
            << ",\"parse_artifact_handoff_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
@@ -2111,6 +2118,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_artifact_handoff_key
            << "\",\"long_tail_grammar_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.long_tail_grammar_handoff_key
+           << "\",\"long_tail_grammar_expansion_key\":\""
+           << bundle.parse_lowering_readiness_surface.long_tail_grammar_expansion_key
            << "\",\"compatibility_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""

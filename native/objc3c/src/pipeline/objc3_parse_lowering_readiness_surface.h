@@ -221,6 +221,9 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
     bool parser_recovery_replay_ready,
     bool long_tail_grammar_core_feature_consistent,
     bool long_tail_grammar_handoff_key_deterministic,
+    bool long_tail_grammar_expansion_accounting_consistent,
+    bool long_tail_grammar_replay_keys_ready,
+    bool long_tail_grammar_expansion_ready,
     bool parse_artifact_handoff_deterministic,
     bool parse_artifact_replay_key_deterministic,
     bool parse_artifact_diagnostics_hardening_consistent,
@@ -233,6 +236,12 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
          (long_tail_grammar_core_feature_consistent ? "true" : "false") +
          ";long_tail_grammar_handoff_key_deterministic=" +
          (long_tail_grammar_handoff_key_deterministic ? "true" : "false") +
+         ";long_tail_grammar_expansion_accounting_consistent=" +
+         (long_tail_grammar_expansion_accounting_consistent ? "true" : "false") +
+         ";long_tail_grammar_replay_keys_ready=" +
+         (long_tail_grammar_replay_keys_ready ? "true" : "false") +
+         ";long_tail_grammar_expansion_ready=" +
+         (long_tail_grammar_expansion_ready ? "true" : "false") +
          ";parse_artifact_handoff_deterministic=" + (parse_artifact_handoff_deterministic ? "true" : "false") +
          ";parse_artifact_replay_key_deterministic=" +
          (parse_artifact_replay_key_deterministic ? "true" : "false") +
@@ -241,6 +250,26 @@ inline std::string BuildObjc3ParseRecoveryDeterminismHardeningKey(
          ";parse_artifact_edge_case_robustness_consistent=" +
          (parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
          ";consistent=" + (parse_recovery_determinism_hardening_consistent ? "true" : "false");
+}
+
+inline std::string BuildObjc3LongTailGrammarExpansionKey(
+    std::size_t construct_count,
+    std::size_t covered_construct_count,
+    std::uint64_t fingerprint,
+    bool core_feature_consistent,
+    bool handoff_key_deterministic,
+    bool expansion_accounting_consistent,
+    bool replay_keys_ready,
+    bool expansion_ready) {
+  return "construct_count=" + std::to_string(construct_count) +
+         ";covered_construct_count=" + std::to_string(covered_construct_count) +
+         ";fingerprint=" + std::to_string(fingerprint) +
+         ";core_feature_consistent=" + (core_feature_consistent ? "true" : "false") +
+         ";handoff_key_deterministic=" + (handoff_key_deterministic ? "true" : "false") +
+         ";expansion_accounting_consistent=" +
+         (expansion_accounting_consistent ? "true" : "false") +
+         ";replay_keys_ready=" + (replay_keys_ready ? "true" : "false") +
+         ";expansion_ready=" + (expansion_ready ? "true" : "false");
 }
 
 inline constexpr std::size_t kObjc3ParseLoweringConformanceMatrixCaseCount = 8u;
@@ -390,6 +419,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.long_tail_grammar_handoff_key_deterministic =
       parser_snapshot.long_tail_grammar_handoff_deterministic &&
       surface.long_tail_grammar_core_feature_consistent;
+  surface.long_tail_grammar_expansion_accounting_consistent =
+      surface.long_tail_grammar_construct_count > 0 &&
+      surface.long_tail_grammar_covered_construct_count <=
+          surface.long_tail_grammar_construct_count &&
+      surface.long_tail_grammar_fingerprint != 0 &&
+      surface.long_tail_grammar_core_feature_consistent;
   const std::size_t parser_snapshot_breakdown_count =
       Objc3ParserSnapshotDeclarationBreakdownCount(parser_snapshot);
   const std::size_t ast_top_level_declaration_count =
@@ -465,6 +500,23 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.compatibility_handoff_key,
       surface.parse_artifact_fingerprint_consistent,
       surface.parse_artifact_replay_key_deterministic);
+  surface.long_tail_grammar_replay_keys_ready =
+      !surface.long_tail_grammar_handoff_key.empty() &&
+      !surface.parse_artifact_handoff_key.empty() &&
+      !surface.parse_artifact_replay_key.empty();
+  surface.long_tail_grammar_expansion_ready =
+      surface.long_tail_grammar_expansion_accounting_consistent &&
+      surface.long_tail_grammar_handoff_key_deterministic &&
+      surface.long_tail_grammar_replay_keys_ready;
+  surface.long_tail_grammar_expansion_key = BuildObjc3LongTailGrammarExpansionKey(
+      surface.long_tail_grammar_construct_count,
+      surface.long_tail_grammar_covered_construct_count,
+      surface.long_tail_grammar_fingerprint,
+      surface.long_tail_grammar_core_feature_consistent,
+      surface.long_tail_grammar_handoff_key_deterministic,
+      surface.long_tail_grammar_expansion_accounting_consistent,
+      surface.long_tail_grammar_replay_keys_ready,
+      surface.long_tail_grammar_expansion_ready);
   surface.parse_artifact_diagnostics_hardening_key =
       BuildObjc3ParseArtifactDiagnosticsHardeningKey(
           surface.parser_diagnostic_count,
@@ -495,11 +547,15 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_recovery_replay_ready &&
       surface.long_tail_grammar_core_feature_consistent &&
       surface.long_tail_grammar_handoff_key_deterministic &&
+      surface.long_tail_grammar_expansion_accounting_consistent &&
+      surface.long_tail_grammar_replay_keys_ready &&
+      surface.long_tail_grammar_expansion_ready &&
       surface.parse_artifact_handoff_deterministic &&
       surface.parse_artifact_replay_key_deterministic &&
       surface.parse_artifact_diagnostics_hardening_consistent &&
       surface.parse_artifact_edge_case_robustness_consistent &&
       !surface.long_tail_grammar_handoff_key.empty() &&
+      !surface.long_tail_grammar_expansion_key.empty() &&
       !surface.parse_artifact_handoff_key.empty() &&
       !surface.parse_artifact_replay_key.empty() &&
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
@@ -510,6 +566,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_recovery_replay_ready,
       surface.long_tail_grammar_core_feature_consistent,
       surface.long_tail_grammar_handoff_key_deterministic,
+      surface.long_tail_grammar_expansion_accounting_consistent,
+      surface.long_tail_grammar_replay_keys_ready,
+      surface.long_tail_grammar_expansion_ready,
       surface.parse_artifact_handoff_deterministic,
       surface.parse_artifact_replay_key_deterministic,
       surface.parse_artifact_diagnostics_hardening_consistent,
@@ -580,6 +639,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_recovery_replay_ready &&
       surface.long_tail_grammar_core_feature_consistent &&
       surface.long_tail_grammar_handoff_key_deterministic &&
+      surface.long_tail_grammar_expansion_ready &&
       surface.parse_artifact_handoff_deterministic;
   const bool parse_artifact_replay_key_ready =
       surface.parse_artifact_replay_key_deterministic;
@@ -634,6 +694,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_diagnostics_hardening_consistent &&
       surface.parse_artifact_edge_case_robustness_consistent &&
       surface.parse_recovery_determinism_hardening_consistent &&
+      surface.long_tail_grammar_expansion_ready &&
       surface.semantic_integration_surface_built &&
       semantic_handoff_deterministic &&
       typed_core_feature_ready &&
@@ -644,6 +705,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
       !surface.parse_artifact_edge_robustness_key.empty() &&
       !surface.parse_recovery_determinism_hardening_key.empty() &&
+      !surface.long_tail_grammar_expansion_key.empty() &&
       !surface.typed_sema_core_feature_key.empty() &&
       !surface.typed_sema_core_feature_expansion_key.empty() &&
       !surface.lowering_boundary_replay_key.empty();
@@ -813,6 +875,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "long-tail grammar core feature is inconsistent";
   } else if (!surface.long_tail_grammar_handoff_key_deterministic) {
     surface.failure_reason = "long-tail grammar handoff key is not deterministic";
+  } else if (!surface.long_tail_grammar_expansion_accounting_consistent) {
+    surface.failure_reason = "long-tail grammar expansion accounting is inconsistent";
   } else if (!surface.parse_artifact_handoff_consistent) {
     surface.failure_reason = "parse artifact handoff is inconsistent";
   } else if (!surface.parser_diagnostic_surface_consistent) {
@@ -829,6 +893,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "compatibility handoff is inconsistent";
   } else if (!surface.parse_artifact_replay_key_deterministic) {
     surface.failure_reason = "parse artifact replay key is not deterministic";
+  } else if (!surface.long_tail_grammar_replay_keys_ready) {
+    surface.failure_reason = "long-tail grammar replay keys are not ready";
+  } else if (!surface.long_tail_grammar_expansion_ready) {
+    surface.failure_reason = "long-tail grammar core feature expansion is not ready";
   } else if (!surface.parse_artifact_diagnostics_hardening_consistent) {
     surface.failure_reason = "parse artifact diagnostics hardening is inconsistent";
   } else if (!surface.parser_token_count_budget_consistent) {

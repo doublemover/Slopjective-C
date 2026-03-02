@@ -47,6 +47,10 @@ Current-state note:
   closure identity (`long_tail_grammar_*`) in
   `parse/objc3_parser_contract.h` and wires fail-closed handoff enforcement in
   `pipeline/objc3_parse_lowering_readiness_surface.h`.
+- M250 lane-A A004 core feature expansion anchors explicit long-tail grammar
+  expansion accounting/replay gates (`long_tail_grammar_expansion_*`) in
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so parse/lowering
+  readiness can fail closed on expansion drift with deterministic replay keys.
 - M250 lane-B semantic stability freeze closes spec delta between
   `pipeline/objc3_typed_sema_to_lowering_contract_surface.h` and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so semantic handoff
@@ -71,7 +75,6 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and
   IR/object artifact compile gating stay deterministic and fail-closed before
   runtime object emission dispatch.
-
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
