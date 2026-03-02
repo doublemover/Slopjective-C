@@ -93,8 +93,14 @@ A conforming implementation shall preserve, for all exported declarations:
       pass-graph recovery-determinism evidence,
     - deterministic conformance-matrix readiness/key anchors for lowering
       pass-graph conformance-matrix evidence,
-    - deterministic conformance-corpus readiness/key anchors for lowering
-      pass-graph conformance-corpus evidence,
+   - deterministic conformance-corpus readiness/key anchors for lowering
+     pass-graph conformance-corpus evidence,
+   - deterministic ownership-aware lowering edge-case compatibility
+     consistency/readiness and compatibility-key anchors for lane-B closeout
+     evidence,
+   - deterministic ownership-aware lowering edge-case robustness
+     expansion/readiness and robustness-key anchors for lane-B expansion
+     evidence,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
    - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,

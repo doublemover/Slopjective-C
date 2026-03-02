@@ -123,6 +123,12 @@ At minimum, the pass-graph gate shall validate:
 - conformance corpus expansion shall include deterministic conformance-corpus
   consistency and conformance-corpus readiness/key gates that fail closed
   before IR emission.
+- ownership-aware lowering edge-case and compatibility completion shall include
+  deterministic compatibility consistency/readiness and compatibility-key
+  transport gates that fail closed before IR emission.
+- ownership-aware lowering edge-case expansion and robustness shall include
+  deterministic robustness expansion/readiness and robustness-key transport
+  gates that fail closed before IR emission.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.

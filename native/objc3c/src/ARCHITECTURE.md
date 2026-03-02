@@ -119,6 +119,16 @@ Current-state note:
   `ir/objc3_ir_emitter.cpp` with deterministic expansion readiness/key
   synthesis so ownership-aware lowering fails closed when weak/unowned expansion
   accounting or replay-proof key transport drifts.
+- M228 lane-B B005 edge-case and compatibility completion extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` and
+  `pipeline/objc3_frontend_artifacts.cpp` with deterministic edge-case
+  compatibility consistency/readiness and compatibility-key transport so
+  ownership-aware lowering fails closed on compatibility drift.
+- M228 lane-B B006 edge-case expansion and robustness extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` with
+  deterministic robustness expansion/readiness and robustness-key transport so
+  ownership-aware lowering compatibility gating remains fail-closed on
+  robustness drift before IR emission.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
