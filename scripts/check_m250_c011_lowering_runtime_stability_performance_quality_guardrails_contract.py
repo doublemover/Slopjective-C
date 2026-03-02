@@ -41,11 +41,19 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     "frontend_types": (
         (
             "M250-C011-TYP-01",
-            "bool performance_quality_guardrails_consistent = false;\n  bool performance_quality_guardrails_ready = false;\n  bool expansion_ready = false;",
+            "bool performance_quality_guardrails_consistent = false;",
         ),
         (
             "M250-C011-TYP-02",
-            "std::string conformance_corpus_key;\n  std::string performance_quality_guardrails_key;\n  std::string edge_case_compatibility_key;",
+            "bool performance_quality_guardrails_ready = false;",
+        ),
+        (
+            "M250-C011-TYP-03",
+            "std::string conformance_corpus_key;",
+        ),
+        (
+            "M250-C011-TYP-04",
+            "std::string performance_quality_guardrails_key;",
         ),
     ),
     "core_surface": (

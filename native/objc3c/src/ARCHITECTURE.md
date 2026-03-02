@@ -170,6 +170,11 @@ Current-state note:
   in `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so performance/quality drift fails closed before runtime readiness is
   reported.
+- M250 lane-C C012 cross-lane integration sync anchors explicit lowering/runtime
+  cross-lane synchronization guardrails (`cross_lane_integration_*`) in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so lane-C cannot report readiness before deterministic lane-A/lane-B/lane-C
+  integration alignment is satisfied.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and

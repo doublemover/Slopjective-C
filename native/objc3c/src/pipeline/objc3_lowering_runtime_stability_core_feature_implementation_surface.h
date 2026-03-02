@@ -86,8 +86,36 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << (surface.performance_quality_guardrails_ready ? "true" : "false")
       << ";performance_quality_guardrails_key="
       << surface.performance_quality_guardrails_key
+      << ";cross_lane_integration_consistent="
+      << (surface.cross_lane_integration_consistent ? "true" : "false")
+      << ";cross_lane_integration_ready="
+      << (surface.cross_lane_integration_ready ? "true" : "false")
+      << ";cross_lane_integration_key=" << surface.cross_lane_integration_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3LoweringRuntimeCrossLaneIntegrationKey(
+    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &surface,
+    bool cross_lane_integration_consistent,
+    bool cross_lane_integration_ready) {
+  std::ostringstream key;
+  key << "lowering-runtime-cross-lane-integration:v1:"
+      << "lane-a-closeout-consistent="
+      << (surface.compatibility_handoff_consistent ? "true" : "false")
+      << ";lane-a-gate-signoff-ready="
+      << (surface.language_version_pragma_coordinate_order_consistent ? "true" : "false")
+      << ";lane-b-semantic-handoff-deterministic="
+      << (surface.typed_handoff_key_deterministic ? "true" : "false")
+      << ";lane-b-semantic-core-ready="
+      << (surface.typed_core_feature_consistent ? "true" : "false")
+      << ";lane-c-performance-guardrails-ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";cross-lane-integration-consistent="
+      << (cross_lane_integration_consistent ? "true" : "false")
+      << ";cross-lane-integration-ready="
+      << (cross_lane_integration_ready ? "true" : "false");
   return key.str();
 }
 
@@ -268,6 +296,18 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       conformance_corpus_ready &&
       parse_guardrails_case_accounting_consistent &&
       !parse_surface.parse_lowering_performance_quality_guardrails_key.empty();
+  const bool cross_lane_integration_consistent =
+      performance_quality_guardrails_consistent &&
+      parse_surface.long_tail_grammar_integration_closeout_consistent &&
+      parse_surface.long_tail_grammar_gate_signoff_ready &&
+      parse_surface.compatibility_handoff_consistent &&
+      typed_surface.semantic_handoff_deterministic &&
+      typed_surface.semantic_handoff_consistent;
+  const bool cross_lane_integration_ready =
+      cross_lane_integration_consistent &&
+      performance_quality_guardrails_ready &&
+      replay_keys_ready &&
+      !surface.parse_artifact_replay_key.empty();
   const bool edge_case_compatibility_expansion_ready =
       typed_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
@@ -301,6 +341,11 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       performance_quality_guardrails_consistent;
   surface.performance_quality_guardrails_ready =
       performance_quality_guardrails_ready;
+  surface.cross_lane_integration_consistent = cross_lane_integration_consistent;
+  surface.cross_lane_integration_ready = cross_lane_integration_ready;
+  surface.cross_lane_integration_key =
+      BuildObjc3LoweringRuntimeCrossLaneIntegrationKey(
+          surface, cross_lane_integration_consistent, cross_lane_integration_ready);
   surface.expansion_ready = expansion_ready;
   const bool recovery_determinism_expansion_ready =
       surface.expansion_ready &&
@@ -318,6 +363,11 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       conformance_corpus_expansion_ready &&
       performance_quality_guardrails_ready;
   surface.expansion_ready = performance_quality_guardrails_expansion_ready;
+  const bool cross_lane_integration_expansion_ready =
+      performance_quality_guardrails_expansion_ready &&
+      cross_lane_integration_ready &&
+      !surface.cross_lane_integration_key.empty();
+  surface.expansion_ready = cross_lane_integration_expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.lowering_boundary_ready &&
@@ -392,6 +442,14 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       std::string(!surface.performance_quality_guardrails_key.empty() ? "true" : "false") +
       ";performance-quality-guardrails-expansion-ready=" +
       std::string(performance_quality_guardrails_expansion_ready ? "true" : "false") +
+      ";cross-lane-integration-consistent=" +
+      std::string(cross_lane_integration_consistent ? "true" : "false") +
+      ";cross-lane-integration-ready=" +
+      std::string(cross_lane_integration_ready ? "true" : "false") +
+      ";cross-lane-integration-key-ready=" +
+      std::string(!surface.cross_lane_integration_key.empty() ? "true" : "false") +
+      ";cross-lane-integration-expansion-ready=" +
+      std::string(cross_lane_integration_expansion_ready ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parser-diagnostic-surface-consistent=" +
@@ -475,6 +533,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   } else if (!performance_quality_guardrails_ready) {
     surface.failure_reason =
         "lowering/runtime performance quality guardrails are not ready";
+  } else if (!cross_lane_integration_consistent) {
+    surface.failure_reason = "lowering/runtime cross-lane integration is inconsistent";
+  } else if (!cross_lane_integration_ready) {
+    surface.failure_reason = "lowering/runtime cross-lane integration is not ready";
   } else if (!diagnostics_hardening_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime core feature expansion is not ready";
@@ -490,6 +552,9 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   } else if (!performance_quality_guardrails_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime performance quality guardrails expansion is not ready";
+  } else if (!cross_lane_integration_expansion_ready) {
+    surface.failure_reason =
+        "lowering/runtime cross-lane integration expansion is not ready";
   } else {
     surface.failure_reason =
         "lowering/runtime core feature implementation is not ready";
