@@ -225,6 +225,14 @@ Current-state note:
   and `package.json` so installer/runtime operations boundaries and support
   tooling continuity remain deterministic and fail-closed for release
   governance readiness.
+- M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
+  anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
+  `M249-D001`) in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m249/m249_e001_lane_e_release_gate_docs_and_runbooks_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so release-gate documentation/runbook governance evidence
+  remains deterministic and fail-closed while lane A-D contract-freeze assets
+  are pending GH seed.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

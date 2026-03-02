@@ -152,6 +152,10 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling governance shall preserve
   explicit lane-D installer/runtime operation anchors and fail closed on
   support-tooling replay drift before architecture freeze readiness advances.
+- release gate/docs/runbooks contract and architecture freeze wiring shall
+  preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
+  `M249-C001`, `M249-D001`) and fail closed when dependency references,
+  docs/runbook evidence commands, or release gate readiness hooks drift.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.
