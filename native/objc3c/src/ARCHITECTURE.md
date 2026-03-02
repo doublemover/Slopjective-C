@@ -93,6 +93,11 @@ Current-state note:
   `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
   so edge-case expansion drift fails closed before semantic stability
   readiness is reported.
+- M250 lane-B B007 diagnostics hardening anchors explicit semantic diagnostics
+  hardening guardrails (`diagnostics_hardening_*`) in
+  `pipeline/objc3_semantic_stability_core_feature_implementation_surface.h`
+  so diagnostics drift fails closed before semantic stability readiness is
+  reported.
 - M250 lane-C C002 modular split scaffolding anchors lowering/runtime stability
   and invariant-proof closure in
   `pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h` so typed
