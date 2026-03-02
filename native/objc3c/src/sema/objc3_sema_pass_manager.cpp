@@ -822,7 +822,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                                              diagnostics_bus_count_after_publish ==
                                                  diagnostics_bus_count_before_publish + pass_diagnostics.size();
     diagnostics_bus_publish_consistent = diagnostics_bus_publish_consistent && pass_bus_publish_consistent;
-    result.diagnostics_after_pass[pass_index] = result.diagnostics.size();
+    result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();
     result.diagnostics_emitted_by_pass[pass_index] = pass_diagnostics.size();
   }
   const std::size_t diagnostics_emitted_total = std::accumulate(
