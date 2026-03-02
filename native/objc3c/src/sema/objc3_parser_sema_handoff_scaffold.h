@@ -214,13 +214,19 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
          (snapshot.top_level_declaration_count == 0u &&
           BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u) ||
          (snapshot.protocol_property_decl_count == 0u && protocol_property_count != 0u) ||
+         (snapshot.protocol_property_decl_count > protocol_property_count) ||
          (snapshot.protocol_method_decl_count == 0u && protocol_method_count != 0u) ||
+         (snapshot.protocol_method_decl_count > protocol_method_count) ||
          (snapshot.interface_property_decl_count == 0u && interface_property_count != 0u) ||
+         (snapshot.interface_property_decl_count > interface_property_count) ||
          (snapshot.interface_method_decl_count == 0u && interface_method_count != 0u) ||
+         (snapshot.interface_method_decl_count > interface_method_count) ||
          (snapshot.implementation_property_decl_count == 0u &&
           implementation_property_count != 0u) ||
+         (snapshot.implementation_property_decl_count > implementation_property_count) ||
          (snapshot.implementation_method_decl_count == 0u &&
           implementation_method_count != 0u) ||
+         (snapshot.implementation_method_decl_count > implementation_method_count) ||
          (snapshot.interface_category_decl_count == 0u && interface_category_count != 0u) ||
          (snapshot.implementation_category_decl_count == 0u && implementation_category_count != 0u) ||
          (snapshot.function_prototype_count == 0u && function_prototype_count != 0u) ||
@@ -283,8 +289,16 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     normalized_snapshot.protocol_property_decl_count = protocol_property_count;
     normalized = true;
   }
+  if (normalized_snapshot.protocol_property_decl_count > protocol_property_count) {
+    normalized_snapshot.protocol_property_decl_count = protocol_property_count;
+    normalized = true;
+  }
   if (normalized_snapshot.protocol_method_decl_count == 0u &&
       protocol_method_count != 0u) {
+    normalized_snapshot.protocol_method_decl_count = protocol_method_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.protocol_method_decl_count > protocol_method_count) {
     normalized_snapshot.protocol_method_decl_count = protocol_method_count;
     normalized = true;
   }
@@ -293,8 +307,16 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     normalized_snapshot.interface_property_decl_count = interface_property_count;
     normalized = true;
   }
+  if (normalized_snapshot.interface_property_decl_count > interface_property_count) {
+    normalized_snapshot.interface_property_decl_count = interface_property_count;
+    normalized = true;
+  }
   if (normalized_snapshot.interface_method_decl_count == 0u &&
       interface_method_count != 0u) {
+    normalized_snapshot.interface_method_decl_count = interface_method_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.interface_method_decl_count > interface_method_count) {
     normalized_snapshot.interface_method_decl_count = interface_method_count;
     normalized = true;
   }
@@ -303,8 +325,18 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     normalized_snapshot.implementation_property_decl_count = implementation_property_count;
     normalized = true;
   }
+  if (normalized_snapshot.implementation_property_decl_count >
+      implementation_property_count) {
+    normalized_snapshot.implementation_property_decl_count = implementation_property_count;
+    normalized = true;
+  }
   if (normalized_snapshot.implementation_method_decl_count == 0u &&
       implementation_method_count != 0u) {
+    normalized_snapshot.implementation_method_decl_count = implementation_method_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.implementation_method_decl_count >
+      implementation_method_count) {
     normalized_snapshot.implementation_method_decl_count = implementation_method_count;
     normalized = true;
   }
