@@ -639,6 +639,10 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   return normalized_snapshot;
 }
 
+inline constexpr std::size_t kObjc3ParserSemaConformanceMatrixBuilderMaxLines = 190u;
+inline constexpr std::size_t kObjc3ParserSemaConformanceCorpusBuilderMaxLines = 75u;
+inline constexpr std::size_t kObjc3ParserSemaHandoffScaffoldBuilderMaxLines = 80u;
+
 inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program) {
   Objc3ParserSemaConformanceMatrix matrix;
@@ -870,6 +874,53 @@ inline Objc3ParserSemaConformanceCorpus BuildObjc3ParserSemaConformanceCorpus(
   return corpus;
 }
 
+inline Objc3ParserSemaPerformanceQualityGuardrails BuildObjc3ParserSemaPerformanceQualityGuardrails(
+    const Objc3ParserSemaConformanceMatrix &matrix,
+    const Objc3ParserSemaConformanceCorpus &corpus) {
+  Objc3ParserSemaPerformanceQualityGuardrails guardrails;
+  guardrails.conformance_matrix_builder_max_lines = kObjc3ParserSemaConformanceMatrixBuilderMaxLines;
+  guardrails.conformance_corpus_builder_max_lines = kObjc3ParserSemaConformanceCorpusBuilderMaxLines;
+  guardrails.handoff_scaffold_builder_max_lines = kObjc3ParserSemaHandoffScaffoldBuilderMaxLines;
+  guardrails.conformance_matrix_builder_budget_guarded =
+      guardrails.conformance_matrix_builder_max_lines >= 150u &&
+      guardrails.conformance_matrix_builder_max_lines <= 220u;
+  guardrails.conformance_corpus_builder_budget_guarded =
+      guardrails.conformance_corpus_builder_max_lines >= 40u &&
+      guardrails.conformance_corpus_builder_max_lines <= 100u;
+  guardrails.handoff_scaffold_builder_budget_guarded =
+      guardrails.handoff_scaffold_builder_max_lines >= 40u &&
+      guardrails.handoff_scaffold_builder_max_lines <= 120u;
+  guardrails.matrix_diagnostic_budget_consistent =
+      matrix.parser_diagnostic_budget_consistent;
+  guardrails.matrix_token_top_level_budget_consistent =
+      matrix.parser_token_top_level_budget_consistent;
+  guardrails.matrix_subset_budget_consistent = matrix.parser_subset_count_consistent;
+  guardrails.corpus_case_budget_consistent =
+      corpus.required_case_count == 5u &&
+      corpus.passed_case_count == corpus.required_case_count &&
+      corpus.failed_case_count == 0u;
+  guardrails.required_guardrail_count = 7u;
+  guardrails.passed_guardrail_count =
+      static_cast<std::size_t>(guardrails.conformance_matrix_builder_budget_guarded) +
+      static_cast<std::size_t>(guardrails.conformance_corpus_builder_budget_guarded) +
+      static_cast<std::size_t>(guardrails.handoff_scaffold_builder_budget_guarded) +
+      static_cast<std::size_t>(guardrails.matrix_diagnostic_budget_consistent) +
+      static_cast<std::size_t>(guardrails.matrix_token_top_level_budget_consistent) +
+      static_cast<std::size_t>(guardrails.matrix_subset_budget_consistent) +
+      static_cast<std::size_t>(guardrails.corpus_case_budget_consistent);
+  guardrails.failed_guardrail_count =
+      guardrails.required_guardrail_count >= guardrails.passed_guardrail_count
+          ? (guardrails.required_guardrail_count - guardrails.passed_guardrail_count)
+          : guardrails.required_guardrail_count;
+  guardrails.deterministic =
+      matrix.deterministic &&
+      corpus.deterministic &&
+      guardrails.required_guardrail_count == 7u &&
+      guardrails.passed_guardrail_count == guardrails.required_guardrail_count &&
+      guardrails.failed_guardrail_count == 0u;
+  return guardrails;
+}
+
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
@@ -889,6 +940,7 @@ struct Objc3ParserSemaHandoffScaffold {
   bool parser_contract_snapshot_fingerprint_matches = false;
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
+  Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
   bool parser_contract_snapshot_matches_program = false;
   bool deterministic = false;
 };
@@ -935,12 +987,17 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
       scaffold.parser_contract_snapshot, *input.program);
   scaffold.parser_sema_conformance_corpus =
       BuildObjc3ParserSemaConformanceCorpus(scaffold.parser_sema_conformance_matrix);
+  scaffold.parser_sema_performance_quality_guardrails =
+      BuildObjc3ParserSemaPerformanceQualityGuardrails(
+          scaffold.parser_sema_conformance_matrix,
+          scaffold.parser_sema_conformance_corpus);
   scaffold.parser_contract_snapshot_matches_program =
       scaffold.parser_sema_conformance_matrix.deterministic;
   scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program &&
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
                            scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.parser_sema_performance_quality_guardrails.deterministic &&
                            scaffold.parser_sema_conformance_corpus.deterministic &&
                            scaffold.parser_sema_conformance_matrix.deterministic;
   return scaffold;

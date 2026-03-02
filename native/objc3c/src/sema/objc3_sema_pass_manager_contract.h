@@ -182,9 +182,27 @@ struct Objc3ParserSemaConformanceCorpus {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaPerformanceQualityGuardrails {
+  std::size_t conformance_matrix_builder_max_lines = 0;
+  std::size_t conformance_corpus_builder_max_lines = 0;
+  std::size_t handoff_scaffold_builder_max_lines = 0;
+  bool conformance_matrix_builder_budget_guarded = false;
+  bool conformance_corpus_builder_budget_guarded = false;
+  bool handoff_scaffold_builder_budget_guarded = false;
+  bool matrix_diagnostic_budget_consistent = false;
+  bool matrix_token_top_level_budget_consistent = false;
+  bool matrix_subset_budget_consistent = false;
+  bool corpus_case_budget_consistent = false;
+  std::size_t required_guardrail_count = 0;
+  std::size_t passed_guardrail_count = 0;
+  std::size_t failed_guardrail_count = 0;
+  bool deterministic = false;
+};
+
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
+  Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   std::size_t diagnostics_total = 0;
@@ -587,6 +605,7 @@ struct Objc3SemaParityContractSurface {
   bool diagnostics_after_pass_monotonic = false;
   bool deterministic_parser_sema_conformance_matrix = false;
   bool deterministic_parser_sema_conformance_corpus = false;
+  bool deterministic_parser_sema_performance_quality_guardrails = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
@@ -692,8 +711,26 @@ struct Objc3SemaParityContractSurface {
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready && surface.deterministic_parser_sema_conformance_matrix &&
          surface.deterministic_parser_sema_conformance_corpus &&
+         surface.deterministic_parser_sema_performance_quality_guardrails &&
          surface.parser_sema_conformance_matrix.deterministic &&
          surface.parser_sema_conformance_corpus.deterministic &&
+         surface.parser_sema_performance_quality_guardrails.deterministic &&
+         surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&
+         surface.parser_sema_performance_quality_guardrails.passed_guardrail_count ==
+             surface.parser_sema_performance_quality_guardrails.required_guardrail_count &&
+         surface.parser_sema_performance_quality_guardrails.failed_guardrail_count == 0u &&
+         surface.parser_sema_performance_quality_guardrails
+             .conformance_matrix_builder_budget_guarded &&
+         surface.parser_sema_performance_quality_guardrails
+             .conformance_corpus_builder_budget_guarded &&
+         surface.parser_sema_performance_quality_guardrails
+             .handoff_scaffold_builder_budget_guarded &&
+         surface.parser_sema_performance_quality_guardrails
+             .matrix_diagnostic_budget_consistent &&
+         surface.parser_sema_performance_quality_guardrails
+             .matrix_token_top_level_budget_consistent &&
+         surface.parser_sema_performance_quality_guardrails.matrix_subset_budget_consistent &&
+         surface.parser_sema_performance_quality_guardrails.corpus_case_budget_consistent &&
          surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
          surface.parser_sema_conformance_matrix.global_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_decl_count_matches &&
@@ -2330,6 +2367,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_parser_sema_conformance_matrix = false;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
   bool deterministic_parser_sema_conformance_corpus = false;
+  Objc3ParserSemaPerformanceQualityGuardrails parser_sema_performance_quality_guardrails;
+  bool deterministic_parser_sema_performance_quality_guardrails = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
