@@ -22,6 +22,10 @@ struct Objc3ParserContractSnapshot {
   std::size_t interface_decl_count = 0;
   std::size_t implementation_decl_count = 0;
   std::size_t function_decl_count = 0;
+  std::size_t interface_category_decl_count = 0;
+  std::size_t implementation_category_decl_count = 0;
+  std::size_t function_prototype_count = 0;
+  std::size_t function_pure_count = 0;
   std::size_t parser_diagnostic_count = 0;
   std::uint64_t ast_shape_fingerprint = 0;
   std::uint64_t ast_top_level_layout_fingerprint = 0;
@@ -187,6 +191,14 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.implementation_decl_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_decl_count));
   fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.interface_category_decl_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.implementation_category_decl_count));
+  fingerprint =
+      MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_prototype_count));
+  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_pure_count));
+  fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.parser_diagnostic_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_shape_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_top_level_layout_fingerprint);
@@ -207,6 +219,22 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
   snapshot.interface_decl_count = ast.interfaces.size();
   snapshot.implementation_decl_count = ast.implementations.size();
   snapshot.function_decl_count = ast.functions.size();
+  snapshot.interface_category_decl_count = static_cast<std::size_t>(std::count_if(
+      ast.interfaces.begin(),
+      ast.interfaces.end(),
+      [](const Objc3InterfaceDecl &interface_decl) { return interface_decl.has_category; }));
+  snapshot.implementation_category_decl_count = static_cast<std::size_t>(std::count_if(
+      ast.implementations.begin(),
+      ast.implementations.end(),
+      [](const Objc3ImplementationDecl &implementation_decl) { return implementation_decl.has_category; }));
+  snapshot.function_prototype_count = static_cast<std::size_t>(std::count_if(
+      ast.functions.begin(),
+      ast.functions.end(),
+      [](const FunctionDecl &function_decl) { return function_decl.is_prototype; }));
+  snapshot.function_pure_count = static_cast<std::size_t>(std::count_if(
+      ast.functions.begin(),
+      ast.functions.end(),
+      [](const FunctionDecl &function_decl) { return function_decl.is_pure; }));
   snapshot.ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(program);
   snapshot.ast_top_level_layout_fingerprint = BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
   snapshot.top_level_declaration_count = snapshot.global_decl_count + snapshot.protocol_decl_count +

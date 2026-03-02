@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 
 #include "sema/objc3_sema_pass_manager_contract.h"
 
@@ -16,19 +18,123 @@ inline Objc3ParserContractSnapshot ResolveObjc3ParserContractSnapshotForSemaHand
   return BuildObjc3ParserContractSnapshot(*input.program, 0u, 0u);
 }
 
+inline bool TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(
+    const Objc3ParserContractSnapshot &snapshot, std::size_t &top_level_count) {
+  top_level_count = 0u;
+  const std::size_t max_count = std::numeric_limits<std::size_t>::max();
+  if (snapshot.global_decl_count > max_count - top_level_count) {
+    return false;
+  }
+  top_level_count += snapshot.global_decl_count;
+  if (snapshot.protocol_decl_count > max_count - top_level_count) {
+    return false;
+  }
+  top_level_count += snapshot.protocol_decl_count;
+  if (snapshot.interface_decl_count > max_count - top_level_count) {
+    return false;
+  }
+  top_level_count += snapshot.interface_decl_count;
+  if (snapshot.implementation_decl_count > max_count - top_level_count) {
+    return false;
+  }
+  top_level_count += snapshot.implementation_decl_count;
+  if (snapshot.function_decl_count > max_count - top_level_count) {
+    return false;
+  }
+  top_level_count += snapshot.function_decl_count;
+  return true;
+}
+
 inline std::size_t BuildObjc3ParserContractTopLevelCountFromDeclBuckets(
     const Objc3ParserContractSnapshot &snapshot) {
-  return snapshot.global_decl_count + snapshot.protocol_decl_count +
-         snapshot.interface_decl_count + snapshot.implementation_decl_count +
-         snapshot.function_decl_count;
+  std::size_t top_level_count = 0u;
+  if (!TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(
+          snapshot, top_level_count)) {
+    return 0u;
+  }
+  return top_level_count;
+}
+
+inline std::size_t BuildObjc3ParserContractTopLevelCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return ast.globals.size() + ast.protocols.size() + ast.interfaces.size() +
+         ast.implementations.size() + ast.functions.size();
+}
+
+inline bool IsObjc3ParserContractTopLevelDeclBucketCompatibilityEdgeCaseSnapshot(
+    const Objc3ParserContractSnapshot &snapshot) {
+  return snapshot.global_decl_count == 0u && snapshot.protocol_decl_count == 0u &&
+         snapshot.interface_decl_count == 0u &&
+         snapshot.implementation_decl_count == 0u &&
+         snapshot.function_decl_count == 0u;
+}
+
+inline bool IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(
+    const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program) {
+  return IsObjc3ParserContractTopLevelDeclBucketCompatibilityEdgeCaseSnapshot(
+             snapshot) &&
+         BuildObjc3ParserContractTopLevelCountFromProgram(program) != 0u;
+}
+
+inline std::size_t BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return static_cast<std::size_t>(std::count_if(
+      ast.interfaces.begin(),
+      ast.interfaces.end(),
+      [](const Objc3InterfaceDecl &interface_decl) { return interface_decl.has_category; }));
+}
+
+inline std::size_t BuildObjc3ParserImplementationCategoryDeclCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return static_cast<std::size_t>(std::count_if(
+      ast.implementations.begin(),
+      ast.implementations.end(),
+      [](const Objc3ImplementationDecl &implementation_decl) { return implementation_decl.has_category; }));
+}
+
+inline std::size_t BuildObjc3ParserFunctionPrototypeCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return static_cast<std::size_t>(std::count_if(
+      ast.functions.begin(),
+      ast.functions.end(),
+      [](const FunctionDecl &function_decl) { return function_decl.is_prototype; }));
+}
+
+inline std::size_t BuildObjc3ParserFunctionPureCountFromProgram(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return static_cast<std::size_t>(std::count_if(
+      ast.functions.begin(),
+      ast.functions.end(),
+      [](const FunctionDecl &function_decl) { return function_decl.is_pure; }));
 }
 
 inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
-    const Objc3ParserContractSnapshot &snapshot) {
+    const Objc3ParserContractSnapshot &snapshot,
+    const Objc3ParsedProgram &program) {
+  const std::size_t interface_category_count =
+      BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
+  const std::size_t implementation_category_count =
+      BuildObjc3ParserImplementationCategoryDeclCountFromProgram(program);
+  const std::size_t function_prototype_count =
+      BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
+  const std::size_t function_pure_count =
+      BuildObjc3ParserFunctionPureCountFromProgram(program);
+  const bool missing_decl_buckets =
+      IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(snapshot, program);
   return snapshot.ast_shape_fingerprint == 0u ||
          snapshot.ast_top_level_layout_fingerprint == 0u ||
+         missing_decl_buckets ||
          (snapshot.top_level_declaration_count == 0u &&
-          BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u);
+          BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u) ||
+         (snapshot.interface_category_decl_count == 0u && interface_category_count != 0u) ||
+         (snapshot.implementation_category_decl_count == 0u && implementation_category_count != 0u) ||
+         (snapshot.function_prototype_count == 0u && function_prototype_count != 0u) ||
+         (snapshot.function_pure_count == 0u && function_pure_count != 0u);
 }
 
 inline Objc3ParserContractSnapshot
@@ -39,16 +145,54 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   if (compatibility_mode != Objc3SemaCompatibilityMode::Legacy) {
     return snapshot;
   }
-  if (!IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(snapshot)) {
+  if (!IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(snapshot, program)) {
     return snapshot;
   }
 
   Objc3ParserContractSnapshot normalized_snapshot = snapshot;
+  if (IsObjc3ParserContractMissingTopLevelDeclBucketsForProgram(
+          normalized_snapshot, program)) {
+    const Objc3Program &ast = Objc3ParsedProgramAst(program);
+    normalized_snapshot.global_decl_count = ast.globals.size();
+    normalized_snapshot.protocol_decl_count = ast.protocols.size();
+    normalized_snapshot.interface_decl_count = ast.interfaces.size();
+    normalized_snapshot.implementation_decl_count = ast.implementations.size();
+    normalized_snapshot.function_decl_count = ast.functions.size();
+    normalized = true;
+  }
   const std::size_t top_level_count =
-      BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot);
+      BuildObjc3ParserContractTopLevelCountFromDeclBuckets(normalized_snapshot);
+  const std::size_t interface_category_count =
+      BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
+  const std::size_t implementation_category_count =
+      BuildObjc3ParserImplementationCategoryDeclCountFromProgram(program);
+  const std::size_t function_prototype_count =
+      BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
+  const std::size_t function_pure_count =
+      BuildObjc3ParserFunctionPureCountFromProgram(program);
   if (normalized_snapshot.top_level_declaration_count == 0u &&
       top_level_count != 0u) {
     normalized_snapshot.top_level_declaration_count = top_level_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.interface_category_decl_count == 0u &&
+      interface_category_count != 0u) {
+    normalized_snapshot.interface_category_decl_count = interface_category_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.implementation_category_decl_count == 0u &&
+      implementation_category_count != 0u) {
+    normalized_snapshot.implementation_category_decl_count = implementation_category_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.function_prototype_count == 0u &&
+      function_prototype_count != 0u) {
+    normalized_snapshot.function_prototype_count = function_prototype_count;
+    normalized = true;
+  }
+  if (normalized_snapshot.function_pure_count == 0u &&
+      function_pure_count != 0u) {
+    normalized_snapshot.function_pure_count = function_pure_count;
     normalized = true;
   }
   if (normalized_snapshot.ast_shape_fingerprint == 0u) {
@@ -71,14 +215,27 @@ inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3Parser
   const std::uint64_t ast_top_level_layout_fingerprint = BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
   const Objc3ParserContractSnapshot expected_snapshot =
       BuildObjc3ParserContractSnapshot(program, snapshot.parser_diagnostic_count, snapshot.token_count);
-  const std::size_t top_level_count =
-      snapshot.global_decl_count + snapshot.protocol_decl_count + snapshot.interface_decl_count +
-      snapshot.implementation_decl_count + snapshot.function_decl_count;
+  std::size_t top_level_count = 0u;
+  if (!TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot, top_level_count)) {
+    return false;
+  }
+  const std::size_t interface_category_count =
+      BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
+  const std::size_t implementation_category_count =
+      BuildObjc3ParserImplementationCategoryDeclCountFromProgram(program);
+  const std::size_t function_prototype_count =
+      BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
+  const std::size_t function_pure_count =
+      BuildObjc3ParserFunctionPureCountFromProgram(program);
   return snapshot.global_decl_count == ast.globals.size() &&
          snapshot.protocol_decl_count == ast.protocols.size() &&
          snapshot.interface_decl_count == ast.interfaces.size() &&
          snapshot.implementation_decl_count == ast.implementations.size() &&
          snapshot.function_decl_count == ast.functions.size() &&
+         snapshot.interface_category_decl_count == interface_category_count &&
+         snapshot.implementation_category_decl_count == implementation_category_count &&
+         snapshot.function_prototype_count == function_prototype_count &&
+         snapshot.function_pure_count == function_pure_count &&
          snapshot.top_level_declaration_count == top_level_count &&
          snapshot.top_level_declaration_count ==
              ast.globals.size() + ast.protocols.size() + ast.interfaces.size() + ast.implementations.size() +
@@ -127,7 +284,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   const Objc3ParserContractSnapshot resolved_snapshot = ResolveObjc3ParserContractSnapshotForSemaHandoff(input);
   scaffold.parser_contract_compatibility_edge_case_detected =
       input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy &&
-      IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(resolved_snapshot);
+      IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(resolved_snapshot, *input.program);
   scaffold.parser_contract_snapshot = NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
       resolved_snapshot,
       *input.program,

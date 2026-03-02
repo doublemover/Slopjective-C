@@ -1914,8 +1914,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"globals\":" << pipeline_result.parser_contract_snapshot.global_decl_count
            << ",\"protocols\":" << pipeline_result.parser_contract_snapshot.protocol_decl_count
            << ",\"interfaces\":" << pipeline_result.parser_contract_snapshot.interface_decl_count
+           << ",\"interface_categories\":"
+           << pipeline_result.parser_contract_snapshot.interface_category_decl_count
            << ",\"implementations\":" << pipeline_result.parser_contract_snapshot.implementation_decl_count
+           << ",\"implementation_categories\":"
+           << pipeline_result.parser_contract_snapshot.implementation_category_decl_count
            << ",\"functions\":" << pipeline_result.parser_contract_snapshot.function_decl_count
+           << ",\"function_prototypes\":"
+           << pipeline_result.parser_contract_snapshot.function_prototype_count
+           << ",\"function_pure\":"
+           << pipeline_result.parser_contract_snapshot.function_pure_count
            << ",\"deterministic_handoff\":"
            << (pipeline_result.parser_contract_snapshot.deterministic_handoff ? "true" : "false")
            << ",\"recovery_replay_ready\":"
@@ -1931,14 +1939,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_deterministic ? "true" : "false")
+           << ",\"parser_token_count_budget_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parser_token_count_budget_consistent ? "true" : "false")
            << ",\"parse_artifact_layout_fingerprint_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_layout_fingerprint_consistent ? "true" : "false")
            << ",\"parse_artifact_fingerprint_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_fingerprint_consistent ? "true" : "false")
            << ",\"compatibility_handoff_consistent\": "
            << (bundle.parse_lowering_readiness_surface.compatibility_handoff_consistent ? "true" : "false")
+           << ",\"language_version_pragma_coordinate_order_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.language_version_pragma_coordinate_order_consistent ? "true"
+                                                                                                            : "false")
            << ",\"parse_artifact_replay_key_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_replay_key_deterministic ? "true" : "false")
+           << ",\"parse_artifact_edge_case_robustness_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_edge_case_robustness_consistent ? "true"
+                                                                                                        : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -1959,6 +1975,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.compatibility_handoff_key
            << "\",\"parse_artifact_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_replay_key
+           << "\",\"parse_artifact_edge_robustness_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_artifact_edge_robustness_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
