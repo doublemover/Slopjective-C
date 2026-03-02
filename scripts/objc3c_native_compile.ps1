@@ -175,17 +175,24 @@ function Invoke-BuildNativeCompiler {
 
   $buildScript = Join-Path $RepoRoot "scripts/build_objc3c_native.ps1"
   $buildOutput = @(& $buildScript)
+  $buildOutputLines = New-Object System.Collections.Generic.List[string]
   $frontendScaffoldRelativePath = $null
+  $frontendInvocationLockRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
-    Write-Output $lineText
+    $buildOutputLines.Add($lineText)
     if ($lineText.StartsWith("frontend_scaffold=")) {
       $frontendScaffoldRelativePath = $lineText.Substring("frontend_scaffold=".Length).Trim()
+    }
+    if ($lineText.StartsWith("frontend_invocation_lock=")) {
+      $frontendInvocationLockRelativePath = $lineText.Substring("frontend_invocation_lock=".Length).Trim()
     }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
+    build_output_lines = $buildOutputLines.ToArray()
     frontend_scaffold_relative_path = $frontendScaffoldRelativePath
+    frontend_invocation_lock_relative_path = $frontendInvocationLockRelativePath
   }
 }
 
@@ -209,6 +216,27 @@ function Resolve-FrontendScaffoldPath {
   $relativePath = $defaultRelativePath
   if ($null -ne $BuildResult) {
     $candidatePath = [string]$BuildResult.frontend_scaffold_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  if ([System.IO.Path]::IsPathRooted($relativePath)) {
+    return $relativePath
+  }
+  return Join-Path $RepoRoot $relativePath
+}
+
+function Resolve-FrontendInvocationLockPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_invocation_lock_relative_path
     if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
       $relativePath = $candidatePath
     }
@@ -283,12 +311,126 @@ function Assert-FrontendModuleScaffold {
   }
 }
 
+function Assert-FrontendInvocationLock {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $lockPath = Resolve-FrontendInvocationLockPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $lockPath -PathType Leaf)) {
+    Write-Error "frontend invocation lock artifact missing at $lockPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend invocation lock artifact is not valid JSON at $lockPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend invocation lock contract id mismatch in $lockPath"
+    exit 2
+  }
+
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1"
+  if ([string]$payload.scaffold_contract_id -ne $expectedScaffoldContractId) {
+    Write-Error "frontend invocation lock scaffold contract id mismatch in $lockPath"
+    exit 2
+  }
+
+  $scaffold = $payload.scaffold
+  if ($null -eq $scaffold) {
+    Write-Error "frontend invocation lock scaffold metadata missing in $lockPath"
+    exit 2
+  }
+
+  $scaffoldRelativePath = [string]$scaffold.path
+  $scaffoldExpectedHash = [string]$scaffold.sha256
+  if ([string]::IsNullOrWhiteSpace($scaffoldRelativePath) -or [string]::IsNullOrWhiteSpace($scaffoldExpectedHash)) {
+    Write-Error "frontend invocation lock scaffold metadata invalid in $lockPath"
+    exit 2
+  }
+
+  $scaffoldPath = $scaffoldRelativePath
+  if (-not [System.IO.Path]::IsPathRooted($scaffoldPath)) {
+    $scaffoldPath = Join-Path $RepoRoot $scaffoldPath
+  }
+  if (!(Test-Path -LiteralPath $scaffoldPath -PathType Leaf)) {
+    Write-Error "frontend invocation lock scaffold path missing at $scaffoldPath"
+    exit 2
+  }
+  $scaffoldActualHash = Get-FileSha256Hex -Path $scaffoldPath
+  if ($scaffoldActualHash -ne $scaffoldExpectedHash.ToLowerInvariant()) {
+    Write-Error "frontend invocation lock scaffold sha256 mismatch in $lockPath"
+    exit 2
+  }
+
+  $binaries = @($payload.binaries)
+  if ($binaries.Count -lt 2) {
+    Write-Error "frontend invocation lock binaries list must include native and c-api runner entries in $lockPath"
+    exit 2
+  }
+
+  $expectedBinaries = [ordered]@{
+    "objc3c-native" = "artifacts/bin/objc3c-native.exe"
+    "objc3c-frontend-c-api-runner" = "artifacts/bin/objc3c-frontend-c-api-runner.exe"
+  }
+  $binaryIndex = @{}
+  foreach ($binary in $binaries) {
+    $binaryName = [string]$binary.name
+    $binaryPath = [string]$binary.path
+    $binaryHash = [string]$binary.sha256
+    if ([string]::IsNullOrWhiteSpace($binaryName) -or
+        [string]::IsNullOrWhiteSpace($binaryPath) -or
+        [string]::IsNullOrWhiteSpace($binaryHash)) {
+      Write-Error "frontend invocation lock binary entry is invalid in $lockPath"
+      exit 2
+    }
+    if ($binaryIndex.ContainsKey($binaryName)) {
+      Write-Error "frontend invocation lock contains duplicate binary entry '$binaryName' in $lockPath"
+      exit 2
+    }
+    $binaryIndex[$binaryName] = $binary
+  }
+
+  foreach ($binaryName in $expectedBinaries.Keys) {
+    if (-not $binaryIndex.ContainsKey($binaryName)) {
+      Write-Error "frontend invocation lock missing binary '$binaryName' in $lockPath"
+      exit 2
+    }
+    $binary = $binaryIndex[$binaryName]
+    $expectedRelativePath = [string]$expectedBinaries[$binaryName]
+    $manifestRelativePath = ([string]$binary.path).Replace('\', '/')
+    if ($manifestRelativePath -ne $expectedRelativePath) {
+      Write-Error "frontend invocation lock binary path mismatch for '$binaryName' in $lockPath"
+      exit 2
+    }
+    $binaryPath = Join-Path $RepoRoot $expectedRelativePath
+    if (!(Test-Path -LiteralPath $binaryPath -PathType Leaf)) {
+      Write-Error "frontend invocation lock binary path missing at $binaryPath"
+      exit 2
+    }
+    $binaryActualHash = Get-FileSha256Hex -Path $binaryPath
+    if ($binaryActualHash -ne ([string]$binary.sha256).ToLowerInvariant()) {
+      Write-Error "frontend invocation lock binary sha256 mismatch for '$binaryName' in $lockPath"
+      exit 2
+    }
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
 
 if (-not $parsed.use_cache) {
   $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  foreach ($lineText in @($buildResult.build_output_lines)) {
+    Write-Output $lineText
+  }
   $buildExit = [int]$buildResult.exit_code
   if ($buildExit -ne 0) { exit $buildExit }
 
@@ -298,6 +440,7 @@ if (-not $parsed.use_cache) {
   }
 
   Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
+  Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
   exit $compileExit
 }
@@ -341,6 +484,9 @@ if ($null -ne $cacheKey) {
 
 if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
   $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
+  foreach ($lineText in @($buildResult.build_output_lines)) {
+    Write-Output $lineText
+  }
   $buildExit = [int]$buildResult.exit_code
   if ($buildExit -ne 0) {
     Write-Output "cache_hit=false"
@@ -354,6 +500,7 @@ if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
 }
 
 Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
+Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
 $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
 
 if ($null -ne $cacheKey) {

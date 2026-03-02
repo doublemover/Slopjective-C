@@ -157,6 +157,83 @@ function Write-FrontendModuleScaffoldArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Get-FileSha256Hex {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "cannot hash missing file: $Path"
+  }
+
+  return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Write-FrontendInvocationLockArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$NativeBinaryPath,
+    [Parameter(Mandatory = $true)]
+    [string]$CapiBinaryPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendScaffoldPath
+  )
+
+  if (!(Test-Path -LiteralPath $NativeBinaryPath -PathType Leaf)) {
+    throw "native binary missing for invocation lock artifact: $NativeBinaryPath"
+  }
+  if (!(Test-Path -LiteralPath $CapiBinaryPath -PathType Leaf)) {
+    throw "c-api runner missing for invocation lock artifact: $CapiBinaryPath"
+  }
+  if (!(Test-Path -LiteralPath $FrontendScaffoldPath -PathType Leaf)) {
+    throw "frontend scaffold missing for invocation lock artifact: $FrontendScaffoldPath"
+  }
+
+  try {
+    $scaffoldPayload = Get-Content -LiteralPath $FrontendScaffoldPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend scaffold is not valid JSON for invocation lock artifact: $FrontendScaffoldPath"
+  }
+
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1"
+  if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
+    throw "frontend scaffold contract id mismatch for invocation lock artifact: $FrontendScaffoldPath"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+    schema_version = 1
+    scaffold_contract_id = [string]$scaffoldPayload.contract_id
+    scaffold = [ordered]@{
+      path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendScaffoldPath
+      sha256 = Get-FileSha256Hex -Path $FrontendScaffoldPath
+    }
+    binaries = @(
+      [ordered]@{
+        name = "objc3c-native"
+        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
+        sha256 = Get-FileSha256Hex -Path $NativeBinaryPath
+      },
+      [ordered]@{
+        name = "objc3c-frontend-c-api-runner"
+        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
+        sha256 = Get-FileSha256Hex -Path $CapiBinaryPath
+      }
+    )
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -231,6 +308,7 @@ $frontendModules = @(
 )
 $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
 $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
+$frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -286,6 +364,13 @@ Write-FrontendModuleScaffoldArtifact `
     (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe),
     (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe)
   )
+Write-FrontendInvocationLockArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendInvocationLockPath `
+  -NativeBinaryPath $outExe `
+  -CapiBinaryPath $outCapiExe `
+  -FrontendScaffoldPath $frontendScaffoldPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
+Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
