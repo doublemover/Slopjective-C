@@ -224,6 +224,35 @@ struct Objc3LoweringRuntimeStabilityInvariantScaffold {
   std::string failure_reason;
 };
 
+struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
+  bool lowering_boundary_ready = false;
+  bool runtime_dispatch_contract_consistent = false;
+  bool typed_handoff_key_deterministic = false;
+  bool typed_core_feature_consistent = false;
+  bool parse_ready_for_lowering = false;
+  bool invariant_proofs_ready = false;
+  bool modular_split_ready = false;
+  bool core_feature_impl_ready = false;
+  std::size_t typed_core_feature_case_count = 0;
+  std::size_t typed_core_feature_passed_case_count = 0;
+  std::size_t typed_core_feature_failed_case_count = 0;
+  std::size_t typed_core_feature_expansion_case_count = 0;
+  std::size_t typed_core_feature_expansion_passed_case_count = 0;
+  std::size_t typed_core_feature_expansion_failed_case_count = 0;
+  std::size_t parse_lowering_conformance_matrix_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_passed_case_count = 0;
+  std::size_t parse_lowering_conformance_corpus_failed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
+  std::string lowering_boundary_replay_key;
+  std::string typed_handoff_key;
+  std::string parse_artifact_replay_key;
+  std::string core_feature_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
@@ -331,6 +360,8 @@ struct Objc3FrontendPipelineResult {
   Objc3SemanticStabilityCoreFeatureImplementationSurface
       semantic_stability_core_feature_implementation_surface;
   Objc3LoweringRuntimeStabilityInvariantScaffold lowering_runtime_stability_invariant_scaffold;
+  Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
+      lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
