@@ -188,6 +188,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_b002_semantic_compatibility_and_migration_checks_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split compatibility continuity remains
   deterministic and fail-closed against `M249-B001` dependency drift.
+- M249 lane-B B003 semantic compatibility/migration core feature implementation anchors
+  explicit lane-B core feature artifacts in
+  `docs/contracts/m249_semantic_compatibility_and_migration_checks_core_feature_implementation_b003_expectations.md`,
+  `spec/planning/compiler/m249/m249_b003_semantic_compatibility_and_migration_checks_core_feature_implementation_packet.md`,
+  and `package.json` so core feature compatibility continuity remains
+  deterministic and fail-closed against `M249-B002` dependency drift.
 - M248 lane-C C001 replay harness and artifact contract anchors explicit lane-C
   contract freeze artifacts in
   `docs/contracts/m248_replay_harness_and_artifact_contracts_contract_freeze_c001_expectations.md`,

@@ -125,6 +125,7 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic compatibility/migration modular split metadata anchors for
      `M249-B002` with explicit `M249-B001` dependency continuity so migration
      scaffolding drift fails closed.
+   - deterministic lane-B semantic compatibility/migration core feature metadata anchors for `M249-B003` with explicit `M249-B002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
      contract evidence and execution replay continuity so CI replay drift fails
      closed.
@@ -150,6 +151,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M249-E001`, `M249-A002`, `M249-B002`, `M249-C002`, and `M249-D002`,
      including pending-lane tokens needed to keep release-gate documentation/runbook modular split/scaffolding
      governance evidence fail-closed before lane A-D modular split/scaffolding assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks core feature implementation dependency anchors for
+     `M249-E002`, `M249-A003`, `M249-B003`, `M249-C003`, and `M249-D003`,
+     including pending-lane tokens needed to keep release-gate documentation/runbook core feature implementation
+     governance evidence fail-closed before lane A-D core feature assets are seeded.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
