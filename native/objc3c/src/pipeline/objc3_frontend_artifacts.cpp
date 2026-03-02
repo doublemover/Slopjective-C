@@ -1973,10 +1973,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"top_level_declarations\":" << pipeline_result.parser_contract_snapshot.top_level_declaration_count
            << ",\"globals\":" << pipeline_result.parser_contract_snapshot.global_decl_count
            << ",\"protocols\":" << pipeline_result.parser_contract_snapshot.protocol_decl_count
+           << ",\"protocol_properties\":"
+           << pipeline_result.parser_contract_snapshot.protocol_property_decl_count
+           << ",\"protocol_methods\":"
+           << pipeline_result.parser_contract_snapshot.protocol_method_decl_count
            << ",\"interfaces\":" << pipeline_result.parser_contract_snapshot.interface_decl_count
+           << ",\"interface_properties\":"
+           << pipeline_result.parser_contract_snapshot.interface_property_decl_count
+           << ",\"interface_methods\":"
+           << pipeline_result.parser_contract_snapshot.interface_method_decl_count
            << ",\"interface_categories\":"
            << pipeline_result.parser_contract_snapshot.interface_category_decl_count
            << ",\"implementations\":" << pipeline_result.parser_contract_snapshot.implementation_decl_count
+           << ",\"implementation_properties\":"
+           << pipeline_result.parser_contract_snapshot.implementation_property_decl_count
+           << ",\"implementation_methods\":"
+           << pipeline_result.parser_contract_snapshot.implementation_method_decl_count
            << ",\"implementation_categories\":"
            << pipeline_result.parser_contract_snapshot.implementation_category_decl_count
            << ",\"functions\":" << pipeline_result.parser_contract_snapshot.function_decl_count
@@ -2029,6 +2041,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"parse_artifact_edge_case_robustness_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_edge_case_robustness_consistent ? "true"
                                                                                                         : "false")
+           << ",\"parse_recovery_determinism_hardening_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_recovery_determinism_hardening_consistent ? "true"
+                                                                                                         : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -2057,6 +2072,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_artifact_diagnostics_hardening_key
            << "\",\"parse_artifact_edge_robustness_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_edge_robustness_key
+           << "\",\"parse_recovery_determinism_hardening_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_recovery_determinism_hardening_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
