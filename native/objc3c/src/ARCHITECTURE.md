@@ -411,6 +411,24 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E023/A009/B011/C012/D020 conformance prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E025 advanced integration shard2 anchors explicit final
+  readiness advanced-integration shard2 guardrails
+  (`advanced_integration_shard2_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E024/A009/B011/C012/D020 integration prerequisites
+  drift before final sign-off can remain green.
+- M250 lane-E E026 advanced performance shard2 anchors explicit final
+  readiness advanced-performance shard2 guardrails
+  (`advanced_performance_shard2_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E025/A010/B012/C013/D021 performance prerequisites
+  drift before final sign-off can remain green.
+- M250 lane-E E027 integration closeout sign-off anchors explicit final
+  readiness integration-closeout sign-off guardrails
+  (`integration_closeout_signoff_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E026/A010/B012/C013/D022 closeout prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`

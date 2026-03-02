@@ -163,6 +163,24 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.advanced_conformance_shard2_ready ? "true" : "false")
       << ";advanced_conformance_shard2_key_ready="
       << (!surface.advanced_conformance_shard2_key.empty() ? "true" : "false")
+      << ";advanced_integration_shard2_consistent="
+      << (surface.advanced_integration_shard2_consistent ? "true" : "false")
+      << ";advanced_integration_shard2_ready="
+      << (surface.advanced_integration_shard2_ready ? "true" : "false")
+      << ";advanced_integration_shard2_key_ready="
+      << (!surface.advanced_integration_shard2_key.empty() ? "true" : "false")
+      << ";advanced_performance_shard2_consistent="
+      << (surface.advanced_performance_shard2_consistent ? "true" : "false")
+      << ";advanced_performance_shard2_ready="
+      << (surface.advanced_performance_shard2_ready ? "true" : "false")
+      << ";advanced_performance_shard2_key_ready="
+      << (!surface.advanced_performance_shard2_key.empty() ? "true" : "false")
+      << ";integration_closeout_signoff_consistent="
+      << (surface.integration_closeout_signoff_consistent ? "true" : "false")
+      << ";integration_closeout_signoff_ready="
+      << (surface.integration_closeout_signoff_ready ? "true" : "false")
+      << ";integration_closeout_signoff_key_ready="
+      << (!surface.integration_closeout_signoff_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -751,6 +769,96 @@ inline std::string BuildObjc3FinalReadinessGateAdvancedConformanceShard2Key(
       << (surface.advanced_conformance_shard2_consistent ? "true" : "false")
       << ";advanced-conformance-shard2-ready="
       << (surface.advanced_conformance_shard2_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateAdvancedIntegrationShard2Key(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_conformance_matrix_ready,
+    bool lane_b_performance_quality_guardrails_ready,
+    bool lane_c_cross_lane_integration_ready,
+    bool lane_d_edge_case_robustness_ready,
+    bool lane_d_edge_case_robustness_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-advanced-integration-shard2:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";advanced-conformance-shard2-ready="
+      << (surface.advanced_conformance_shard2_ready ? "true" : "false")
+      << ";lane-a-conformance-matrix-ready="
+      << (lane_a_conformance_matrix_ready ? "true" : "false")
+      << ";lane-b-performance-quality-guardrails-ready="
+      << (lane_b_performance_quality_guardrails_ready ? "true" : "false")
+      << ";lane-c-cross-lane-integration-ready="
+      << (lane_c_cross_lane_integration_ready ? "true" : "false")
+      << ";lane-d-edge-case-robustness-ready="
+      << (lane_d_edge_case_robustness_ready ? "true" : "false")
+      << ";lane-d-edge-case-robustness-key-ready="
+      << (lane_d_edge_case_robustness_key_ready ? "true" : "false")
+      << ";advanced-integration-shard2-consistent="
+      << (surface.advanced_integration_shard2_consistent ? "true" : "false")
+      << ";advanced-integration-shard2-ready="
+      << (surface.advanced_integration_shard2_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateAdvancedPerformanceShard2Key(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_conformance_matrix_ready,
+    bool lane_b_performance_quality_guardrails_ready,
+    bool lane_c_cross_lane_integration_ready,
+    bool lane_d_diagnostics_hardening_ready,
+    bool lane_d_diagnostics_hardening_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-advanced-performance-shard2:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";advanced-integration-shard2-ready="
+      << (surface.advanced_integration_shard2_ready ? "true" : "false")
+      << ";lane-a-conformance-matrix-ready="
+      << (lane_a_conformance_matrix_ready ? "true" : "false")
+      << ";lane-b-performance-quality-guardrails-ready="
+      << (lane_b_performance_quality_guardrails_ready ? "true" : "false")
+      << ";lane-c-cross-lane-integration-ready="
+      << (lane_c_cross_lane_integration_ready ? "true" : "false")
+      << ";lane-d-diagnostics-hardening-ready="
+      << (lane_d_diagnostics_hardening_ready ? "true" : "false")
+      << ";lane-d-diagnostics-hardening-key-ready="
+      << (lane_d_diagnostics_hardening_key_ready ? "true" : "false")
+      << ";advanced-performance-shard2-consistent="
+      << (surface.advanced_performance_shard2_consistent ? "true" : "false")
+      << ";advanced-performance-shard2-ready="
+      << (surface.advanced_performance_shard2_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateIntegrationCloseoutSignoffKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_conformance_matrix_ready,
+    bool lane_b_performance_quality_guardrails_ready,
+    bool lane_c_cross_lane_integration_ready,
+    bool lane_d_conformance_matrix_ready,
+    bool lane_d_conformance_matrix_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-integration-closeout-signoff:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";advanced-performance-shard2-ready="
+      << (surface.advanced_performance_shard2_ready ? "true" : "false")
+      << ";lane-a-conformance-matrix-ready="
+      << (lane_a_conformance_matrix_ready ? "true" : "false")
+      << ";lane-b-performance-quality-guardrails-ready="
+      << (lane_b_performance_quality_guardrails_ready ? "true" : "false")
+      << ";lane-c-cross-lane-integration-ready="
+      << (lane_c_cross_lane_integration_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-ready="
+      << (lane_d_conformance_matrix_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-key-ready="
+      << (lane_d_conformance_matrix_key_ready ? "true" : "false")
+      << ";integration-closeout-signoff-consistent="
+      << (surface.integration_closeout_signoff_consistent ? "true" : "false")
+      << ";integration-closeout-signoff-ready="
+      << (surface.integration_closeout_signoff_ready ? "true" : "false");
   return key.str();
 }
 
@@ -1413,6 +1521,94 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.advanced_conformance_shard2_ready =
       surface.advanced_conformance_shard2_ready &&
       !surface.advanced_conformance_shard2_key.empty();
+  const bool lane_advanced_integration_shard2_consistent =
+      lane_a_surface.conformance_matrix_ready &&
+      lane_b_surface.performance_quality_guardrails_ready &&
+      lane_c_surface.cross_lane_integration_ready &&
+      lane_d_surface.edge_case_robustness_ready &&
+      !lane_d_surface.edge_case_robustness_key.empty();
+  const bool advanced_integration_shard2_consistent =
+      surface.advanced_conformance_shard2_ready &&
+      lane_advanced_integration_shard2_consistent;
+  const bool advanced_integration_shard2_ready =
+      advanced_integration_shard2_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.advanced_conformance_shard2_key.empty() &&
+      !lane_d_surface.edge_case_robustness_key.empty();
+  surface.advanced_integration_shard2_consistent =
+      advanced_integration_shard2_consistent;
+  surface.advanced_integration_shard2_ready = advanced_integration_shard2_ready;
+  surface.advanced_integration_shard2_key =
+      BuildObjc3FinalReadinessGateAdvancedIntegrationShard2Key(
+          surface,
+          lane_a_surface.conformance_matrix_ready,
+          lane_b_surface.performance_quality_guardrails_ready,
+          lane_c_surface.cross_lane_integration_ready,
+          lane_d_surface.edge_case_robustness_ready,
+          !lane_d_surface.edge_case_robustness_key.empty());
+  surface.advanced_integration_shard2_ready =
+      surface.advanced_integration_shard2_ready &&
+      !surface.advanced_integration_shard2_key.empty();
+  const bool lane_advanced_performance_shard2_consistent =
+      lane_a_surface.conformance_matrix_ready &&
+      lane_b_surface.performance_quality_guardrails_ready &&
+      lane_c_surface.cross_lane_integration_ready &&
+      lane_d_surface.diagnostics_hardening_ready &&
+      !lane_d_surface.diagnostics_hardening_key.empty();
+  const bool advanced_performance_shard2_consistent =
+      surface.advanced_integration_shard2_ready &&
+      lane_advanced_performance_shard2_consistent;
+  const bool advanced_performance_shard2_ready =
+      advanced_performance_shard2_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.advanced_integration_shard2_key.empty() &&
+      !lane_d_surface.diagnostics_hardening_key.empty();
+  surface.advanced_performance_shard2_consistent =
+      advanced_performance_shard2_consistent;
+  surface.advanced_performance_shard2_ready = advanced_performance_shard2_ready;
+  surface.advanced_performance_shard2_key =
+      BuildObjc3FinalReadinessGateAdvancedPerformanceShard2Key(
+          surface,
+          lane_a_surface.conformance_matrix_ready,
+          lane_b_surface.performance_quality_guardrails_ready,
+          lane_c_surface.cross_lane_integration_ready,
+          lane_d_surface.diagnostics_hardening_ready,
+          !lane_d_surface.diagnostics_hardening_key.empty());
+  surface.advanced_performance_shard2_ready =
+      surface.advanced_performance_shard2_ready &&
+      !surface.advanced_performance_shard2_key.empty();
+  const bool lane_integration_closeout_signoff_consistent =
+      lane_a_surface.conformance_matrix_ready &&
+      lane_b_surface.performance_quality_guardrails_ready &&
+      lane_c_surface.cross_lane_integration_ready &&
+      lane_d_surface.conformance_matrix_ready &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  const bool integration_closeout_signoff_consistent =
+      surface.advanced_performance_shard2_ready &&
+      lane_integration_closeout_signoff_consistent;
+  const bool integration_closeout_signoff_ready =
+      integration_closeout_signoff_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.advanced_performance_shard2_key.empty() &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  surface.integration_closeout_signoff_consistent =
+      integration_closeout_signoff_consistent;
+  surface.integration_closeout_signoff_ready =
+      integration_closeout_signoff_ready;
+  surface.integration_closeout_signoff_key =
+      BuildObjc3FinalReadinessGateIntegrationCloseoutSignoffKey(
+          surface,
+          lane_a_surface.conformance_matrix_ready,
+          lane_b_surface.performance_quality_guardrails_ready,
+          lane_c_surface.cross_lane_integration_ready,
+          lane_d_surface.conformance_matrix_ready,
+          !lane_d_surface.conformance_matrix_key.empty());
+  surface.integration_closeout_signoff_ready =
+      surface.integration_closeout_signoff_ready &&
+      !surface.integration_closeout_signoff_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -1438,6 +1634,9 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.advanced_edge_compatibility_shard2_ready &&
       surface.advanced_diagnostics_shard2_ready &&
       surface.advanced_conformance_shard2_ready &&
+      surface.advanced_integration_shard2_ready &&
+      surface.advanced_performance_shard2_ready &&
+      surface.integration_closeout_signoff_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -1717,6 +1916,42 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.advanced_conformance_shard2_key.empty()) {
     surface.failure_reason =
         "final readiness gate advanced conformance workpack shard2 key is not ready";
+  } else if (!lane_advanced_integration_shard2_consistent) {
+    surface.failure_reason =
+        "final readiness gate advanced integration workpack shard2 is inconsistent";
+  } else if (!surface.advanced_integration_shard2_consistent) {
+    surface.failure_reason =
+        "final readiness gate advanced integration workpack shard2 consistency is not satisfied";
+  } else if (!surface.advanced_integration_shard2_ready) {
+    surface.failure_reason =
+        "final readiness gate advanced integration workpack shard2 is not ready";
+  } else if (surface.advanced_integration_shard2_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate advanced integration workpack shard2 key is not ready";
+  } else if (!lane_advanced_performance_shard2_consistent) {
+    surface.failure_reason =
+        "final readiness gate advanced performance workpack shard2 is inconsistent";
+  } else if (!surface.advanced_performance_shard2_consistent) {
+    surface.failure_reason =
+        "final readiness gate advanced performance workpack shard2 consistency is not satisfied";
+  } else if (!surface.advanced_performance_shard2_ready) {
+    surface.failure_reason =
+        "final readiness gate advanced performance workpack shard2 is not ready";
+  } else if (surface.advanced_performance_shard2_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate advanced performance workpack shard2 key is not ready";
+  } else if (!lane_integration_closeout_signoff_consistent) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off is inconsistent";
+  } else if (!surface.integration_closeout_signoff_consistent) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off consistency is not satisfied";
+  } else if (!surface.integration_closeout_signoff_ready) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off is not ready";
+  } else if (surface.integration_closeout_signoff_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";
