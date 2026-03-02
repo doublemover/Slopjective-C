@@ -92,6 +92,10 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-E modular split/scaffolding closeout dependency anchors for `M228-E001`, `M228-A002`,
      `M228-B002`, `M228-C004`, and `M228-D002`, including pending-lane tokens needed to keep replay-proof/performance
      modular split/scaffolding gate evidence fail-closed before C004 asset seeding.
+   - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
+     `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
+     compile/perf-budget governance evidence fail-closed before lane A-D contract
+     assets are seeded.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

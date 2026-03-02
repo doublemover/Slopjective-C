@@ -112,6 +112,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-E dependency anchors (`M228-E001`, `M228-A002`,
   `M228-B002`, `M228-C004`, `M228-D002`) and fail closed when dependency
   references or closeout evidence commands drift.
+- performance SLO gate/reporting wiring shall preserve explicit lane-E
+  dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
+  fail closed when dependency references, compile-route proof hooks, or
+  perf-budget evidence commands drift.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

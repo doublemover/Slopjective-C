@@ -136,6 +136,13 @@ Current-state note:
   and `package.json` so modular split/scaffolding closeout evidence remains
   deterministic and fail-closed while lane-C C004 modular split/scaffolding
   assets are pending GH seed.
+- M247 lane-E E001 performance SLO gate/reporting anchors dependency references
+  (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
+  `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
+  `spec/planning/compiler/m247/m247_e001_performance_slo_gate_and_reporting_contract_freeze_packet.md`,
+  and `package.json` so compile-time/perf budget governance evidence remains
+  deterministic and fail-closed while lane A-D contract-freeze assets are
+  pending GH seed.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
