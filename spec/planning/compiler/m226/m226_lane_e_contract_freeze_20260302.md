@@ -1,14 +1,14 @@
 # M226 Lane E Contract Freeze (2026-03-02)
 
-Packet: `M226-E001`, `M226-E002`
+Packet: `M226-E001`, `M226-E002`, `M226-E003`
 Freeze date: `2026-03-02`
 Owner lane: `E`
 
 ## Purpose
 
 Freeze lane-E integration gate contract surfaces for M226, including the E001
-gate prerequisites and E002 evidence modular split/scaffolding, and fail closed
-if expected packet assets drift or disappear.
+gate prerequisites, E002 evidence modular split/scaffolding, and E003 core
+evidence indexing, and fail closed if expected packet assets drift or disappear.
 
 ## Packet Registry
 
@@ -16,6 +16,7 @@ if expected packet assets drift or disappear.
 | --- | --- | --- |
 | `M226-E001` | `objc3c-lane-e-integration-gate-contract/m226-e001-v1` | `docs/contracts/m226_lane_e_integration_gate_expectations.md` |
 | `M226-E002` | `objc3c-lane-e-integration-gate-evidence-modular-split-contract/m226-e002-v1` | `docs/contracts/m226_lane_e_integration_gate_e002_evidence_modular_split_expectations.md` |
+| `M226-E003` | `objc3c-lane-e-integration-gate-core-evidence-contract/m226-e003-v1` | `docs/contracts/m226_lane_e_integration_gate_e003_core_evidence_expectations.md` |
 
 ## Packet: `M226-E001`
 
@@ -43,12 +44,26 @@ if expected packet assets drift or disappear.
 | Fail-closed checker | `scripts/check_m226_e002_lane_e_integration_gate_evidence_modular_split_contract.py` |
 | Checker tests | `tests/tooling/test_check_m226_e002_lane_e_integration_gate_evidence_modular_split_contract.py` |
 
+## Packet: `M226-E003`
+
+### Frozen Core Evidence Assets
+
+| Module | Contract Asset(s) |
+| --- | --- |
+| Expectations | `docs/contracts/m226_lane_e_integration_gate_e003_core_evidence_expectations.md` |
+| Packet doc | `spec/planning/compiler/m226/m226_e003_lane_e_integration_gate_core_evidence_packet.md` |
+| Evidence scaffold doc | `spec/planning/compiler/m226/m226_e003_lane_e_integration_gate_core_evidence_scaffold.md` |
+| Fail-closed checker | `scripts/check_m226_e003_lane_e_integration_gate_core_evidence_contract.py` |
+| Checker tests | `tests/tooling/test_check_m226_e003_lane_e_integration_gate_core_evidence_contract.py` |
+
 ## Gate Commands
 
 - `python scripts/check_m226_e001_lane_e_integration_gate_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_e001_lane_e_integration_gate_contract.py -q`
 - `python scripts/check_m226_e002_lane_e_integration_gate_evidence_modular_split_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_e002_lane_e_integration_gate_evidence_modular_split_contract.py -q`
+- `python scripts/check_m226_e003_lane_e_integration_gate_core_evidence_contract.py`
+- `python -m pytest tests/tooling/test_check_m226_e003_lane_e_integration_gate_core_evidence_contract.py -q`
 
 ## Evidence Output
 
@@ -56,3 +71,6 @@ if expected packet assets drift or disappear.
 - `tmp/reports/m226/m226_e002_lane_e_integration_gate_evidence_modular_split_contract_summary.json`
 - `tmp/reports/m226/e002/validation/pytest_check_m226_e002_lane_e_integration_gate_evidence_modular_split_contract.txt`
 - `tmp/reports/m226/e002/evidence_index.json`
+- `tmp/reports/m226/m226_e003_lane_e_integration_gate_core_evidence_contract_summary.json`
+- `tmp/reports/m226/e003/validation/pytest_check_m226_e003_lane_e_integration_gate_core_evidence_contract.txt`
+- `tmp/reports/m226/e003/evidence_index.json`
