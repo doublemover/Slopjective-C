@@ -2113,6 +2113,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_consistent
                    ? "true"
                    : "false")
+           << ",\"toolchain_runtime_ga_operations_cross_lane_integration_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .toolchain_runtime_ga_operations_cross_lane_integration_consistent
+                   ? "true"
+                   : "false")
+           << ",\"toolchain_runtime_ga_operations_cross_lane_integration_ready\": "
+           << (bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_cross_lane_integration_ready
+                   ? "true"
+                   : "false")
            << ",\"toolchain_runtime_ga_operations_docs_runbook_sync_consistent\": "
            << (bundle.parse_lowering_readiness_surface
                        .toolchain_runtime_ga_operations_docs_runbook_sync_consistent
@@ -2269,6 +2278,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_key
            << "\",\"parse_lowering_performance_quality_guardrails_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_key
+           << "\",\"toolchain_runtime_ga_operations_cross_lane_integration_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .toolchain_runtime_ga_operations_cross_lane_integration_key
            << "\",\"toolchain_runtime_ga_operations_docs_runbook_sync_key\":\""
            << bundle.parse_lowering_readiness_surface.toolchain_runtime_ga_operations_docs_runbook_sync_key
            << "\",\"toolchain_runtime_ga_operations_advanced_core_key\":\""

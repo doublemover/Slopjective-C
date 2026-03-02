@@ -127,6 +127,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parse_lowering_conformance_matrix_consistent = false;
   bool parse_lowering_conformance_corpus_consistent = false;
   bool parse_lowering_performance_quality_guardrails_consistent = false;
+  bool toolchain_runtime_ga_operations_cross_lane_integration_consistent = false;
+  bool toolchain_runtime_ga_operations_cross_lane_integration_ready = false;
   bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent = false;
   bool toolchain_runtime_ga_operations_docs_runbook_sync_ready = false;
   bool toolchain_runtime_ga_operations_advanced_core_consistent = false;
@@ -195,6 +197,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string parse_lowering_conformance_matrix_key;
   std::string parse_lowering_conformance_corpus_key;
   std::string parse_lowering_performance_quality_guardrails_key;
+  std::string toolchain_runtime_ga_operations_cross_lane_integration_key;
   std::string toolchain_runtime_ga_operations_docs_runbook_sync_key;
   std::string toolchain_runtime_ga_operations_advanced_core_key;
   std::string toolchain_runtime_ga_operations_advanced_edge_compatibility_key;

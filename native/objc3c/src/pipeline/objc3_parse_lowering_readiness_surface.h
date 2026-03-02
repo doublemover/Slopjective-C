@@ -2429,6 +2429,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parse_lowering_performance_quality_guardrails_key,
           toolchain_runtime_ga_operations_cross_lane_integration_consistent,
           toolchain_runtime_ga_operations_cross_lane_integration_ready);
+  surface.toolchain_runtime_ga_operations_cross_lane_integration_consistent =
+      toolchain_runtime_ga_operations_cross_lane_integration_consistent;
+  surface.toolchain_runtime_ga_operations_cross_lane_integration_ready =
+      toolchain_runtime_ga_operations_cross_lane_integration_ready;
+  surface.toolchain_runtime_ga_operations_cross_lane_integration_key =
+      toolchain_runtime_ga_operations_cross_lane_integration_key;
   surface.parse_lowering_performance_quality_guardrails_key +=
       ";toolchain_runtime_ga_operations_cross_lane_integration_key=" +
       toolchain_runtime_ga_operations_cross_lane_integration_key;
