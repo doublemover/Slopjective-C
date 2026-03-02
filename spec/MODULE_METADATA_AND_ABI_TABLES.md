@@ -60,6 +60,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - explicit pass-graph core-feature expansion readiness flag and expansion key suitable for IR metadata emission and replay-proof closeout,
    - deterministic ownership-aware lowering replay keys for ownership qualifier,
      retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
+   - ownership-aware lowering modular split scaffold readiness keys proving
+     lane-contract replay-key determinism before lowering/emit handoff,
    - direct IR-emission completeness metadata keys for pass-graph core/expansion
      readiness suitable for replay-proof closeout evidence,
    - deterministic object-emission backend route keys and output markers for

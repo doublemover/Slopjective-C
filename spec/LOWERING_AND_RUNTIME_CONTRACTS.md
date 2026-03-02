@@ -75,6 +75,9 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering contracts (ownership qualifiers, retain/release,
   autoreleasepool scope, ARC diagnostics/fixits) remain replay-key stable and
   fail closed when ownership-lowering invariants drift.
+- ownership-aware lowering modular split scaffolding shall validate ownership
+  qualifier, retain/release, autoreleasepool, and ARC diagnostics lane-contract
+  replay keys before direct IR emission proceeds.
 - direct IR emission completeness for ObjC lowering patterns shall remain
   metadata-stable and fail closed on pass-graph or lowering-boundary drift.
 - object emission and link-path routing (clang/llvm-direct) shall remain

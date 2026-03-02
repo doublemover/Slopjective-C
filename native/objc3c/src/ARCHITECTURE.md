@@ -67,6 +67,12 @@ Current-state note:
   `lower/objc3_lowering_contract.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so ownership-lowering routing remains
   deterministic and fail-closed before modular split work.
+- M228 lane-B B002 modular split scaffolding extracts ownership-aware lowering
+  scaffold synthesis into
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` and enforces a
+  fail-closed scaffold gate in `pipeline/objc3_frontend_artifacts.cpp` so
+  ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
+  replay surfaces remain deterministic through lane-B modular split hardening.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so

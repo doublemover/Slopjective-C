@@ -10,6 +10,7 @@
 #include "ir/objc3_ir_emitter.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
+#include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
 namespace {
@@ -1690,6 +1691,29 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string arc_diagnostics_fixit_lowering_replay_key =
       Objc3ArcDiagnosticsFixitLoweringReplayKey(arc_diagnostics_fixit_lowering_contract);
+  const Objc3OwnershipAwareLoweringBehaviorScaffold ownership_aware_lowering_behavior_scaffold =
+      BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
+          ownership_qualifier_lowering_contract,
+          ownership_qualifier_lowering_replay_key,
+          retain_release_operation_lowering_contract,
+          retain_release_operation_lowering_replay_key,
+          autoreleasepool_scope_lowering_contract,
+          autoreleasepool_scope_lowering_replay_key,
+          arc_diagnostics_fixit_lowering_contract,
+          arc_diagnostics_fixit_lowering_replay_key);
+  std::string ownership_aware_lowering_behavior_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L305",
+        "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
+            ownership_aware_lowering_behavior_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
   const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
       BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockLiteralCaptureLoweringContract(block_literal_capture_lowering_contract)) {
