@@ -427,6 +427,7 @@ function Invoke-BuildNativeCompiler {
   $frontendRecoveryDeterminismHardeningRelativePath = $null
   $frontendConformanceMatrixRelativePath = $null
   $frontendConformanceCorpusRelativePath = $null
+  $frontendIntegrationCloseoutRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -457,6 +458,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_conformance_corpus=")) {
       $frontendConformanceCorpusRelativePath = $lineText.Substring("frontend_conformance_corpus=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_integration_closeout=")) {
+      $frontendIntegrationCloseoutRelativePath = $lineText.Substring("frontend_integration_closeout=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -470,6 +474,7 @@ function Invoke-BuildNativeCompiler {
     frontend_recovery_determinism_hardening_relative_path = $frontendRecoveryDeterminismHardeningRelativePath
     frontend_conformance_matrix_relative_path = $frontendConformanceMatrixRelativePath
     frontend_conformance_corpus_relative_path = $frontendConformanceCorpusRelativePath
+    frontend_integration_closeout_relative_path = $frontendIntegrationCloseoutRelativePath
   }
 }
 
@@ -643,6 +648,24 @@ function Resolve-FrontendConformanceCorpusPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend conformance corpus"
+}
+
+function Resolve-FrontendIntegrationCloseoutPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_integration_closeout.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_integration_closeout_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend integration closeout"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -2030,6 +2053,81 @@ function Assert-FrontendConformanceCorpus {
   }
 }
 
+function Assert-FrontendIntegrationCloseout {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $closeoutPath = Resolve-FrontendIntegrationCloseoutPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $closeoutPath -PathType Leaf)) {
+    Write-Error "frontend integration closeout artifact missing at $closeoutPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $closeoutPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend integration closeout artifact is not valid JSON at $closeoutPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-integration-closeout/m226-d011-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend integration closeout contract id mismatch in $closeoutPath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-conformance-corpus/m226-d010-v1",
+    "objc3c-frontend-build-invocation-conformance-matrix/m226-d009-v1",
+    "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend integration closeout missing dependency contract '$requiredContractId' in $closeoutPath"
+      exit 2
+    }
+  }
+
+  $closeoutGate = $payload.closeout_gate
+  if ($null -eq $closeoutGate) {
+    Write-Error "frontend integration closeout closeout_gate metadata missing in $closeoutPath"
+    exit 2
+  }
+  if (-not [bool]$closeoutGate.build_integration_gate_signoff) {
+    Write-Error "frontend integration closeout build_integration_gate_signoff must be true in $closeoutPath"
+    exit 2
+  }
+  if (-not [bool]$closeoutGate.invocation_profile_gate_signoff) {
+    Write-Error "frontend integration closeout invocation_profile_gate_signoff must be true in $closeoutPath"
+    exit 2
+  }
+  if (-not [bool]$closeoutGate.corpus_coverage_gate_signoff) {
+    Write-Error "frontend integration closeout corpus_coverage_gate_signoff must be true in $closeoutPath"
+    exit 2
+  }
+  if ([int]$closeoutGate.deterministic_fail_closed_exit_code -ne 2) {
+    Write-Error "frontend integration closeout deterministic_fail_closed_exit_code must be 2 in $closeoutPath"
+    exit 2
+  }
+  if ([int]$closeoutGate.acceptance_corpus_count -le 0 -or [int]$closeoutGate.rejection_corpus_count -le 0) {
+    Write-Error "frontend integration closeout acceptance/rejection corpus counts must be positive in $closeoutPath"
+    exit 2
+  }
+
+  return [pscustomobject]@{
+    integration_closeout_path = $closeoutPath
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
@@ -2071,6 +2169,7 @@ if (-not $parsed.use_cache) {
     -RepoRoot $repoRoot `
     -BuildResult $buildResult `
     -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
+  Assert-FrontendIntegrationCloseout -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
   exit $compileExit
 }
@@ -2086,7 +2185,8 @@ if (-not $needsBuild) {
     Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendConformanceMatrixPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendConformanceCorpusPath -RepoRoot $repoRoot -BuildResult $buildResult
+    Resolve-FrontendConformanceCorpusPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendIntegrationCloseoutPath -RepoRoot $repoRoot -BuildResult $buildResult
   )
   foreach ($artifactPath in $requiredArtifacts) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -2137,6 +2237,7 @@ Assert-FrontendConformanceCorpus `
   -RepoRoot $repoRoot `
   -BuildResult $buildResult `
   -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
+Assert-FrontendIntegrationCloseout -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 
 $argsWithoutOutDir = Get-ArgsWithoutOutDir -CompileArgs $effectiveCompileArgs
 $inputPath = $null

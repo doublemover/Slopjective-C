@@ -891,6 +891,62 @@ function Write-FrontendConformanceCorpusArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 12) -Encoding utf8
 }
 
+function Write-FrontendIntegrationCloseoutArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendConformanceCorpusPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendConformanceCorpusPath -PathType Leaf)) {
+    throw "frontend conformance corpus artifact missing for integration closeout artifact: $FrontendConformanceCorpusPath"
+  }
+
+  try {
+    $corpusPayload = Get-Content -LiteralPath $FrontendConformanceCorpusPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend conformance corpus artifact is not valid JSON for integration closeout artifact: $FrontendConformanceCorpusPath"
+  }
+
+  $expectedCorpusContractId = "objc3c-frontend-build-invocation-conformance-corpus/m226-d010-v1"
+  if ([string]$corpusPayload.contract_id -ne $expectedCorpusContractId) {
+    throw "frontend conformance corpus contract id mismatch for integration closeout artifact: $FrontendConformanceCorpusPath"
+  }
+
+  $acceptanceCount = [int]$corpusPayload.acceptance_corpus_count
+  $rejectionCount = [int]$corpusPayload.rejection_corpus_count
+  if ($acceptanceCount -le 0 -or $rejectionCount -le 0) {
+    throw "frontend conformance corpus must provide non-empty acceptance and rejection coverage for integration closeout"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-integration-closeout/m226-d011-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedCorpusContractId
+      "objc3c-frontend-build-invocation-conformance-matrix/m226-d009-v1"
+      "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1"
+    )
+    closeout_gate = [ordered]@{
+      build_integration_gate_signoff = $true
+      invocation_profile_gate_signoff = $true
+      corpus_coverage_gate_signoff = $true
+      deterministic_fail_closed_exit_code = 2
+      acceptance_corpus_count = $acceptanceCount
+      rejection_corpus_count = $rejectionCount
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 12) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -973,6 +1029,7 @@ $frontendDiagnosticsHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-na
 $frontendRecoveryDeterminismHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json"
 $frontendConformanceMatrixPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json"
 $frontendConformanceCorpusPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json"
+$frontendIntegrationCloseoutPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_integration_closeout.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -1067,6 +1124,10 @@ Write-FrontendConformanceCorpusArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendConformanceCorpusPath `
   -FrontendConformanceMatrixPath $frontendConformanceMatrixPath
+Write-FrontendIntegrationCloseoutArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendIntegrationCloseoutPath `
+  -FrontendConformanceCorpusPath $frontendConformanceCorpusPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
@@ -1078,3 +1139,4 @@ Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPat
 Write-Output ("frontend_recovery_determinism_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendRecoveryDeterminismHardeningPath))
 Write-Output ("frontend_conformance_matrix=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceMatrixPath))
 Write-Output ("frontend_conformance_corpus=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceCorpusPath))
+Write-Output ("frontend_integration_closeout=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendIntegrationCloseoutPath))
