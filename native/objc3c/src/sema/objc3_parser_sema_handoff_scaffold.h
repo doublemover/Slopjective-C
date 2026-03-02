@@ -334,6 +334,12 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
           snapshot.implementation_class_method_decl_count,
           snapshot.implementation_instance_method_decl_count,
           snapshot.implementation_method_decl_count);
+  const bool protocol_property_count_matches =
+      snapshot.protocol_property_decl_count == protocol_property_count;
+  const bool interface_method_count_matches =
+      snapshot.interface_method_decl_count == interface_method_count;
+  const bool implementation_method_count_matches =
+      snapshot.implementation_method_decl_count == implementation_method_count;
   return snapshot.ast_shape_fingerprint == 0u ||
          snapshot.ast_top_level_layout_fingerprint == 0u ||
          decl_bucket_overflow ||
@@ -341,6 +347,9 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
          protocol_method_bucket_inconsistent ||
          interface_method_bucket_inconsistent ||
          implementation_method_bucket_inconsistent ||
+         !protocol_property_count_matches ||
+         !interface_method_count_matches ||
+         !implementation_method_count_matches ||
          (snapshot.top_level_declaration_count == 0u &&
           BuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot) != 0u) ||
          (snapshot.protocol_property_decl_count == 0u && protocol_property_count != 0u) ||
