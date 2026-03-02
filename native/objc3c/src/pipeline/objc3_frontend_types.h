@@ -226,6 +226,8 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   bool conformance_matrix_ready = false;
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
   std::size_t typed_core_feature_case_count = 0;
   std::size_t typed_core_feature_passed_case_count = 0;
   std::size_t typed_core_feature_failed_case_count = 0;
@@ -248,6 +250,7 @@ struct Objc3SemanticStabilityCoreFeatureImplementationSurface {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string failure_reason;
 };
 
