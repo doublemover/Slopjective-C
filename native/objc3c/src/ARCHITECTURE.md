@@ -38,6 +38,13 @@ Current-state note:
   `kObjc3CanonicalBridgeTopReferenceTypeForms`) to keep semantic checking
   deterministic across `id`/`Class`/`SEL`/`Protocol`/`instancetype` and
   object-pointer forms.
+- M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
+  canonical stage-order and fail-closed lowering entrypoints in
+  `pipeline/frontend_pipeline_contract.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, and
+  `lower/objc3_lowering_contract.cpp` so direct LLVM IR emission hardening can
+  build on deterministic decomposition boundaries.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
