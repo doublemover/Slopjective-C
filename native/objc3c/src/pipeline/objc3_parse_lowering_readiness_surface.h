@@ -81,6 +81,24 @@ inline bool IsObjc3LanguageVersionPragmaContractConsistent(
          duplicate_consistent;
 }
 
+inline bool IsObjc3LanguageVersionPragmaCoordinateOrderConsistent(
+    const Objc3FrontendLanguageVersionPragmaContract &pragma_contract) {
+  if (!pragma_contract.seen) {
+    return true;
+  }
+
+  const bool first_before_or_equal_last =
+      pragma_contract.first_line < pragma_contract.last_line ||
+      (pragma_contract.first_line == pragma_contract.last_line &&
+       pragma_contract.first_column <= pragma_contract.last_column);
+  const bool single_directive_coordinates_consistent =
+      pragma_contract.directive_count != 1 ||
+      (pragma_contract.first_line == pragma_contract.last_line &&
+       pragma_contract.first_column == pragma_contract.last_column);
+  return first_before_or_equal_last &&
+         single_directive_coordinates_consistent;
+}
+
 inline std::string BuildObjc3CompatibilityHandoffKey(
     const Objc3FrontendOptions &options,
     const Objc3FrontendMigrationHints &migration_hints,
@@ -97,6 +115,22 @@ inline std::string BuildObjc3CompatibilityHandoffKey(
          (pragma_contract.duplicate ? "duplicate" : "single") + ":" +
          (pragma_contract.non_leading ? "non-leading" : "leading") +
          ";consistent=" + (compatibility_handoff_consistent ? "true" : "false");
+}
+
+inline std::string BuildObjc3ParseArtifactEdgeRobustnessKey(
+    std::size_t parser_token_count,
+    std::size_t parser_snapshot_breakdown_count,
+    std::size_t ast_top_level_declaration_count,
+    bool parser_token_count_budget_consistent,
+    bool language_version_pragma_coordinate_order_consistent,
+    bool parse_artifact_edge_case_robustness_consistent) {
+  return "parser_tokens=" + std::to_string(parser_token_count) +
+         ";snapshot_breakdown=" + std::to_string(parser_snapshot_breakdown_count) +
+         ";ast_top_level=" + std::to_string(ast_top_level_declaration_count) +
+         ";token_budget_consistent=" + (parser_token_count_budget_consistent ? "true" : "false") +
+         ";pragma_coordinate_order_consistent=" +
+         (language_version_pragma_coordinate_order_consistent ? "true" : "false") +
+         ";consistent=" + (parse_artifact_edge_case_robustness_consistent ? "true" : "false");
 }
 
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
@@ -129,6 +163,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
   const bool parser_diagnostic_surface_consistent =
       parser_snapshot.parser_diagnostic_count == surface.parser_diagnostic_count;
+  surface.parser_token_count_budget_consistent =
+      surface.parser_token_count >= parser_snapshot_breakdown_count &&
+      surface.parser_token_count >= parser_snapshot.top_level_declaration_count &&
+      surface.parser_token_count >= ast_top_level_declaration_count;
   surface.parse_artifact_handoff_consistent =
       parser_snapshot_breakdown_consistent &&
       ast_top_level_declaration_count == parser_snapshot.top_level_declaration_count;
@@ -151,6 +189,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       (options.migration_assist || legacy_literal_total == 0);
   const bool language_version_pragma_contract_consistent =
       IsObjc3LanguageVersionPragmaContractConsistent(
+          pipeline_result.language_version_pragma_contract);
+  surface.language_version_pragma_coordinate_order_consistent =
+      IsObjc3LanguageVersionPragmaCoordinateOrderConsistent(
           pipeline_result.language_version_pragma_contract);
   surface.compatibility_handoff_consistent =
       migration_hints_consistent &&
@@ -179,6 +220,19 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.compatibility_handoff_key,
       surface.parse_artifact_fingerprint_consistent,
       surface.parse_artifact_replay_key_deterministic);
+  surface.parse_artifact_edge_case_robustness_consistent =
+      surface.parser_token_count_budget_consistent &&
+      surface.language_version_pragma_coordinate_order_consistent &&
+      !surface.parse_artifact_handoff_key.empty() &&
+      !surface.compatibility_handoff_key.empty() &&
+      !surface.parse_artifact_replay_key.empty();
+  surface.parse_artifact_edge_robustness_key = BuildObjc3ParseArtifactEdgeRobustnessKey(
+      surface.parser_token_count,
+      parser_snapshot_breakdown_count,
+      ast_top_level_declaration_count,
+      surface.parser_token_count_budget_consistent,
+      surface.language_version_pragma_coordinate_order_consistent,
+      surface.parse_artifact_edge_case_robustness_consistent);
   surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
   surface.semantic_diagnostics_deterministic = pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic = pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff;
@@ -207,9 +261,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_contract_deterministic &&
       surface.parser_recovery_replay_ready &&
       surface.parse_artifact_handoff_deterministic;
+  const bool parse_artifact_replay_key_ready =
+      surface.parse_artifact_replay_key_deterministic;
   const bool parse_snapshot_replay_ready =
       parse_snapshot_ready &&
-      surface.parse_artifact_replay_key_deterministic;
+      parse_artifact_replay_key_ready &&
+      surface.parse_artifact_edge_case_robustness_consistent;
   const bool sema_handoff_ready =
       surface.semantic_integration_surface_built &&
       surface.semantic_diagnostics_deterministic &&
@@ -250,6 +307,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "compatibility handoff is inconsistent";
   } else if (!surface.parse_artifact_replay_key_deterministic) {
     surface.failure_reason = "parse artifact replay key is not deterministic";
+  } else if (!surface.parser_token_count_budget_consistent) {
+    surface.failure_reason = "parser token count budget is inconsistent";
+  } else if (!surface.language_version_pragma_coordinate_order_consistent) {
+    surface.failure_reason = "language-version pragma coordinate order is inconsistent";
+  } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
+    surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
   } else if (!surface.semantic_integration_surface_built) {
     surface.failure_reason = "semantic integration surface not built";
   } else if (!surface.semantic_diagnostics_deterministic) {
