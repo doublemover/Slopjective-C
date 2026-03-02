@@ -103,6 +103,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic ownership-aware lowering edge-case robustness
      expansion/readiness and robustness-key anchors for lane-B expansion
      evidence,
+   - deterministic ownership-aware lowering diagnostics hardening
+     consistency/readiness and diagnostics-key anchors for lane-B B007
+     diagnostics hardening evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion

@@ -136,6 +136,11 @@ Current-state note:
   deterministic robustness expansion/readiness and robustness-key transport so
   ownership-aware lowering compatibility gating remains fail-closed on
   robustness drift before IR emission.
+- M228 lane-B B007 diagnostics hardening extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` with
+  deterministic diagnostics consistency/readiness and diagnostics-key transport
+  so ownership-aware lowering compatibility gating remains fail-closed on
+  diagnostics hardening drift before IR emission.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
