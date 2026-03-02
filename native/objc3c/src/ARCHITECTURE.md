@@ -98,6 +98,12 @@ Current-state note:
   compatibility handoff and edge-robustness gates in
   `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so edge-case compatibility drift fails closed before runtime readiness.
+- M250 lane-C C006 edge-case expansion and robustness anchors explicit
+  lowering/runtime edge-case expansion and robustness guardrails
+  (`edge_case_*_robustness*`) in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so edge-case expansion drift fails closed before runtime readiness is
+  reported.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and

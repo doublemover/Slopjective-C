@@ -55,6 +55,11 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << (surface.parse_edge_case_robustness_consistent ? "true" : "false")
       << ";edge_case_compatibility_ready="
       << (surface.edge_case_compatibility_ready ? "true" : "false")
+      << ";edge_case_expansion_consistent="
+      << (surface.edge_case_expansion_consistent ? "true" : "false")
+      << ";edge_case_robustness_ready="
+      << (surface.edge_case_robustness_ready ? "true" : "false")
+      << ";edge_case_robustness_key=" << surface.edge_case_robustness_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -107,6 +112,8 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_surface.language_version_pragma_coordinate_order_consistent;
   surface.parse_edge_case_robustness_consistent =
       parse_surface.parse_artifact_edge_case_robustness_consistent;
+  surface.edge_case_robustness_key =
+      parse_surface.long_tail_grammar_edge_case_robustness_key;
 
   surface.lowering_boundary_replay_key = scaffold.lowering_boundary_replay_key;
   surface.typed_handoff_key = scaffold.typed_handoff_key;
@@ -161,11 +168,22 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_surface.parse_recovery_determinism_hardening_consistent &&
       !parse_surface.compatibility_handoff_key.empty() &&
       !parse_surface.parse_artifact_edge_robustness_key.empty();
-  const bool expansion_ready =
+  const bool edge_case_expansion_consistent =
+      parse_surface.long_tail_grammar_edge_case_expansion_consistent &&
+      parse_surface.parse_artifact_edge_case_robustness_consistent &&
+      parse_surface.parse_recovery_determinism_hardening_consistent;
+  const bool edge_case_robustness_ready =
+      edge_case_compatibility_ready &&
+      parse_surface.long_tail_grammar_edge_case_robustness_ready &&
+      !parse_surface.long_tail_grammar_edge_case_robustness_key.empty();
+  const bool edge_case_compatibility_expansion_ready =
       typed_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
       replay_keys_ready &&
       edge_case_compatibility_ready;
+  const bool expansion_ready =
+      edge_case_compatibility_expansion_ready &&
+      edge_case_robustness_ready;
 
   surface.typed_expansion_accounting_consistent =
       typed_expansion_accounting_consistent;
@@ -173,6 +191,8 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       parse_conformance_accounting_consistent;
   surface.replay_keys_ready = replay_keys_ready;
   surface.edge_case_compatibility_ready = edge_case_compatibility_ready;
+  surface.edge_case_expansion_consistent = edge_case_expansion_consistent;
+  surface.edge_case_robustness_ready = edge_case_robustness_ready;
   surface.expansion_ready = expansion_ready;
 
   surface.core_feature_impl_ready =
@@ -202,6 +222,12 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       ";replay-keys-ready=" + std::string(replay_keys_ready ? "true" : "false") +
       ";edge-compat-ready=" +
       std::string(edge_case_compatibility_ready ? "true" : "false") +
+      ";edge-expansion-consistent=" +
+      std::string(edge_case_expansion_consistent ? "true" : "false") +
+      ";edge-robustness-ready=" +
+      std::string(edge_case_robustness_ready ? "true" : "false") +
+      ";edge-robustness-key-ready=" +
+      std::string(!surface.edge_case_robustness_key.empty() ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parse-edge-robustness-consistent=" +
@@ -255,6 +281,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "lowering/runtime replay keys are not ready";
   } else if (!edge_case_compatibility_ready) {
     surface.failure_reason = "lowering/runtime edge-case compatibility is not ready";
+  } else if (!edge_case_expansion_consistent) {
+    surface.failure_reason = "lowering/runtime edge-case expansion is inconsistent";
+  } else if (!edge_case_robustness_ready) {
+    surface.failure_reason = "lowering/runtime edge-case robustness is not ready";
   } else if (!expansion_ready) {
     surface.failure_reason =
         "lowering/runtime core feature expansion is not ready";

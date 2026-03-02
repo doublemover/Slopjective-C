@@ -262,6 +262,8 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool language_version_pragma_coordinate_order_consistent = false;
   bool parse_edge_case_robustness_consistent = false;
   bool edge_case_compatibility_ready = false;
+  bool edge_case_expansion_consistent = false;
+  bool edge_case_robustness_ready = false;
   bool expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -280,6 +282,7 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   std::string lowering_boundary_replay_key;
   std::string typed_handoff_key;
   std::string parse_artifact_replay_key;
+  std::string edge_case_robustness_key;
   std::string edge_case_compatibility_key;
   std::string expansion_key;
   std::string core_feature_key;
