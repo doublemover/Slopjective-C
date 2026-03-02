@@ -46,6 +46,27 @@ struct Objc3FrontendLanguageVersionPragmaContract {
   unsigned last_column = 0;
 };
 
+struct Objc3ParseLoweringReadinessSurface {
+  std::size_t lexer_diagnostic_count = 0;
+  std::size_t parser_diagnostic_count = 0;
+  std::size_t semantic_diagnostic_count = 0;
+  std::size_t parser_token_count = 0;
+  std::size_t parser_top_level_declaration_count = 0;
+  bool parser_contract_snapshot_present = false;
+  bool parser_contract_deterministic = false;
+  bool parser_recovery_replay_ready = false;
+  bool semantic_integration_surface_built = false;
+  bool semantic_diagnostics_deterministic = false;
+  bool semantic_type_metadata_deterministic = false;
+  bool symbol_graph_deterministic = false;
+  bool scope_resolution_deterministic = false;
+  bool object_pointer_type_handoff_deterministic = false;
+  bool lowering_boundary_ready = false;
+  bool ready_for_lowering = false;
+  std::string lowering_boundary_replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendProtocolCategorySummary {
   std::size_t declared_protocols = 0;
   std::size_t declared_categories = 0;
@@ -147,6 +168,7 @@ struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
+  Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;

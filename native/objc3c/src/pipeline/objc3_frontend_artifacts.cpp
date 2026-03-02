@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "pipeline/objc3_parse_lowering_readiness_surface.h"
 
 namespace {
 
@@ -1310,8 +1311,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   Objc3FrontendArtifactBundle bundle;
   const Objc3Program &program = Objc3ParsedProgramAst(pipeline_result.program);
   bundle.stage_diagnostics = pipeline_result.stage_diagnostics;
+  bundle.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(pipeline_result, options);
   bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);
   if (!bundle.diagnostics.empty()) {
+    return bundle;
+  }
+
+  std::string parse_lowering_readiness_error;
+  if (!IsObjc3ParseLoweringReadinessSurfaceReady(bundle.parse_lowering_readiness_surface,
+                                                 parse_lowering_readiness_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L300",
+        "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
+            parse_lowering_readiness_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
 
@@ -1908,6 +1923,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "        \"semantic\": {\"diagnostics\":" << bundle.stage_diagnostics.semantic.size()
            << "}\n";
   manifest << "      },\n";
+  manifest << "      \"parse_lowering_readiness\": {\"ready_for_lowering\": "
+           << (bundle.parse_lowering_readiness_surface.ready_for_lowering ? "true" : "false")
+           << ",\"parser_contract_snapshot_present\": "
+           << (bundle.parse_lowering_readiness_surface.parser_contract_snapshot_present ? "true" : "false")
+           << ",\"semantic_integration_surface_built\": "
+           << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
+           << ",\"lowering_boundary_ready\": "
+           << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
+           << ",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
+           << "\",\"lowering_boundary_replay_key\":\""
+           << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
+           << "\"},\n";
   manifest << "      \"sema_pass_manager\": {\"diagnostics_after_build\":"
            << pipeline_result.sema_diagnostics_after_pass[0] << ",\"diagnostics_after_validate_bodies\":"
            << pipeline_result.sema_diagnostics_after_pass[1] << ",\"diagnostics_after_validate_pure_contract\":"

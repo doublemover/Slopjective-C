@@ -8,6 +8,7 @@
 
 struct Objc3FrontendArtifactBundle {
   Objc3FrontendDiagnosticsBus stage_diagnostics;
+  Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   std::vector<std::string> post_pipeline_diagnostics;
   std::vector<std::string> diagnostics;
   std::string manifest_json;
