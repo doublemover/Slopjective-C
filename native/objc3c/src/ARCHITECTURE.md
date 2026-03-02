@@ -364,6 +364,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E015/A006/B007/C008/D013 edge prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E017 advanced diagnostics shard1 anchors explicit final
+  readiness advanced-diagnostics shard1 guardrails
+  (`advanced_diagnostics_shard1_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E016/A006/B008/C008/D014 diagnostics prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
