@@ -541,6 +541,70 @@ function Write-FrontendDiagnosticsHardeningArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendRecoveryDeterminismHardeningArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendDiagnosticsHardeningPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendDiagnosticsHardeningPath -PathType Leaf)) {
+    throw "frontend diagnostics hardening artifact missing for recovery determinism hardening artifact: $FrontendDiagnosticsHardeningPath"
+  }
+
+  try {
+    $diagnosticsPayload = Get-Content -LiteralPath $FrontendDiagnosticsHardeningPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend diagnostics hardening artifact is not valid JSON for recovery determinism hardening artifact: $FrontendDiagnosticsHardeningPath"
+  }
+
+  $expectedDiagnosticsContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/m226-d007-v1"
+  if ([string]$diagnosticsPayload.contract_id -ne $expectedDiagnosticsContractId) {
+    throw "frontend diagnostics hardening contract id mismatch for recovery determinism hardening artifact: $FrontendDiagnosticsHardeningPath"
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedDiagnosticsContractId
+      "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1"
+    )
+    cache_determinism = [ordered]@{
+      fail_closed_exit_code = 2
+      entry_contract_id = "objc3c-native-cache-entry/m226-d008-v1"
+      cache_status_tokens = @(
+        "cache_hit=true"
+        "cache_hit=false"
+      )
+      required_entry_files = @(
+        "files"
+        "exit_code.txt"
+        "ready.marker"
+        "metadata.json"
+      )
+      recovery_signals = @(
+        "cache_recovery=metadata_missing"
+        "cache_recovery=metadata_invalid"
+        "cache_recovery=metadata_contract_mismatch"
+        "cache_recovery=metadata_cache_key_mismatch"
+        "cache_recovery=metadata_exit_code_mismatch"
+        "cache_recovery=metadata_digest_mismatch"
+        "cache_recovery=restore_failed"
+      )
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -620,6 +684,7 @@ $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-na
 $frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_compat.json"
 $frontendEdgeRobustnessPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_robustness.json"
 $frontendDiagnosticsHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_diagnostics_hardening.json"
+$frontendRecoveryDeterminismHardeningPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -702,6 +767,10 @@ Write-FrontendDiagnosticsHardeningArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendDiagnosticsHardeningPath `
   -FrontendEdgeRobustnessPath $frontendEdgeRobustnessPath
+Write-FrontendRecoveryDeterminismHardeningArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendRecoveryDeterminismHardeningPath `
+  -FrontendDiagnosticsHardeningPath $frontendDiagnosticsHardeningPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
@@ -710,3 +779,4 @@ Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPa
 Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeCompatPath))
 Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeRobustnessPath))
 Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendDiagnosticsHardeningPath))
+Write-Output ("frontend_recovery_determinism_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendRecoveryDeterminismHardeningPath))

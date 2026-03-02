@@ -238,6 +238,155 @@ function Get-CacheKey {
   return Get-Sha256HexFromBytes -Bytes $payloadBytes
 }
 
+function Get-DirectoryDeterminismDigest {
+  param([string]$Path)
+
+  if ([string]::IsNullOrWhiteSpace($Path)) {
+    return ""
+  }
+  if (!(Test-Path -LiteralPath $Path -PathType Container)) {
+    return ""
+  }
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $Path).Path
+  $files = Get-ChildItem -LiteralPath $Path -Recurse -File | Sort-Object -Property FullName
+  $rows = New-Object System.Collections.Generic.List[string]
+  foreach ($file in $files) {
+    $relativePath = $file.FullName.Substring($resolvedRoot.Length).TrimStart('\', '/').Replace('\', '/')
+    $fileHash = Get-FileSha256Hex -Path $file.FullName
+    $rows.Add($relativePath + ":" + $fileHash)
+  }
+
+  $payloadText = [string]::Join("`n", $rows.ToArray())
+  $payloadBytes = [System.Text.Encoding]::UTF8.GetBytes($payloadText)
+  return Get-Sha256HexFromBytes -Bytes $payloadBytes
+}
+
+function Write-CacheRecoverySignal {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Reason
+  )
+
+  Write-Output ("cache_recovery=" + $Reason)
+}
+
+function Try-RestoreCacheEntry {
+  param(
+    [string]$EntryDir,
+    [string]$FilesDir,
+    [string]$ExitPath,
+    [string]$ReadyPath,
+    [string]$DestinationRoot,
+    [string]$CacheKey,
+    [string]$ExpectedEntryContractId
+  )
+
+  if (!(Test-Path -LiteralPath $EntryDir -PathType Container)) {
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  if (!(Test-Path -LiteralPath $ReadyPath -PathType Leaf) -or
+      !(Test-Path -LiteralPath $ExitPath -PathType Leaf) -or
+      !(Test-Path -LiteralPath $FilesDir -PathType Container)) {
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  $metadataPath = Join-Path $EntryDir "metadata.json"
+  if (!(Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+    Write-CacheRecoverySignal -Reason "metadata_missing"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  try {
+    $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-CacheRecoverySignal -Reason "metadata_invalid"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  if ([string]$metadata.entry_contract_id -ne $ExpectedEntryContractId) {
+    Write-CacheRecoverySignal -Reason "metadata_contract_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  if ([string]$metadata.cache_key -ne [string]$CacheKey) {
+    Write-CacheRecoverySignal -Reason "metadata_cache_key_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  $rawExitCode = (Get-Content -LiteralPath $ExitPath -Raw).Trim()
+  $parsedExitCode = 0
+  if (-not [int]::TryParse($rawExitCode, [ref]$parsedExitCode)) {
+    Write-CacheRecoverySignal -Reason "metadata_exit_code_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  $metadataExitCode = 0
+  if (-not [int]::TryParse([string]$metadata.compile_exit_code, [ref]$metadataExitCode)) {
+    Write-CacheRecoverySignal -Reason "metadata_exit_code_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  if ($metadataExitCode -ne $parsedExitCode) {
+    Write-CacheRecoverySignal -Reason "metadata_exit_code_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  $expectedDigest = [string]$metadata.output_digest_sha256
+  $actualDigest = Get-DirectoryDeterminismDigest -Path $FilesDir
+  if ([string]::IsNullOrWhiteSpace($expectedDigest) -or
+      ($actualDigest -ne $expectedDigest.ToLowerInvariant())) {
+    Write-CacheRecoverySignal -Reason "metadata_digest_mismatch"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  try {
+    Copy-DirectoryContents -SourceRoot $FilesDir -DestinationRoot $DestinationRoot
+  } catch {
+    Write-CacheRecoverySignal -Reason "restore_failed"
+    return [pscustomobject]@{
+      restored = $false
+      exit_code = 0
+    }
+  }
+
+  return [pscustomobject]@{
+    restored = $true
+    exit_code = $parsedExitCode
+  }
+}
+
 function Copy-DirectoryContents {
   param(
     [string]$SourceRoot,
@@ -275,6 +424,7 @@ function Invoke-BuildNativeCompiler {
   $frontendEdgeCompatRelativePath = $null
   $frontendEdgeRobustnessRelativePath = $null
   $frontendDiagnosticsHardeningRelativePath = $null
+  $frontendRecoveryDeterminismHardeningRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -296,6 +446,9 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_diagnostics_hardening=")) {
       $frontendDiagnosticsHardeningRelativePath = $lineText.Substring("frontend_diagnostics_hardening=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_recovery_determinism_hardening=")) {
+      $frontendRecoveryDeterminismHardeningRelativePath = $lineText.Substring("frontend_recovery_determinism_hardening=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
@@ -306,6 +459,7 @@ function Invoke-BuildNativeCompiler {
     frontend_edge_compat_relative_path = $frontendEdgeCompatRelativePath
     frontend_edge_robustness_relative_path = $frontendEdgeRobustnessRelativePath
     frontend_diagnostics_hardening_relative_path = $frontendDiagnosticsHardeningRelativePath
+    frontend_recovery_determinism_hardening_relative_path = $frontendRecoveryDeterminismHardeningRelativePath
   }
 }
 
@@ -425,6 +579,24 @@ function Resolve-FrontendDiagnosticsHardeningPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend diagnostics hardening"
+}
+
+function Resolve-FrontendRecoveryDeterminismHardeningPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_recovery_determinism_hardening.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_recovery_determinism_hardening_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend recovery determinism hardening"
 }
 
 function Assert-FrontendModuleScaffold {
@@ -1309,6 +1481,121 @@ function Assert-FrontendDiagnosticsHardening {
   }
 }
 
+function Assert-FrontendRecoveryDeterminismHardening {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $recoveryPath = Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $recoveryPath -PathType Leaf)) {
+    Write-Error "frontend recovery determinism hardening artifact missing at $recoveryPath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $recoveryPath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend recovery determinism hardening artifact is not valid JSON at $recoveryPath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/m226-d008-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend recovery determinism hardening contract id mismatch in $recoveryPath"
+    exit 2
+  }
+
+  $expectedDependencies = @(
+    "objc3c-frontend-build-invocation-diagnostics-hardening/m226-d007-v1",
+    "objc3c-frontend-build-invocation-edge-robustness/m226-d006-v1"
+  )
+  $dependencySet = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (-not [string]::IsNullOrWhiteSpace($contractIdText)) {
+      $dependencySet[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencies) {
+    if (-not $dependencySet.ContainsKey($requiredContractId)) {
+      Write-Error "frontend recovery determinism hardening missing dependency contract '$requiredContractId' in $recoveryPath"
+      exit 2
+    }
+  }
+
+  $cacheDeterminism = $payload.cache_determinism
+  if ($null -eq $cacheDeterminism) {
+    Write-Error "frontend recovery determinism hardening cache_determinism metadata missing in $recoveryPath"
+    exit 2
+  }
+  if ([int]$cacheDeterminism.fail_closed_exit_code -ne 2) {
+    Write-Error "frontend recovery determinism hardening fail_closed_exit_code must be 2 in $recoveryPath"
+    exit 2
+  }
+  if ([string]$cacheDeterminism.entry_contract_id -ne "objc3c-native-cache-entry/m226-d008-v1") {
+    Write-Error "frontend recovery determinism hardening entry_contract_id mismatch in $recoveryPath"
+    exit 2
+  }
+
+  $requiredStatusTokens = @("cache_hit=true", "cache_hit=false")
+  $statusTokenSet = @{}
+  foreach ($token in @($cacheDeterminism.cache_status_tokens)) {
+    $tokenText = [string]$token
+    if (-not [string]::IsNullOrWhiteSpace($tokenText)) {
+      $statusTokenSet[$tokenText] = $true
+    }
+  }
+  foreach ($requiredToken in $requiredStatusTokens) {
+    if (-not $statusTokenSet.ContainsKey($requiredToken)) {
+      Write-Error "frontend recovery determinism hardening missing cache_status_tokens entry '$requiredToken' in $recoveryPath"
+      exit 2
+    }
+  }
+
+  $requiredEntryFiles = @("files", "exit_code.txt", "ready.marker", "metadata.json")
+  $entryFileSet = @{}
+  foreach ($entryFile in @($cacheDeterminism.required_entry_files)) {
+    $entryFileText = [string]$entryFile
+    if (-not [string]::IsNullOrWhiteSpace($entryFileText)) {
+      $entryFileSet[$entryFileText] = $true
+    }
+  }
+  foreach ($requiredEntryFile in $requiredEntryFiles) {
+    if (-not $entryFileSet.ContainsKey($requiredEntryFile)) {
+      Write-Error "frontend recovery determinism hardening missing required_entry_files entry '$requiredEntryFile' in $recoveryPath"
+      exit 2
+    }
+  }
+
+  $requiredRecoverySignals = @(
+    "cache_recovery=metadata_missing",
+    "cache_recovery=metadata_invalid",
+    "cache_recovery=metadata_contract_mismatch",
+    "cache_recovery=metadata_cache_key_mismatch",
+    "cache_recovery=metadata_exit_code_mismatch",
+    "cache_recovery=metadata_digest_mismatch",
+    "cache_recovery=restore_failed"
+  )
+  $recoverySignalSet = @{}
+  foreach ($signal in @($cacheDeterminism.recovery_signals)) {
+    $signalText = [string]$signal
+    if (-not [string]::IsNullOrWhiteSpace($signalText)) {
+      $recoverySignalSet[$signalText] = $true
+    }
+  }
+  foreach ($requiredSignal in $requiredRecoverySignals) {
+    if (-not $recoverySignalSet.ContainsKey($requiredSignal)) {
+      Write-Error "frontend recovery determinism hardening missing recovery_signals entry '$requiredSignal' in $recoveryPath"
+      exit 2
+    }
+  }
+
+  return [pscustomobject]@{
+    recovery_determinism_hardening_path = $recoveryPath
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
@@ -1336,6 +1623,7 @@ if (-not $parsed.use_cache) {
     -CoreFeatureGuard $coreFeatureGuard
   Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
   Assert-FrontendDiagnosticsHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
+  Assert-FrontendRecoveryDeterminismHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
   $effectiveCompileArgs = @($parsed.compile_args)
   if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
     $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
@@ -1352,7 +1640,8 @@ if (-not $needsBuild) {
     Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult,
     Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult
+    Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
+    Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult
   )
   foreach ($artifactPath in $requiredArtifacts) {
     if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
@@ -1389,6 +1678,7 @@ $edgeCompatGuard = Assert-FrontendEdgeCompatibility `
   -CoreFeatureGuard $coreFeatureGuard
 Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 Assert-FrontendDiagnosticsHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
+Assert-FrontendRecoveryDeterminismHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
 $effectiveCompileArgs = @($parsed.compile_args)
 if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
   $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
@@ -1405,6 +1695,7 @@ if ($argsWithoutOutDir.Count -gt 0) {
 
 $cacheRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/cache"
 $compilerSourcePath = Join-Path $repoRoot "native/objc3c/src/main.cpp"
+$cacheEntryContractId = "objc3c-native-cache-entry/m226-d008-v1"
 $cacheKey = Get-CacheKey `
   -InputPath $inputPath `
   -ArgsWithoutOutDir $argsWithoutOutDir `
@@ -1417,17 +1708,17 @@ if ($null -ne $cacheKey) {
   $exitPath = Join-Path $entryDir "exit_code.txt"
   $readyPath = Join-Path $entryDir "ready.marker"
 
-  if ((Test-Path -LiteralPath $readyPath -PathType Leaf) -and
-      (Test-Path -LiteralPath $exitPath -PathType Leaf) -and
-      (Test-Path -LiteralPath $filesDir -PathType Container)) {
-    try {
-      Copy-DirectoryContents -SourceRoot $filesDir -DestinationRoot $parsed.out_dir
-      $cachedExitCode = [int](Get-Content -LiteralPath $exitPath -Raw)
-      Write-Output "cache_hit=true"
-      exit $cachedExitCode
-    } catch {
-      # fall through to cache miss path
-    }
+  $cacheRestore = Try-RestoreCacheEntry `
+    -EntryDir $entryDir `
+    -FilesDir $filesDir `
+    -ExitPath $exitPath `
+    -ReadyPath $readyPath `
+    -DestinationRoot $parsed.out_dir `
+    -CacheKey $cacheKey `
+    -ExpectedEntryContractId $cacheEntryContractId
+  if ($cacheRestore.restored) {
+    Write-Output "cache_hit=true"
+    exit ([int]$cacheRestore.exit_code)
   }
 }
 
@@ -1441,7 +1732,17 @@ if ($null -ne $cacheKey) {
     New-Item -ItemType Directory -Force -Path $stageFilesDir | Out-Null
 
     Copy-DirectoryContents -SourceRoot $parsed.out_dir -DestinationRoot $stageFilesDir
+    $outputDigest = Get-DirectoryDeterminismDigest -Path $stageFilesDir
     Set-Content -LiteralPath (Join-Path $stagingDir "exit_code.txt") -Value "$compileExit" -Encoding ascii
+    $metadataPayload = [ordered]@{
+      entry_contract_id = $cacheEntryContractId
+      schema_version = 1
+      cache_key = $cacheKey
+      compile_exit_code = [int]$compileExit
+      output_digest_sha256 = $outputDigest
+      required_entry_files = @("files", "exit_code.txt", "ready.marker", "metadata.json")
+    }
+    Set-Content -LiteralPath (Join-Path $stagingDir "metadata.json") -Value ($metadataPayload | ConvertTo-Json -Depth 8) -Encoding utf8
     Set-Content -LiteralPath (Join-Path $stagingDir "ready.marker") -Value "ready" -Encoding ascii
 
     $entryDir = Join-Path $cacheRoot $cacheKey
