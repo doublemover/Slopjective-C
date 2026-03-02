@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "contract_id": "objc3c-parser-conformance-corpus-contract/m226-a010-v1",
+  "cases": [
+    {
+      "id": "A010-C001",
+      "path": "accept_void_pointer_param.objc3",
+      "expect": "accept",
+      "diagnostic_code": null
+    },
+    {
+      "id": "A010-C002",
+      "path": "reject_i32_pointer_param.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P114"
+    },
+    {
+      "id": "A010-C003",
+      "path": "reject_bool_pointer_param.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P114"
+    },
+    {
+      "id": "A010-C004",
+      "path": "reject_trailing_comma_param.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P104"
+    },
+    {
+      "id": "A010-C005",
+      "path": "reject_post_comma_nondecl.objc3",
+      "expect": "reject",
+      "diagnostic_code": "O3P100"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+i32 m226a010_reject_trailing_comma(i32 lhs, ) {
+    return lhs;
+}

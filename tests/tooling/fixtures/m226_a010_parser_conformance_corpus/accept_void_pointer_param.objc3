@@ -1,0 +1,3 @@
+i32 m226a010_accept_void_pointer(void *opaque) {
+    return 0;
+}
