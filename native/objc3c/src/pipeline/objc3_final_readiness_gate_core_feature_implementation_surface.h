@@ -85,6 +85,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.performance_quality_guardrails_ready ? "true" : "false")
       << ";performance_quality_guardrails_key_ready="
       << (!surface.performance_quality_guardrails_key.empty() ? "true" : "false")
+      << ";cross_lane_integration_consistent="
+      << (surface.cross_lane_integration_consistent ? "true" : "false")
+      << ";cross_lane_integration_ready="
+      << (surface.cross_lane_integration_ready ? "true" : "false")
+      << ";cross_lane_integration_key_ready="
+      << (!surface.cross_lane_integration_key.empty() ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -282,6 +288,36 @@ inline std::string BuildObjc3FinalReadinessGatePerformanceQualityGuardrailsKey(
       << (surface.performance_quality_guardrails_consistent ? "true" : "false")
       << ";performance-quality-guardrails-ready="
       << (surface.performance_quality_guardrails_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateCrossLaneIntegrationKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_core_feature_expansion_ready,
+    bool lane_b_edge_case_compatibility_ready,
+    bool lane_c_edge_case_robustness_ready,
+    bool lane_d_conformance_matrix_ready,
+    bool lane_d_conformance_matrix_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-cross-lane-integration:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";performance-quality-guardrails-ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";lane-a-core-feature-expansion-ready="
+      << (lane_a_core_feature_expansion_ready ? "true" : "false")
+      << ";lane-b-edge-case-compatibility-ready="
+      << (lane_b_edge_case_compatibility_ready ? "true" : "false")
+      << ";lane-c-edge-case-robustness-ready="
+      << (lane_c_edge_case_robustness_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-ready="
+      << (lane_d_conformance_matrix_ready ? "true" : "false")
+      << ";lane-d-conformance-matrix-key-ready="
+      << (lane_d_conformance_matrix_key_ready ? "true" : "false")
+      << ";cross-lane-integration-consistent="
+      << (surface.cross_lane_integration_consistent ? "true" : "false")
+      << ";cross-lane-integration-ready="
+      << (surface.cross_lane_integration_ready ? "true" : "false");
   return key.str();
 }
 
@@ -558,6 +594,36 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.performance_quality_guardrails_ready =
       surface.performance_quality_guardrails_ready &&
       !surface.performance_quality_guardrails_key.empty();
+  const bool lane_cross_lane_integration_consistent =
+      lane_a_surface.core_feature_expansion_ready &&
+      lane_b_surface.edge_case_compatibility_ready &&
+      lane_c_surface.edge_case_robustness_ready &&
+      lane_d_surface.conformance_matrix_ready &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  const bool cross_lane_integration_consistent =
+      surface.performance_quality_guardrails_ready &&
+      lane_cross_lane_integration_consistent;
+  const bool cross_lane_integration_ready =
+      cross_lane_integration_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.performance_quality_guardrails_key.empty() &&
+      !lane_d_surface.conformance_matrix_key.empty();
+  surface.cross_lane_integration_consistent =
+      cross_lane_integration_consistent;
+  surface.cross_lane_integration_ready =
+      cross_lane_integration_ready;
+  surface.cross_lane_integration_key =
+      BuildObjc3FinalReadinessGateCrossLaneIntegrationKey(
+          surface,
+          lane_a_surface.core_feature_expansion_ready,
+          lane_b_surface.edge_case_compatibility_ready,
+          lane_c_surface.edge_case_robustness_ready,
+          lane_d_surface.conformance_matrix_ready,
+          !lane_d_surface.conformance_matrix_key.empty());
+  surface.cross_lane_integration_ready =
+      surface.cross_lane_integration_ready &&
+      !surface.cross_lane_integration_key.empty();
   surface.core_feature_key =
       BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(surface);
   surface.core_feature_impl_ready =
@@ -570,6 +636,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.conformance_matrix_ready &&
       surface.conformance_corpus_ready &&
       surface.performance_quality_guardrails_ready &&
+      surface.cross_lane_integration_ready &&
       !surface.core_feature_key.empty();
 
   if (surface.core_feature_impl_ready) {
@@ -693,6 +760,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.performance_quality_guardrails_key.empty()) {
     surface.failure_reason =
         "final readiness gate performance and quality guardrails key is not ready";
+  } else if (!lane_cross_lane_integration_consistent) {
+    surface.failure_reason =
+        "final readiness gate cross-lane integration sync is inconsistent";
+  } else if (!surface.cross_lane_integration_consistent) {
+    surface.failure_reason =
+        "final readiness gate cross-lane integration sync consistency is not satisfied";
+  } else if (!surface.cross_lane_integration_ready) {
+    surface.failure_reason =
+        "final readiness gate cross-lane integration sync is not ready";
+  } else if (surface.cross_lane_integration_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate cross-lane integration sync key is not ready";
   } else {
     surface.failure_reason =
         "final readiness gate core feature implementation is not ready";

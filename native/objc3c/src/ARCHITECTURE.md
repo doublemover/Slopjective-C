@@ -337,6 +337,11 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E010/A004/B005/C005/D009 quality prerequisites
   drift before final sign-off can remain green.
+- M250 lane-E E012 cross-lane integration sync anchors explicit final
+  readiness cross-lane integration guardrails (`cross_lane_integration_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E011/A004/B005/C006/D010 sync prerequisites
+  drift before final sign-off can remain green.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
