@@ -1931,12 +1931,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_consistent ? "true" : "false")
            << ",\"parse_artifact_handoff_deterministic\": "
            << (bundle.parse_lowering_readiness_surface.parse_artifact_handoff_deterministic ? "true" : "false")
+           << ",\"parse_artifact_fingerprint_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_fingerprint_consistent ? "true" : "false")
+           << ",\"parse_artifact_replay_key_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface.parse_artifact_replay_key_deterministic ? "true" : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
            << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
+           << ",\"parser_contract_snapshot_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.parser_contract_snapshot_fingerprint
+           << ",\"parser_ast_shape_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.parser_ast_shape_fingerprint
+           << ",\"ast_shape_fingerprint\": "
+           << bundle.parse_lowering_readiness_surface.ast_shape_fingerprint
            << ",\"parse_artifact_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_artifact_handoff_key
+           << "\",\"parse_artifact_replay_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_artifact_replay_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key

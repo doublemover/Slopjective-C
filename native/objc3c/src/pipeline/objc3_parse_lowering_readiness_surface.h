@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "pipeline/objc3_frontend_types.h"
@@ -32,6 +33,19 @@ inline std::string BuildObjc3ParseArtifactHandoffKey(
          (handoff_deterministic ? "true" : "false");
 }
 
+inline std::string BuildObjc3ParseArtifactReplayKey(
+    const Objc3ParserContractSnapshot &snapshot,
+    std::uint64_t parser_contract_snapshot_fingerprint,
+    std::uint64_t ast_shape_fingerprint,
+    bool fingerprint_consistent,
+    bool replay_key_deterministic) {
+  return "parser_snapshot_fingerprint=" + std::to_string(parser_contract_snapshot_fingerprint) +
+         ";snapshot_ast_shape_fingerprint=" + std::to_string(snapshot.ast_shape_fingerprint) +
+         ";ast_shape_fingerprint=" + std::to_string(ast_shape_fingerprint) +
+         ";fingerprint_consistent=" + (fingerprint_consistent ? "true" : "false") +
+         ";deterministic=" + (replay_key_deterministic ? "true" : "false");
+}
+
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
     const Objc3FrontendOptions &options) {
@@ -42,6 +56,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.semantic_diagnostic_count = pipeline_result.stage_diagnostics.semantic.size();
   surface.parser_token_count = parser_snapshot.token_count;
   surface.parser_top_level_declaration_count = parser_snapshot.top_level_declaration_count;
+  surface.parser_contract_snapshot_fingerprint = BuildObjc3ParserContractSnapshotFingerprint(parser_snapshot);
+  surface.parser_ast_shape_fingerprint = parser_snapshot.ast_shape_fingerprint;
+  surface.ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(pipeline_result.program);
   surface.parser_contract_snapshot_present =
       parser_snapshot.token_count > 0 ||
       parser_snapshot.top_level_declaration_count > 0 ||
@@ -63,11 +80,23 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_handoff_consistent &&
       parser_diagnostic_surface_consistent &&
       surface.parser_contract_deterministic;
+  surface.parse_artifact_fingerprint_consistent =
+      surface.parser_ast_shape_fingerprint == surface.ast_shape_fingerprint;
+  surface.parse_artifact_replay_key_deterministic =
+      surface.parse_artifact_handoff_deterministic &&
+      surface.parse_artifact_fingerprint_consistent &&
+      surface.parser_contract_snapshot_fingerprint != 0;
   surface.parse_artifact_handoff_key = BuildObjc3ParseArtifactHandoffKey(
       parser_snapshot,
       ast_top_level_declaration_count,
       surface.parser_diagnostic_count,
       surface.parse_artifact_handoff_deterministic);
+  surface.parse_artifact_replay_key = BuildObjc3ParseArtifactReplayKey(
+      parser_snapshot,
+      surface.parser_contract_snapshot_fingerprint,
+      surface.ast_shape_fingerprint,
+      surface.parse_artifact_fingerprint_consistent,
+      surface.parse_artifact_replay_key_deterministic);
   surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
   surface.semantic_diagnostics_deterministic = pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic = pipeline_result.sema_parity_surface.deterministic_type_metadata_handoff;
@@ -96,6 +125,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_contract_deterministic &&
       surface.parser_recovery_replay_ready &&
       surface.parse_artifact_handoff_deterministic;
+  const bool parse_snapshot_replay_ready =
+      parse_snapshot_ready &&
+      surface.parse_artifact_replay_key_deterministic;
   const bool sema_handoff_ready =
       surface.semantic_integration_surface_built &&
       surface.semantic_diagnostics_deterministic &&
@@ -104,7 +136,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.scope_resolution_deterministic &&
       surface.object_pointer_type_handoff_deterministic;
   surface.ready_for_lowering = diagnostics_clear &&
-                               parse_snapshot_ready &&
+                               parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
                                surface.lowering_boundary_ready;
 
@@ -128,6 +160,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parse artifact handoff is inconsistent";
   } else if (!surface.parse_artifact_handoff_deterministic) {
     surface.failure_reason = "parse artifact handoff is not deterministic";
+  } else if (!surface.parse_artifact_fingerprint_consistent) {
+    surface.failure_reason = "parse artifact fingerprint is inconsistent";
+  } else if (!surface.parse_artifact_replay_key_deterministic) {
+    surface.failure_reason = "parse artifact replay key is not deterministic";
   } else if (!surface.semantic_integration_surface_built) {
     surface.failure_reason = "semantic integration surface not built";
   } else if (!surface.semantic_diagnostics_deterministic) {
