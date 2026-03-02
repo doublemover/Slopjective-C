@@ -181,6 +181,11 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime GA readiness fails closed on backend output robustness
   drift before success exit status is returned.
+- M250 lane-D D007 diagnostics hardening anchors explicit diagnostics
+  hardening guardrails (`diagnostics_hardening_*`) in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
+  toolchain/runtime GA readiness fails closed on diagnostics drift before
+  success exit status is returned.
 ## Ownership Map
 
 - Lane A: `lex/*`, `parse/*`, `lower/*`, `ir/*`, `driver/*`, `io/*`
