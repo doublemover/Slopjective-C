@@ -175,6 +175,12 @@ Current-state note:
   `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
   so lane-C cannot report readiness before deterministic lane-A/lane-B/lane-C
   integration alignment is satisfied.
+- M250 lane-C C013 integration closeout and gate sign-off anchors explicit
+  lowering/runtime closeout/sign-off guardrails
+  (`integration_closeout_*`, `gate_signoff_*`) in
+  `pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h`
+  so lane-C final readiness cannot report green before deterministic closeout
+  evidence is satisfied.
 - M250 lane-D D002 modular split scaffolding anchors toolchain/runtime GA
   operations readiness in
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h` so backend routing and

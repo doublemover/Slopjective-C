@@ -303,6 +303,8 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool performance_quality_guardrails_ready = false;
   bool cross_lane_integration_consistent = false;
   bool cross_lane_integration_ready = false;
+  bool integration_closeout_consistent = false;
+  bool gate_signoff_ready = false;
   bool expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -328,6 +330,7 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   std::string conformance_corpus_key;
   std::string performance_quality_guardrails_key;
   std::string cross_lane_integration_key;
+  std::string integration_closeout_key;
   std::string edge_case_compatibility_key;
   std::string expansion_key;
   std::string core_feature_key;

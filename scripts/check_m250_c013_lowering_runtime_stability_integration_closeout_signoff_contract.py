@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed validator for M250-C012 lowering/runtime cross-lane integration sync."""
+"""Fail-closed validator for M250-C013 lowering/runtime integration closeout sign-off."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m250-lowering-runtime-stability-cross-lane-integration-sync-contract-c012-v1"
+MODE = "m250-lowering-runtime-stability-integration-closeout-signoff-contract-c013-v1"
 
 ARTIFACTS: dict[str, Path] = {
     "frontend_types": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h",
@@ -21,93 +21,80 @@ ARTIFACTS: dict[str, Path] = {
     / "src"
     / "pipeline"
     / "objc3_lowering_runtime_stability_core_feature_implementation_surface.h",
-    "c011_contract_doc": ROOT
-    / "docs"
-    / "contracts"
-    / "m250_lowering_runtime_stability_performance_quality_guardrails_c011_expectations.md",
-    "contract_doc": ROOT
+    "c012_contract_doc": ROOT
     / "docs"
     / "contracts"
     / "m250_lowering_runtime_stability_cross_lane_integration_sync_c012_expectations.md",
+    "contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m250_lowering_runtime_stability_integration_closeout_signoff_c013_expectations.md",
     "packet_doc": ROOT
     / "spec"
     / "planning"
     / "compiler"
     / "m250"
-    / "m250_c012_lowering_runtime_stability_cross_lane_integration_sync_packet.md",
+    / "m250_c013_lowering_runtime_stability_integration_closeout_signoff_packet.md",
 }
 
 REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     "frontend_types": (
-        (
-            "M250-C012-TYP-01",
-            "bool cross_lane_integration_consistent = false;",
-        ),
-        (
-            "M250-C012-TYP-02",
-            "bool cross_lane_integration_ready = false;",
-        ),
-        (
-            "M250-C012-TYP-03",
-            "std::string performance_quality_guardrails_key;",
-        ),
-        (
-            "M250-C012-TYP-04",
-            "std::string cross_lane_integration_key;",
-        ),
+        ("M250-C013-TYP-01", "bool integration_closeout_consistent = false;"),
+        ("M250-C013-TYP-02", "bool gate_signoff_ready = false;"),
+        ("M250-C013-TYP-03", "std::string integration_closeout_key;"),
     ),
     "core_surface": (
-        ("M250-C012-SUR-01", "const bool cross_lane_integration_consistent ="),
-        ("M250-C012-SUR-02", "const bool cross_lane_integration_ready ="),
-        ("M250-C012-SUR-03", "surface.cross_lane_integration_consistent ="),
-        ("M250-C012-SUR-04", "surface.cross_lane_integration_ready ="),
-        ("M250-C012-SUR-05", "surface.cross_lane_integration_key ="),
-        ("M250-C012-SUR-06", "BuildObjc3LoweringRuntimeCrossLaneIntegrationKey("),
-        ("M250-C012-SUR-07", "const bool cross_lane_integration_expansion_ready ="),
-        ("M250-C012-SUR-08", ";cross-lane-integration-consistent="),
-        ("M250-C012-SUR-09", ";cross-lane-integration-ready="),
-        ("M250-C012-SUR-10", ";cross-lane-integration-key-ready="),
-        ("M250-C012-SUR-11", ";cross-lane-integration-expansion-ready="),
-        ("M250-C012-SUR-12", "lowering/runtime cross-lane integration is inconsistent"),
-        ("M250-C012-SUR-13", "lowering/runtime cross-lane integration is not ready"),
-        ("M250-C012-SUR-14", "lowering/runtime cross-lane integration expansion is not ready"),
+        ("M250-C013-SUR-01", "const bool integration_closeout_consistent ="),
+        ("M250-C013-SUR-02", "const bool gate_signoff_ready ="),
+        ("M250-C013-SUR-03", "surface.integration_closeout_consistent ="),
+        ("M250-C013-SUR-04", "surface.gate_signoff_ready ="),
+        ("M250-C013-SUR-05", "surface.integration_closeout_key ="),
+        ("M250-C013-SUR-06", "BuildObjc3LoweringRuntimeIntegrationCloseoutKey("),
+        ("M250-C013-SUR-07", "const bool integration_closeout_expansion_ready ="),
+        ("M250-C013-SUR-08", ";integration-closeout-consistent="),
+        ("M250-C013-SUR-09", ";gate-signoff-ready="),
+        ("M250-C013-SUR-10", ";integration-closeout-key-ready="),
+        ("M250-C013-SUR-11", ";integration-closeout-expansion-ready="),
+        ("M250-C013-SUR-12", "lowering/runtime integration closeout is inconsistent"),
+        ("M250-C013-SUR-13", "lowering/runtime gate sign-off is not ready"),
+        ("M250-C013-SUR-14", "lowering/runtime integration closeout expansion is not ready"),
     ),
-    "c011_contract_doc": (
+    "c012_contract_doc": (
         (
-            "M250-C012-DEP-01",
-            "Contract ID: `objc3c-lowering-runtime-stability-performance-quality-guardrails/m250-c011-v1`",
+            "M250-C013-DEP-01",
+            "Contract ID: `objc3c-lowering-runtime-stability-cross-lane-integration-sync/m250-c012-v1`",
         ),
     ),
     "contract_doc": (
         (
-            "M250-C012-DOC-01",
-            "Contract ID: `objc3c-lowering-runtime-stability-cross-lane-integration-sync/m250-c012-v1`",
+            "M250-C013-DOC-01",
+            "Contract ID: `objc3c-lowering-runtime-stability-integration-closeout-signoff/m250-c013-v1`",
         ),
-        ("M250-C012-DOC-02", "cross_lane_integration_consistent"),
-        ("M250-C012-DOC-03", "cross_lane_integration_ready"),
+        ("M250-C013-DOC-02", "integration_closeout_consistent"),
+        ("M250-C013-DOC-03", "gate_signoff_ready"),
         (
-            "M250-C012-DOC-04",
-            "scripts/check_m250_c012_lowering_runtime_stability_cross_lane_integration_sync_contract.py",
+            "M250-C013-DOC-04",
+            "scripts/check_m250_c013_lowering_runtime_stability_integration_closeout_signoff_contract.py",
         ),
         (
-            "M250-C012-DOC-05",
-            "tests/tooling/test_check_m250_c012_lowering_runtime_stability_cross_lane_integration_sync_contract.py",
+            "M250-C013-DOC-05",
+            "tests/tooling/test_check_m250_c013_lowering_runtime_stability_integration_closeout_signoff_contract.py",
         ),
-        ("M250-C012-DOC-06", "npm run check:objc3c:m250-c012-lane-c-readiness"),
+        ("M250-C013-DOC-06", "npm run check:objc3c:m250-c013-lane-c-readiness"),
     ),
     "packet_doc": (
-        ("M250-C012-PKT-01", "Packet: `M250-C012`"),
-        ("M250-C012-PKT-02", "Dependencies: `M250-C011`"),
+        ("M250-C013-PKT-01", "Packet: `M250-C013`"),
+        ("M250-C013-PKT-02", "Dependencies: `M250-C012`"),
         (
-            "M250-C012-PKT-03",
-            "scripts/check_m250_c012_lowering_runtime_stability_cross_lane_integration_sync_contract.py",
+            "M250-C013-PKT-03",
+            "scripts/check_m250_c013_lowering_runtime_stability_integration_closeout_signoff_contract.py",
         ),
     ),
 }
 
 FORBIDDEN_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
     "core_surface": (
-        ("M250-C012-FORB-01", "const bool cross_lane_integration_ready = true;"),
+        ("M250-C013-FORB-01", "const bool gate_signoff_ready = true;"),
     ),
 }
 
@@ -129,7 +116,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "--summary-out",
         type=Path,
         default=Path(
-            "tmp/reports/m250/M250-C012/lowering_runtime_stability_cross_lane_integration_sync_contract_summary.json"
+            "tmp/reports/m250/M250-C013/lowering_runtime_stability_integration_closeout_signoff_contract_summary.json"
         ),
     )
     return parser.parse_args(argv)

@@ -91,6 +91,11 @@ inline std::string BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationKe
       << ";cross_lane_integration_ready="
       << (surface.cross_lane_integration_ready ? "true" : "false")
       << ";cross_lane_integration_key=" << surface.cross_lane_integration_key
+      << ";integration_closeout_consistent="
+      << (surface.integration_closeout_consistent ? "true" : "false")
+      << ";gate_signoff_ready="
+      << (surface.gate_signoff_ready ? "true" : "false")
+      << ";integration_closeout_key=" << surface.integration_closeout_key
       << ";expansion_ready=" << (surface.expansion_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
@@ -116,6 +121,25 @@ inline std::string BuildObjc3LoweringRuntimeCrossLaneIntegrationKey(
       << (cross_lane_integration_consistent ? "true" : "false")
       << ";cross-lane-integration-ready="
       << (cross_lane_integration_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3LoweringRuntimeIntegrationCloseoutKey(
+    const Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface &surface,
+    bool integration_closeout_consistent,
+    bool gate_signoff_ready) {
+  std::ostringstream key;
+  key << "lowering-runtime-integration-closeout:v1:"
+      << "cross-lane-integration-consistent="
+      << (surface.cross_lane_integration_consistent ? "true" : "false")
+      << ";cross-lane-integration-ready="
+      << (surface.cross_lane_integration_ready ? "true" : "false")
+      << ";performance-guardrails-ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";replay-keys-ready=" << (surface.replay_keys_ready ? "true" : "false")
+      << ";integration-closeout-consistent="
+      << (integration_closeout_consistent ? "true" : "false")
+      << ";gate-signoff-ready=" << (gate_signoff_ready ? "true" : "false");
   return key.str();
 }
 
@@ -308,6 +332,15 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       performance_quality_guardrails_ready &&
       replay_keys_ready &&
       !surface.parse_artifact_replay_key.empty();
+  const bool integration_closeout_consistent =
+      cross_lane_integration_consistent &&
+      cross_lane_integration_ready &&
+      performance_quality_guardrails_consistent &&
+      replay_keys_ready;
+  const bool gate_signoff_ready =
+      integration_closeout_consistent &&
+      performance_quality_guardrails_ready &&
+      !surface.cross_lane_integration_key.empty();
   const bool edge_case_compatibility_expansion_ready =
       typed_expansion_accounting_consistent &&
       parse_conformance_accounting_consistent &&
@@ -346,6 +379,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   surface.cross_lane_integration_key =
       BuildObjc3LoweringRuntimeCrossLaneIntegrationKey(
           surface, cross_lane_integration_consistent, cross_lane_integration_ready);
+  surface.integration_closeout_consistent = integration_closeout_consistent;
+  surface.gate_signoff_ready = gate_signoff_ready;
+  surface.integration_closeout_key = BuildObjc3LoweringRuntimeIntegrationCloseoutKey(
+      surface, integration_closeout_consistent, gate_signoff_ready);
   surface.expansion_ready = expansion_ready;
   const bool recovery_determinism_expansion_ready =
       surface.expansion_ready &&
@@ -368,6 +405,11 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       cross_lane_integration_ready &&
       !surface.cross_lane_integration_key.empty();
   surface.expansion_ready = cross_lane_integration_expansion_ready;
+  const bool integration_closeout_expansion_ready =
+      cross_lane_integration_expansion_ready &&
+      gate_signoff_ready &&
+      !surface.integration_closeout_key.empty();
+  surface.expansion_ready = integration_closeout_expansion_ready;
 
   surface.core_feature_impl_ready =
       surface.lowering_boundary_ready &&
@@ -450,6 +492,13 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
       std::string(!surface.cross_lane_integration_key.empty() ? "true" : "false") +
       ";cross-lane-integration-expansion-ready=" +
       std::string(cross_lane_integration_expansion_ready ? "true" : "false") +
+      ";integration-closeout-consistent=" +
+      std::string(integration_closeout_consistent ? "true" : "false") +
+      ";gate-signoff-ready=" + std::string(gate_signoff_ready ? "true" : "false") +
+      ";integration-closeout-key-ready=" +
+      std::string(!surface.integration_closeout_key.empty() ? "true" : "false") +
+      ";integration-closeout-expansion-ready=" +
+      std::string(integration_closeout_expansion_ready ? "true" : "false") +
       ";compat-handoff-consistent=" +
       std::string(parse_surface.compatibility_handoff_consistent ? "true" : "false") +
       ";parser-diagnostic-surface-consistent=" +
@@ -537,6 +586,10 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
     surface.failure_reason = "lowering/runtime cross-lane integration is inconsistent";
   } else if (!cross_lane_integration_ready) {
     surface.failure_reason = "lowering/runtime cross-lane integration is not ready";
+  } else if (!integration_closeout_consistent) {
+    surface.failure_reason = "lowering/runtime integration closeout is inconsistent";
+  } else if (!gate_signoff_ready) {
+    surface.failure_reason = "lowering/runtime gate sign-off is not ready";
   } else if (!diagnostics_hardening_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime core feature expansion is not ready";
@@ -555,6 +608,9 @@ BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(
   } else if (!cross_lane_integration_expansion_ready) {
     surface.failure_reason =
         "lowering/runtime cross-lane integration expansion is not ready";
+  } else if (!integration_closeout_expansion_ready) {
+    surface.failure_reason =
+        "lowering/runtime integration closeout expansion is not ready";
   } else {
     surface.failure_reason =
         "lowering/runtime core feature implementation is not ready";
