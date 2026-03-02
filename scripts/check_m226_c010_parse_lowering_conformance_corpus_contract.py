@@ -35,7 +35,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ("M226-C010-RDY-06", "surface.parse_lowering_conformance_corpus_consistent ="),
         ("M226-C010-RDY-07", "surface.parse_lowering_conformance_corpus_key ="),
         ("M226-C010-RDY-08", "const bool parse_lowering_conformance_corpus_ready ="),
-        ("M226-C010-RDY-09", "parse_lowering_conformance_corpus_ready;"),
+        ("M226-C010-RDY-09", "parse_lowering_conformance_corpus_ready &&"),
         ("M226-C010-RDY-10", "surface.failure_reason = \"parse-lowering conformance corpus is inconsistent\";"),
     ),
     "frontend_types_header": (

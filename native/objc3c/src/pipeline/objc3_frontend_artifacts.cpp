@@ -2049,7 +2049,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                                                                                      : "false")
            << ",\"parse_lowering_conformance_corpus_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_consistent ? "true"
-                                                                                                     : "false")
+                                                                                                      : "false")
+           << ",\"parse_lowering_performance_quality_guardrails_consistent\": "
+           << (bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_consistent
+                   ? "true"
+                   : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
            << ",\"lowering_boundary_ready\": "
@@ -2062,6 +2066,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_passed_case_count
            << ",\"parse_lowering_conformance_corpus_failed_case_count\": "
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_failed_case_count
+           << ",\"parse_lowering_performance_quality_guardrails_case_count\": "
+           << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_case_count
+           << ",\"parse_lowering_performance_quality_guardrails_passed_case_count\": "
+           << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_passed_case_count
+           << ",\"parse_lowering_performance_quality_guardrails_failed_case_count\": "
+           << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_failed_case_count
            << ",\"parser_diagnostic_code_count\": "
            << bundle.parse_lowering_readiness_surface.parser_diagnostic_code_count
            << ",\"parser_diagnostic_code_fingerprint\": "
@@ -2092,6 +2102,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_matrix_key
            << "\",\"parse_lowering_conformance_corpus_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_key
+           << "\",\"parse_lowering_performance_quality_guardrails_key\":\""
+           << bundle.parse_lowering_readiness_surface.parse_lowering_performance_quality_guardrails_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
