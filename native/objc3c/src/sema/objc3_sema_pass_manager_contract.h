@@ -370,6 +370,16 @@ struct Objc3ParserSemaAdvancedPerformanceShard1 {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaAdvancedCoreShard2 {
+  bool advanced_performance_shard1_ready = false;
+  bool pass_manager_contract_surface_sync = false;
+  bool shard_surface_sync = false;
+  std::size_t required_sync_count = 0;
+  std::size_t passed_sync_count = 0;
+  std::size_t failed_sync_count = 0;
+  bool deterministic = false;
+};
+
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
@@ -383,6 +393,7 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaAdvancedConformanceShard1 parser_sema_advanced_conformance_shard1;
   Objc3ParserSemaAdvancedIntegrationShard1 parser_sema_advanced_integration_shard1;
   Objc3ParserSemaAdvancedPerformanceShard1 parser_sema_advanced_performance_shard1;
+  Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
@@ -804,6 +815,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_advanced_conformance_shard1 = false;
   bool deterministic_parser_sema_advanced_integration_shard1 = false;
   bool deterministic_parser_sema_advanced_performance_shard1 = false;
+  bool deterministic_parser_sema_advanced_core_shard2 = false;
   bool deterministic_semantic_diagnostics = false;
   bool deterministic_type_metadata_handoff = false;
   bool deterministic_interface_implementation_handoff = false;
@@ -919,6 +931,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_parser_sema_advanced_conformance_shard1 &&
          surface.deterministic_parser_sema_advanced_integration_shard1 &&
          surface.deterministic_parser_sema_advanced_performance_shard1 &&
+         surface.deterministic_parser_sema_advanced_core_shard2 &&
          IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
          surface.parser_sema_conformance_matrix.deterministic &&
          surface.parser_sema_conformance_corpus.deterministic &&
@@ -932,6 +945,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_advanced_conformance_shard1.deterministic &&
          surface.parser_sema_advanced_integration_shard1.deterministic &&
          surface.parser_sema_advanced_performance_shard1.deterministic &&
+         surface.parser_sema_advanced_core_shard2.deterministic &&
          surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&
          surface.parser_sema_performance_quality_guardrails.passed_guardrail_count ==
              surface.parser_sema_performance_quality_guardrails.required_guardrail_count &&
@@ -1039,6 +1053,16 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.parser_sema_advanced_performance_shard1
              .pass_manager_contract_surface_sync &&
          surface.parser_sema_advanced_performance_shard1
+             .shard_surface_sync &&
+         surface.parser_sema_advanced_core_shard2.required_sync_count == 3u &&
+         surface.parser_sema_advanced_core_shard2.passed_sync_count ==
+             surface.parser_sema_advanced_core_shard2.required_sync_count &&
+         surface.parser_sema_advanced_core_shard2.failed_sync_count == 0u &&
+         surface.parser_sema_advanced_core_shard2
+             .advanced_performance_shard1_ready &&
+         surface.parser_sema_advanced_core_shard2
+             .pass_manager_contract_surface_sync &&
+         surface.parser_sema_advanced_core_shard2
              .shard_surface_sync &&
          surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
          surface.parser_sema_conformance_matrix.global_decl_count_matches &&
@@ -2704,6 +2728,8 @@ struct Objc3SemaPassManagerResult {
   bool deterministic_parser_sema_advanced_integration_shard1 = false;
   Objc3ParserSemaAdvancedPerformanceShard1 parser_sema_advanced_performance_shard1;
   bool deterministic_parser_sema_advanced_performance_shard1 = false;
+  Objc3ParserSemaAdvancedCoreShard2 parser_sema_advanced_core_shard2;
+  bool deterministic_parser_sema_advanced_core_shard2 = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
