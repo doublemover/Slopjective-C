@@ -373,74 +373,146 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
   return normalized_snapshot;
 }
 
-inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(const Objc3ParserContractSnapshot &snapshot,
-                                                               const Objc3ParsedProgram &program) {
-  const Objc3Program &ast = Objc3ParsedProgramAst(program);
-  const std::uint64_t ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(program);
-  const std::uint64_t ast_top_level_layout_fingerprint = BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
+inline Objc3ParserSemaConformanceMatrix BuildObjc3ParserSemaConformanceMatrix(
+    const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program) {
+  Objc3ParserSemaConformanceMatrix matrix;
   const Objc3ParserContractSnapshot expected_snapshot =
       BuildObjc3ParserContractSnapshot(program, snapshot.parser_diagnostic_count, snapshot.token_count);
-  std::size_t top_level_count = 0u;
-  if (!TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot, top_level_count)) {
-    return false;
-  }
-  const std::size_t protocol_property_count =
-      BuildObjc3ParserProtocolPropertyDeclCountFromProgram(program);
-  const std::size_t protocol_method_count =
-      BuildObjc3ParserProtocolMethodDeclCountFromProgram(program);
-  const std::size_t interface_property_count =
-      BuildObjc3ParserInterfacePropertyDeclCountFromProgram(program);
-  const std::size_t interface_method_count =
-      BuildObjc3ParserInterfaceMethodDeclCountFromProgram(program);
-  const std::size_t implementation_property_count =
-      BuildObjc3ParserImplementationPropertyDeclCountFromProgram(program);
-  const std::size_t implementation_method_count =
-      BuildObjc3ParserImplementationMethodDeclCountFromProgram(program);
-  const std::size_t interface_category_count =
-      BuildObjc3ParserInterfaceCategoryDeclCountFromProgram(program);
-  const std::size_t implementation_category_count =
-      BuildObjc3ParserImplementationCategoryDeclCountFromProgram(program);
-  const std::size_t function_prototype_count =
-      BuildObjc3ParserFunctionPrototypeCountFromProgram(program);
-  const std::size_t function_pure_count =
-      BuildObjc3ParserFunctionPureCountFromProgram(program);
-  const bool parser_diagnostic_budget_consistent =
-      snapshot.token_count == 0u || snapshot.parser_diagnostic_count <= snapshot.token_count;
-  const bool parser_token_top_level_budget_consistent =
-      snapshot.token_count == 0u || snapshot.token_count >= snapshot.top_level_declaration_count;
-  const bool parser_subset_count_consistent =
+
+  matrix.parser_top_level_declaration_count = snapshot.top_level_declaration_count;
+  matrix.ast_top_level_declaration_count = expected_snapshot.top_level_declaration_count;
+  matrix.parser_global_decl_count = snapshot.global_decl_count;
+  matrix.ast_global_decl_count = expected_snapshot.global_decl_count;
+  matrix.parser_protocol_decl_count = snapshot.protocol_decl_count;
+  matrix.ast_protocol_decl_count = expected_snapshot.protocol_decl_count;
+  matrix.parser_interface_decl_count = snapshot.interface_decl_count;
+  matrix.ast_interface_decl_count = expected_snapshot.interface_decl_count;
+  matrix.parser_implementation_decl_count = snapshot.implementation_decl_count;
+  matrix.ast_implementation_decl_count = expected_snapshot.implementation_decl_count;
+  matrix.parser_function_decl_count = snapshot.function_decl_count;
+  matrix.ast_function_decl_count = expected_snapshot.function_decl_count;
+  matrix.parser_protocol_property_decl_count = snapshot.protocol_property_decl_count;
+  matrix.ast_protocol_property_decl_count = expected_snapshot.protocol_property_decl_count;
+  matrix.parser_protocol_method_decl_count = snapshot.protocol_method_decl_count;
+  matrix.ast_protocol_method_decl_count = expected_snapshot.protocol_method_decl_count;
+  matrix.parser_interface_property_decl_count = snapshot.interface_property_decl_count;
+  matrix.ast_interface_property_decl_count = expected_snapshot.interface_property_decl_count;
+  matrix.parser_interface_method_decl_count = snapshot.interface_method_decl_count;
+  matrix.ast_interface_method_decl_count = expected_snapshot.interface_method_decl_count;
+  matrix.parser_implementation_property_decl_count = snapshot.implementation_property_decl_count;
+  matrix.ast_implementation_property_decl_count = expected_snapshot.implementation_property_decl_count;
+  matrix.parser_implementation_method_decl_count = snapshot.implementation_method_decl_count;
+  matrix.ast_implementation_method_decl_count = expected_snapshot.implementation_method_decl_count;
+  matrix.parser_interface_category_decl_count = snapshot.interface_category_decl_count;
+  matrix.ast_interface_category_decl_count = expected_snapshot.interface_category_decl_count;
+  matrix.parser_implementation_category_decl_count = snapshot.implementation_category_decl_count;
+  matrix.ast_implementation_category_decl_count = expected_snapshot.implementation_category_decl_count;
+  matrix.parser_function_prototype_count = snapshot.function_prototype_count;
+  matrix.ast_function_prototype_count = expected_snapshot.function_prototype_count;
+  matrix.parser_function_pure_count = snapshot.function_pure_count;
+  matrix.ast_function_pure_count = expected_snapshot.function_pure_count;
+  matrix.parser_ast_shape_fingerprint = snapshot.ast_shape_fingerprint;
+  matrix.ast_shape_fingerprint = expected_snapshot.ast_shape_fingerprint;
+  matrix.parser_ast_top_level_layout_fingerprint = snapshot.ast_top_level_layout_fingerprint;
+  matrix.ast_top_level_layout_fingerprint = expected_snapshot.ast_top_level_layout_fingerprint;
+  matrix.parser_contract_snapshot_fingerprint =
+      BuildObjc3ParserContractSnapshotFingerprint(snapshot);
+  matrix.expected_parser_contract_snapshot_fingerprint =
+      BuildObjc3ParserContractSnapshotFingerprint(expected_snapshot);
+
+  std::size_t top_level_decl_count_from_buckets = 0u;
+  const bool top_level_decl_buckets_consistent =
+      TryBuildObjc3ParserContractTopLevelCountFromDeclBuckets(snapshot, top_level_decl_count_from_buckets) &&
+      snapshot.top_level_declaration_count == top_level_decl_count_from_buckets;
+  matrix.top_level_declaration_count_matches =
+      snapshot.top_level_declaration_count == expected_snapshot.top_level_declaration_count &&
+      top_level_decl_buckets_consistent;
+  matrix.global_decl_count_matches =
+      snapshot.global_decl_count == expected_snapshot.global_decl_count;
+  matrix.protocol_decl_count_matches =
+      snapshot.protocol_decl_count == expected_snapshot.protocol_decl_count;
+  matrix.interface_decl_count_matches =
+      snapshot.interface_decl_count == expected_snapshot.interface_decl_count;
+  matrix.implementation_decl_count_matches =
+      snapshot.implementation_decl_count == expected_snapshot.implementation_decl_count;
+  matrix.function_decl_count_matches =
+      snapshot.function_decl_count == expected_snapshot.function_decl_count;
+  matrix.protocol_property_decl_count_matches =
+      snapshot.protocol_property_decl_count == expected_snapshot.protocol_property_decl_count;
+  matrix.protocol_method_decl_count_matches =
+      snapshot.protocol_method_decl_count == expected_snapshot.protocol_method_decl_count;
+  matrix.interface_property_decl_count_matches =
+      snapshot.interface_property_decl_count == expected_snapshot.interface_property_decl_count;
+  matrix.interface_method_decl_count_matches =
+      snapshot.interface_method_decl_count == expected_snapshot.interface_method_decl_count;
+  matrix.implementation_property_decl_count_matches =
+      snapshot.implementation_property_decl_count ==
+      expected_snapshot.implementation_property_decl_count;
+  matrix.implementation_method_decl_count_matches =
+      snapshot.implementation_method_decl_count ==
+      expected_snapshot.implementation_method_decl_count;
+  matrix.interface_category_decl_count_matches =
+      snapshot.interface_category_decl_count ==
+      expected_snapshot.interface_category_decl_count;
+  matrix.implementation_category_decl_count_matches =
+      snapshot.implementation_category_decl_count ==
+      expected_snapshot.implementation_category_decl_count;
+  matrix.function_prototype_count_matches =
+      snapshot.function_prototype_count == expected_snapshot.function_prototype_count;
+  matrix.function_pure_count_matches =
+      snapshot.function_pure_count == expected_snapshot.function_pure_count;
+  matrix.ast_shape_fingerprint_matches =
+      snapshot.ast_shape_fingerprint == expected_snapshot.ast_shape_fingerprint;
+  matrix.ast_top_level_layout_fingerprint_matches =
+      snapshot.ast_top_level_layout_fingerprint ==
+      expected_snapshot.ast_top_level_layout_fingerprint;
+  matrix.parser_contract_snapshot_fingerprint_matches =
+      matrix.parser_contract_snapshot_fingerprint ==
+      matrix.expected_parser_contract_snapshot_fingerprint;
+  matrix.parser_diagnostic_budget_consistent =
+      snapshot.token_count == 0u ||
+      snapshot.parser_diagnostic_count <= snapshot.token_count;
+  matrix.parser_token_top_level_budget_consistent =
+      snapshot.token_count == 0u ||
+      snapshot.token_count >= snapshot.top_level_declaration_count;
+  matrix.parser_subset_count_consistent =
       snapshot.interface_category_decl_count <= snapshot.interface_decl_count &&
       snapshot.implementation_category_decl_count <= snapshot.implementation_decl_count &&
       snapshot.function_prototype_count <= snapshot.function_decl_count &&
       snapshot.function_pure_count <= snapshot.function_decl_count;
-  return snapshot.global_decl_count == ast.globals.size() &&
-         snapshot.protocol_decl_count == ast.protocols.size() &&
-         snapshot.protocol_property_decl_count == protocol_property_count &&
-         snapshot.protocol_method_decl_count == protocol_method_count &&
-         snapshot.interface_decl_count == ast.interfaces.size() &&
-         snapshot.interface_property_decl_count == interface_property_count &&
-         snapshot.interface_method_decl_count == interface_method_count &&
-         snapshot.implementation_decl_count == ast.implementations.size() &&
-         snapshot.implementation_property_decl_count == implementation_property_count &&
-         snapshot.implementation_method_decl_count == implementation_method_count &&
-         snapshot.function_decl_count == ast.functions.size() &&
-         snapshot.interface_category_decl_count == interface_category_count &&
-         snapshot.implementation_category_decl_count == implementation_category_count &&
-         snapshot.function_prototype_count == function_prototype_count &&
-         snapshot.function_pure_count == function_pure_count &&
-         snapshot.top_level_declaration_count == top_level_count &&
-         snapshot.top_level_declaration_count ==
-             ast.globals.size() + ast.protocols.size() + ast.interfaces.size() + ast.implementations.size() +
-                 ast.functions.size() &&
-         snapshot.ast_shape_fingerprint == ast_shape_fingerprint &&
-         snapshot.ast_top_level_layout_fingerprint == ast_top_level_layout_fingerprint &&
-         parser_diagnostic_budget_consistent &&
-         parser_token_top_level_budget_consistent &&
-         parser_subset_count_consistent &&
-         BuildObjc3ParserContractSnapshotFingerprint(snapshot) ==
-             BuildObjc3ParserContractSnapshotFingerprint(expected_snapshot) &&
-         snapshot.deterministic_handoff &&
-         snapshot.parser_recovery_replay_ready;
+  matrix.parser_contract_snapshot_deterministic = snapshot.deterministic_handoff;
+  matrix.parser_recovery_replay_ready = snapshot.parser_recovery_replay_ready;
+  matrix.deterministic =
+      matrix.top_level_declaration_count_matches &&
+      matrix.global_decl_count_matches &&
+      matrix.protocol_decl_count_matches &&
+      matrix.interface_decl_count_matches &&
+      matrix.implementation_decl_count_matches &&
+      matrix.function_decl_count_matches &&
+      matrix.protocol_property_decl_count_matches &&
+      matrix.protocol_method_decl_count_matches &&
+      matrix.interface_property_decl_count_matches &&
+      matrix.interface_method_decl_count_matches &&
+      matrix.implementation_property_decl_count_matches &&
+      matrix.implementation_method_decl_count_matches &&
+      matrix.interface_category_decl_count_matches &&
+      matrix.implementation_category_decl_count_matches &&
+      matrix.function_prototype_count_matches &&
+      matrix.function_pure_count_matches &&
+      matrix.ast_shape_fingerprint_matches &&
+      matrix.ast_top_level_layout_fingerprint_matches &&
+      matrix.parser_contract_snapshot_fingerprint_matches &&
+      matrix.parser_diagnostic_budget_consistent &&
+      matrix.parser_token_top_level_budget_consistent &&
+      matrix.parser_subset_count_consistent &&
+      matrix.parser_contract_snapshot_deterministic &&
+      matrix.parser_recovery_replay_ready;
+  return matrix;
+}
+
+inline bool IsObjc3ParserContractSnapshotConsistentWithProgram(
+    const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program) {
+  return BuildObjc3ParserSemaConformanceMatrix(snapshot, program).deterministic;
 }
 
 struct Objc3ParserSemaHandoffScaffold {
@@ -460,6 +532,7 @@ struct Objc3ParserSemaHandoffScaffold {
   std::uint64_t expected_parser_contract_snapshot_fingerprint = 0;
   std::uint64_t parser_contract_snapshot_fingerprint = 0;
   bool parser_contract_snapshot_fingerprint_matches = false;
+  Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   bool parser_contract_snapshot_matches_program = false;
   bool deterministic = false;
 };
@@ -502,11 +575,14 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
       BuildObjc3ParserContractSnapshotFingerprint(expected_snapshot);
   scaffold.parser_contract_snapshot_fingerprint_matches =
       scaffold.parser_contract_snapshot_fingerprint == scaffold.expected_parser_contract_snapshot_fingerprint;
+  scaffold.parser_sema_conformance_matrix = BuildObjc3ParserSemaConformanceMatrix(
+      scaffold.parser_contract_snapshot, *input.program);
   scaffold.parser_contract_snapshot_matches_program =
-      IsObjc3ParserContractSnapshotConsistentWithProgram(scaffold.parser_contract_snapshot, *input.program);
+      scaffold.parser_sema_conformance_matrix.deterministic;
   scaffold.deterministic = scaffold.parser_contract_snapshot_matches_program &&
                            scaffold.parser_contract_ast_shape_fingerprint_matches &&
                            scaffold.parser_contract_ast_top_level_layout_fingerprint_matches &&
-                           scaffold.parser_contract_snapshot_fingerprint_matches;
+                           scaffold.parser_contract_snapshot_fingerprint_matches &&
+                           scaffold.parser_sema_conformance_matrix.deterministic;
   return scaffold;
 }

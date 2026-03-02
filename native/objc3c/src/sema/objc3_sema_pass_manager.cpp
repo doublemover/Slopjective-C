@@ -713,6 +713,12 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     return result;
   }
   result.parser_contract_snapshot = handoff.parser_contract_snapshot;
+  result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;
+  result.deterministic_parser_sema_conformance_matrix =
+      handoff.parser_sema_conformance_matrix.deterministic;
+  if (!result.deterministic_parser_sema_conformance_matrix) {
+    return result;
+  }
   result.deterministic_parser_sema_handoff = handoff.deterministic;
   if (!handoff.deterministic) {
     return result;
@@ -2062,6 +2068,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.deterministic_atomic_memory_order_mapping = result.atomic_memory_order_mapping.deterministic;
   result.vector_type_lowering = BuildVectorTypeLoweringSummary(result.integration_surface);
   result.deterministic_vector_type_lowering = result.vector_type_lowering.deterministic;
+  result.parity_surface.parser_sema_conformance_matrix =
+      result.parser_sema_conformance_matrix;
   result.parity_surface.diagnostics_after_pass = result.diagnostics_after_pass;
   result.parity_surface.diagnostics_emitted_by_pass = result.diagnostics_emitted_by_pass;
   result.parity_surface.diagnostics_total = result.diagnostics.size();
@@ -3049,6 +3057,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.parity_surface.autoreleasepool_scope_summary.max_scope_depth;
   result.parity_surface.diagnostics_after_pass_monotonic =
       IsMonotonicObjc3SemaDiagnosticsAfterPass(result.diagnostics_after_pass);
+  result.parity_surface.deterministic_parser_sema_conformance_matrix =
+      result.deterministic_parser_sema_conformance_matrix &&
+      result.parity_surface.parser_sema_conformance_matrix.deterministic;
   result.parity_surface.deterministic_semantic_diagnostics = result.deterministic_semantic_diagnostics;
   result.parity_surface.deterministic_type_metadata_handoff = result.deterministic_type_metadata_handoff;
   result.parity_surface.deterministic_interface_implementation_handoff =
@@ -4929,7 +4940,58 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
   result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;
   result.parity_surface.ready =
-      result.executed && result.parity_surface.diagnostics_after_pass_monotonic &&
+      result.executed &&
+      result.parity_surface.deterministic_parser_sema_conformance_matrix &&
+      result.parity_surface.parser_sema_conformance_matrix.deterministic &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .top_level_declaration_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .global_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .protocol_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .interface_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .implementation_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .function_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .protocol_property_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .protocol_method_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .interface_property_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .interface_method_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .implementation_property_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .implementation_method_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .interface_category_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .implementation_category_decl_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .function_prototype_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .function_pure_count_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .ast_shape_fingerprint_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .ast_top_level_layout_fingerprint_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_contract_snapshot_fingerprint_matches &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_diagnostic_budget_consistent &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_token_top_level_budget_consistent &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_subset_count_consistent &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_contract_snapshot_deterministic &&
+      result.parity_surface.parser_sema_conformance_matrix
+          .parser_recovery_replay_ready &&
+      result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
       result.parity_surface.deterministic_type_metadata_handoff &&
       result.parity_surface.deterministic_atomic_memory_order_mapping &&

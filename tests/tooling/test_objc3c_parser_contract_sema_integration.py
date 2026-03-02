@@ -5,6 +5,7 @@ PARSER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser_c
 PARSER_SOURCE = ROOT / "native" / "objc3c" / "src" / "parse" / "objc3_parser.cpp"
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMA_HEADER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.h"
+SEMA_HANDOFF_SCAFFOLD = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_parser_sema_handoff_scaffold.h"
 PASS_MANAGER_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager_contract.h"
 SEMA_PASS_MANAGER = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_pass_manager.cpp"
 PIPELINE_TYPES = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
@@ -86,6 +87,24 @@ def test_parser_to_sema_recovery_determinism_hardening_gate_is_explicit() -> Non
     assert "if (!recovery_and_block_determinism_hardening_consistent) {" in sema_pass_manager
     assert ".fail_closed_diagnostic_sites <=" in pass_manager_contract
     assert ".diagnostic_emit_sites &&" in pass_manager_contract
+
+
+def test_parser_to_sema_conformance_matrix_hardening_gate_is_explicit() -> None:
+    sema_handoff = _read(SEMA_HANDOFF_SCAFFOLD)
+    sema_pass_manager = _read(SEMA_PASS_MANAGER)
+    pass_manager_contract = _read(PASS_MANAGER_CONTRACT)
+
+    assert "struct Objc3ParserSemaConformanceMatrix {" in pass_manager_contract
+    assert "Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;" in pass_manager_contract
+    assert "bool deterministic_parser_sema_conformance_matrix = false;" in pass_manager_contract
+    assert "BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
+    assert "scaffold.parser_sema_conformance_matrix = BuildObjc3ParserSemaConformanceMatrix(" in sema_handoff
+    assert "result.parser_sema_conformance_matrix = handoff.parser_sema_conformance_matrix;" in sema_pass_manager
+    assert "result.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
+    assert "if (!result.deterministic_parser_sema_conformance_matrix) {" in sema_pass_manager
+    assert "result.parity_surface.deterministic_parser_sema_conformance_matrix =" in sema_pass_manager
+    assert "surface.deterministic_parser_sema_conformance_matrix &&" in pass_manager_contract
+    assert "surface.parser_sema_conformance_matrix.parser_subset_count_consistent &&" in pass_manager_contract
 
 
 def test_ast_builder_scaffold_is_registered_in_build_surfaces() -> None:
