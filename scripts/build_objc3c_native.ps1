@@ -242,6 +242,106 @@ function Write-FrontendInvocationLockArtifact {
   Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
 }
 
+function Write-FrontendCoreFeatureExpansionArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [object[]]$Modules,
+    [Parameter(Mandatory = $true)]
+    [string[]]$SharedSources,
+    [Parameter(Mandatory = $true)]
+    [string]$NativeBinaryPath,
+    [Parameter(Mandatory = $true)]
+    [string]$CapiBinaryPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendScaffoldPath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendInvocationLockPath
+  )
+
+  if (!(Test-Path -LiteralPath $FrontendScaffoldPath -PathType Leaf)) {
+    throw "frontend scaffold missing for core feature expansion artifact: $FrontendScaffoldPath"
+  }
+  if (!(Test-Path -LiteralPath $FrontendInvocationLockPath -PathType Leaf)) {
+    throw "frontend invocation lock missing for core feature expansion artifact: $FrontendInvocationLockPath"
+  }
+  if (!(Test-Path -LiteralPath $NativeBinaryPath -PathType Leaf)) {
+    throw "native binary missing for core feature expansion artifact: $NativeBinaryPath"
+  }
+  if (!(Test-Path -LiteralPath $CapiBinaryPath -PathType Leaf)) {
+    throw "c-api runner missing for core feature expansion artifact: $CapiBinaryPath"
+  }
+
+  try {
+    $scaffoldPayload = Get-Content -LiteralPath $FrontendScaffoldPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend scaffold is not valid JSON for core feature expansion artifact: $FrontendScaffoldPath"
+  }
+
+  try {
+    $invocationLockPayload = Get-Content -LiteralPath $FrontendInvocationLockPath -Raw | ConvertFrom-Json
+  } catch {
+    throw "frontend invocation lock is not valid JSON for core feature expansion artifact: $FrontendInvocationLockPath"
+  }
+
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1"
+  if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
+    throw "frontend scaffold contract id mismatch for core feature expansion artifact: $FrontendScaffoldPath"
+  }
+  $expectedInvocationLockContractId = "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+  if ([string]$invocationLockPayload.contract_id -ne $expectedInvocationLockContractId) {
+    throw "frontend invocation lock contract id mismatch for core feature expansion artifact: $FrontendInvocationLockPath"
+  }
+
+  $moduleNames = @($Modules | ForEach-Object { [string]$_.name })
+  foreach ($moduleName in $moduleNames) {
+    if ([string]::IsNullOrWhiteSpace($moduleName)) {
+      throw "frontend module metadata contains empty module name for core feature expansion artifact"
+    }
+  }
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1"
+    schema_version = 1
+    depends_on_contract_ids = @(
+      $expectedScaffoldContractId
+      $expectedInvocationLockContractId
+    )
+    module_names = $moduleNames
+    shared_source_count = $SharedSources.Count
+    binaries = @(
+      [ordered]@{
+        name = "objc3c-native"
+        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath
+      },
+      [ordered]@{
+        name = "objc3c-frontend-c-api-runner"
+        path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath
+      }
+    )
+    invocation = [ordered]@{
+      default_out_dir = "tmp/artifacts/compilation/objc3c-native"
+      cache_root = "tmp/artifacts/objc3c-native/cache"
+      supports_cache = $true
+    }
+    backend_routing = [ordered]@{
+      allowed_ir_object_backends = @("clang", "llvm-direct")
+      supports_capability_routing = $true
+      capability_summary_flag = "--llvm-capabilities-summary"
+      route_flag = "--objc3-route-backend-from-capabilities"
+    }
+  }
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+}
+
 $frontendModules = @(
   [ordered]@{
     name = "driver"
@@ -317,6 +417,7 @@ $frontendModules = @(
 $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
 $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
+$frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -378,7 +479,17 @@ Write-FrontendInvocationLockArtifact `
   -NativeBinaryPath $outExe `
   -CapiBinaryPath $outCapiExe `
   -FrontendScaffoldPath $frontendScaffoldPath
+Write-FrontendCoreFeatureExpansionArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $frontendCoreFeatureExpansionPath `
+  -Modules $frontendModules `
+  -SharedSources $sharedSources `
+  -NativeBinaryPath $outExe `
+  -CapiBinaryPath $outCapiExe `
+  -FrontendScaffoldPath $frontendScaffoldPath `
+  -FrontendInvocationLockPath $frontendInvocationLockPath
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
 Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
+Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))

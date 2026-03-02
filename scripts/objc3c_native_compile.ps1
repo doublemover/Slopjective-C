@@ -178,6 +178,7 @@ function Invoke-BuildNativeCompiler {
   $buildOutputLines = New-Object System.Collections.Generic.List[string]
   $frontendScaffoldRelativePath = $null
   $frontendInvocationLockRelativePath = $null
+  $frontendCoreFeatureExpansionRelativePath = $null
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
@@ -187,12 +188,16 @@ function Invoke-BuildNativeCompiler {
     if ($lineText.StartsWith("frontend_invocation_lock=")) {
       $frontendInvocationLockRelativePath = $lineText.Substring("frontend_invocation_lock=".Length).Trim()
     }
+    if ($lineText.StartsWith("frontend_core_feature_expansion=")) {
+      $frontendCoreFeatureExpansionRelativePath = $lineText.Substring("frontend_core_feature_expansion=".Length).Trim()
+    }
   }
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
     build_output_lines = $buildOutputLines.ToArray()
     frontend_scaffold_relative_path = $frontendScaffoldRelativePath
     frontend_invocation_lock_relative_path = $frontendInvocationLockRelativePath
+    frontend_core_feature_expansion_relative_path = $frontendCoreFeatureExpansionRelativePath
   }
 }
 
@@ -237,6 +242,27 @@ function Resolve-FrontendInvocationLockPath {
   $relativePath = $defaultRelativePath
   if ($null -ne $BuildResult) {
     $candidatePath = [string]$BuildResult.frontend_invocation_lock_relative_path
+    if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
+      $relativePath = $candidatePath
+    }
+  }
+
+  if ([System.IO.Path]::IsPathRooted($relativePath)) {
+    return $relativePath
+  }
+  return Join-Path $RepoRoot $relativePath
+}
+
+function Resolve-FrontendCoreFeatureExpansionPath {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
+  $relativePath = $defaultRelativePath
+  if ($null -ne $BuildResult) {
+    $candidatePath = [string]$BuildResult.frontend_core_feature_expansion_relative_path
     if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
       $relativePath = $candidatePath
     }
@@ -422,6 +448,170 @@ function Assert-FrontendInvocationLock {
   }
 }
 
+function Assert-FrontendCoreFeatureExpansion {
+  param(
+    [string]$RepoRoot,
+    [object]$BuildResult,
+    [object]$ParsedArgs
+  )
+
+  $featurePath = Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $RepoRoot -BuildResult $BuildResult
+  if (!(Test-Path -LiteralPath $featurePath -PathType Leaf)) {
+    Write-Error "frontend core feature expansion artifact missing at $featurePath"
+    exit 2
+  }
+
+  try {
+    $payload = Get-Content -LiteralPath $featurePath -Raw | ConvertFrom-Json
+  } catch {
+    Write-Error "frontend core feature expansion artifact is not valid JSON at $featurePath"
+    exit 2
+  }
+
+  $expectedContractId = "objc3c-frontend-build-invocation-core-feature-expansion/m226-d004-v1"
+  if ([string]$payload.contract_id -ne $expectedContractId) {
+    Write-Error "frontend core feature expansion contract id mismatch in $featurePath"
+    exit 2
+  }
+
+  $expectedDependencyContracts = @(
+    "objc3c-frontend-build-invocation-modular-scaffold/m226-d002-v1",
+    "objc3c-frontend-build-invocation-manifest-guard/m226-d003-v1"
+  )
+  $presentDependencyContracts = @{}
+  foreach ($contractId in @($payload.depends_on_contract_ids)) {
+    $contractIdText = [string]$contractId
+    if (![string]::IsNullOrWhiteSpace($contractIdText)) {
+      $presentDependencyContracts[$contractIdText] = $true
+    }
+  }
+  foreach ($requiredContractId in $expectedDependencyContracts) {
+    if (-not $presentDependencyContracts.ContainsKey($requiredContractId)) {
+      Write-Error "frontend core feature expansion missing dependency contract '$requiredContractId' in $featurePath"
+      exit 2
+    }
+  }
+
+  $requiredModules = @("driver", "diagnostics-io", "ir", "lex-parse", "frontend-api", "lowering", "pipeline", "sema")
+  $presentModules = @{}
+  foreach ($moduleName in @($payload.module_names)) {
+    $moduleText = [string]$moduleName
+    if (![string]::IsNullOrWhiteSpace($moduleText)) {
+      $presentModules[$moduleText] = $true
+    }
+  }
+  foreach ($requiredModule in $requiredModules) {
+    if (-not $presentModules.ContainsKey($requiredModule)) {
+      Write-Error "frontend core feature expansion missing required module '$requiredModule' in $featurePath"
+      exit 2
+    }
+  }
+
+  $invocation = $payload.invocation
+  if ($null -eq $invocation) {
+    Write-Error "frontend core feature expansion invocation metadata missing in $featurePath"
+    exit 2
+  }
+  if ([string]$invocation.default_out_dir -ne "tmp/artifacts/compilation/objc3c-native") {
+    Write-Error "frontend core feature expansion default_out_dir mismatch in $featurePath"
+    exit 2
+  }
+  if ([string]$invocation.cache_root -ne "tmp/artifacts/objc3c-native/cache") {
+    Write-Error "frontend core feature expansion cache_root mismatch in $featurePath"
+    exit 2
+  }
+  if (-not [bool]$invocation.supports_cache) {
+    Write-Error "frontend core feature expansion supports_cache must be true in $featurePath"
+    exit 2
+  }
+
+  $backendRouting = $payload.backend_routing
+  if ($null -eq $backendRouting) {
+    Write-Error "frontend core feature expansion backend_routing metadata missing in $featurePath"
+    exit 2
+  }
+  if (-not [bool]$backendRouting.supports_capability_routing) {
+    Write-Error "frontend core feature expansion supports_capability_routing must be true in $featurePath"
+    exit 2
+  }
+  if ([string]$backendRouting.capability_summary_flag -ne "--llvm-capabilities-summary") {
+    Write-Error "frontend core feature expansion capability_summary_flag mismatch in $featurePath"
+    exit 2
+  }
+  if ([string]$backendRouting.route_flag -ne "--objc3-route-backend-from-capabilities") {
+    Write-Error "frontend core feature expansion route_flag mismatch in $featurePath"
+    exit 2
+  }
+
+  $allowedBackends = @{}
+  foreach ($backend in @($backendRouting.allowed_ir_object_backends)) {
+    $backendText = [string]$backend
+    if (-not [string]::IsNullOrWhiteSpace($backendText)) {
+      $allowedBackends[$backendText] = $true
+    }
+  }
+  foreach ($requiredBackend in @("clang", "llvm-direct")) {
+    if (-not $allowedBackends.ContainsKey($requiredBackend)) {
+      Write-Error "frontend core feature expansion missing backend '$requiredBackend' in $featurePath"
+      exit 2
+    }
+  }
+
+  $compileArgs = @()
+  if ($null -ne $ParsedArgs) {
+    $compileArgs = @($ParsedArgs.compile_args)
+  }
+  $requestedBackend = $null
+  $usesCapabilityRouting = $false
+  $hasCapabilitySummary = $false
+
+  for ($i = 0; $i -lt $compileArgs.Count; $i++) {
+    $token = [string]$compileArgs[$i]
+    if ($token -eq "--objc3-ir-object-backend") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --objc3-ir-object-backend"
+        exit 2
+      }
+      $i++
+      $requestedBackend = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($requestedBackend)) {
+        Write-Error "empty value for --objc3-ir-object-backend"
+        exit 2
+      }
+      continue
+    }
+    if ($token -eq "--objc3-route-backend-from-capabilities") {
+      $usesCapabilityRouting = $true
+      continue
+    }
+    if ($token -eq "--llvm-capabilities-summary") {
+      if (($i + 1) -ge $compileArgs.Count) {
+        Write-Error "missing value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $i++
+      $summaryPath = [string]$compileArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($summaryPath)) {
+        Write-Error "empty value for --llvm-capabilities-summary"
+        exit 2
+      }
+      $hasCapabilitySummary = $true
+      continue
+    }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($requestedBackend)) {
+    if (-not $allowedBackends.ContainsKey($requestedBackend)) {
+      Write-Error "requested --objc3-ir-object-backend '$requestedBackend' is not allowed by frontend core feature expansion in $featurePath"
+      exit 2
+    }
+  }
+  if ($usesCapabilityRouting -and -not $hasCapabilitySummary) {
+    Write-Error "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
+    exit 2
+  }
+}
+
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
@@ -441,6 +631,7 @@ if (-not $parsed.use_cache) {
 
   Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
   Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
+  Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
   $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
   exit $compileExit
 }
@@ -501,6 +692,7 @@ if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
 
 Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
 Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
+Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
 $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
 
 if ($null -ne $cacheKey) {
