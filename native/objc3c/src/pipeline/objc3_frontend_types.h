@@ -284,6 +284,8 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
   bool expansion_ready = false;
   bool core_feature_impl_ready = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -304,6 +306,7 @@ struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   std::string parse_artifact_replay_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
   std::string edge_case_compatibility_key;
   std::string expansion_key;
   std::string core_feature_key;
