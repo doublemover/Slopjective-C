@@ -108,6 +108,9 @@ At minimum, the pass-graph gate shall validate:
 - diagnostics hardening shall include deterministic diagnostics consistency and
   diagnostics hardening readiness/key gates that fail closed before IR
   emission.
+- recovery and determinism hardening shall include deterministic recovery
+  consistency and recovery/determinism readiness/key gates that fail closed
+  before IR emission.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.

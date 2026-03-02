@@ -97,6 +97,24 @@ std::string BuildObjc3LoweringPipelinePassGraphDiagnosticsHardeningKey(
   return key.str();
 }
 
+std::string BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "lowering-pipeline-pass-graph-recovery-determinism:v1:"
+      << "diagnostics-hardening-ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false")
+      << ";recovery-determinism-consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery-determinism-ready="
+      << (surface.recovery_determinism_ready ? "true" : "false")
+      << ";lowering-boundary-replay-key=" << surface.lowering_boundary_replay_key
+      << ";runtime-dispatch-declaration-replay-key="
+      << surface.runtime_dispatch_declaration_replay_key
+      << ";diagnostics-hardening-key-ready="
+      << (!surface.diagnostics_hardening_key.empty() ? "true" : "false");
+  return key.str();
+}
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -214,6 +232,23 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
       !surface.edge_case_robustness_key.empty();
   surface.diagnostics_hardening_key =
       BuildObjc3LoweringPipelinePassGraphDiagnosticsHardeningKey(surface);
+  surface.recovery_determinism_consistent =
+      surface.diagnostics_hardening_ready &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_recovery_determinism_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .parse_recovery_determinism_hardening_consistent;
+  surface.recovery_determinism_ready =
+      surface.recovery_determinism_consistent &&
+      pipeline_result.parse_lowering_readiness_surface
+          .long_tail_grammar_recovery_determinism_ready &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .long_tail_grammar_recovery_determinism_key.empty() &&
+      !pipeline_result.parse_lowering_readiness_surface
+           .parse_recovery_determinism_hardening_key.empty() &&
+      !surface.diagnostics_hardening_key.empty();
+  surface.recovery_determinism_key =
+      BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(surface);
   surface.expansion_key =
       BuildObjc3LoweringPipelinePassGraphCoreFeatureExpansionKey(surface);
   surface.core_feature_key =
@@ -222,7 +257,8 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
   if (surface.core_feature_ready && surface.expansion_ready &&
       surface.edge_case_compatibility_ready &&
       surface.edge_case_robustness_ready &&
-      surface.diagnostics_hardening_ready) {
+      surface.diagnostics_hardening_ready &&
+      surface.recovery_determinism_ready) {
     return surface;
   }
 
@@ -265,6 +301,12 @@ BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     surface.failure_reason = "pass-graph diagnostics hardening is not ready";
   } else if (surface.diagnostics_hardening_key.empty()) {
     surface.failure_reason = "pass-graph diagnostics hardening key is not ready";
+  } else if (!surface.recovery_determinism_consistent) {
+    surface.failure_reason = "pass-graph recovery determinism is inconsistent";
+  } else if (!surface.recovery_determinism_ready) {
+    surface.failure_reason = "pass-graph recovery determinism is not ready";
+  } else if (surface.recovery_determinism_key.empty()) {
+    surface.failure_reason = "pass-graph recovery determinism key is not ready";
   } else {
     surface.failure_reason =
         "lowering pipeline pass-graph core feature surface is not ready";
@@ -333,6 +375,19 @@ bool IsObjc3LoweringPipelinePassGraphDiagnosticsHardeningReady(
   }
   reason = surface.failure_reason.empty()
                ? "lowering pipeline pass-graph diagnostics hardening is not ready"
+               : surface.failure_reason;
+  return false;
+}
+
+bool IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (surface.recovery_determinism_ready) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.failure_reason.empty()
+               ? "lowering pipeline pass-graph recovery determinism is not ready"
                : surface.failure_reason;
   return false;
 }

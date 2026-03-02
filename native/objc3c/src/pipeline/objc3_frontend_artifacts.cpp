@@ -1481,6 +1481,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string lowering_pass_graph_lane_a_recovery_determinism_error;
+  if (!IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
+          lowering_pass_graph_lane_a_recovery_determinism_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L309",
+        "LLVM IR emission failed: lowering pipeline pass-graph lane-A recovery determinism check failed: " +
+            lowering_pass_graph_lane_a_recovery_determinism_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
   std::string lowering_pass_graph_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
           pipeline_result.ir_emission_completeness_scaffold,
@@ -5084,6 +5098,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.lowering_pass_graph_diagnostics_hardening_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .diagnostics_hardening_key;
+  ir_frontend_metadata.lowering_pass_graph_recovery_determinism_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .recovery_determinism_ready;
+  ir_frontend_metadata.lowering_pass_graph_recovery_determinism_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .recovery_determinism_key;
   ir_frontend_metadata.ir_emission_completeness_modular_split_ready =
       pipeline_result.ir_emission_completeness_scaffold.modular_split_ready;
   ir_frontend_metadata.ir_emission_completeness_modular_split_key =

@@ -19,6 +19,9 @@ std::string BuildObjc3LoweringPipelinePassGraphEdgeCaseRobustnessKey(
 std::string BuildObjc3LoweringPipelinePassGraphDiagnosticsHardeningKey(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
 
+std::string BuildObjc3LoweringPipelinePassGraphRecoveryDeterminismKey(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface);
+
 Objc3LoweringPipelinePassGraphCoreFeatureSurface
 BuildObjc3LoweringPipelinePassGraphCoreFeatureSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -41,5 +44,9 @@ bool IsObjc3LoweringPipelinePassGraphEdgeCaseRobustnessReady(
     std::string &reason);
 
 bool IsObjc3LoweringPipelinePassGraphDiagnosticsHardeningReady(
+    const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
+    std::string &reason);
+
+bool IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
     const Objc3LoweringPipelinePassGraphCoreFeatureSurface &surface,
     std::string &reason);

@@ -78,6 +78,12 @@ Current-state note:
   (`diagnostics_hardening_consistent`, `diagnostics_hardening_*`) and enforces
   fail-closed diagnostics-hardening gating in
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
+- M228 lane-A A008 recovery and determinism hardening extends
+  `pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp` with
+  deterministic recovery and determinism guardrails
+  (`recovery_determinism_consistent`, `recovery_determinism_*`) and enforces
+  fail-closed recovery-determinism gating in
+  `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
