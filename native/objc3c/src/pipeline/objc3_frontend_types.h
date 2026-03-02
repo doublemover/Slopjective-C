@@ -426,6 +426,8 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool docs_runbook_sync_ready = false;
   bool release_candidate_replay_dry_run_consistent = false;
   bool release_candidate_replay_dry_run_ready = false;
+  bool advanced_core_shard1_consistent = false;
+  bool advanced_core_shard1_ready = false;
   bool core_feature_impl_ready = false;
   std::string governance_key;
   std::string modular_split_key;
@@ -445,6 +447,7 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string cross_lane_integration_key;
   std::string docs_runbook_sync_key;
   std::string release_candidate_replay_dry_run_key;
+  std::string advanced_core_shard1_key;
   std::string failure_reason;
 };
 
