@@ -813,6 +813,8 @@ A conforming implementation shall preserve, for all exported declarations:
      drift fails closed.
   - deterministic lane-D runner core feature metadata anchors for `M248-D003`
     with explicit `M248-D002` dependency continuity so nullable-tool-path core feature drift fails closed.
+  - deterministic lane-D runner/platform operations core feature expansion metadata anchors for `M248-D004`
+    with explicit `M248-D003` dependency continuity and fail-closed expansion evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

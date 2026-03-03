@@ -783,6 +783,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d003_runner_reliability_and_platform_operations_core_feature_implementation_packet.md`,
   and `package.json` so nullable-tool-path safety continuity remains
   deterministic and fail-closed against `M248-D002` dependency drift.
+- M248 lane-D D004 runner/platform operations core feature expansion anchors
+  explicit lane-D expansion artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m248/m248_d004_runner_reliability_and_platform_operations_core_feature_expansion_packet.md`,
+  and `package.json` so expansion continuity remains deterministic
+  and fail-closed against `M248-D003` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
