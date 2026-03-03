@@ -286,6 +286,9 @@ At minimum, the pass-graph gate shall validate:
 - interop surface syntax/declaration-form performance and quality guardrails governance shall preserve explicit
   lane-A dependency anchor (`M244-A010`) and fail closed when quality
   dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form cross-lane integration sync governance shall preserve explicit
+  lane-A dependency anchors (`M244-A011`, `M244-B007`, `M244-C007`, `M244-D004`, and `M244-E006`) and fail closed
+  when integration dependency references or readiness evidence commands drift.
 - interop lowering and ABI conformance governance shall preserve
   deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
   and fail closed on lowering and ABI conformance boundary drift before
@@ -305,12 +308,17 @@ At minimum, the pass-graph gate shall validate:
 - interop lowering and ABI conformance edge-case expansion and robustness governance shall preserve explicit
   lane-C dependency anchor (`M244-C005`) and fail closed when edge-case
   expansion dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance diagnostics hardening governance shall preserve explicit
+  lane-C dependency anchor (`M244-C006`) and fail closed when diagnostics
+  dependency references or readiness evidence commands drift.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on
   modular split scaffolding evidence drift before downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path core feature implementation governance shall preserve explicit lane-D dependency anchors (`M244-D002`) and fail closed on
   core-feature implementation evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path core feature expansion governance shall preserve explicit lane-D dependency anchors (`M244-D003`) and fail closed on
+  core-feature expansion evidence drift before downstream runtime projection and metadata integration advances.
 - interop semantic contracts and type mediation governance shall preserve
   deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
   and fail closed on semantic/type mediation drift before downstream interop
@@ -355,6 +363,11 @@ At minimum, the pass-graph gate shall validate:
   preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case and compatibility completion readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E edge-case and compatibility completion readiness hooks drift.
+- interop conformance gate and operations edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E005`, `M244-A005`, `M244-B007`, `M244-C008`, and `M244-D008`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case expansion and robustness readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E edge-case expansion and robustness readiness hooks drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
