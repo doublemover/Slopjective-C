@@ -690,6 +690,12 @@ Current-state note:
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_performance_quality_guardrails_surface.h`
   and `pipeline/objc3_frontend_pipeline.cpp` so lane-B performance/quality guardrails closure
   remains deterministic and fail-closed against `M243-B010` conformance corpus drift.
+- M243 lane-B B012 semantic diagnostic taxonomy/fix-it synthesis cross-lane integration sync
+  anchors cross-lane integration sync dependency/readiness continuity in
+  `docs/contracts/m243_semantic_diagnostic_taxonomy_and_fix_it_synthesis_cross_lane_integration_sync_b012_expectations.md`,
+  `spec/planning/compiler/m243/m243_b012_semantic_diagnostic_taxonomy_and_fix_it_synthesis_cross_lane_integration_sync_packet.md`,
+  and `package.json` (`check:objc3c:m243-b012-lane-b-readiness`) so lane-B integration sync
+  closure remains deterministic and fail-closed against `M243-B011` guardrail drift.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
