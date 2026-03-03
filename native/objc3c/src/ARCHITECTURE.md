@@ -843,6 +843,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d012_runner_reliability_and_platform_operations_cross_lane_integration_sync_packet.md`,
   and `package.json` so cross-lane integration continuity remains deterministic
   and fail-closed against `M248-D011` dependency drift.
+- M248 lane-D D013 docs and operator runbook synchronization anchors runner/platform operations contract integration
+  explicit lane-D docs/runbook synchronization artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_docs_and_operator_runbook_synchronization_d013_expectations.md`,
+  `spec/planning/compiler/m248/m248_d013_runner_reliability_and_platform_operations_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` so docs/runbook continuity remains deterministic
+  and fail-closed against `M248-D012` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

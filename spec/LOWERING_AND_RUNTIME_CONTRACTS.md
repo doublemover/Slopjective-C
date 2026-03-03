@@ -948,6 +948,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-D dependency anchors (`M248-D011`) and fail
   closed on cross-lane integration sync evidence drift before downstream
   platform replay and lane-e conformance matrix advances.
+- runner/platform operations docs and operator runbook synchronization governance shall preserve
+  explicit lane-D dependency anchors (`M248-D012`) and fail closed on
+  docs/runbook synchronization evidence drift before downstream platform replay
+  and lane-e conformance matrix advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
