@@ -258,6 +258,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B interop semantic/type mediation core-feature metadata anchors for `M244-B003`
      with explicit `M244-B002` dependency continuity and fail-closed evidence
      so interop semantic/type mediation core-feature implementation drift fails closed.
+   - deterministic lane-B interop semantic/type mediation core-feature expansion metadata anchors for `M244-B004`
+     with explicit `M244-B003` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation core-feature expansion drift fails closed.
     - deterministic lane-E interop conformance gate and operations dependency anchors for
       `M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`, including dependency-reference tokens
       wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
