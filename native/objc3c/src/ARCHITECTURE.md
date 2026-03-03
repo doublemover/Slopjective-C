@@ -439,8 +439,8 @@ Current-state note:
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
   `spec/planning/compiler/m244/m244_a001_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_packet.md`,
-  and `package.json` so deterministic anchors, dependency tokens, and fail-closed
-  behavior remain frozen before downstream interop lowering and metadata work begins.
+  and `package.json` so deterministic anchors, dependency tokens, and fail-closed behavior remain frozen
+  before downstream interop lowering and metadata work begins.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
