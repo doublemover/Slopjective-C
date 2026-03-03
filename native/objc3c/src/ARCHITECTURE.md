@@ -737,6 +737,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a001_frontend_behavior_parity_across_toolchains_contract_and_architecture_freeze_packet.md`,
   and `package.json` so portability and reproducible-build boundary evidence
   remains deterministic and fail-closed across toolchain permutations.
+- M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m245/m245_a002_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split portability continuity remains
+  deterministic and fail-closed against `M245-A001` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,

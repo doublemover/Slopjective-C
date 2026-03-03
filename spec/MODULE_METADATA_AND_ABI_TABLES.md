@@ -384,6 +384,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A frontend behavior parity metadata anchors for `M245-A001`
       with toolchain portability evidence and parser replay-budget continuity
       so frontend portability drift fails closed.
+    - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
+      with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
     - deterministic lane-A feature packaging metadata anchors for `M249-A001`
       with release packaging compatibility evidence and parser replay-budget continuity
       so distribution surface drift fails closed.
