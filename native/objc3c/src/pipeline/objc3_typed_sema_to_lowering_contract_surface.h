@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <sstream>
 #include <string>
 
@@ -8,6 +9,116 @@
 
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureCaseCount = 6u;
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureExpansionCaseCount = 4u;
+
+inline std::size_t Objc3TypedSemaToLoweringParserSnapshotDeclarationBreakdownCount(
+    const Objc3ParserContractSnapshot &snapshot) {
+  return snapshot.global_decl_count + snapshot.protocol_decl_count +
+         snapshot.interface_decl_count + snapshot.implementation_decl_count +
+         snapshot.function_decl_count;
+}
+
+inline std::size_t Objc3TypedSemaToLoweringParsedProgramTopLevelDeclarationCount(
+    const Objc3ParsedProgram &program) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  return ast.globals.size() + ast.protocols.size() + ast.interfaces.size() +
+         ast.implementations.size() + ast.functions.size();
+}
+
+inline bool IsObjc3TypedSemaToLoweringLanguageVersionPragmaContractConsistent(
+    const Objc3FrontendLanguageVersionPragmaContract &pragma_contract) {
+  if (!pragma_contract.seen) {
+    return pragma_contract.directive_count == 0 &&
+           !pragma_contract.duplicate &&
+           !pragma_contract.non_leading &&
+           pragma_contract.first_line == 0 &&
+           pragma_contract.first_column == 0 &&
+           pragma_contract.last_line == 0 &&
+           pragma_contract.last_column == 0;
+  }
+
+  const bool coordinates_present =
+      pragma_contract.first_line > 0 &&
+      pragma_contract.first_column > 0 &&
+      pragma_contract.last_line > 0 &&
+      pragma_contract.last_column > 0;
+  const bool duplicate_consistent =
+      !pragma_contract.duplicate || pragma_contract.directive_count > 1;
+  return pragma_contract.directive_count > 0 &&
+         coordinates_present &&
+         duplicate_consistent;
+}
+
+inline bool IsObjc3TypedSemaToLoweringLanguageVersionPragmaCoordinateOrderConsistent(
+    const Objc3FrontendLanguageVersionPragmaContract &pragma_contract) {
+  if (!pragma_contract.seen) {
+    return true;
+  }
+
+  const bool first_before_or_equal_last =
+      pragma_contract.first_line < pragma_contract.last_line ||
+      (pragma_contract.first_line == pragma_contract.last_line &&
+       pragma_contract.first_column <= pragma_contract.last_column);
+  const bool single_directive_coordinates_consistent =
+      pragma_contract.directive_count != 1 ||
+      (pragma_contract.first_line == pragma_contract.last_line &&
+       pragma_contract.first_column == pragma_contract.last_column);
+  return first_before_or_equal_last &&
+         single_directive_coordinates_consistent;
+}
+
+inline const char *Objc3TypedSemaToLoweringCompatibilityModeName(
+    const Objc3FrontendCompatibilityMode mode) {
+  return mode == Objc3FrontendCompatibilityMode::kLegacy ? "legacy" : "canonical";
+}
+
+inline std::string BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendLanguageVersionPragmaContract &pragma_contract,
+    bool compatibility_handoff_consistent) {
+  return "compatibility_mode=" +
+         std::string(Objc3TypedSemaToLoweringCompatibilityModeName(options.compatibility_mode)) +
+         ";migration_assist=" + (options.migration_assist ? "true" : "false") +
+         ";legacy_literals=" + std::to_string(migration_hints.legacy_yes_count) + ":" +
+         std::to_string(migration_hints.legacy_no_count) + ":" +
+         std::to_string(migration_hints.legacy_null_count) +
+         ";language_version_pragma=" + (pragma_contract.seen ? "seen" : "none") + ":" +
+         std::to_string(pragma_contract.directive_count) + ":" +
+         (pragma_contract.duplicate ? "duplicate" : "single") + ":" +
+         (pragma_contract.non_leading ? "non-leading" : "leading") +
+         ";consistent=" + (compatibility_handoff_consistent ? "true" : "false");
+}
+
+inline std::string BuildObjc3TypedSemaToLoweringParseArtifactEdgeRobustnessKey(
+    std::size_t parser_token_count,
+    std::size_t parser_snapshot_breakdown_count,
+    std::size_t ast_top_level_declaration_count,
+    bool parser_token_count_budget_consistent,
+    bool language_version_pragma_coordinate_order_consistent,
+    bool parse_artifact_edge_case_robustness_consistent) {
+  return "parser_tokens=" + std::to_string(parser_token_count) +
+         ";snapshot_breakdown=" + std::to_string(parser_snapshot_breakdown_count) +
+         ";ast_top_level=" + std::to_string(ast_top_level_declaration_count) +
+         ";token_budget_consistent=" + (parser_token_count_budget_consistent ? "true" : "false") +
+         ";pragma_coordinate_order_consistent=" +
+         (language_version_pragma_coordinate_order_consistent ? "true" : "false") +
+         ";consistent=" + (parse_artifact_edge_case_robustness_consistent ? "true" : "false");
+}
+
+inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureEdgeCaseCompatibilityKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-core-edge-compat:v1:compatibility_handoff_consistent=" +
+         std::string(surface.compatibility_handoff_consistent ? "true" : "false") +
+         ";language_version_pragma_coordinate_order_consistent=" +
+         std::string(surface.language_version_pragma_coordinate_order_consistent ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         std::string(surface.parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";parse_artifact_edge_case_robustness_consistent=" +
+         std::string(surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
+         ";compatibility_handoff_key=" + surface.compatibility_handoff_key +
+         ";parse_artifact_edge_robustness_key=" + surface.parse_artifact_edge_robustness_key +
+         ";ready=" + (surface.typed_core_feature_edge_case_compatibility_ready ? "true" : "false");
+}
 
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
@@ -37,6 +148,16 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << ";core_feature_expansion_failed_case_count=" << surface.typed_core_feature_expansion_failed_case_count
       << ";core_feature_expansion_consistent="
       << (surface.typed_core_feature_expansion_consistent ? "true" : "false")
+      << ";compatibility_handoff_consistent="
+      << (surface.compatibility_handoff_consistent ? "true" : "false")
+      << ";language_version_pragma_coordinate_order_consistent="
+      << (surface.language_version_pragma_coordinate_order_consistent ? "true" : "false")
+      << ";parse_artifact_replay_key_deterministic="
+      << (surface.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";parse_artifact_edge_case_robustness_consistent="
+      << (surface.parse_artifact_edge_case_robustness_consistent ? "true" : "false")
+      << ";core_feature_edge_case_compatibility_ready="
+      << (surface.typed_core_feature_edge_case_compatibility_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -57,6 +178,8 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << ";lowering_boundary_ready=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";core_feature_expansion_consistent="
       << (surface.typed_core_feature_expansion_consistent ? "true" : "false")
+      << ";core_feature_edge_case_compatibility_ready="
+      << (surface.typed_core_feature_edge_case_compatibility_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -108,6 +231,71 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       pipeline_result.symbol_graph_scope_resolution_summary.deterministic_symbol_graph_handoff;
   surface.scope_resolution_handoff_deterministic =
       pipeline_result.symbol_graph_scope_resolution_summary.deterministic_scope_resolution_handoff;
+  const Objc3ParserContractSnapshot &parser_snapshot = pipeline_result.parser_contract_snapshot;
+  const std::size_t parser_snapshot_breakdown_count =
+      Objc3TypedSemaToLoweringParserSnapshotDeclarationBreakdownCount(parser_snapshot);
+  const bool parser_snapshot_breakdown_consistent =
+      parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
+  const std::size_t ast_top_level_declaration_count =
+      Objc3TypedSemaToLoweringParsedProgramTopLevelDeclarationCount(pipeline_result.program);
+  const bool parse_artifact_handoff_consistent =
+      parser_snapshot_breakdown_consistent &&
+      ast_top_level_declaration_count == parser_snapshot.top_level_declaration_count;
+  const bool parse_artifact_handoff_deterministic =
+      parse_artifact_handoff_consistent && parser_snapshot.deterministic_handoff;
+  const bool parse_artifact_layout_fingerprint_consistent =
+      parser_snapshot.ast_top_level_layout_fingerprint ==
+      BuildObjc3ParsedProgramTopLevelLayoutFingerprint(pipeline_result.program);
+  const bool parse_artifact_fingerprint_consistent =
+      parser_snapshot.ast_shape_fingerprint ==
+          BuildObjc3ParsedProgramAstShapeFingerprint(pipeline_result.program) &&
+      parse_artifact_layout_fingerprint_consistent;
+  const std::size_t legacy_literal_total = pipeline_result.migration_hints.legacy_total();
+  const bool migration_hints_consistent =
+      legacy_literal_total ==
+          pipeline_result.migration_hints.legacy_yes_count +
+              pipeline_result.migration_hints.legacy_no_count +
+              pipeline_result.migration_hints.legacy_null_count &&
+      legacy_literal_total <= parser_snapshot.token_count &&
+      (options.migration_assist || legacy_literal_total == 0);
+  const bool language_version_pragma_contract_consistent =
+      IsObjc3TypedSemaToLoweringLanguageVersionPragmaContractConsistent(
+          pipeline_result.language_version_pragma_contract);
+  surface.language_version_pragma_coordinate_order_consistent =
+      IsObjc3TypedSemaToLoweringLanguageVersionPragmaCoordinateOrderConsistent(
+          pipeline_result.language_version_pragma_contract);
+  surface.compatibility_handoff_consistent =
+      migration_hints_consistent &&
+      language_version_pragma_contract_consistent;
+  surface.compatibility_handoff_key = BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(
+      options,
+      pipeline_result.migration_hints,
+      pipeline_result.language_version_pragma_contract,
+      surface.compatibility_handoff_consistent);
+  const std::uint64_t parser_contract_snapshot_fingerprint =
+      BuildObjc3ParserContractSnapshotFingerprint(parser_snapshot);
+  surface.parse_artifact_replay_key_deterministic =
+      parse_artifact_handoff_deterministic &&
+      parse_artifact_fingerprint_consistent &&
+      surface.compatibility_handoff_consistent &&
+      parser_contract_snapshot_fingerprint != 0;
+  const bool parser_token_count_budget_consistent =
+      parser_snapshot.token_count >= parser_snapshot_breakdown_count &&
+      parser_snapshot.token_count >= parser_snapshot.top_level_declaration_count &&
+      parser_snapshot.token_count >= ast_top_level_declaration_count;
+  surface.parse_artifact_edge_case_robustness_consistent =
+      parser_token_count_budget_consistent &&
+      surface.language_version_pragma_coordinate_order_consistent &&
+      surface.parse_artifact_replay_key_deterministic &&
+      !surface.compatibility_handoff_key.empty();
+  surface.parse_artifact_edge_robustness_key =
+      BuildObjc3TypedSemaToLoweringParseArtifactEdgeRobustnessKey(
+          parser_snapshot.token_count,
+          parser_snapshot_breakdown_count,
+          ast_top_level_declaration_count,
+          parser_token_count_budget_consistent,
+          surface.language_version_pragma_coordinate_order_consistent,
+          surface.parse_artifact_edge_case_robustness_consistent);
 
   Objc3LoweringIRBoundary lowering_boundary;
   std::string lowering_error;
@@ -208,10 +396,23 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringCoreFeatureExpansionKey(surface);
   const bool typed_core_feature_expansion_key_ready =
       !surface.typed_core_feature_expansion_key.empty();
+  surface.typed_core_feature_edge_case_compatibility_ready =
+      surface.typed_core_feature_expansion_consistent &&
+      surface.compatibility_handoff_consistent &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.parse_artifact_edge_case_robustness_consistent &&
+      !surface.compatibility_handoff_key.empty() &&
+      !surface.parse_artifact_edge_robustness_key.empty();
+  surface.typed_core_feature_edge_case_compatibility_key =
+      BuildObjc3TypedSemaToLoweringCoreFeatureEdgeCaseCompatibilityKey(surface);
+  const bool typed_core_feature_edge_case_compatibility_key_ready =
+      !surface.typed_core_feature_edge_case_compatibility_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
-      typed_core_feature_expansion_key_ready;
+      typed_core_feature_expansion_key_ready &&
+      surface.typed_core_feature_edge_case_compatibility_ready &&
+      typed_core_feature_edge_case_compatibility_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -264,6 +465,19 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering core feature expansion is inconsistent";
   } else if (surface.typed_core_feature_expansion_key.empty()) {
     surface.failure_reason = "typed core feature expansion key is empty";
+  } else if (!surface.compatibility_handoff_consistent) {
+    surface.failure_reason = "typed sema-to-lowering compatibility handoff is inconsistent";
+  } else if (!surface.parse_artifact_replay_key_deterministic) {
+    surface.failure_reason = "typed sema-to-lowering parse artifact replay key is not deterministic";
+  } else if (!surface.language_version_pragma_coordinate_order_consistent) {
+    surface.failure_reason =
+        "typed sema-to-lowering language version pragma coordinate order is inconsistent";
+  } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
+    surface.failure_reason = "typed sema-to-lowering parse artifact edge-case robustness is inconsistent";
+  } else if (!surface.typed_core_feature_edge_case_compatibility_ready) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility is not ready";
+  } else if (surface.typed_core_feature_edge_case_compatibility_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {

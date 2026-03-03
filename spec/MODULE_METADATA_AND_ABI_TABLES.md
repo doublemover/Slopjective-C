@@ -970,3 +970,7 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - unknown required OCI-1 fields/capabilities trigger hard errors,
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
+
+## D.5 Lane-C Typed Edge-Case Metadata Anchors (implementation anchor) {#d-5}
+
+deterministic lane-C typed sema-to-lowering edge-case compatibility metadata anchors for `M227-C005` must remain synchronized across typed handoff keys, parse-artifact replay keys, and readiness gating metadata surfaces before lane-C closeout can pass.

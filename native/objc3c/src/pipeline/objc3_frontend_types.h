@@ -64,6 +64,11 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool typed_handoff_key_deterministic = false;
   bool typed_core_feature_consistent = false;
   bool typed_core_feature_expansion_consistent = false;
+  bool compatibility_handoff_consistent = false;
+  bool language_version_pragma_coordinate_order_consistent = false;
+  bool parse_artifact_replay_key_deterministic = false;
+  bool parse_artifact_edge_case_robustness_consistent = false;
+  bool typed_core_feature_edge_case_compatibility_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -75,6 +80,9 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string typed_handoff_key;
   std::string typed_core_feature_key;
   std::string typed_core_feature_expansion_key;
+  std::string compatibility_handoff_key;
+  std::string parse_artifact_edge_robustness_key;
+  std::string typed_core_feature_edge_case_compatibility_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
@@ -179,6 +187,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool typed_handoff_key_deterministic = false;
   bool typed_sema_core_feature_consistent = false;
   bool typed_sema_core_feature_expansion_consistent = false;
+  bool typed_sema_edge_case_compatibility_consistent = false;
+  bool typed_sema_edge_case_compatibility_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_sema_core_feature_case_count = 0;
@@ -241,6 +251,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string toolchain_runtime_ga_operations_integration_closeout_signoff_key;
   std::string typed_sema_core_feature_key;
   std::string typed_sema_core_feature_expansion_key;
+  std::string typed_sema_edge_case_compatibility_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

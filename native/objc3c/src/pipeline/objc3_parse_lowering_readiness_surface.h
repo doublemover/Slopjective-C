@@ -1717,9 +1717,11 @@ inline bool HasObjc3TypedSemaToLoweringCoreFeatureSurface(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   return surface.typed_core_feature_case_count > 0 ||
          surface.typed_core_feature_expansion_case_count > 0 ||
+         surface.typed_core_feature_edge_case_compatibility_ready ||
          !surface.typed_handoff_key.empty() ||
          !surface.typed_core_feature_key.empty() ||
          !surface.typed_core_feature_expansion_key.empty() ||
+         !surface.typed_core_feature_edge_case_compatibility_key.empty() ||
          surface.ready_for_lowering ||
          !surface.failure_reason.empty();
 }
@@ -2329,6 +2331,13 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_sema_to_lowering_contract_surface.typed_core_feature_key;
   surface.typed_sema_core_feature_expansion_key =
       typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_key;
+  surface.typed_sema_edge_case_compatibility_consistent =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_compatibility_ready;
+  surface.typed_sema_edge_case_compatibility_key =
+      typed_sema_to_lowering_contract_surface.typed_core_feature_edge_case_compatibility_key;
+  surface.typed_sema_edge_case_compatibility_ready =
+      surface.typed_sema_edge_case_compatibility_consistent &&
+      !surface.typed_sema_edge_case_compatibility_key.empty();
   Objc3LoweringIRBoundary lowering_boundary;
   std::string lowering_error;
   const bool lowering_boundary_from_options_ready =
@@ -2403,10 +2412,26 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_core_feature_expansion_case_accounting_consistent &&
       surface.typed_sema_core_feature_expansion_consistent &&
       !surface.typed_sema_core_feature_expansion_key.empty();
+  const bool typed_edge_case_compatibility_alignment =
+      surface.compatibility_handoff_consistent ==
+          typed_sema_to_lowering_contract_surface.compatibility_handoff_consistent &&
+      surface.language_version_pragma_coordinate_order_consistent ==
+          typed_sema_to_lowering_contract_surface.language_version_pragma_coordinate_order_consistent &&
+      surface.parse_artifact_replay_key_deterministic ==
+          typed_sema_to_lowering_contract_surface.parse_artifact_replay_key_deterministic &&
+      surface.parse_artifact_edge_case_robustness_consistent ==
+          typed_sema_to_lowering_contract_surface.parse_artifact_edge_case_robustness_consistent &&
+      surface.compatibility_handoff_key ==
+          typed_sema_to_lowering_contract_surface.compatibility_handoff_key &&
+      surface.parse_artifact_edge_robustness_key ==
+          typed_sema_to_lowering_contract_surface.parse_artifact_edge_robustness_key;
   const bool typed_core_feature_ready =
       surface.typed_handoff_key_deterministic &&
       surface.typed_sema_core_feature_consistent &&
       typed_core_feature_expansion_ready &&
+      surface.typed_sema_edge_case_compatibility_ready &&
+      typed_edge_case_compatibility_alignment &&
+      !surface.typed_sema_edge_case_compatibility_key.empty() &&
       !surface.typed_sema_core_feature_key.empty();
   const bool sema_handoff_ready =
       typed_sema_to_lowering_contract_surface.ready_for_lowering &&
@@ -3462,6 +3487,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "typed sema-to-lowering core feature expansion is inconsistent";
   } else if (surface.typed_sema_core_feature_expansion_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering core feature expansion key is empty";
+  } else if (!surface.typed_sema_edge_case_compatibility_consistent) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility is inconsistent";
+  } else if (!surface.typed_sema_edge_case_compatibility_ready) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility is not ready";
+  } else if (surface.typed_sema_edge_case_compatibility_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility key is empty";
+  } else if (!typed_edge_case_compatibility_alignment) {
+    surface.failure_reason = "typed sema-to-lowering edge-case compatibility drifted from parse/lowering readiness";
   } else if (!surface.lowering_boundary_ready) {
     surface.failure_reason = "lowering boundary is not ready";
   } else if (!surface.parse_lowering_conformance_matrix_consistent) {

@@ -1095,3 +1095,7 @@ Implementations are encouraged to provide a conformance suite that includes:
 - correct argument evaluation semantics for optional sends,
 - `throws` propagation behavior in nested `do/catch`,
 - executor hop correctness and actor isolation enforcement across module boundaries.
+
+## C.12 Lane-C Edge-Case Compatibility Governance (implementation anchor) {#c-12}
+
+typed sema-to-lowering edge-case and compatibility completion governance shall preserve explicit lane-C dependency anchors (`M227-C005`, `M227-C004`) so readiness stays deterministic and fail-closed when typed handoff and parse/lowering surfaces drift.
