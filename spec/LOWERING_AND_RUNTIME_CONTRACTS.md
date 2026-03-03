@@ -115,6 +115,8 @@ At minimum, the pass-graph gate shall validate:
   runtime-facing type metadata diagnostics-hardening consistency, readiness, key, or alignment continuity drift before recovery/determinism validation advances.
 - runtime-facing type metadata recovery/determinism hardening governance shall preserve explicit lane-D dependency anchors (`M227-D008`, `M227-D007`) and fail closed on
   runtime-facing type metadata recovery/determinism consistency, readiness, key, or alignment continuity drift before conformance-matrix validation advances.
+- runtime-facing type metadata conformance matrix implementation governance shall preserve explicit lane-D dependency anchors (`M227-D009`, `M227-D008`) and fail closed on
+  runtime-facing type metadata conformance matrix consistency, readiness, key, or alignment continuity drift before conformance-corpus validation advances.
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.
