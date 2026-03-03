@@ -743,6 +743,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a002_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split portability continuity remains
   deterministic and fail-closed against `M245-A001` dependency drift.
+- M245 lane-A A003 frontend behavior parity core feature implementation anchors
+  explicit lane-A core-feature artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_core_feature_implementation_a003_expectations.md`,
+  `spec/planning/compiler/m245/m245_a003_frontend_behavior_parity_across_toolchains_core_feature_implementation_packet.md`,
+  and `package.json` so core feature portability continuity remains
+  deterministic and fail-closed against `M245-A002` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
