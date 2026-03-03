@@ -983,6 +983,7 @@ $frontendModules = @(
       "native/objc3c/src/lex/objc3_lexer.cpp"
       "native/objc3c/src/parse/objc3_ast_builder.cpp"
       "native/objc3c/src/parse/objc3_ast_builder_contract.cpp"
+      "native/objc3c/src/parse/objc3_diagnostic_source_precision_scaffold.cpp"
       "native/objc3c/src/parse/objc3_parse_support.cpp"
       "native/objc3c/src/parse/objc3_parser.cpp"
     )

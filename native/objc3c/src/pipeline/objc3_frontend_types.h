@@ -115,6 +115,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parse_artifact_handoff_deterministic = false;
   bool parser_diagnostic_surface_consistent = false;
   bool parser_diagnostic_code_surface_deterministic = false;
+  bool parser_diagnostic_source_precision_scaffold_consistent = false;
+  bool parser_diagnostic_source_precision_scaffold_ready = false;
   bool parser_token_count_budget_consistent = false;
   bool parse_artifact_layout_fingerprint_consistent = false;
   bool parse_artifact_fingerprint_consistent = false;
@@ -176,9 +178,11 @@ struct Objc3ParseLoweringReadinessSurface {
   std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
   std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
   std::size_t parser_diagnostic_code_count = 0;
+  std::size_t parser_diagnostic_coordinate_tagged_count = 0;
   std::size_t long_tail_grammar_construct_count = 0;
   std::size_t long_tail_grammar_covered_construct_count = 0;
   std::uint64_t parser_diagnostic_code_fingerprint = 1469598103934665603ull;
+  std::uint64_t parser_diagnostic_source_precision_fingerprint = 1469598103934665603ull;
   std::uint64_t long_tail_grammar_fingerprint = 1469598103934665603ull;
   std::string parse_artifact_handoff_key;
   std::string compatibility_handoff_key;
@@ -192,6 +196,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string long_tail_grammar_conformance_matrix_key;
   std::string long_tail_grammar_integration_closeout_key;
   std::string parse_artifact_diagnostics_hardening_key;
+  std::string parser_diagnostic_source_precision_scaffold_key;
   std::string parse_artifact_edge_robustness_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;
@@ -210,6 +215,22 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string typed_sema_core_feature_key;
   std::string typed_sema_core_feature_expansion_key;
   std::string lowering_boundary_replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold {
+  bool sema_pass_flow_summary_present = false;
+  bool sema_pass_flow_summary_ready = false;
+  bool sema_parity_surface_present = false;
+  bool sema_parity_surface_ready = false;
+  bool diagnostics_taxonomy_consistent = false;
+  bool arc_diagnostics_fixit_summary_deterministic = false;
+  bool arc_diagnostics_fixit_handoff_deterministic = false;
+  bool typed_sema_handoff_deterministic = false;
+  bool modular_split_ready = false;
+  std::string sema_pass_flow_handoff_key;
+  std::string typed_handoff_key;
+  std::string scaffold_key;
   std::string failure_reason;
 };
 
@@ -669,6 +690,8 @@ struct Objc3FrontendPipelineResult {
   Objc3ParserContractSnapshot parser_contract_snapshot;
   Objc3FrontendDiagnosticsBus stage_diagnostics;
   Objc3TypedSemaToLoweringContractSurface typed_sema_to_lowering_contract_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold
+      semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
   Objc3SemanticStabilityCoreFeatureImplementationSurface

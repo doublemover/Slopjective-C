@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "parse/objc3_diagnostic_source_precision_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 
@@ -188,6 +189,8 @@ inline std::string BuildObjc3ParseArtifactDiagnosticsHardeningKey(
     std::uint64_t parser_diagnostic_code_fingerprint,
     bool parser_diagnostic_surface_consistent,
     bool parser_diagnostic_code_surface_deterministic,
+    bool parser_diagnostic_source_precision_scaffold_consistent,
+    const std::string &parser_diagnostic_source_precision_scaffold_key,
     bool parse_artifact_diagnostics_hardening_consistent) {
   return "parser_diagnostics=" + std::to_string(parser_diagnostic_count) +
          ";snapshot_parser_diagnostics=" + std::to_string(parser_snapshot_diagnostic_count) +
@@ -196,6 +199,9 @@ inline std::string BuildObjc3ParseArtifactDiagnosticsHardeningKey(
          ";diagnostic_surface_consistent=" + (parser_diagnostic_surface_consistent ? "true" : "false") +
          ";diagnostic_code_surface_deterministic=" +
          (parser_diagnostic_code_surface_deterministic ? "true" : "false") +
+         ";source_precision_scaffold_consistent=" +
+         (parser_diagnostic_source_precision_scaffold_consistent ? "true" : "false") +
+         ";source_precision_scaffold_key=" + parser_diagnostic_source_precision_scaffold_key +
          ";consistent=" + (parse_artifact_diagnostics_hardening_consistent ? "true" : "false");
 }
 
@@ -1639,10 +1645,25 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       Objc3ParsedProgramTopLevelDeclarationCount(pipeline_result.program);
   const Objc3ParseLoweringDiagnosticCodeCoverage parser_diagnostic_code_coverage =
       BuildObjc3ParseLoweringDiagnosticCodeCoverage(pipeline_result.stage_diagnostics.parser);
+  const Objc3ParserDiagnosticSourcePrecisionScaffold parser_diagnostic_source_precision_scaffold =
+      BuildObjc3ParserDiagnosticSourcePrecisionScaffold(
+          pipeline_result.stage_diagnostics.parser,
+          parser_snapshot);
   const bool parser_snapshot_breakdown_consistent =
       parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
   surface.parser_diagnostic_surface_consistent =
       parser_snapshot.parser_diagnostic_count == surface.parser_diagnostic_count;
+  surface.parser_diagnostic_coordinate_tagged_count =
+      parser_diagnostic_source_precision_scaffold.coordinate_tagged_diagnostic_count;
+  surface.parser_diagnostic_source_precision_fingerprint =
+      parser_diagnostic_source_precision_scaffold.coordinate_fingerprint;
+  surface.parser_diagnostic_source_precision_scaffold_key =
+      parser_diagnostic_source_precision_scaffold.scaffold_key;
+  surface.parser_diagnostic_source_precision_scaffold_consistent =
+      parser_diagnostic_source_precision_scaffold.scaffold_consistent;
+  surface.parser_diagnostic_source_precision_scaffold_ready =
+      IsObjc3ParserDiagnosticSourcePrecisionScaffoldReady(
+          parser_diagnostic_source_precision_scaffold);
   surface.parser_diagnostic_code_count = parser_diagnostic_code_coverage.unique_code_count;
   surface.parser_diagnostic_code_fingerprint = parser_diagnostic_code_coverage.unique_code_fingerprint;
   surface.parser_diagnostic_code_surface_deterministic =
@@ -1650,7 +1671,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_diagnostic_code_count <= surface.parser_diagnostic_count;
   surface.parse_artifact_diagnostics_hardening_consistent =
       surface.parser_diagnostic_surface_consistent &&
-      surface.parser_diagnostic_code_surface_deterministic;
+      surface.parser_diagnostic_code_surface_deterministic &&
+      surface.parser_diagnostic_source_precision_scaffold_consistent &&
+      surface.parser_diagnostic_source_precision_scaffold_ready &&
+      !surface.parser_diagnostic_source_precision_scaffold_key.empty();
   surface.parser_token_count_budget_consistent =
       surface.parser_token_count >= parser_snapshot_breakdown_count &&
       surface.parser_token_count >= parser_snapshot.top_level_declaration_count &&
@@ -1737,6 +1761,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parser_diagnostic_code_fingerprint,
           surface.parser_diagnostic_surface_consistent,
           surface.parser_diagnostic_code_surface_deterministic,
+          surface.parser_diagnostic_source_precision_scaffold_consistent,
+          surface.parser_diagnostic_source_precision_scaffold_key,
           surface.parse_artifact_diagnostics_hardening_consistent);
   surface.parse_artifact_edge_case_robustness_consistent =
       surface.parser_token_count_budget_consistent &&
@@ -2875,6 +2901,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parse artifact handoff is inconsistent";
   } else if (!surface.parser_diagnostic_surface_consistent) {
     surface.failure_reason = "parser diagnostics surface is inconsistent";
+  } else if (!surface.parser_diagnostic_source_precision_scaffold_ready) {
+    surface.failure_reason = "parser diagnostic source-precision scaffold is not ready";
   } else if (!surface.parser_diagnostic_code_surface_deterministic) {
     surface.failure_reason = "parser diagnostic code surface is not deterministic";
   } else if (!surface.parse_artifact_handoff_deterministic) {
