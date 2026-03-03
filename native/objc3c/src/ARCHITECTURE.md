@@ -154,6 +154,14 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-d006-lane-d-readiness`) so runtime-facing metadata
   edge-case expansion/robustness continuity remains deterministic
   and fail-closed against `M227-D005` dependency drift.
+- M227 lane-D D007 runtime-facing type metadata diagnostics hardening anchors
+  explicit lane-D diagnostics hardening artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_diagnostics_hardening_d007_expectations.md`,
+  `spec/planning/compiler/m227/m227_d007_runtime_facing_type_metadata_diagnostics_hardening_packet.md`,
+  `scripts/check_m227_d007_runtime_facing_type_metadata_diagnostics_hardening_contract.py`,
+  and `package.json` (`check:objc3c:m227-d007-lane-d-readiness`) so runtime-facing metadata
+  diagnostics-hardening continuity remains deterministic
+  and fail-closed against `M227-D006` dependency drift.
 - M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`) in
   `docs/contracts/m227_lane_e_semantic_conformance_quality_gate_expectations.md`,
   `spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`,

@@ -149,6 +149,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed,
     - deterministic lane-D runtime-facing type metadata edge-case expansion and robustness metadata anchors for `M227-D006`
       with explicit `M227-D005` dependency continuity and fail-closed evidence continuity so edge-case expansion/robustness evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata diagnostics hardening metadata anchors for `M227-D007`
+      with explicit `M227-D006` dependency continuity and fail-closed diagnostics-hardening evidence continuity so diagnostics-hardening evidence drift fails closed,
     - deterministic lane-D toolchain/runtime edge-case compatibility
       consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness
