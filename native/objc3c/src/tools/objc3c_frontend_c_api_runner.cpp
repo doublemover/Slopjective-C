@@ -265,39 +265,45 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       << EscapeJsonString(output_contract_edge_case_robustness_surface.diagnostics_output_path) << "\",\n";
   out << "    \"summary_output_path_contract_consistent\": "
       << (output_contract_edge_case_robustness_surface
-                  .edge_case_compatibility_consistent
+                  .summary_output_path_contract_consistent
               ? "true"
               : "false")
       << ",\n";
   out << "    \"diagnostics_output_path_contract_consistent\": "
       << (output_contract_edge_case_robustness_surface
-                  .edge_case_compatibility_consistent
+                  .diagnostics_output_path_contract_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"diagnostics_filename_matches_emit_prefix\": "
+      << (output_contract_edge_case_robustness_surface
+                  .diagnostics_filename_matches_emit_prefix
               ? "true"
               : "false")
       << ",\n";
   out << "    \"core_feature_expansion_ready\": "
-      << (output_contract_edge_case_robustness_surface.edge_case_compatibility_ready
+      << (output_contract_edge_case_robustness_surface.core_feature_expansion_ready
               ? "true"
               : "false")
       << ",\n";
   out << "    \"summary_output_extension_compatible\": "
-      << (output_contract_edge_case_robustness_surface.summary_output_parent_present
+      << (output_contract_edge_case_robustness_surface.summary_output_extension_compatible
               ? "true"
               : "false")
       << ",\n";
   out << "    \"diagnostics_output_suffix_compatible\": "
-      << (output_contract_edge_case_robustness_surface.diagnostics_output_parent_present
+      << (output_contract_edge_case_robustness_surface.diagnostics_output_suffix_compatible
               ? "true"
               : "false")
       << ",\n";
   out << "    \"case_folded_paths_distinct\": "
-      << (output_contract_edge_case_robustness_surface.output_paths_within_length_budget
+      << (output_contract_edge_case_robustness_surface.case_folded_paths_distinct
               ? "true"
               : "false")
       << ",\n";
   out << "    \"output_paths_control_char_free\": "
       << (output_contract_edge_case_robustness_surface
-                  .output_paths_no_trailing_space
+                  .output_paths_control_char_free
               ? "true"
               : "false")
       << ",\n";
@@ -309,6 +315,26 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       << ",\n";
   out << "    \"edge_case_compatibility_ready\": "
       << (output_contract_edge_case_robustness_surface.edge_case_compatibility_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"summary_output_parent_present\": "
+      << (output_contract_edge_case_robustness_surface.summary_output_parent_present
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"diagnostics_output_parent_present\": "
+      << (output_contract_edge_case_robustness_surface.diagnostics_output_parent_present
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"output_paths_within_length_budget\": "
+      << (output_contract_edge_case_robustness_surface.output_paths_within_length_budget
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"output_paths_no_trailing_space\": "
+      << (output_contract_edge_case_robustness_surface.output_paths_no_trailing_space
               ? "true"
               : "false")
       << ",\n";

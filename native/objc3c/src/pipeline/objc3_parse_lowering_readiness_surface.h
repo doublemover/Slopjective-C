@@ -241,6 +241,30 @@ inline std::string BuildObjc3ParseArtifactEdgeRobustnessKey(
          ";consistent=" + (parse_artifact_edge_case_robustness_consistent ? "true" : "false");
 }
 
+inline std::string BuildObjc3DiagnosticGrammarHooksEdgeCaseRobustnessKey(
+    std::size_t parser_diagnostic_count,
+    std::size_t parser_diagnostic_code_count,
+    std::uint64_t parser_diagnostic_code_fingerprint,
+    bool parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent,
+    bool parser_diagnostic_grammar_hooks_edge_case_compatibility_ready,
+    bool parse_artifact_edge_case_robustness_consistent,
+    bool parser_diagnostic_grammar_hooks_edge_case_expansion_consistent,
+    bool parser_diagnostic_grammar_hooks_edge_case_robustness_ready) {
+  return "parser_diagnostic_count=" + std::to_string(parser_diagnostic_count) +
+         ";parser_diagnostic_code_count=" + std::to_string(parser_diagnostic_code_count) +
+         ";parser_diagnostic_code_fingerprint=" + std::to_string(parser_diagnostic_code_fingerprint) +
+         ";edge_case_compatibility_consistent=" +
+         (parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent ? "true" : "false") +
+         ";edge_case_compatibility_ready=" +
+         (parser_diagnostic_grammar_hooks_edge_case_compatibility_ready ? "true" : "false") +
+         ";parse_artifact_edge_case_robustness_consistent=" +
+         (parse_artifact_edge_case_robustness_consistent ? "true" : "false") +
+         ";edge_case_expansion_consistent=" +
+         (parser_diagnostic_grammar_hooks_edge_case_expansion_consistent ? "true" : "false") +
+         ";edge_case_robustness_ready=" +
+         (parser_diagnostic_grammar_hooks_edge_case_robustness_ready ? "true" : "false");
+}
+
 inline bool Objc3ParseLoweringReadinessKeyHasPrefix(
     const std::string &value,
     const std::string &prefix) {
@@ -1867,6 +1891,28 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_token_count_budget_consistent,
       surface.language_version_pragma_coordinate_order_consistent,
       surface.parse_artifact_edge_case_robustness_consistent);
+  surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent =
+      surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready &&
+      surface.parse_artifact_edge_case_robustness_consistent &&
+      surface.parser_diagnostic_code_surface_deterministic &&
+      surface.parser_diagnostic_source_precision_scaffold_ready &&
+      !surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_key.empty() &&
+      !surface.parse_artifact_diagnostics_hardening_key.empty();
+  surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready =
+      surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.language_version_pragma_coordinate_order_consistent;
+  surface.parser_diagnostic_grammar_hooks_edge_case_robustness_key =
+      BuildObjc3DiagnosticGrammarHooksEdgeCaseRobustnessKey(
+          surface.parser_diagnostic_count,
+          surface.parser_diagnostic_code_count,
+          surface.parser_diagnostic_code_fingerprint,
+          surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent,
+          surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready,
+          surface.parse_artifact_edge_case_robustness_consistent,
+          surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent,
+          surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready);
   surface.long_tail_grammar_edge_case_compatibility_consistent =
       surface.long_tail_grammar_expansion_ready &&
       surface.long_tail_grammar_compatibility_handoff_ready &&
@@ -1946,6 +1992,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_replay_key_deterministic &&
       surface.parse_artifact_diagnostics_hardening_consistent &&
       surface.parse_artifact_edge_case_robustness_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready &&
       !surface.long_tail_grammar_handoff_key.empty() &&
       !surface.long_tail_grammar_expansion_key.empty() &&
       !surface.long_tail_grammar_edge_case_compatibility_key.empty() &&
@@ -1954,7 +2002,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.parse_artifact_handoff_key.empty() &&
       !surface.parse_artifact_replay_key.empty() &&
       !surface.parse_artifact_diagnostics_hardening_key.empty() &&
-      !surface.parse_artifact_edge_robustness_key.empty();
+      !surface.parse_artifact_edge_robustness_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_edge_case_robustness_key.empty();
   surface.parse_recovery_determinism_hardening_key = BuildObjc3ParseRecoveryDeterminismHardeningKey(
       surface.parser_contract_snapshot_present,
       surface.parser_contract_deterministic,
@@ -3029,6 +3078,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser diagnostic grammar hooks edge-case compatibility is inconsistent";
   } else if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready) {
     surface.failure_reason = "parser diagnostic grammar hooks edge-case compatibility is not ready";
+  } else if (!surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent) {
+    surface.failure_reason = "parser diagnostic grammar hooks edge-case expansion is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready) {
+    surface.failure_reason = "parser diagnostic grammar hooks edge-case robustness is not ready";
   } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
     surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
   } else if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {

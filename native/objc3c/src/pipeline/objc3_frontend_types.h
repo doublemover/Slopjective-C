@@ -124,6 +124,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parser_diagnostic_grammar_hooks_core_feature_expansion_ready = false;
   bool parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent = false;
   bool parser_diagnostic_grammar_hooks_edge_case_compatibility_ready = false;
+  bool parser_diagnostic_grammar_hooks_edge_case_expansion_consistent = false;
+  bool parser_diagnostic_grammar_hooks_edge_case_robustness_ready = false;
   bool parser_token_count_budget_consistent = false;
   bool parse_artifact_layout_fingerprint_consistent = false;
   bool parse_artifact_fingerprint_consistent = false;
@@ -209,6 +211,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string parser_diagnostic_grammar_hooks_core_feature_key;
   std::string parser_diagnostic_grammar_hooks_core_feature_expansion_key;
   std::string parser_diagnostic_grammar_hooks_edge_case_compatibility_key;
+  std::string parser_diagnostic_grammar_hooks_edge_case_robustness_key;
   std::string parse_artifact_edge_robustness_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;

@@ -267,6 +267,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M243-D003` dependency continuity so core feature expansion drift fails closed.
   - deterministic lane-D CLI/reporting output edge-case compatibility completion metadata anchors for `M243-D005`
     with explicit `M243-D004` dependency continuity so edge-case compatibility drift fails closed.
+  - deterministic lane-D CLI/reporting output edge-case expansion and robustness metadata anchors for `M243-D006`
+    with explicit `M243-D005` dependency continuity so edge-case expansion drift fails closed.
   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
     continuity so diagnostics surfacing scaffold drift fails closed.
@@ -294,6 +296,10 @@ A conforming implementation shall preserve, for all exported declarations:
      edge-case expansion and robustness metadata anchors for `M243-B006` with
      explicit `M243-B005` dependency continuity so edge-case expansion
      robustness drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     diagnostics hardening metadata anchors for `M243-B007` with
+     explicit `M243-B006` dependency continuity so diagnostics hardening
+     drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
@@ -322,6 +328,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M243-E003`, `M243-A004`, `M243-B004`, `M243-C003`, and `M243-D003`, including
      cross-lane expansion maturity tokens needed to keep diagnostics quality gate/replay-policy core feature
      expansion governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy edge-case and compatibility completion dependency anchors for
+     `M243-E004`, `M243-A005`, `M243-B005`, `M243-C005`, and `M243-D005`, including
+     cross-lane compatibility maturity tokens needed to keep diagnostics quality gate/replay-policy edge-case and
+     compatibility completion governance evidence fail-closed while lane readiness remains staged.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
