@@ -422,6 +422,12 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A semantic-pass performance and quality guardrails metadata anchors for `M227-A011`
       with parser/sema performance-quality guardrails evidence and fail-closed continuity
       so parser/sema performance-quality drift fails closed.
+    - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
+      with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
+      so semantic-pass cross-lane dependency drift fails closed.
+    - deterministic lane-A semantic-pass docs/operator runbook synchronization metadata anchors for `M227-A013`
+      with operator command-sequencing and dependency-anchor continuity evidence
+      so semantic-pass runbook drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

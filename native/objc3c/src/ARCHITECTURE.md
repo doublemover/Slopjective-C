@@ -83,6 +83,14 @@ Current-state note:
   `deterministic_parser_sema_performance_quality_guardrails`) in handoff/manager
   contracts and lane-A readiness wiring so guardrail drift fails closed before
   cross-lane synchronization workpacks.
+- M227 lane-A A012 cross-lane integration sync anchors deterministic lane
+  dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
+  `M227-E001`) in a single fail-closed integration packet so cross-lane
+  dependency drift is surfaced before docs/runbook synchronization workpacks.
+- M227 lane-A A013 docs and operator runbook synchronization anchors explicit
+  operator-facing dependency/command continuity in
+  `docs/runbooks/m227_wave_execution_runbook.md` and lane-A readiness wiring so
+  runbook/closeout drift fails closed before release-candidate replay workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

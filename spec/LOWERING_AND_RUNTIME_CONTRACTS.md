@@ -475,6 +475,14 @@ At minimum, the pass-graph gate shall validate:
   lane-A dependency anchor (`M227-A011`) and fail closed on parser/sema
   performance-quality guardrail drift before cross-lane synchronization
   validation advances.
+- semantic-pass cross-lane integration sync governance shall preserve explicit
+  lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
+  lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
+  `M227-E001`) drift before docs/runbook synchronization validation advances.
+- semantic-pass docs and operator runbook synchronization governance shall
+  preserve explicit lane-A dependency anchor (`M227-A013`) and fail closed when
+  operator command sequencing, dependency contract anchors, or readiness wiring
+  drift before release-candidate replay validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before
