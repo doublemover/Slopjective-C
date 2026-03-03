@@ -561,6 +561,13 @@ Current-state note:
   `pipeline/objc3_parse_lowering_readiness_surface.h`, and
   `pipeline/objc3_frontend_artifacts.cpp` so parser replay drift fails closed
   before conformance maturity gates advance.
+- M243 lane-A A009 conformance matrix implementation anchors parser diagnostic
+  grammar-hook conformance matrix guardrails in
+  `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_parse_lowering_readiness_surface.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so parser diagnostic conformance
+  matrix drift fails closed before parse/lowering conformance corpus and
+  performance-quality gate progression.
 - M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
   sema diagnostics bus and pass-flow freeze in
   `sema/objc3_sema_pass_manager_contract.h` and
@@ -611,6 +618,12 @@ Current-state note:
   `pipeline/objc3_frontend_pipeline.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so diagnostics hardening consistency,
   readiness, and replay-key continuity remain deterministic and fail-closed.
+- M243 lane-C C008 recovery and determinism hardening anchors lowering/runtime diagnostics surfacing
+  recovery closure in
+  `pipeline/objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so recovery/determinism consistency,
+  readiness, and replay-key continuity remain deterministic and fail-closed.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`
@@ -650,6 +663,11 @@ Current-state note:
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_recovery_determinism_hardening_surface.h`
   and `pipeline/objc3_frontend_pipeline.cpp` so lane-B recovery/determinism closure
   remains deterministic and fail-closed for semantic diagnostics UX/fix-it.
+- M243 lane-B B010 semantic diagnostic taxonomy/fix-it synthesis conformance corpus expansion
+  anchors conformance-corpus consistency/readiness and conformance-corpus-key continuity in
+  `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_conformance_corpus_expansion_surface.h`
+  and `pipeline/objc3_frontend_pipeline.cpp` so lane-B conformance corpus closure
+  remains deterministic and fail-closed against `M243-B009` conformance matrix drift.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
@@ -718,6 +736,16 @@ Current-state note:
   `spec/planning/compiler/m243/m243_d008_cli_reporting_and_output_contract_integration_recovery_determinism_hardening_packet.md`,
   so diagnostics schema/summary output contracts remain deterministic and
   fail-closed against `M243-D007` dependency drift.
+- M243 lane-D D009 conformance matrix implementation anchors CLI/reporting output contract integration
+  conformance closure in
+  `io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h`,
+  `io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h`, and
+  `tools/objc3c_frontend_c_api_runner.cpp`, frozen by
+  `docs/contracts/m243_cli_reporting_and_output_contract_integration_conformance_matrix_implementation_d009_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_d009_cli_reporting_and_output_contract_integration_conformance_matrix_implementation_packet.md`,
+  so diagnostics schema/summary output contracts remain deterministic and
+  fail-closed against `M243-D008` dependency drift.
 - M243 lane-E E001 diagnostics quality gate/replay policy contract and architecture freeze
   anchors dependency references (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) in
@@ -768,6 +796,13 @@ Current-state note:
   and `package.json` so diagnostics quality gate/replay-policy diagnostics
   hardening evidence remains deterministic and fail-closed across mixed-lane
   dependency maturity.
+- M243 lane-E E008 diagnostics quality gate/replay policy recovery and determinism hardening anchors dependency references
+  (`M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and `M243-D006`) in
+  `docs/contracts/m243_lane_e_diagnostics_quality_gate_and_replay_policy_recovery_and_determinism_hardening_e008_expectations.md`,
+  `spec/planning/compiler/m243/m243_e008_lane_e_diagnostics_quality_gate_and_replay_policy_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so diagnostics quality gate/replay-policy recovery and
+  determinism hardening evidence remains deterministic and fail-closed across
+  mixed-lane dependency maturity.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
