@@ -440,6 +440,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
+    - deterministic lane-A frontend optimization hint modular split metadata anchors for `M246-A002`
+      with explicit `M246-A001` dependency continuity so hint-capture scaffolding drift fails closed.
     - deterministic lane-B semantic invariants for optimization legality metadata anchors for `M246-B001`
       with semantic legality evidence and optimizer replay-budget continuity so legality
       drift fails closed.

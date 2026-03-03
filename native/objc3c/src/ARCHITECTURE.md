@@ -822,6 +822,12 @@ Current-state note:
   `spec/planning/compiler/m246/m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_packet.md`,
   and `package.json` so optimizer hint-capture continuity remains deterministic
   and fail-closed against parser/AST hint drift.
+- M246 lane-A A002 frontend optimization hint capture modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m246_frontend_optimization_hint_capture_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m246/m246_a002_frontend_optimization_hint_capture_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split optimization hint continuity remains
+  deterministic and fail-closed against `M246-A001` dependency drift.
 - M246 lane-B B001 semantic invariants for optimization legality contract and architecture freeze anchors
   explicit lane-B contract freeze artifacts in
   `docs/contracts/m246_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_b001_expectations.md`,
