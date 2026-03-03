@@ -103,6 +103,10 @@ Current-state note:
   `performance_quality_guardrails_*`) and enforces fail-closed
   performance-quality guardrails gating in
   `pipeline/objc3_frontend_artifacts.cpp` before IR emission.
+- M228 lane-A A012 cross-lane integration sync anchors deterministic
+  lane-contract continuity (`A011`, `B007`, `C005`, `D006`, `E006`) through
+  contract/spec tooling so lane-A integration evidence fails closed when
+  cross-lane contract anchors drift.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,

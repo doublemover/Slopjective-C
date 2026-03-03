@@ -126,6 +126,9 @@ At minimum, the pass-graph gate shall validate:
 - performance and quality guardrails shall include deterministic
   performance-quality consistency and performance-quality readiness/key gates
   that fail closed before IR emission.
+- cross-lane integration sync shall preserve deterministic lane dependency
+  anchors (`A011`, `B007`, `C005`, `D006`, `E006`) and fail closed when
+  contract continuity drifts.
 - IR-emission core-feature expansion shall remain deterministic, preserve
   expansion readiness/key continuity, and fail closed when pass-graph
   expansion continuity or expansion metadata transport drifts.

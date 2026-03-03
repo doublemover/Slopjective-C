@@ -97,6 +97,8 @@ A conforming implementation shall preserve, for all exported declarations:
      pass-graph conformance-corpus evidence,
    - deterministic performance-quality guardrails readiness/key anchors for
      lowering pass-graph performance-quality evidence,
+   - deterministic cross-lane integration sync anchors for `A011`, `B007`,
+     `C005`, `D006`, and `E006` dependency continuity evidence,
    - deterministic ownership-aware lowering edge-case compatibility
      consistency/readiness and compatibility-key anchors for lane-B closeout
      evidence,
