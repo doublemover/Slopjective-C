@@ -268,6 +268,10 @@ At minimum, the pass-graph gate shall validate:
   downstream runtime projection and cross-lane conformance expansion advances.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
+- interop semantic contracts and type mediation governance shall preserve
+  deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
+  and fail closed on semantic/type mediation drift before downstream interop
+  lowering/runtime integration advances.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
