@@ -399,6 +399,8 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic/lowering modular split metadata anchors for
      `M248-B002` with explicit `M248-B001` dependency continuity so semantic
      scaffolding drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints core feature metadata anchors for
+     `M245-B003` with explicit `M245-B002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
      with sema pass-flow compatibility evidence and parse/lowering compatibility handoff continuity
      so migration drift fails closed.
