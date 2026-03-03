@@ -119,6 +119,14 @@ Current-state note:
   (`check:objc3c:m227-b017-lane-b-readiness`) so `M227-B016` dependency
   continuity and lane-B advanced-diagnostics command sequencing remain
   deterministic and fail-closed against governance drift.
+- M227 lane-B B018 type-system advanced conformance workpack (shard 1) anchors
+  explicit lane-B advanced conformance workpack (shard 1) artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_advanced_conformance_workpack_shard1_b018_expectations.md`,
+  `spec/planning/compiler/m227/m227_b018_type_system_objc3_forms_advanced_conformance_workpack_shard1_packet.md`,
+  `docs/runbooks/m227_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m227-b018-lane-b-readiness`) so `M227-B017` dependency
+  continuity and lane-B advanced-conformance command sequencing remain
+  deterministic and fail-closed against governance drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
@@ -170,6 +178,14 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-d007-lane-d-readiness`) so runtime-facing metadata
   diagnostics-hardening continuity remains deterministic
   and fail-closed against `M227-D006` dependency drift.
+- M227 lane-D D008 runtime-facing type metadata recovery/determinism hardening anchors
+  explicit lane-D recovery/determinism hardening artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_recovery_determinism_hardening_d008_expectations.md`,
+  `spec/planning/compiler/m227/m227_d008_runtime_facing_type_metadata_recovery_determinism_hardening_packet.md`,
+  `scripts/check_m227_d008_runtime_facing_type_metadata_recovery_determinism_hardening_contract.py`,
+  and `package.json` (`check:objc3c:m227-d008-lane-d-readiness`) so runtime-facing metadata
+  recovery/determinism continuity remains deterministic
+  and fail-closed against `M227-D007` dependency drift.
 - M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`) in
   `docs/contracts/m227_lane_e_semantic_conformance_quality_gate_expectations.md`,
   `spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`,

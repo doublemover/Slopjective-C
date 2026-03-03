@@ -113,6 +113,8 @@ At minimum, the pass-graph gate shall validate:
   runtime-facing type metadata expansion/robustness consistency, readiness, or robustness-key continuity drift before diagnostics-hardening validation advances.
 - runtime-facing type metadata diagnostics hardening governance shall preserve explicit lane-D dependency anchors (`M227-D007`, `M227-D006`) and fail closed on
   runtime-facing type metadata diagnostics-hardening consistency, readiness, key, or alignment continuity drift before recovery/determinism validation advances.
+- runtime-facing type metadata recovery/determinism hardening governance shall preserve explicit lane-D dependency anchors (`M227-D008`, `M227-D007`) and fail closed on
+  runtime-facing type metadata recovery/determinism consistency, readiness, key, or alignment continuity drift before conformance-matrix validation advances.
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.
@@ -473,6 +475,7 @@ At minimum, the pass-graph gate shall validate:
 - type-system advanced core workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B015`, `M227-B014`) and fail closed on canonical ObjC type-form advanced-core command sequencing, evidence-path continuity, or advanced-core continuity drift before semantic compatibility and migration validation advances.
 - type-system advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B016`, `M227-B015`) and fail closed on canonical ObjC type-form advanced-edge-compatibility command sequencing, evidence-path continuity, or advanced-edge-compatibility continuity drift before semantic compatibility and migration validation advances.
 - type-system advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B017`, `M227-B016`) and fail closed on canonical ObjC type-form advanced-diagnostics command sequencing, evidence-path continuity, or advanced-diagnostics continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced conformance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B018`, `M227-B017`) and fail closed on canonical ObjC type-form advanced-conformance command sequencing, evidence-path continuity, or advanced-conformance continuity drift before semantic compatibility and migration validation advances.
 - typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
   lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
   before semantic compatibility and runtime-facing metadata validation advances.
