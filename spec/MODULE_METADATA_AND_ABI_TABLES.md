@@ -336,6 +336,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-B interop semantic/type mediation docs/operator runbook synchronization metadata anchors for `M244-B013`
       with explicit `M244-B012` dependency continuity and fail-closed evidence
       so interop semantic/type mediation docs/runbook synchronization drift fails closed.
+    - deterministic lane-B interop semantic/type mediation advanced core workpack (shard 1) metadata anchors for `M244-B015`
+      with explicit `M244-B014` dependency continuity and fail-closed evidence
+      so interop semantic/type mediation advanced core workpack (shard 1) drift fails closed.
     - deterministic lane-E interop conformance gate and operations dependency anchors for
        `M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`, including dependency-reference tokens
       wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed

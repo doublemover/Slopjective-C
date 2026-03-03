@@ -662,6 +662,11 @@ Current-state note:
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_docs_operator_runbook_synchronization_b013_expectations.md`,
   `spec/planning/compiler/m244/m244_b013_interop_semantic_contracts_and_type_mediation_docs_operator_runbook_synchronization_packet.md`,
   and `package.json` so `M244-B012` dependency continuity and docs/runbook synchronization evidence remain fail-closed.
+- M244 lane-B B015 interop semantic/type mediation advanced core workpack (shard 1) anchors
+  explicit lane-B advanced core workpack (shard 1) artifacts in
+  `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_advanced_core_workpack_shard1_b015_expectations.md`,
+  `spec/planning/compiler/m244/m244_b015_interop_semantic_contracts_and_type_mediation_advanced_core_workpack_shard1_packet.md`,
+  and `package.json` so `M244-B014` dependency continuity and advanced core workpack (shard 1) evidence remain fail-closed.
 - M244 lane-E E001 interop conformance gate and operations contract and architecture freeze
   anchors dependency references (`M244-A001`, `M244-B001`, `M244-C001`, and
   `M244-D001`) in
