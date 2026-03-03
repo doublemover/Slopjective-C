@@ -451,6 +451,10 @@ At minimum, the pass-graph gate shall validate:
 - suite partitioning modular split/scaffolding shall preserve explicit lane-A
   dependency anchors (`M248-A001`) and fail closed on scaffolding evidence drift
   before parser replay readiness advances.
+- suite partitioning and fixture ownership recovery and determinism hardening governance
+  shall preserve explicit lane-A dependency anchors (`M248-A007`) and fail
+  closed on recovery and determinism hardening evidence drift before downstream
+  parser replay and lane-e conformance matrix advances.
 - frontend behavior parity across toolchains governance shall preserve
   deterministic lane-A boundary anchors and fail closed on toolchain portability drift
   before semantic parity and lowering portability validation advances.
@@ -928,6 +932,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-D dependency anchors (`M248-D007`) and fail
   closed on recovery and determinism hardening evidence drift before downstream
   platform replay and lane-e conformance matrix advances.
+- runner/platform operations conformance matrix implementation governance
+  shall preserve explicit lane-D dependency anchors (`M248-D008`) and fail
+  closed on conformance matrix implementation evidence drift before downstream
+  platform replay and lane-e conformance corpus advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

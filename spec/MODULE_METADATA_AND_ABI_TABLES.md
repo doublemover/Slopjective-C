@@ -401,6 +401,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A suite partitioning modular split metadata anchors for
       `M248-A002` with explicit `M248-A001` dependency continuity so fixture
       scaffolding drift fails closed.
+    - deterministic lane-A suite partitioning and fixture ownership recovery and determinism hardening metadata anchors for `M248-A008`
+      with explicit `M248-A007` dependency continuity and fail-closed recovery/determinism evidence continuity.
     - deterministic lane-A frontend behavior parity metadata anchors for `M245-A001`
       with toolchain portability evidence and parser replay-budget continuity
       so frontend portability drift fails closed.
@@ -823,6 +825,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M248-D006` dependency continuity and fail-closed diagnostics evidence continuity.
   - deterministic lane-D runner/platform operations recovery and determinism hardening metadata anchors for `M248-D008`
     with explicit `M248-D007` dependency continuity and fail-closed recovery/determinism evidence continuity.
+  - deterministic lane-D runner/platform operations conformance matrix implementation metadata anchors for `M248-D009`
+    with explicit `M248-D008` dependency continuity and fail-closed conformance matrix evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 
