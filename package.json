@@ -644,6 +644,9 @@
     "check:objc3c:m243-b013-semantic-diagnostic-taxonomy-and-fix-it-synthesis-docs-operator-runbook-synchronization-contract": "python scripts/check_m243_b013_semantic_diagnostic_taxonomy_and_fix_it_synthesis_docs_operator_runbook_synchronization_contract.py",
     "test:tooling:m243-b013-semantic-diagnostic-taxonomy-and-fix-it-synthesis-docs-operator-runbook-synchronization-contract": "python -m pytest tests/tooling/test_check_m243_b013_semantic_diagnostic_taxonomy_and_fix_it_synthesis_docs_operator_runbook_synchronization_contract.py -q",
     "check:objc3c:m243-b013-lane-b-readiness": "npm run check:objc3c:m243-b012-lane-b-readiness && npm run check:objc3c:m243-b013-semantic-diagnostic-taxonomy-and-fix-it-synthesis-docs-operator-runbook-synchronization-contract && npm run test:tooling:m243-b013-semantic-diagnostic-taxonomy-and-fix-it-synthesis-docs-operator-runbook-synchronization-contract",
+    "check:objc3c:m243-b014-semantic-diagnostic-taxonomy-and-fix-it-synthesis-integration-closeout-and-gate-signoff-contract": "python scripts/check_m243_b014_semantic_diagnostic_taxonomy_and_fix_it_synthesis_integration_closeout_and_gate_signoff_contract.py",
+    "test:tooling:m243-b014-semantic-diagnostic-taxonomy-and-fix-it-synthesis-integration-closeout-and-gate-signoff-contract": "python -m pytest tests/tooling/test_check_m243_b014_semantic_diagnostic_taxonomy_and_fix_it_synthesis_integration_closeout_and_gate_signoff_contract.py -q",
+    "check:objc3c:m243-b014-lane-b-readiness": "npm run check:objc3c:m243-b013-lane-b-readiness && npm run check:objc3c:m243-b014-semantic-diagnostic-taxonomy-and-fix-it-synthesis-integration-closeout-and-gate-signoff-contract && npm run test:tooling:m243-b014-semantic-diagnostic-taxonomy-and-fix-it-synthesis-integration-closeout-and-gate-signoff-contract",
     "check:objc3c:m243-d001-cli-reporting-output-contract-integration-contract": "python scripts/check_m243_d001_cli_reporting_and_output_contract_integration_contract.py",
     "test:tooling:m243-d001-cli-reporting-output-contract-integration-contract": "python -m pytest tests/tooling/test_check_m243_d001_cli_reporting_and_output_contract_integration_contract.py -q",
     "check:objc3c:m243-d001-lane-d-readiness": "npm run check:objc3c:m243-d001-cli-reporting-output-contract-integration-contract && npm run test:tooling:m243-d001-cli-reporting-output-contract-integration-contract",
@@ -1075,3 +1078,4 @@
     "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
+
