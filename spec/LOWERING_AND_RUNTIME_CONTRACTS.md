@@ -447,6 +447,10 @@ At minimum, the pass-graph gate shall validate:
   closed on parser diagnostic grammar-hook recovery-determinism consistency,
   readiness, or replay-key continuity drift before conformance matrix
   expansions advance.
+- diagnostic grammar hooks and source precision performance and quality guardrails shall preserve lane-A dependency anchors (`M243-A010`)
+  and fail closed on readiness-chain continuity, architecture/spec anchor
+  continuity, or evidence-summary continuity drift before downstream lane-A
+  integration closures advance.
 - semantic diagnostic taxonomy and fix-it synthesis core feature implementation
   shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
   core-feature evidence drift before diagnostics hardening and conformance
