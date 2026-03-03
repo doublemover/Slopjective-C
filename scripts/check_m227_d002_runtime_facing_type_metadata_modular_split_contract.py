@@ -69,6 +69,25 @@ ARTIFACTS: dict[str, Path] = {
     / "compiler"
     / "m227"
     / "m227_d002_runtime_facing_type_metadata_modular_split_packet.md",
+    "d001_contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m227_runtime_facing_type_metadata_semantics_expectations.md",
+    "d001_packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m227"
+    / "m227_d001_runtime_facing_type_metadata_semantics_contract_freeze.md",
+    "d001_checker": ROOT / "scripts" / "check_m227_d001_runtime_facing_type_metadata_semantics_contract.py",
+    "d001_tooling_test": ROOT
+    / "tests"
+    / "tooling"
+    / "test_check_m227_d001_runtime_facing_type_metadata_semantics_contract.py",
+    "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
+    "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
+    "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+    "package_json": ROOT / "package.json",
 }
 
 ARTIFACT_ORDER: tuple[str, ...] = tuple(ARTIFACTS.keys())
@@ -193,29 +212,133 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ),
         (
             "M227-D002-DOC-02",
-            "`python scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py`",
+            "Issue `#5148` defines canonical lane-D modular split/scaffolding scope.",
         ),
         (
             "M227-D002-DOC-03",
-            "`python -m pytest tests/tooling/test_check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py -q`",
+            "Dependencies: `M227-D001`",
         ),
-        ("M227-D002-DOC-04", "`npm run build:objc3c-native`"),
+        (
+            "M227-D002-DOC-04",
+            "m227_d002_runtime_facing_type_metadata_modular_split_packet.md",
+        ),
         (
             "M227-D002-DOC-05",
+            "`python scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py`",
+        ),
+        (
+            "M227-D002-DOC-06",
+            "`python -m pytest tests/tooling/test_check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py -q`",
+        ),
+        ("M227-D002-DOC-07", "`npm run check:objc3c:m227-d002-lane-d-readiness`"),
+        (
+            "M227-D002-DOC-08",
             "`tmp/reports/m227/M227-D002/runtime_facing_type_metadata_modular_split_contract_summary.json`",
         ),
+        ("M227-D002-DOC-09", "`compile:objc3c`"),
+        ("M227-D002-DOC-10", "`proof:objc3c`"),
+        ("M227-D002-DOC-11", "`test:objc3c:execution-replay-proof`"),
+        ("M227-D002-DOC-12", "`test:objc3c:perf-budget`"),
     ),
     "planning_doc": (
         ("M227-D002-PLN-01", "# M227-D002 Runtime-Facing Type Metadata Modular Split Packet"),
         ("M227-D002-PLN-02", "Packet: `M227-D002`"),
+        ("M227-D002-PLN-03", "Issue: `#5148`"),
+        ("M227-D002-PLN-04", "Freeze date: `2026-03-03`"),
+        ("M227-D002-PLN-05", "Dependencies: `M227-D001`"),
         (
-            "M227-D002-PLN-03",
+            "M227-D002-PLN-06",
             "scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py",
         ),
         (
-            "M227-D002-PLN-04",
+            "M227-D002-PLN-07",
+            "`check:objc3c:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract`",
+        ),
+        (
+            "M227-D002-PLN-08",
+            "`test:tooling:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract`",
+        ),
+        (
+            "M227-D002-PLN-09",
+            "`check:objc3c:m227-d002-lane-d-readiness`",
+        ),
+        (
+            "M227-D002-PLN-10",
             "tmp/reports/m227/M227-D002/runtime_facing_type_metadata_modular_split_contract_summary.json",
         ),
+        ("M227-D002-PLN-11", "`compile:objc3c`"),
+        ("M227-D002-PLN-12", "`proof:objc3c`"),
+        ("M227-D002-PLN-13", "`test:objc3c:execution-replay-proof`"),
+        ("M227-D002-PLN-14", "`test:objc3c:perf-budget`"),
+    ),
+    "d001_contract_doc": (
+        (
+            "M227-D002-DEP-D001-01",
+            "Contract ID: `objc3c-runtime-facing-type-metadata-semantics-contract/m227-d001-v1`",
+        ),
+    ),
+    "d001_packet_doc": (
+        ("M227-D002-DEP-D001-02", "Packet: `M227-D001`"),
+        ("M227-D002-DEP-D001-03", "Dependencies: none"),
+    ),
+    "d001_checker": (
+        ("M227-D002-DEP-D001-04", 'MODE = "m227-d001-runtime-facing-type-metadata-semantics-contract-v1"'),
+    ),
+    "d001_tooling_test": (
+        ("M227-D002-DEP-D001-05", "check_m227_d001_runtime_facing_type_metadata_semantics_contract"),
+    ),
+    "architecture_doc": (
+        (
+            "M227-D002-ARCH-01",
+            "M227 lane-D D002 runtime-facing type metadata modular split/scaffolding anchors",
+        ),
+        (
+            "M227-D002-ARCH-02",
+            "docs/contracts/m227_runtime_facing_type_metadata_modular_split_d002_expectations.md",
+        ),
+    ),
+    "lowering_spec": (
+        (
+            "M227-D002-SPC-01",
+            "runtime-facing type metadata modular split/scaffolding governance shall preserve explicit",
+        ),
+        (
+            "M227-D002-SPC-02",
+            "lane-D dependency anchors (`M227-D001`) and fail closed on sema handoff scaffold/pass-flow scaffold",
+        ),
+    ),
+    "metadata_spec": (
+        (
+            "M227-D002-META-01",
+            "deterministic lane-D runtime-facing type metadata modular split/scaffolding metadata anchors for `M227-D002`",
+        ),
+        (
+            "M227-D002-META-02",
+            "explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed",
+        ),
+    ),
+    "package_json": (
+        (
+            "M227-D002-PKG-01",
+            '"check:objc3c:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract": '
+            '"python scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py"',
+        ),
+        (
+            "M227-D002-PKG-02",
+            '"test:tooling:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract": '
+            '"python -m pytest tests/tooling/test_check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py -q"',
+        ),
+        (
+            "M227-D002-PKG-03",
+            '"check:objc3c:m227-d002-lane-d-readiness": '
+            '"npm run check:objc3c:m227-d001-lane-d-readiness '
+            '&& npm run check:objc3c:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract '
+            '&& npm run test:tooling:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract"',
+        ),
+        ("M227-D002-PKG-04", '"compile:objc3c": '),
+        ("M227-D002-PKG-05", '"proof:objc3c": '),
+        ("M227-D002-PKG-06", '"test:objc3c:execution-replay-proof": '),
+        ("M227-D002-PKG-07", '"test:objc3c:perf-budget": '),
     ),
 }
 

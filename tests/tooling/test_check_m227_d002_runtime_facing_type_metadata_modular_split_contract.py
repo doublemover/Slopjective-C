@@ -13,7 +13,8 @@ SPEC = importlib.util.spec_from_file_location(
     "check_m227_d002_runtime_facing_type_metadata_modular_split_contract",
     SCRIPT_PATH,
 )
-assert SPEC is not None and SPEC.loader is not None
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError("Unable to load scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py")
 contract = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = contract
 SPEC.loader.exec_module(contract)
@@ -27,14 +28,14 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m227-d002-runtime-facing-type-metadata-modular-split-scaffold-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 45
+    assert payload["checks_total"] >= 90
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
 
-def test_contract_default_summary_out_is_under_tmp_reports_m227() -> None:
+def test_contract_default_summary_out_is_under_tmp_reports_m227_d002() -> None:
     args = contract.parse_args([])
-    assert str(args.summary_out).replace("\\", "/").startswith("tmp/reports/m227/")
+    assert str(args.summary_out).replace("\\", "/").startswith("tmp/reports/m227/M227-D002/")
 
 
 def test_contract_fails_closed_when_contract_id_drifts(
@@ -129,5 +130,73 @@ def test_contract_fails_closed_when_runtime_shim_projection_is_removed(
     assert payload["ok"] is False
     assert any(
         failure["check_id"] == "M227-D002-ART-05"
+        for failure in payload["failures"]
+    )
+
+
+def test_contract_fails_closed_when_package_lane_d_readiness_drops_dependency_chain(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_package = tmp_path / "package.json"
+    drift_package.write_text(
+        contract.ARTIFACTS["package_json"]
+        .read_text(encoding="utf-8")
+        .replace(
+            '"check:objc3c:m227-d002-lane-d-readiness": '
+            '"npm run check:objc3c:m227-d001-lane-d-readiness '
+            '&& npm run check:objc3c:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract '
+            '&& npm run test:tooling:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract"',
+            '"check:objc3c:m227-d002-lane-d-readiness": '
+            '"npm run check:objc3c:m227-d002-runtime-facing-type-metadata-modular-split-scaffolding-contract"',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["package_json"] = drift_package
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(
+        failure["check_id"] == "M227-D002-PKG-03"
+        for failure in payload["failures"]
+    )
+
+
+def test_contract_fails_closed_when_architecture_anchor_phrase_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_architecture = tmp_path / "ARCHITECTURE.md"
+    drift_architecture.write_text(
+        contract.ARTIFACTS["architecture_doc"]
+        .read_text(encoding="utf-8")
+        .replace(
+            "M227 lane-D D002 runtime-facing type metadata modular split/scaffolding anchors",
+            "M227 lane-D D002 runtime-facing modular split/scaffolding anchors",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["architecture_doc"] = drift_architecture
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(
+        failure["check_id"] == "M227-D002-ARCH-01"
         for failure in payload["failures"]
     )
