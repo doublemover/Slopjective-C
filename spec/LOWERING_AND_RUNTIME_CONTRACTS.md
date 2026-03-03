@@ -485,6 +485,9 @@ At minimum, the pass-graph gate shall validate:
 - frontend optimization hint capture governance shall preserve explicit
   deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
   before optimizer pipeline integration and invariants validation advances.
+- semantic invariants for optimization legality governance shall preserve explicit
+  deterministic lane-B semantic legality anchors and fail closed on optimization legality drift
+  before optimizer pipeline integration and invariants validation advances.
 - IR optimization pass wiring and validation governance shall preserve explicit
   deterministic lane-C pass-wiring anchors and fail closed on optimizer IR validation drift
   before optimizer pipeline integration and invariants validation advances.

@@ -822,6 +822,12 @@ Current-state note:
   `spec/planning/compiler/m246/m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_packet.md`,
   and `package.json` so optimizer hint-capture continuity remains deterministic
   and fail-closed against parser/AST hint drift.
+- M246 lane-B B001 semantic invariants for optimization legality contract and architecture freeze anchors
+  explicit lane-B contract freeze artifacts in
+  `docs/contracts/m246_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m246/m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so semantic legality continuity remains deterministic
+  and fail-closed against optimization legality drift.
 - M246 lane-C C001 IR optimization pass wiring and validation contract and architecture freeze anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m246_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_c001_expectations.md`,
