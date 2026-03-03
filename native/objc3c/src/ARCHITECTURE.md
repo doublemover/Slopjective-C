@@ -838,6 +838,13 @@ Current-state note:
   and `package.json` so diagnostics quality gate/replay-policy conformance
   matrix implementation evidence remains deterministic and fail-closed across
   mixed-lane dependency maturity.
+- M243 lane-E E010 diagnostics quality gate/replay policy conformance corpus expansion anchors dependency references
+  (`M243-E009`, `M243-A004`, `M243-B005`, `M243-C005`, and `M243-D007`) in
+  `docs/contracts/m243_lane_e_diagnostics_quality_gate_and_replay_policy_conformance_corpus_expansion_e010_expectations.md`,
+  `spec/planning/compiler/m243/m243_e010_lane_e_diagnostics_quality_gate_and_replay_policy_conformance_corpus_expansion_packet.md`,
+  and `package.json` so diagnostics quality gate/replay-policy conformance
+  corpus expansion evidence remains deterministic and fail-closed across
+  mixed-lane dependency maturity.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)

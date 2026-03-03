@@ -378,13 +378,17 @@ A conforming implementation shall preserve, for all exported declarations:
      `M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and `M243-D006`, including
      mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy recovery and determinism
      hardening governance evidence fail-closed while lane readiness remains staged.
-   - deterministic lane-E diagnostics quality gate and replay policy conformance matrix implementation dependency anchors for
-     `M243-E008`, `M243-A003`, `M243-B004`, `M243-C005`, and `M243-D006`, including
-     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy conformance matrix
-     implementation governance evidence fail-closed while lane readiness remains staged.
-   - deterministic lane-D runner operations metadata anchors for `M248-D001`
-     with compile-route evidence and perf-budget continuity so platform
-     operation drift fails closed.
+  - deterministic lane-E diagnostics quality gate and replay policy conformance matrix implementation dependency anchors for
+    `M243-E008`, `M243-A003`, `M243-B004`, `M243-C005`, and `M243-D006`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy conformance matrix
+    implementation governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy conformance corpus expansion dependency anchors for
+    `M243-E009`, `M243-A004`, `M243-B005`, `M243-C005`, and `M243-D007`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy conformance corpus
+    expansion governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-D runner operations metadata anchors for `M248-D001`
+    with compile-route evidence and perf-budget continuity so platform
+    operation drift fails closed.
    - deterministic lane-D runner modular split metadata anchors for `M248-D002`
      with explicit `M248-D001` dependency continuity so platform scaffolding
      drift fails closed.
