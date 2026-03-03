@@ -26,6 +26,12 @@ ARTIFACTS: dict[str, Path] = {
     / "src"
     / "sema"
     / "objc3_sema_pass_manager.cpp",
+    "sema_pass_flow_scaffold_source": ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "sema"
+    / "objc3_sema_pass_flow_scaffold.cpp",
     "pipeline_types": ROOT
     / "native"
     / "objc3c"
@@ -57,22 +63,32 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ),
     ),
     "sema_pass_manager_source": (
-        ("M227-A001-SRC-01", "result.sema_pass_flow_summary.pass_executed[pass_index] = true;"),
+        ("M227-A001-SRC-01", "MarkObjc3SemaPassExecuted(result.sema_pass_flow_summary, pass);"),
         (
             "M227-A001-SRC-02",
-            "++result.sema_pass_flow_summary.executed_pass_count;",
+            "FinalizeObjc3SemaPassFlowSummary(result.sema_pass_flow_summary,",
         ),
         (
             "M227-A001-SRC-03",
-            "result.sema_pass_flow_summary.pass_order_matches_contract =",
+            "result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;",
         ),
+    ),
+    "sema_pass_flow_scaffold_source": (
         (
             "M227-A001-SRC-04",
-            "result.sema_pass_flow_summary.symbol_flow_counts_consistent =",
+            "summary.pass_executed[pass_index] = true;",
         ),
         (
             "M227-A001-SRC-05",
-            "result.parity_surface.sema_pass_flow_summary = result.sema_pass_flow_summary;",
+            "++summary.executed_pass_count;",
+        ),
+        (
+            "M227-A001-SRC-06",
+            "summary.pass_order_matches_contract =",
+        ),
+        (
+            "M227-A001-SRC-07",
+            "summary.symbol_flow_counts_consistent =",
         ),
     ),
     "pipeline_types": (
