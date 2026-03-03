@@ -978,3 +978,5 @@ deterministic lane-C typed sema-to-lowering edge-case compatibility metadata anc
 deterministic lane-C typed sema-to-lowering edge-case expansion and robustness metadata anchors for `M227-C006` must remain synchronized across typed robustness keys, parse-artifact robustness keys, and readiness alignment metadata surfaces before lane-C robustness closure can pass.
 
 deterministic lane-C typed sema-to-lowering diagnostics-hardening metadata anchors for `M227-C007` must remain synchronized across typed diagnostics-hardening keys, parse diagnostics-hardening keys, and readiness alignment metadata surfaces before lane-C diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering recovery/determinism metadata anchors for `M227-C008` must remain synchronized across typed recovery keys, parse recovery keys, and readiness alignment metadata surfaces before lane-C recovery closure can pass.

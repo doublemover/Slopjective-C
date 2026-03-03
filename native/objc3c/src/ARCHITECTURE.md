@@ -1973,3 +1973,6 @@ Forbidden:
 - M227 lane-C C007 typed sema-to-lowering diagnostics hardening anchors require
   fail-closed diagnostics-hardening continuity between typed handoff surfaces
   and parse/lowering readiness before lane-C diagnostics closure can pass.
+- M227 lane-C C008 typed sema-to-lowering recovery and determinism hardening anchors
+  require fail-closed recovery/determinism continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C recovery closure can pass.

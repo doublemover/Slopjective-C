@@ -1,0 +1,48 @@
+# M227-D005 Runtime-Facing Type Metadata Edge-Case and Compatibility Completion Packet
+
+Packet: `M227-D005`
+Milestone: `M227`
+Lane: `D`
+Issue: `#5151`
+Scaffold date: `2026-03-03`
+Dependencies: `M227-D004`, `M227-A005`, `M227-B005`, `M227-C005`
+
+## Purpose
+
+Execute lane-D runtime-facing type metadata edge-case and compatibility
+completion governance by freezing prerequisite dependency tokens/references and
+failing closed on dependency drift before downstream lane-D robustness and
+readiness workpacks.
+
+## Scope Anchors
+
+- Contract:
+  `docs/contracts/m227_runtime_facing_type_metadata_edge_case_compatibility_completion_d005_expectations.md`
+- Checker:
+  `scripts/check_m227_d005_runtime_facing_type_metadata_edge_case_compatibility_completion_contract.py`
+- Tooling tests:
+  `tests/tooling/test_check_m227_d005_runtime_facing_type_metadata_edge_case_compatibility_completion_contract.py`
+- Evidence summary:
+  `tmp/reports/m227/M227-D005/runtime_facing_type_metadata_edge_case_compatibility_completion_contract_summary.json`
+
+## Frozen Dependency Tokens and References
+
+| Lane Task | Frozen Dependency Token | Dependency Reference |
+| --- | --- | --- |
+| `M227-D004` | `M227-D004` | Contract `docs/contracts/m227_runtime_facing_type_metadata_core_feature_expansion_d004_expectations.md`; checker `scripts/check_m227_d004_runtime_facing_type_metadata_core_feature_expansion_contract.py`; tooling test `tests/tooling/test_check_m227_d004_runtime_facing_type_metadata_core_feature_expansion_contract.py`; packet `spec/planning/compiler/m227/m227_d004_runtime_facing_type_metadata_core_feature_expansion_packet.md`. |
+| `M227-A005` | `M227-A005` | Contract `docs/contracts/m227_semantic_pass_edge_compat_completion_expectations.md`; checker `scripts/check_m227_a005_semantic_pass_edge_compat_completion_contract.py`; tooling test `tests/tooling/test_check_m227_a005_semantic_pass_edge_compat_completion_contract.py`; packet `spec/planning/compiler/m227/m227_a005_semantic_pass_edge_compat_completion_packet.md`. |
+| `M227-B005` | `M227-B005` | Contract `docs/contracts/m227_type_system_objc3_forms_edge_compat_b005_expectations.md`; checker `scripts/check_m227_b005_type_system_objc3_forms_edge_compat_contract.py`; tooling test `tests/tooling/test_check_m227_b005_type_system_objc3_forms_edge_compat_contract.py`; packet `spec/planning/compiler/m227/m227_b005_type_system_objc3_forms_edge_compat_packet.md`. |
+| `M227-C005` | `M227-C005` | Contract `docs/contracts/m227_typed_sema_to_lowering_edge_case_compatibility_completion_c005_expectations.md`; checker `scripts/check_m227_c005_typed_sema_to_lowering_edge_case_compatibility_completion_contract.py`; tooling test `tests/tooling/test_check_m227_c005_typed_sema_to_lowering_edge_case_compatibility_completion_contract.py`; packet `spec/planning/compiler/m227/m227_c005_typed_sema_to_lowering_edge_case_compatibility_completion_packet.md`. |
+
+Dependency matrices in the expectations contract and this packet must remain
+identical and deterministic; checker semantics fail closed on token drift,
+reference drift, row-order drift, or row-count drift.
+
+## Gate Commands
+
+- `python scripts/check_m227_d005_runtime_facing_type_metadata_edge_case_compatibility_completion_contract.py`
+- `python -m pytest tests/tooling/test_check_m227_d005_runtime_facing_type_metadata_edge_case_compatibility_completion_contract.py -q`
+
+## Evidence Output
+
+- `tmp/reports/m227/M227-D005/runtime_facing_type_metadata_edge_case_compatibility_completion_contract_summary.json`
