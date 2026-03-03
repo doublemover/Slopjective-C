@@ -2000,3 +2000,7 @@ Forbidden:
 - M227 lane-C C015 typed sema-to-lowering advanced core workpack (shard 1) anchors
   require fail-closed advanced-core continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C shard-1 closure can pass.
+- M227 lane-C C016 typed sema-to-lowering advanced edge compatibility workpack (shard 1) anchors
+  require fail-closed advanced-edge compatibility continuity between typed
+  handoff surfaces and parse/lowering readiness before lane-C shard-1 edge
+  compatibility closure can pass.
