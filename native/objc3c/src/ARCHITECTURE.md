@@ -54,6 +54,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-c001-lane-c-readiness`) so typed
   sema transport and lowering metadata continuity remain deterministic and
   fail-closed against handoff or metadata drift.
+- M227 lane-C C002 typed sema-to-lowering modular split scaffolding anchors
+  explicit lane-C scaffolding artifacts in
+  `docs/contracts/m227_typed_sema_to_lowering_modular_split_c002_expectations.md`,
+  `spec/planning/compiler/m227/m227_c002_typed_sema_to_lowering_modular_split_packet.md`,
+  and `package.json` (`check:objc3c:m227-c002-lane-c-readiness`) so typed
+  sema/lowering modular split continuity remains deterministic and fail-closed
+  against `M227-C001` dependency drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and

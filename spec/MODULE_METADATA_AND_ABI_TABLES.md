@@ -407,6 +407,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
       with typed sema handoff evidence and lowering metadata continuity so
       sema-to-lowering contract drift fails closed.
+    - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
+      with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
     - deterministic lane-A semantic-pass conformance matrix metadata anchors for `M227-A009`
       with parser/sema conformance-matrix evidence and corpus replay continuity
       so parser/sema conformance-matrix drift fails closed.
