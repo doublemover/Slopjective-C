@@ -417,6 +417,8 @@ A conforming implementation shall preserve, for all exported declarations:
       portability drift fails closed.
     - deterministic lane-C lowering/IR portability modular split metadata anchors for `M245-C002`
       with explicit `M245-C001` dependency continuity so portability scaffolding drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility modular split metadata anchors for `M245-D002`
+      with explicit `M245-D001` dependency continuity so reproducibility scaffolding drift fails closed.
     - deterministic lane-E portability gate/release checklist dependency anchors for
       `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
       integration freeze evidence remains deterministic and fail-closed.

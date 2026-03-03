@@ -773,6 +773,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c002_lowering_ir_portability_contracts_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split portability continuity remains
   deterministic and fail-closed against `M245-C001` dependency drift.
+- M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
+  explicit lane-D scaffolding artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m245/m245_d002_build_link_runtime_reproducibility_operations_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split reproducibility continuity remains
+  deterministic and fail-closed against `M245-D001` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.

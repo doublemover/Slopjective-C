@@ -462,6 +462,9 @@ At minimum, the pass-graph gate shall validate:
   validation advances.
 - lowering/IR portability modular split/scaffolding governance shall preserve explicit lane-C dependency anchors (`M245-C001`) and fail closed on modular split evidence drift before runtime portability scaffolding advances.
 - frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
+- build/link/runtime reproducibility modular split/scaffolding governance shall preserve explicit
+  lane-D dependency anchors (`M245-D001`) and fail closed on modular split evidence drift
+  before runtime reproducibility scaffolding advances.
 - portability gate/release checklist contract and architecture freeze wiring shall
   preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
   `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
