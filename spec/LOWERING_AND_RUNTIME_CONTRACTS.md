@@ -368,6 +368,9 @@ At minimum, the pass-graph gate shall validate:
 - interop semantic/type mediation cross-lane integration sync governance shall preserve explicit
   lane-B dependency anchor (`M244-B011`) and fail closed when cross-lane integration
   dependency references or readiness evidence commands drift.
+- interop semantic/type mediation docs and operator runbook synchronization governance shall preserve explicit
+  lane-B dependency anchor (`M244-B012`) and fail closed when docs/runbook synchronization
+  dependency references or readiness evidence commands drift.
 - interop conformance gate and operations contract and architecture freeze wiring shall preserve explicit
   lane-E dependency anchors (`M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`),
   preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D readiness hooks,
