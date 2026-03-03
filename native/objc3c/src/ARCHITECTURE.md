@@ -795,6 +795,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d005_runner_reliability_and_platform_operations_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so compatibility completion continuity remains
   deterministic and fail-closed against `M248-D004` dependency drift.
+- M248 lane-D D006 runner/platform operations edge-case expansion and
+  robustness anchors explicit lane-D robustness artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_edge_case_expansion_and_robustness_d006_expectations.md`,
+  `spec/planning/compiler/m248/m248_d006_runner_reliability_and_platform_operations_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so robustness expansion continuity remains deterministic
+  and fail-closed against `M248-D005` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
