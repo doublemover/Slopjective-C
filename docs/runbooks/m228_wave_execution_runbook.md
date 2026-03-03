@@ -30,9 +30,11 @@ This runbook tracks current M228 lane sync coverage for:
    - `python -m pytest tests/tooling/test_check_m228_a014_lowering_pipeline_decomposition_pass_graph_release_candidate_replay_dry_run_contract.py -q`
    - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m228_a014_lowering_pipeline_decomposition_pass_graph_release_replay_dry_run.ps1`
 6. Run lane-A readiness chain:
+   - `npm run check:objc3c:m228-a014-lane-a-readiness`
+7. Validate advanced core workpack (shard 1) gate:
    - `python scripts/check_m228_a015_lowering_pipeline_decomposition_pass_graph_advanced_core_workpack_shard1_contract.py`
    - `python -m pytest tests/tooling/test_check_m228_a015_lowering_pipeline_decomposition_pass_graph_advanced_core_workpack_shard1_contract.py -q`
-7. Run lane-A readiness chain:
+8. Run lane-A readiness chain:
    - `npm run check:objc3c:m228-a015-lane-a-readiness`
 
 ## Evidence
