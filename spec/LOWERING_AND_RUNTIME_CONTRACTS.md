@@ -464,6 +464,7 @@ At minimum, the pass-graph gate shall validate:
 - type-system conformance matrix implementation governance shall preserve explicit lane-B dependency anchors (`M227-B009`, `M227-B008`) and fail closed on canonical ObjC type-form conformance matrix consistency/readiness or conformance-matrix-key continuity drift before semantic compatibility and migration validation advances.
 - type-system conformance corpus expansion governance shall preserve explicit lane-B dependency anchors (`M227-B010`, `M227-B009`) and fail closed on canonical ObjC type-form conformance corpus consistency/readiness, case-accounting continuity, or conformance-corpus-key continuity drift before semantic compatibility and migration validation advances.
 - type-system performance and quality guardrails governance shall preserve explicit lane-B dependency anchors (`M227-B011`, `M227-B010`) and fail closed on canonical ObjC type-form performance/quality guardrail accounting, consistency/readiness, or performance-quality-key continuity drift before semantic compatibility and migration validation advances.
+- type-system docs and operator runbook synchronization governance shall preserve explicit lane-B dependency anchors (`M227-B013`, `M227-B012`) and fail closed on canonical ObjC type-form docs/runbook command sequencing or evidence-path continuity drift before semantic compatibility and migration validation advances.
 - typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
   lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
   before semantic compatibility and runtime-facing metadata validation advances.
@@ -1123,3 +1124,5 @@ typed sema-to-lowering advanced core workpack (shard 1) governance shall preserv
 typed sema-to-lowering advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C016`, `M227-C015`) so typed advanced-edge compatibility continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C017`, `M227-C016`) so typed advanced-diagnostics continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C018`, `M227-C017`) so typed advanced-conformance continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.

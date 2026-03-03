@@ -424,6 +424,9 @@ A conforming implementation shall preserve, for all exported declarations:
       with canonical type-form performance/quality guardrail accounting, consistency/readiness, and
       performance-quality-key continuity evidence, plus explicit `M227-B010` dependency continuity so
       guardrail drift fails closed.
+    - deterministic lane-B type-system docs/operator runbook synchronization metadata anchors for `M227-B013`
+      with lane-B operator command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B012` dependency continuity so docs/runbook synchronization drift fails closed.
     - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
       with typed sema handoff evidence and lowering metadata continuity so
       sema-to-lowering contract drift fails closed.
@@ -998,3 +1001,5 @@ deterministic lane-C typed sema-to-lowering advanced-core-shard1 metadata anchor
 deterministic lane-C typed sema-to-lowering advanced-edge-compatibility-shard1 metadata anchors for `M227-C016` must remain synchronized across typed edge-compatibility shard-1 keys, parse edge-compatibility shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 edge compatibility closure can pass.
 
 deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard1 metadata anchors for `M227-C017` must remain synchronized across typed diagnostics shard-1 keys, parse diagnostics shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-conformance-shard1 metadata anchors for `M227-C018` must remain synchronized across typed conformance shard-1 keys, parse conformance shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 conformance closure can pass.

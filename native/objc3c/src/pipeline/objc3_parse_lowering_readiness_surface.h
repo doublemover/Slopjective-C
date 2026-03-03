@@ -2426,6 +2426,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_ready;
   surface.typed_sema_advanced_diagnostics_shard1_key =
       typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_key;
+  surface.typed_sema_advanced_conformance_shard1_consistent =
+      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_consistent;
+  surface.typed_sema_advanced_conformance_shard1_ready =
+      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_ready;
+  surface.typed_sema_advanced_conformance_shard1_key =
+      typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_key;
   Objc3LoweringIRBoundary lowering_boundary;
   std::string lowering_error;
   const bool lowering_boundary_from_options_ready =
@@ -2603,6 +2609,13 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_ready &&
       surface.typed_sema_advanced_diagnostics_shard1_key ==
           typed_sema_to_lowering_contract_surface.typed_advanced_diagnostics_shard1_key;
+  const bool typed_advanced_conformance_shard1_alignment =
+      surface.typed_sema_advanced_conformance_shard1_consistent ==
+          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_consistent &&
+      surface.typed_sema_advanced_conformance_shard1_ready ==
+          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_ready &&
+      surface.typed_sema_advanced_conformance_shard1_key ==
+          typed_sema_to_lowering_contract_surface.typed_advanced_conformance_shard1_key;
   const bool typed_core_feature_ready =
       surface.typed_handoff_key_deterministic &&
       surface.typed_sema_core_feature_consistent &&
@@ -2632,6 +2645,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.typed_sema_advanced_edge_compatibility_shard1_ready &&
       surface.typed_sema_advanced_diagnostics_shard1_consistent &&
       surface.typed_sema_advanced_diagnostics_shard1_ready &&
+      surface.typed_sema_advanced_conformance_shard1_consistent &&
+      surface.typed_sema_advanced_conformance_shard1_ready &&
       typed_edge_case_compatibility_alignment &&
       typed_edge_case_robustness_alignment &&
       !surface.typed_sema_edge_case_compatibility_key.empty() &&
@@ -2658,6 +2673,8 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       !surface.typed_sema_advanced_edge_compatibility_shard1_key.empty() &&
       typed_advanced_diagnostics_shard1_alignment &&
       !surface.typed_sema_advanced_diagnostics_shard1_key.empty() &&
+      typed_advanced_conformance_shard1_alignment &&
+      !surface.typed_sema_advanced_conformance_shard1_key.empty() &&
       !surface.typed_sema_core_feature_key.empty();
   const bool sema_handoff_ready =
       typed_sema_to_lowering_contract_surface.ready_for_lowering &&
@@ -3797,6 +3814,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "typed sema-to-lowering advanced diagnostics shard 1 is not ready";
   } else if (surface.typed_sema_advanced_diagnostics_shard1_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering advanced diagnostics shard 1 key is empty";
+  } else if (!surface.typed_sema_advanced_conformance_shard1_consistent) {
+    surface.failure_reason = "typed sema-to-lowering advanced conformance shard 1 is inconsistent";
+  } else if (!surface.typed_sema_advanced_conformance_shard1_ready) {
+    surface.failure_reason = "typed sema-to-lowering advanced conformance shard 1 is not ready";
+  } else if (surface.typed_sema_advanced_conformance_shard1_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering advanced conformance shard 1 key is empty";
   } else if (!typed_edge_case_compatibility_alignment) {
     surface.failure_reason = "typed sema-to-lowering edge-case compatibility drifted from parse/lowering readiness";
   } else if (!typed_edge_case_robustness_alignment) {
@@ -3830,6 +3853,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   } else if (!typed_advanced_diagnostics_shard1_alignment) {
     surface.failure_reason =
         "typed sema-to-lowering advanced diagnostics shard 1 drifted from parse/lowering readiness";
+  } else if (!typed_advanced_conformance_shard1_alignment) {
+    surface.failure_reason =
+        "typed sema-to-lowering advanced conformance shard 1 drifted from parse/lowering readiness";
   } else if (!surface.lowering_boundary_ready) {
     surface.failure_reason = "lowering boundary is not ready";
   } else if (!surface.parse_lowering_conformance_matrix_consistent) {

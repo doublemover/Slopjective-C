@@ -79,6 +79,14 @@ Current-state note:
   ObjC3 type-form performance/quality guardrail accounting, consistency/readiness,
   and performance-quality-key continuity remain deterministic and fail-closed
   against sema/type metadata drift.
+- M227 lane-B B013 type-system docs and operator runbook synchronization anchors
+  explicit lane-B docs/runbook synchronization artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_docs_operator_runbook_sync_b013_expectations.md`,
+  `spec/planning/compiler/m227/m227_b013_type_system_objc3_forms_docs_operator_runbook_sync_packet.md`,
+  `docs/runbooks/m227_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m227-b013-lane-b-readiness`) so `M227-B012` dependency
+  continuity and lane-B operator command sequencing remain deterministic and
+  fail-closed against docs/runbook drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
@@ -2007,4 +2015,8 @@ Forbidden:
 - M227 lane-C C017 typed sema-to-lowering advanced diagnostics workpack (shard 1) anchors
   require fail-closed advanced-diagnostics continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C shard-1 diagnostics
+  closure can pass.
+- M227 lane-C C018 typed sema-to-lowering advanced conformance workpack (shard 1) anchors
+  require fail-closed advanced-conformance continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C shard-1 conformance
   closure can pass.
