@@ -1993,3 +1993,7 @@ Forbidden:
 - M227 lane-C C013 typed sema-to-lowering docs/runbook synchronization anchors
   require fail-closed docs/runbook continuity between typed handoff surfaces
   and parse/lowering readiness before lane-C docs/runbook closure can pass.
+- M227 lane-C C014 typed sema-to-lowering release-candidate/replay dry-run anchors
+  require fail-closed release-candidate/replay continuity between typed
+  handoff surfaces and parse/lowering readiness before lane-C dry-run closure
+  can pass.

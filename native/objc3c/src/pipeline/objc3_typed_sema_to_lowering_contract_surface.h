@@ -231,6 +231,17 @@ inline std::string BuildObjc3TypedSemaToLoweringDocsRunbookSyncKey(
          ";typed_cross_lane_integration_key=" + surface.typed_cross_lane_integration_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringReleaseCandidateReplayDryRunKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-release-candidate-replay-dry-run:v1:typed_docs_runbook_sync_ready=" +
+         std::string(surface.typed_docs_runbook_sync_ready ? "true" : "false") +
+         ";typed_release_candidate_replay_dry_run_consistent=" +
+         std::string(surface.typed_release_candidate_replay_dry_run_consistent ? "true" : "false") +
+         ";typed_release_candidate_replay_dry_run_ready=" +
+         std::string(surface.typed_release_candidate_replay_dry_run_ready ? "true" : "false") +
+         ";typed_docs_runbook_sync_key=" + surface.typed_docs_runbook_sync_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -301,6 +312,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_docs_runbook_sync_consistent ? "true" : "false")
       << ";typed_docs_runbook_sync_ready="
       << (surface.typed_docs_runbook_sync_ready ? "true" : "false")
+      << ";typed_release_candidate_replay_dry_run_consistent="
+      << (surface.typed_release_candidate_replay_dry_run_consistent ? "true" : "false")
+      << ";typed_release_candidate_replay_dry_run_ready="
+      << (surface.typed_release_candidate_replay_dry_run_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -355,6 +370,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_docs_runbook_sync_consistent ? "true" : "false")
       << ";typed_docs_runbook_sync_ready="
       << (surface.typed_docs_runbook_sync_ready ? "true" : "false")
+      << ";typed_release_candidate_replay_dry_run_consistent="
+      << (surface.typed_release_candidate_replay_dry_run_consistent ? "true" : "false")
+      << ";typed_release_candidate_replay_dry_run_ready="
+      << (surface.typed_release_candidate_replay_dry_run_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -711,6 +730,18 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringDocsRunbookSyncKey(surface);
   const bool typed_docs_runbook_sync_key_ready =
       !surface.typed_docs_runbook_sync_key.empty();
+  surface.typed_release_candidate_replay_dry_run_consistent =
+      surface.typed_docs_runbook_sync_ready &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.semantic_handoff_deterministic;
+  surface.typed_release_candidate_replay_dry_run_ready =
+      surface.typed_release_candidate_replay_dry_run_consistent &&
+      !surface.typed_docs_runbook_sync_key.empty() &&
+      !surface.typed_cross_lane_integration_key.empty();
+  surface.typed_release_candidate_replay_dry_run_key =
+      BuildObjc3TypedSemaToLoweringReleaseCandidateReplayDryRunKey(surface);
+  const bool typed_release_candidate_replay_dry_run_key_ready =
+      !surface.typed_release_candidate_replay_dry_run_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -740,7 +771,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_cross_lane_integration_key_ready &&
       surface.typed_docs_runbook_sync_consistent &&
       surface.typed_docs_runbook_sync_ready &&
-      typed_docs_runbook_sync_key_ready;
+      typed_docs_runbook_sync_key_ready &&
+      surface.typed_release_candidate_replay_dry_run_consistent &&
+      surface.typed_release_candidate_replay_dry_run_ready &&
+      typed_release_candidate_replay_dry_run_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -854,6 +888,15 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering docs/runbook synchronization is not ready";
   } else if (surface.typed_docs_runbook_sync_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering docs/runbook synchronization key is empty";
+  } else if (!surface.typed_release_candidate_replay_dry_run_consistent) {
+    surface.failure_reason =
+        "typed sema-to-lowering release-candidate replay dry-run is inconsistent";
+  } else if (!surface.typed_release_candidate_replay_dry_run_ready) {
+    surface.failure_reason =
+        "typed sema-to-lowering release-candidate replay dry-run is not ready";
+  } else if (surface.typed_release_candidate_replay_dry_run_key.empty()) {
+    surface.failure_reason =
+        "typed sema-to-lowering release-candidate replay dry-run key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {
