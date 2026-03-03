@@ -7,6 +7,7 @@
 
 #include "parse/objc3_diagnostic_grammar_hooks_core_feature.h"
 #include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.h"
+#include "parse/objc3_diagnostic_grammar_hooks_edge_case_compatibility_surface.h"
 #include "parse/objc3_diagnostic_source_precision_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -1773,6 +1774,24 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       pipeline_result.migration_hints,
       pipeline_result.language_version_pragma_contract,
       surface.compatibility_handoff_consistent);
+  const Objc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface
+      parser_diagnostic_grammar_hooks_edge_case_compatibility =
+          BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
+              parser_diagnostic_grammar_hooks_core_feature_expansion,
+              options,
+              pipeline_result.language_version_pragma_contract,
+              surface.parser_diagnostic_count,
+              parser_snapshot.parser_diagnostic_count,
+              surface.parser_token_count,
+              surface.compatibility_handoff_consistent);
+  surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent =
+      parser_diagnostic_grammar_hooks_edge_case_compatibility
+          .edge_case_compatibility_consistent;
+  surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_key =
+      parser_diagnostic_grammar_hooks_edge_case_compatibility.compatibility_key;
+  surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready =
+      IsObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurfaceReady(
+          parser_diagnostic_grammar_hooks_edge_case_compatibility);
   surface.parse_artifact_replay_key_deterministic =
       surface.parse_artifact_handoff_deterministic &&
       surface.parse_artifact_fingerprint_consistent &&
@@ -1833,11 +1852,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.parse_artifact_edge_case_robustness_consistent =
       surface.parser_token_count_budget_consistent &&
       surface.language_version_pragma_coordinate_order_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready &&
       surface.parse_artifact_diagnostics_hardening_consistent &&
       !surface.parse_artifact_handoff_key.empty() &&
       !surface.compatibility_handoff_key.empty() &&
       !surface.parse_artifact_replay_key.empty() &&
-      !surface.parse_artifact_diagnostics_hardening_key.empty();
+      !surface.parse_artifact_diagnostics_hardening_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_key.empty();
   surface.parse_artifact_edge_robustness_key = BuildObjc3ParseArtifactEdgeRobustnessKey(
       surface.parser_token_count,
       parser_snapshot_breakdown_count,
@@ -3003,6 +3025,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser token count budget is inconsistent";
   } else if (!surface.language_version_pragma_coordinate_order_consistent) {
     surface.failure_reason = "language-version pragma coordinate order is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent) {
+    surface.failure_reason = "parser diagnostic grammar hooks edge-case compatibility is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_edge_case_compatibility_ready) {
+    surface.failure_reason = "parser diagnostic grammar hooks edge-case compatibility is not ready";
   } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
     surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
   } else if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {
