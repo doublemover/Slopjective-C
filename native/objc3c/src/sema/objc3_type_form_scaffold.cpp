@@ -121,6 +121,18 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                                       BoolKey(summary.canonical_bridge_top_matches_reference_without_sel);
   summary.diagnostics_hardening_ready =
       summary.diagnostics_hardening_consistent && !summary.diagnostics_hardening_key.empty();
+  summary.recovery_determinism_consistent =
+      summary.diagnostics_hardening_consistent &&
+      summary.diagnostics_hardening_ready &&
+      !summary.diagnostics_hardening_key.empty();
+  summary.recovery_determinism_key = std::string("type-form-recovery-determinism;diagnostics-consistent=") +
+                                     BoolKey(summary.diagnostics_hardening_consistent) +
+                                     ";diagnostics-ready=" + BoolKey(summary.diagnostics_hardening_ready) +
+                                     ";diagnostics-key-ready=" +
+                                     BoolKey(!summary.diagnostics_hardening_key.empty());
+  summary.recovery_determinism_ready =
+      summary.recovery_determinism_consistent &&
+      !summary.recovery_determinism_key.empty();
   summary.deterministic = summary.canonical_reference_form_count > 0 &&
                           summary.canonical_message_scalar_form_count > 0 &&
                           summary.canonical_bridge_top_form_count > 0 &&
@@ -137,7 +149,10 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                           summary.canonical_bridge_top_matches_reference_without_sel &&
                           summary.diagnostics_hardening_consistent &&
                           summary.diagnostics_hardening_ready &&
-                          !summary.diagnostics_hardening_key.empty();
+                          !summary.diagnostics_hardening_key.empty() &&
+                          summary.recovery_determinism_consistent &&
+                          summary.recovery_determinism_ready &&
+                          !summary.recovery_determinism_key.empty();
   return summary;
 }
 
@@ -159,5 +174,8 @@ bool IsReadyObjc3TypeFormScaffoldSummary(const Objc3TypeFormScaffoldSummary &sum
          summary.diagnostics_hardening_consistent &&
          summary.diagnostics_hardening_ready &&
          !summary.diagnostics_hardening_key.empty() &&
+         summary.recovery_determinism_consistent &&
+         summary.recovery_determinism_ready &&
+         !summary.recovery_determinism_key.empty() &&
          summary.deterministic;
 }

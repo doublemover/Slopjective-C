@@ -547,6 +547,9 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   bool canonical_type_form_diagnostics_hardening_consistent = false;
   bool canonical_type_form_diagnostics_hardening_ready = false;
   std::string canonical_type_form_diagnostics_hardening_key;
+  bool canonical_type_form_recovery_determinism_consistent = false;
+  bool canonical_type_form_recovery_determinism_ready = false;
+  std::string canonical_type_form_recovery_determinism_key;
   bool deterministic = true;
 };
 

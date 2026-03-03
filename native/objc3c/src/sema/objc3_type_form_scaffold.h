@@ -23,6 +23,9 @@ struct Objc3TypeFormScaffoldSummary {
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
   std::string diagnostics_hardening_key;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
+  std::string recovery_determinism_key;
   bool deterministic = false;
 };
 
