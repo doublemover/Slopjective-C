@@ -428,6 +428,11 @@ At minimum, the pass-graph gate shall validate:
   recovery-determinism consistency, recovery-determinism readiness, or
   recovery-determinism-key continuity drift before diagnostics quality gate
   and replay policy validation advances.
+- lowering/runtime diagnostics surfacing conformance matrix implementation shall preserve
+  explicit lane-C dependency anchors (`M243-C008`) and fail closed on
+  conformance-matrix consistency, conformance-matrix readiness, or
+  conformance-matrix-key continuity drift before diagnostics quality gate and
+  replay policy validation advances.
 - diagnostic grammar hooks and source precision recovery and determinism
   hardening shall preserve lane-A dependency anchors (`M243-A007`) and fail
   closed on parser diagnostic grammar-hook recovery-determinism consistency,

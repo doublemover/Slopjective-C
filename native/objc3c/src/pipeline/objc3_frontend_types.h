@@ -757,6 +757,27 @@ struct Objc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurfa
   std::string failure_reason;
 };
 
+struct Objc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface {
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
+  bool parse_conformance_matrix_consistent = false;
+  bool parse_conformance_matrix_ready = false;
+  bool semantic_conformance_matrix_consistent = false;
+  bool semantic_conformance_matrix_ready = false;
+  bool lowering_pipeline_conformance_matrix_ready = false;
+  bool conformance_matrix_consistent = false;
+  bool conformance_matrix_ready = false;
+  std::size_t parse_lowering_conformance_matrix_case_count = 0;
+  std::string recovery_determinism_key;
+  std::string parse_lowering_conformance_matrix_key;
+  std::string long_tail_grammar_conformance_matrix_key;
+  std::string parser_diagnostic_grammar_hooks_conformance_matrix_key;
+  std::string semantic_conformance_matrix_key;
+  std::string lowering_pipeline_conformance_matrix_key;
+  std::string conformance_matrix_key;
+  std::string failure_reason;
+};
+
 struct Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface {
   bool lowering_boundary_ready = false;
   bool runtime_dispatch_contract_consistent = false;
@@ -1087,6 +1108,8 @@ struct Objc3FrontendPipelineResult {
       lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface;
   Objc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurface
       lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface
+      lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface;
   Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
       lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;

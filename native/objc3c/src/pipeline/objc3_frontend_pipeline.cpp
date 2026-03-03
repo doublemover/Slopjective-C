@@ -11,6 +11,7 @@
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
@@ -873,6 +874,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result
       .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface =
       BuildObjc3LoweringRuntimeDiagnosticsSurfacingRecoveryDeterminismHardeningSurface(
+          result);
+  result
+      .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurface(
           result);
   result.lowering_runtime_stability_core_feature_implementation_surface =
       BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(

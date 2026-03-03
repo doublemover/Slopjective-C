@@ -631,6 +631,12 @@ Current-state note:
   `pipeline/objc3_frontend_pipeline.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so recovery/determinism consistency,
   readiness, and replay-key continuity remain deterministic and fail-closed.
+- M243 lane-C C009 conformance matrix implementation anchors lowering/runtime diagnostics surfacing
+  conformance closure in
+  `pipeline/objc3_lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so conformance-matrix consistency,
+  readiness, and replay-key continuity remain deterministic and fail-closed.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`

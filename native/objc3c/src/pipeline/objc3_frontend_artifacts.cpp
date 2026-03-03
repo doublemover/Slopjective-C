@@ -13,6 +13,7 @@
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
@@ -1500,6 +1501,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L326",
         "LLVM IR emission failed: lowering/runtime diagnostics surfacing recovery/determinism hardening check failed: " +
             diagnostics_surfacing_recovery_determinism_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string diagnostics_surfacing_conformance_matrix_error;
+  if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingConformanceMatrixImplementationSurfaceReady(
+          pipeline_result
+              .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface,
+          diagnostics_surfacing_conformance_matrix_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L327",
+        "LLVM IR emission failed: lowering/runtime diagnostics surfacing conformance matrix check failed: " +
+            diagnostics_surfacing_conformance_matrix_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
