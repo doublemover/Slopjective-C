@@ -133,6 +133,34 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
   summary.recovery_determinism_ready =
       summary.recovery_determinism_consistent &&
       !summary.recovery_determinism_key.empty();
+  summary.conformance_matrix_consistent =
+      summary.recovery_determinism_consistent &&
+      summary.recovery_determinism_ready &&
+      !summary.recovery_determinism_key.empty() &&
+      summary.canonical_reference_form_count == kObjc3CanonicalReferenceTypeForms.size() &&
+      summary.canonical_message_scalar_form_count == kObjc3CanonicalScalarMessageSendTypeForms.size() &&
+      summary.canonical_bridge_top_form_count == kObjc3CanonicalBridgeTopReferenceTypeForms.size() &&
+      summary.canonical_reference_forms_unique &&
+      summary.canonical_message_scalar_forms_unique &&
+      summary.canonical_bridge_top_forms_unique &&
+      summary.canonical_message_scalars_disjoint_from_reference &&
+      summary.canonical_bridge_top_subset_of_reference &&
+      summary.canonical_bridge_top_excludes_sel &&
+      summary.canonical_reference_includes_sel &&
+      summary.canonical_message_scalars_include_i32 &&
+      summary.canonical_message_scalars_include_bool &&
+      summary.canonical_forms_exclude_unknown &&
+      summary.canonical_bridge_top_matches_reference_without_sel;
+  summary.conformance_matrix_key = std::string("type-form-conformance-matrix;recovery-consistent=") +
+                                   BoolKey(summary.recovery_determinism_consistent) +
+                                   ";recovery-ready=" + BoolKey(summary.recovery_determinism_ready) +
+                                   ";recovery-key-ready=" + BoolKey(!summary.recovery_determinism_key.empty()) +
+                                   ";reference-forms=" + std::to_string(summary.canonical_reference_form_count) +
+                                   ";message-scalars=" + std::to_string(summary.canonical_message_scalar_form_count) +
+                                   ";bridge-top-forms=" + std::to_string(summary.canonical_bridge_top_form_count);
+  summary.conformance_matrix_ready =
+      summary.conformance_matrix_consistent &&
+      !summary.conformance_matrix_key.empty();
   summary.deterministic = summary.canonical_reference_form_count > 0 &&
                           summary.canonical_message_scalar_form_count > 0 &&
                           summary.canonical_bridge_top_form_count > 0 &&
@@ -152,7 +180,10 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                           !summary.diagnostics_hardening_key.empty() &&
                           summary.recovery_determinism_consistent &&
                           summary.recovery_determinism_ready &&
-                          !summary.recovery_determinism_key.empty();
+                          !summary.recovery_determinism_key.empty() &&
+                          summary.conformance_matrix_consistent &&
+                          summary.conformance_matrix_ready &&
+                          !summary.conformance_matrix_key.empty();
   return summary;
 }
 
@@ -177,5 +208,8 @@ bool IsReadyObjc3TypeFormScaffoldSummary(const Objc3TypeFormScaffoldSummary &sum
          summary.recovery_determinism_consistent &&
          summary.recovery_determinism_ready &&
          !summary.recovery_determinism_key.empty() &&
+         summary.conformance_matrix_consistent &&
+         summary.conformance_matrix_ready &&
+         !summary.conformance_matrix_key.empty() &&
          summary.deterministic;
 }

@@ -550,6 +550,9 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   bool canonical_type_form_recovery_determinism_consistent = false;
   bool canonical_type_form_recovery_determinism_ready = false;
   std::string canonical_type_form_recovery_determinism_key;
+  bool canonical_type_form_conformance_matrix_consistent = false;
+  bool canonical_type_form_conformance_matrix_ready = false;
+  std::string canonical_type_form_conformance_matrix_key;
   bool deterministic = true;
 };
 

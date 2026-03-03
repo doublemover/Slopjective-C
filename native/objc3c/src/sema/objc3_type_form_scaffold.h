@@ -26,6 +26,9 @@ struct Objc3TypeFormScaffoldSummary {
   bool recovery_determinism_consistent = false;
   bool recovery_determinism_ready = false;
   std::string recovery_determinism_key;
+  bool conformance_matrix_consistent = false;
+  bool conformance_matrix_ready = false;
+  std::string conformance_matrix_key;
   bool deterministic = false;
 };
 
