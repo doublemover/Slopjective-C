@@ -11,6 +11,7 @@
 #include <system_error>
 
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
+#include "io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h"
 #include "io/objc3_cli_reporting_output_contract_diagnostics_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_edge_case_expansion_and_robustness_surface.h"
 #include "io/objc3_cli_reporting_output_contract_edge_case_compatibility_surface.h"
@@ -214,7 +215,7 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error,
-                             const Objc3CliReportingOutputContractRecoveryDeterminismHardeningSurface
+                             const Objc3CliReportingOutputContractConformanceMatrixImplementationSurface
                                  &output_contract_recovery_determinism_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
@@ -265,6 +266,8 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       << EscapeJsonString(output_contract_recovery_determinism_surface.diagnostics_hardening_key) << "\",\n";
   out << "    \"recovery_determinism_key\": \""
       << EscapeJsonString(output_contract_recovery_determinism_surface.recovery_determinism_key) << "\",\n";
+  out << "    \"conformance_matrix_key\": \""
+      << EscapeJsonString(output_contract_recovery_determinism_surface.conformance_matrix_key) << "\",\n";
   out << "    \"summary_output_path\": \""
       << EscapeJsonString(output_contract_recovery_determinism_surface.summary_output_path) << "\",\n";
   out << "    \"diagnostics_output_path\": \""
@@ -376,6 +379,21 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       << ",\n";
   out << "    \"recovery_determinism_ready\": "
       << (output_contract_recovery_determinism_surface.recovery_determinism_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"conformance_matrix_consistent\": "
+      << (output_contract_recovery_determinism_surface.conformance_matrix_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"conformance_matrix_ready\": "
+      << (output_contract_recovery_determinism_surface.conformance_matrix_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"conformance_matrix_key_ready\": "
+      << (output_contract_recovery_determinism_surface.conformance_matrix_key_ready
               ? "true"
               : "false")
       << ",\n";
@@ -609,12 +627,27 @@ int main(int argc, char **argv) {
     return 2;
   }
 
+  const Objc3CliReportingOutputContractConformanceMatrixImplementationSurface
+      cli_reporting_output_contract_conformance_matrix_surface =
+          BuildObjc3CliReportingOutputContractConformanceMatrixImplementationSurface(
+              cli_reporting_output_contract_recovery_determinism_surface);
+  std::string output_contract_conformance_matrix_reason;
+  if (!IsObjc3CliReportingOutputContractConformanceMatrixImplementationSurfaceReady(
+          cli_reporting_output_contract_conformance_matrix_surface,
+          output_contract_conformance_matrix_reason)) {
+    std::cerr
+        << "cli/reporting output conformance matrix implementation fail-closed: "
+        << output_contract_conformance_matrix_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
   const std::string summary_json = BuildSummaryJson(
       options,
       status,
       result,
       last_error,
-      cli_reporting_output_contract_recovery_determinism_surface);
+      cli_reporting_output_contract_conformance_matrix_surface);
   std::string summary_error;
   if (!WriteSummary(summary_path, summary_json, summary_error)) {
     std::cerr << summary_error << "\n";

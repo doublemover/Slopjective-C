@@ -343,6 +343,11 @@ At minimum, the pass-graph gate shall validate:
   recovery/determinism key continuity, diagnostics-hardening continuity, or
   summary/diagnostics output replay drift before lane-E recovery readiness
   advances.
+- CLI/reporting and output conformance matrix implementation governance shall preserve
+  explicit lane-D dependency anchors (`M243-D008`) and fail closed on
+  conformance-matrix key continuity, recovery/determinism continuity, or
+  summary/diagnostics output contract drift before lane-E recovery readiness
+  advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
@@ -384,6 +389,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M243-E006`, `M243-A003`, `M243-B003`, `M243-C004`, and
   `M243-D005`) and fail closed when dependency references,
   diagnostics/replay diagnostics hardening evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy recovery and determinism hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and
+  `M243-D006`) and fail closed when dependency references,
+  diagnostics/replay recovery and determinism hardening evidence commands, or lane-E readiness hooks drift.
 - lowering/runtime diagnostics surfacing modular split scaffolding shall
   preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
   scaffolding evidence drift before diagnostics quality gate and replay policy
@@ -409,6 +418,11 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-C dependency anchors (`M243-C006`) and fail closed on
   diagnostics-hardening consistency, diagnostics-hardening readiness, or
   diagnostics-hardening-key continuity drift before diagnostics quality gate
+  and replay policy validation advances.
+- lowering/runtime diagnostics surfacing recovery and determinism hardening shall preserve
+  explicit lane-C dependency anchors (`M243-C007`) and fail closed on
+  recovery-determinism consistency, recovery-determinism readiness, or
+  recovery-determinism-key continuity drift before diagnostics quality gate
   and replay policy validation advances.
 - diagnostic grammar hooks and source precision recovery and determinism
   hardening shall preserve lane-A dependency anchors (`M243-A007`) and fail
@@ -439,6 +453,11 @@ At minimum, the pass-graph gate shall validate:
   shall preserve lane-B dependency anchors (`M243-B007`) and fail closed on
   recovery-determinism consistency, recovery-determinism readiness, or
   recovery-determinism-key continuity drift before conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis conformance corpus expansion
+  shall preserve lane-B dependency anchors (`M243-B009`) and fail closed on
+  conformance-corpus consistency, conformance-corpus readiness, or
+  conformance-corpus-key continuity drift before downstream lane-B guardrail
+  expansions advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

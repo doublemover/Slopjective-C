@@ -271,6 +271,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M243-D005` dependency continuity so edge-case expansion drift fails closed.
   - deterministic lane-D CLI/reporting output recovery and determinism hardening metadata anchors for `M243-D008`
     with explicit `M243-D007` dependency continuity so recovery and determinism drift fails closed.
+  - deterministic lane-D CLI/reporting output conformance matrix implementation metadata anchors for `M243-D009`
+    with explicit `M243-D008` dependency continuity so conformance matrix drift fails closed.
   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
     continuity so diagnostics surfacing scaffold drift fails closed.
@@ -290,6 +292,9 @@ A conforming implementation shall preserve, for all exported declarations:
       closed.
     - deterministic lane-C lowering/runtime diagnostics surfacing diagnostics hardening metadata anchors for `M243-C007` with explicit `M243-C006`
       dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing recovery and determinism hardening metadata anchors for `M243-C008` with explicit
+      `M243-C007` dependency continuity so recovery and determinism drift fails
+      closed.
    - deterministic lane-A diagnostic grammar hooks/source precision recovery
      and determinism hardening metadata anchors for `M243-A008` with explicit
      `M243-A007` dependency continuity so parser diagnostic replay hardening
@@ -315,6 +320,10 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
      recovery and determinism hardening metadata anchors for `M243-B008` with
      explicit `M243-B007` dependency continuity so recovery determinism
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     conformance corpus expansion metadata anchors for `M243-B010` with
+     explicit `M243-B009` dependency continuity so conformance corpus
      drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
@@ -356,6 +365,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M243-E006`, `M243-A003`, `M243-B003`, `M243-C004`, and `M243-D005`, including
      mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy diagnostics hardening
      governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy recovery and determinism hardening dependency anchors for
+     `M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and `M243-D006`, including
+     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy recovery and determinism
+     hardening governance evidence fail-closed while lane readiness remains staged.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
