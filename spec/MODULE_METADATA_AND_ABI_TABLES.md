@@ -276,6 +276,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B interop semantic/type mediation edge-case and compatibility completion metadata anchors for `M244-B005`
      with explicit `M244-B004` dependency continuity and fail-closed evidence
      so interop semantic/type mediation edge-case and compatibility completion drift fails closed.
+   - deterministic lane-B interop semantic/type mediation edge-case expansion and robustness metadata anchors for `M244-B006`
+     with explicit `M244-B005` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation edge-case expansion and robustness drift fails closed.
     - deterministic lane-E interop conformance gate and operations dependency anchors for
       `M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`, including dependency-reference tokens
       wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
