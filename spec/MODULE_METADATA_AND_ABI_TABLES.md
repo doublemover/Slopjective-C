@@ -167,6 +167,11 @@ A conforming implementation shall preserve, for all exported declarations:
      `M228-C007`, including pending-token continuity needed to keep
      replay-proof/performance diagnostics-hardening closeout evidence
      fail-closed while lane-C diagnostics assets are pending.
+   - deterministic lane-E recovery and determinism hardening dependency anchors
+     for `M228-E007`, `M228-A008`, `M228-B008`, `M228-D008`, and pending token
+     `M228-C008`, including pending-token continuity needed to keep
+     replay-proof/performance recovery/determinism closeout evidence fail-closed
+     while lane-C recovery/determinism assets are pending.
    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
      backend marker-path and marker payload-to-route consistency evidence.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
