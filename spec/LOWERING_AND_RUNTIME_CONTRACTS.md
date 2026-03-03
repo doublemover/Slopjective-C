@@ -1113,3 +1113,5 @@ typed sema-to-lowering conformance corpus expansion governance shall preserve ex
 typed sema-to-lowering performance/quality guardrails governance shall preserve explicit lane-C dependency anchors (`M227-C011`, `M227-C010`) so typed guardrail accounting and parse/lowering alignment stay deterministic and fail-closed when guardrail continuity drifts.
 
 typed sema-to-lowering cross-lane integration sync governance shall preserve explicit lane-C dependency anchors (`M227-C012`, `M227-C011`) so typed integration-sync continuity and parse/lowering alignment stay deterministic and fail-closed when cross-lane drift occurs.
+
+typed sema-to-lowering docs/runbook synchronization governance shall preserve explicit lane-C dependency anchors (`M227-C013`, `M227-C012`) so typed docs/runbook continuity and parse/lowering alignment stay deterministic and fail-closed when synchronization drift occurs.

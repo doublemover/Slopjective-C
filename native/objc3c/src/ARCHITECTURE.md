@@ -1990,3 +1990,6 @@ Forbidden:
   require fail-closed cross-lane integration continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C integration-sync closure
   can pass.
+- M227 lane-C C013 typed sema-to-lowering docs/runbook synchronization anchors
+  require fail-closed docs/runbook continuity between typed handoff surfaces
+  and parse/lowering readiness before lane-C docs/runbook closure can pass.

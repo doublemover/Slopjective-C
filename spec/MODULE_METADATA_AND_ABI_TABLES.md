@@ -988,3 +988,5 @@ deterministic lane-C typed sema-to-lowering conformance corpus metadata anchors 
 deterministic lane-C typed sema-to-lowering performance/quality guardrails metadata anchors for `M227-C011` must remain synchronized across typed guardrail keys, parse guardrail keys, and readiness alignment metadata surfaces before lane-C guardrail closure can pass.
 
 deterministic lane-C typed sema-to-lowering cross-lane integration metadata anchors for `M227-C012` must remain synchronized across typed integration-sync keys, parse integration-sync keys, and readiness alignment metadata surfaces before lane-C integration-sync closure can pass.
+
+deterministic lane-C typed sema-to-lowering docs/runbook synchronization metadata anchors for `M227-C013` must remain synchronized across typed docs/runbook keys, parse docs/runbook keys, and readiness alignment metadata surfaces before lane-C docs/runbook closure can pass.
