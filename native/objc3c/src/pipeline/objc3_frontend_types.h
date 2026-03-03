@@ -95,6 +95,8 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool typed_advanced_diagnostics_shard1_ready = false;
   bool typed_advanced_conformance_shard1_consistent = false;
   bool typed_advanced_conformance_shard1_ready = false;
+  bool typed_advanced_integration_shard1_consistent = false;
+  bool typed_advanced_integration_shard1_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -125,6 +127,7 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string typed_advanced_edge_compatibility_shard1_key;
   std::string typed_advanced_diagnostics_shard1_key;
   std::string typed_advanced_conformance_shard1_key;
+  std::string typed_advanced_integration_shard1_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
@@ -257,6 +260,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool typed_sema_advanced_diagnostics_shard1_ready = false;
   bool typed_sema_advanced_conformance_shard1_consistent = false;
   bool typed_sema_advanced_conformance_shard1_ready = false;
+  bool typed_sema_advanced_integration_shard1_consistent = false;
+  bool typed_sema_advanced_integration_shard1_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_sema_core_feature_case_count = 0;
@@ -336,6 +341,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string typed_sema_advanced_edge_compatibility_shard1_key;
   std::string typed_sema_advanced_diagnostics_shard1_key;
   std::string typed_sema_advanced_conformance_shard1_key;
+  std::string typed_sema_advanced_integration_shard1_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

@@ -2020,3 +2020,7 @@ Forbidden:
   require fail-closed advanced-conformance continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C shard-1 conformance
   closure can pass.
+- M227 lane-C C019 typed sema-to-lowering advanced integration workpack (shard 1) anchors
+  require fail-closed advanced-integration continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C shard-1 integration
+  closure can pass.
