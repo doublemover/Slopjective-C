@@ -1986,3 +1986,7 @@ Forbidden:
   require fail-closed guardrail accounting and readiness continuity between
   typed handoff surfaces and parse/lowering readiness before lane-C guardrail
   closure can pass.
+- M227 lane-C C012 typed sema-to-lowering cross-lane integration sync anchors
+  require fail-closed cross-lane integration continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C integration-sync closure
+  can pass.

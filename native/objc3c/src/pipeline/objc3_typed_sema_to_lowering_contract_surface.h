@@ -207,6 +207,19 @@ inline std::string BuildObjc3TypedSemaToLoweringPerformanceQualityGuardrailsKey(
          ";typed_conformance_corpus_key=" + surface.typed_conformance_corpus_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringCrossLaneIntegrationKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-cross-lane-integration:v1:performance_quality_guardrails_ready=" +
+         std::string(surface.typed_performance_quality_guardrails_ready ? "true" : "false") +
+         ";typed_cross_lane_integration_consistent=" +
+         std::string(surface.typed_cross_lane_integration_consistent ? "true" : "false") +
+         ";typed_cross_lane_integration_ready=" +
+         std::string(surface.typed_cross_lane_integration_ready ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         std::string(surface.parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";typed_performance_quality_guardrails_key=" + surface.typed_performance_quality_guardrails_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -269,6 +282,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_performance_quality_guardrails_consistent ? "true" : "false")
       << ";typed_performance_quality_guardrails_ready="
       << (surface.typed_performance_quality_guardrails_ready ? "true" : "false")
+      << ";typed_cross_lane_integration_consistent="
+      << (surface.typed_cross_lane_integration_consistent ? "true" : "false")
+      << ";typed_cross_lane_integration_ready="
+      << (surface.typed_cross_lane_integration_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -315,6 +332,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_performance_quality_guardrails_consistent ? "true" : "false")
       << ";typed_performance_quality_guardrails_ready="
       << (surface.typed_performance_quality_guardrails_ready ? "true" : "false")
+      << ";typed_cross_lane_integration_consistent="
+      << (surface.typed_cross_lane_integration_consistent ? "true" : "false")
+      << ";typed_cross_lane_integration_ready="
+      << (surface.typed_cross_lane_integration_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -646,6 +667,19 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringPerformanceQualityGuardrailsKey(surface);
   const bool typed_performance_quality_guardrails_key_ready =
       !surface.typed_performance_quality_guardrails_key.empty();
+  surface.typed_cross_lane_integration_consistent =
+      surface.typed_performance_quality_guardrails_ready &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.semantic_handoff_deterministic &&
+      surface.typed_performance_quality_guardrails_case_count > 0;
+  surface.typed_cross_lane_integration_ready =
+      surface.typed_cross_lane_integration_consistent &&
+      !surface.typed_performance_quality_guardrails_key.empty() &&
+      !surface.typed_conformance_corpus_key.empty();
+  surface.typed_cross_lane_integration_key =
+      BuildObjc3TypedSemaToLoweringCrossLaneIntegrationKey(surface);
+  const bool typed_cross_lane_integration_key_ready =
+      !surface.typed_cross_lane_integration_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -669,7 +703,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_conformance_corpus_key_ready &&
       surface.typed_performance_quality_guardrails_consistent &&
       surface.typed_performance_quality_guardrails_ready &&
-      typed_performance_quality_guardrails_key_ready;
+      typed_performance_quality_guardrails_key_ready &&
+      surface.typed_cross_lane_integration_consistent &&
+      surface.typed_cross_lane_integration_ready &&
+      typed_cross_lane_integration_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -771,6 +808,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering performance/quality guardrails are not ready";
   } else if (surface.typed_performance_quality_guardrails_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering performance/quality guardrails key is empty";
+  } else if (!surface.typed_cross_lane_integration_consistent) {
+    surface.failure_reason = "typed sema-to-lowering cross-lane integration is inconsistent";
+  } else if (!surface.typed_cross_lane_integration_ready) {
+    surface.failure_reason = "typed sema-to-lowering cross-lane integration is not ready";
+  } else if (surface.typed_cross_lane_integration_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering cross-lane integration key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {
