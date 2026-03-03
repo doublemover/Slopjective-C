@@ -974,3 +974,5 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 ## D.5 Lane-C Typed Edge-Case Metadata Anchors (implementation anchor) {#d-5}
 
 deterministic lane-C typed sema-to-lowering edge-case compatibility metadata anchors for `M227-C005` must remain synchronized across typed handoff keys, parse-artifact replay keys, and readiness gating metadata surfaces before lane-C closeout can pass.
+
+deterministic lane-C typed sema-to-lowering edge-case expansion and robustness metadata anchors for `M227-C006` must remain synchronized across typed robustness keys, parse-artifact robustness keys, and readiness alignment metadata surfaces before lane-C robustness closure can pass.

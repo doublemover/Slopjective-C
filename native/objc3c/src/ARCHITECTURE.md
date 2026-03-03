@@ -1967,3 +1967,6 @@ Forbidden:
 - M227 lane-C C005 typed sema-to-lowering edge-case and compatibility completion anchors
   require fail-closed continuity between typed handoff surfaces, parse/lowering
   readiness, and dependency packet evidence before lane-C readiness can pass.
+- M227 lane-C C006 typed sema-to-lowering edge-case expansion and robustness anchors
+  require fail-closed expansion/robustness continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C robustness closure can pass.
