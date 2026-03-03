@@ -732,6 +732,13 @@ Current-state note:
   and `package.json` so diagnostics quality gate/replay-policy edge-case and
   compatibility completion evidence remains deterministic and fail-closed across
   cross-lane compatibility closure dependencies.
+- M243 lane-E E006 diagnostics quality gate/replay policy edge-case expansion and robustness anchors dependency references
+  (`M243-E005`, `M243-A002`, `M243-B003`, `M243-C003`, and `M243-D004`) in
+  `docs/contracts/m243_lane_e_diagnostics_quality_gate_and_replay_policy_edge_case_expansion_and_robustness_e006_expectations.md`,
+  `spec/planning/compiler/m243/m243_e006_lane_e_diagnostics_quality_gate_and_replay_policy_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so diagnostics quality gate/replay-policy edge-case expansion
+  and robustness evidence remains deterministic and fail-closed across mixed-lane
+  dependency maturity.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)

@@ -371,6 +371,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M243-E004`, `M243-A005`, `M243-B005`, `M243-C005`, and
   `M243-D005`) and fail closed when dependency references,
   diagnostics/replay edge-case compatibility evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E005`, `M243-A002`, `M243-B003`, `M243-C003`, and
+  `M243-D004`) and fail closed when dependency references,
+  diagnostics/replay edge-case expansion and robustness evidence commands, or lane-E readiness hooks drift.
 - lowering/runtime diagnostics surfacing modular split scaffolding shall
   preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
   scaffolding evidence drift before diagnostics quality gate and replay policy
