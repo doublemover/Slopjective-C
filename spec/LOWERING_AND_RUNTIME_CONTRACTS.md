@@ -1137,3 +1137,5 @@ typed sema-to-lowering advanced performance workpack (shard 1) governance shall 
 typed sema-to-lowering advanced core workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C021`, `M227-C020`) so typed advanced-core-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced edge compatibility workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C022`, `M227-C021`) so typed advanced-edge-compatibility-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C023`, `M227-C022`) so typed advanced-diagnostics-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.

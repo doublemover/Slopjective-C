@@ -331,6 +331,17 @@ inline std::string BuildObjc3TypedSemaToLoweringAdvancedEdgeCompatibilityShard2K
          ";typed_advanced_core_shard2_key=" + surface.typed_advanced_core_shard2_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringAdvancedDiagnosticsShard2Key(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-advanced-diagnostics-shard2:v1:typed_advanced_edge_compatibility_shard2_ready=" +
+         std::string(surface.typed_advanced_edge_compatibility_shard2_ready ? "true" : "false") +
+         ";typed_advanced_diagnostics_shard2_consistent=" +
+         std::string(surface.typed_advanced_diagnostics_shard2_consistent ? "true" : "false") +
+         ";typed_advanced_diagnostics_shard2_ready=" +
+         std::string(surface.typed_advanced_diagnostics_shard2_ready ? "true" : "false") +
+         ";typed_advanced_edge_compatibility_shard2_key=" + surface.typed_advanced_edge_compatibility_shard2_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -437,6 +448,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_advanced_edge_compatibility_shard2_consistent ? "true" : "false")
       << ";typed_advanced_edge_compatibility_shard2_ready="
       << (surface.typed_advanced_edge_compatibility_shard2_ready ? "true" : "false")
+      << ";typed_advanced_diagnostics_shard2_consistent="
+      << (surface.typed_advanced_diagnostics_shard2_consistent ? "true" : "false")
+      << ";typed_advanced_diagnostics_shard2_ready="
+      << (surface.typed_advanced_diagnostics_shard2_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -527,6 +542,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_advanced_edge_compatibility_shard2_consistent ? "true" : "false")
       << ";typed_advanced_edge_compatibility_shard2_ready="
       << (surface.typed_advanced_edge_compatibility_shard2_ready ? "true" : "false")
+      << ";typed_advanced_diagnostics_shard2_consistent="
+      << (surface.typed_advanced_diagnostics_shard2_consistent ? "true" : "false")
+      << ";typed_advanced_diagnostics_shard2_ready="
+      << (surface.typed_advanced_diagnostics_shard2_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -991,6 +1010,18 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringAdvancedEdgeCompatibilityShard2Key(surface);
   const bool typed_advanced_edge_compatibility_shard2_key_ready =
       !surface.typed_advanced_edge_compatibility_shard2_key.empty();
+  surface.typed_advanced_diagnostics_shard2_consistent =
+      surface.typed_advanced_edge_compatibility_shard2_ready &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.semantic_handoff_deterministic;
+  surface.typed_advanced_diagnostics_shard2_ready =
+      surface.typed_advanced_diagnostics_shard2_consistent &&
+      !surface.typed_advanced_edge_compatibility_shard2_key.empty() &&
+      !surface.typed_advanced_core_shard2_key.empty();
+  surface.typed_advanced_diagnostics_shard2_key =
+      BuildObjc3TypedSemaToLoweringAdvancedDiagnosticsShard2Key(surface);
+  const bool typed_advanced_diagnostics_shard2_key_ready =
+      !surface.typed_advanced_diagnostics_shard2_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -1047,7 +1078,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_advanced_core_shard2_key_ready &&
       surface.typed_advanced_edge_compatibility_shard2_consistent &&
       surface.typed_advanced_edge_compatibility_shard2_ready &&
-      typed_advanced_edge_compatibility_shard2_key_ready;
+      typed_advanced_edge_compatibility_shard2_key_ready &&
+      surface.typed_advanced_diagnostics_shard2_consistent &&
+      surface.typed_advanced_diagnostics_shard2_ready &&
+      typed_advanced_diagnostics_shard2_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -1224,6 +1258,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
   } else if (surface.typed_advanced_edge_compatibility_shard2_key.empty()) {
     surface.failure_reason =
         "typed sema-to-lowering advanced edge compatibility shard 2 key is empty";
+  } else if (!surface.typed_advanced_diagnostics_shard2_consistent) {
+    surface.failure_reason = "typed sema-to-lowering advanced diagnostics shard 2 is inconsistent";
+  } else if (!surface.typed_advanced_diagnostics_shard2_ready) {
+    surface.failure_reason = "typed sema-to-lowering advanced diagnostics shard 2 is not ready";
+  } else if (surface.typed_advanced_diagnostics_shard2_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering advanced diagnostics shard 2 key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {

@@ -2052,3 +2052,7 @@ Forbidden:
   require fail-closed advanced-edge-compatibility-shard2
   continuity between typed handoff surfaces and parse/lowering readiness before
   lane-C shard-2 edge compatibility closure can pass.
+- M227 lane-C C023 typed sema-to-lowering advanced diagnostics workpack (shard 2) anchors
+  require fail-closed advanced-diagnostics-shard2 continuity between
+  typed handoff surfaces and parse/lowering readiness before lane-C shard-2
+  diagnostics closure can pass.
