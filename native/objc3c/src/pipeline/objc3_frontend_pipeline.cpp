@@ -14,6 +14,7 @@
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
+#include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h"
 #include "pipeline/objc3_semantic_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -770,6 +771,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
 
   result.typed_sema_to_lowering_contract_surface =
       BuildObjc3TypedSemaToLoweringContractSurface(result, options);
+  result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold(
+          result.sema_pass_flow_summary,
+          result.sema_parity_surface,
+          result.typed_sema_to_lowering_contract_surface);
   result.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(result, options);
   result.semantic_stability_spec_delta_closure_scaffold =
       BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(
