@@ -122,6 +122,14 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-d002-lane-d-readiness`) so sema handoff
   scaffold/pass-flow scaffold and runtime metadata projection continuity remain
   deterministic and fail-closed against `M227-D001` dependency drift.
+- M227 lane-D D006 runtime-facing type metadata edge-case expansion and robustness anchors
+  explicit lane-D edge-case expansion/robustness artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_edge_case_expansion_and_robustness_d006_expectations.md`,
+  `spec/planning/compiler/m227/m227_d006_runtime_facing_type_metadata_edge_case_expansion_and_robustness_packet.md`,
+  `scripts/check_m227_d006_runtime_facing_type_metadata_edge_case_expansion_and_robustness_contract.py`,
+  and `package.json` (`check:objc3c:m227-d006-lane-d-readiness`) so runtime-facing metadata
+  edge-case expansion/robustness continuity remains deterministic
+  and fail-closed against `M227-D005` dependency drift.
 - M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`) in
   `docs/contracts/m227_lane_e_semantic_conformance_quality_gate_expectations.md`,
   `spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`,
@@ -2023,4 +2031,8 @@ Forbidden:
 - M227 lane-C C019 typed sema-to-lowering advanced integration workpack (shard 1) anchors
   require fail-closed advanced-integration continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C shard-1 integration
+  closure can pass.
+- M227 lane-C C020 typed sema-to-lowering advanced performance workpack (shard 1) anchors
+  require fail-closed advanced-performance continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C shard-1 performance
   closure can pass.

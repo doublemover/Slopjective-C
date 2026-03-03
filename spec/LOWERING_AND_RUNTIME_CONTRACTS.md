@@ -109,6 +109,8 @@ At minimum, the pass-graph gate shall validate:
 - runtime-facing type metadata modular split/scaffolding governance shall preserve explicit
   lane-D dependency anchors (`M227-D001`) and fail closed on sema handoff scaffold/pass-flow scaffold
   or runtime-facing metadata projection drift before runtime-facing core-feature validation advances.
+- runtime-facing type metadata edge-case expansion and robustness governance shall preserve explicit lane-D dependency anchors (`M227-D006`, `M227-D005`) and fail closed on
+  runtime-facing type metadata expansion/robustness consistency, readiness, or robustness-key continuity drift before diagnostics-hardening validation advances.
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.
@@ -1128,3 +1130,5 @@ typed sema-to-lowering advanced diagnostics workpack (shard 1) governance shall 
 typed sema-to-lowering advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C018`, `M227-C017`) so typed advanced-conformance continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced integration workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C019`, `M227-C018`) so typed advanced-integration continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced performance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C020`, `M227-C019`) so typed advanced-performance continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.

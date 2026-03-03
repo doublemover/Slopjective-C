@@ -147,6 +147,8 @@ A conforming implementation shall preserve, for all exported declarations:
       handoff evidence continuity,
     - deterministic lane-D runtime-facing type metadata modular split/scaffolding metadata anchors for `M227-D002`
       with explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed,
+    - deterministic lane-D runtime-facing type metadata edge-case expansion and robustness metadata anchors for `M227-D006`
+      with explicit `M227-D005` dependency continuity and fail-closed evidence continuity so edge-case expansion/robustness evidence drift fails closed,
     - deterministic lane-D toolchain/runtime edge-case compatibility
       consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness
@@ -1005,3 +1007,5 @@ deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard1 metadata
 deterministic lane-C typed sema-to-lowering advanced-conformance-shard1 metadata anchors for `M227-C018` must remain synchronized across typed conformance shard-1 keys, parse conformance shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 conformance closure can pass.
 
 deterministic lane-C typed sema-to-lowering advanced-integration-shard1 metadata anchors for `M227-C019` must remain synchronized across typed integration shard-1 keys, parse integration shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 integration closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-performance-shard1 metadata anchors for `M227-C020` must remain synchronized across typed performance shard-1 keys, parse performance shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 performance closure can pass.
