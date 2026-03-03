@@ -144,6 +144,10 @@ At minimum, the pass-graph gate shall validate:
   preserve compatibility consistency/readiness and compatibility-key
   continuity, and fail closed when pass-graph compatibility evidence or
   metadata transport continuity drifts.
+- IR-emission recovery and determinism hardening shall remain deterministic,
+  preserve recovery consistency/readiness and recovery-determinism-key
+  continuity, and fail closed when pass-graph or parse-artifact
+  recovery-determinism evidence drifts.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.

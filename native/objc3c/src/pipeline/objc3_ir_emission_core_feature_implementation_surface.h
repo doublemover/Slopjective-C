@@ -13,6 +13,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool pass_graph_edge_case_compatibility_ready = false;
   bool pass_graph_edge_case_robustness_ready = false;
   bool pass_graph_diagnostics_hardening_ready = false;
+  bool pass_graph_recovery_determinism_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
   bool expansion_metadata_transport_ready = false;
@@ -20,36 +21,44 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool language_version_pragma_coordinate_order_consistent = false;
   bool parse_artifact_edge_case_robustness_consistent = false;
   bool parse_artifact_diagnostics_hardening_consistent = false;
+  bool parse_artifact_recovery_determinism_hardening_consistent = false;
   bool edge_case_expansion_consistent = false;
   bool diagnostics_hardening_consistent = false;
+  bool recovery_determinism_consistent = false;
   bool parse_artifact_edge_case_robustness_ready = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool edge_case_compatibility_key_transport_ready = false;
   bool edge_case_robustness_key_transport_ready = false;
   bool diagnostics_hardening_key_transport_ready = false;
+  bool recovery_determinism_key_transport_ready = false;
   bool core_feature_impl_ready = false;
   bool core_feature_expansion_ready = false;
   bool core_feature_edge_case_compatibility_ready = false;
   bool core_feature_edge_case_robustness_ready = false;
   bool core_feature_diagnostics_hardening_ready = false;
+  bool core_feature_recovery_determinism_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string expansion_key;
   std::string pass_graph_edge_case_compatibility_key;
   std::string pass_graph_edge_case_robustness_key;
   std::string pass_graph_diagnostics_hardening_key;
+  std::string pass_graph_recovery_determinism_key;
   std::string compatibility_handoff_key;
   std::string parse_artifact_diagnostics_hardening_key;
+  std::string parse_artifact_recovery_determinism_hardening_key;
   std::string parse_artifact_edge_case_expansion_key;
   std::string parse_artifact_edge_robustness_key;
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
   std::string failure_reason;
   std::string expansion_failure_reason;
   std::string edge_case_compatibility_failure_reason;
   std::string edge_case_robustness_failure_reason;
   std::string diagnostics_hardening_failure_reason;
+  std::string recovery_determinism_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -173,6 +182,32 @@ inline std::string BuildObjc3IREmissionCoreFeatureDiagnosticsHardeningKey(
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-recovery-determinism-hardening:v1:"
+      << "diagnostics-hardening-ready="
+      << (surface.core_feature_diagnostics_hardening_ready ? "true" : "false")
+      << ";pass-graph-recovery-determinism-ready="
+      << (surface.pass_graph_recovery_determinism_ready ? "true" : "false")
+      << ";recovery-determinism-consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";parse-artifact-recovery-determinism-hardening-consistent="
+      << (surface.parse_artifact_recovery_determinism_hardening_consistent
+              ? "true"
+              : "false")
+      << ";recovery-determinism-key-transport-ready="
+      << (surface.recovery_determinism_key_transport_ready ? "true" : "false")
+      << ";recovery-determinism-ready="
+      << (surface.core_feature_recovery_determinism_ready ? "true" : "false")
+      << ";pass-graph-recovery-determinism-key="
+      << surface.pass_graph_recovery_determinism_key
+      << ";parse-artifact-recovery-determinism-hardening-key="
+      << surface.parse_artifact_recovery_determinism_hardening_key
+      << ";diagnostics-hardening-key=" << surface.diagnostics_hardening_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -196,6 +231,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_diagnostics_hardening_ready =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .diagnostics_hardening_ready;
+  surface.pass_graph_recovery_determinism_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .recovery_determinism_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -210,6 +248,8 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_artifact_edge_case_robustness_consistent;
   surface.parse_artifact_diagnostics_hardening_consistent =
       parse_surface.parse_artifact_diagnostics_hardening_consistent;
+  surface.parse_artifact_recovery_determinism_hardening_consistent =
+      parse_surface.parse_recovery_determinism_hardening_consistent;
   surface.edge_case_expansion_consistent =
       parse_surface.long_tail_grammar_edge_case_expansion_consistent;
   surface.parse_artifact_edge_case_robustness_ready =
@@ -225,9 +265,14 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_diagnostics_hardening_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .diagnostics_hardening_key;
+  surface.pass_graph_recovery_determinism_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .recovery_determinism_key;
   surface.compatibility_handoff_key = parse_surface.compatibility_handoff_key;
   surface.parse_artifact_diagnostics_hardening_key =
       parse_surface.parse_artifact_diagnostics_hardening_key;
+  surface.parse_artifact_recovery_determinism_hardening_key =
+      parse_surface.parse_recovery_determinism_hardening_key;
   surface.parse_artifact_edge_case_expansion_key =
       parse_surface.long_tail_grammar_expansion_key;
   surface.parse_artifact_edge_robustness_key =
@@ -288,6 +333,20 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.diagnostics_hardening_key_transport_ready;
   surface.diagnostics_hardening_key =
       BuildObjc3IREmissionCoreFeatureDiagnosticsHardeningKey(surface);
+  surface.recovery_determinism_consistent =
+      surface.core_feature_diagnostics_hardening_ready &&
+      surface.parse_artifact_recovery_determinism_hardening_consistent;
+  surface.recovery_determinism_key_transport_ready =
+      !surface.pass_graph_recovery_determinism_key.empty() &&
+      !surface.parse_artifact_recovery_determinism_hardening_key.empty() &&
+      !surface.diagnostics_hardening_key.empty();
+  surface.core_feature_recovery_determinism_ready =
+      surface.core_feature_diagnostics_hardening_ready &&
+      surface.pass_graph_recovery_determinism_ready &&
+      surface.recovery_determinism_consistent &&
+      surface.recovery_determinism_key_transport_ready;
+  surface.recovery_determinism_key =
+      BuildObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningKey(surface);
 
   if (surface.core_feature_expansion_ready) {
     surface.expansion_failure_reason.clear();
@@ -379,6 +438,28 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   } else {
     surface.diagnostics_hardening_failure_reason =
         "IR emission core feature diagnostics hardening surface is not ready";
+  }
+
+  if (surface.core_feature_recovery_determinism_ready) {
+    surface.recovery_determinism_failure_reason.clear();
+  } else if (!surface.core_feature_diagnostics_hardening_ready) {
+    surface.recovery_determinism_failure_reason =
+        "IR emission core feature diagnostics hardening is not ready";
+  } else if (!surface.pass_graph_recovery_determinism_ready) {
+    surface.recovery_determinism_failure_reason =
+        "pass-graph recovery determinism is not ready";
+  } else if (!surface.parse_artifact_recovery_determinism_hardening_consistent) {
+    surface.recovery_determinism_failure_reason =
+        "IR emission core feature parse artifact recovery determinism hardening is inconsistent";
+  } else if (!surface.recovery_determinism_consistent) {
+    surface.recovery_determinism_failure_reason =
+        "IR emission core feature recovery determinism hardening is inconsistent";
+  } else if (!surface.recovery_determinism_key_transport_ready) {
+    surface.recovery_determinism_failure_reason =
+        "IR emission core feature recovery determinism hardening key transport is not ready";
+  } else {
+    surface.recovery_determinism_failure_reason =
+        "IR emission core feature recovery determinism hardening surface is not ready";
   }
 
   if (surface.core_feature_impl_ready) {
@@ -477,5 +558,21 @@ inline bool IsObjc3IREmissionCoreFeatureDiagnosticsHardeningReady(
       surface.diagnostics_hardening_failure_reason.empty()
           ? "IR emission core feature diagnostics hardening surface is not ready"
           : surface.diagnostics_hardening_failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_recovery_determinism_ready &&
+      surface.recovery_determinism_key_transport_ready &&
+      !surface.recovery_determinism_key.empty()) {
+    reason.clear();
+    return true;
+  }
+  reason =
+      surface.recovery_determinism_failure_reason.empty()
+          ? "IR emission core feature recovery determinism hardening surface is not ready"
+          : surface.recovery_determinism_failure_reason;
   return false;
 }
