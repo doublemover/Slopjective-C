@@ -356,6 +356,10 @@ A conforming implementation shall preserve, for all exported declarations:
       `M244-E007`, `M244-A006`, `M244-B009`, `M244-C011`, and `M244-D010`, including dependency-reference tokens
       wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
       on token/reference drift while staged lane-B/C/D recovery and determinism hardening assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations conformance matrix implementation dependency anchors for
+      `M244-E008`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D conformance matrix implementation assets remain pending GH seed.
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.
