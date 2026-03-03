@@ -520,6 +520,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic conformance lane-E diagnostics hardening wiring shall preserve explicit lane-E dependency anchors (`M227-E006`, `M227-A007`, `M227-B007`, `M227-C007`, and `M227-D007`),
   preserve readiness continuity across direct `M227-E006` and `M227-A007` checker/test commands plus `check:objc3c:m227-b007-lane-b-readiness`, `check:objc3c:m227-c007-lane-c-readiness`, and `check:objc3c:m227-d007-lane-d-readiness`,
   and fail closed when dependency tokens, dependency-reference commands, or lane-E diagnostics hardening evidence drift.
+- semantic conformance lane-E recovery and determinism hardening wiring shall preserve explicit lane-E dependency anchors (`M227-E007`, `M227-A008`, `M227-B008`, `M227-C008`, and `M227-D008`),
+  preserve readiness continuity across direct `M227-E007` and `M227-A008` checker/test commands plus `check:objc3c:m227-b008-lane-b-readiness`, `check:objc3c:m227-c008-lane-c-readiness`, and `check:objc3c:m227-d008-lane-d-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E recovery and determinism hardening evidence drift.
 - semantic-pass cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
   lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
