@@ -35,6 +35,7 @@ dependency-token/reference continuity.
    every row.
 5. Checker output is deterministic JSON and fails closed on any snippet,
    matrix, or asset drift.
+6. Dependency matrix row count remains fixed at four prerequisite lane tasks.
 
 ## Validation
 
