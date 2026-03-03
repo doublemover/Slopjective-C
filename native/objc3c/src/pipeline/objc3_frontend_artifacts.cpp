@@ -1631,6 +1631,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
+  std::string ir_emission_core_feature_conformance_matrix_error;
+  if (!IsObjc3IREmissionCoreFeatureConformanceMatrixReady(
+          ir_emission_core_feature_impl_surface,
+          ir_emission_core_feature_conformance_matrix_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L320",
+        "LLVM IR emission failed: IR emission core feature conformance matrix check failed: " +
+            ir_emission_core_feature_conformance_matrix_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
   std::vector<const FunctionDecl *> manifest_functions;
   manifest_functions.reserve(program.functions.size());
   std::unordered_set<std::string> manifest_function_names;
@@ -1919,7 +1932,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result.parse_lowering_readiness_surface
               .parse_lowering_conformance_matrix_consistent,
           pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_matrix_key);
+              .parse_lowering_conformance_matrix_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_conformance_corpus_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_conformance_corpus_case_count,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_conformance_corpus_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -1982,6 +2001,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L319",
         "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
             ownership_aware_lowering_behavior_conformance_matrix_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_conformance_corpus_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_conformance_corpus_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L320",
+        "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
+            ownership_aware_lowering_behavior_conformance_corpus_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -5335,6 +5367,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .core_feature_recovery_determinism_ready;
   ir_frontend_metadata.ir_emission_core_feature_recovery_determinism_key =
       ir_emission_core_feature_impl_surface.recovery_determinism_key;
+  ir_frontend_metadata.ir_emission_core_feature_conformance_matrix_ready =
+      ir_emission_core_feature_impl_surface.core_feature_conformance_matrix_ready;
+  ir_frontend_metadata.ir_emission_core_feature_conformance_matrix_key =
+      ir_emission_core_feature_impl_surface.conformance_matrix_key;
   std::string ir_error;
   // Historical extraction contract marker:
   // EmitObjc3IRText(pipeline_result.program, options.lowering, ir_frontend_metadata, bundle.ir_text, ir_error)

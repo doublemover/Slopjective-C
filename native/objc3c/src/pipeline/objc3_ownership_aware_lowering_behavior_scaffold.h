@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <sstream>
 #include <string>
 
@@ -31,8 +32,12 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   bool recovery_determinism_ready = false;
   bool conformance_matrix_consistent = false;
   bool conformance_matrix_ready = false;
+  bool conformance_corpus_consistent = false;
+  bool conformance_corpus_ready = false;
   bool parse_recovery_determinism_hardening_consistent = false;
   bool parse_lowering_conformance_matrix_consistent = false;
+  bool parse_lowering_conformance_corpus_consistent = false;
+  std::size_t parse_lowering_conformance_corpus_case_count = 0;
   std::string ownership_qualifier_replay_key;
   std::string retain_release_replay_key;
   std::string autoreleasepool_scope_replay_key;
@@ -47,8 +52,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   std::string diagnostics_hardening_key;
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
+  std::string conformance_corpus_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;
+  std::string parse_lowering_conformance_corpus_key;
   std::string failure_reason;
 };
 
@@ -203,6 +210,24 @@ inline std::string BuildObjc3OwnershipAwareLoweringBehaviorConformanceMatrixKey(
   return key.str();
 }
 
+inline std::string BuildObjc3OwnershipAwareLoweringBehaviorConformanceCorpusKey(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold) {
+  std::ostringstream key;
+  key << "ownership-aware-lowering-conformance-corpus-expansion:v1:"
+      << "conformance-matrix-ready="
+      << (scaffold.conformance_matrix_ready ? "true" : "false")
+      << ";parse-lowering-conformance-corpus-consistent="
+      << (scaffold.parse_lowering_conformance_corpus_consistent ? "true" : "false")
+      << ";parse-lowering-conformance-corpus-case-count="
+      << scaffold.parse_lowering_conformance_corpus_case_count
+      << ";parse-artifact-replay-key-deterministic="
+      << (scaffold.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";conformance-matrix-key=" << scaffold.conformance_matrix_key
+      << ";parse-lowering-conformance-corpus-key="
+      << scaffold.parse_lowering_conformance_corpus_key;
+  return key.str();
+}
+
 inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
     const Objc3OwnershipQualifierLoweringContract &ownership_qualifier_contract,
     const std::string &ownership_qualifier_replay_key,
@@ -223,7 +248,10 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     bool parse_recovery_determinism_hardening_consistent,
     const std::string &parse_recovery_determinism_hardening_key,
     bool parse_lowering_conformance_matrix_consistent,
-    const std::string &parse_lowering_conformance_matrix_key) {
+    const std::string &parse_lowering_conformance_matrix_key,
+    bool parse_lowering_conformance_corpus_consistent,
+    std::size_t parse_lowering_conformance_corpus_case_count,
+    const std::string &parse_lowering_conformance_corpus_key) {
   Objc3OwnershipAwareLoweringBehaviorScaffold scaffold;
   scaffold.ownership_qualifier_contract_ready =
       IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_contract) &&
@@ -256,6 +284,10 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_recovery_determinism_hardening_consistent;
   scaffold.parse_lowering_conformance_matrix_consistent =
       parse_lowering_conformance_matrix_consistent;
+  scaffold.parse_lowering_conformance_corpus_consistent =
+      parse_lowering_conformance_corpus_consistent;
+  scaffold.parse_lowering_conformance_corpus_case_count =
+      parse_lowering_conformance_corpus_case_count;
   scaffold.compatibility_handoff_key = compatibility_handoff_key;
   scaffold.parse_artifact_edge_robustness_key =
       parse_artifact_edge_robustness_key;
@@ -263,6 +295,8 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_recovery_determinism_hardening_key;
   scaffold.parse_lowering_conformance_matrix_key =
       parse_lowering_conformance_matrix_key;
+  scaffold.parse_lowering_conformance_corpus_key =
+      parse_lowering_conformance_corpus_key;
   scaffold.ownership_profile_accounting_consistent =
       ownership_qualifier_contract.object_pointer_type_annotation_sites >=
           ownership_qualifier_contract.ownership_qualifier_sites &&
@@ -376,6 +410,17 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       !scaffold.conformance_matrix_key.empty() &&
       !scaffold.parse_lowering_conformance_matrix_key.empty() &&
       !scaffold.recovery_determinism_key.empty();
+  scaffold.conformance_corpus_consistent =
+      scaffold.conformance_matrix_ready &&
+      scaffold.parse_lowering_conformance_corpus_consistent &&
+      scaffold.parse_lowering_conformance_corpus_case_count > 0 &&
+      scaffold.parse_artifact_replay_key_deterministic;
+  scaffold.conformance_corpus_key =
+      BuildObjc3OwnershipAwareLoweringBehaviorConformanceCorpusKey(scaffold);
+  scaffold.conformance_corpus_ready =
+      scaffold.conformance_corpus_consistent &&
+      !scaffold.conformance_corpus_key.empty() &&
+      !scaffold.parse_lowering_conformance_corpus_key.empty();
 
   if (scaffold.modular_split_ready &&
       scaffold.expansion_ready &&
@@ -388,7 +433,9 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.recovery_determinism_ready &&
       !scaffold.recovery_determinism_key.empty() &&
       scaffold.conformance_matrix_ready &&
-      !scaffold.conformance_matrix_key.empty()) {
+      !scaffold.conformance_matrix_key.empty() &&
+      scaffold.conformance_corpus_ready &&
+      !scaffold.conformance_corpus_key.empty()) {
     return scaffold;
   }
 
@@ -460,6 +507,18 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     scaffold.failure_reason = "ownership-aware lowering conformance matrix key is empty";
   } else if (!scaffold.conformance_matrix_ready) {
     scaffold.failure_reason = "ownership-aware lowering conformance matrix is not ready";
+  } else if (!scaffold.parse_lowering_conformance_corpus_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering parse conformance corpus is inconsistent";
+  } else if (scaffold.parse_lowering_conformance_corpus_case_count == 0) {
+    scaffold.failure_reason = "ownership-aware lowering parse conformance corpus case count is zero";
+  } else if (scaffold.parse_lowering_conformance_corpus_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering parse conformance corpus key is empty";
+  } else if (!scaffold.conformance_corpus_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering conformance corpus is inconsistent";
+  } else if (scaffold.conformance_corpus_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering conformance corpus key is empty";
+  } else if (!scaffold.conformance_corpus_ready) {
+    scaffold.failure_reason = "ownership-aware lowering conformance corpus is not ready";
   } else {
     scaffold.failure_reason = "ownership-aware lowering modular split scaffold not ready";
   }
@@ -573,6 +632,22 @@ inline bool IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
 
   reason = scaffold.failure_reason.empty()
                ? "ownership-aware lowering conformance matrix is not ready"
+               : scaffold.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold,
+    std::string &reason) {
+  if (scaffold.conformance_corpus_consistent &&
+      scaffold.conformance_corpus_ready &&
+      !scaffold.conformance_corpus_key.empty()) {
+    reason.clear();
+    return true;
+  }
+
+  reason = scaffold.failure_reason.empty()
+               ? "ownership-aware lowering conformance corpus is not ready"
                : scaffold.failure_reason;
   return false;
 }
