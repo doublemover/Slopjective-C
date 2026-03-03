@@ -424,6 +424,10 @@ A conforming implementation shall preserve, for all exported declarations:
     `M243-E010`, `M243-A004`, `M243-B005`, `M243-C006`, and `M243-D008`, including
     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy performance and quality
     guardrails governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy cross-lane integration sync dependency anchors for
+    `M243-E011`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy cross-lane integration
+    sync governance evidence fail-closed while lane readiness remains staged.
   - deterministic lane-D runner operations metadata anchors for `M248-D001`
     with compile-route evidence and perf-budget continuity so platform
     operation drift fails closed.

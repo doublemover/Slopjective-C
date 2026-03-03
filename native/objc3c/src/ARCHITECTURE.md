@@ -926,6 +926,13 @@ Current-state note:
   and `package.json` so diagnostics quality gate/replay-policy performance and
   quality guardrails evidence remains deterministic and fail-closed across
   mixed-lane dependency maturity.
+- M243 lane-E E012 diagnostics quality gate/replay policy cross-lane integration sync anchors dependency references
+  (`M243-E011`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`) in
+  `docs/contracts/m243_lane_e_diagnostics_quality_gate_and_replay_policy_cross_lane_integration_sync_e012_expectations.md`,
+  `spec/planning/compiler/m243/m243_e012_lane_e_diagnostics_quality_gate_and_replay_policy_cross_lane_integration_sync_packet.md`,
+  and `package.json` so diagnostics quality gate/replay-policy cross-lane
+  integration sync evidence remains deterministic and fail-closed across
+  mixed-lane dependency maturity.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)
