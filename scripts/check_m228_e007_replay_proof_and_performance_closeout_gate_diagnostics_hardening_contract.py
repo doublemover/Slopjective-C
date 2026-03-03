@@ -31,6 +31,7 @@ DEFAULT_PACKAGE_JSON = ROOT / "package.json"
 DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
 DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
 DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
+DEFAULT_RUNBOOK_DOC = ROOT / "docs" / "runbooks" / "m228_wave_execution_runbook.md"
 DEFAULT_SUMMARY_OUT = Path(
     "tmp/reports/m228/M228-E007/"
     "replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract_summary.json"
@@ -122,6 +123,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M228-E007-DOC-EXP-07", "`M228-C007` is preserved as a pending-lane continuity token"),
     SnippetCheck("M228-E007-DOC-EXP-08", "`check:objc3c:m228-e007-lane-e-readiness`"),
     SnippetCheck("M228-E007-DOC-EXP-09", "`tmp/reports/m228/M228-E007/replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract_summary.json`"),
+    SnippetCheck("M228-E007-DOC-EXP-10", "`docs/runbooks/m228_wave_execution_runbook.md`"),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -140,6 +142,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M228-E007-DOC-PKT-06",
         "`tests/tooling/test_check_m228_e007_replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract.py`",
     ),
+    SnippetCheck("M228-E007-DOC-PKT-07", "`docs/runbooks/m228_wave_execution_runbook.md`"),
 )
 
 PACKAGE_SCRIPT_KEY_CHECKS: tuple[PackageScriptKeyCheck, ...] = (
@@ -193,6 +196,14 @@ METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
 )
 
+RUNBOOK_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M228-E007-RUN-01",
+        "objc3c-lane-e-replay-proof-performance-closeout-gate-diagnostics-hardening-contract/m228-e007-v1",
+    ),
+    SnippetCheck("M228-E007-RUN-02", "npm run check:objc3c:m228-e007-lane-e-readiness"),
+)
+
 
 def canonical_json(payload: object) -> str:
     return json.dumps(payload, indent=2) + "\n"
@@ -214,6 +225,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
     parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
+    parser.add_argument("--runbook-doc", type=Path, default=DEFAULT_RUNBOOK_DOC)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 
@@ -397,6 +409,15 @@ def run(argv: Sequence[str]) -> int:
     )
     checks_total += metadata_checks
     findings.extend(metadata_findings)
+
+    runbook_checks, runbook_findings = check_doc_contract(
+        artifact_name="runbook_doc",
+        path=args.runbook_doc,
+        exists_check_id="M228-E007-RUN-00",
+        snippets=RUNBOOK_SNIPPETS,
+    )
+    checks_total += runbook_checks
+    findings.extend(runbook_findings)
 
     findings = sorted(findings, key=lambda finding: (finding.check_id, finding.artifact, finding.detail))
     summary = {

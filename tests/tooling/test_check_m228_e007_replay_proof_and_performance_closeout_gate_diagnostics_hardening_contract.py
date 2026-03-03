@@ -112,6 +112,26 @@ def test_contract_fails_closed_when_packet_dependency_anchor_drifts(tmp_path: Pa
     assert any(failure["check_id"] == "M228-E007-DOC-PKT-02" for failure in payload["failures"])
 
 
+def test_contract_fails_closed_when_runbook_anchor_drifts(tmp_path: Path) -> None:
+    drift_runbook = tmp_path / "m228_wave_execution_runbook.md"
+    drift_runbook.write_text(
+        contract.DEFAULT_RUNBOOK_DOC.read_text(encoding="utf-8").replace(
+            "objc3c-lane-e-replay-proof-performance-closeout-gate-diagnostics-hardening-contract/m228-e007-v1",
+            "objc3c-lane-e-replay-proof-performance-closeout-gate-diagnostics-hardening-contract/m228-e999-v1",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--runbook-doc", str(drift_runbook), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M228-E007-RUN-01" for failure in payload["failures"])
+
+
 def test_contract_fails_closed_when_package_chain_drops_c007_readiness(tmp_path: Path) -> None:
     drift_pkg = tmp_path / "package.json"
     package_payload = json.loads(contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"))

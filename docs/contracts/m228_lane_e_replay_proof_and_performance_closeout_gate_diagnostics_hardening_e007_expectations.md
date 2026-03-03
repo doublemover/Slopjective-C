@@ -40,6 +40,7 @@ Issue `#5287` dependency list includes pending-lane token `M228-C007`.
 - `native/objc3c/src/ARCHITECTURE.md` includes lane-E E007 anchor text.
 - `spec/LOWERING_AND_RUNTIME_CONTRACTS.md` includes lane-E E007 fail-closed wiring language for diagnostics-hardening closeout continuity.
 - `spec/MODULE_METADATA_AND_ABI_TABLES.md` includes deterministic lane-E E007 dependency-anchor wording for replay-proof/performance closeout evidence.
+- `docs/runbooks/m228_wave_execution_runbook.md` includes lane-E E007 diagnostics-hardening gate and readiness command anchors.
 
 ## Validation
 

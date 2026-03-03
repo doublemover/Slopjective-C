@@ -27,6 +27,8 @@ Freeze lane-E replay-proof/performance closeout diagnostics-hardening prerequisi
   - `docs/contracts/m228_lowering_pipeline_decomposition_pass_graph_diagnostics_hardening_a007_expectations.md`
   - `docs/contracts/m228_ownership_aware_lowering_behavior_diagnostics_hardening_b007_expectations.md`
   - `docs/contracts/m228_object_emission_link_path_reliability_diagnostics_hardening_d007_expectations.md`
+- Runbook anchor:
+  - `docs/runbooks/m228_wave_execution_runbook.md`
 - Issue dependency continuity tokens:
   - `M228-C007`
 
