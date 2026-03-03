@@ -10,6 +10,7 @@
 #include <string>
 #include <system_error>
 
+#include "io/objc3_cli_reporting_output_contract_core_feature_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
 
 namespace fs = std::filesystem;
@@ -207,7 +208,8 @@ void WriteStageSummaryJson(std::ostringstream &out,
 std::string BuildSummaryJson(const RunnerOptions &options,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
-                             const std::string &last_error) {
+                             const std::string &last_error,
+                             const Objc3CliReportingOutputContractCoreFeatureSurface &output_contract_core_feature_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   const char *compatibility_mode_name =
@@ -238,6 +240,21 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   WriteStageSummaryJson(out, "sema", result.sema, true);
   WriteStageSummaryJson(out, "lower", result.lower, true);
   WriteStageSummaryJson(out, "emit", result.emit, false);
+  out << "  },\n";
+  out << "  \"output_contract\": {\n";
+  out << "    \"diagnostics_schema_version\": \""
+      << kObjc3CliReportingDiagnosticsSchemaVersion << "\",\n";
+  out << "    \"summary_mode\": \"" << kObjc3CliReportingSummaryMode << "\",\n";
+  out << "    \"scaffold_key\": \""
+      << EscapeJsonString(output_contract_core_feature_surface.scaffold_key) << "\",\n";
+  out << "    \"core_feature_key\": \""
+      << EscapeJsonString(output_contract_core_feature_surface.core_feature_key) << "\",\n";
+  out << "    \"summary_output_path\": \""
+      << EscapeJsonString(output_contract_core_feature_surface.summary_output_path) << "\",\n";
+  out << "    \"diagnostics_output_path\": \""
+      << EscapeJsonString(output_contract_core_feature_surface.diagnostics_output_path) << "\",\n";
+  out << "    \"core_feature_impl_ready\": "
+      << (output_contract_core_feature_surface.core_feature_impl_ready ? "true" : "false") << "\n";
   out << "  }\n";
   out << "}\n";
   return out.str();
@@ -370,7 +387,31 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  const std::string summary_json = BuildSummaryJson(options, status, result, last_error);
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const fs::path diagnostics_output_path = diagnostics_path_text.empty()
+                                               ? (options.out_dir / (options.emit_prefix + ".diagnostics.json"))
+                                               : fs::path(diagnostics_path_text);
+  const Objc3CliReportingOutputContractCoreFeatureSurface cli_reporting_output_contract_core_feature_surface =
+      BuildObjc3CliReportingOutputContractCoreFeatureSurface(
+          cli_reporting_output_contract_scaffold,
+          summary_path,
+          diagnostics_output_path);
+  std::string output_contract_core_feature_reason;
+  if (!IsObjc3CliReportingOutputContractCoreFeatureSurfaceReady(
+          cli_reporting_output_contract_core_feature_surface,
+          output_contract_core_feature_reason)) {
+    std::cerr << "cli/reporting output core feature fail-closed: "
+              << output_contract_core_feature_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
+  const std::string summary_json = BuildSummaryJson(
+      options,
+      status,
+      result,
+      last_error,
+      cli_reporting_output_contract_core_feature_surface);
   std::string summary_error;
   if (!WriteSummary(summary_path, summary_json, summary_error)) {
     std::cerr << summary_error << "\n";
