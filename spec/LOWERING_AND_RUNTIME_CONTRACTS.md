@@ -288,6 +288,8 @@ At minimum, the pass-graph gate shall validate:
   downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on
   modular split scaffolding evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path core feature implementation governance shall preserve explicit lane-D dependency anchors (`M244-D002`) and fail closed on
+  core-feature implementation evidence drift before downstream runtime projection and metadata integration advances.
 - interop semantic contracts and type mediation governance shall preserve
   deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
   and fail closed on semantic/type mediation drift before downstream interop

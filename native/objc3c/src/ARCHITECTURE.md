@@ -499,6 +499,12 @@ Current-state note:
   `spec/planning/compiler/m244/m244_d002_runtime_link_bridge_path_modular_split_scaffolding_packet.md`,
   and `package.json` so runtime/link bridge-path modular split continuity remains deterministic
   and fail-closed against `M244-D001` dependency drift.
+- M244 lane-D D003 runtime/link bridge-path core feature implementation anchors
+  explicit lane-D core feature artifacts in
+  `docs/contracts/m244_runtime_link_bridge_path_core_feature_implementation_d003_expectations.md`,
+  `spec/planning/compiler/m244/m244_d003_runtime_link_bridge_path_core_feature_implementation_packet.md`,
+  and `package.json` so runtime/link bridge-path core feature continuity remains deterministic
+  and fail-closed against `M244-D002` dependency drift.
 - M244 lane-B B001 interop semantic contracts and type mediation anchors explicit
   lane-B contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_contract_freeze_b001_expectations.md`,
