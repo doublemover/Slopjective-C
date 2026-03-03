@@ -11,6 +11,7 @@
 #include <system_error>
 
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
+#include "io/objc3_cli_reporting_output_contract_conformance_corpus_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h"
 #include "io/objc3_cli_reporting_output_contract_diagnostics_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_edge_case_expansion_and_robustness_surface.h"
@@ -216,7 +217,9 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error,
                              const Objc3CliReportingOutputContractConformanceMatrixImplementationSurface
-                                 &output_contract_recovery_determinism_surface) {
+                                 &output_contract_recovery_determinism_surface,
+                             const Objc3CliReportingOutputContractConformanceCorpusExpansionSurface
+                                 &output_contract_conformance_corpus_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   const char *compatibility_mode_name =
@@ -397,8 +400,37 @@ std::string BuildSummaryJson(const RunnerOptions &options,
               ? "true"
               : "false")
       << ",\n";
+  out << "    \"conformance_corpus_key\": \""
+      << EscapeJsonString(output_contract_conformance_corpus_surface.conformance_corpus_key)
+      << "\",\n";
+  out << "    \"conformance_corpus_case_count\": "
+      << output_contract_conformance_corpus_surface.conformance_corpus_case_count
+      << ",\n";
+  out << "    \"conformance_corpus_accept_case_count\": "
+      << output_contract_conformance_corpus_surface
+             .conformance_corpus_accept_case_count
+      << ",\n";
+  out << "    \"conformance_corpus_reject_case_count\": "
+      << output_contract_conformance_corpus_surface
+             .conformance_corpus_reject_case_count
+      << ",\n";
+  out << "    \"conformance_corpus_consistent\": "
+      << (output_contract_conformance_corpus_surface.conformance_corpus_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"conformance_corpus_ready\": "
+      << (output_contract_conformance_corpus_surface.conformance_corpus_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"conformance_corpus_key_ready\": "
+      << (output_contract_conformance_corpus_surface.conformance_corpus_key_ready
+              ? "true"
+              : "false")
+      << ",\n";
   out << "    \"core_feature_impl_ready\": "
-      << (output_contract_recovery_determinism_surface.core_feature_impl_ready
+      << (output_contract_conformance_corpus_surface.core_feature_impl_ready
               ? "true"
               : "false")
       << "\n";
@@ -642,12 +674,28 @@ int main(int argc, char **argv) {
     return 2;
   }
 
+  const Objc3CliReportingOutputContractConformanceCorpusExpansionSurface
+      cli_reporting_output_contract_conformance_corpus_surface =
+          BuildObjc3CliReportingOutputContractConformanceCorpusExpansionSurface(
+              cli_reporting_output_contract_conformance_matrix_surface);
+  std::string output_contract_conformance_corpus_reason;
+  if (!IsObjc3CliReportingOutputContractConformanceCorpusExpansionSurfaceReady(
+          cli_reporting_output_contract_conformance_corpus_surface,
+          output_contract_conformance_corpus_reason)) {
+    std::cerr
+        << "cli/reporting output conformance corpus expansion fail-closed: "
+        << output_contract_conformance_corpus_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
   const std::string summary_json = BuildSummaryJson(
       options,
       status,
       result,
       last_error,
-      cli_reporting_output_contract_conformance_matrix_surface);
+      cli_reporting_output_contract_conformance_matrix_surface,
+      cli_reporting_output_contract_conformance_corpus_surface);
   std::string summary_error;
   if (!WriteSummary(summary_path, summary_json, summary_error)) {
     std::cerr << summary_error << "\n";

@@ -1,0 +1,38 @@
+{
+  "id": "M243-D010-R001",
+  "title": "Issue #6474 / M243-D010: Conformance corpus key ordering drift is diagnosed deterministically",
+  "feature": "M243 lane D CLI/reporting output contract conformance corpus expansion",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m243/m243_d010_cli_reporting_and_output_contract_integration_conformance_corpus_expansion_packet.md"
+  ],
+  "source": "void m243d010_r001_reject(void) {\n    __objc3_diag_contract(@\"summary=module.c_api_summary.json;diagnostics=module.diagnostics.json;conformance=drifted-order\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "OBJC3-D-CONFORMANCE-CORPUS-KEY-DRIFT",
+        "severity": "error",
+        "span": {
+          "start": { "line": 2, "column": 25 },
+          "end": { "line": 2, "column": 121 }
+        },
+        "message": "conformance corpus key must encode canonical accept/reject case ids in deterministic order",
+        "fixits": [
+          {
+            "range": {
+              "start": { "line": 2, "column": 25 },
+              "end": { "line": 2, "column": 121 }
+            },
+            "replacement": "@\"conformance=canonical-m243-d010\""
+          }
+        ]
+      }
+    ]
+  }
+}
+

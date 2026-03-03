@@ -1,0 +1,18 @@
+{
+  "id": "M243-D010-C001",
+  "title": "Issue #6474 / M243-D010: Canonical conformance corpus accept tuple remains deterministic",
+  "feature": "M243 lane D CLI/reporting output contract conformance corpus expansion",
+  "bucket": "diagnostics",
+  "profile": "strict",
+  "references": [
+    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
+    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "spec/planning/compiler/m243/m243_d010_cli_reporting_and_output_contract_integration_conformance_corpus_expansion_packet.md"
+  ],
+  "source": "void m243d010_c001_accept(void) {\n    __objc3_diag_contract(@\"summary=module.c_api_summary.json;diagnostics=module.diagnostics.json;conformance=canonical-m243-d010\");\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": []
+  }
+}
+

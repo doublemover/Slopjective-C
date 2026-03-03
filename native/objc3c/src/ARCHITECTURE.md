@@ -764,6 +764,16 @@ Current-state note:
   `spec/planning/compiler/m243/m243_d009_cli_reporting_and_output_contract_integration_conformance_matrix_implementation_packet.md`,
   so diagnostics schema/summary output contracts remain deterministic and
   fail-closed against `M243-D008` dependency drift.
+- M243 lane-D D010 conformance corpus expansion anchors CLI/reporting output contract integration
+  conformance-corpus closure in
+  `io/objc3_cli_reporting_output_contract_conformance_corpus_expansion_surface.h`,
+  `io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h`,
+  and `tools/objc3c_frontend_c_api_runner.cpp`, frozen by
+  `docs/contracts/m243_cli_reporting_and_output_contract_integration_conformance_corpus_expansion_d010_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_d010_cli_reporting_and_output_contract_integration_conformance_corpus_expansion_packet.md`,
+  so diagnostics schema/summary output contracts remain deterministic and
+  fail-closed against `M243-D009` dependency drift.
 - M243 lane-E E001 diagnostics quality gate/replay policy contract and architecture freeze
   anchors dependency references (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) in

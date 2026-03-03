@@ -273,6 +273,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M243-D007` dependency continuity so recovery and determinism drift fails closed.
   - deterministic lane-D CLI/reporting output conformance matrix implementation metadata anchors for `M243-D009`
     with explicit `M243-D008` dependency continuity so conformance matrix drift fails closed.
+  - deterministic lane-D CLI/reporting output conformance corpus expansion metadata anchors for `M243-D010`
+    with explicit `M243-D009` dependency continuity so conformance corpus drift fails closed.
   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
     continuity so diagnostics surfacing scaffold drift fails closed.
