@@ -457,6 +457,12 @@ Current-state note:
   `spec/planning/compiler/m244/m244_c001_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_packet.md`,
   and `package.json` so deterministic lowering/ABI anchors, dependency tokens, and fail-closed behavior remain frozen
   before downstream runtime projection and cross-lane conformance work begins.
+- M244 lane-D D001 runtime/link bridge-path anchors explicit
+  lane-D contract and architecture freeze artifacts in
+  `docs/contracts/m244_runtime_link_bridge_path_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m244/m244_d001_runtime_link_bridge_path_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so runtime/link bridge-path dependency continuity remains deterministic and fail-closed
+  against `M244-A001` dependency-token drift before downstream runtime and metadata work begins.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
