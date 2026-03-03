@@ -305,6 +305,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C lowering/runtime diagnostics surfacing conformance corpus expansion metadata anchors for `M243-C010` with explicit
       `M243-C009` dependency continuity so conformance corpus drift fails
       closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing performance and quality guardrails metadata anchors for `M243-C011` with explicit
+      `M243-C010` dependency continuity so performance/quality guardrail drift
+      fails closed.
    - deterministic lane-A diagnostic grammar hooks/source precision recovery
      and determinism hardening metadata anchors for `M243-A008` with explicit
      `M243-A007` dependency continuity so parser diagnostic replay hardening
