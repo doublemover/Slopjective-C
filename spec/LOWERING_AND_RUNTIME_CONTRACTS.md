@@ -262,6 +262,10 @@ At minimum, the pass-graph gate shall validate:
 - interop surface syntax/declaration-form core-feature implementation governance shall preserve explicit
   lane-A dependency anchor (`M244-A002`) and fail closed when core-feature
   dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance governance shall preserve
+  deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
+  and fail closed on lowering and ABI conformance boundary drift before
+  downstream runtime projection and cross-lane conformance expansion advances.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.

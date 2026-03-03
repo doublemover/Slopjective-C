@@ -451,6 +451,12 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_core_feature_implementation_a003_expectations.md`,
   `spec/planning/compiler/m244/m244_a003_interop_surface_syntax_and_declaration_forms_core_feature_implementation_packet.md`,
   and `package.json` so `M244-A002` dependency continuity and core-feature evidence remain fail-closed.
+- M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
+  contract and architecture freeze artifacts in
+  `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m244/m244_c001_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so deterministic lowering/ABI anchors, dependency tokens, and fail-closed behavior remain frozen
+  before downstream runtime projection and cross-lane conformance work begins.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,

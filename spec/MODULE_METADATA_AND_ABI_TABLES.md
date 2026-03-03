@@ -207,7 +207,7 @@ A conforming implementation shall preserve, for all exported declarations:
       `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
       pending-lane tokens needed to keep modular split governance evidence
       fail-closed before lane A-D modular split assets are seeded.
-    - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
+   - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
       with explicit dependency tokens (`none`) and fail-closed evidence continuity
       so interop declaration-form metadata drift fails closed.
     - deterministic lane-A interop surface modular split metadata anchors for `M244-A002`
@@ -216,6 +216,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A interop surface core-feature implementation metadata anchors for `M244-A003`
       with explicit `M244-A002` dependency continuity and fail-closed evidence
       so interop core-feature implementation drift fails closed.
+   - deterministic lane-C interop lowering/ABI conformance metadata anchors for `M244-C001`
+     with explicit dependency tokens (`none`) and fail-closed evidence continuity
+     so lowering/ABI conformance metadata drift fails closed.
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.
