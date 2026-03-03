@@ -32,6 +32,9 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
   bool conformance_corpus_key_ready = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
+  bool performance_quality_guardrails_key_ready = false;
   bool core_feature_impl_ready = false;
   std::string backend_route_key;
   std::string scaffold_key;
@@ -43,6 +46,7 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string core_feature_key;
   std::string failure_reason;
 };
@@ -139,6 +143,12 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(
       << (surface.conformance_corpus_ready ? "true" : "false")
       << ";conformance_corpus_key_ready="
       << (surface.conformance_corpus_key_ready ? "true" : "false")
+      << ";performance_quality_guardrails_consistent="
+      << (surface.performance_quality_guardrails_consistent ? "true" : "false")
+      << ";performance_quality_guardrails_ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false")
+      << ";performance_quality_guardrails_key_ready="
+      << (surface.performance_quality_guardrails_key_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
 }
@@ -241,6 +251,25 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceCorpusKey(
       << (surface.conformance_corpus_ready ? "true" : "false")
       << ";accept_case_id=" << accept_case_id
       << ";reject_case_id=" << reject_case_id;
+  return key.str();
+}
+
+inline std::string BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey(
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "toolchain-runtime-ga-operations-performance-quality-guardrails:v1:"
+      << "backend=" << surface.backend_route_key
+      << ";backend_output_path_deterministic="
+      << (surface.backend_output_path_deterministic ? "true" : "false")
+      << ";backend_output_path=" << surface.backend_output_path
+      << ";conformance_corpus_ready="
+      << (surface.conformance_corpus_ready ? "true" : "false")
+      << ";conformance_corpus_key_ready="
+      << (surface.conformance_corpus_key_ready ? "true" : "false")
+      << ";performance_quality_guardrails_consistent="
+      << (surface.performance_quality_guardrails_consistent ? "true" : "false")
+      << ";performance_quality_guardrails_ready="
+      << (surface.performance_quality_guardrails_ready ? "true" : "false");
   return key.str();
 }
 
@@ -394,6 +423,28 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       surface.conformance_corpus_key.find(";backend_output_path=" + surface.backend_output_path) !=
           std::string::npos &&
       surface.conformance_corpus_key.find(";conformance_matrix_key_ready=true") != std::string::npos;
+  surface.performance_quality_guardrails_consistent =
+      surface.conformance_corpus_consistent &&
+      surface.conformance_corpus_key_ready &&
+      surface.backend_dispatch_consistent &&
+      surface.backend_output_payload_consistent &&
+      surface.backend_output_path_deterministic;
+  surface.performance_quality_guardrails_ready =
+      surface.performance_quality_guardrails_consistent &&
+      surface.conformance_corpus_ready &&
+      !surface.backend_route_key.empty() &&
+      !surface.backend_output_path.empty();
+  surface.performance_quality_guardrails_key =
+      BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey(surface);
+  surface.performance_quality_guardrails_key_ready =
+      surface.performance_quality_guardrails_ready &&
+      !surface.performance_quality_guardrails_key.empty() &&
+      surface.performance_quality_guardrails_key.find("backend=" + surface.backend_route_key) !=
+          std::string::npos &&
+      surface.performance_quality_guardrails_key.find(";backend_output_path=" + surface.backend_output_path) !=
+          std::string::npos &&
+      surface.performance_quality_guardrails_key.find(";conformance_corpus_key_ready=true") !=
+          std::string::npos;
   surface.core_feature_impl_ready =
       surface.scaffold_ready &&
       surface.backend_route_deterministic &&
@@ -417,6 +468,10 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.conformance_matrix_key_ready;
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.conformance_corpus_ready;
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.conformance_corpus_key_ready;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.performance_quality_guardrails_ready;
+  surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.performance_quality_guardrails_key_ready;
   surface.core_feature_expansion_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(surface);
   surface.core_feature_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(surface);
 
@@ -478,6 +533,12 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
     surface.failure_reason = "toolchain/runtime conformance corpus is not ready";
   } else if (!surface.conformance_corpus_key_ready) {
     surface.failure_reason = "toolchain/runtime conformance corpus key is not ready";
+  } else if (!surface.performance_quality_guardrails_consistent) {
+    surface.failure_reason = "toolchain/runtime performance quality guardrails are inconsistent";
+  } else if (!surface.performance_quality_guardrails_ready) {
+    surface.failure_reason = "toolchain/runtime performance quality guardrails are not ready";
+  } else if (!surface.performance_quality_guardrails_key_ready) {
+    surface.failure_reason = "toolchain/runtime performance quality guardrails key is not ready";
   } else if (surface.scaffold_key.empty()) {
     surface.failure_reason = "toolchain/runtime scaffold key is empty";
   } else {
@@ -560,6 +621,26 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceCorpusReady(
   }
   if (!surface.conformance_corpus_key_ready) {
     reason = "toolchain/runtime conformance corpus key is not ready";
+    return false;
+  }
+
+  reason.clear();
+  return true;
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady(
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (!surface.performance_quality_guardrails_consistent) {
+    reason = "toolchain/runtime performance quality guardrails are inconsistent";
+    return false;
+  }
+  if (!surface.performance_quality_guardrails_ready) {
+    reason = "toolchain/runtime performance quality guardrails are not ready";
+    return false;
+  }
+  if (!surface.performance_quality_guardrails_key_ready) {
+    reason = "toolchain/runtime performance quality guardrails key is not ready";
     return false;
   }
 

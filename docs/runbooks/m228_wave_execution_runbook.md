@@ -9,6 +9,7 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-ir-emission-completeness-edge-case-and-compatibility-completion/m228-c005-v1`
 - `objc3c-object-emission-link-path-reliability-edge-case-expansion-and-robustness/m228-d006-v1`
 - `objc3c-lane-e-replay-proof-performance-closeout-gate-edge-case-expansion-and-robustness-contract/m228-e006-v1`
+- `objc3c-lane-e-replay-proof-performance-closeout-gate-diagnostics-hardening-contract/m228-e007-v1`
 - `objc3c-lowering-pipeline-pass-graph-cross-lane-integration-sync/m228-a012-v1`
 - `objc3c-lowering-pipeline-pass-graph-docs-operator-runbook-sync/m228-a013-v1`
 - `objc3c-lowering-pipeline-pass-graph-release-replay-dry-run/m228-a014-v1`
@@ -43,11 +44,16 @@ This runbook tracks current M228 lane sync coverage for:
    - `python -m pytest tests/tooling/test_check_m228_a016_lowering_pipeline_decomposition_pass_graph_integration_closeout_and_gate_signoff_contract.py -q`
 10. Run lane-A readiness chain:
    - `npm run check:objc3c:m228-a016-lane-a-readiness`
-9. Validate lane-D performance/quality guardrails gate:
+11. Validate lane-D performance/quality guardrails gate:
    - `python scripts/check_m228_d011_object_emission_link_path_reliability_performance_quality_guardrails_contract.py`
    - `python -m pytest tests/tooling/test_check_m228_d011_object_emission_link_path_reliability_performance_quality_guardrails_contract.py -q`
-10. Run lane-D readiness chain:
+12. Run lane-D readiness chain:
    - `npm run check:objc3c:m228-d011-lane-d-readiness`
+13. Validate lane-E diagnostics hardening closeout gate:
+   - `python scripts/check_m228_e007_replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract.py`
+   - `python -m pytest tests/tooling/test_check_m228_e007_replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract.py -q`
+14. Run lane-E readiness chain:
+   - `npm run check:objc3c:m228-e007-lane-e-readiness`
 
 ## Evidence
 
