@@ -12,35 +12,44 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool pass_graph_expansion_ready = false;
   bool pass_graph_edge_case_compatibility_ready = false;
   bool pass_graph_edge_case_robustness_ready = false;
+  bool pass_graph_diagnostics_hardening_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
   bool expansion_metadata_transport_ready = false;
   bool compatibility_handoff_consistent = false;
   bool language_version_pragma_coordinate_order_consistent = false;
   bool parse_artifact_edge_case_robustness_consistent = false;
+  bool parse_artifact_diagnostics_hardening_consistent = false;
   bool edge_case_expansion_consistent = false;
+  bool diagnostics_hardening_consistent = false;
   bool parse_artifact_edge_case_robustness_ready = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool edge_case_compatibility_key_transport_ready = false;
   bool edge_case_robustness_key_transport_ready = false;
+  bool diagnostics_hardening_key_transport_ready = false;
   bool core_feature_impl_ready = false;
   bool core_feature_expansion_ready = false;
   bool core_feature_edge_case_compatibility_ready = false;
   bool core_feature_edge_case_robustness_ready = false;
+  bool core_feature_diagnostics_hardening_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string expansion_key;
   std::string pass_graph_edge_case_compatibility_key;
   std::string pass_graph_edge_case_robustness_key;
+  std::string pass_graph_diagnostics_hardening_key;
   std::string compatibility_handoff_key;
+  std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_edge_case_expansion_key;
   std::string parse_artifact_edge_robustness_key;
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
+  std::string diagnostics_hardening_key;
   std::string failure_reason;
   std::string expansion_failure_reason;
   std::string edge_case_compatibility_failure_reason;
   std::string edge_case_robustness_failure_reason;
+  std::string diagnostics_hardening_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -139,6 +148,31 @@ inline std::string BuildObjc3IREmissionCoreFeatureEdgeCaseRobustnessKey(
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeatureDiagnosticsHardeningKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-diagnostics-hardening:v1:"
+      << "edge-case-robustness-ready="
+      << (surface.core_feature_edge_case_robustness_ready ? "true" : "false")
+      << ";pass-graph-diagnostics-hardening-ready="
+      << (surface.pass_graph_diagnostics_hardening_ready ? "true" : "false")
+      << ";diagnostics-hardening-consistent="
+      << (surface.diagnostics_hardening_consistent ? "true" : "false")
+      << ";parse-artifact-diagnostics-hardening-consistent="
+      << (surface.parse_artifact_diagnostics_hardening_consistent ? "true"
+                                                                  : "false")
+      << ";diagnostics-hardening-key-transport-ready="
+      << (surface.diagnostics_hardening_key_transport_ready ? "true" : "false")
+      << ";diagnostics-hardening-ready="
+      << (surface.core_feature_diagnostics_hardening_ready ? "true" : "false")
+      << ";pass-graph-diagnostics-hardening-key="
+      << surface.pass_graph_diagnostics_hardening_key
+      << ";parse-artifact-diagnostics-hardening-key="
+      << surface.parse_artifact_diagnostics_hardening_key
+      << ";edge-case-robustness-key=" << surface.edge_case_robustness_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -159,6 +193,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_edge_case_robustness_ready =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .edge_case_robustness_ready;
+  surface.pass_graph_diagnostics_hardening_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .diagnostics_hardening_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -171,6 +208,8 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.language_version_pragma_coordinate_order_consistent;
   surface.parse_artifact_edge_case_robustness_consistent =
       parse_surface.parse_artifact_edge_case_robustness_consistent;
+  surface.parse_artifact_diagnostics_hardening_consistent =
+      parse_surface.parse_artifact_diagnostics_hardening_consistent;
   surface.edge_case_expansion_consistent =
       parse_surface.long_tail_grammar_edge_case_expansion_consistent;
   surface.parse_artifact_edge_case_robustness_ready =
@@ -183,7 +222,12 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_edge_case_robustness_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .edge_case_robustness_key;
+  surface.pass_graph_diagnostics_hardening_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .diagnostics_hardening_key;
   surface.compatibility_handoff_key = parse_surface.compatibility_handoff_key;
+  surface.parse_artifact_diagnostics_hardening_key =
+      parse_surface.parse_artifact_diagnostics_hardening_key;
   surface.parse_artifact_edge_case_expansion_key =
       parse_surface.long_tail_grammar_expansion_key;
   surface.parse_artifact_edge_robustness_key =
@@ -230,6 +274,20 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.edge_case_robustness_key_transport_ready;
   surface.edge_case_robustness_key =
       BuildObjc3IREmissionCoreFeatureEdgeCaseRobustnessKey(surface);
+  surface.diagnostics_hardening_consistent =
+      surface.core_feature_edge_case_robustness_ready &&
+      surface.parse_artifact_diagnostics_hardening_consistent;
+  surface.diagnostics_hardening_key_transport_ready =
+      !surface.pass_graph_diagnostics_hardening_key.empty() &&
+      !surface.parse_artifact_diagnostics_hardening_key.empty() &&
+      !surface.edge_case_robustness_key.empty();
+  surface.core_feature_diagnostics_hardening_ready =
+      surface.core_feature_edge_case_robustness_ready &&
+      surface.pass_graph_diagnostics_hardening_ready &&
+      surface.diagnostics_hardening_consistent &&
+      surface.diagnostics_hardening_key_transport_ready;
+  surface.diagnostics_hardening_key =
+      BuildObjc3IREmissionCoreFeatureDiagnosticsHardeningKey(surface);
 
   if (surface.core_feature_expansion_ready) {
     surface.expansion_failure_reason.clear();
@@ -299,6 +357,28 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   } else {
     surface.edge_case_robustness_failure_reason =
         "IR emission core feature edge-case robustness surface is not ready";
+  }
+
+  if (surface.core_feature_diagnostics_hardening_ready) {
+    surface.diagnostics_hardening_failure_reason.clear();
+  } else if (!surface.core_feature_edge_case_robustness_ready) {
+    surface.diagnostics_hardening_failure_reason =
+        "IR emission core feature edge-case robustness is not ready";
+  } else if (!surface.pass_graph_diagnostics_hardening_ready) {
+    surface.diagnostics_hardening_failure_reason =
+        "pass-graph diagnostics hardening is not ready";
+  } else if (!surface.parse_artifact_diagnostics_hardening_consistent) {
+    surface.diagnostics_hardening_failure_reason =
+        "IR emission core feature parse artifact diagnostics hardening is inconsistent";
+  } else if (!surface.diagnostics_hardening_consistent) {
+    surface.diagnostics_hardening_failure_reason =
+        "IR emission core feature diagnostics hardening is inconsistent";
+  } else if (!surface.diagnostics_hardening_key_transport_ready) {
+    surface.diagnostics_hardening_failure_reason =
+        "IR emission core feature diagnostics hardening key transport is not ready";
+  } else {
+    surface.diagnostics_hardening_failure_reason =
+        "IR emission core feature diagnostics hardening surface is not ready";
   }
 
   if (surface.core_feature_impl_ready) {
@@ -381,5 +461,21 @@ inline bool IsObjc3IREmissionCoreFeatureEdgeCaseRobustnessReady(
   reason = surface.edge_case_robustness_failure_reason.empty()
                ? "IR emission core feature edge-case robustness surface is not ready"
                : surface.edge_case_robustness_failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeatureDiagnosticsHardeningReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_diagnostics_hardening_ready &&
+      surface.diagnostics_hardening_key_transport_ready &&
+      !surface.diagnostics_hardening_key.empty()) {
+    reason.clear();
+    return true;
+  }
+  reason =
+      surface.diagnostics_hardening_failure_reason.empty()
+          ? "IR emission core feature diagnostics hardening surface is not ready"
+          : surface.diagnostics_hardening_failure_reason;
   return false;
 }

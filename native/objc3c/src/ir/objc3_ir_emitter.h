@@ -507,6 +507,8 @@ struct Objc3IRFrontendMetadata {
   std::string ir_emission_core_feature_edge_case_compatibility_key;
   bool ir_emission_core_feature_edge_case_robustness_ready = false;
   std::string ir_emission_core_feature_edge_case_robustness_key;
+  bool ir_emission_core_feature_diagnostics_hardening_ready = false;
+  std::string ir_emission_core_feature_diagnostics_hardening_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };
