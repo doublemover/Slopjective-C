@@ -568,6 +568,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` so parser diagnostic conformance
   matrix drift fails closed before parse/lowering conformance corpus and
   performance-quality gate progression.
+- M243 lane-A A010 conformance corpus expansion anchors parser diagnostic
+  grammar-hook conformance corpus guardrails in
+  `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_parse_lowering_readiness_surface.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so parser diagnostic conformance
+  corpus drift fails closed before parse/lowering performance-quality and
+  integration-closeout gate progression.
 - M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
   sema diagnostics bus and pass-flow freeze in
   `sema/objc3_sema_pass_manager_contract.h` and

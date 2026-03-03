@@ -2605,6 +2605,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                        .parser_diagnostic_grammar_hooks_conformance_matrix_ready
                    ? "true"
                    : "false")
+           << ",\"parser_diagnostic_grammar_hooks_conformance_corpus_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .parser_diagnostic_grammar_hooks_conformance_corpus_consistent
+                   ? "true"
+                   : "false")
+           << ",\"parser_diagnostic_grammar_hooks_conformance_corpus_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .parser_diagnostic_grammar_hooks_conformance_corpus_ready
+                   ? "true"
+                   : "false")
            << ",\"parse_lowering_conformance_matrix_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_lowering_conformance_matrix_consistent ? "true"
                                                                                                     : "false")
@@ -2780,6 +2790,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"parser_diagnostic_grammar_hooks_conformance_matrix_key\":\""
            << bundle.parse_lowering_readiness_surface
                   .parser_diagnostic_grammar_hooks_conformance_matrix_key
+           << "\",\"parser_diagnostic_grammar_hooks_conformance_corpus_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .parser_diagnostic_grammar_hooks_conformance_corpus_key
            << "\",\"parse_lowering_conformance_matrix_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_matrix_key
            << "\",\"parse_lowering_conformance_corpus_key\":\""

@@ -1,0 +1,3 @@
+actor class M243A010Counter : NSObject
+nonreentrant - (void)tick;
+@end

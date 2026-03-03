@@ -1,0 +1,2 @@
+#pragma objc_language_version(3)
+void m243a010_reject_non_objc_pointer(i32 *bad);

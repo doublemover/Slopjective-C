@@ -331,6 +331,27 @@ inline std::string BuildObjc3DiagnosticGrammarHooksConformanceMatrixKey(
          (parser_diagnostic_grammar_hooks_conformance_matrix_ready ? "true" : "false");
 }
 
+inline std::string BuildObjc3DiagnosticGrammarHooksConformanceCorpusKey(
+    std::size_t conformance_corpus_case_count,
+    std::size_t conformance_corpus_passed_case_count,
+    std::size_t conformance_corpus_failed_case_count,
+    bool parser_diagnostic_grammar_hooks_conformance_matrix_ready,
+    bool parse_artifact_replay_key_deterministic,
+    bool parser_diagnostic_grammar_hooks_conformance_corpus_consistent,
+    bool parser_diagnostic_grammar_hooks_conformance_corpus_ready) {
+  return "conformance_corpus_case_count=" + std::to_string(conformance_corpus_case_count) +
+         ";conformance_corpus_passed_case_count=" + std::to_string(conformance_corpus_passed_case_count) +
+         ";conformance_corpus_failed_case_count=" + std::to_string(conformance_corpus_failed_case_count) +
+         ";conformance_matrix_ready=" +
+         (parser_diagnostic_grammar_hooks_conformance_matrix_ready ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         (parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";conformance_corpus_consistent=" +
+         (parser_diagnostic_grammar_hooks_conformance_corpus_consistent ? "true" : "false") +
+         ";conformance_corpus_ready=" +
+         (parser_diagnostic_grammar_hooks_conformance_corpus_ready ? "true" : "false");
+}
+
 inline bool Objc3ParseLoweringReadinessKeyHasPrefix(
     const std::string &value,
     const std::string &prefix) {
@@ -2607,6 +2628,31 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   const bool parse_lowering_conformance_corpus_ready =
       surface.parse_lowering_conformance_corpus_consistent &&
       toolchain_runtime_ga_operations_conformance_corpus_ready;
+  surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent =
+      surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent &&
+      surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready &&
+      surface.parse_lowering_conformance_corpus_consistent &&
+      surface.parse_lowering_conformance_corpus_case_count ==
+          kObjc3ParseLoweringConformanceCorpusCaseCount &&
+      surface.parse_lowering_conformance_corpus_case_count > 0 &&
+      !surface.parser_diagnostic_grammar_hooks_conformance_matrix_key.empty() &&
+      !surface.parse_lowering_conformance_corpus_key.empty();
+  const bool parser_diagnostic_grammar_hooks_conformance_corpus_ready_gate =
+      surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent &&
+      parse_lowering_conformance_corpus_ready &&
+      surface.parse_lowering_performance_quality_guardrails_case_count > 0;
+  surface.parser_diagnostic_grammar_hooks_conformance_corpus_key =
+      BuildObjc3DiagnosticGrammarHooksConformanceCorpusKey(
+          surface.parse_lowering_conformance_corpus_case_count,
+          surface.parse_lowering_conformance_corpus_passed_case_count,
+          surface.parse_lowering_conformance_corpus_failed_case_count,
+          surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready,
+          surface.parse_artifact_replay_key_deterministic,
+          surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent,
+          parser_diagnostic_grammar_hooks_conformance_corpus_ready_gate);
+  surface.parser_diagnostic_grammar_hooks_conformance_corpus_ready =
+      parser_diagnostic_grammar_hooks_conformance_corpus_ready_gate &&
+      !surface.parser_diagnostic_grammar_hooks_conformance_corpus_key.empty();
   const bool parser_token_budget_guardrail_case_passed =
       surface.parser_token_count_budget_consistent;
   const bool parser_diagnostic_code_surface_guardrail_case_passed =
@@ -3146,6 +3192,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
                                sema_handoff_ready &&
                                surface.lowering_boundary_ready &&
                                parse_lowering_conformance_matrix_ready &&
+                               surface.parser_diagnostic_grammar_hooks_conformance_corpus_ready &&
                                parse_lowering_conformance_corpus_ready &&
                                parse_lowering_performance_quality_guardrails_ready_gate &&
                                surface.long_tail_grammar_gate_signoff_ready;
@@ -3236,6 +3283,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   } else if (!surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready) {
     surface.failure_reason =
         "parser diagnostic grammar hooks conformance matrix is not ready";
+  } else if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_consistent) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks conformance corpus is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_conformance_corpus_ready) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks conformance corpus is not ready";
   } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
     surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
   } else if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {

@@ -1,0 +1,11 @@
+#pragma objc_language_version(3)
+typedef struct M243A010_GrammarHookTrace {
+    int token;
+    int line;
+    int column;
+} M243A010_GrammarHookTrace;
+
+M243A010_GrammarHookTrace m243a010_grammar_hook_trace(int token) {
+    M243A010_GrammarHookTrace trace = { token, 10, 19 };
+    return trace;
+}

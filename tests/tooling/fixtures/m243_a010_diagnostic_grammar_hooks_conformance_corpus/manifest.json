@@ -1,0 +1,35 @@
+{
+  "contract_id": "objc3c-diagnostic-grammar-hooks-and-source-precision-conformance-corpus-expansion/m243-a010-v1",
+  "cases": [
+    {
+      "id": "A010-C001",
+      "path": "accept_deterministic_grammar_hook_surface.objc3",
+      "parse": "accept",
+      "diagnostic_code": null
+    },
+    {
+      "id": "A010-C002",
+      "path": "reject_actor_nonreentrant_modifier.objc3",
+      "parse": "reject",
+      "diagnostic_code": "OBJC3-E-ACTOR-NONREENTRANT-DEFERRED"
+    },
+    {
+      "id": "A010-C003",
+      "path": "reject_trailing_comma_parameter.objc3",
+      "parse": "reject",
+      "diagnostic_code": "O3P104"
+    },
+    {
+      "id": "A010-C004",
+      "path": "reject_nondeclaration_after_comma.objc3",
+      "parse": "reject",
+      "diagnostic_code": "O3P100"
+    },
+    {
+      "id": "A010-C005",
+      "path": "reject_non_objc_pointer_parameter.objc3",
+      "parse": "reject",
+      "diagnostic_code": "O3P114"
+    }
+  ]
+}
