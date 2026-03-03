@@ -497,6 +497,11 @@ Current-state note:
   `spec/planning/compiler/m244/m244_a012_interop_surface_syntax_and_declaration_forms_cross_lane_integration_sync_packet.md`,
   and `package.json` so `M244-A011`, `M244-B007`, `M244-C007`, `M244-D004`, and `M244-E006` dependency continuity
   and integration evidence remain fail-closed.
+- M244 lane-A A013 interop surface syntax/declaration-form integration closeout and gate sign-off anchors
+  explicit lane-A integration closeout artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_integration_closeout_and_gate_signoff_a013_expectations.md`,
+  `spec/planning/compiler/m244/m244_a013_interop_surface_syntax_and_declaration_forms_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so `M244-A012` dependency continuity and integration closeout evidence remain fail-closed.
 - M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
   contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,

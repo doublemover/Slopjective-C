@@ -289,6 +289,9 @@ At minimum, the pass-graph gate shall validate:
 - interop surface syntax/declaration-form cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchors (`M244-A011`, `M244-B007`, `M244-C007`, `M244-D004`, and `M244-E006`) and fail closed
   when integration dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form integration closeout and gate sign-off governance shall preserve explicit
+  lane-A dependency anchor (`M244-A012`) and fail closed when integration closeout
+  dependency references or readiness evidence commands drift.
 - interop lowering and ABI conformance governance shall preserve
   deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
   and fail closed on lowering and ABI conformance boundary drift before

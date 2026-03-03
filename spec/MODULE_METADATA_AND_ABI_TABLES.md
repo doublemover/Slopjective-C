@@ -243,6 +243,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A interop surface cross-lane integration sync metadata anchors for `M244-A012`
       with explicit `M244-A011`/`M244-B007`/`M244-C007`/`M244-D004`/`M244-E006` dependency continuity and fail-closed evidence
       so interop integration drift fails closed.
+    - deterministic lane-A interop surface integration closeout and gate sign-off metadata anchors for `M244-A013`
+      with explicit `M244-A012` dependency continuity and fail-closed evidence
+      so interop integration closeout drift fails closed.
    - deterministic lane-C interop lowering/ABI conformance metadata anchors for `M244-C001`
      with explicit dependency tokens (`none`) and fail-closed evidence continuity
      so lowering/ABI conformance metadata drift fails closed.
@@ -279,6 +282,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-D runtime/link bridge-path core feature expansion metadata anchors for `M244-D004`
       with explicit `M244-D003` dependency continuity and fail-closed evidence continuity
       so runtime/link bridge-path core feature expansion metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path edge-case and compatibility completion metadata anchors for `M244-D005`
+      with explicit `M244-D004` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path edge-case and compatibility completion metadata drift fails closed.
    - deterministic lane-B interop semantic/type mediation metadata anchors for `M244-B001`
      with semantic integration + typed handoff determinism evidence, explicit dependency tokens (`none`),
      and fail-closed evidence continuity so interop semantic/type mediation drift fails closed.
@@ -321,6 +327,10 @@ A conforming implementation shall preserve, for all exported declarations:
       `M244-E005`, `M244-A005`, `M244-B007`, `M244-C008`, and `M244-D008`, including dependency-reference tokens
       wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
       on token/reference drift while staged lane-B/C/D edge-case expansion and robustness assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations diagnostics hardening dependency anchors for
+      `M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D diagnostics hardening assets remain pending GH seed.
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.
