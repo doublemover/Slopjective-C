@@ -388,6 +388,10 @@ At minimum, the pass-graph gate shall validate:
   compatibility continuity, edge-case surface readiness, or replay-key
   transport drift before diagnostics quality gate and replay policy validation
   advances.
+- lowering/runtime diagnostics surfacing edge-case expansion and robustness shall preserve
+  explicit lane-C dependency anchors (`M243-C005`) and fail closed on
+  expansion consistency, robustness readiness, or robustness-key transport
+  drift before diagnostics quality gate and replay policy validation advances.
 - semantic diagnostic taxonomy and fix-it synthesis core feature implementation
   shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
   core-feature evidence drift before diagnostics hardening and conformance

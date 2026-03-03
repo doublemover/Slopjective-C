@@ -9,6 +9,7 @@
 #include "lex/objc3_lexer.h"
 #include "parse/objc3_ast_builder_contract.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h"
@@ -839,6 +840,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result);
   result.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface =
       BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface(
+          result);
+  result
+      .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseExpansionAndRobustnessSurface(
           result);
   result.lowering_runtime_stability_core_feature_implementation_surface =
       BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(

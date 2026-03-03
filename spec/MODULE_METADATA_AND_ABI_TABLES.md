@@ -282,6 +282,10 @@ A conforming implementation shall preserve, for all exported declarations:
       compatibility completion metadata anchors for `M243-C005` with explicit
       `M243-C004` dependency continuity so edge-case compatibility drift fails
       closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing edge-case
+      expansion and robustness metadata anchors for `M243-C006` with explicit
+      `M243-C005` dependency continuity so edge-case expansion drift fails
+      closed.
     - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
       feature metadata anchors for `M243-B003` with explicit `M243-B002`
       dependency continuity so core feature implementation drift fails closed.
