@@ -27,7 +27,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m227-d001-runtime-facing-type-metadata-semantics-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 35
+    assert payload["checks_total"] >= 60
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
@@ -129,5 +129,72 @@ def test_contract_fails_closed_when_ir_runtime_shim_projection_is_removed(
     assert payload["ok"] is False
     assert any(
         failure["check_id"] == "M227-D001-ART-08"
+        for failure in payload["failures"]
+    )
+
+
+def test_contract_fails_closed_when_package_lane_d_readiness_drops_tooling_test(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_package = tmp_path / "package.json"
+    drift_package.write_text(
+        contract.ARTIFACTS["package_json"]
+        .read_text(encoding="utf-8")
+        .replace(
+            '"check:objc3c:m227-d001-lane-d-readiness": '
+            '"npm run check:objc3c:m227-d001-runtime-facing-type-metadata-semantics-contract '
+            '&& npm run test:tooling:m227-d001-runtime-facing-type-metadata-semantics-contract"',
+            '"check:objc3c:m227-d001-lane-d-readiness": '
+            '"npm run check:objc3c:m227-d001-runtime-facing-type-metadata-semantics-contract"',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["package_json"] = drift_package
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(
+        failure["check_id"] == "M227-D001-PKG-03"
+        for failure in payload["failures"]
+    )
+
+
+def test_contract_fails_closed_when_architecture_anchor_phrase_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_architecture = tmp_path / "ARCHITECTURE.md"
+    drift_architecture.write_text(
+        contract.ARTIFACTS["architecture_doc"]
+        .read_text(encoding="utf-8")
+        .replace(
+            "architecture freeze anchors explicit lane-D contract-freeze artifacts in",
+            "architecture freeze anchors explicit lane-D artifacts in",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["architecture_doc"] = drift_architecture
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(
+        failure["check_id"] == "M227-D001-ARC-01"
         for failure in payload["failures"]
     )

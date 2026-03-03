@@ -33,6 +33,10 @@ ARTIFACTS: dict[str, Path] = {
     "frontend_artifacts_source": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp",
     "contract_doc": ROOT / "docs" / "contracts" / "m227_runtime_facing_type_metadata_semantics_expectations.md",
     "planning_doc": ROOT / "spec" / "planning" / "compiler" / "m227" / "m227_d001_runtime_facing_type_metadata_semantics_contract_freeze.md",
+    "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
+    "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
+    "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+    "package_json": ROOT / "package.json",
 }
 
 ARTIFACT_ORDER: tuple[str, ...] = tuple(ARTIFACTS.keys())
@@ -122,14 +126,80 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M227-D001-DOC-06",
             "`tmp/reports/m227/M227-D001/runtime_type_metadata_semantics_contract_summary.json`",
         ),
+        (
+            "M227-D001-DOC-07",
+            "`check:objc3c:m227-d001-lane-d-readiness`",
+        ),
+        (
+            "M227-D001-DOC-08",
+            "`spec/LOWERING_AND_RUNTIME_CONTRACTS.md`",
+        ),
+        (
+            "M227-D001-DOC-09",
+            "`spec/MODULE_METADATA_AND_ABI_TABLES.md`",
+        ),
     ),
     "planning_doc": (
         ("M227-D001-PLN-01", "# M227-D001 Runtime-Facing Type Metadata Semantics Contract Freeze Packet"),
         ("M227-D001-PLN-02", "Packet: `M227-D001`"),
-        ("M227-D001-PLN-03", "## Determinism Criteria"),
+        ("M227-D001-PLN-03", "Freeze date: `2026-03-03`"),
+        ("M227-D001-PLN-04", "Dependencies: none"),
+        ("M227-D001-PLN-05", "## Determinism Criteria"),
         (
-            "M227-D001-PLN-04",
+            "M227-D001-PLN-06",
             "- Runtime dispatch symbol defaults are cross-layer consistent (`objc3_msgsend_i32`) between sema and pipeline contracts.",
+        ),
+        (
+            "M227-D001-PLN-07",
+            "`check:objc3c:m227-d001-lane-d-readiness`",
+        ),
+    ),
+    "architecture_doc": (
+        (
+            "M227-D001-ARC-01",
+            "architecture freeze anchors explicit lane-D contract-freeze artifacts in",
+        ),
+        (
+            "M227-D001-ARC-02",
+            "docs/contracts/m227_runtime_facing_type_metadata_semantics_expectations.md",
+        ),
+        (
+            "M227-D001-ARC-03",
+            "`check:objc3c:m227-d001-lane-d-readiness`",
+        ),
+    ),
+    "lowering_spec": (
+        (
+            "M227-D001-SPC-01",
+            "runtime-facing type metadata semantics governance shall preserve",
+        ),
+        (
+            "M227-D001-SPC-02",
+            "continuity (`M227-D001`).",
+        ),
+    ),
+    "metadata_spec": (
+        (
+            "M227-D001-META-01",
+            "deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`",
+        ),
+        (
+            "M227-D001-META-02",
+            "continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact",
+        ),
+    ),
+    "package_json": (
+        (
+            "M227-D001-PKG-01",
+            '"check:objc3c:m227-d001-runtime-facing-type-metadata-semantics-contract": "python scripts/check_m227_d001_runtime_facing_type_metadata_semantics_contract.py"',
+        ),
+        (
+            "M227-D001-PKG-02",
+            '"test:tooling:m227-d001-runtime-facing-type-metadata-semantics-contract": "python -m pytest tests/tooling/test_check_m227_d001_runtime_facing_type_metadata_semantics_contract.py -q"',
+        ),
+        (
+            "M227-D001-PKG-03",
+            '"check:objc3c:m227-d001-lane-d-readiness": "npm run check:objc3c:m227-d001-runtime-facing-type-metadata-semantics-contract && npm run test:tooling:m227-d001-runtime-facing-type-metadata-semantics-contract"',
         ),
     ),
 }
