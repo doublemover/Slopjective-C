@@ -283,6 +283,9 @@ At minimum, the pass-graph gate shall validate:
 - interop surface syntax/declaration-form conformance corpus expansion governance shall preserve explicit
   lane-A dependency anchor (`M244-A009`) and fail closed when conformance
   dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form performance and quality guardrails governance shall preserve explicit
+  lane-A dependency anchor (`M244-A010`) and fail closed when quality
+  dependency references or readiness evidence commands drift.
 - interop lowering and ABI conformance governance shall preserve
   deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
   and fail closed on lowering and ABI conformance boundary drift before
