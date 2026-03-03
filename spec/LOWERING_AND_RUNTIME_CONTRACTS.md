@@ -326,6 +326,9 @@ At minimum, the pass-graph gate shall validate:
 - interop lowering and ABI conformance performance and quality guardrails governance shall preserve explicit
   lane-C dependency anchor (`M244-C010`) and fail closed when performance/quality
   dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance cross-lane integration sync governance shall preserve explicit
+  lane-C dependency anchor (`M244-C011`) and fail closed when cross-lane integration
+  dependency references or readiness evidence commands drift.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on

@@ -558,6 +558,11 @@ Current-state note:
   `docs/contracts/m244_interop_lowering_and_abi_conformance_performance_and_quality_guardrails_c011_expectations.md`,
   `spec/planning/compiler/m244/m244_c011_interop_lowering_and_abi_conformance_performance_and_quality_guardrails_packet.md`,
   and `package.json` so `M244-C010` dependency continuity and performance/quality evidence remain fail-closed.
+- M244 lane-C C012 interop lowering/ABI conformance cross-lane integration sync anchors
+  explicit lane-C cross-lane integration artifacts in
+  `docs/contracts/m244_interop_lowering_and_abi_conformance_cross_lane_integration_sync_c012_expectations.md`,
+  `spec/planning/compiler/m244/m244_c012_interop_lowering_and_abi_conformance_cross_lane_integration_sync_packet.md`,
+  and `package.json` so `M244-C011` dependency continuity and cross-lane integration evidence remain fail-closed.
 - M244 lane-D D001 runtime/link bridge-path anchors explicit
   lane-D contract and architecture freeze artifacts in
   `docs/contracts/m244_runtime_link_bridge_path_contract_and_architecture_freeze_d001_expectations.md`,
