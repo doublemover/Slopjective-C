@@ -512,6 +512,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic conformance lane-E modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`),
   preserve readiness continuity across `check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, and `check:objc3c:m227-d002-lane-d-readiness`,
   and fail closed when dependency tokens, package readiness hooks, or lane-E modular split/scaffolding evidence drift.
+- semantic conformance lane-E edge-case expansion and robustness wiring shall preserve explicit lane-E dependency anchors (`M227-E005`, `M227-A006`, `M227-B006`, `M227-C006`, and `M227-D006`),
+  preserve readiness continuity across direct `M227-E005` and `M227-A006` checker/test commands plus `check:objc3c:m227-b006-lane-b-readiness`, `check:objc3c:m227-c006-lane-c-readiness`, and `check:objc3c:m227-d006-lane-d-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E edge-case expansion/robustness evidence drift.
 - semantic-pass cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
   lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
