@@ -251,6 +251,14 @@ Current-state note:
   and `package.json` so lane-E edge-case expansion/robustness closeout
   evidence remains deterministic and fail-closed across lane-A through lane-D
   dependencies.
+- M228 lane-E E007 replay-proof/performance closeout diagnostics hardening anchors
+  dependency references (`M228-E006`, `M228-A007`, `M228-B007`, `M228-D007`,
+  and pending token `M228-C007`) in
+  `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_diagnostics_hardening_e007_expectations.md`,
+  `spec/planning/compiler/m228/m228_e007_replay_proof_and_performance_closeout_gate_diagnostics_hardening_packet.md`,
+  and `package.json` so diagnostics-hardening closeout evidence remains
+  deterministic and fail-closed while lane-C diagnostics-hardening assets are
+  pending.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,

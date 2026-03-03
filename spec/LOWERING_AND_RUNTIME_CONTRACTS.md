@@ -179,6 +179,11 @@ At minimum, the pass-graph gate shall validate:
   `M228-A006`, `M228-B006`, `M228-C006`, `M228-D006`) and fail closed when
   dependency references, readiness chaining, or closeout evidence commands
   drift.
+- replay-proof/performance diagnostics hardening closeout wiring shall preserve
+  explicit lane-E dependency anchors (`M228-E006`, `M228-A007`, `M228-B007`,
+  `M228-D007`, and pending token `M228-C007`) and fail closed when dependency
+  references, readiness chaining, pending-token continuity, or closeout
+  evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or

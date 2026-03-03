@@ -141,6 +141,11 @@ A conforming implementation shall preserve, for all exported declarations:
      anchors for `M228-E005`, `M228-A006`, `M228-B006`, `M228-C006`, and
      `M228-D006`, including cross-lane robustness-readiness continuity needed
      to keep replay-proof/performance closeout evidence fail-closed.
+   - deterministic lane-E diagnostics hardening dependency anchors for
+     `M228-E006`, `M228-A007`, `M228-B007`, `M228-D007`, and pending token
+     `M228-C007`, including pending-token continuity needed to keep
+     replay-proof/performance diagnostics-hardening closeout evidence
+     fail-closed while lane-C diagnostics assets are pending.
    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
      backend marker-path and marker payload-to-route consistency evidence.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
