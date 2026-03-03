@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
 #include "sema/objc3_sema_contract.h"
 
@@ -19,6 +20,9 @@ struct Objc3TypeFormScaffoldSummary {
   bool canonical_message_scalars_include_bool = false;
   bool canonical_forms_exclude_unknown = false;
   bool canonical_bridge_top_matches_reference_without_sel = false;
+  bool diagnostics_hardening_consistent = false;
+  bool diagnostics_hardening_ready = false;
+  std::string diagnostics_hardening_key;
   bool deterministic = false;
 };
 

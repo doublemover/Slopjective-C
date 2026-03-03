@@ -544,6 +544,9 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   bool canonical_bridge_top_forms_unique = false;
   bool canonical_bridge_top_subset_of_reference = false;
   bool canonical_type_form_scaffold_ready = false;
+  bool canonical_type_form_diagnostics_hardening_consistent = false;
+  bool canonical_type_form_diagnostics_hardening_ready = false;
+  std::string canonical_type_form_diagnostics_hardening_key;
   bool deterministic = true;
 };
 

@@ -7792,6 +7792,9 @@ static void ApplyTypeFormScaffoldSummaryToIdClassSelObjectPointerTypeCheckingSum
   summary.canonical_bridge_top_forms_unique = scaffold.canonical_bridge_top_forms_unique;
   summary.canonical_bridge_top_subset_of_reference = scaffold.canonical_bridge_top_subset_of_reference;
   summary.canonical_type_form_scaffold_ready = IsReadyObjc3TypeFormScaffoldSummary(scaffold);
+  summary.canonical_type_form_diagnostics_hardening_consistent = scaffold.diagnostics_hardening_consistent;
+  summary.canonical_type_form_diagnostics_hardening_ready = scaffold.diagnostics_hardening_ready;
+  summary.canonical_type_form_diagnostics_hardening_key = scaffold.diagnostics_hardening_key;
 }
 
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
@@ -7942,6 +7945,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
       summary.canonical_bridge_top_forms_unique &&
       summary.canonical_bridge_top_subset_of_reference &&
       summary.canonical_type_form_scaffold_ready &&
+      summary.canonical_type_form_diagnostics_hardening_consistent &&
+      summary.canonical_type_form_diagnostics_hardening_ready &&
+      !summary.canonical_type_form_diagnostics_hardening_key.empty() &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -8118,6 +8124,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
       summary.canonical_bridge_top_forms_unique &&
       summary.canonical_bridge_top_subset_of_reference &&
       summary.canonical_type_form_scaffold_ready &&
+      summary.canonical_type_form_diagnostics_hardening_consistent &&
+      summary.canonical_type_form_diagnostics_hardening_ready &&
+      !summary.canonical_type_form_diagnostics_hardening_key.empty() &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -12150,6 +12159,18 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_subset_of_reference &&
          handoff.id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready ==
              id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_consistent ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_consistent &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_ready ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_ready &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_key ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_diagnostics_hardening_key &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites ==
              id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites ==
@@ -12215,6 +12236,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_forms_unique &&
          handoff.id_class_sel_object_pointer_type_checking_summary.canonical_bridge_top_subset_of_reference &&
          handoff.id_class_sel_object_pointer_type_checking_summary.canonical_type_form_scaffold_ready &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+             .canonical_type_form_diagnostics_hardening_consistent &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+             .canonical_type_form_diagnostics_hardening_ready &&
+         !handoff.id_class_sel_object_pointer_type_checking_summary
+              .canonical_type_form_diagnostics_hardening_key.empty() &&
          handoff.block_literal_capture_semantics_summary.deterministic &&
          handoff.block_literal_capture_semantics_summary.block_literal_sites ==
              block_literal_capture_semantics_summary.block_literal_sites &&

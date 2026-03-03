@@ -1,6 +1,7 @@
 #include "sema/objc3_type_form_scaffold.h"
 
 #include <array>
+#include <string>
 
 namespace {
 
@@ -72,6 +73,10 @@ bool IsCanonicalBridgeTopEquivalentToReferenceWithoutSel(const std::array<ValueT
   return reference_without_sel_count == bridge_top_forms.size();
 }
 
+inline const char *BoolKey(bool value) {
+  return value ? "1" : "0";
+}
+
 }  // namespace
 
 Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
@@ -101,6 +106,21 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
   summary.canonical_bridge_top_matches_reference_without_sel =
       IsCanonicalBridgeTopEquivalentToReferenceWithoutSel(kObjc3CanonicalReferenceTypeForms,
                                                           kObjc3CanonicalBridgeTopReferenceTypeForms);
+  summary.diagnostics_hardening_consistent =
+      summary.canonical_reference_includes_sel &&
+      summary.canonical_message_scalars_include_i32 &&
+      summary.canonical_message_scalars_include_bool &&
+      summary.canonical_forms_exclude_unknown &&
+      summary.canonical_bridge_top_matches_reference_without_sel;
+  summary.diagnostics_hardening_key = std::string("type-form-diagnostics-hardening;ref-sel=") +
+                                      BoolKey(summary.canonical_reference_includes_sel) +
+                                      ";msg-i32=" + BoolKey(summary.canonical_message_scalars_include_i32) +
+                                      ";msg-bool=" + BoolKey(summary.canonical_message_scalars_include_bool) +
+                                      ";exclude-unknown=" + BoolKey(summary.canonical_forms_exclude_unknown) +
+                                      ";bridge-eq-ref-minus-sel=" +
+                                      BoolKey(summary.canonical_bridge_top_matches_reference_without_sel);
+  summary.diagnostics_hardening_ready =
+      summary.diagnostics_hardening_consistent && !summary.diagnostics_hardening_key.empty();
   summary.deterministic = summary.canonical_reference_form_count > 0 &&
                           summary.canonical_message_scalar_form_count > 0 &&
                           summary.canonical_bridge_top_form_count > 0 &&
@@ -114,7 +134,10 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                           summary.canonical_message_scalars_include_i32 &&
                           summary.canonical_message_scalars_include_bool &&
                           summary.canonical_forms_exclude_unknown &&
-                          summary.canonical_bridge_top_matches_reference_without_sel;
+                          summary.canonical_bridge_top_matches_reference_without_sel &&
+                          summary.diagnostics_hardening_consistent &&
+                          summary.diagnostics_hardening_ready &&
+                          !summary.diagnostics_hardening_key.empty();
   return summary;
 }
 
@@ -133,5 +156,8 @@ bool IsReadyObjc3TypeFormScaffoldSummary(const Objc3TypeFormScaffoldSummary &sum
          summary.canonical_message_scalars_include_bool &&
          summary.canonical_forms_exclude_unknown &&
          summary.canonical_bridge_top_matches_reference_without_sel &&
+         summary.diagnostics_hardening_consistent &&
+         summary.diagnostics_hardening_ready &&
+         !summary.diagnostics_hardening_key.empty() &&
          summary.deterministic;
 }
