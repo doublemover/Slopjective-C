@@ -432,6 +432,21 @@ struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceCorpusExpansio
   std::string failure_reason;
 };
 
+struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisPerformanceQualityGuardrailsSurface {
+  bool conformance_corpus_consistent = false;
+  bool conformance_corpus_ready = false;
+  bool parse_lowering_performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
+  std::size_t parse_lowering_performance_quality_guardrails_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
+  std::string conformance_corpus_key;
+  std::string parse_lowering_performance_quality_guardrails_key;
+  std::string performance_quality_guardrails_key;
+  std::string failure_reason;
+};
+
 struct Objc3SemanticStabilitySpecDeltaClosureScaffold {
   bool typed_surface_present = false;
   bool parse_readiness_surface_present = false;
@@ -1045,6 +1060,8 @@ struct Objc3FrontendPipelineResult {
       semantic_diagnostic_taxonomy_and_fixit_conformance_matrix_implementation_surface;
   Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisConformanceCorpusExpansionSurface
       semantic_diagnostic_taxonomy_and_fixit_conformance_corpus_expansion_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisPerformanceQualityGuardrailsSurface
+      semantic_diagnostic_taxonomy_and_fixit_performance_quality_guardrails_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
   Objc3SemanticStabilityCoreFeatureImplementationSurface

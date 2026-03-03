@@ -462,6 +462,11 @@ At minimum, the pass-graph gate shall validate:
   conformance-corpus consistency, conformance-corpus readiness, or
   conformance-corpus-key continuity drift before downstream lane-B guardrail
   expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis performance and quality guardrails
+  shall preserve lane-B dependency anchors (`M243-B010`) and fail closed on
+  performance-quality-guardrails consistency, performance-quality-guardrails readiness,
+  or performance-quality-guardrails-key continuity drift before downstream lane-B
+  integration closures advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

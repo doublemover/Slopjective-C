@@ -668,6 +668,11 @@ Current-state note:
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_conformance_corpus_expansion_surface.h`
   and `pipeline/objc3_frontend_pipeline.cpp` so lane-B conformance corpus closure
   remains deterministic and fail-closed against `M243-B009` conformance matrix drift.
+- M243 lane-B B011 semantic diagnostic taxonomy/fix-it synthesis performance and quality guardrails
+  anchors performance-quality-guardrails consistency/readiness and performance-quality-guardrails-key continuity in
+  `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_performance_quality_guardrails_surface.h`
+  and `pipeline/objc3_frontend_pipeline.cpp` so lane-B performance/quality guardrails closure
+  remains deterministic and fail-closed against `M243-B010` conformance corpus drift.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
