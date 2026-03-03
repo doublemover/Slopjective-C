@@ -548,6 +548,11 @@ Current-state note:
   `docs/contracts/m244_interop_lowering_and_abi_conformance_conformance_matrix_implementation_c009_expectations.md`,
   `spec/planning/compiler/m244/m244_c009_interop_lowering_and_abi_conformance_conformance_matrix_implementation_packet.md`,
   and `package.json` so `M244-C008` dependency continuity and conformance matrix evidence remain fail-closed.
+- M244 lane-C C010 interop lowering/ABI conformance conformance corpus expansion anchors
+  explicit lane-C conformance corpus expansion artifacts in
+  `docs/contracts/m244_interop_lowering_and_abi_conformance_conformance_corpus_expansion_c010_expectations.md`,
+  `spec/planning/compiler/m244/m244_c010_interop_lowering_and_abi_conformance_conformance_corpus_expansion_packet.md`,
+  and `package.json` so `M244-C009` dependency continuity and conformance corpus evidence remain fail-closed.
 - M244 lane-D D001 runtime/link bridge-path anchors explicit
   lane-D contract and architecture freeze artifacts in
   `docs/contracts/m244_runtime_link_bridge_path_contract_and_architecture_freeze_d001_expectations.md`,
