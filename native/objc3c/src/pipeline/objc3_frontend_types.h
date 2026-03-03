@@ -71,6 +71,8 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool typed_core_feature_edge_case_compatibility_ready = false;
   bool typed_core_feature_edge_case_expansion_consistent = false;
   bool typed_core_feature_edge_case_robustness_ready = false;
+  bool typed_diagnostics_hardening_consistent = false;
+  bool typed_diagnostics_hardening_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -86,6 +88,7 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string parse_artifact_edge_robustness_key;
   std::string typed_core_feature_edge_case_compatibility_key;
   std::string typed_core_feature_edge_case_robustness_key;
+  std::string typed_diagnostics_hardening_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
@@ -194,6 +197,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool typed_sema_edge_case_compatibility_ready = false;
   bool typed_sema_edge_case_expansion_consistent = false;
   bool typed_sema_edge_case_robustness_ready = false;
+  bool typed_sema_diagnostics_hardening_consistent = false;
+  bool typed_sema_diagnostics_hardening_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_sema_core_feature_case_count = 0;
@@ -258,6 +263,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string typed_sema_core_feature_expansion_key;
   std::string typed_sema_edge_case_compatibility_key;
   std::string typed_sema_edge_case_robustness_key;
+  std::string typed_sema_diagnostics_hardening_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

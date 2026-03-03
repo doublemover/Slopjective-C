@@ -1970,3 +1970,6 @@ Forbidden:
 - M227 lane-C C006 typed sema-to-lowering edge-case expansion and robustness anchors
   require fail-closed expansion/robustness continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C robustness closure can pass.
+- M227 lane-C C007 typed sema-to-lowering diagnostics hardening anchors require
+  fail-closed diagnostics-hardening continuity between typed handoff surfaces
+  and parse/lowering readiness before lane-C diagnostics closure can pass.

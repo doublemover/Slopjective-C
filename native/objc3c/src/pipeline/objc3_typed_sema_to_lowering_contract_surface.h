@@ -135,6 +135,19 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureEdgeRobustnessKey(
          ";parse_artifact_edge_robustness_key=" + surface.parse_artifact_edge_robustness_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringDiagnosticsHardeningKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-diagnostics-hardening:v1:edge_case_robustness_ready=" +
+         std::string(surface.typed_core_feature_edge_case_robustness_ready ? "true" : "false") +
+         ";typed_diagnostics_hardening_consistent=" +
+         std::string(surface.typed_diagnostics_hardening_consistent ? "true" : "false") +
+         ";typed_diagnostics_hardening_ready=" +
+         std::string(surface.typed_diagnostics_hardening_ready ? "true" : "false") +
+         ";typed_handoff_key_deterministic=" +
+         std::string(surface.typed_handoff_key_deterministic ? "true" : "false") +
+         ";edge_case_robustness_key=" + surface.typed_core_feature_edge_case_robustness_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -177,6 +190,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_core_feature_edge_case_expansion_consistent ? "true" : "false")
       << ";core_feature_edge_case_robustness_ready="
       << (surface.typed_core_feature_edge_case_robustness_ready ? "true" : "false")
+      << ";typed_diagnostics_hardening_consistent="
+      << (surface.typed_diagnostics_hardening_consistent ? "true" : "false")
+      << ";typed_diagnostics_hardening_ready="
+      << (surface.typed_diagnostics_hardening_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -203,6 +220,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_core_feature_edge_case_expansion_consistent ? "true" : "false")
       << ";core_feature_edge_case_robustness_ready="
       << (surface.typed_core_feature_edge_case_robustness_ready ? "true" : "false")
+      << ";typed_diagnostics_hardening_consistent="
+      << (surface.typed_diagnostics_hardening_consistent ? "true" : "false")
+      << ";typed_diagnostics_hardening_ready="
+      << (surface.typed_diagnostics_hardening_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -444,6 +465,20 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringCoreFeatureEdgeRobustnessKey(surface);
   const bool typed_core_feature_edge_case_robustness_key_ready =
       !surface.typed_core_feature_edge_case_robustness_key.empty();
+  surface.typed_diagnostics_hardening_consistent =
+      surface.typed_core_feature_edge_case_robustness_ready &&
+      surface.semantic_handoff_deterministic &&
+      surface.sema_parity_surface_deterministic &&
+      surface.parse_artifact_replay_key_deterministic;
+  surface.typed_diagnostics_hardening_ready =
+      surface.typed_diagnostics_hardening_consistent &&
+      !surface.typed_core_feature_edge_case_robustness_key.empty() &&
+      !surface.compatibility_handoff_key.empty() &&
+      !surface.parse_artifact_edge_robustness_key.empty();
+  surface.typed_diagnostics_hardening_key =
+      BuildObjc3TypedSemaToLoweringDiagnosticsHardeningKey(surface);
+  const bool typed_diagnostics_hardening_key_ready =
+      !surface.typed_diagnostics_hardening_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -452,7 +487,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_core_feature_edge_case_compatibility_key_ready &&
       surface.typed_core_feature_edge_case_expansion_consistent &&
       surface.typed_core_feature_edge_case_robustness_ready &&
-      typed_core_feature_edge_case_robustness_key_ready;
+      typed_core_feature_edge_case_robustness_key_ready &&
+      surface.typed_diagnostics_hardening_consistent &&
+      surface.typed_diagnostics_hardening_ready &&
+      typed_diagnostics_hardening_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -524,6 +562,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering edge-case robustness is not ready";
   } else if (surface.typed_core_feature_edge_case_robustness_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering edge-case robustness key is empty";
+  } else if (!surface.typed_diagnostics_hardening_consistent) {
+    surface.failure_reason = "typed sema-to-lowering diagnostics hardening is inconsistent";
+  } else if (!surface.typed_diagnostics_hardening_ready) {
+    surface.failure_reason = "typed sema-to-lowering diagnostics hardening is not ready";
+  } else if (surface.typed_diagnostics_hardening_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering diagnostics hardening key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {
