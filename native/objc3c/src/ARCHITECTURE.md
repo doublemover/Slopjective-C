@@ -834,6 +834,12 @@ Current-state note:
   `spec/planning/compiler/m246/m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_packet.md`,
   and `package.json` so optimizer pass-wiring continuity remains deterministic
   and fail-closed against IR validation drift.
+- M246 lane-C C002 IR optimization pass wiring and validation modular split/scaffolding anchors
+  explicit lane-C scaffolding artifacts in
+  `docs/contracts/m246_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m246/m246_c002_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_packet.md`,
+  and `package.json` so optimizer modular split continuity remains deterministic
+  and fail-closed against `M246-C001` dependency drift.
 - M246 lane-D D001 toolchain integration and optimization controls contract and architecture freeze anchors
   explicit lane-D contract freeze artifacts in
   `docs/contracts/m246_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_d001_expectations.md`,

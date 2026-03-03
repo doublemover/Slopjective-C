@@ -491,6 +491,9 @@ At minimum, the pass-graph gate shall validate:
 - IR optimization pass wiring and validation governance shall preserve explicit
   deterministic lane-C pass-wiring anchors and fail closed on optimizer IR validation drift
   before optimizer pipeline integration and invariants validation advances.
+- IR optimization pass wiring and validation modular split/scaffolding governance shall preserve explicit
+  lane-C dependency anchors (`M246-C001`) and fail closed on modular split handoff drift
+  before optimizer pass-wiring scaffolding advances.
 - toolchain integration and optimization controls governance shall preserve explicit
   deterministic lane-D control anchors and fail closed on toolchain optimization control drift
   before optimizer pipeline integration and invariants validation advances.

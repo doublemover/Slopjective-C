@@ -446,6 +446,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C IR optimization pass wiring metadata anchors for `M246-C001`
       with IR pass-wiring evidence and optimizer replay-budget continuity so IR validation
       drift fails closed.
+    - deterministic lane-C IR optimization pass wiring modular split metadata anchors for `M246-C002`
+      with explicit `M246-C001` dependency continuity so modular split drift fails closed.
     - deterministic lane-D toolchain integration and optimization controls metadata anchors for `M246-D001`
       with toolchain-control evidence and optimizer replay-budget continuity so control
       drift fails closed.
