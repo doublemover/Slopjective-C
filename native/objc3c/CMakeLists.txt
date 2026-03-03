@@ -46,6 +46,7 @@ target_include_directories(objc3c_diag PUBLIC
 add_library(objc3c_parse STATIC
   src/parse/objc3_ast_builder.cpp
   src/parse/objc3_ast_builder_contract.cpp
+  src/parse/objc3_diagnostic_grammar_hooks_core_feature.cpp
   src/parse/objc3_diagnostic_source_precision_scaffold.cpp
   src/parse/objc3_parse_support.cpp
   src/parse/objc3_parser.cpp
