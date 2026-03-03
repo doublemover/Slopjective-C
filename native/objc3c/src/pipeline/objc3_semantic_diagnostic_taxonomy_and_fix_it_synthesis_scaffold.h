@@ -40,7 +40,7 @@ BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold(
   scaffold.sema_parity_surface_present =
       sema_parity_surface.ready ||
       !sema_parity_surface.pass_flow_recovery_replay_key.empty() ||
-      !sema_parity_surface.diagnostics.empty();
+      sema_parity_surface.diagnostics_total > 0u;
   scaffold.sema_pass_flow_summary_ready =
       IsReadyObjc3SemaPassFlowSummary(sema_pass_flow_summary);
   scaffold.sema_parity_surface_ready =
