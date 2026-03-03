@@ -45,7 +45,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
 def test_contract_default_summary_out_is_under_tmp_reports_m244_c014() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
-    assert normalized.startswith("tmp/reports/m244/M244-C014/")
+    assert normalized.startswith("tmp/reports/m244/m244-c014/")
 
 
 def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -85,7 +85,7 @@ def test_contract_fails_closed_when_prerequisite_asset_is_missing(
 def test_contract_fails_closed_when_expectations_drop_c013_dependency(tmp_path: Path) -> None:
     drift_doc = tmp_path / "m244_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_c014.md"
     drift_doc.write_text(
-        contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8").replace("`M244-C013`", "`M244-C099`", 1),
+        contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8").replace("`m244-c013`", "`M244-C099`", 1),
         encoding="utf-8",
     )
 
@@ -95,7 +95,7 @@ def test_contract_fails_closed_when_expectations_drop_c013_dependency(tmp_path: 
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M244-C014-DOC-EXP-02" for failure in payload["failures"])
+    assert any(failure["check_id"] == "m244-c014-DOC-EXP-02" for failure in payload["failures"])
 
 
 def test_contract_fails_closed_when_package_chain_drops_c013_readiness(tmp_path: Path) -> None:
@@ -117,4 +117,7 @@ def test_contract_fails_closed_when_package_chain_drops_c013_readiness(tmp_path:
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M244-C014-CFG-10" for failure in payload["failures"])
+    assert any(failure["check_id"] == "m244-c014-CFG-10" for failure in payload["failures"])
+
+
+

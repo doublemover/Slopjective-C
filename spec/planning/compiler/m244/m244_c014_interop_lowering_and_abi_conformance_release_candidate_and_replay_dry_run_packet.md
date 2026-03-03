@@ -1,16 +1,17 @@
-# M244-C014 Interop Lowering and ABI Conformance Release-Candidate and Replay Dry-Run Packet
+# m244-c014 Interop Lowering and ABI Conformance release-candidate and replay dry-run Packet
 
-Packet: `M244-C014`
+Packet: `m244-c014`
 Milestone: `M244`
 Lane: `C`
 Issue: `#6563`
-Dependencies: `M244-C013`
+Dependencies: `m244-c013`
 
 ## Purpose
 
-Execute lane-C interop lowering and ABI conformance release-candidate and replay
-dry-run governance on top of C013 docs/runbook synchronization assets so lane-C
-closeout and downstream lane-E readiness remain deterministic and fail-closed.
+Execute lane-C interop lowering and ABI conformance docs and operator runbook
+synchronization governance on top of C013 docs/runbook synchronization assets so
+downstream readiness and cross-lane conformance integration remain deterministic
+and fail-closed.
 Code/spec anchors and milestone optimization improvements are mandatory scope inputs.
 
 ## Scope Anchors
@@ -30,7 +31,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
   - `test:tooling:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract`
   - `check:objc3c:m244-c014-lane-c-readiness`
 
-## Dependency Anchors (M244-C013)
+## Dependency Anchors (m244-c013)
 
 - `docs/contracts/m244_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_c013_expectations.md`
 - `spec/planning/compiler/m244/m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_packet.md`
@@ -53,4 +54,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 
 ## Evidence Output
 
-- `tmp/reports/m244/M244-C014/interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract_summary.json`
+- `tmp/reports/m244/m244-c014/interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract_summary.json`
+
+
+

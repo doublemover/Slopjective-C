@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed checker for M244-C014 interop lowering release-candidate/replay dry-run contract."""
+"""Fail-closed checker for m244-c014 interop lowering release-candidate/replay dry-run contract."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md
 DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
 DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
 DEFAULT_SUMMARY_OUT = Path(
-    "tmp/reports/m244/M244-C014/"
+    "tmp/reports/m244/m244-c014/"
     "interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract_summary.json"
 )
 
@@ -72,29 +72,29 @@ class Finding:
 
 PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
     AssetCheck(
-        "M244-C014-C013-01",
-        "M244-C013",
+        "m244-c014-C013-01",
+        "m244-c013",
         Path(
             "docs/contracts/m244_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_c013_expectations.md"
         ),
     ),
     AssetCheck(
-        "M244-C014-C013-02",
-        "M244-C013",
+        "m244-c014-C013-02",
+        "m244-c013",
         Path(
             "spec/planning/compiler/m244/m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_packet.md"
         ),
     ),
     AssetCheck(
-        "M244-C014-C013-03",
-        "M244-C013",
+        "m244-c014-C013-03",
+        "m244-c013",
         Path(
             "scripts/check_m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_contract.py"
         ),
     ),
     AssetCheck(
-        "M244-C014-C013-04",
-        "M244-C013",
+        "m244-c014-C013-04",
+        "m244-c013",
         Path(
             "tests/tooling/test_check_m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_contract.py"
         ),
@@ -103,72 +103,72 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
 
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M244-C014-DOC-EXP-01",
+        "m244-c014-DOC-EXP-01",
         "Contract ID: `objc3c-interop-lowering-and-abi-conformance-release-candidate-and-replay-dry-run/m244-c014-v1`",
     ),
-    SnippetCheck("M244-C014-DOC-EXP-02", "Dependencies: `M244-C013`"),
+    SnippetCheck("m244-c014-DOC-EXP-02", "Dependencies: `m244-c013`"),
     SnippetCheck(
-        "M244-C014-DOC-EXP-03",
+        "m244-c014-DOC-EXP-03",
         "Issue `#6563` defines canonical lane-C release-candidate and replay dry-run scope.",
     ),
     SnippetCheck(
-        "M244-C014-DOC-EXP-04",
+        "m244-c014-DOC-EXP-04",
         "Code/spec anchors and milestone optimization improvements are mandatory scope inputs.",
     ),
-    SnippetCheck("M244-C014-DOC-EXP-05", "`check:objc3c:m244-c014-lane-c-readiness`"),
-    SnippetCheck("M244-C014-DOC-EXP-06", "`compile:objc3c`"),
-    SnippetCheck("M244-C014-DOC-EXP-07", "`proof:objc3c`"),
-    SnippetCheck("M244-C014-DOC-EXP-08", "`test:objc3c:execution-replay-proof`"),
-    SnippetCheck("M244-C014-DOC-EXP-09", "`test:objc3c:perf-budget`"),
+    SnippetCheck("m244-c014-DOC-EXP-05", "`check:objc3c:m244-c014-lane-c-readiness`"),
+    SnippetCheck("m244-c014-DOC-EXP-06", "`compile:objc3c`"),
+    SnippetCheck("m244-c014-DOC-EXP-07", "`proof:objc3c`"),
+    SnippetCheck("m244-c014-DOC-EXP-08", "`test:objc3c:execution-replay-proof`"),
+    SnippetCheck("m244-c014-DOC-EXP-09", "`test:objc3c:perf-budget`"),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck("M244-C014-DOC-PKT-01", "Packet: `M244-C014`"),
-    SnippetCheck("M244-C014-DOC-PKT-02", "Issue: `#6563`"),
-    SnippetCheck("M244-C014-DOC-PKT-03", "Dependencies: `M244-C013`"),
+    SnippetCheck("m244-c014-DOC-PKT-01", "Packet: `m244-c014`"),
+    SnippetCheck("m244-c014-DOC-PKT-02", "Issue: `#6563`"),
+    SnippetCheck("m244-c014-DOC-PKT-03", "Dependencies: `m244-c013`"),
     SnippetCheck(
-        "M244-C014-DOC-PKT-04",
+        "m244-c014-DOC-PKT-04",
         "`scripts/check_m244_c014_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract.py`",
     ),
     SnippetCheck(
-        "M244-C014-DOC-PKT-05",
+        "m244-c014-DOC-PKT-05",
         "`tests/tooling/test_check_m244_c014_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract.py`",
     ),
-    SnippetCheck("M244-C014-DOC-PKT-06", "`compile:objc3c`"),
-    SnippetCheck("M244-C014-DOC-PKT-07", "`proof:objc3c`"),
-    SnippetCheck("M244-C014-DOC-PKT-08", "`test:objc3c:execution-replay-proof`"),
-    SnippetCheck("M244-C014-DOC-PKT-09", "`test:objc3c:perf-budget`"),
+    SnippetCheck("m244-c014-DOC-PKT-06", "`compile:objc3c`"),
+    SnippetCheck("m244-c014-DOC-PKT-07", "`proof:objc3c`"),
+    SnippetCheck("m244-c014-DOC-PKT-08", "`test:objc3c:execution-replay-proof`"),
+    SnippetCheck("m244-c014-DOC-PKT-09", "`test:objc3c:perf-budget`"),
 )
 
 PACKAGE_SCRIPT_KEY_CHECKS: tuple[PackageScriptKeyCheck, ...] = (
     PackageScriptKeyCheck(
-        "M244-C014-CFG-01",
+        "m244-c014-CFG-01",
         "check:objc3c:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract",
     ),
     PackageScriptKeyCheck(
-        "M244-C014-CFG-02",
+        "m244-c014-CFG-02",
         "test:tooling:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract",
     ),
-    PackageScriptKeyCheck("M244-C014-CFG-03", "check:objc3c:m244-c014-lane-c-readiness"),
-    PackageScriptKeyCheck("M244-C014-CFG-04", "compile:objc3c"),
-    PackageScriptKeyCheck("M244-C014-CFG-05", "proof:objc3c"),
-    PackageScriptKeyCheck("M244-C014-CFG-06", "test:objc3c:execution-replay-proof"),
-    PackageScriptKeyCheck("M244-C014-CFG-07", "test:objc3c:perf-budget"),
+    PackageScriptKeyCheck("m244-c014-CFG-03", "check:objc3c:m244-c014-lane-c-readiness"),
+    PackageScriptKeyCheck("m244-c014-CFG-04", "compile:objc3c"),
+    PackageScriptKeyCheck("m244-c014-CFG-05", "proof:objc3c"),
+    PackageScriptKeyCheck("m244-c014-CFG-06", "test:objc3c:execution-replay-proof"),
+    PackageScriptKeyCheck("m244-c014-CFG-07", "test:objc3c:perf-budget"),
 )
 
 PACKAGE_SCRIPT_CHECKS: tuple[PackageScriptCheck, ...] = (
     PackageScriptCheck(
-        "M244-C014-CFG-08",
+        "m244-c014-CFG-08",
         "check:objc3c:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract",
         "python scripts/check_m244_c014_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract.py",
     ),
     PackageScriptCheck(
-        "M244-C014-CFG-09",
+        "m244-c014-CFG-09",
         "test:tooling:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract",
         "python -m pytest tests/tooling/test_check_m244_c014_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract.py -q",
     ),
     PackageScriptCheck(
-        "M244-C014-CFG-10",
+        "m244-c014-CFG-10",
         "check:objc3c:m244-c014-lane-c-readiness",
         "npm run check:objc3c:m244-c013-lane-c-readiness && npm run check:objc3c:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract && npm run test:tooling:m244-c014-interop-lowering-abi-conformance-release-candidate-and-replay-dry-run-contract",
     ),
@@ -176,30 +176,30 @@ PACKAGE_SCRIPT_CHECKS: tuple[PackageScriptCheck, ...] = (
 
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M244-C014-ARCH-01",
+        "m244-c014-ARCH-01",
         "M244 lane-C C014 interop lowering/ABI conformance release-candidate and replay dry-run anchors",
     ),
     SnippetCheck(
-        "M244-C014-ARCH-02",
+        "m244-c014-ARCH-02",
         "`M244-C013` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.",
     ),
 )
 
 LOWERING_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M244-C014-SPC-01",
+        "m244-c014-SPC-01",
         "interop lowering and ABI conformance release-candidate and replay dry-run governance shall preserve explicit",
     ),
-    SnippetCheck("M244-C014-SPC-02", "lane-C dependency anchor (`M244-C013`)"),
+    SnippetCheck("m244-c014-SPC-02", "lane-C dependency anchor (`M244-C013`)"),
 )
 
 METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M244-C014-META-01",
+        "m244-c014-META-01",
         "deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C014`",
     ),
     SnippetCheck(
-        "M244-C014-META-02",
+        "m244-c014-META-02",
         "with explicit `M244-C013` dependency continuity and fail-closed evidence",
     ),
 )
@@ -302,7 +302,7 @@ def check_package_contract(path: Path) -> tuple[int, list[Finding]]:
         findings.append(
             Finding(
                 artifact=display_path(path),
-                check_id="M244-C014-CFG-00",
+                check_id="m244-c014-CFG-00",
                 detail=f"required document is missing: {display_path(path)}",
             )
         )
@@ -314,7 +314,7 @@ def check_package_contract(path: Path) -> tuple[int, list[Finding]]:
         findings.append(
             Finding(
                 artifact=display_path(path),
-                check_id="M244-C014-CFG-00",
+                check_id="m244-c014-CFG-00",
                 detail=f"unable to parse package.json: {exc}",
             )
         )
@@ -326,7 +326,7 @@ def check_package_contract(path: Path) -> tuple[int, list[Finding]]:
         findings.append(
             Finding(
                 artifact="package_json",
-                check_id="M244-C014-CFG-00",
+                check_id="m244-c014-CFG-00",
                 detail='expected top-level "scripts" object in package.json',
             )
         )
@@ -368,7 +368,7 @@ def run(argv: Sequence[str]) -> int:
     expectations_checks, expectations_findings = check_doc_contract(
         artifact_name="expectations_doc",
         path=args.expectations_doc,
-        exists_check_id="M244-C014-DOC-EXP-00",
+        exists_check_id="m244-c014-DOC-EXP-00",
         snippets=EXPECTATIONS_SNIPPETS,
     )
     checks_total += expectations_checks
@@ -377,7 +377,7 @@ def run(argv: Sequence[str]) -> int:
     packet_checks, packet_findings = check_doc_contract(
         artifact_name="packet_doc",
         path=args.packet_doc,
-        exists_check_id="M244-C014-DOC-PKT-00",
+        exists_check_id="m244-c014-DOC-PKT-00",
         snippets=PACKET_SNIPPETS,
     )
     checks_total += packet_checks
@@ -390,7 +390,7 @@ def run(argv: Sequence[str]) -> int:
     architecture_checks, architecture_findings = check_doc_contract(
         artifact_name="architecture_doc",
         path=args.architecture_doc,
-        exists_check_id="M244-C014-ARCH-00",
+        exists_check_id="m244-c014-ARCH-00",
         snippets=ARCHITECTURE_SNIPPETS,
     )
     checks_total += architecture_checks
@@ -399,7 +399,7 @@ def run(argv: Sequence[str]) -> int:
     lowering_checks, lowering_findings = check_doc_contract(
         artifact_name="lowering_spec",
         path=args.lowering_spec,
-        exists_check_id="M244-C014-SPC-00",
+        exists_check_id="m244-c014-SPC-00",
         snippets=LOWERING_SPEC_SNIPPETS,
     )
     checks_total += lowering_checks
@@ -408,7 +408,7 @@ def run(argv: Sequence[str]) -> int:
     metadata_checks, metadata_findings = check_doc_contract(
         artifact_name="metadata_spec",
         path=args.metadata_spec,
-        exists_check_id="M244-C014-META-00",
+        exists_check_id="m244-c014-META-00",
         snippets=METADATA_SPEC_SNIPPETS,
     )
     checks_total += metadata_checks
@@ -451,3 +451,6 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
+
+

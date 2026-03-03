@@ -1,8 +1,8 @@
-# M244 Interop Lowering and ABI Conformance Release-Candidate and Replay Dry-Run Expectations (C014)
+# M244 Interop Lowering and ABI Conformance release-candidate and replay dry-run Expectations (C014)
 
 Contract ID: `objc3c-interop-lowering-and-abi-conformance-release-candidate-and-replay-dry-run/m244-c014-v1`
 Status: Accepted
-Dependencies: `M244-C013`
+Dependencies: `m244-c013`
 Scope: lane-C interop lowering/ABI release-candidate and replay dry-run governance with deterministic dependency continuity and fail-closed readiness integration.
 
 ## Objective
@@ -15,7 +15,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 ## Dependency Scope
 
 - Issue `#6563` defines canonical lane-C release-candidate and replay dry-run scope.
-- `M244-C013` assets remain mandatory prerequisites:
+- `m244-c013` assets remain mandatory prerequisites:
   - `docs/contracts/m244_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_c013_expectations.md`
   - `spec/planning/compiler/m244/m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_packet.md`
   - `scripts/check_m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_contract.py`
@@ -25,7 +25,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 
 1. lane-C release-candidate/replay dry-run dependency references remain explicit and
    fail closed when dependency tokens drift.
-2. Readiness command chain enforces `M244-C013` before `M244-C014`
+2. Readiness command chain enforces `m244-c013` before `m244-c014`
    evidence checks run.
 3. Shared architecture/spec anchors remain explicit in:
    - `native/objc3c/src/ARCHITECTURE.md`
@@ -60,4 +60,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 
 ## Evidence Path
 
-- `tmp/reports/m244/M244-C014/interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract_summary.json`
+- `tmp/reports/m244/m244-c014/interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_contract_summary.json`
+
+
+
