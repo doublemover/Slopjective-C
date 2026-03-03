@@ -11,6 +11,7 @@
 - `objc3c-semantic-pass-docs-operator-runbook-sync/m227-a013-v1`
 - `objc3c-semantic-pass-release-replay-dry-run/m227-a014-v1`
 - `objc3c-semantic-pass-advanced-core-workpack-shard1/m227-a015-v1`
+- `objc3c-semantic-pass-advanced-edge-compatibility-workpack-shard1/m227-a016-v1`
 
 ## Operator Command Sequence
 
@@ -29,6 +30,9 @@
 13. `python scripts/check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py`
 14. `python -m pytest tests/tooling/test_check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py -q`
 15. `npm run check:objc3c:m227-a015-lane-a-readiness`
+16. `python scripts/check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py`
+17. `python -m pytest tests/tooling/test_check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py -q`
+18. `npm run check:objc3c:m227-a016-lane-a-readiness`
 
 ## Evidence
 

@@ -465,6 +465,7 @@ At minimum, the pass-graph gate shall validate:
 - typed sema-to-lowering modular split scaffolding governance shall preserve explicit
   lane-C dependency anchors (`M227-C001`) and fail closed on typed sema/lowering modular split handoff drift
   before semantic compatibility and runtime-facing metadata validation advances.
+- typed sema-to-lowering core feature implementation governance shall preserve explicit lane-C dependency anchors (`M227-C002`) and fail closed on typed sema core-feature case accounting or typed core-feature key continuity drift before semantic compatibility and runtime-facing metadata validation advances.
 - semantic-pass conformance matrix implementation governance shall preserve explicit
   lane-A dependency anchor (`M227-A009`) and fail closed on parser/sema
   conformance-matrix or corpus replay drift before conformance expansion
@@ -496,6 +497,13 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_advanced_core_ready`, or
   `toolchain_runtime_ga_operations_advanced_core_key` drift before advanced
   edge/diagnostics/conformance validation advances.
+- semantic-pass advanced edge compatibility workpack (shard 1) wiring shall preserve deterministic
+  edge-compatibility dependency anchors (`M227-A016`)
+  and fail closed when
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent`,
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`, or
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_key` drift
+  before advanced diagnostics/conformance validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before

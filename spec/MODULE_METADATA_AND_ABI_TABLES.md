@@ -419,6 +419,8 @@ A conforming implementation shall preserve, for all exported declarations:
       sema-to-lowering contract drift fails closed.
     - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
       with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
+    - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`
+      with explicit `M227-C002` dependency continuity so typed core-feature handoff drift fails closed.
     - deterministic lane-A semantic-pass conformance matrix metadata anchors for `M227-A009`
       with parser/sema conformance-matrix evidence and corpus replay continuity
       so parser/sema conformance-matrix drift fails closed.
@@ -446,6 +448,12 @@ A conforming implementation shall preserve, for all exported declarations:
       `toolchain_runtime_ga_operations_advanced_core_ready`,
       `toolchain_runtime_ga_operations_advanced_core_key`) so advanced-core
       shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced edge compatibility workpack (shard 1) metadata anchors for `M227-A016` with edge-compatibility
+      consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent`,
+      `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`,
+      `toolchain_runtime_ga_operations_advanced_edge_compatibility_key`) so
+      advanced edge-compatibility shard1 drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

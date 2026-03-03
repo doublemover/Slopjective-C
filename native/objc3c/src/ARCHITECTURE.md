@@ -77,6 +77,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-c002-lane-c-readiness`) so typed
   sema/lowering modular split continuity remains deterministic and fail-closed
   against `M227-C001` dependency drift.
+- M227 lane-C C003 typed sema-to-lowering core feature implementation anchors
+  explicit lane-C core-feature artifacts in
+  `docs/contracts/m227_typed_sema_to_lowering_core_feature_c003_expectations.md`,
+  `spec/planning/compiler/m227/m227_c003_typed_sema_to_lowering_core_feature_packet.md`,
+  and `package.json` (`check:objc3c:m227-c003-lane-c-readiness`) so typed
+  sema/lowering core-feature case-accounting continuity remains deterministic
+  and fail-closed against `M227-C002` dependency drift.
 - M227 lane-D D001 runtime-facing type metadata semantics contract and
   architecture freeze anchors explicit lane-D contract-freeze artifacts in
   `docs/contracts/m227_runtime_facing_type_metadata_semantics_expectations.md`,
@@ -128,6 +135,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
   (`check:objc3c:m227-a015-lane-a-readiness`) so advanced-core continuity
   drift fails closed before advanced edge/diagnostics/conformance workpacks.
+- M227 lane-A A016 advanced edge compatibility workpack (shard 1) anchors deterministic
+  edge-compatibility readiness synthesis in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
+  (`check:objc3c:m227-a016-lane-a-readiness`) so advanced edge-compatibility
+  continuity drift fails closed before advanced diagnostics/conformance workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,
