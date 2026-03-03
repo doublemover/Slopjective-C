@@ -445,6 +445,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-B semantic invariants for optimization legality metadata anchors for `M246-B001`
       with semantic legality evidence and optimizer replay-budget continuity so legality
       drift fails closed.
+    - deterministic lane-B semantic invariants for optimization legality modular split metadata anchors for `M246-B002`
+      with explicit `M246-B001` dependency continuity so modular split drift fails closed.
     - deterministic lane-C IR optimization pass wiring metadata anchors for `M246-C001`
       with IR pass-wiring evidence and optimizer replay-budget continuity so IR validation
       drift fails closed.

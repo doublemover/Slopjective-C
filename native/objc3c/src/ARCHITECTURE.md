@@ -834,6 +834,12 @@ Current-state note:
   `spec/planning/compiler/m246/m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_packet.md`,
   and `package.json` so semantic legality continuity remains deterministic
   and fail-closed against optimization legality drift.
+- M246 lane-B B002 semantic invariants for optimization legality modular split/scaffolding anchors
+  explicit lane-B scaffolding artifacts in
+  `docs/contracts/m246_semantic_invariants_for_optimization_legality_modular_split_scaffolding_b002_expectations.md`,
+  `spec/planning/compiler/m246/m246_b002_semantic_invariants_for_optimization_legality_modular_split_scaffolding_packet.md`,
+  and `package.json` so semantic legality modular split continuity remains deterministic
+  and fail-closed against `M246-B001` dependency drift.
 - M246 lane-C C001 IR optimization pass wiring and validation contract and architecture freeze anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m246_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_c001_expectations.md`,
@@ -856,6 +862,10 @@ Current-state note:
   dependency references (`M246-A001`, `M246-B001`, `M246-C002`, and `M246-D001`)
   in lane-E contract packet, checker, and readiness wiring so gate continuity
   remains deterministic and fail-closed while lane-B and lane-C scaffolding assets seed.
+- M246 lane-E E002 optimization gate and perf evidence modular split/scaffolding anchors
+  dependency references (`M246-E001`, `M246-A002`, `M246-B002`, `M246-C004`, and `M246-D002`)
+  in lane-E scaffolding packet, checker, and readiness wiring so gate continuity
+  remains deterministic and fail-closed while dependent lane scaffolding assets seed.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

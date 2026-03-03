@@ -491,6 +491,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic invariants for optimization legality governance shall preserve explicit
   deterministic lane-B semantic legality anchors and fail closed on optimization legality drift
   before optimizer pipeline integration and invariants validation advances.
+- semantic invariants for optimization legality modular split/scaffolding governance shall preserve explicit
+  lane-B dependency anchors (`M246-B001`) and fail closed on modular split handoff drift
+  before optimizer semantic legality scaffolding advances.
 - IR optimization pass wiring and validation governance shall preserve explicit
   deterministic lane-C pass-wiring anchors and fail closed on optimizer IR validation drift
   before optimizer pipeline integration and invariants validation advances.
