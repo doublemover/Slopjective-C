@@ -505,6 +505,15 @@ Current-state note:
   `npm run --if-present check:objc3c:m244-d001-lane-d-readiness`) so lane-E governance evidence remains
   deterministic and fail-closed on dependency token/reference drift while
   lane-B/C/D contract-freeze assets remain pending GH seed.
+- M244 lane-E E002 interop conformance gate and operations modular split/scaffolding
+  anchors dependency references (`M244-E001`, `M244-A002`, `M244-B002`, `M244-C002`, and `M244-D002`) in
+  `docs/contracts/m244_lane_e_interop_conformance_gate_and_operations_modular_split_scaffolding_e002_expectations.md`,
+  `spec/planning/compiler/m244/m244_e002_lane_e_interop_conformance_gate_and_operations_modular_split_scaffolding_packet.md`,
+  and `package.json` (`npm run --if-present check:objc3c:m244-b002-lane-b-readiness`,
+  `npm run --if-present check:objc3c:m244-c002-lane-c-readiness`,
+  `npm run --if-present check:objc3c:m244-d002-lane-d-readiness`) so lane-E modular split/scaffolding evidence remains
+  deterministic and fail-closed on dependency token/reference drift while
+  lane-B/C/D modular split assets remain pending GH seed.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,

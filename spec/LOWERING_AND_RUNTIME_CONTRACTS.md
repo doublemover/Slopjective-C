@@ -291,6 +291,11 @@ At minimum, the pass-graph gate shall validate:
   preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E readiness hooks drift.
+- interop conformance gate and operations modular split/scaffolding wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E001`, `M244-A002`, `M244-B002`, `M244-C002`, and `M244-D002`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D modular split readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E modular split readiness hooks drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
