@@ -834,6 +834,10 @@ Current-state note:
   `spec/planning/compiler/m246/m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_packet.md`,
   and `package.json` so optimizer control continuity remains deterministic
   and fail-closed against toolchain control drift.
+- M246 lane-E E001 optimization gate and perf evidence contract and architecture freeze anchors
+  dependency references (`M246-A001`, `M246-B001`, `M246-C002`, and `M246-D001`)
+  in lane-E contract packet, checker, and readiness wiring so gate continuity
+  remains deterministic and fail-closed while lane-B and lane-C scaffolding assets seed.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

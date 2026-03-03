@@ -491,6 +491,9 @@ At minimum, the pass-graph gate shall validate:
 - toolchain integration and optimization controls governance shall preserve explicit
   deterministic lane-D control anchors and fail closed on toolchain optimization control drift
   before optimizer pipeline integration and invariants validation advances.
+- optimization gate and perf evidence contract-freeze wiring shall preserve
+  explicit lane-E dependency anchors (`M246-A001`, `M246-B001`, `M246-C002`,
+  and `M246-D001`) and fail closed on contract-freeze handoff drift.
 - semantic compatibility and migration checks core feature implementation shall
   preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
   before semantic stability expansion validation advances.

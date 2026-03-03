@@ -446,6 +446,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-D toolchain integration and optimization controls metadata anchors for `M246-D001`
       with toolchain-control evidence and optimizer replay-budget continuity so control
       drift fails closed.
+    - deterministic lane-E optimization gate and perf evidence contract-freeze dependency anchors for
+      `M246-A001`, `M246-B001`, `M246-C002`, and `M246-D001` so gate
+      continuity evidence remains deterministic and fail-closed.
     - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
       with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.
