@@ -475,6 +475,9 @@ At minimum, the pass-graph gate shall validate:
   lane-A dependency anchor (`M227-A011`) and fail closed on parser/sema
   performance-quality guardrail drift before cross-lane synchronization
   validation advances.
+- semantic conformance lane-E quality-gate contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`),
+  preserve readiness continuity across `check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, and `check:objc3c:m227-d001-lane-d-readiness`,
+  and fail closed when dependency tokens, package readiness hooks, or lane-E gate evidence drift.
 - semantic-pass cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
   lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,

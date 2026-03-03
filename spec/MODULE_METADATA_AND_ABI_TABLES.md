@@ -422,6 +422,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A semantic-pass performance and quality guardrails metadata anchors for `M227-A011`
       with parser/sema performance-quality guardrails evidence and fail-closed continuity
       so parser/sema performance-quality drift fails closed.
+    - deterministic lane-E semantic conformance quality-gate dependency anchors for `M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`
+      with fail-closed readiness continuity (`check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, `check:objc3c:m227-d001-lane-d-readiness`)
+      so semantic conformance lane-E quality-gate metadata governance drift fails closed.
     - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
       with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
       so semantic-pass cross-lane dependency drift fails closed.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed prerequisite checker for the M227-E001 semantic conformance lane-E quality gate."""
+"""Fail-closed checker for M227-E001 semantic conformance lane-E quality-gate freeze."""
 
 from __future__ import annotations
 
@@ -11,14 +11,25 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m227-e001-semantic-conformance-lane-e-quality-gate-contract-v1"
+MODE = "m227-e001-semantic-conformance-lane-e-quality-gate-contract-architecture-freeze-v1"
 
 DEFAULT_EXPECTATIONS_DOC = (
     ROOT / "docs" / "contracts" / "m227_lane_e_semantic_conformance_quality_gate_expectations.md"
 )
+DEFAULT_PACKET_DOC = (
+    ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m227"
+    / "m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md"
+)
 DEFAULT_FREEZE_DOC = (
     ROOT / "spec" / "planning" / "compiler" / "m227" / "m227_e001_semantic_conformance_lane_e_quality_gate_contract_freeze.md"
 )
+DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
+DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
+DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
 DEFAULT_PACKAGE_JSON = ROOT / "package.json"
 DEFAULT_SUMMARY_OUT = Path("tmp/reports/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_summary.json")
 
@@ -65,24 +76,24 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         Path("spec/planning/compiler/m227/m227_a001_semantic_pass_contract_freeze.md"),
     ),
     AssetCheck(
-        "M227-E001-A002-01",
-        "M227-A002",
-        Path("docs/contracts/m227_semantic_pass_modular_split_expectations.md"),
+        "M227-E001-B002-01",
+        "M227-B002",
+        Path("docs/contracts/m227_type_system_objc3_forms_modular_split_expectations.md"),
     ),
     AssetCheck(
-        "M227-E001-A002-02",
-        "M227-A002",
-        Path("scripts/check_m227_a002_semantic_pass_modular_split_contract.py"),
+        "M227-E001-B002-02",
+        "M227-B002",
+        Path("scripts/check_m227_b002_type_system_objc3_forms_modular_split_contract.py"),
     ),
     AssetCheck(
-        "M227-E001-A002-03",
-        "M227-A002",
-        Path("tests/tooling/test_check_m227_a002_semantic_pass_modular_split_contract.py"),
+        "M227-E001-B002-03",
+        "M227-B002",
+        Path("tests/tooling/test_check_m227_b002_type_system_objc3_forms_modular_split_contract.py"),
     ),
     AssetCheck(
-        "M227-E001-A002-04",
-        "M227-A002",
-        Path("spec/planning/compiler/m227/m227_a002_semantic_pass_modular_split_packet.md"),
+        "M227-E001-B002-04",
+        "M227-B002",
+        Path("spec/planning/compiler/m227/m227_b002_type_system_objc3_forms_modular_split_packet.md"),
     ),
     AssetCheck(
         "M227-E001-C001-01",
@@ -98,6 +109,11 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         "M227-E001-C001-03",
         "M227-C001",
         Path("tests/tooling/test_check_m227_c001_typed_sema_to_lowering_contract.py"),
+    ),
+    AssetCheck(
+        "M227-E001-C001-04",
+        "M227-C001",
+        Path("spec/planning/compiler/m227/m227_c001_typed_sema_to_lowering_contract_and_architecture_freeze_packet.md"),
     ),
     AssetCheck(
         "M227-E001-D001-01",
@@ -122,7 +138,10 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
 )
 
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck("M227-E001-DOC-EXP-02", "# M227 Lane E Semantic Conformance and Quality Gate Expectations (E001)"),
+    SnippetCheck(
+        "M227-E001-DOC-EXP-02",
+        "# M227 Lane E Semantic Conformance Quality Gate Contract and Architecture Freeze Expectations (E001)",
+    ),
     SnippetCheck(
         "M227-E001-DOC-EXP-03",
         "Contract ID: `objc3c-lane-e-semantic-conformance-quality-gate-contract/m227-e001-v1`",
@@ -132,8 +151,12 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M227-E001-DOC-EXP-06", "`M227-C001`"),
     SnippetCheck("M227-E001-DOC-EXP-07", "`M227-D001`"),
     SnippetCheck(
+        "M227-E001-DOC-EXP-08",
+        "`spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`",
+    ),
+    SnippetCheck(
         "M227-E001-DOC-EXP-09",
-        "`check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract`",
+        "`check:objc3c:m227-a001-lane-a-readiness`",
     ),
     SnippetCheck(
         "M227-E001-DOC-EXP-10",
@@ -145,41 +168,94 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
 )
 
-FREEZE_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck("M227-E001-DOC-FRZ-02", "# M227-E001 Semantic Conformance Lane-E Quality Gate Contract Freeze"),
-    SnippetCheck("M227-E001-DOC-FRZ-03", "Packet: `M227-E001`"),
-    SnippetCheck("M227-E001-DOC-FRZ-04", "Freeze date: `2026-03-02`"),
-    SnippetCheck("M227-E001-DOC-FRZ-05", "Dependencies: `M227-A001`, `M227-B002`, `M227-C001`, `M227-D001`"),
+PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M227-E001-DOC-FRZ-06",
-        "`python scripts/check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py`",
+        "M227-E001-DOC-PKT-02",
+        "# M227-E001 Semantic Conformance Lane-E Quality Gate Contract and Architecture Freeze Packet",
+    ),
+    SnippetCheck("M227-E001-DOC-PKT-03", "Packet: `M227-E001`"),
+    SnippetCheck("M227-E001-DOC-PKT-04", "Dependencies: `M227-A001`, `M227-B002`, `M227-C001`, `M227-D001`"),
+    SnippetCheck(
+        "M227-E001-DOC-PKT-05",
+        "`scripts/check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py`",
     ),
     SnippetCheck(
-        "M227-E001-DOC-FRZ-07",
+        "M227-E001-DOC-PKT-06",
+        "`tests/tooling/test_check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py`",
+    ),
+    SnippetCheck(
+        "M227-E001-DOC-PKT-07",
         "`npm run check:objc3c:m227-e001-lane-e-quality-gate-readiness`",
     ),
     SnippetCheck(
-        "M227-E001-DOC-FRZ-08",
+        "M227-E001-DOC-PKT-08",
         "`tmp/reports/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_summary.json`",
+    ),
+)
+
+FREEZE_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M227-E001-DOC-FRZ-02", "# M227-E001 Semantic Conformance Lane-E Quality Gate Contract Freeze"),
+    SnippetCheck("M227-E001-DOC-FRZ-03", "Packet: `M227-E001`"),
+    SnippetCheck("M227-E001-DOC-FRZ-04", "Dependencies: `M227-A001`, `M227-B002`, `M227-C001`, `M227-D001`"),
+)
+
+ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E001-ARCH-02",
+        "M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`)",
+    ),
+    SnippetCheck(
+        "M227-E001-ARCH-03",
+        "`check:objc3c:m227-e001-lane-e-quality-gate-readiness`",
+    ),
+)
+
+LOWERING_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E001-SPC-02",
+        "semantic conformance lane-E quality-gate contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`)",
+    ),
+    SnippetCheck(
+        "M227-E001-SPC-03",
+        "preserve readiness continuity across `check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, and `check:objc3c:m227-d001-lane-d-readiness`",
+    ),
+)
+
+METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E001-META-02",
+        "deterministic lane-E semantic conformance quality-gate dependency anchors for `M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`",
+    ),
+    SnippetCheck(
+        "M227-E001-META-03",
+        "with fail-closed readiness continuity (`check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, `check:objc3c:m227-d001-lane-d-readiness`)",
     ),
 )
 
 PACKAGE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M227-E001-PKG-02",
-        '"check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract": '
-        '"python scripts/check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py"',
+        '"check:objc3c:m227-a001-semantic-pass-decomposition-contract": "python scripts/check_m227_a001_semantic_pass_decomposition_contract.py"',
     ),
     SnippetCheck(
         "M227-E001-PKG-03",
-        '"test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract": '
-        '"python -m pytest tests/tooling/test_check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py -q"',
+        '"test:tooling:m227-a001-semantic-pass-decomposition-contract": "python -m pytest tests/tooling/test_check_m227_a001_semantic_pass_decomposition_contract.py -q"',
     ),
     SnippetCheck(
         "M227-E001-PKG-04",
-        '"check:objc3c:m227-e001-lane-e-quality-gate-readiness": '
-        '"npm run check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract '
-        '&& npm run test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract"',
+        '"check:objc3c:m227-a001-lane-a-readiness": "npm run check:objc3c:m227-a001-semantic-pass-decomposition-contract && npm run test:tooling:m227-a001-semantic-pass-decomposition-contract"',
+    ),
+    SnippetCheck(
+        "M227-E001-PKG-05",
+        '"check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract": "python scripts/check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py"',
+    ),
+    SnippetCheck(
+        "M227-E001-PKG-06",
+        '"test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract": "python -m pytest tests/tooling/test_check_m227_e001_semantic_conformance_lane_e_quality_gate_contract.py -q"',
+    ),
+    SnippetCheck(
+        "M227-E001-PKG-07",
+        '"check:objc3c:m227-e001-lane-e-quality-gate-readiness": "npm run check:objc3c:m227-a001-lane-a-readiness && npm run check:objc3c:m227-b002-lane-b-readiness && npm run check:objc3c:m227-c001-lane-c-readiness && npm run check:objc3c:m227-d001-lane-d-readiness && npm run check:objc3c:m227-e001-semantic-conformance-lane-e-quality-gate-contract && npm run test:tooling:m227-e001-semantic-conformance-lane-e-quality-gate-contract"',
     ),
 )
 
@@ -199,7 +275,11 @@ def display_path(path: Path) -> str:
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expectations-doc", type=Path, default=DEFAULT_EXPECTATIONS_DOC)
+    parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
     parser.add_argument("--freeze-doc", type=Path, default=DEFAULT_FREEZE_DOC)
+    parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
+    parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
+    parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
@@ -298,32 +378,23 @@ def run(argv: Sequence[str]) -> int:
 
     checks_total, findings = check_prerequisite_assets()
 
-    expectations_checks, expectations_findings = check_doc_contract(
-        artifact_name="expectations_doc",
-        path=args.expectations_doc,
-        exists_check_id="M227-E001-DOC-EXP-01",
-        snippets=EXPECTATIONS_SNIPPETS,
-    )
-    checks_total += expectations_checks
-    findings.extend(expectations_findings)
-
-    freeze_checks, freeze_findings = check_doc_contract(
-        artifact_name="freeze_doc",
-        path=args.freeze_doc,
-        exists_check_id="M227-E001-DOC-FRZ-01",
-        snippets=FREEZE_SNIPPETS,
-    )
-    checks_total += freeze_checks
-    findings.extend(freeze_findings)
-
-    package_checks, package_findings = check_doc_contract(
-        artifact_name="package_json",
-        path=args.package_json,
-        exists_check_id="M227-E001-PKG-01",
-        snippets=PACKAGE_SNIPPETS,
-    )
-    checks_total += package_checks
-    findings.extend(package_findings)
+    for artifact_name, path, exists_check_id, snippets in (
+        ("expectations_doc", args.expectations_doc, "M227-E001-DOC-EXP-01", EXPECTATIONS_SNIPPETS),
+        ("packet_doc", args.packet_doc, "M227-E001-DOC-PKT-01", PACKET_SNIPPETS),
+        ("freeze_doc", args.freeze_doc, "M227-E001-DOC-FRZ-01", FREEZE_SNIPPETS),
+        ("architecture_doc", args.architecture_doc, "M227-E001-ARCH-01", ARCHITECTURE_SNIPPETS),
+        ("lowering_spec", args.lowering_spec, "M227-E001-SPC-01", LOWERING_SPEC_SNIPPETS),
+        ("metadata_spec", args.metadata_spec, "M227-E001-META-01", METADATA_SPEC_SNIPPETS),
+        ("package_json", args.package_json, "M227-E001-PKG-01", PACKAGE_SNIPPETS),
+    ):
+        section_checks, section_findings = check_doc_contract(
+            artifact_name=artifact_name,
+            path=path,
+            exists_check_id=exists_check_id,
+            snippets=snippets,
+        )
+        checks_total += section_checks
+        findings.extend(section_findings)
 
     findings = sorted(findings, key=lambda finding: (finding.check_id, finding.artifact, finding.detail))
     summary = {
@@ -341,9 +412,10 @@ def run(argv: Sequence[str]) -> int:
         ],
     }
 
+    summary_out = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
     try:
-        args.summary_out.parent.mkdir(parents=True, exist_ok=True)
-        args.summary_out.write_text(canonical_json(summary), encoding="utf-8")
+        summary_out.parent.mkdir(parents=True, exist_ok=True)
+        summary_out.write_text(canonical_json(summary), encoding="utf-8")
     except OSError as exc:
         print(
             "m227-e001-semantic-conformance-lane-e-quality-gate-contract: "
