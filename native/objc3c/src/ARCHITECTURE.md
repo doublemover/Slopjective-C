@@ -641,6 +641,13 @@ Current-state note:
   `pipeline/objc3_frontend_pipeline.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so conformance-matrix consistency,
   readiness, and replay-key continuity remain deterministic and fail-closed.
+- M243 lane-C C010 conformance corpus expansion anchors lowering/runtime diagnostics surfacing
+  conformance-corpus closure in
+  `docs/contracts/m243_lowering_runtime_diagnostics_surfacing_conformance_corpus_expansion_c010_expectations.md`,
+  `spec/planning/compiler/m243/m243_c010_lowering_runtime_diagnostics_surfacing_conformance_corpus_expansion_packet.md`,
+  and `scripts/check_m243_c010_lowering_runtime_diagnostics_surfacing_conformance_corpus_expansion_contract.py`
+  so conformance-corpus consistency, readiness, and conformance-corpus-key continuity
+  remain deterministic and fail-closed.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`
