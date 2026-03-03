@@ -481,6 +481,11 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_conformance_matrix_implementation_a009_expectations.md`,
   `spec/planning/compiler/m244/m244_a009_interop_surface_syntax_and_declaration_forms_conformance_matrix_implementation_packet.md`,
   and `package.json` so `M244-A008` dependency continuity and conformance evidence remain fail-closed.
+- M244 lane-A A010 interop surface syntax/declaration-form conformance corpus expansion anchors
+  explicit lane-A conformance-corpus artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_conformance_corpus_expansion_a010_expectations.md`,
+  `spec/planning/compiler/m244/m244_a010_interop_surface_syntax_and_declaration_forms_conformance_corpus_expansion_packet.md`,
+  and `package.json` so `M244-A009` dependency continuity and conformance evidence remain fail-closed.
 - M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
   contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,
