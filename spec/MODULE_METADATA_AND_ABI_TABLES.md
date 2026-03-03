@@ -982,3 +982,5 @@ deterministic lane-C typed sema-to-lowering diagnostics-hardening metadata ancho
 deterministic lane-C typed sema-to-lowering recovery/determinism metadata anchors for `M227-C008` must remain synchronized across typed recovery keys, parse recovery keys, and readiness alignment metadata surfaces before lane-C recovery closure can pass.
 
 deterministic lane-C typed sema-to-lowering conformance matrix metadata anchors for `M227-C009` must remain synchronized across typed matrix keys, parse matrix keys, and readiness alignment metadata surfaces before lane-C matrix closure can pass.
+
+deterministic lane-C typed sema-to-lowering conformance corpus metadata anchors for `M227-C010` must remain synchronized across typed corpus keys, parse corpus keys, and readiness alignment metadata surfaces before lane-C corpus closure can pass.

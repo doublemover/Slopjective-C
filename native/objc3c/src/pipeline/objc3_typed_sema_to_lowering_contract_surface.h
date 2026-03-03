@@ -172,6 +172,17 @@ inline std::string BuildObjc3TypedSemaToLoweringConformanceMatrixKey(
          ";typed_recovery_determinism_key=" + surface.typed_recovery_determinism_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringConformanceCorpusKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-conformance-corpus:v1:typed_conformance_matrix_ready=" +
+         std::string(surface.typed_conformance_matrix_ready ? "true" : "false") +
+         ";typed_conformance_corpus_consistent=" +
+         std::string(surface.typed_conformance_corpus_consistent ? "true" : "false") +
+         ";typed_conformance_corpus_ready=" +
+         std::string(surface.typed_conformance_corpus_ready ? "true" : "false") +
+         ";typed_conformance_matrix_key=" + surface.typed_conformance_matrix_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -226,6 +237,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_conformance_matrix_consistent ? "true" : "false")
       << ";typed_conformance_matrix_ready="
       << (surface.typed_conformance_matrix_ready ? "true" : "false")
+      << ";typed_conformance_corpus_consistent="
+      << (surface.typed_conformance_corpus_consistent ? "true" : "false")
+      << ";typed_conformance_corpus_ready="
+      << (surface.typed_conformance_corpus_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -264,6 +279,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_conformance_matrix_consistent ? "true" : "false")
       << ";typed_conformance_matrix_ready="
       << (surface.typed_conformance_matrix_ready ? "true" : "false")
+      << ";typed_conformance_corpus_consistent="
+      << (surface.typed_conformance_corpus_consistent ? "true" : "false")
+      << ";typed_conformance_corpus_ready="
+      << (surface.typed_conformance_corpus_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -544,6 +563,18 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringConformanceMatrixKey(surface);
   const bool typed_conformance_matrix_key_ready =
       !surface.typed_conformance_matrix_key.empty();
+  surface.typed_conformance_corpus_consistent =
+      surface.typed_conformance_matrix_ready &&
+      surface.parse_artifact_replay_key_deterministic &&
+      surface.semantic_handoff_deterministic;
+  surface.typed_conformance_corpus_ready =
+      surface.typed_conformance_corpus_consistent &&
+      !surface.typed_conformance_matrix_key.empty() &&
+      !surface.typed_recovery_determinism_key.empty();
+  surface.typed_conformance_corpus_key =
+      BuildObjc3TypedSemaToLoweringConformanceCorpusKey(surface);
+  const bool typed_conformance_corpus_key_ready =
+      !surface.typed_conformance_corpus_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -561,7 +592,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_recovery_determinism_key_ready &&
       surface.typed_conformance_matrix_consistent &&
       surface.typed_conformance_matrix_ready &&
-      typed_conformance_matrix_key_ready;
+      typed_conformance_matrix_key_ready &&
+      surface.typed_conformance_corpus_consistent &&
+      surface.typed_conformance_corpus_ready &&
+      typed_conformance_corpus_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -651,6 +685,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering conformance matrix is not ready";
   } else if (surface.typed_conformance_matrix_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering conformance matrix key is empty";
+  } else if (!surface.typed_conformance_corpus_consistent) {
+    surface.failure_reason = "typed sema-to-lowering conformance corpus is inconsistent";
+  } else if (!surface.typed_conformance_corpus_ready) {
+    surface.failure_reason = "typed sema-to-lowering conformance corpus is not ready";
+  } else if (surface.typed_conformance_corpus_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering conformance corpus key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {

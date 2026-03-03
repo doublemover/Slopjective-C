@@ -1979,3 +1979,6 @@ Forbidden:
 - M227 lane-C C009 typed sema-to-lowering conformance-matrix implementation anchors
   require fail-closed conformance-matrix continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C matrix closure can pass.
+- M227 lane-C C010 typed sema-to-lowering conformance-corpus expansion anchors
+  require fail-closed conformance-corpus continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C corpus closure can pass.

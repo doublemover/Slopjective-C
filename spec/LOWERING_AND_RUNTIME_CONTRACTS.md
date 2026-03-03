@@ -1107,3 +1107,5 @@ typed sema-to-lowering diagnostics hardening governance shall preserve explicit 
 typed sema-to-lowering recovery and determinism hardening governance shall preserve explicit lane-C dependency anchors (`M227-C008`, `M227-C007`) so typed recovery/determinism and parse/lowering alignment stay deterministic and fail-closed when replay continuity drifts.
 
 typed sema-to-lowering conformance matrix implementation governance shall preserve explicit lane-C dependency anchors (`M227-C009`, `M227-C008`) so typed conformance-matrix and parse/lowering alignment stay deterministic and fail-closed when matrix continuity drifts.
+
+typed sema-to-lowering conformance corpus expansion governance shall preserve explicit lane-C dependency anchors (`M227-C010`, `M227-C009`) so typed conformance-corpus and parse/lowering alignment stay deterministic and fail-closed when corpus continuity drifts.
