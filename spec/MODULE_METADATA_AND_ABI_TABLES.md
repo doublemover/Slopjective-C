@@ -135,6 +135,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M228-E004`, `M228-A004`, `M228-B006`, `M228-C004`, `M228-D005`, and
      pending token `M228-C010`, including pending-token continuity needed to
      keep replay-proof/performance closeout evidence fail-closed.
+   - deterministic lane-E E006 edge-case expansion/robustness dependency
+     anchors for `M228-E005`, `M228-A006`, `M228-B006`, `M228-C006`, and
+     `M228-D006`, including cross-lane robustness-readiness continuity needed
+     to keep replay-proof/performance closeout evidence fail-closed.
    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
      backend marker-path and marker payload-to-route consistency evidence.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
