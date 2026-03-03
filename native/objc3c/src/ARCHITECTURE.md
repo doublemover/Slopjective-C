@@ -87,6 +87,14 @@ Current-state note:
   (`check:objc3c:m227-b013-lane-b-readiness`) so `M227-B012` dependency
   continuity and lane-B operator command sequencing remain deterministic and
   fail-closed against docs/runbook drift.
+- M227 lane-B B014 type-system release-candidate replay dry-run anchors
+  explicit lane-B release-candidate/replay dry-run artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_release_candidate_replay_dry_run_b014_expectations.md`,
+  `spec/planning/compiler/m227/m227_b014_type_system_objc3_forms_release_candidate_replay_dry_run_packet.md`,
+  `docs/runbooks/m227_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m227-b014-lane-b-readiness`) so `M227-B013` dependency
+  continuity and lane-B release-candidate/replay command sequencing remain
+  deterministic and fail-closed against governance drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
