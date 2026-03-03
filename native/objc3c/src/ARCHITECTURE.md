@@ -675,6 +675,15 @@ Current-state note:
   `npm run --if-present check:objc3c:m244-d008-lane-d-readiness`) so lane-E edge-case expansion and robustness evidence remains
   deterministic and fail-closed on dependency token/reference drift while
   lane-B/C/D edge-case expansion and robustness assets remain pending GH seed.
+- M244 lane-E E007 interop conformance gate and operations diagnostics hardening
+  anchors dependency references (`M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`) in
+  `docs/contracts/m244_lane_e_interop_conformance_gate_and_operations_diagnostics_hardening_e007_expectations.md`,
+  `spec/planning/compiler/m244/m244_e007_lane_e_interop_conformance_gate_and_operations_diagnostics_hardening_packet.md`,
+  and `package.json` (`npm run --if-present check:objc3c:m244-b008-lane-b-readiness`,
+  `npm run --if-present check:objc3c:m244-c009-lane-c-readiness`,
+  `npm run --if-present check:objc3c:m244-d009-lane-d-readiness`) so lane-E diagnostics hardening evidence remains
+  deterministic and fail-closed on dependency token/reference drift while
+  lane-B/C/D diagnostics hardening assets remain pending GH seed.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,

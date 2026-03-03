@@ -384,6 +384,16 @@ At minimum, the pass-graph gate shall validate:
   preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case expansion and robustness readiness hooks,
   and fail closed when dependency token/reference continuity, interop evidence commands,
   or lane-E edge-case expansion and robustness readiness hooks drift.
+- interop conformance gate and operations diagnostics hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D diagnostics hardening readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E diagnostics hardening readiness hooks drift.
+- interop conformance gate and operations recovery and determinism hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E007`, `M244-A006`, `M244-B009`, `M244-C011`, and `M244-D010`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D recovery and determinism hardening readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E recovery and determinism hardening readiness hooks drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
