@@ -133,6 +133,10 @@ At minimum, the pass-graph gate shall validate:
   documentation/runbook anchors (`A011`, `B007`, `C005`, `D006`, `E006`,
   `A012`) and fail closed when operator command sequencing or evidence-path
   continuity drifts.
+- release-candidate and replay dry-run wiring shall preserve deterministic
+  lane-A release-replay anchors (`A013`), wrapper compile replay artifact
+  continuity, and lowering replay-proof command sequencing so readiness fails
+  closed when replay evidence drifts.
 - IR-emission core-feature expansion shall remain deterministic, preserve
   expansion readiness/key continuity, and fail closed when pass-graph
   expansion continuity or expansion metadata transport drifts.

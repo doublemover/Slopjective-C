@@ -11,6 +11,7 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-lane-e-replay-proof-performance-closeout-gate-edge-case-expansion-and-robustness-contract/m228-e006-v1`
 - `objc3c-lowering-pipeline-pass-graph-cross-lane-integration-sync/m228-a012-v1`
 - `objc3c-lowering-pipeline-pass-graph-docs-operator-runbook-sync/m228-a013-v1`
+- `objc3c-lowering-pipeline-pass-graph-release-replay-dry-run/m228-a014-v1`
 
 ## Canonical Validation Sequence
 
@@ -23,8 +24,12 @@ This runbook tracks current M228 lane sync coverage for:
 4. Validate docs/operator runbook synchronization gate:
    - `python scripts/check_m228_a013_lowering_pipeline_decomposition_pass_graph_docs_operator_runbook_sync_contract.py`
    - `python -m pytest tests/tooling/test_check_m228_a013_lowering_pipeline_decomposition_pass_graph_docs_operator_runbook_sync_contract.py -q`
-5. Run lane-A readiness chain:
-   - `npm run check:objc3c:m228-a013-lane-a-readiness`
+5. Validate release-candidate replay dry-run gate:
+   - `python scripts/check_m228_a014_lowering_pipeline_decomposition_pass_graph_release_candidate_replay_dry_run_contract.py`
+   - `python -m pytest tests/tooling/test_check_m228_a014_lowering_pipeline_decomposition_pass_graph_release_candidate_replay_dry_run_contract.py -q`
+   - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m228_a014_lowering_pipeline_decomposition_pass_graph_release_replay_dry_run.ps1`
+6. Run lane-A readiness chain:
+   - `npm run check:objc3c:m228-a014-lane-a-readiness`
 
 ## Evidence
 

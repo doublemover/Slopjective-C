@@ -99,12 +99,15 @@ A conforming implementation shall preserve, for all exported declarations:
       lowering pass-graph performance-quality evidence,
     - deterministic cross-lane integration sync anchors for `A011`, `B007`,
       `C005`, `D006`, and `E006` dependency continuity evidence,
-    - deterministic docs/operator runbook synchronization anchors for `A011`,
-      `B007`, `C005`, `D006`, `E006`, and `A012` documentation continuity
-      evidence,
-    - deterministic ownership-aware lowering edge-case compatibility
-      consistency/readiness and compatibility-key anchors for lane-B closeout
-      evidence,
+   - deterministic docs/operator runbook synchronization anchors for `A011`,
+     `B007`, `C005`, `D006`, `E006`, and `A012` documentation continuity
+     evidence,
+   - deterministic lane-A release-candidate replay dry-run anchors for
+     `A013`, wrapper replay artifact continuity, and lowering replay-proof
+     evidence continuity,
+   - deterministic ownership-aware lowering edge-case compatibility
+     consistency/readiness and compatibility-key anchors for lane-B closeout
+     evidence,
    - deterministic ownership-aware lowering edge-case robustness
      expansion/readiness and robustness-key anchors for lane-B expansion
      evidence,

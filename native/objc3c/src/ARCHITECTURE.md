@@ -112,6 +112,11 @@ Current-state note:
   `docs/contracts/m228_lowering_pipeline_decomposition_pass_graph_docs_operator_runbook_sync_a013_expectations.md`
   and `docs/runbooks/m228_wave_execution_runbook.md` so package/spec wiring
   fails closed when runbook command sequencing or evidence-path anchors drift.
+- M228 lane-A A014 release-candidate replay dry-run anchors deterministic
+  wrapper compile replay stability in
+  `scripts/run_m228_a014_lowering_pipeline_decomposition_pass_graph_release_replay_dry_run.ps1`
+  and fail-closed lane-A readiness wiring so release-replay evidence continuity
+  drifts are caught before downstream lane-E closeout gates.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
