@@ -482,6 +482,9 @@ At minimum, the pass-graph gate shall validate:
 - portability gate/release checklist core feature implementation wiring shall preserve
   explicit lane-E dependency anchors (`M245-E002`, `M245-A001`, `M245-B001`,
   `M245-C002`, and `M245-D002`) and fail closed on core-feature handoff drift.
+- frontend optimization hint capture governance shall preserve explicit
+  deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
+  before optimizer pipeline integration and invariants validation advances.
 - semantic compatibility and migration checks core feature implementation shall
   preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
   before semantic stability expansion validation advances.
