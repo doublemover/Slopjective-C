@@ -286,6 +286,30 @@ inline std::string BuildObjc3DiagnosticGrammarHooksDiagnosticsHardeningKey(
          (parser_diagnostic_grammar_hooks_diagnostics_hardening_ready ? "true" : "false");
 }
 
+inline std::string BuildObjc3DiagnosticGrammarHooksRecoveryDeterminismKey(
+    bool parser_recovery_replay_ready,
+    bool parse_artifact_replay_key_deterministic,
+    bool parse_recovery_determinism_hardening_consistent,
+    bool parser_diagnostic_grammar_hooks_diagnostics_hardening_ready,
+    bool parser_diagnostic_grammar_hooks_edge_case_robustness_ready,
+    bool parser_diagnostic_grammar_hooks_recovery_determinism_consistent,
+    bool parser_diagnostic_grammar_hooks_recovery_determinism_ready) {
+  return std::string("parser_recovery_replay_ready=") +
+         (parser_recovery_replay_ready ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         (parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";parse_recovery_determinism_hardening_consistent=" +
+         (parse_recovery_determinism_hardening_consistent ? "true" : "false") +
+         ";parser_diagnostic_grammar_hooks_diagnostics_hardening_ready=" +
+         (parser_diagnostic_grammar_hooks_diagnostics_hardening_ready ? "true" : "false") +
+         ";parser_diagnostic_grammar_hooks_edge_case_robustness_ready=" +
+         (parser_diagnostic_grammar_hooks_edge_case_robustness_ready ? "true" : "false") +
+         ";recovery_determinism_consistent=" +
+         (parser_diagnostic_grammar_hooks_recovery_determinism_consistent ? "true" : "false") +
+         ";recovery_determinism_ready=" +
+         (parser_diagnostic_grammar_hooks_recovery_determinism_ready ? "true" : "false");
+}
+
 inline bool Objc3ParseLoweringReadinessKeyHasPrefix(
     const std::string &value,
     const std::string &prefix) {
@@ -2067,12 +2091,36 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parse_artifact_diagnostics_hardening_consistent,
       surface.parse_artifact_edge_case_robustness_consistent,
       surface.parse_recovery_determinism_hardening_consistent);
+  surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent =
+      surface.parse_recovery_determinism_hardening_consistent &&
+      surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready &&
+      surface.parser_recovery_replay_ready &&
+      surface.parse_artifact_replay_key_deterministic &&
+      !surface.parse_recovery_determinism_hardening_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_edge_case_robustness_key.empty();
+  surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready =
+      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
+      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready;
+  surface.parser_diagnostic_grammar_hooks_recovery_determinism_key =
+      BuildObjc3DiagnosticGrammarHooksRecoveryDeterminismKey(
+          surface.parser_recovery_replay_ready,
+          surface.parse_artifact_replay_key_deterministic,
+          surface.parse_recovery_determinism_hardening_consistent,
+          surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready,
+          surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready,
+          surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent,
+          surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready);
   surface.long_tail_grammar_recovery_determinism_consistent =
       surface.parse_recovery_determinism_hardening_consistent &&
+      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
+      surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready &&
       surface.long_tail_grammar_diagnostics_hardening_ready &&
       surface.parser_recovery_replay_ready &&
       surface.parse_artifact_replay_key_deterministic &&
       !surface.parse_recovery_determinism_hardening_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_recovery_determinism_key.empty() &&
       !surface.long_tail_grammar_diagnostics_hardening_key.empty();
   surface.long_tail_grammar_recovery_determinism_ready =
       surface.long_tail_grammar_recovery_determinism_consistent &&
@@ -3129,6 +3177,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser diagnostic grammar hooks diagnostics hardening is inconsistent";
   } else if (!surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready) {
     surface.failure_reason = "parser diagnostic grammar hooks diagnostics hardening is not ready";
+  } else if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks recovery/determinism hardening is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks recovery/determinism hardening is not ready";
   } else if (!surface.parse_artifact_edge_case_robustness_consistent) {
     surface.failure_reason = "parse artifact edge-case robustness is inconsistent";
   } else if (!surface.long_tail_grammar_edge_case_compatibility_consistent) {
