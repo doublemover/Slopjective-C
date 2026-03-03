@@ -35,6 +35,12 @@ struct Objc3TypeFormScaffoldSummary {
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
   std::string conformance_corpus_key;
+  std::size_t performance_quality_required_guardrail_count = 0;
+  std::size_t performance_quality_passed_guardrail_count = 0;
+  std::size_t performance_quality_failed_guardrail_count = 0;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
+  std::string performance_quality_guardrails_key;
   bool deterministic = false;
 };
 

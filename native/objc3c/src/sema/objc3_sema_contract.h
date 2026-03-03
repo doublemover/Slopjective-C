@@ -559,6 +559,12 @@ struct Objc3IdClassSelObjectPointerTypeCheckingSummary {
   bool canonical_type_form_conformance_corpus_consistent = false;
   bool canonical_type_form_conformance_corpus_ready = false;
   std::string canonical_type_form_conformance_corpus_key;
+  std::size_t canonical_type_form_performance_quality_required_guardrail_count = 0;
+  std::size_t canonical_type_form_performance_quality_passed_guardrail_count = 0;
+  std::size_t canonical_type_form_performance_quality_failed_guardrail_count = 0;
+  bool canonical_type_form_performance_quality_guardrails_consistent = false;
+  bool canonical_type_form_performance_quality_guardrails_ready = false;
+  std::string canonical_type_form_performance_quality_guardrails_key;
   bool deterministic = true;
 };
 

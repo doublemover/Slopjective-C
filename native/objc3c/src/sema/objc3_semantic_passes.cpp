@@ -7807,6 +7807,18 @@ static void ApplyTypeFormScaffoldSummaryToIdClassSelObjectPointerTypeCheckingSum
   summary.canonical_type_form_conformance_corpus_consistent = scaffold.conformance_corpus_consistent;
   summary.canonical_type_form_conformance_corpus_ready = scaffold.conformance_corpus_ready;
   summary.canonical_type_form_conformance_corpus_key = scaffold.conformance_corpus_key;
+  summary.canonical_type_form_performance_quality_required_guardrail_count =
+      scaffold.performance_quality_required_guardrail_count;
+  summary.canonical_type_form_performance_quality_passed_guardrail_count =
+      scaffold.performance_quality_passed_guardrail_count;
+  summary.canonical_type_form_performance_quality_failed_guardrail_count =
+      scaffold.performance_quality_failed_guardrail_count;
+  summary.canonical_type_form_performance_quality_guardrails_consistent =
+      scaffold.performance_quality_guardrails_consistent;
+  summary.canonical_type_form_performance_quality_guardrails_ready =
+      scaffold.performance_quality_guardrails_ready;
+  summary.canonical_type_form_performance_quality_guardrails_key =
+      scaffold.performance_quality_guardrails_key;
 }
 
 static Objc3IdClassSelObjectPointerTypeCheckingSummary
@@ -7973,6 +7985,16 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromIntegrationSurface(const Objc
       summary.canonical_type_form_conformance_corpus_consistent &&
       summary.canonical_type_form_conformance_corpus_ready &&
       !summary.canonical_type_form_conformance_corpus_key.empty() &&
+      summary.canonical_type_form_performance_quality_required_guardrail_count >
+          0u &&
+      summary.canonical_type_form_performance_quality_passed_guardrail_count ==
+          summary
+              .canonical_type_form_performance_quality_required_guardrail_count &&
+      summary.canonical_type_form_performance_quality_failed_guardrail_count ==
+          0u &&
+      summary.canonical_type_form_performance_quality_guardrails_consistent &&
+      summary.canonical_type_form_performance_quality_guardrails_ready &&
+      !summary.canonical_type_form_performance_quality_guardrails_key.empty() &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -8165,6 +8187,16 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
       summary.canonical_type_form_conformance_corpus_consistent &&
       summary.canonical_type_form_conformance_corpus_ready &&
       !summary.canonical_type_form_conformance_corpus_key.empty() &&
+      summary.canonical_type_form_performance_quality_required_guardrail_count >
+          0u &&
+      summary.canonical_type_form_performance_quality_passed_guardrail_count ==
+          summary
+              .canonical_type_form_performance_quality_required_guardrail_count &&
+      summary.canonical_type_form_performance_quality_failed_guardrail_count ==
+          0u &&
+      summary.canonical_type_form_performance_quality_guardrails_consistent &&
+      summary.canonical_type_form_performance_quality_guardrails_ready &&
+      !summary.canonical_type_form_performance_quality_guardrails_key.empty() &&
       summary.param_id_spelling_sites <= summary.param_type_sites &&
       summary.param_class_spelling_sites <= summary.param_type_sites &&
       summary.param_sel_spelling_sites <= summary.param_type_sites &&
@@ -12257,6 +12289,30 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
                  .canonical_type_form_conformance_corpus_key ==
              id_class_sel_object_pointer_type_checking_summary
                  .canonical_type_form_conformance_corpus_key &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_required_guardrail_count ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_required_guardrail_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_passed_guardrail_count ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_passed_guardrail_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_failed_guardrail_count ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_failed_guardrail_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_consistent ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_consistent &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_ready ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_ready &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_key ==
+             id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_guardrails_key &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_type_sites ==
              id_class_sel_object_pointer_type_checking_summary.param_type_sites &&
          handoff.id_class_sel_object_pointer_type_checking_summary.param_id_spelling_sites ==
@@ -12355,6 +12411,22 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              .canonical_type_form_conformance_corpus_ready &&
          !handoff.id_class_sel_object_pointer_type_checking_summary
               .canonical_type_form_conformance_corpus_key.empty() &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_required_guardrail_count >
+             0u &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_passed_guardrail_count ==
+             handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_required_guardrail_count &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+                 .canonical_type_form_performance_quality_failed_guardrail_count ==
+             0u &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+             .canonical_type_form_performance_quality_guardrails_consistent &&
+         handoff.id_class_sel_object_pointer_type_checking_summary
+             .canonical_type_form_performance_quality_guardrails_ready &&
+         !handoff.id_class_sel_object_pointer_type_checking_summary
+              .canonical_type_form_performance_quality_guardrails_key.empty() &&
          handoff.block_literal_capture_semantics_summary.deterministic &&
          handoff.block_literal_capture_semantics_summary.block_literal_sites ==
              block_literal_capture_semantics_summary.block_literal_sites &&

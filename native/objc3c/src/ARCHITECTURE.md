@@ -71,6 +71,14 @@ Current-state note:
   ObjC3 type-form conformance corpus consistency/readiness, case-accounting,
   and conformance-corpus-key continuity remain deterministic and fail-closed
   against sema/type metadata drift.
+- M227 lane-B B011 type-system performance and quality guardrails anchors
+  explicit lane-B performance/quality guardrail artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_performance_quality_guardrails_b011_expectations.md`,
+  `spec/planning/compiler/m227/m227_b011_type_system_objc3_forms_performance_quality_guardrails_packet.md`,
+  and `package.json` (`check:objc3c:m227-b011-lane-b-readiness`) so canonical
+  ObjC3 type-form performance/quality guardrail accounting, consistency/readiness,
+  and performance-quality-key continuity remain deterministic and fail-closed
+  against sema/type metadata drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,

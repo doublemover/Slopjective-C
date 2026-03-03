@@ -420,6 +420,10 @@ A conforming implementation shall preserve, for all exported declarations:
       with canonical type-form conformance corpus consistency/readiness, case-accounting continuity,
       and conformance-corpus-key continuity evidence, plus explicit `M227-B009` dependency continuity
       so conformance corpus drift fails closed.
+    - deterministic lane-B type-system performance and quality guardrails metadata anchors for `M227-B011`
+      with canonical type-form performance/quality guardrail accounting, consistency/readiness, and
+      performance-quality-key continuity evidence, plus explicit `M227-B010` dependency continuity so
+      guardrail drift fails closed.
     - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
       with typed sema handoff evidence and lowering metadata continuity so
       sema-to-lowering contract drift fails closed.

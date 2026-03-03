@@ -187,6 +187,45 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
   summary.conformance_corpus_ready =
       summary.conformance_corpus_consistent &&
       !summary.conformance_corpus_key.empty();
+  summary.performance_quality_required_guardrail_count = 9u;
+  summary.performance_quality_passed_guardrail_count = 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_matrix_consistent ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_matrix_ready ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      !summary.conformance_matrix_key.empty() ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_corpus_case_count > 0u ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_corpus_passed_case_count ==
+              summary.conformance_corpus_case_count
+          ? 1u
+          : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_corpus_failed_case_count == 0u ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_corpus_consistent ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      summary.conformance_corpus_ready ? 1u : 0u;
+  summary.performance_quality_passed_guardrail_count +=
+      !summary.conformance_corpus_key.empty() ? 1u : 0u;
+  summary.performance_quality_failed_guardrail_count =
+      summary.performance_quality_required_guardrail_count -
+      summary.performance_quality_passed_guardrail_count;
+  summary.performance_quality_guardrails_consistent =
+      summary.performance_quality_required_guardrail_count > 0u &&
+      summary.performance_quality_failed_guardrail_count == 0u;
+  summary.performance_quality_guardrails_key =
+      std::string("type-form-performance-quality-guardrails;required=") +
+      std::to_string(summary.performance_quality_required_guardrail_count) +
+      ";passed=" +
+      std::to_string(summary.performance_quality_passed_guardrail_count) +
+      ";failed=" +
+      std::to_string(summary.performance_quality_failed_guardrail_count);
+  summary.performance_quality_guardrails_ready =
+      summary.performance_quality_guardrails_consistent &&
+      !summary.performance_quality_guardrails_key.empty();
   summary.deterministic = summary.canonical_reference_form_count > 0 &&
                           summary.canonical_message_scalar_form_count > 0 &&
                           summary.canonical_bridge_top_form_count > 0 &&
@@ -216,7 +255,17 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                           summary.conformance_corpus_failed_case_count == 0u &&
                           summary.conformance_corpus_consistent &&
                           summary.conformance_corpus_ready &&
-                          !summary.conformance_corpus_key.empty();
+                          !summary.conformance_corpus_key.empty() &&
+                          summary.performance_quality_required_guardrail_count >
+                              0u &&
+                          summary.performance_quality_passed_guardrail_count ==
+                              summary
+                                  .performance_quality_required_guardrail_count &&
+                          summary.performance_quality_failed_guardrail_count ==
+                              0u &&
+                          summary.performance_quality_guardrails_consistent &&
+                          summary.performance_quality_guardrails_ready &&
+                          !summary.performance_quality_guardrails_key.empty();
   return summary;
 }
 
@@ -250,6 +299,13 @@ bool IsReadyObjc3TypeFormScaffoldSummary(const Objc3TypeFormScaffoldSummary &sum
          summary.conformance_corpus_failed_case_count == 0u &&
          summary.conformance_corpus_consistent &&
          summary.conformance_corpus_ready &&
+         summary.performance_quality_required_guardrail_count > 0u &&
+         summary.performance_quality_passed_guardrail_count ==
+             summary.performance_quality_required_guardrail_count &&
+         summary.performance_quality_failed_guardrail_count == 0u &&
+         summary.performance_quality_guardrails_consistent &&
+         summary.performance_quality_guardrails_ready &&
+         !summary.performance_quality_guardrails_key.empty() &&
          !summary.conformance_corpus_key.empty() &&
          summary.deterministic;
 }
