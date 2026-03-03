@@ -61,6 +61,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-c002-lane-c-readiness`) so typed
   sema/lowering modular split continuity remains deterministic and fail-closed
   against `M227-C001` dependency drift.
+- M227 lane-D D001 runtime-facing type metadata semantics contract and
+  architecture freeze anchors explicit lane-D contract-freeze artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_semantics_expectations.md`,
+  `spec/planning/compiler/m227/m227_d001_runtime_facing_type_metadata_semantics_contract_freeze.md`,
+  and `package.json` (`check:objc3c:m227-d001-lane-d-readiness`) so
+  runtime-facing type metadata sema/pipeline/artifact handoff semantics remain
+  deterministic and fail-closed against runtime metadata drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and

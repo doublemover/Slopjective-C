@@ -102,6 +102,10 @@ At minimum, the pass-graph gate shall validate:
 - toolchain/runtime core feature implementation shall remain fail-closed on
   backend-output marker path/payload drift and core-feature readiness drift
   after backend object dispatch.
+- runtime-facing type metadata semantics governance shall preserve
+  deterministic sema parity handoff, runtime-shim default dispatch symbol
+  (`objc3_msgsend_i32`), and fail-closed pipeline/artifact metadata projection
+  continuity (`M227-D001`).
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.
