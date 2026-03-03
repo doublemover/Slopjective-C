@@ -279,6 +279,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-e006-lane-e-readiness`) so lane-E edge-case expansion/robustness
   governance evidence remains deterministic and fail-closed on dependency-token/reference
   or readiness drift.
+- M227 lane-E E007 semantic conformance diagnostics hardening anchors dependency references (`M227-E006`, `M227-A007`, `M227-B007`, `M227-C007`, and `M227-D007`) in
+  `docs/contracts/m227_lane_e_semantic_conformance_diagnostics_hardening_e007_expectations.md`,
+  `spec/planning/compiler/m227/m227_e007_semantic_conformance_lane_e_diagnostics_hardening_packet.md`,
+  `scripts/check_m227_e007_semantic_conformance_lane_e_diagnostics_hardening_contract.py`,
+  and `package.json` (`check:objc3c:m227-e007-lane-e-readiness`) so lane-E diagnostics-hardening
+  governance evidence remains deterministic and fail-closed on dependency-token/reference
+  or readiness drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
