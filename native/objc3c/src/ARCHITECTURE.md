@@ -239,6 +239,12 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime object emission/link-path routing remains fail-closed when
   backend route/output recovery-determinism evidence drifts.
+- M228 lane-D D009 conformance matrix implementation anchors deterministic
+  conformance consistency/readiness and conformance-matrix-key continuity
+  (`conformance_matrix_*`) in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
+  toolchain/runtime object emission/link-path routing remains fail-closed when
+  backend route/output conformance-matrix evidence drifts.
 - M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
   references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
   `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,

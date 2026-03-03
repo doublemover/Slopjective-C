@@ -175,6 +175,10 @@ At minimum, the pass-graph gate shall validate:
   deterministic, preserve recovery consistency/readiness and
   recovery-determinism-key continuity, and fail closed when backend route/output
   recovery-determinism evidence drifts.
+- toolchain/runtime conformance matrix implementation shall remain
+  deterministic, preserve conformance consistency/readiness and
+  conformance-matrix-key continuity, and fail closed when backend route/output
+  conformance-matrix evidence drifts.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.
