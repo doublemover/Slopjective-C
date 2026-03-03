@@ -782,6 +782,11 @@ Current-state note:
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
+- M245 lane-E E002 portability gate/release checklist modular split/scaffolding anchors
+  dependency references (`M245-E001`, `M245-A002`, `M245-B002`,
+  `M245-C002`, and `M245-D002`) in lane-E modular split contract packet,
+  checker, and readiness wiring so dependency continuity remains deterministic
+  and fail-closed while downstream lane implementation assets seed.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,
