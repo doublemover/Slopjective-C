@@ -32,12 +32,13 @@ Current-state note:
   parser completeness and parser-to-sema handoff determinism.
 - M227 extends the sema boundary with pass-order and symbol-flow freeze rules
   in `sema/objc3_sema_pass_manager_contract.h` (`Objc3SemaPassFlowSummary`).
-- M227 lane-B type-system freeze anchors canonical ObjC form sets in
-  `sema/objc3_sema_contract.h` (`kObjc3CanonicalReferenceTypeForms`,
-  `kObjc3CanonicalScalarMessageSendTypeForms`,
-  `kObjc3CanonicalBridgeTopReferenceTypeForms`) to keep semantic checking
-  deterministic across `id`/`Class`/`SEL`/`Protocol`/`instancetype` and
-  object-pointer forms.
+- M227 lane-B B001 type-system completeness for ObjC3 forms contract and architecture freeze anchors
+  explicit lane-B contract-freeze artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_contract_and_architecture_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m227/m227_b001_type_system_objc3_forms_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`check:objc3c:m227-b001-lane-b-readiness`) so canonical
+  reference/message/bridge-top type-form routing in sema remains deterministic
+  and fail-closed against ad-hoc compatibility drift.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

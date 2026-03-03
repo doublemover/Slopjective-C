@@ -448,6 +448,10 @@ At minimum, the pass-graph gate shall validate:
 - semantic/lowering modular split scaffolding shall preserve explicit lane-B
   dependency anchors (`M248-B001`) and fail closed on modular split evidence
   drift before semantic replay readiness advances.
+- type-system completeness for ObjC3 forms governance shall preserve explicit
+  lane-B dependency anchors (`M227-B001`) and fail closed on canonical ObjC
+  type-form contract drift before semantic compatibility and migration
+  validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before

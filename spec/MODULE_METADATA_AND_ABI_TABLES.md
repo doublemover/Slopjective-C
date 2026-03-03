@@ -395,12 +395,15 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M249-A001` dependency continuity so compatibility scaffolding drift fails closed.
    - deterministic lane-A feature packaging core feature metadata anchors for `M249-A003`
      with explicit `M249-A002` dependency continuity so core feature implementation drift fails closed.
-   - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
-     with semantic fixture ownership evidence and lowering replay continuity so
-     CI sharding semantic drift fails closed.
-   - deterministic lane-B semantic/lowering modular split metadata anchors for
-     `M248-B002` with explicit `M248-B001` dependency continuity so semantic
-     scaffolding drift fails closed.
+    - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
+      with semantic fixture ownership evidence and lowering replay continuity so
+      CI sharding semantic drift fails closed.
+    - deterministic lane-B type-system completeness for ObjC3 forms metadata anchors for `M227-B001`
+      with canonical reference/message/bridge-top form evidence and semantic-pass fail-closed continuity
+      so canonical ObjC type-form drift fails closed.
+    - deterministic lane-B semantic/lowering modular split metadata anchors for
+      `M248-B002` with explicit `M248-B001` dependency continuity so semantic
+      scaffolding drift fails closed.
    - deterministic lane-B semantic parity/platform constraints core feature metadata anchors for
      `M245-B003` with explicit `M245-B002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
