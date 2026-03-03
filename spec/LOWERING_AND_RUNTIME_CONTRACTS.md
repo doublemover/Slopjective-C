@@ -149,6 +149,9 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering diagnostics hardening shall include deterministic
   diagnostics consistency/readiness and diagnostics-key transport gates that
   fail closed before IR emission.
+- ownership-aware lowering recovery and determinism hardening shall include
+  deterministic recovery consistency/readiness and recovery-key transport gates
+  that fail closed before IR emission.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output

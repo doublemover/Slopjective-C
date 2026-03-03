@@ -27,6 +27,9 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   bool edge_case_robustness_ready = false;
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
+  bool parse_recovery_determinism_hardening_consistent = false;
   std::string ownership_qualifier_replay_key;
   std::string retain_release_replay_key;
   std::string autoreleasepool_scope_replay_key;
@@ -39,6 +42,8 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
+  std::string parse_recovery_determinism_hardening_key;
   std::string failure_reason;
 };
 
@@ -158,6 +163,24 @@ inline std::string BuildObjc3OwnershipAwareLoweringBehaviorDiagnosticsHardeningK
   return key.str();
 }
 
+inline std::string BuildObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismKey(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold) {
+  std::ostringstream key;
+  key << "ownership-aware-lowering-recovery-determinism-hardening:v1:"
+      << "diagnostics-hardening-ready="
+      << (scaffold.diagnostics_hardening_ready ? "true" : "false")
+      << ";parse-recovery-determinism-hardening-consistent="
+      << (scaffold.parse_recovery_determinism_hardening_consistent ? "true"
+                                                                   : "false")
+      << ";parse-artifact-replay-key-deterministic="
+      << (scaffold.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";diagnostics-hardening-key=" << scaffold.diagnostics_hardening_key
+      << ";parse-recovery-determinism-hardening-key="
+      << scaffold.parse_recovery_determinism_hardening_key
+      << ";edge-case-robustness-key=" << scaffold.edge_case_robustness_key;
+  return key.str();
+}
+
 inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
     const Objc3OwnershipQualifierLoweringContract &ownership_qualifier_contract,
     const std::string &ownership_qualifier_replay_key,
@@ -174,7 +197,9 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     bool parse_artifact_edge_case_robustness_consistent,
     bool parse_artifact_replay_key_deterministic,
     const std::string &compatibility_handoff_key,
-    const std::string &parse_artifact_edge_robustness_key) {
+    const std::string &parse_artifact_edge_robustness_key,
+    bool parse_recovery_determinism_hardening_consistent,
+    const std::string &parse_recovery_determinism_hardening_key) {
   Objc3OwnershipAwareLoweringBehaviorScaffold scaffold;
   scaffold.ownership_qualifier_contract_ready =
       IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_contract) &&
@@ -203,9 +228,13 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_artifact_edge_case_robustness_consistent;
   scaffold.parse_artifact_replay_key_deterministic =
       parse_artifact_replay_key_deterministic;
+  scaffold.parse_recovery_determinism_hardening_consistent =
+      parse_recovery_determinism_hardening_consistent;
   scaffold.compatibility_handoff_key = compatibility_handoff_key;
   scaffold.parse_artifact_edge_robustness_key =
       parse_artifact_edge_robustness_key;
+  scaffold.parse_recovery_determinism_hardening_key =
+      parse_recovery_determinism_hardening_key;
   scaffold.ownership_profile_accounting_consistent =
       ownership_qualifier_contract.object_pointer_type_annotation_sites >=
           ownership_qualifier_contract.ownership_qualifier_sites &&
@@ -297,6 +326,17 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.diagnostics_hardening_consistent &&
       !scaffold.diagnostics_hardening_key.empty() &&
       !scaffold.edge_case_robustness_key.empty();
+  scaffold.recovery_determinism_consistent =
+      scaffold.diagnostics_hardening_ready &&
+      scaffold.parse_recovery_determinism_hardening_consistent &&
+      scaffold.parse_artifact_replay_key_deterministic &&
+      !scaffold.parse_recovery_determinism_hardening_key.empty();
+  scaffold.recovery_determinism_key =
+      BuildObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismKey(scaffold);
+  scaffold.recovery_determinism_ready =
+      scaffold.recovery_determinism_consistent &&
+      !scaffold.recovery_determinism_key.empty() &&
+      !scaffold.diagnostics_hardening_key.empty();
 
   if (scaffold.modular_split_ready &&
       scaffold.expansion_ready &&
@@ -305,7 +345,9 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.edge_case_robustness_ready &&
       !scaffold.edge_case_robustness_key.empty() &&
       scaffold.diagnostics_hardening_ready &&
-      !scaffold.diagnostics_hardening_key.empty()) {
+      !scaffold.diagnostics_hardening_key.empty() &&
+      scaffold.recovery_determinism_ready &&
+      !scaffold.recovery_determinism_key.empty()) {
     return scaffold;
   }
 
@@ -357,6 +399,16 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     scaffold.failure_reason = "ownership-aware lowering diagnostics hardening key is empty";
   } else if (!scaffold.diagnostics_hardening_ready) {
     scaffold.failure_reason = "ownership-aware lowering diagnostics hardening is not ready";
+  } else if (!scaffold.parse_recovery_determinism_hardening_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering parse recovery determinism hardening is inconsistent";
+  } else if (scaffold.parse_recovery_determinism_hardening_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering parse recovery determinism hardening key is empty";
+  } else if (!scaffold.recovery_determinism_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering recovery determinism hardening is inconsistent";
+  } else if (scaffold.recovery_determinism_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering recovery determinism hardening key is empty";
+  } else if (!scaffold.recovery_determinism_ready) {
+    scaffold.failure_reason = "ownership-aware lowering recovery determinism hardening is not ready";
   } else {
     scaffold.failure_reason = "ownership-aware lowering modular split scaffold not ready";
   }
@@ -438,6 +490,22 @@ inline bool IsObjc3OwnershipAwareLoweringBehaviorDiagnosticsHardeningReady(
 
   reason = scaffold.failure_reason.empty()
                ? "ownership-aware lowering diagnostics hardening is not ready"
+               : scaffold.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold,
+    std::string &reason) {
+  if (scaffold.recovery_determinism_consistent &&
+      scaffold.recovery_determinism_ready &&
+      !scaffold.recovery_determinism_key.empty()) {
+    reason.clear();
+    return true;
+  }
+
+  reason = scaffold.failure_reason.empty()
+               ? "ownership-aware lowering recovery determinism hardening is not ready"
                : scaffold.failure_reason;
   return false;
 }

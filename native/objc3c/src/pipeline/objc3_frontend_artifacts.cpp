@@ -1885,7 +1885,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               .parse_artifact_replay_key_deterministic,
           pipeline_result.parse_lowering_readiness_surface.compatibility_handoff_key,
           pipeline_result.parse_lowering_readiness_surface
-              .parse_artifact_edge_robustness_key);
+              .parse_artifact_edge_robustness_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_recovery_determinism_hardening_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_recovery_determinism_hardening_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -1922,6 +1926,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L312",
         "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
             ownership_aware_lowering_behavior_edge_case_compatibility_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_recovery_determinism_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_recovery_determinism_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L318",
+        "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
+            ownership_aware_lowering_behavior_recovery_determinism_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }

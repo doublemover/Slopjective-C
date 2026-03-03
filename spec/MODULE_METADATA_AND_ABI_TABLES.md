@@ -95,19 +95,25 @@ A conforming implementation shall preserve, for all exported declarations:
       pass-graph conformance-matrix evidence,
    - deterministic conformance-corpus readiness/key anchors for lowering
      pass-graph conformance-corpus evidence,
-   - deterministic performance-quality guardrails readiness/key anchors for
-     lowering pass-graph performance-quality evidence,
-   - deterministic cross-lane integration sync anchors for `A011`, `B007`,
-     `C005`, `D006`, and `E006` dependency continuity evidence,
-   - deterministic ownership-aware lowering edge-case compatibility
-     consistency/readiness and compatibility-key anchors for lane-B closeout
-     evidence,
+    - deterministic performance-quality guardrails readiness/key anchors for
+      lowering pass-graph performance-quality evidence,
+    - deterministic cross-lane integration sync anchors for `A011`, `B007`,
+      `C005`, `D006`, and `E006` dependency continuity evidence,
+    - deterministic docs/operator runbook synchronization anchors for `A011`,
+      `B007`, `C005`, `D006`, `E006`, and `A012` documentation continuity
+      evidence,
+    - deterministic ownership-aware lowering edge-case compatibility
+      consistency/readiness and compatibility-key anchors for lane-B closeout
+      evidence,
    - deterministic ownership-aware lowering edge-case robustness
      expansion/readiness and robustness-key anchors for lane-B expansion
      evidence,
    - deterministic ownership-aware lowering diagnostics hardening
      consistency/readiness and diagnostics-key anchors for lane-B B007
      diagnostics hardening evidence,
+   - deterministic ownership-aware lowering recovery and determinism
+     consistency/readiness and recovery-key anchors for lane-B B008 recovery and determinism
+     hardening evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion
