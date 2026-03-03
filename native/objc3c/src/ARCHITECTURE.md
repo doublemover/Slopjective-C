@@ -56,6 +56,11 @@ Current-state note:
   `deterministic_parser_sema_conformance_corpus`) in handoff/manager contracts
   and lane-A readiness wiring so conformance-corpus drift fails closed before
   lane-A integration closeout workpacks.
+- M227 lane-A A011 performance and quality guardrails anchors semantic-pass
+  parser/sema performance/quality guardrails (`parser_sema_performance_quality_guardrails`,
+  `deterministic_parser_sema_performance_quality_guardrails`) in handoff/manager
+  contracts and lane-A readiness wiring so guardrail drift fails closed before
+  cross-lane synchronization workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

@@ -410,6 +410,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A semantic-pass conformance corpus metadata anchors for `M227-A010`
       with parser/sema conformance-corpus replay evidence and fail-closed continuity
       so parser/sema conformance-corpus drift fails closed.
+    - deterministic lane-A semantic-pass performance and quality guardrails metadata anchors for `M227-A011`
+      with parser/sema performance-quality guardrails evidence and fail-closed continuity
+      so parser/sema performance-quality drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.
