@@ -10,6 +10,7 @@
 - `objc3c-semantic-pass-cross-lane-integration-sync/m227-a012-v1`
 - `objc3c-semantic-pass-docs-operator-runbook-sync/m227-a013-v1`
 - `objc3c-semantic-pass-release-replay-dry-run/m227-a014-v1`
+- `objc3c-semantic-pass-advanced-core-workpack-shard1/m227-a015-v1`
 
 ## Operator Command Sequence
 
@@ -25,6 +26,9 @@
 10. `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m227_a014_semantic_pass_release_replay_dry_run.ps1`
 11. `npm run check:objc3c:m227-a014-lane-a-readiness`
 12. `npm run check:objc3c:m227-a014-milestone-optimization-replay-proof`
+13. `python scripts/check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py`
+14. `python -m pytest tests/tooling/test_check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py -q`
+15. `npm run check:objc3c:m227-a015-lane-a-readiness`
 
 ## Evidence
 

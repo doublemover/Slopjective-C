@@ -121,6 +121,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-a014-lane-a-readiness`) so
   semantic-pass release candidate replay drift fails closed before advanced
   shard closure workpacks.
+- M227 lane-A A015 advanced core workpack (shard 1) anchors deterministic
+  advanced-core readiness synthesis in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
+  (`check:objc3c:m227-a015-lane-a-readiness`) so advanced-core continuity
+  drift fails closed before advanced edge/diagnostics/conformance workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

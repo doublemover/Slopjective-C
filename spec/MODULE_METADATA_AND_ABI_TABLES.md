@@ -440,6 +440,12 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A semantic-pass release-candidate replay dry-run metadata anchors for `M227-A014`
       with replay artifact evidence (`module.manifest.json`, `module.diagnostics.json`, `module.ll`, `module.object-backend.txt`)
       and fail-closed readiness continuity so semantic-pass release replay drift fails closed.
+    - deterministic lane-A semantic-pass advanced core workpack (shard 1) metadata anchors for `M227-A015`
+      with advanced-core consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_core_consistent`,
+      `toolchain_runtime_ga_operations_advanced_core_ready`,
+      `toolchain_runtime_ga_operations_advanced_core_key`) so advanced-core
+      shard1 drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.
