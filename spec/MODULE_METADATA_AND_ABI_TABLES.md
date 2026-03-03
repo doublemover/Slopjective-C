@@ -434,6 +434,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E portability gate/release checklist modular split/scaffolding dependency anchors for
       `M245-E001`, `M245-A002`, `M245-B002`, `M245-C002`, and `M245-D002` so lane
       split continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist core feature implementation dependency anchors for
+      `M245-E002`, `M245-A001`, `M245-B001`, `M245-C002`, and `M245-D002` so lane
+      implementation continuity evidence remains deterministic and fail-closed.
     - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
       with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.

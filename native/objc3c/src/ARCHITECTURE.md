@@ -811,6 +811,11 @@ Current-state note:
   `M245-C002`, and `M245-D002`) in lane-E modular split contract packet,
   checker, and readiness wiring so dependency continuity remains deterministic
   and fail-closed while downstream lane implementation assets seed.
+- M245 lane-E E003 portability gate/release checklist core feature implementation anchors
+  dependency references (`M245-E002`, `M245-A001`, `M245-B001`,
+  `M245-C002`, and `M245-D002`) in lane-E core-feature contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against modular split handoff drift.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

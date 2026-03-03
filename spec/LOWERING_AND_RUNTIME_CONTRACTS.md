@@ -479,6 +479,9 @@ At minimum, the pass-graph gate shall validate:
 - portability gate/release checklist modular split/scaffolding wiring shall preserve
   explicit lane-E dependency anchors (`M245-E001`, `M245-A002`, `M245-B002`,
   `M245-C002`, and `M245-D002`) and fail closed on modular split handoff drift.
+- portability gate/release checklist core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E002`, `M245-A001`, `M245-B001`,
+  `M245-C002`, and `M245-D002`) and fail closed on core-feature handoff drift.
 - semantic compatibility and migration checks core feature implementation shall
   preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
   before semantic stability expansion validation advances.
