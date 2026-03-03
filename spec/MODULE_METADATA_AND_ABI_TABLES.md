@@ -434,6 +434,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A semantic-pass docs/operator runbook synchronization metadata anchors for `M227-A013`
       with operator command-sequencing and dependency-anchor continuity evidence
       so semantic-pass runbook drift fails closed.
+    - deterministic lane-A semantic-pass release-candidate replay dry-run metadata anchors for `M227-A014`
+      with replay artifact evidence (`module.manifest.json`, `module.diagnostics.json`, `module.ll`, `module.object-backend.txt`)
+      and fail-closed readiness continuity so semantic-pass release replay drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

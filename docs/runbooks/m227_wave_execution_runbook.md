@@ -9,6 +9,7 @@
 - `objc3c-lane-e-semantic-conformance-quality-gate-contract/m227-e001-v1`
 - `objc3c-semantic-pass-cross-lane-integration-sync/m227-a012-v1`
 - `objc3c-semantic-pass-docs-operator-runbook-sync/m227-a013-v1`
+- `objc3c-semantic-pass-release-replay-dry-run/m227-a014-v1`
 
 ## Operator Command Sequence
 
@@ -19,6 +20,11 @@
 5. `python scripts/check_m227_a013_semantic_pass_docs_operator_runbook_sync_contract.py`
 6. `python -m pytest tests/tooling/test_check_m227_a013_semantic_pass_docs_operator_runbook_sync_contract.py -q`
 7. `npm run check:objc3c:m227-a013-lane-a-readiness`
+8. `python scripts/check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py`
+9. `python -m pytest tests/tooling/test_check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py -q`
+10. `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m227_a014_semantic_pass_release_replay_dry_run.ps1`
+11. `npm run check:objc3c:m227-a014-lane-a-readiness`
+12. `npm run check:objc3c:m227-a014-milestone-optimization-replay-proof`
 
 ## Evidence
 

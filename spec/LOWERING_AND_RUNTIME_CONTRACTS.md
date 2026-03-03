@@ -487,6 +487,9 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-A dependency anchor (`M227-A013`) and fail closed when
   operator command sequencing, dependency contract anchors, or readiness wiring
   drift before release-candidate replay validation advances.
+- semantic-pass release-candidate and replay dry-run governance shall preserve explicit lane-A dependency anchor (`M227-A014`),
+  preserve deterministic replay artifacts (`module.manifest.json`, `module.diagnostics.json`, `module.ll`, `module.object-backend.txt`),
+  and fail closed when replay evidence, runbook command sequencing, or readiness wiring drifts before advanced shard validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before

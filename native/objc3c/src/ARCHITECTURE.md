@@ -106,6 +106,13 @@ Current-state note:
   operator-facing dependency/command continuity in
   `docs/runbooks/m227_wave_execution_runbook.md` and lane-A readiness wiring so
   runbook/closeout drift fails closed before release-candidate replay workpacks.
+- M227 lane-A A014 release-candidate replay dry-run anchors deterministic
+  replay evidence collection in
+  `scripts/run_m227_a014_semantic_pass_release_replay_dry_run.ps1`,
+  `scripts/check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py`,
+  and `package.json` (`check:objc3c:m227-a014-lane-a-readiness`) so
+  semantic-pass release candidate replay drift fails closed before advanced
+  shard closure workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,
