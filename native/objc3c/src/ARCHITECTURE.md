@@ -469,6 +469,16 @@ Current-state note:
   `spec/planning/compiler/m244/m244_b001_interop_semantic_contracts_and_type_mediation_contract_and_architecture_freeze_packet.md`,
   and `package.json` so interop semantic/type mediation anchors and fail-closed dependency-token continuity remain frozen
   before downstream lane-B modular split/scaffolding and integration work begins.
+- M244 lane-E E001 interop conformance gate and operations contract and architecture freeze
+  anchors dependency references (`M244-A001`, `M244-B001`, `M244-C001`, and
+  `M244-D001`) in
+  `docs/contracts/m244_lane_e_interop_conformance_gate_and_operations_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m244/m244_e001_lane_e_interop_conformance_gate_and_operations_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`npm run --if-present check:objc3c:m244-b001-lane-b-readiness`,
+  `npm run --if-present check:objc3c:m244-c001-lane-c-readiness`,
+  `npm run --if-present check:objc3c:m244-d001-lane-d-readiness`) so lane-E governance evidence remains
+  deterministic and fail-closed on dependency token/reference drift while
+  lane-B/C/D contract-freeze assets remain pending GH seed.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,

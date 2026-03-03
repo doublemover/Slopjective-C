@@ -272,6 +272,11 @@ At minimum, the pass-graph gate shall validate:
   deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
   and fail closed on semantic/type mediation drift before downstream interop
   lowering/runtime integration advances.
+- interop conformance gate and operations contract and architecture freeze wiring shall preserve explicit
+  lane-E dependency anchors (`M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E readiness hooks drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.

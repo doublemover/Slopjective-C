@@ -225,6 +225,10 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B interop semantic/type mediation metadata anchors for `M244-B001`
      with semantic integration + typed handoff determinism evidence, explicit dependency tokens (`none`),
      and fail-closed evidence continuity so interop semantic/type mediation drift fails closed.
+    - deterministic lane-E interop conformance gate and operations dependency anchors for
+      `M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift without requiring pending lane-B/C/D artifacts before they land.
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.
