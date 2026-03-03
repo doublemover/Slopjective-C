@@ -785,6 +785,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c002_lowering_ir_portability_contracts_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split portability continuity remains
   deterministic and fail-closed against `M245-C001` dependency drift.
+- M245 lane-C C003 lowering/IR portability contracts core feature implementation anchors
+  explicit lane-C core-feature artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m245/m245_c003_lowering_ir_portability_contracts_core_feature_implementation_packet.md`,
+  and `package.json` so core feature portability continuity remains
+  deterministic and fail-closed against `M245-C001` and `M245-C002` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,

@@ -461,6 +461,7 @@ At minimum, the pass-graph gate shall validate:
   lowering portability drift before runtime execution and conformance
   validation advances.
 - lowering/IR portability modular split/scaffolding governance shall preserve explicit lane-C dependency anchors (`M245-C001`) and fail closed on modular split evidence drift before runtime portability scaffolding advances.
+- lowering/IR portability contracts core feature implementation shall preserve explicit lane-C dependency anchors (`M245-C001`, `M245-C002`) and fail closed on core-feature evidence drift before runtime portability implementation advances.
 - frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
 - frontend behavior parity core feature implementation governance shall preserve explicit lane-A dependency anchors (`M245-A002`) and fail closed on core-feature evidence drift before parser portability implementation advances.
 - semantic parity and platform constraints core feature implementation shall
