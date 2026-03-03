@@ -791,6 +791,13 @@ Current-state note:
   `spec/planning/compiler/m243/m243_d010_cli_reporting_and_output_contract_integration_conformance_corpus_expansion_packet.md`,
   so diagnostics schema/summary output contracts remain deterministic and
   fail-closed against `M243-D009` dependency drift.
+- M243 lane-D D011 performance and quality guardrails anchors CLI/reporting output contract integration
+  guardrail closure in
+  `docs/contracts/m243_cli_reporting_and_output_contract_integration_performance_quality_guardrails_d011_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_d011_cli_reporting_and_output_contract_integration_performance_quality_guardrails_packet.md`,
+  so diagnostics schema/summary output contracts remain deterministic and
+  fail-closed against `M243-D010` dependency drift.
 - M243 lane-E E001 diagnostics quality gate/replay policy contract and architecture freeze
   anchors dependency references (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) in
