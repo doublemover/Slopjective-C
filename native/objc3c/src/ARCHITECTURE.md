@@ -461,6 +461,11 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_edge_case_and_compatibility_completion_a005_expectations.md`,
   `spec/planning/compiler/m244/m244_a005_interop_surface_syntax_and_declaration_forms_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so `M244-A004` dependency continuity and edge-case completion evidence remain fail-closed.
+- M244 lane-A A006 interop surface syntax/declaration-form edge-case expansion and robustness anchors
+  explicit lane-A edge-case expansion artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_edge_case_expansion_and_robustness_a006_expectations.md`,
+  `spec/planning/compiler/m244/m244_a006_interop_surface_syntax_and_declaration_forms_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so `M244-A005` dependency continuity and edge-case expansion evidence remain fail-closed.
 - M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
   contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,
