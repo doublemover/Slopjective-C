@@ -281,6 +281,9 @@ At minimum, the pass-graph gate shall validate:
 - interop lowering and ABI conformance modular split scaffolding governance shall preserve explicit
   lane-C dependency anchor (`M244-C001`) and fail closed when modular split
   dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance core-feature implementation governance shall preserve explicit
+  lane-C dependency anchor (`M244-C002`) and fail closed when core-feature
+  dependency references or readiness evidence commands drift.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on
