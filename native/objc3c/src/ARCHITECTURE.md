@@ -568,6 +568,11 @@ Current-state note:
   `docs/contracts/m244_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_c013_expectations.md`,
   `spec/planning/compiler/m244/m244_c013_interop_lowering_and_abi_conformance_docs_operator_runbook_synchronization_packet.md`,
   and `package.json` so `M244-C012` dependency continuity and docs/runbook synchronization evidence remain fail-closed.
+- M244 lane-C C014 interop lowering/ABI conformance release-candidate and replay dry-run anchors
+  explicit lane-C release-candidate/replay dry-run artifacts in
+  `docs/contracts/m244_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_c014_expectations.md`,
+  `spec/planning/compiler/m244/m244_c014_interop_lowering_and_abi_conformance_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` so `M244-C013` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
 - M244 lane-D D001 runtime/link bridge-path anchors explicit
   lane-D contract and architecture freeze artifacts in
   `docs/contracts/m244_runtime_link_bridge_path_contract_and_architecture_freeze_d001_expectations.md`,
@@ -610,6 +615,12 @@ Current-state note:
   `spec/planning/compiler/m244/m244_d007_runtime_link_bridge_path_diagnostics_hardening_packet.md`,
   and `package.json` so runtime/link bridge-path diagnostics hardening continuity remains deterministic
   and fail-closed against `M244-D006` dependency drift.
+- M244 lane-D D008 runtime/link bridge-path recovery and determinism hardening anchors
+  explicit lane-D recovery and determinism hardening artifacts in
+  `docs/contracts/m244_runtime_link_bridge_path_recovery_determinism_hardening_d008_expectations.md`,
+  `spec/planning/compiler/m244/m244_d008_runtime_link_bridge_path_recovery_determinism_hardening_packet.md`,
+  and `package.json` so runtime/link bridge-path recovery and determinism hardening continuity remains deterministic
+  and fail-closed against `M244-D007` dependency drift.
 - M244 lane-B B001 interop semantic contracts and type mediation anchors explicit
   lane-B contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_contract_freeze_b001_expectations.md`,

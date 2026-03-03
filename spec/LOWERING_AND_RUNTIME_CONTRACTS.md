@@ -332,6 +332,9 @@ At minimum, the pass-graph gate shall validate:
 - interop lowering and ABI conformance docs and operator runbook synchronization governance shall preserve explicit
   lane-C dependency anchor (`M244-C012`) and fail closed when docs/runbook synchronization
   dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance release-candidate and replay dry-run governance shall preserve explicit
+  lane-C dependency anchor (`M244-C013`) and fail closed when release-candidate/replay dry-run
+  dependency references or readiness evidence commands drift.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on
@@ -346,6 +349,8 @@ At minimum, the pass-graph gate shall validate:
   edge-case expansion and robustness evidence drift before downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path diagnostics hardening governance shall preserve explicit lane-D dependency anchors (`M244-D006`) and fail closed on
   diagnostics hardening evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path recovery and determinism hardening governance shall preserve explicit lane-D dependency anchors (`M244-D007`) and fail closed on
+  recovery and determinism hardening evidence drift before downstream runtime projection and metadata integration advances.
 - interop semantic contracts and type mediation governance shall preserve
   deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
   and fail closed on semantic/type mediation drift before downstream interop

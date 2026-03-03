@@ -285,6 +285,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C interop lowering/ABI conformance docs/operator runbook synchronization metadata anchors for `M244-C013`
       with explicit `M244-C012` dependency continuity and fail-closed evidence
       so lowering/ABI docs/runbook synchronization drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C014`
+      with explicit `M244-C013` dependency continuity and fail-closed evidence
+      so lowering/ABI release-candidate/replay dry-run drift fails closed.
     - deterministic lane-D runtime/link bridge-path metadata anchors for `M244-D001`
       with explicit dependency tokens (`M244-A001`) and fail-closed evidence continuity
       so runtime/link bridge-path metadata drift fails closed.
@@ -306,6 +309,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-D runtime/link bridge-path diagnostics hardening metadata anchors for `M244-D007`
       with explicit `M244-D006` dependency continuity and fail-closed evidence continuity
       so runtime/link bridge-path diagnostics hardening metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path recovery and determinism hardening metadata anchors for `M244-D008`
+      with explicit `M244-D007` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path recovery and determinism hardening metadata drift fails closed.
    - deterministic lane-B interop semantic/type mediation metadata anchors for `M244-B001`
      with semantic integration + typed handoff determinism evidence, explicit dependency tokens (`none`),
      and fail-closed evidence continuity so interop semantic/type mediation drift fails closed.
