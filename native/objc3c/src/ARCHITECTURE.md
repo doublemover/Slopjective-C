@@ -479,6 +479,11 @@ Current-state note:
   `spec/planning/compiler/m244/m244_b001_interop_semantic_contracts_and_type_mediation_contract_and_architecture_freeze_packet.md`,
   and `package.json` so interop semantic/type mediation anchors and fail-closed dependency-token continuity remain frozen
   before downstream lane-B modular split/scaffolding and integration work begins.
+- M244 lane-B B002 interop semantic contracts/type mediation modular split and scaffolding anchors explicit
+  lane-B modular split artifacts in
+  `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_modular_split_scaffolding_b002_expectations.md`,
+  `spec/planning/compiler/m244/m244_b002_interop_semantic_contracts_and_type_mediation_modular_split_scaffolding_packet.md`,
+  and `package.json` so `M244-B001` dependency continuity and modular split evidence remain fail-closed.
 - M244 lane-E E001 interop conformance gate and operations contract and architecture freeze
   anchors dependency references (`M244-A001`, `M244-B001`, `M244-C001`, and
   `M244-D001`) in
