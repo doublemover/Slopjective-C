@@ -512,6 +512,11 @@ Current-state note:
   `docs/contracts/m244_interop_lowering_and_abi_conformance_edge_case_and_compatibility_completion_c005_expectations.md`,
   `spec/planning/compiler/m244/m244_c005_interop_lowering_and_abi_conformance_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so `M244-C004` dependency continuity and edge-case completion evidence remain fail-closed.
+- M244 lane-C C006 interop lowering/ABI conformance edge-case expansion and robustness anchors
+  explicit lane-C edge-case expansion artifacts in
+  `docs/contracts/m244_interop_lowering_and_abi_conformance_edge_case_expansion_and_robustness_c006_expectations.md`,
+  `spec/planning/compiler/m244/m244_c006_interop_lowering_and_abi_conformance_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so `M244-C005` dependency continuity and edge-case expansion evidence remain fail-closed.
 - M244 lane-D D001 runtime/link bridge-path anchors explicit
   lane-D contract and architecture freeze artifacts in
   `docs/contracts/m244_runtime_link_bridge_path_contract_and_architecture_freeze_d001_expectations.md`,
