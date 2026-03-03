@@ -1021,3 +1021,5 @@ deterministic lane-C typed sema-to-lowering advanced-core-shard2 metadata anchor
 deterministic lane-C typed sema-to-lowering advanced-edge-compatibility-shard2 metadata anchors for `M227-C022` must remain synchronized across typed edge-compatibility-shard2 keys, parse edge-compatibility-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 edge compatibility closure can pass.
 
 deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard2 metadata anchors for `M227-C023` must remain synchronized across typed diagnostics-shard2 keys, parse diagnostics-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-conformance-shard2 metadata anchors for `M227-C024` must remain synchronized across typed conformance-shard2 keys, parse conformance-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 conformance closure can pass.
