@@ -550,6 +550,11 @@ Current-state note:
   `pipeline/objc3_parse_lowering_readiness_surface.h` so parser diagnostic
   robustness drift fails closed before parse-recovery determinism and
   conformance readiness advances.
+- M243 lane-A A007 diagnostics hardening anchors parser diagnostic grammar-hook
+  diagnostics hardening guardrails in `pipeline/objc3_frontend_types.h` and
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so diagnostics hardening
+  drift fails closed before parse-recovery and conformance maturity gates
+  advance.
 - M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
   sema diagnostics bus and pass-flow freeze in
   `sema/objc3_sema_pass_manager_contract.h` and
@@ -588,6 +593,12 @@ Current-state note:
   `pipeline/objc3_frontend_pipeline.cpp`, and
   `pipeline/objc3_frontend_artifacts.cpp` so compatibility handoff continuity
   and edge-case replay-key transport remain deterministic and fail-closed.
+- M243 lane-C C006 edge-case expansion and robustness anchors lowering/runtime diagnostics surfacing
+  edge-case robustness closure in
+  `pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so expansion consistency and
+  robustness replay-key continuity remain deterministic and fail-closed.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`
@@ -622,6 +633,11 @@ Current-state note:
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_diagnostics_hardening_surface.h`
   and `pipeline/objc3_frontend_pipeline.cpp` so lane-B diagnostics hardening
   closure remains deterministic and fail-closed for semantic diagnostics UX/fix-it.
+- M243 lane-B B008 semantic diagnostic taxonomy/fix-it synthesis recovery and determinism hardening
+  anchors recovery-determinism consistency/readiness and recovery-key continuity in
+  `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_recovery_determinism_hardening_surface.h`
+  and `pipeline/objc3_frontend_pipeline.cpp` so lane-B recovery/determinism closure
+  remains deterministic and fail-closed for semantic diagnostics UX/fix-it.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
