@@ -338,6 +338,8 @@ At minimum, the pass-graph gate shall validate:
   edge-case and compatibility completion evidence drift before downstream runtime projection and metadata integration advances.
 - runtime/link bridge-path edge-case expansion and robustness governance shall preserve explicit lane-D dependency anchors (`M244-D005`) and fail closed on
   edge-case expansion and robustness evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path diagnostics hardening governance shall preserve explicit lane-D dependency anchors (`M244-D006`) and fail closed on
+  diagnostics hardening evidence drift before downstream runtime projection and metadata integration advances.
 - interop semantic contracts and type mediation governance shall preserve
   deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
   and fail closed on semantic/type mediation drift before downstream interop
