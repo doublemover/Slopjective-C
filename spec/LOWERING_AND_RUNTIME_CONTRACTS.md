@@ -924,6 +924,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-D dependency anchors (`M248-D006`) and fail
   closed on diagnostics hardening evidence drift before downstream platform
   replay and lane-e recovery and determinism hardening advances.
+- runner/platform operations recovery and determinism hardening governance
+  shall preserve explicit lane-D dependency anchors (`M248-D007`) and fail
+  closed on recovery and determinism hardening evidence drift before downstream
+  platform replay and lane-e conformance matrix advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 

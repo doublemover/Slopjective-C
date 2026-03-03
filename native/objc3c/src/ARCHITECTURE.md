@@ -807,6 +807,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d007_runner_reliability_and_platform_operations_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening continuity remains deterministic
   and fail-closed against `M248-D006` dependency drift.
+- M248 lane-D D008 runner/platform operations recovery and determinism hardening
+  anchors explicit lane-D recovery/determinism artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_recovery_and_determinism_hardening_d008_expectations.md`,
+  `spec/planning/compiler/m248/m248_d008_runner_reliability_and_platform_operations_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism continuity remains deterministic
+  and fail-closed against `M248-D007` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

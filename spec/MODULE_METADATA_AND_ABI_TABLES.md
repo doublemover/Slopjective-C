@@ -821,6 +821,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M248-D005` dependency continuity and fail-closed robustness evidence continuity.
   - deterministic lane-D runner/platform operations diagnostics hardening metadata anchors for `M248-D007`
     with explicit `M248-D006` dependency continuity and fail-closed diagnostics evidence continuity.
+  - deterministic lane-D runner/platform operations recovery and determinism hardening metadata anchors for `M248-D008`
+    with explicit `M248-D007` dependency continuity and fail-closed recovery/determinism evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 
