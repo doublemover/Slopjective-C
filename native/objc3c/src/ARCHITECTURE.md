@@ -123,6 +123,13 @@ Current-state note:
   `pipeline/objc3_frontend_types.h`, and
   `pipeline/objc3_frontend_artifacts.cpp` so advanced-core shard1 drift fails
   closed before advanced edge/diagnostics/conformance shard gates.
+- M228 lane-A A016 integration closeout and gate sign-off anchors deterministic
+  toolchain/runtime GA integration-closeout sign-off consistency/readiness/key
+  continuity (`toolchain_runtime_ga_operations_integration_closeout_signoff_*`)
+  in `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so lane-A closeout drift fails closed
+  before lane-B/C/D and lane-E integration sign-off.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
@@ -270,6 +277,12 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime object emission/link-path routing remains fail-closed when
   backend route/output conformance-corpus evidence drifts.
+- M228 lane-D D011 performance and quality guardrails anchors deterministic
+  performance/quality consistency/readiness and performance-quality-key
+  continuity (`performance_quality_guardrails_*`) in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
+  toolchain/runtime object emission/link-path routing remains fail-closed when
+  backend route/output quality guardrail evidence drifts.
 - M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
   references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
   `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,

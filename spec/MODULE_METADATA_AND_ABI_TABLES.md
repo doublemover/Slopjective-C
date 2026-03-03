@@ -108,6 +108,10 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-A advanced core workpack (shard 1) anchors for
      `A014`, toolchain/runtime GA advanced-core consistency/readiness, and
      advanced-core-key continuity evidence,
+   - deterministic lane-A integration closeout and gate sign-off anchors for
+     `A015`, toolchain/runtime GA integration-closeout sign-off
+     consistency/readiness, and integration-closeout sign-off key continuity
+     evidence,
    - deterministic ownership-aware lowering edge-case compatibility
      consistency/readiness and compatibility-key anchors for lane-B closeout
      evidence,
@@ -150,6 +154,9 @@ A conforming implementation shall preserve, for all exported declarations:
      evidence continuity,
    - deterministic lane-D toolchain/runtime conformance corpus
      consistency/readiness and conformance-corpus-key anchors for fail-closed
+     evidence continuity,
+   - deterministic lane-D toolchain/runtime performance and quality guardrails
+     consistency/readiness and performance-quality-key anchors for fail-closed
      evidence continuity,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,

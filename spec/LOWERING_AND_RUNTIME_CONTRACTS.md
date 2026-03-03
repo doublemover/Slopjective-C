@@ -141,6 +141,10 @@ At minimum, the pass-graph gate shall validate:
   toolchain/runtime GA advanced-core consistency/readiness and
   advanced-core-key continuity (`A014`) so lane-A advanced shard closure fails
   closed when advanced-core evidence drifts.
+- integration closeout and gate sign-off wiring shall preserve deterministic
+  toolchain/runtime GA integration-closeout sign-off
+  consistency/readiness/key continuity (`A015`) so lane-A closeout fails
+  closed when integration sign-off evidence drifts.
 - IR-emission core-feature expansion shall remain deterministic, preserve
   expansion readiness/key continuity, and fail closed when pass-graph
   expansion continuity or expansion metadata transport drifts.
@@ -194,6 +198,10 @@ At minimum, the pass-graph gate shall validate:
   preserve conformance-corpus consistency/readiness and
   conformance-corpus-key continuity, and fail closed when backend route/output
   conformance-corpus evidence drifts.
+- toolchain/runtime performance and quality guardrails shall remain
+  deterministic, preserve performance/quality consistency/readiness and
+  performance-quality-key continuity, and fail closed when backend route/output
+  quality guardrail evidence drifts.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.
