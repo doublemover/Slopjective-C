@@ -808,9 +808,11 @@ A conforming implementation shall preserve, for all exported declarations:
   - deterministic lane-D runner operations metadata anchors for `M248-D001`
     with compile-route evidence and perf-budget continuity so platform
     operation drift fails closed.
-   - deterministic lane-D runner modular split metadata anchors for `M248-D002`
+  - deterministic lane-D runner modular split metadata anchors for `M248-D002`
      with explicit `M248-D001` dependency continuity so platform scaffolding
      drift fails closed.
+  - deterministic lane-D runner core feature metadata anchors for `M248-D003`
+    with explicit `M248-D002` dependency continuity so nullable-tool-path core feature drift fails closed.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

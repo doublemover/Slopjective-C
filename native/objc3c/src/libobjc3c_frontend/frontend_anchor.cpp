@@ -38,6 +38,13 @@ static bool IsNullOrEmpty(const char *text) {
   return text == nullptr || text[0] == '\0';
 }
 
+static std::filesystem::path OptionalFilesystemPath(const char *text) {
+  if (IsNullOrEmpty(text)) {
+    return std::filesystem::path();
+  }
+  return std::filesystem::path(text);
+}
+
 static std::string ToLowerCopy(std::string value) {
   for (char &ch : value) {
     ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
@@ -503,12 +510,14 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
 #else
       const bool llvm_direct_backend_enabled = false;
 #endif
+      const std::filesystem::path clang_path = OptionalFilesystemPath(options->clang_path);
+      const std::filesystem::path llc_path = OptionalFilesystemPath(options->llc_path);
       const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
           BuildObjc3ToolchainRuntimeGaOperationsScaffold(
               wants_clang_backend,
               wants_llvm_direct_backend,
-              std::filesystem::path(options->clang_path),
-              std::filesystem::path(options->llc_path),
+              clang_path,
+              llc_path,
               llvm_direct_backend_enabled,
               ir_out,
               object_out);
@@ -530,9 +539,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         std::string backend_output_error;
         std::string backend_error;
         if (wants_clang_backend) {
-          compile_status = RunIRCompile(std::filesystem::path(options->clang_path), ir_out, object_out);
+          compile_status = RunIRCompile(clang_path, ir_out, object_out);
         } else {
-          compile_status = RunIRCompileLLVMDirect(std::filesystem::path(options->llc_path), ir_out, object_out, backend_error);
+          compile_status = RunIRCompileLLVMDirect(llc_path, ir_out, object_out, backend_error);
         }
         if (compile_status == 0) {
           if (!WriteTextFile(backend_out, backend_text, backend_output_error)) {

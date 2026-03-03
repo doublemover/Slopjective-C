@@ -777,6 +777,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d002_runner_reliability_and_platform_operations_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split runner continuity remains deterministic
   and fail-closed against `M248-D001` dependency drift.
+- M248 lane-D D003 runner core feature implementation anchors explicit lane-D
+  core-feature artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_core_feature_implementation_d003_expectations.md`,
+  `spec/planning/compiler/m248/m248_d003_runner_reliability_and_platform_operations_core_feature_implementation_packet.md`,
+  and `package.json` so nullable-tool-path safety continuity remains
+  deterministic and fail-closed against `M248-D002` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

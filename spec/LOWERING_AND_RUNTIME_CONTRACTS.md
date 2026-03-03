@@ -905,6 +905,10 @@ At minimum, the pass-graph gate shall validate:
 - runner/platform operations modular split scaffolding shall preserve explicit
   lane-D dependency anchors (`M248-D001`) and fail closed on scaffolding
   evidence drift before platform replay readiness advances.
+- runner/platform operations core feature implementation shall preserve
+  explicit lane-D dependency anchors (`M248-D002`) and fail closed on
+  nullable-tool-path safety drift before runner/platform lane-D readiness
+  advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
