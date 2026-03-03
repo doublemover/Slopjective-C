@@ -10,6 +10,8 @@
 #include <string>
 #include <system_error>
 
+#include "io/objc3_cli_reporting_output_contract_scaffold.h"
+
 namespace fs = std::filesystem;
 
 namespace {
@@ -346,6 +348,28 @@ int main(int argc, char **argv) {
 
   const fs::path summary_path =
       options.summary_out.empty() ? (options.out_dir / (options.emit_prefix + ".c_api_summary.json")) : options.summary_out;
+  const bool stage_report_output_contract_ready =
+      result.lex.stage == OBJC3C_FRONTEND_STAGE_LEX &&
+      result.parse.stage == OBJC3C_FRONTEND_STAGE_PARSE &&
+      result.sema.stage == OBJC3C_FRONTEND_STAGE_SEMA &&
+      result.lower.stage == OBJC3C_FRONTEND_STAGE_LOWER &&
+      result.emit.stage == OBJC3C_FRONTEND_STAGE_EMIT;
+  const Objc3CliReportingOutputContractScaffold cli_reporting_output_contract_scaffold =
+      BuildObjc3CliReportingOutputContractScaffold(
+          options.out_dir,
+          options.emit_prefix,
+          summary_path,
+          stage_report_output_contract_ready);
+  std::string output_contract_scaffold_reason;
+  if (!IsObjc3CliReportingOutputContractScaffoldReady(
+          cli_reporting_output_contract_scaffold,
+          output_contract_scaffold_reason)) {
+    std::cerr << "cli/reporting output scaffold fail-closed: "
+              << output_contract_scaffold_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
   const std::string summary_json = BuildSummaryJson(options, status, result, last_error);
   std::string summary_error;
   if (!WriteSummary(summary_path, summary_json, summary_error)) {
