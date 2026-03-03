@@ -155,6 +155,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M227-D007` dependency continuity and fail-closed recovery-determinism evidence continuity so recovery/determinism evidence drift fails closed,
     - deterministic lane-D runtime-facing type metadata conformance matrix implementation metadata anchors for `M227-D009`
       with explicit `M227-D008` dependency continuity and fail-closed conformance-matrix evidence continuity so conformance-matrix evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata conformance corpus expansion metadata anchors for `M227-D010`
+      with explicit `M227-D009` dependency continuity and fail-closed conformance-corpus evidence continuity so conformance-corpus evidence drift fails closed,
     - deterministic lane-D toolchain/runtime edge-case compatibility
       consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness
