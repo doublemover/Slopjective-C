@@ -1117,3 +1117,5 @@ typed sema-to-lowering cross-lane integration sync governance shall preserve exp
 typed sema-to-lowering docs/runbook synchronization governance shall preserve explicit lane-C dependency anchors (`M227-C013`, `M227-C012`) so typed docs/runbook continuity and parse/lowering alignment stay deterministic and fail-closed when synchronization drift occurs.
 
 typed sema-to-lowering release-candidate and replay dry-run governance shall preserve explicit lane-C dependency anchors (`M227-C014`, `M227-C013`) so typed release-candidate/replay continuity and parse/lowering alignment stay deterministic and fail-closed when dry-run drift occurs.
+
+typed sema-to-lowering advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C015`, `M227-C014`) so typed advanced-core continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.

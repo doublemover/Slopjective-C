@@ -87,6 +87,8 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool typed_docs_runbook_sync_ready = false;
   bool typed_release_candidate_replay_dry_run_consistent = false;
   bool typed_release_candidate_replay_dry_run_ready = false;
+  bool typed_advanced_core_shard1_consistent = false;
+  bool typed_advanced_core_shard1_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -113,6 +115,7 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string typed_cross_lane_integration_key;
   std::string typed_docs_runbook_sync_key;
   std::string typed_release_candidate_replay_dry_run_key;
+  std::string typed_advanced_core_shard1_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
@@ -237,6 +240,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool typed_sema_docs_runbook_sync_ready = false;
   bool typed_sema_release_candidate_replay_dry_run_consistent = false;
   bool typed_sema_release_candidate_replay_dry_run_ready = false;
+  bool typed_sema_advanced_core_shard1_consistent = false;
+  bool typed_sema_advanced_core_shard1_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_sema_core_feature_case_count = 0;
@@ -312,6 +317,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string typed_sema_cross_lane_integration_key;
   std::string typed_sema_docs_runbook_sync_key;
   std::string typed_sema_release_candidate_replay_dry_run_key;
+  std::string typed_sema_advanced_core_shard1_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

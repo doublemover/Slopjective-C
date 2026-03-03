@@ -992,3 +992,5 @@ deterministic lane-C typed sema-to-lowering cross-lane integration metadata anch
 deterministic lane-C typed sema-to-lowering docs/runbook synchronization metadata anchors for `M227-C013` must remain synchronized across typed docs/runbook keys, parse docs/runbook keys, and readiness alignment metadata surfaces before lane-C docs/runbook closure can pass.
 
 deterministic lane-C typed sema-to-lowering release-candidate/replay metadata anchors for `M227-C014` must remain synchronized across typed dry-run keys, parse dry-run keys, and readiness alignment metadata surfaces before lane-C dry-run closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-core-shard1 metadata anchors for `M227-C015` must remain synchronized across typed shard-1 keys, parse shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 closure can pass.
