@@ -471,6 +471,11 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_diagnostics_hardening_a007_expectations.md`,
   `spec/planning/compiler/m244/m244_a007_interop_surface_syntax_and_declaration_forms_diagnostics_hardening_packet.md`,
   and `package.json` so `M244-A006` dependency continuity and diagnostics evidence remain fail-closed.
+- M244 lane-A A008 interop surface syntax/declaration-form recovery and determinism hardening anchors
+  explicit lane-A recovery/determinism artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_recovery_and_determinism_hardening_a008_expectations.md`,
+  `spec/planning/compiler/m244/m244_a008_interop_surface_syntax_and_declaration_forms_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so `M244-A007` dependency continuity and recovery evidence remain fail-closed.
 - M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
   contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,

@@ -228,6 +228,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A interop surface diagnostics hardening metadata anchors for `M244-A007`
       with explicit `M244-A006` dependency continuity and fail-closed evidence
       so interop diagnostics hardening drift fails closed.
+    - deterministic lane-A interop surface recovery and determinism hardening metadata anchors for `M244-A008`
+      with explicit `M244-A007` dependency continuity and fail-closed evidence
+      so interop recovery and determinism hardening drift fails closed.
    - deterministic lane-C interop lowering/ABI conformance metadata anchors for `M244-C001`
      with explicit dependency tokens (`none`) and fail-closed evidence continuity
      so lowering/ABI conformance metadata drift fails closed.
