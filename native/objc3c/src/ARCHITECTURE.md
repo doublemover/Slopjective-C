@@ -578,6 +578,12 @@ Current-state note:
   `spec/planning/compiler/m244/m244_d005_runtime_link_bridge_path_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so runtime/link bridge-path edge-case and compatibility completion continuity remains deterministic
   and fail-closed against `M244-D004` dependency drift.
+- M244 lane-D D006 runtime/link bridge-path edge-case expansion and robustness anchors
+  explicit lane-D edge-case expansion and robustness artifacts in
+  `docs/contracts/m244_runtime_link_bridge_path_edge_case_expansion_and_robustness_d006_expectations.md`,
+  `spec/planning/compiler/m244/m244_d006_runtime_link_bridge_path_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so runtime/link bridge-path edge-case expansion and robustness continuity remains deterministic
+  and fail-closed against `M244-D005` dependency drift.
 - M244 lane-B B001 interop semantic contracts and type mediation anchors explicit
   lane-B contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_contract_freeze_b001_expectations.md`,
