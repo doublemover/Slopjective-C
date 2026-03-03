@@ -14,6 +14,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool pass_graph_edge_case_robustness_ready = false;
   bool pass_graph_diagnostics_hardening_ready = false;
   bool pass_graph_recovery_determinism_ready = false;
+  bool pass_graph_conformance_matrix_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
   bool expansion_metadata_transport_ready = false;
@@ -22,21 +23,25 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool parse_artifact_edge_case_robustness_consistent = false;
   bool parse_artifact_diagnostics_hardening_consistent = false;
   bool parse_artifact_recovery_determinism_hardening_consistent = false;
+  bool parse_artifact_conformance_matrix_consistent = false;
   bool edge_case_expansion_consistent = false;
   bool diagnostics_hardening_consistent = false;
   bool recovery_determinism_consistent = false;
+  bool conformance_matrix_consistent = false;
   bool parse_artifact_edge_case_robustness_ready = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool edge_case_compatibility_key_transport_ready = false;
   bool edge_case_robustness_key_transport_ready = false;
   bool diagnostics_hardening_key_transport_ready = false;
   bool recovery_determinism_key_transport_ready = false;
+  bool conformance_matrix_key_transport_ready = false;
   bool core_feature_impl_ready = false;
   bool core_feature_expansion_ready = false;
   bool core_feature_edge_case_compatibility_ready = false;
   bool core_feature_edge_case_robustness_ready = false;
   bool core_feature_diagnostics_hardening_ready = false;
   bool core_feature_recovery_determinism_ready = false;
+  bool core_feature_conformance_matrix_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string expansion_key;
@@ -44,21 +49,25 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string pass_graph_edge_case_robustness_key;
   std::string pass_graph_diagnostics_hardening_key;
   std::string pass_graph_recovery_determinism_key;
+  std::string pass_graph_conformance_matrix_key;
   std::string compatibility_handoff_key;
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_recovery_determinism_hardening_key;
+  std::string parse_artifact_conformance_matrix_key;
   std::string parse_artifact_edge_case_expansion_key;
   std::string parse_artifact_edge_robustness_key;
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
   std::string recovery_determinism_key;
+  std::string conformance_matrix_key;
   std::string failure_reason;
   std::string expansion_failure_reason;
   std::string edge_case_compatibility_failure_reason;
   std::string edge_case_robustness_failure_reason;
   std::string diagnostics_hardening_failure_reason;
   std::string recovery_determinism_failure_reason;
+  std::string conformance_matrix_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -208,6 +217,33 @@ inline std::string BuildObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningKe
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeatureConformanceMatrixKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-conformance-matrix:v1:"
+      << "recovery-determinism-ready="
+      << (surface.core_feature_recovery_determinism_ready ? "true" : "false")
+      << ";pass-graph-conformance-matrix-ready="
+      << (surface.pass_graph_conformance_matrix_ready ? "true" : "false")
+      << ";parse-artifact-conformance-matrix-consistent="
+      << (surface.parse_artifact_conformance_matrix_consistent ? "true"
+                                                               : "false")
+      << ";parse-artifact-replay-key-deterministic="
+      << (surface.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";conformance-matrix-consistent="
+      << (surface.conformance_matrix_consistent ? "true" : "false")
+      << ";conformance-matrix-key-transport-ready="
+      << (surface.conformance_matrix_key_transport_ready ? "true" : "false")
+      << ";conformance-matrix-ready="
+      << (surface.core_feature_conformance_matrix_ready ? "true" : "false")
+      << ";pass-graph-conformance-matrix-key="
+      << surface.pass_graph_conformance_matrix_key
+      << ";parse-artifact-conformance-matrix-key="
+      << surface.parse_artifact_conformance_matrix_key
+      << ";recovery-determinism-key=" << surface.recovery_determinism_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -234,6 +270,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_recovery_determinism_ready =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .recovery_determinism_ready;
+  surface.pass_graph_conformance_matrix_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .conformance_matrix_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -250,6 +289,8 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_artifact_diagnostics_hardening_consistent;
   surface.parse_artifact_recovery_determinism_hardening_consistent =
       parse_surface.parse_recovery_determinism_hardening_consistent;
+  surface.parse_artifact_conformance_matrix_consistent =
+      parse_surface.parse_lowering_conformance_matrix_consistent;
   surface.edge_case_expansion_consistent =
       parse_surface.long_tail_grammar_edge_case_expansion_consistent;
   surface.parse_artifact_edge_case_robustness_ready =
@@ -268,11 +309,16 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_recovery_determinism_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .recovery_determinism_key;
+  surface.pass_graph_conformance_matrix_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .conformance_matrix_key;
   surface.compatibility_handoff_key = parse_surface.compatibility_handoff_key;
   surface.parse_artifact_diagnostics_hardening_key =
       parse_surface.parse_artifact_diagnostics_hardening_key;
   surface.parse_artifact_recovery_determinism_hardening_key =
       parse_surface.parse_recovery_determinism_hardening_key;
+  surface.parse_artifact_conformance_matrix_key =
+      parse_surface.parse_lowering_conformance_matrix_key;
   surface.parse_artifact_edge_case_expansion_key =
       parse_surface.long_tail_grammar_expansion_key;
   surface.parse_artifact_edge_robustness_key =
@@ -347,6 +393,21 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.recovery_determinism_key_transport_ready;
   surface.recovery_determinism_key =
       BuildObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningKey(surface);
+  surface.conformance_matrix_consistent =
+      surface.core_feature_recovery_determinism_ready &&
+      surface.parse_artifact_conformance_matrix_consistent &&
+      surface.parse_artifact_replay_key_deterministic;
+  surface.conformance_matrix_key_transport_ready =
+      !surface.pass_graph_conformance_matrix_key.empty() &&
+      !surface.parse_artifact_conformance_matrix_key.empty() &&
+      !surface.recovery_determinism_key.empty();
+  surface.core_feature_conformance_matrix_ready =
+      surface.core_feature_recovery_determinism_ready &&
+      surface.pass_graph_conformance_matrix_ready &&
+      surface.conformance_matrix_consistent &&
+      surface.conformance_matrix_key_transport_ready;
+  surface.conformance_matrix_key =
+      BuildObjc3IREmissionCoreFeatureConformanceMatrixKey(surface);
 
   if (surface.core_feature_expansion_ready) {
     surface.expansion_failure_reason.clear();
@@ -462,6 +523,28 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
         "IR emission core feature recovery determinism hardening surface is not ready";
   }
 
+  if (surface.core_feature_conformance_matrix_ready) {
+    surface.conformance_matrix_failure_reason.clear();
+  } else if (!surface.core_feature_recovery_determinism_ready) {
+    surface.conformance_matrix_failure_reason =
+        "IR emission core feature recovery determinism hardening is not ready";
+  } else if (!surface.pass_graph_conformance_matrix_ready) {
+    surface.conformance_matrix_failure_reason =
+        "pass-graph conformance matrix is not ready";
+  } else if (!surface.parse_artifact_conformance_matrix_consistent) {
+    surface.conformance_matrix_failure_reason =
+        "IR emission core feature parse artifact conformance matrix is inconsistent";
+  } else if (!surface.conformance_matrix_consistent) {
+    surface.conformance_matrix_failure_reason =
+        "IR emission core feature conformance matrix is inconsistent";
+  } else if (!surface.conformance_matrix_key_transport_ready) {
+    surface.conformance_matrix_failure_reason =
+        "IR emission core feature conformance matrix key transport is not ready";
+  } else {
+    surface.conformance_matrix_failure_reason =
+        "IR emission core feature conformance matrix surface is not ready";
+  }
+
   if (surface.core_feature_impl_ready) {
     return surface;
   }
@@ -574,5 +657,21 @@ inline bool IsObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningReady(
       surface.recovery_determinism_failure_reason.empty()
           ? "IR emission core feature recovery determinism hardening surface is not ready"
           : surface.recovery_determinism_failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeatureConformanceMatrixReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_conformance_matrix_ready &&
+      surface.conformance_matrix_key_transport_ready &&
+      !surface.conformance_matrix_key.empty()) {
+    reason.clear();
+    return true;
+  }
+  reason =
+      surface.conformance_matrix_failure_reason.empty()
+          ? "IR emission core feature conformance matrix surface is not ready"
+          : surface.conformance_matrix_failure_reason;
   return false;
 }
