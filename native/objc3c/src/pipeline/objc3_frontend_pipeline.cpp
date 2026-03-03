@@ -25,6 +25,7 @@
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_edge_case_compatibility_surface.h"
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_edge_case_expansion_and_robustness_surface.h"
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_diagnostics_hardening_surface.h"
+#include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_recovery_determinism_hardening_surface.h"
 #include "pipeline/objc3_semantic_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -810,6 +811,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface =
       BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface(
           result.semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface,
+          result.parse_lowering_readiness_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_recovery_determinism_hardening_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisRecoveryDeterminismHardeningSurface(
+          result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface,
           result.parse_lowering_readiness_surface);
   result.semantic_stability_spec_delta_closure_scaffold =
       BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(

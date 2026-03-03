@@ -412,6 +412,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve lane-B dependency anchors (`M243-B006`) and fail closed on
   diagnostics-hardening consistency, diagnostics-hardening readiness, or
   diagnostics-hardening-key continuity drift before recovery and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis recovery and determinism hardening
+  shall preserve lane-B dependency anchors (`M243-B007`) and fail closed on
+  recovery-determinism consistency, recovery-determinism readiness, or
+  recovery-determinism-key continuity drift before conformance expansions advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

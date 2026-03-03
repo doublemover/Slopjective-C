@@ -304,6 +304,10 @@ A conforming implementation shall preserve, for all exported declarations:
      diagnostics hardening metadata anchors for `M243-B007` with
      explicit `M243-B006` dependency continuity so diagnostics hardening
      drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     recovery and determinism hardening metadata anchors for `M243-B008` with
+     explicit `M243-B007` dependency continuity so recovery determinism
+     drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
