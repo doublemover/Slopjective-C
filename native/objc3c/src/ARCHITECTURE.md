@@ -51,6 +51,11 @@ Current-state note:
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
   lane-A readiness wiring so conformance-matrix or corpus replay drift fails
   closed before conformance-corpus expansion workpacks.
+- M227 lane-A A010 conformance corpus expansion anchors semantic-pass
+  corpus accounting/replay continuity (`parser_sema_conformance_corpus` and
+  `deterministic_parser_sema_conformance_corpus`) in handoff/manager contracts
+  and lane-A readiness wiring so conformance-corpus drift fails closed before
+  lane-A integration closeout workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,
