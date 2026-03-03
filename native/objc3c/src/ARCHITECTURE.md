@@ -446,6 +446,11 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_modular_split_scaffolding_a002_expectations.md`,
   `spec/planning/compiler/m244/m244_a002_interop_surface_syntax_and_declaration_forms_modular_split_scaffolding_packet.md`,
   and `package.json` so `M244-A001` dependency continuity and modular split evidence remain fail-closed.
+- M244 lane-A A003 interop surface syntax/declaration-form core feature implementation anchors
+  explicit lane-A implementation artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_core_feature_implementation_a003_expectations.md`,
+  `spec/planning/compiler/m244/m244_a003_interop_surface_syntax_and_declaration_forms_core_feature_implementation_packet.md`,
+  and `package.json` so `M244-A002` dependency continuity and core-feature evidence remain fail-closed.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
