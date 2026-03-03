@@ -120,7 +120,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
         ),
         (
             "M228-B005-ART-07",
-            "pipeline_result.parse_lowering_readiness_surface\n              .parse_artifact_edge_robustness_key);",
+            "pipeline_result.parse_lowering_readiness_surface\n              .parse_artifact_edge_robustness_key,",
         ),
         (
             "M228-B005-ART-08",
