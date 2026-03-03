@@ -210,6 +210,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
       with explicit dependency tokens (`none`) and fail-closed evidence continuity
       so interop declaration-form metadata drift fails closed.
+    - deterministic lane-A interop surface modular split metadata anchors for `M244-A002`
+      with explicit `M244-A001` dependency continuity and fail-closed evidence
+      so interop modular split scaffolding drift fails closed.
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.

@@ -256,6 +256,9 @@ At minimum, the pass-graph gate shall validate:
   deterministic lane-A anchors, explicit dependency tokens (`none` for `M244-A001`),
   and fail closed on declaration-form boundary drift before downstream interop
   lowering/runtime integration advances.
+- interop surface syntax/declaration-form modular split scaffolding governance shall preserve explicit
+  lane-A dependency anchor (`M244-A001`) and fail closed when modular split
+  dependency references or readiness evidence commands drift.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
