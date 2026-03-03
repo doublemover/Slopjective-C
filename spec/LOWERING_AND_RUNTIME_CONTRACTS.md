@@ -522,6 +522,12 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_advanced_conformance_ready`, or
   `toolchain_runtime_ga_operations_advanced_conformance_key` drift before
   advanced integration validation advances.
+- semantic-pass advanced integration workpack (shard 1) wiring shall preserve deterministic
+  integration dependency anchors (`M227-A019`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_integration_consistent`,
+  `toolchain_runtime_ga_operations_advanced_integration_ready`, or
+  `toolchain_runtime_ga_operations_advanced_integration_key` drift before
+  advanced performance validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before

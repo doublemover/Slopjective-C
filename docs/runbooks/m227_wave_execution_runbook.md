@@ -14,6 +14,7 @@
 - `objc3c-semantic-pass-advanced-edge-compatibility-workpack-shard1/m227-a016-v1`
 - `objc3c-semantic-pass-advanced-diagnostics-workpack-shard1/m227-a017-v1`
 - `objc3c-semantic-pass-advanced-conformance-workpack-shard1/m227-a018-v1`
+- `objc3c-semantic-pass-advanced-integration-workpack-shard1/m227-a019-v1`
 
 ## Operator Command Sequence
 
@@ -41,6 +42,9 @@
 22. `python scripts/check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py`
 23. `python -m pytest tests/tooling/test_check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py -q`
 24. `npm run check:objc3c:m227-a018-lane-a-readiness`
+25. `python scripts/check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py`
+26. `python -m pytest tests/tooling/test_check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py -q`
+27. `npm run check:objc3c:m227-a019-lane-a-readiness`
 
 ## Evidence
 
