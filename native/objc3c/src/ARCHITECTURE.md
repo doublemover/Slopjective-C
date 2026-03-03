@@ -39,6 +39,11 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-b001-lane-b-readiness`) so canonical
   reference/message/bridge-top type-form routing in sema remains deterministic
   and fail-closed against ad-hoc compatibility drift.
+- M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
+  parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
+  `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
+  lane-A readiness wiring so conformance-matrix or corpus replay drift fails
+  closed before conformance-corpus expansion workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

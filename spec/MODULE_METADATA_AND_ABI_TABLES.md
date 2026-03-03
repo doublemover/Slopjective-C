@@ -401,6 +401,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-B type-system completeness for ObjC3 forms metadata anchors for `M227-B001`
       with canonical reference/message/bridge-top form evidence and semantic-pass fail-closed continuity
       so canonical ObjC type-form drift fails closed.
+    - deterministic lane-A semantic-pass conformance matrix metadata anchors for `M227-A009`
+      with parser/sema conformance-matrix evidence and corpus replay continuity
+      so parser/sema conformance-matrix drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.
