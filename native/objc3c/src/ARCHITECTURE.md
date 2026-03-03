@@ -1976,3 +1976,6 @@ Forbidden:
 - M227 lane-C C008 typed sema-to-lowering recovery and determinism hardening anchors
   require fail-closed recovery/determinism continuity between typed handoff
   surfaces and parse/lowering readiness before lane-C recovery closure can pass.
+- M227 lane-C C009 typed sema-to-lowering conformance-matrix implementation anchors
+  require fail-closed conformance-matrix continuity between typed handoff
+  surfaces and parse/lowering readiness before lane-C matrix closure can pass.
