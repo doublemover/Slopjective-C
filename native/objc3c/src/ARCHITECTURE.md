@@ -91,6 +91,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-d001-lane-d-readiness`) so
   runtime-facing type metadata sema/pipeline/artifact handoff semantics remain
   deterministic and fail-closed against runtime metadata drift.
+- M227 lane-D D002 runtime-facing type metadata modular split/scaffolding anchors
+  explicit lane-D modular split/scaffolding artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_modular_split_d002_expectations.md`,
+  `spec/planning/compiler/m227/m227_d002_runtime_facing_type_metadata_modular_split_packet.md`,
+  and `package.json` (`check:objc3c:m227-d002-lane-d-readiness`) so sema handoff
+  scaffold/pass-flow scaffold and runtime metadata projection continuity remain
+  deterministic and fail-closed against `M227-D001` dependency drift.
 - M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`) in
   `docs/contracts/m227_lane_e_semantic_conformance_quality_gate_expectations.md`,
   `spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`,

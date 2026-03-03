@@ -145,6 +145,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with canonical reference type-form order, runtime dispatch default symbol
       continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
       handoff evidence continuity,
+    - deterministic lane-D runtime-facing type metadata modular split/scaffolding metadata anchors for `M227-D002`
+      with explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed,
     - deterministic lane-D toolchain/runtime edge-case compatibility
       consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness

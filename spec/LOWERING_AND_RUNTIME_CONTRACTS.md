@@ -106,6 +106,9 @@ At minimum, the pass-graph gate shall validate:
   deterministic sema parity handoff, runtime-shim default dispatch symbol
   (`objc3_msgsend_i32`), and fail-closed pipeline/artifact metadata projection
   continuity (`M227-D001`).
+- runtime-facing type metadata modular split/scaffolding governance shall preserve explicit
+  lane-D dependency anchors (`M227-D001`) and fail closed on sema handoff scaffold/pass-flow scaffold
+  or runtime-facing metadata projection drift before runtime-facing core-feature validation advances.
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.
