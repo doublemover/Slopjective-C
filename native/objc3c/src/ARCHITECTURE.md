@@ -435,6 +435,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d002_runner_reliability_and_platform_operations_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split runner continuity remains deterministic
   and fail-closed against `M248-D001` dependency drift.
+- M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
+  lane-A contract and architecture freeze artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m244/m244_a001_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so deterministic anchors, dependency tokens, and fail-closed
+  behavior remain frozen before downstream interop lowering and metadata work begins.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -659,6 +665,13 @@ Current-state note:
   `spec/planning/compiler/m243/m243_c011_lowering_runtime_diagnostics_surfacing_performance_quality_guardrails_packet.md`,
   so diagnostics surfacing readiness evidence remains deterministic and fail-closed
   against `M243-C010` dependency drift.
+- M243 lane-C C012 cross-lane integration sync anchors lowering/runtime diagnostics surfacing
+  cross-lane integration closure in
+  `docs/contracts/m243_lowering_runtime_diagnostics_surfacing_cross_lane_integration_sync_c012_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_c012_lowering_runtime_diagnostics_surfacing_cross_lane_integration_sync_packet.md`,
+  so diagnostics surfacing readiness evidence remains deterministic and fail-closed
+  against `M243-C011` dependency drift.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`
@@ -720,6 +733,12 @@ Current-state note:
   `spec/planning/compiler/m243/m243_b013_semantic_diagnostic_taxonomy_and_fix_it_synthesis_docs_operator_runbook_synchronization_packet.md`,
   and `package.json` (`check:objc3c:m243-b013-lane-b-readiness`) so lane-B docs/runbook synchronization
   closure remains deterministic and fail-closed against `M243-B012` integration sync drift.
+- M243 lane-B B014 semantic diagnostic taxonomy/fix-it synthesis integration closeout and gate sign-off
+  anchors integration closeout/gate-sign-off dependency/readiness continuity in
+  `docs/contracts/m243_semantic_diagnostic_taxonomy_and_fix_it_synthesis_integration_closeout_and_gate_signoff_b014_expectations.md`,
+  `spec/planning/compiler/m243/m243_b014_semantic_diagnostic_taxonomy_and_fix_it_synthesis_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` (`check:objc3c:m243-b014-lane-b-readiness`) so lane-B integration closeout/gate-sign-off
+  closure remains deterministic and fail-closed against `M243-B013` docs/runbook synchronization drift.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
@@ -822,6 +841,13 @@ Current-state note:
   `spec/planning/compiler/m243/m243_d012_cli_reporting_and_output_contract_integration_cross_lane_integration_sync_packet.md`,
   so diagnostics schema/summary output contracts remain deterministic and
   fail-closed against `M243-D011` dependency drift.
+- M243 lane-D D013 docs and operator runbook synchronization anchors CLI/reporting output contract integration
+  docs/runbook synchronization closure in
+  `docs/contracts/m243_cli_reporting_and_output_contract_integration_docs_operator_runbook_synchronization_d013_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_d013_cli_reporting_and_output_contract_integration_docs_operator_runbook_synchronization_packet.md`,
+  so diagnostics schema/summary output contracts remain deterministic and
+  fail-closed against `M243-D012` dependency drift.
 - M243 lane-E E001 diagnostics quality gate/replay policy contract and architecture freeze
   anchors dependency references (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) in

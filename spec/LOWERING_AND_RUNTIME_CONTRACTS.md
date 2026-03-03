@@ -252,6 +252,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M247-E001`, `M247-A002`, `M247-B002`, `M247-C002`,
   `M247-D002`) and fail closed when dependency references or modular split
   evidence commands drift.
+- interop surface syntax and declaration forms governance shall preserve
+  deterministic lane-A anchors, explicit dependency tokens (`none` for `M244-A001`),
+  and fail closed on declaration-form boundary drift before downstream interop
+  lowering/runtime integration advances.
 - suite partitioning and fixture ownership governance shall preserve explicit
   lane-A dependency boundary anchors and fail closed on fixture partition drift
   before parser and recovery replay validation advances.
@@ -363,6 +367,11 @@ At minimum, the pass-graph gate shall validate:
   cross-lane-integration-sync consistency/readiness,
   cross-lane-integration-sync-key continuity, or summary/diagnostics output
   contract drift before lane-E recovery readiness advances.
+- CLI/reporting and output docs and operator runbook synchronization governance shall preserve
+  explicit lane-D dependency anchors (`M243-D012`) and fail closed on
+  docs-runbook-synchronization consistency/readiness,
+  docs-runbook-synchronization-key continuity, or summary/diagnostics output
+  contract drift before lane-E recovery readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
@@ -466,6 +475,11 @@ At minimum, the pass-graph gate shall validate:
   performance/quality guardrails consistency/readiness, guardrails-key
   continuity, or diagnostics surfacing evidence contract drift before lane-C
   readiness advances.
+- lowering/runtime diagnostics surfacing cross-lane integration sync shall preserve
+  explicit lane-C dependency anchors (`M243-C011`) and fail closed on
+  cross-lane-integration-sync consistency/readiness,
+  cross-lane-integration-sync-key continuity, or diagnostics surfacing
+  evidence contract drift before lane-C readiness advances.
 - diagnostic grammar hooks and source precision recovery and determinism
   hardening shall preserve lane-A dependency anchors (`M243-A007`) and fail
   closed on parser diagnostic grammar-hook recovery-determinism consistency,
@@ -523,6 +537,11 @@ At minimum, the pass-graph gate shall validate:
   docs-runbook-synchronization consistency, docs-runbook-synchronization readiness,
   or docs-runbook-synchronization-key continuity drift before downstream lane-B
   integration closures advance.
+- semantic diagnostic taxonomy and fix-it synthesis integration closeout and gate sign-off
+  shall preserve lane-B dependency anchors (`M243-B013`) and fail closed on
+  integration-closeout consistency, integration-closeout readiness,
+  integration-closeout-signoff-key continuity, or downstream lane-B readiness
+  chain drift before cross-lane release integration advances.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

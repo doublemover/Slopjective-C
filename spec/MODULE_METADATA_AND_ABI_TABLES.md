@@ -203,13 +203,16 @@ A conforming implementation shall preserve, for all exported declarations:
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
      assets are seeded.
-   - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
-     `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
-     pending-lane tokens needed to keep modular split governance evidence
-     fail-closed before lane A-D modular split assets are seeded.
-   - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
-     with fixture ownership boundary evidence and parser replay-budget continuity
-     so CI sharding partition drift fails closed.
+    - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
+      `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
+      pending-lane tokens needed to keep modular split governance evidence
+      fail-closed before lane A-D modular split assets are seeded.
+    - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
+      with explicit dependency tokens (`none`) and fail-closed evidence continuity
+      so interop declaration-form metadata drift fails closed.
+    - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
+      with fixture ownership boundary evidence and parser replay-budget continuity
+      so CI sharding partition drift fails closed.
    - deterministic lane-A suite partitioning modular split metadata anchors for
      `M248-A002` with explicit `M248-A001` dependency continuity so fixture
      scaffolding drift fails closed.
@@ -279,6 +282,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M243-D010` dependency continuity so performance/quality guardrail drift fails closed.
   - deterministic lane-D CLI/reporting output cross-lane integration sync metadata anchors for `M243-D012`
     with explicit `M243-D011` dependency continuity so cross-lane integration sync drift fails closed.
+  - deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D013`
+    with explicit `M243-D012` dependency continuity so docs/runbook synchronization drift fails closed.
   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
     continuity so diagnostics surfacing scaffold drift fails closed.
@@ -309,6 +314,9 @@ A conforming implementation shall preserve, for all exported declarations:
       closed.
     - deterministic lane-C lowering/runtime diagnostics surfacing performance and quality guardrails metadata anchors for `M243-C011` with explicit
       `M243-C010` dependency continuity so performance/quality guardrail drift
+      fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing cross-lane integration sync metadata anchors for `M243-C012` with explicit
+      `M243-C011` dependency continuity so cross-lane integration sync drift
       fails closed.
    - deterministic lane-A diagnostic grammar hooks/source precision recovery
      and determinism hardening metadata anchors for `M243-A008` with explicit
@@ -358,6 +366,8 @@ A conforming implementation shall preserve, for all exported declarations:
      docs/operator runbook synchronization metadata anchors for `M243-B013` with
      explicit `M243-B012` dependency continuity so docs/runbook synchronization
      drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis integration closeout and gate sign-off metadata anchors for `M243-B014` with explicit `M243-B013` dependency continuity
+     so integration closeout/gate-sign-off readiness metadata drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
