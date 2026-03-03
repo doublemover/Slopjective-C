@@ -12,6 +12,7 @@
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_scaffold.h"
@@ -1472,6 +1473,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string diagnostics_surfacing_diagnostics_hardening_error;
+  if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingDiagnosticsHardeningSurfaceReady(
+          pipeline_result
+              .lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface,
+          diagnostics_surfacing_diagnostics_hardening_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L325",
+        "LLVM IR emission failed: lowering/runtime diagnostics surfacing diagnostics hardening check failed: " +
+            diagnostics_surfacing_diagnostics_hardening_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
   std::string lowering_pass_graph_error;
   if (!IsObjc3LoweringPipelinePassGraphScaffoldReady(
           pipeline_result.lowering_pipeline_pass_graph_scaffold,
@@ -2552,10 +2568,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                                                                                                         : "false")
            << ",\"parse_recovery_determinism_hardening_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_recovery_determinism_hardening_consistent ? "true"
-                                                                                                         : "false")
+                                                                                                        : "false")
+           << ",\"parser_diagnostic_grammar_hooks_recovery_determinism_consistent\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .parser_diagnostic_grammar_hooks_recovery_determinism_consistent
+                   ? "true"
+                   : "false")
+           << ",\"parser_diagnostic_grammar_hooks_recovery_determinism_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .parser_diagnostic_grammar_hooks_recovery_determinism_ready
+                   ? "true"
+                   : "false")
            << ",\"parse_lowering_conformance_matrix_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_lowering_conformance_matrix_consistent ? "true"
-                                                                                                     : "false")
+                                                                                                    : "false")
            << ",\"parse_lowering_conformance_corpus_consistent\": "
            << (bundle.parse_lowering_readiness_surface.parse_lowering_conformance_corpus_consistent ? "true"
                                                                                                       : "false")
@@ -2722,6 +2748,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << bundle.parse_lowering_readiness_surface.parse_artifact_edge_robustness_key
            << "\",\"parse_recovery_determinism_hardening_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_recovery_determinism_hardening_key
+           << "\",\"parser_diagnostic_grammar_hooks_recovery_determinism_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .parser_diagnostic_grammar_hooks_recovery_determinism_key
            << "\",\"parse_lowering_conformance_matrix_key\":\""
            << bundle.parse_lowering_readiness_surface.parse_lowering_conformance_matrix_key
            << "\",\"parse_lowering_conformance_corpus_key\":\""
