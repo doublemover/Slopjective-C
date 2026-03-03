@@ -128,14 +128,16 @@ def test_contract_fails_closed_when_packet_dependency_anchor_drifts(tmp_path: Pa
 
 def test_contract_fails_closed_when_package_chain_drops_c004_readiness(tmp_path: Path) -> None:
     drift_pkg = tmp_path / "package.json"
-    drift_pkg.write_text(
-        contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8").replace(
-            "npm run check:objc3c:m228-c004-lane-c-readiness && ",
-            "",
-            1,
-        ),
-        encoding="utf-8",
+    package_payload = json.loads(contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"))
+    scripts = package_payload["scripts"]
+    scripts["check:objc3c:m228-e005-lane-e-readiness"] = scripts[
+        "check:objc3c:m228-e005-lane-e-readiness"
+    ].replace(
+        "npm run check:objc3c:m228-c004-lane-c-readiness && ",
+        "",
+        1,
     )
+    drift_pkg.write_text(json.dumps(package_payload, indent=2) + "\n", encoding="utf-8")
 
     summary_out = tmp_path / "summary.json"
     exit_code = contract.run(

@@ -51,6 +51,19 @@ class SnippetCheck:
 
 
 @dataclass(frozen=True)
+class PackageScriptCheck:
+    check_id: str
+    script_key: str
+    expected_value: str
+
+
+@dataclass(frozen=True)
+class PackageScriptKeyCheck:
+    check_id: str
+    script_key: str
+
+
+@dataclass(frozen=True)
 class Finding:
     artifact: str
     check_id: str
@@ -213,19 +226,28 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M228-E005-DOC-PKT-14", "`native/objc3c/src/ARCHITECTURE.md`"),
 )
 
-PACKAGE_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck(
+PACKAGE_SCRIPT_CHECKS: tuple[PackageScriptCheck, ...] = (
+    PackageScriptCheck(
         "M228-E005-CFG-01",
-        '"check:objc3c:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract"',
+        "check:objc3c:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract",
+        "python scripts/check_m228_e005_replay_proof_and_performance_closeout_gate_edge_case_and_compatibility_completion_contract.py",
     ),
-    SnippetCheck(
+    PackageScriptCheck(
         "M228-E005-CFG-02",
-        '"test:tooling:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract"',
+        "test:tooling:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract",
+        "python -m pytest tests/tooling/test_check_m228_e005_replay_proof_and_performance_closeout_gate_edge_case_and_compatibility_completion_contract.py -q",
     ),
-    SnippetCheck("M228-E005-CFG-03", '"check:objc3c:m228-e005-lane-e-readiness"'),
-    SnippetCheck(
+    PackageScriptCheck(
         "M228-E005-CFG-04",
+        "check:objc3c:m228-e005-lane-e-readiness",
         "npm run check:objc3c:m228-e004-lane-e-readiness && npm run check:objc3c:m228-a004-lane-a-readiness && npm run check:objc3c:m228-b006-lane-b-readiness && npm run check:objc3c:m228-c004-lane-c-readiness && npm run check:objc3c:m228-d005-lane-d-readiness && npm run check:objc3c:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract && npm run test:tooling:m228-e005-replay-proof-performance-closeout-gate-edge-case-and-compatibility-completion-contract",
+    ),
+)
+
+PACKAGE_SCRIPT_KEY_CHECKS: tuple[PackageScriptKeyCheck, ...] = (
+    PackageScriptKeyCheck(
+        "M228-E005-CFG-03",
+        "check:objc3c:m228-e005-lane-e-readiness",
     ),
 )
 
@@ -363,6 +385,98 @@ def check_doc_contract(
     return checks_total, findings
 
 
+def check_package_contract(path: Path) -> tuple[int, list[Finding]]:
+    checks_total = 1
+    findings: list[Finding] = []
+    if not path.exists():
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id="M228-E005-CFG-00",
+                detail=f"required document is missing: {display_path(path)}",
+            )
+        )
+        return checks_total, findings
+    if not path.is_file():
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id="M228-E005-CFG-00",
+                detail=f"required document path is not a file: {display_path(path)}",
+            )
+        )
+        return checks_total, findings
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id="M228-E005-CFG-00",
+                detail="required document is not valid UTF-8",
+            )
+        )
+        return checks_total, findings
+    except json.JSONDecodeError as exc:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id="M228-E005-CFG-00",
+                detail=f"required document is not valid JSON: {exc}",
+            )
+        )
+        return checks_total, findings
+    except OSError as exc:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id="M228-E005-CFG-00",
+                detail=f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
+
+    scripts = payload.get("scripts")
+    checks_total += 1
+    if not isinstance(scripts, dict):
+        findings.append(
+            Finding(
+                artifact="package_json",
+                check_id="M228-E005-CFG-00",
+                detail='expected top-level "scripts" object in package.json',
+            )
+        )
+        return checks_total, findings
+
+    for key_check in PACKAGE_SCRIPT_KEY_CHECKS:
+        checks_total += 1
+        if key_check.script_key not in scripts:
+            findings.append(
+                Finding(
+                    artifact="package_json",
+                    check_id=key_check.check_id,
+                    detail=f'expected scripts["{key_check.script_key}"] to exist',
+                )
+            )
+
+    for script_check in PACKAGE_SCRIPT_CHECKS:
+        checks_total += 1
+        actual = scripts.get(script_check.script_key)
+        if actual != script_check.expected_value:
+            findings.append(
+                Finding(
+                    artifact="package_json",
+                    check_id=script_check.check_id,
+                    detail=(
+                        f'expected scripts["{script_check.script_key}"] to equal '
+                        f'"{script_check.expected_value}"'
+                    ),
+                )
+            )
+    return checks_total, findings
+
+
 def run(argv: Sequence[str]) -> int:
     args = parse_args(argv)
 
@@ -386,12 +500,7 @@ def run(argv: Sequence[str]) -> int:
     checks_total += packet_checks
     findings.extend(packet_findings)
 
-    package_checks, package_findings = check_doc_contract(
-        artifact_name="package_json",
-        path=args.package_json,
-        exists_check_id="M228-E005-CFG-00",
-        snippets=PACKAGE_SNIPPETS,
-    )
+    package_checks, package_findings = check_package_contract(args.package_json)
     checks_total += package_checks
     findings.extend(package_findings)
 
