@@ -451,6 +451,11 @@ Current-state note:
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_core_feature_implementation_a003_expectations.md`,
   `spec/planning/compiler/m244/m244_a003_interop_surface_syntax_and_declaration_forms_core_feature_implementation_packet.md`,
   and `package.json` so `M244-A002` dependency continuity and core-feature evidence remain fail-closed.
+- M244 lane-A A004 interop surface syntax/declaration-form core feature expansion anchors
+  explicit lane-A expansion artifacts in
+  `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_core_feature_expansion_a004_expectations.md`,
+  `spec/planning/compiler/m244/m244_a004_interop_surface_syntax_and_declaration_forms_core_feature_expansion_packet.md`,
+  and `package.json` so `M244-A003` dependency continuity and expansion evidence remain fail-closed.
 - M244 lane-C C001 interop lowering and ABI conformance anchors explicit lane-C
   contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_lowering_and_abi_conformance_contract_and_architecture_freeze_c001_expectations.md`,
