@@ -541,6 +541,11 @@ Current-state note:
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_core_feature_expansion_b004_expectations.md`,
   `spec/planning/compiler/m244/m244_b004_interop_semantic_contracts_and_type_mediation_core_feature_expansion_packet.md`,
   and `package.json` so `M244-B003` dependency continuity and core-feature expansion evidence remain fail-closed.
+- M244 lane-B B005 interop semantic contracts/type mediation edge-case and compatibility completion anchors explicit
+  lane-B edge-case and compatibility completion artifacts in
+  `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_edge_case_and_compatibility_completion_b005_expectations.md`,
+  `spec/planning/compiler/m244/m244_b005_interop_semantic_contracts_and_type_mediation_edge_case_and_compatibility_completion_packet.md`,
+  and `package.json` so `M244-B004` dependency continuity and edge-case completion evidence remain fail-closed.
 - M244 lane-E E001 interop conformance gate and operations contract and architecture freeze
   anchors dependency references (`M244-A001`, `M244-B001`, `M244-C001`, and
   `M244-D001`) in
