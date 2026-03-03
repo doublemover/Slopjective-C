@@ -2080,3 +2080,7 @@ Forbidden:
   require fail-closed advanced-integration-shard2 continuity between
   typed handoff surfaces and parse/lowering readiness before lane-C shard-2
   integration closure can pass.
+- M227 lane-C C026 typed sema-to-lowering integration closeout and gate sign-off anchors
+  require fail-closed integration-closeout/sign-off continuity between
+  typed handoff surfaces and parse/lowering readiness before lane-C sign-off
+  closure can pass.
