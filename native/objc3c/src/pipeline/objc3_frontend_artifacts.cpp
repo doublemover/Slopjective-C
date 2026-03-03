@@ -1902,7 +1902,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result.parse_lowering_readiness_surface
               .parse_recovery_determinism_hardening_consistent,
           pipeline_result.parse_lowering_readiness_surface
-              .parse_recovery_determinism_hardening_key);
+              .parse_recovery_determinism_hardening_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_conformance_matrix_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_conformance_matrix_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -1952,6 +1956,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L318",
         "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
             ownership_aware_lowering_behavior_recovery_determinism_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_conformance_matrix_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_conformance_matrix_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L319",
+        "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
+            ownership_aware_lowering_behavior_conformance_matrix_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }

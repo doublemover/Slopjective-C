@@ -117,11 +117,17 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic ownership-aware lowering recovery and determinism
      consistency/readiness and recovery-key anchors for lane-B B008 recovery and determinism
      hardening evidence,
+   - deterministic ownership-aware lowering conformance matrix
+     consistency/readiness and conformance-matrix-key anchors for lane-B B009
+     conformance matrix implementation evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion
      consistency/readiness and compatibility-key anchors for lane-C closeout
      evidence continuity,
+   - deterministic IR-emission recovery and determinism hardening
+     consistency/readiness and recovery-determinism-key anchors for lane-C
+     fail-closed evidence continuity,
    - deterministic lane-D toolchain/runtime edge-case compatibility
      consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness
