@@ -121,6 +121,8 @@ At minimum, the pass-graph gate shall validate:
   runtime-facing type metadata conformance corpus consistency, readiness, key, or alignment continuity drift before performance/quality validation advances.
 - runtime-facing type metadata performance and quality guardrails governance shall preserve explicit lane-D dependency anchors (`M227-D011`, `M227-D010`) and fail closed on
   runtime-facing type metadata performance/quality consistency, readiness, key, or alignment continuity drift before integration-closeout validation advances.
+- runtime-facing type metadata integration closeout and gate sign-off governance shall preserve explicit lane-D dependency anchors (`M227-D012`, `M227-D011`) and fail closed on
+  runtime-facing type metadata integration closeout/sign-off consistency, readiness, key, or alignment continuity drift before lane-D readiness sign-off advances.
 - toolchain/runtime core feature expansion shall remain fail-closed on backend
   marker-path determinism and backend marker payload-to-route consistency drift
   before core-feature implementation readiness can pass.

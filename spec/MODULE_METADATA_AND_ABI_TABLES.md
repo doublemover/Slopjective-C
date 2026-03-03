@@ -159,6 +159,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M227-D009` dependency continuity and fail-closed conformance-corpus evidence continuity so conformance-corpus evidence drift fails closed,
     - deterministic lane-D runtime-facing type metadata performance and quality guardrails metadata anchors for `M227-D011`
       with explicit `M227-D010` dependency continuity and fail-closed performance-quality evidence continuity so performance-quality evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata integration closeout and gate sign-off metadata anchors for `M227-D012`
+      with explicit `M227-D011` dependency continuity and fail-closed integration-closeout-signoff evidence continuity so integration-closeout/sign-off evidence drift fails closed,
     - deterministic lane-D toolchain/runtime edge-case compatibility
       consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness

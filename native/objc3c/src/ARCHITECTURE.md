@@ -218,6 +218,14 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-d011-lane-d-readiness`) so runtime-facing metadata
   performance/quality continuity remains deterministic
   and fail-closed against `M227-D010` dependency drift.
+- M227 lane-D D012 runtime-facing type metadata integration closeout and gate sign-off anchors
+  explicit lane-D integration closeout/sign-off artifacts in
+  `docs/contracts/m227_runtime_facing_type_metadata_integration_closeout_and_gate_signoff_d012_expectations.md`,
+  `spec/planning/compiler/m227/m227_d012_runtime_facing_type_metadata_integration_closeout_and_gate_signoff_packet.md`,
+  `scripts/check_m227_d012_runtime_facing_type_metadata_integration_closeout_and_gate_signoff_contract.py`,
+  and `package.json` (`check:objc3c:m227-d012-lane-d-readiness`) so runtime-facing metadata
+  integration-closeout/sign-off continuity remains deterministic
+  and fail-closed against `M227-D011` dependency drift.
 - M227 lane-E E001 semantic conformance quality-gate contract and architecture freeze anchors dependency references (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`) in
   `docs/contracts/m227_lane_e_semantic_conformance_quality_gate_expectations.md`,
   `spec/planning/compiler/m227/m227_e001_semantic_conformance_lane_e_quality_gate_contract_and_architecture_freeze_packet.md`,
