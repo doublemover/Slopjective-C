@@ -1121,3 +1121,5 @@ typed sema-to-lowering release-candidate and replay dry-run governance shall pre
 typed sema-to-lowering advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C015`, `M227-C014`) so typed advanced-core continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C016`, `M227-C015`) so typed advanced-edge compatibility continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C017`, `M227-C016`) so typed advanced-diagnostics continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.

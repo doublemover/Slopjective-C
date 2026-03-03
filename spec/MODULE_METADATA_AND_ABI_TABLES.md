@@ -996,3 +996,5 @@ deterministic lane-C typed sema-to-lowering release-candidate/replay metadata an
 deterministic lane-C typed sema-to-lowering advanced-core-shard1 metadata anchors for `M227-C015` must remain synchronized across typed shard-1 keys, parse shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 closure can pass.
 
 deterministic lane-C typed sema-to-lowering advanced-edge-compatibility-shard1 metadata anchors for `M227-C016` must remain synchronized across typed edge-compatibility shard-1 keys, parse edge-compatibility shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 edge compatibility closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard1 metadata anchors for `M227-C017` must remain synchronized across typed diagnostics shard-1 keys, parse diagnostics shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 diagnostics closure can pass.
