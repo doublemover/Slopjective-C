@@ -79,6 +79,8 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool typed_conformance_matrix_ready = false;
   bool typed_conformance_corpus_consistent = false;
   bool typed_conformance_corpus_ready = false;
+  bool typed_performance_quality_guardrails_consistent = false;
+  bool typed_performance_quality_guardrails_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_core_feature_case_count = 0;
@@ -87,6 +89,9 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::size_t typed_core_feature_expansion_case_count = 0;
   std::size_t typed_core_feature_expansion_passed_case_count = 0;
   std::size_t typed_core_feature_expansion_failed_case_count = 0;
+  std::size_t typed_performance_quality_guardrails_case_count = 0;
+  std::size_t typed_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t typed_performance_quality_guardrails_failed_case_count = 0;
   std::string typed_handoff_key;
   std::string typed_core_feature_key;
   std::string typed_core_feature_expansion_key;
@@ -98,6 +103,7 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::string typed_recovery_determinism_key;
   std::string typed_conformance_matrix_key;
   std::string typed_conformance_corpus_key;
+  std::string typed_performance_quality_guardrails_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };
@@ -214,6 +220,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool typed_sema_conformance_matrix_ready = false;
   bool typed_sema_conformance_corpus_consistent = false;
   bool typed_sema_conformance_corpus_ready = false;
+  bool typed_sema_performance_quality_guardrails_consistent = false;
+  bool typed_sema_performance_quality_guardrails_ready = false;
   bool lowering_boundary_ready = false;
   bool ready_for_lowering = false;
   std::size_t typed_sema_core_feature_case_count = 0;
@@ -222,6 +230,9 @@ struct Objc3ParseLoweringReadinessSurface {
   std::size_t typed_sema_core_feature_expansion_case_count = 0;
   std::size_t typed_sema_core_feature_expansion_passed_case_count = 0;
   std::size_t typed_sema_core_feature_expansion_failed_case_count = 0;
+  std::size_t typed_sema_performance_quality_guardrails_case_count = 0;
+  std::size_t typed_sema_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t typed_sema_performance_quality_guardrails_failed_case_count = 0;
   std::size_t parse_lowering_conformance_matrix_case_count = 0;
   std::size_t parse_lowering_conformance_corpus_case_count = 0;
   std::size_t parse_lowering_conformance_corpus_passed_case_count = 0;
@@ -282,6 +293,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string typed_sema_recovery_determinism_key;
   std::string typed_sema_conformance_matrix_key;
   std::string typed_sema_conformance_corpus_key;
+  std::string typed_sema_performance_quality_guardrails_key;
   std::string lowering_boundary_replay_key;
   std::string failure_reason;
 };

@@ -9,6 +9,7 @@
 
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureCaseCount = 6u;
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureExpansionCaseCount = 4u;
+inline constexpr std::size_t kObjc3TypedSemaToLoweringPerformanceQualityGuardrailsCaseCount = 4u;
 
 inline std::size_t Objc3TypedSemaToLoweringParserSnapshotDeclarationBreakdownCount(
     const Objc3ParserContractSnapshot &snapshot) {
@@ -183,6 +184,29 @@ inline std::string BuildObjc3TypedSemaToLoweringConformanceCorpusKey(
          ";typed_conformance_matrix_key=" + surface.typed_conformance_matrix_key;
 }
 
+inline std::string BuildObjc3TypedSemaToLoweringPerformanceQualityGuardrailsKey(
+    const Objc3TypedSemaToLoweringContractSurface &surface) {
+  return "typed-sema-lowering-performance-quality-guardrails:v1:case_count=" +
+         std::to_string(surface.typed_performance_quality_guardrails_case_count) +
+         ";passed_case_count=" +
+         std::to_string(surface.typed_performance_quality_guardrails_passed_case_count) +
+         ";failed_case_count=" +
+         std::to_string(surface.typed_performance_quality_guardrails_failed_case_count) +
+         ";typed_conformance_corpus_consistent=" +
+         std::string(surface.typed_conformance_corpus_consistent ? "true" : "false") +
+         ";typed_conformance_corpus_ready=" +
+         std::string(surface.typed_conformance_corpus_ready ? "true" : "false") +
+         ";parse_artifact_replay_key_deterministic=" +
+         std::string(surface.parse_artifact_replay_key_deterministic ? "true" : "false") +
+         ";semantic_handoff_deterministic=" +
+         std::string(surface.semantic_handoff_deterministic ? "true" : "false") +
+         ";consistent=" +
+         std::string(surface.typed_performance_quality_guardrails_consistent ? "true" : "false") +
+         ";ready=" +
+         std::string(surface.typed_performance_quality_guardrails_ready ? "true" : "false") +
+         ";typed_conformance_corpus_key=" + surface.typed_conformance_corpus_key;
+}
+
 inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
     const Objc3TypedSemaToLoweringContractSurface &surface) {
   std::ostringstream key;
@@ -241,6 +265,10 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << (surface.typed_conformance_corpus_consistent ? "true" : "false")
       << ";typed_conformance_corpus_ready="
       << (surface.typed_conformance_corpus_ready ? "true" : "false")
+      << ";typed_performance_quality_guardrails_consistent="
+      << (surface.typed_performance_quality_guardrails_consistent ? "true" : "false")
+      << ";typed_performance_quality_guardrails_ready="
+      << (surface.typed_performance_quality_guardrails_ready ? "true" : "false")
       << ";lowering_boundary=" << (surface.lowering_boundary_ready ? "true" : "false")
       << ";ready_for_lowering=" << (surface.ready_for_lowering ? "true" : "false");
   return key.str();
@@ -283,6 +311,10 @@ inline std::string BuildObjc3TypedSemaToLoweringCoreFeatureKey(
       << (surface.typed_conformance_corpus_consistent ? "true" : "false")
       << ";typed_conformance_corpus_ready="
       << (surface.typed_conformance_corpus_ready ? "true" : "false")
+      << ";typed_performance_quality_guardrails_consistent="
+      << (surface.typed_performance_quality_guardrails_consistent ? "true" : "false")
+      << ";typed_performance_quality_guardrails_ready="
+      << (surface.typed_performance_quality_guardrails_ready ? "true" : "false")
       << ";consistent=" << (surface.typed_core_feature_consistent ? "true" : "false");
   return key.str();
 }
@@ -575,6 +607,45 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       BuildObjc3TypedSemaToLoweringConformanceCorpusKey(surface);
   const bool typed_conformance_corpus_key_ready =
       !surface.typed_conformance_corpus_key.empty();
+  surface.typed_performance_quality_guardrails_case_count =
+      kObjc3TypedSemaToLoweringPerformanceQualityGuardrailsCaseCount;
+  surface.typed_performance_quality_guardrails_passed_case_count =
+      static_cast<std::size_t>(surface.typed_conformance_corpus_consistent) +
+      static_cast<std::size_t>(surface.typed_conformance_corpus_ready) +
+      static_cast<std::size_t>(surface.parse_artifact_replay_key_deterministic) +
+      static_cast<std::size_t>(surface.semantic_handoff_deterministic);
+  surface.typed_performance_quality_guardrails_failed_case_count =
+      surface.typed_performance_quality_guardrails_case_count >=
+              surface.typed_performance_quality_guardrails_passed_case_count
+          ? (surface.typed_performance_quality_guardrails_case_count -
+             surface.typed_performance_quality_guardrails_passed_case_count)
+          : surface.typed_performance_quality_guardrails_case_count;
+  const bool typed_performance_quality_guardrails_case_accounting_consistent =
+      surface.typed_performance_quality_guardrails_case_count ==
+          kObjc3TypedSemaToLoweringPerformanceQualityGuardrailsCaseCount &&
+      surface.typed_performance_quality_guardrails_case_count > 0 &&
+      surface.typed_performance_quality_guardrails_passed_case_count <=
+          surface.typed_performance_quality_guardrails_case_count &&
+      surface.typed_performance_quality_guardrails_failed_case_count ==
+          (surface.typed_performance_quality_guardrails_case_count -
+           surface.typed_performance_quality_guardrails_passed_case_count);
+  const bool typed_performance_quality_guardrails_cases_passed =
+      surface.typed_performance_quality_guardrails_passed_case_count ==
+          surface.typed_performance_quality_guardrails_case_count &&
+      surface.typed_performance_quality_guardrails_failed_case_count == 0;
+  surface.typed_performance_quality_guardrails_consistent =
+      typed_performance_quality_guardrails_case_accounting_consistent &&
+      typed_performance_quality_guardrails_cases_passed &&
+      typed_conformance_corpus_key_ready;
+  surface.typed_performance_quality_guardrails_ready =
+      surface.typed_performance_quality_guardrails_consistent &&
+      !surface.typed_conformance_corpus_key.empty() &&
+      !surface.typed_conformance_matrix_key.empty() &&
+      !surface.typed_recovery_determinism_key.empty();
+  surface.typed_performance_quality_guardrails_key =
+      BuildObjc3TypedSemaToLoweringPerformanceQualityGuardrailsKey(surface);
+  const bool typed_performance_quality_guardrails_key_ready =
+      !surface.typed_performance_quality_guardrails_key.empty();
   surface.typed_core_feature_consistent =
       typed_core_feature_consistent &&
       surface.typed_core_feature_expansion_consistent &&
@@ -595,7 +666,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       typed_conformance_matrix_key_ready &&
       surface.typed_conformance_corpus_consistent &&
       surface.typed_conformance_corpus_ready &&
-      typed_conformance_corpus_key_ready;
+      typed_conformance_corpus_key_ready &&
+      surface.typed_performance_quality_guardrails_consistent &&
+      surface.typed_performance_quality_guardrails_ready &&
+      typed_performance_quality_guardrails_key_ready;
 
   surface.ready_for_lowering = surface.typed_core_feature_consistent;
   surface.typed_handoff_key = BuildObjc3TypedSemaToLoweringContractHandoffKey(surface);
@@ -691,6 +765,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "typed sema-to-lowering conformance corpus is not ready";
   } else if (surface.typed_conformance_corpus_key.empty()) {
     surface.failure_reason = "typed sema-to-lowering conformance corpus key is empty";
+  } else if (!surface.typed_performance_quality_guardrails_consistent) {
+    surface.failure_reason = "typed sema-to-lowering performance/quality guardrails are inconsistent";
+  } else if (!surface.typed_performance_quality_guardrails_ready) {
+    surface.failure_reason = "typed sema-to-lowering performance/quality guardrails are not ready";
+  } else if (surface.typed_performance_quality_guardrails_key.empty()) {
+    surface.failure_reason = "typed sema-to-lowering performance/quality guardrails key is empty";
   } else if (!surface.typed_handoff_key_deterministic) {
     surface.failure_reason = "typed handoff key is not deterministic";
   } else if (!surface.typed_core_feature_consistent) {
