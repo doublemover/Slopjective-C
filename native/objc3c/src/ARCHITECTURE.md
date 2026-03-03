@@ -825,6 +825,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d009_runner_reliability_and_platform_operations_conformance_matrix_implementation_packet.md`,
   and `package.json` so conformance-matrix continuity remains deterministic
   and fail-closed against `M248-D008` dependency drift.
+- M248 lane-D D010 runner/platform operations conformance corpus expansion anchors
+  explicit lane-D conformance-corpus artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_conformance_corpus_expansion_d010_expectations.md`,
+  `spec/planning/compiler/m248/m248_d010_runner_reliability_and_platform_operations_conformance_corpus_expansion_packet.md`,
+  and `package.json` so conformance-corpus continuity remains deterministic
+  and fail-closed against `M248-D009` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

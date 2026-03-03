@@ -936,6 +936,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-D dependency anchors (`M248-D008`) and fail
   closed on conformance matrix implementation evidence drift before downstream
   platform replay and lane-e conformance corpus advances.
+- runner/platform operations conformance corpus expansion governance
+  shall preserve explicit lane-D dependency anchors (`M248-D009`) and fail
+  closed on conformance corpus expansion evidence drift before downstream
+  platform replay and lane-e performance guardrail advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
