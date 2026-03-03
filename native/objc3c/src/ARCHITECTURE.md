@@ -731,6 +731,12 @@ Current-state note:
   `npm run --if-present check:objc3c:m244-d009-lane-d-readiness`) so lane-E diagnostics hardening evidence remains
   deterministic and fail-closed on dependency token/reference drift while
   lane-B/C/D diagnostics hardening assets remain pending GH seed.
+- M245 lane-A A001 frontend behavior parity across toolchains anchors explicit
+  lane-A contract-freeze artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m245/m245_a001_frontend_behavior_parity_across_toolchains_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so portability and reproducible-build boundary evidence
+  remains deterministic and fail-closed across toolchain permutations.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -749,6 +755,15 @@ Current-state note:
   `spec/planning/compiler/m249/m249_a003_feature_packaging_surface_and_compatibility_contracts_core_feature_implementation_packet.md`,
   and `package.json` so core feature compatibility continuity remains
   deterministic and fail-closed against `M249-A002` dependency drift.
+- M245 lane-C C001 lowering/IR portability contracts contract anchors explicit
+  lane-C contract-freeze artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m245/m245_c001_lowering_ir_portability_contracts_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so lowering portability and IR emission continuity remain
+  deterministic and fail-closed for reproducible toolchain execution.
+- M245 lane-E E001 portability gate/release checklist contract and architecture freeze
+  anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
+  and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

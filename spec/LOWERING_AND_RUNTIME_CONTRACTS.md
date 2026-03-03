@@ -430,6 +430,9 @@ At minimum, the pass-graph gate shall validate:
 - suite partitioning modular split/scaffolding shall preserve explicit lane-A
   dependency anchors (`M248-A001`) and fail closed on scaffolding evidence drift
   before parser replay readiness advances.
+- frontend behavior parity across toolchains governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on toolchain portability drift
+  before semantic parity and lowering portability validation advances.
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.
@@ -453,6 +456,13 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-B dependency anchors (`M249-B001`) and fail closed on
   modular split evidence drift before semantic stability expansion validation
   advances.
+- lowering/IR portability contracts governance shall preserve explicit
+  lane-C portability and deterministic emission anchors and fail closed on
+  lowering portability drift before runtime execution and conformance
+  validation advances.
+- portability gate/release checklist contract and architecture freeze wiring shall
+  preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
+  `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
 - semantic compatibility and migration checks core feature implementation shall
   preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
   before semantic stability expansion validation advances.

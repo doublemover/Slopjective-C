@@ -378,12 +378,15 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
       with fixture ownership boundary evidence and parser replay-budget continuity
       so CI sharding partition drift fails closed.
-   - deterministic lane-A suite partitioning modular split metadata anchors for
-     `M248-A002` with explicit `M248-A001` dependency continuity so fixture
-     scaffolding drift fails closed.
-   - deterministic lane-A feature packaging metadata anchors for `M249-A001`
-     with release packaging compatibility evidence and parser replay-budget continuity
-     so distribution surface drift fails closed.
+    - deterministic lane-A suite partitioning modular split metadata anchors for
+      `M248-A002` with explicit `M248-A001` dependency continuity so fixture
+      scaffolding drift fails closed.
+    - deterministic lane-A frontend behavior parity metadata anchors for `M245-A001`
+      with toolchain portability evidence and parser replay-budget continuity
+      so frontend portability drift fails closed.
+    - deterministic lane-A feature packaging metadata anchors for `M249-A001`
+      with release packaging compatibility evidence and parser replay-budget continuity
+      so distribution surface drift fails closed.
    - deterministic lane-A feature packaging modular split metadata anchors for `M249-A002`
      with explicit `M249-A001` dependency continuity so compatibility scaffolding drift fails closed.
    - deterministic lane-A feature packaging core feature metadata anchors for `M249-A003`
@@ -400,15 +403,21 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B semantic compatibility/migration modular split metadata anchors for
      `M249-B002` with explicit `M249-B001` dependency continuity so migration
      scaffolding drift fails closed.
-   - deterministic lane-B semantic compatibility/migration core feature metadata anchors for `M249-B003` with explicit `M249-B002` dependency continuity so core feature implementation drift fails closed.
-   - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
-     contract evidence and execution replay continuity so CI replay drift fails
-     closed.
-   - deterministic lane-C replay modular split metadata anchors for `M248-C002`
-     with explicit `M248-C001` dependency continuity so modular split replay
-     drift fails closed.
-   - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
-     with symbol policy evidence and object package continuity so CI artifact
+    - deterministic lane-B semantic compatibility/migration core feature metadata anchors for `M249-B003` with explicit `M249-B002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
+      contract evidence and execution replay continuity so CI replay drift fails
+      closed.
+    - deterministic lane-C replay modular split metadata anchors for `M248-C002`
+      with explicit `M248-C001` dependency continuity so modular split replay
+      drift fails closed.
+    - deterministic lane-C lowering/IR portability metadata anchors for `M245-C001`
+      with lowering portability evidence and IR emission continuity so runtime
+      portability drift fails closed.
+    - deterministic lane-E portability gate/release checklist dependency anchors for
+      `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
+      integration freeze evidence remains deterministic and fail-closed.
+    - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
+      with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.
    - deterministic lane-C IR/object packaging modular split metadata anchors for `M249-C002`
      with explicit `M249-C001` dependency continuity so symbol-policy scaffolding drift fails closed.
