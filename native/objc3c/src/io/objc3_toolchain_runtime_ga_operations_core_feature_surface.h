@@ -23,6 +23,9 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   bool diagnostics_hardening_consistent = false;
   bool diagnostics_hardening_ready = false;
   bool diagnostics_hardening_key_ready = false;
+  bool recovery_determinism_consistent = false;
+  bool recovery_determinism_ready = false;
+  bool recovery_determinism_key_ready = false;
   bool core_feature_impl_ready = false;
   std::string backend_route_key;
   std::string scaffold_key;
@@ -31,6 +34,7 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   std::string edge_case_compatibility_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
+  std::string recovery_determinism_key;
   std::string core_feature_key;
   std::string failure_reason;
 };
@@ -109,6 +113,12 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(
       << (surface.diagnostics_hardening_ready ? "true" : "false")
       << ";diagnostics_hardening_key_ready="
       << (surface.diagnostics_hardening_key_ready ? "true" : "false")
+      << ";recovery_determinism_consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery_determinism_ready="
+      << (surface.recovery_determinism_ready ? "true" : "false")
+      << ";recovery_determinism_key_ready="
+      << (surface.recovery_determinism_key_ready ? "true" : "false")
       << ";core_feature_impl_ready=" << (surface.core_feature_impl_ready ? "true" : "false");
   return key.str();
 }
@@ -143,6 +153,25 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningKey
       << (surface.diagnostics_hardening_consistent ? "true" : "false")
       << ";diagnostics_hardening_ready="
       << (surface.diagnostics_hardening_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningKey(
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface) {
+  std::ostringstream key;
+  key << "toolchain-runtime-ga-operations-recovery-determinism-hardening:v1:"
+      << "backend=" << surface.backend_route_key
+      << ";backend_output_path_deterministic="
+      << (surface.backend_output_path_deterministic ? "true" : "false")
+      << ";backend_output_path=" << surface.backend_output_path
+      << ";diagnostics_hardening_ready="
+      << (surface.diagnostics_hardening_ready ? "true" : "false")
+      << ";diagnostics_hardening_key_ready="
+      << (surface.diagnostics_hardening_key_ready ? "true" : "false")
+      << ";recovery_determinism_consistent="
+      << (surface.recovery_determinism_consistent ? "true" : "false")
+      << ";recovery_determinism_ready="
+      << (surface.recovery_determinism_ready ? "true" : "false");
   return key.str();
 }
 
@@ -237,6 +266,27 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       surface.diagnostics_hardening_key.find("backend=" + surface.backend_route_key) != std::string::npos &&
       surface.diagnostics_hardening_key.find(";backend_output_path=" + surface.backend_output_path) !=
           std::string::npos;
+  surface.recovery_determinism_consistent =
+      surface.diagnostics_hardening_consistent &&
+      surface.diagnostics_hardening_key_ready &&
+      surface.edge_case_robustness_consistent &&
+      surface.backend_output_path_deterministic &&
+      surface.backend_dispatch_consistent;
+  surface.recovery_determinism_ready =
+      surface.recovery_determinism_consistent &&
+      surface.diagnostics_hardening_ready &&
+      surface.backend_output_payload_consistent &&
+      !surface.backend_route_key.empty() &&
+      !surface.backend_output_path.empty();
+  surface.recovery_determinism_key =
+      BuildObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningKey(surface);
+  surface.recovery_determinism_key_ready =
+      surface.recovery_determinism_ready &&
+      !surface.recovery_determinism_key.empty() &&
+      surface.recovery_determinism_key.find("backend=" + surface.backend_route_key) != std::string::npos &&
+      surface.recovery_determinism_key.find(";backend_output_path=" + surface.backend_output_path) !=
+          std::string::npos &&
+      surface.recovery_determinism_key.find(";diagnostics_hardening_key_ready=true") != std::string::npos;
   surface.core_feature_impl_ready =
       surface.scaffold_ready &&
       surface.backend_route_deterministic &&
@@ -254,6 +304,8 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
       surface.core_feature_impl_ready && !surface.edge_case_robustness_key.empty();
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_ready;
   surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.diagnostics_hardening_key_ready;
+  surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.recovery_determinism_ready;
+  surface.core_feature_impl_ready = surface.core_feature_impl_ready && surface.recovery_determinism_key_ready;
   surface.core_feature_expansion_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(surface);
   surface.core_feature_key = BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureKey(surface);
 
@@ -297,6 +349,12 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
     surface.failure_reason = "toolchain/runtime diagnostics hardening is not ready";
   } else if (!surface.diagnostics_hardening_key_ready) {
     surface.failure_reason = "toolchain/runtime diagnostics hardening key is not ready";
+  } else if (!surface.recovery_determinism_consistent) {
+    surface.failure_reason = "toolchain/runtime recovery and determinism hardening is inconsistent";
+  } else if (!surface.recovery_determinism_ready) {
+    surface.failure_reason = "toolchain/runtime recovery and determinism hardening is not ready";
+  } else if (!surface.recovery_determinism_key_ready) {
+    surface.failure_reason = "toolchain/runtime recovery and determinism hardening key is not ready";
   } else if (surface.scaffold_key.empty()) {
     surface.failure_reason = "toolchain/runtime scaffold key is empty";
   } else {
@@ -319,6 +377,26 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsDiagnosticsHardeningReady(
   }
   if (!surface.diagnostics_hardening_key_ready) {
     reason = "toolchain/runtime diagnostics hardening key is not ready";
+    return false;
+  }
+
+  reason.clear();
+  return true;
+}
+
+inline bool IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
+    const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface,
+    std::string &reason) {
+  if (!surface.recovery_determinism_consistent) {
+    reason = "toolchain/runtime recovery and determinism hardening is inconsistent";
+    return false;
+  }
+  if (!surface.recovery_determinism_ready) {
+    reason = "toolchain/runtime recovery and determinism hardening is not ready";
+    return false;
+  }
+  if (!surface.recovery_determinism_key_ready) {
+    reason = "toolchain/runtime recovery and determinism hardening key is not ready";
     return false;
   }
 
