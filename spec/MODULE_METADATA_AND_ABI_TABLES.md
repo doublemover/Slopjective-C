@@ -454,6 +454,12 @@ A conforming implementation shall preserve, for all exported declarations:
       `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`,
       `toolchain_runtime_ga_operations_advanced_edge_compatibility_key`) so
       advanced edge-compatibility shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced diagnostics workpack (shard 1) metadata anchors for `M227-A017`
+      with diagnostics consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_diagnostics_consistent`,
+      `toolchain_runtime_ga_operations_advanced_diagnostics_ready`,
+      `toolchain_runtime_ga_operations_advanced_diagnostics_key`) so advanced
+      diagnostics shard1 drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

@@ -142,6 +142,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
   (`check:objc3c:m227-a016-lane-a-readiness`) so advanced edge-compatibility
   continuity drift fails closed before advanced diagnostics/conformance workpacks.
+- M227 lane-A A017 advanced diagnostics workpack (shard 1) anchors deterministic
+  diagnostics readiness synthesis in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
+  (`check:objc3c:m227-a017-lane-a-readiness`) so advanced diagnostics
+  continuity drift fails closed before advanced conformance workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,
