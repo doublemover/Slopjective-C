@@ -354,6 +354,7 @@
     "check:objc3c:m227-e003-lane-e-core-feature-readiness": "npm run check:objc3c:m227-e003-semantic-conformance-lane-e-core-feature-contract && npm run test:tooling:m227-e003-semantic-conformance-lane-e-core-feature-contract",
     "check:objc3c:m227-c001-typed-sema-to-lowering-contract": "python scripts/check_m227_c001_typed_sema_to_lowering_contract.py",
     "test:tooling:m227-c001-typed-sema-to-lowering-contract": "python -m pytest tests/tooling/test_check_m227_c001_typed_sema_to_lowering_contract.py -q",
+    "check:objc3c:m227-c001-lane-c-readiness": "npm run check:objc3c:m227-c001-typed-sema-to-lowering-contract && npm run test:tooling:m227-c001-typed-sema-to-lowering-contract",
     "check:objc3c:m227-c002-typed-sema-to-lowering-modular-split-contract": "python scripts/check_m227_c002_typed_sema_to_lowering_modular_split_contract.py",
     "test:tooling:m227-c002-typed-sema-to-lowering-modular-split-contract": "python -m pytest tests/tooling/test_check_m227_c002_typed_sema_to_lowering_modular_split_contract.py -q",
     "check:objc3c:m227-a009-semantic-pass-conformance-matrix-implementation-contract": "python scripts/check_m227_a009_semantic_pass_conformance_matrix_implementation_contract.py",

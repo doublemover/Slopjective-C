@@ -452,6 +452,9 @@ At minimum, the pass-graph gate shall validate:
   lane-B dependency anchors (`M227-B001`) and fail closed on canonical ObjC
   type-form contract drift before semantic compatibility and migration
   validation advances.
+- typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
+  lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
+  before semantic compatibility and runtime-facing metadata validation advances.
 - semantic-pass conformance matrix implementation governance shall preserve explicit
   lane-A dependency anchor (`M227-A009`) and fail closed on parser/sema
   conformance-matrix or corpus replay drift before conformance expansion

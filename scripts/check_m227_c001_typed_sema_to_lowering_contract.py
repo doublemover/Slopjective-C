@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed architecture freeze checker for typed sema->lowering contracts (M227-C001)."""
+"""Fail-closed contract checker for M227-C001 typed sema-to-lowering freeze."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m227-c001-typed-sema-to-lowering-contract-v1"
+MODE = "m227-c001-typed-sema-to-lowering-contract-and-architecture-freeze-v1"
 
 ARTIFACTS: dict[str, Path] = {
     "frontend_pipeline_contract_header": ROOT / "native" / "objc3c" / "src" / "pipeline" / "frontend_pipeline_contract.h",
@@ -20,7 +20,19 @@ ARTIFACTS: dict[str, Path] = {
     "frontend_artifacts_source": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp",
     "semantics_fragment": ROOT / "docs" / "objc3c-native" / "src" / "30-semantics.md",
     "artifacts_fragment": ROOT / "docs" / "objc3c-native" / "src" / "50-artifacts.md",
-    "contract_doc": ROOT / "docs" / "contracts" / "m227_typed_sema_to_lowering_contract_expectations.md",
+    "expectations_doc": ROOT / "docs" / "contracts" / "m227_typed_sema_to_lowering_contract_expectations.md",
+    "packet_doc": (
+        ROOT
+        / "spec"
+        / "planning"
+        / "compiler"
+        / "m227"
+        / "m227_c001_typed_sema_to_lowering_contract_and_architecture_freeze_packet.md"
+    ),
+    "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
+    "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
+    "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+    "package_json": ROOT / "package.json",
 }
 
 ARTIFACT_ORDER: tuple[str, ...] = tuple(ARTIFACTS.keys())
@@ -170,24 +182,107 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "`frontend.pipeline.semantic_surface.objc_symbol_graph_scope_resolution_surface`",
         ),
     ),
-    "contract_doc": (
+    "expectations_doc": (
         (
-            "M227-C001-DOC-01",
-            "# Typed Sema-to-Lowering Contract and Architecture Freeze Expectations (M227-C001)",
-        ),
-        ("M227-C001-DOC-02", "Contract ID: `objc3c-typed-sema-to-lowering-contract/m227-c001-v1`"),
-        ("M227-C001-DOC-03", "`native/objc3c/src/pipeline/objc3_frontend_types.h`"),
-        ("M227-C001-DOC-04", "`native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`"),
-        ("M227-C001-DOC-05", "`native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`"),
-        ("M227-C001-DOC-06", "`python scripts/check_m227_c001_typed_sema_to_lowering_contract.py`"),
-        (
-            "M227-C001-DOC-07",
-            "`python -m pytest tests/tooling/test_check_m227_c001_typed_sema_to_lowering_contract.py -q`",
+            "M227-C001-DOC-EXP-01",
+            "# M227 Typed Sema-to-Lowering Contracts Contract and Architecture Freeze Expectations (C001)",
         ),
         (
-            "M227-C001-DOC-08",
-            "`tmp/reports/m227/m227_c001_typed_sema_to_lowering_contract_summary.json`",
+            "M227-C001-DOC-EXP-02",
+            "Contract ID: `objc3c-typed-sema-to-lowering-contract-and-architecture-freeze/m227-c001-v1`",
         ),
+        (
+            "M227-C001-DOC-EXP-03",
+            "Issue `#5121` defines canonical lane-C contract freeze scope.",
+        ),
+        ("M227-C001-DOC-EXP-04", "Dependencies: none"),
+        (
+            "M227-C001-DOC-EXP-05",
+            "m227_c001_typed_sema_to_lowering_contract_and_architecture_freeze_packet.md",
+        ),
+        (
+            "M227-C001-DOC-EXP-06",
+            "`check:objc3c:m227-c001-lane-c-readiness`",
+        ),
+        (
+            "M227-C001-DOC-EXP-07",
+            "`tmp/reports/m227/M227-C001/typed_sema_to_lowering_contract_and_architecture_freeze_summary.json`",
+        ),
+    ),
+    "packet_doc": (
+        (
+            "M227-C001-DOC-PKT-01",
+            "# M227-C001 Typed Sema-to-Lowering Contracts Contract and Architecture Freeze Packet",
+        ),
+        ("M227-C001-DOC-PKT-02", "Packet: `M227-C001`"),
+        ("M227-C001-DOC-PKT-03", "Issue: `#5121`"),
+        ("M227-C001-DOC-PKT-04", "Freeze date: `2026-03-03`"),
+        ("M227-C001-DOC-PKT-05", "Dependencies: none"),
+        (
+            "M227-C001-DOC-PKT-06",
+            "`check:objc3c:m227-c001-typed-sema-to-lowering-contract`",
+        ),
+        (
+            "M227-C001-DOC-PKT-07",
+            "`check:objc3c:m227-c001-lane-c-readiness`",
+        ),
+        ("M227-C001-DOC-PKT-08", "`compile:objc3c`"),
+    ),
+    "architecture_doc": (
+        (
+            "M227-C001-ARCH-01",
+            "M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors",
+        ),
+        (
+            "M227-C001-ARCH-02",
+            "docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md",
+        ),
+        (
+            "M227-C001-ARCH-03",
+            "spec/planning/compiler/m227/m227_c001_typed_sema_to_lowering_contract_and_architecture_freeze_packet.md",
+        ),
+        (
+            "M227-C001-ARCH-04",
+            "check:objc3c:m227-c001-lane-c-readiness",
+        ),
+    ),
+    "lowering_spec": (
+        (
+            "M227-C001-SPC-01",
+            "typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors",
+        ),
+        (
+            "M227-C001-SPC-02",
+            "lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift",
+        ),
+    ),
+    "metadata_spec": (
+        (
+            "M227-C001-META-01",
+            "deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`",
+        ),
+        (
+            "M227-C001-META-02",
+            "typed sema handoff evidence and lowering metadata continuity",
+        ),
+    ),
+    "package_json": (
+        (
+            "M227-C001-PKG-01",
+            '"check:objc3c:m227-c001-typed-sema-to-lowering-contract": "python scripts/check_m227_c001_typed_sema_to_lowering_contract.py"',
+        ),
+        (
+            "M227-C001-PKG-02",
+            '"test:tooling:m227-c001-typed-sema-to-lowering-contract": "python -m pytest tests/tooling/test_check_m227_c001_typed_sema_to_lowering_contract.py -q"',
+        ),
+        (
+            "M227-C001-PKG-03",
+            '"check:objc3c:m227-c001-lane-c-readiness": "npm run check:objc3c:m227-c001-typed-sema-to-lowering-contract && npm run test:tooling:m227-c001-typed-sema-to-lowering-contract"',
+        ),
+        ("M227-C001-PKG-04", '"compile:objc3c": '),
+        ("M227-C001-PKG-05", '"proof:objc3c": '),
+        ("M227-C001-PKG-06", '"test:objc3c:execution-replay-proof": '),
+        ("M227-C001-PKG-07", '"test:objc3c:perf-budget": '),
     ),
 }
 
@@ -229,7 +324,9 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--summary-out",
         type=Path,
-        default=Path("tmp/reports/m227/m227_c001_typed_sema_to_lowering_contract_summary.json"),
+        default=Path(
+            "tmp/reports/m227/M227-C001/typed_sema_to_lowering_contract_and_architecture_freeze_summary.json"
+        ),
     )
     return parser.parse_args(argv)
 

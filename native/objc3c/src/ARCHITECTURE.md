@@ -39,6 +39,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-b001-lane-b-readiness`) so canonical
   reference/message/bridge-top type-form routing in sema remains deterministic
   and fail-closed against ad-hoc compatibility drift.
+- M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
+  explicit lane-C contract-freeze artifacts in
+  `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
+  `spec/planning/compiler/m227/m227_c001_typed_sema_to_lowering_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`check:objc3c:m227-c001-lane-c-readiness`) so typed
+  sema transport and lowering metadata continuity remain deterministic and
+  fail-closed against handoff or metadata drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
