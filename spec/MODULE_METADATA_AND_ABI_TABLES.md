@@ -312,6 +312,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-A diagnostic grammar hooks/source precision performance and quality guardrails metadata anchors for `M243-A011` with explicit `M243-A010` dependency continuity
      so parser diagnostic grammar-hook readiness-chain and evidence metadata
      drift fail closed.
+   - deterministic lane-A diagnostic grammar hooks/source precision integration closeout and gate sign-off metadata anchors for `M243-A012` with explicit `M243-A011` dependency continuity
+     so parser diagnostic grammar-hook closeout-sign-off metadata drift fails
+     closed.
     - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
       feature metadata anchors for `M243-B003` with explicit `M243-B002`
       dependency continuity so core feature implementation drift fails closed.

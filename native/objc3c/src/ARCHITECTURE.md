@@ -579,6 +579,10 @@ Current-state note:
   in `package.json` plus architecture/spec contract references so lane-A
   performance-quality drift fails closed after A010 conformance corpus closure
   and before downstream integration gates advance.
+- M243 lane-A A012 integration closeout and gate sign-off anchors parser diagnostic grammar-hook readiness chain sign-off governance
+  in `package.json` plus architecture/spec contract references so lane-A
+  integration closeout drift fails closed after A011 performance-quality
+  closure and before downstream cross-lane integration gates advance.
 - M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
   sema diagnostics bus and pass-flow freeze in
   `sema/objc3_sema_pass_manager_contract.h` and

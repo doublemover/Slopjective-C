@@ -465,6 +465,10 @@ At minimum, the pass-graph gate shall validate:
   and fail closed on readiness-chain continuity, architecture/spec anchor
   continuity, or evidence-summary continuity drift before downstream lane-A
   integration closures advance.
+- diagnostic grammar hooks and source precision integration closeout and gate sign-off shall preserve lane-A dependency anchors (`M243-A011`)
+  and fail closed on readiness-chain continuity, architecture/spec anchor
+  continuity, or sign-off evidence continuity drift before downstream lane-A
+  integration-closeout gates advance.
 - semantic diagnostic taxonomy and fix-it synthesis core feature implementation
   shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
   core-feature evidence drift before diagnostics hardening and conformance
