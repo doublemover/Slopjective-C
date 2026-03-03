@@ -10,6 +10,7 @@
 #include "ir/objc3_ir_emitter.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_scaffold.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.h"
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
@@ -1404,6 +1405,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L301",
         "LLVM IR emission failed: lowering/runtime diagnostics surfacing scaffold check failed: " +
             diagnostics_surfacing_scaffold_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  std::string diagnostics_surfacing_core_feature_error;
+  if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurfaceReady(
+          pipeline_result
+              .lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface,
+          diagnostics_surfacing_core_feature_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L321",
+        "LLVM IR emission failed: lowering/runtime diagnostics surfacing core feature check failed: " +
+            diagnostics_surfacing_core_feature_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
