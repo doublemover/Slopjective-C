@@ -137,6 +137,10 @@ At minimum, the pass-graph gate shall validate:
   lane-A release-replay anchors (`A013`), wrapper compile replay artifact
   continuity, and lowering replay-proof command sequencing so readiness fails
   closed when replay evidence drifts.
+- advanced core workpack (shard 1) wiring shall preserve deterministic
+  toolchain/runtime GA advanced-core consistency/readiness and
+  advanced-core-key continuity (`A014`) so lane-A advanced shard closure fails
+  closed when advanced-core evidence drifts.
 - IR-emission core-feature expansion shall remain deterministic, preserve
   expansion readiness/key continuity, and fail closed when pass-graph
   expansion continuity or expansion metadata transport drifts.
@@ -148,6 +152,10 @@ At minimum, the pass-graph gate shall validate:
   preserve recovery consistency/readiness and recovery-determinism-key
   continuity, and fail closed when pass-graph or parse-artifact
   recovery-determinism evidence drifts.
+- IR-emission conformance matrix implementation shall remain deterministic,
+  preserve conformance consistency/readiness and conformance-matrix-key
+  continuity, and fail closed when pass-graph or parse-artifact
+  conformance-matrix evidence drifts.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.
@@ -163,6 +171,9 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering conformance matrix implementation shall include
   deterministic conformance consistency/readiness and conformance-matrix-key
   transport gates that fail closed before IR emission.
+- ownership-aware lowering conformance corpus expansion shall include
+  deterministic conformance-corpus consistency/readiness and
+  conformance-corpus-key transport gates that fail closed before IR emission.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output
@@ -179,6 +190,10 @@ At minimum, the pass-graph gate shall validate:
   deterministic, preserve conformance consistency/readiness and
   conformance-matrix-key continuity, and fail closed when backend route/output
   conformance-matrix evidence drifts.
+- toolchain/runtime conformance corpus expansion shall remain deterministic,
+  preserve conformance-corpus consistency/readiness and
+  conformance-corpus-key continuity, and fail closed when backend route/output
+  conformance-corpus evidence drifts.
 - replay-proof/performance closeout gate wiring shall preserve explicit lane-E
   dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
   fail closed when dependency references or closeout evidence commands drift.
@@ -215,6 +230,12 @@ At minimum, the pass-graph gate shall validate:
   `M228-B008`, `M228-D008`, and pending token `M228-C008`) and fail closed when
   dependency references, readiness chaining, pending-token continuity, or
   closeout evidence commands drift.
+- replay-proof/performance conformance matrix implementation closeout wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E008`, `M228-A009`,
+  `M228-B009`, `M228-C008`, `M228-D009`, and pending tokens `M228-A007`,
+  `M228-B010`, `M228-C017`, `M228-D007`) and fail closed when dependency
+  references, readiness chaining, pending-token continuity, or closeout
+  evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or

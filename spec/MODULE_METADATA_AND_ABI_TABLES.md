@@ -105,6 +105,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-A release-candidate replay dry-run anchors for
      `A013`, wrapper replay artifact continuity, and lowering replay-proof
      evidence continuity,
+   - deterministic lane-A advanced core workpack (shard 1) anchors for
+     `A014`, toolchain/runtime GA advanced-core consistency/readiness, and
+     advanced-core-key continuity evidence,
    - deterministic ownership-aware lowering edge-case compatibility
      consistency/readiness and compatibility-key anchors for lane-B closeout
      evidence,
@@ -120,16 +123,22 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic ownership-aware lowering conformance matrix
      consistency/readiness and conformance-matrix-key anchors for lane-B B009
      conformance matrix implementation evidence,
+   - deterministic ownership-aware lowering conformance corpus
+     consistency/readiness and conformance-corpus-key anchors for lane-B B010
+     conformance corpus expansion evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion
      consistency/readiness and compatibility-key anchors for lane-C closeout
      evidence continuity,
-   - deterministic IR-emission recovery and determinism hardening
-     consistency/readiness and recovery-determinism-key anchors for lane-C
-     fail-closed evidence continuity,
-   - deterministic lane-D toolchain/runtime edge-case compatibility
-     consistency/readiness and compatibility-key anchors for closeout evidence,
+    - deterministic IR-emission recovery and determinism hardening
+      consistency/readiness and recovery-determinism-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic IR-emission conformance matrix implementation
+      consistency/readiness and conformance-matrix-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic lane-D toolchain/runtime edge-case compatibility
+      consistency/readiness and compatibility-key anchors for closeout evidence,
    - deterministic lane-D toolchain/runtime edge-case robustness
      consistency/readiness and robustness-key anchors for expansion evidence
      continuity,
@@ -138,6 +147,9 @@ A conforming implementation shall preserve, for all exported declarations:
      evidence continuity,
    - deterministic lane-D toolchain/runtime conformance matrix
      consistency/readiness and conformance-matrix-key anchors for fail-closed
+     evidence continuity,
+   - deterministic lane-D toolchain/runtime conformance corpus
+     consistency/readiness and conformance-corpus-key anchors for fail-closed
      evidence continuity,
    - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
      fail closed when lowering/emit routing is inconsistent,
@@ -167,13 +179,19 @@ A conforming implementation shall preserve, for all exported declarations:
      `M228-C007`, including pending-token continuity needed to keep
      replay-proof/performance diagnostics-hardening closeout evidence
      fail-closed while lane-C diagnostics assets are pending.
-   - deterministic lane-E recovery and determinism hardening dependency anchors
-     for `M228-E007`, `M228-A008`, `M228-B008`, `M228-D008`, and pending token
-     `M228-C008`, including pending-token continuity needed to keep
-     replay-proof/performance recovery/determinism closeout evidence fail-closed
-     while lane-C recovery/determinism assets are pending.
-   - deterministic toolchain/runtime core-feature expansion readiness/key markers for
-     backend marker-path and marker payload-to-route consistency evidence.
+    - deterministic lane-E recovery and determinism hardening dependency anchors
+      for `M228-E007`, `M228-A008`, `M228-B008`, `M228-D008`, and pending token
+      `M228-C008`, including pending-token continuity needed to keep
+      replay-proof/performance recovery/determinism closeout evidence fail-closed
+      while lane-C recovery/determinism assets are pending.
+    - deterministic lane-E conformance matrix implementation dependency anchors
+      for `M228-E008`, `M228-A009`, `M228-B009`, `M228-C008`, `M228-D009`, and
+      pending tokens `M228-A007`, `M228-B010`, `M228-C017`, `M228-D007`,
+      including pending-token continuity needed to keep replay-proof/performance
+      conformance-matrix closeout evidence fail-closed while issue dependency
+      continuity tokens remain pending.
+    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
+      backend marker-path and marker payload-to-route consistency evidence.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract

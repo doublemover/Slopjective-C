@@ -117,6 +117,12 @@ Current-state note:
   `scripts/run_m228_a014_lowering_pipeline_decomposition_pass_graph_release_replay_dry_run.ps1`
   and fail-closed lane-A readiness wiring so release-replay evidence continuity
   drifts are caught before downstream lane-E closeout gates.
+- M228 lane-A A015 advanced core workpack (shard 1) anchors deterministic
+  toolchain/runtime GA advanced-core consistency/readiness/key continuity in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so advanced-core shard1 drift fails
+  closed before advanced edge/diagnostics/conformance shard gates.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
@@ -165,6 +171,12 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` with deterministic conformance
   consistency/readiness and conformance-key transport so ownership-aware
   lowering remains fail-closed on conformance matrix drift before IR emission.
+- M228 lane-B B010 conformance corpus expansion extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` and
+  `pipeline/objc3_frontend_artifacts.cpp` with deterministic conformance-corpus
+  consistency/readiness (`conformance_corpus_*`) and conformance-corpus-key
+  transport so ownership-aware lowering remains fail-closed on conformance
+  corpus drift before IR emission.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
@@ -201,6 +213,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
   `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
   pass-graph or parse-artifact recovery/determinism evidence drifts.
+- M228 lane-C C009 conformance matrix implementation anchors deterministic
+  conformance consistency/readiness and conformance-key continuity
+  (`conformance_matrix_*`) in
+  `pipeline/objc3_ir_emission_core_feature_implementation_surface.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
+  `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
+  pass-graph or parse-artifact conformance matrix evidence drifts.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and
@@ -245,6 +264,12 @@ Current-state note:
   `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
   toolchain/runtime object emission/link-path routing remains fail-closed when
   backend route/output conformance-matrix evidence drifts.
+- M228 lane-D D010 conformance corpus expansion anchors deterministic
+  conformance-corpus consistency/readiness and conformance-corpus-key
+  continuity (`conformance_corpus_*`) in
+  `io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h` so
+  toolchain/runtime object emission/link-path routing remains fail-closed when
+  backend route/output conformance-corpus evidence drifts.
 - M228 lane-E E001 replay-proof/performance closeout gate anchors dependency
   references (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) in
   `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_e001_expectations.md`,
@@ -306,6 +331,15 @@ Current-state note:
   and `package.json` so recovery/determinism closeout evidence remains
   deterministic and fail-closed while lane-C recovery/determinism assets are
   pending.
+- M228 lane-E E009 replay-proof/performance closeout conformance matrix implementation anchors
+  dependency references (`M228-E008`, `M228-A009`, `M228-B009`, `M228-C008`,
+  `M228-D009`, and pending tokens `M228-A007`, `M228-B010`, `M228-C017`,
+  `M228-D007`) in
+  `docs/contracts/m228_lane_e_replay_proof_and_performance_closeout_gate_conformance_matrix_implementation_e009_expectations.md`,
+  `spec/planning/compiler/m228/m228_e009_replay_proof_and_performance_closeout_gate_conformance_matrix_implementation_packet.md`,
+  and `package.json` so conformance-matrix implementation closeout evidence
+  remains deterministic and fail-closed while issue-dependency continuity
+  tokens remain pending.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
