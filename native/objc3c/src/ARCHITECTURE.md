@@ -63,6 +63,14 @@ Current-state note:
   ObjC3 type-form conformance matrix consistency/readiness and
   conformance-matrix-key continuity remain deterministic and fail-closed
   against sema/type metadata drift.
+- M227 lane-B B010 type-system conformance corpus expansion anchors
+  explicit lane-B conformance-corpus artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_conformance_corpus_expansion_b010_expectations.md`,
+  `spec/planning/compiler/m227/m227_b010_type_system_objc3_forms_conformance_corpus_expansion_packet.md`,
+  and `package.json` (`check:objc3c:m227-b010-lane-b-readiness`) so canonical
+  ObjC3 type-form conformance corpus consistency/readiness, case-accounting,
+  and conformance-corpus-key continuity remain deterministic and fail-closed
+  against sema/type metadata drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,

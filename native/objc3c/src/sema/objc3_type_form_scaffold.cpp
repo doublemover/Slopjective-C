@@ -161,6 +161,32 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
   summary.conformance_matrix_ready =
       summary.conformance_matrix_consistent &&
       !summary.conformance_matrix_key.empty();
+  summary.conformance_corpus_case_count =
+      summary.canonical_reference_form_count +
+      summary.canonical_message_scalar_form_count +
+      summary.canonical_bridge_top_form_count;
+  summary.conformance_corpus_passed_case_count =
+      summary.conformance_matrix_consistent ? summary.conformance_corpus_case_count : 0u;
+  summary.conformance_corpus_failed_case_count =
+      summary.conformance_corpus_case_count - summary.conformance_corpus_passed_case_count;
+  summary.conformance_corpus_consistent =
+      summary.conformance_matrix_consistent &&
+      summary.conformance_matrix_ready &&
+      !summary.conformance_matrix_key.empty() &&
+      summary.conformance_corpus_case_count > 0u &&
+      summary.conformance_corpus_passed_case_count == summary.conformance_corpus_case_count &&
+      summary.conformance_corpus_failed_case_count == 0u;
+  summary.conformance_corpus_key =
+      std::string("type-form-conformance-corpus;matrix-consistent=") +
+      BoolKey(summary.conformance_matrix_consistent) +
+      ";matrix-ready=" + BoolKey(summary.conformance_matrix_ready) +
+      ";matrix-key-ready=" + BoolKey(!summary.conformance_matrix_key.empty()) +
+      ";case-count=" + std::to_string(summary.conformance_corpus_case_count) +
+      ";passed=" + std::to_string(summary.conformance_corpus_passed_case_count) +
+      ";failed=" + std::to_string(summary.conformance_corpus_failed_case_count);
+  summary.conformance_corpus_ready =
+      summary.conformance_corpus_consistent &&
+      !summary.conformance_corpus_key.empty();
   summary.deterministic = summary.canonical_reference_form_count > 0 &&
                           summary.canonical_message_scalar_form_count > 0 &&
                           summary.canonical_bridge_top_form_count > 0 &&
@@ -183,7 +209,14 @@ Objc3TypeFormScaffoldSummary BuildObjc3TypeFormScaffoldSummary() {
                           !summary.recovery_determinism_key.empty() &&
                           summary.conformance_matrix_consistent &&
                           summary.conformance_matrix_ready &&
-                          !summary.conformance_matrix_key.empty();
+                          !summary.conformance_matrix_key.empty() &&
+                          summary.conformance_corpus_case_count > 0u &&
+                          summary.conformance_corpus_passed_case_count ==
+                              summary.conformance_corpus_case_count &&
+                          summary.conformance_corpus_failed_case_count == 0u &&
+                          summary.conformance_corpus_consistent &&
+                          summary.conformance_corpus_ready &&
+                          !summary.conformance_corpus_key.empty();
   return summary;
 }
 
@@ -211,5 +244,12 @@ bool IsReadyObjc3TypeFormScaffoldSummary(const Objc3TypeFormScaffoldSummary &sum
          summary.conformance_matrix_consistent &&
          summary.conformance_matrix_ready &&
          !summary.conformance_matrix_key.empty() &&
+         summary.conformance_corpus_case_count > 0u &&
+         summary.conformance_corpus_passed_case_count ==
+             summary.conformance_corpus_case_count &&
+         summary.conformance_corpus_failed_case_count == 0u &&
+         summary.conformance_corpus_consistent &&
+         summary.conformance_corpus_ready &&
+         !summary.conformance_corpus_key.empty() &&
          summary.deterministic;
 }

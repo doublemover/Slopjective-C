@@ -29,6 +29,12 @@ struct Objc3TypeFormScaffoldSummary {
   bool conformance_matrix_consistent = false;
   bool conformance_matrix_ready = false;
   std::string conformance_matrix_key;
+  std::size_t conformance_corpus_case_count = 0;
+  std::size_t conformance_corpus_passed_case_count = 0;
+  std::size_t conformance_corpus_failed_case_count = 0;
+  bool conformance_corpus_consistent = false;
+  bool conformance_corpus_ready = false;
+  std::string conformance_corpus_key;
   bool deterministic = false;
 };
 
