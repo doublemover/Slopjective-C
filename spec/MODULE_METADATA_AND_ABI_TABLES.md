@@ -263,18 +263,37 @@ A conforming implementation shall preserve, for all exported declarations:
      fix-it engine output contract scaffolding drift fails closed.
    - deterministic lane-D CLI/reporting output core feature metadata anchors for `M243-D003`
      with explicit `M243-D002` dependency continuity so core feature implementation drift fails closed.
-   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
-     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
-     continuity so diagnostics surfacing scaffold drift fails closed.
+  - deterministic lane-D CLI/reporting output core feature expansion metadata anchors for `M243-D004`
+    with explicit `M243-D003` dependency continuity so core feature expansion drift fails closed.
+  - deterministic lane-D CLI/reporting output edge-case compatibility completion metadata anchors for `M243-D005`
+    with explicit `M243-D004` dependency continuity so edge-case compatibility drift fails closed.
+  - deterministic lane-C lowering/runtime diagnostics surfacing modular split
+    metadata anchors for `M243-C002` with explicit `M243-C001` dependency
+    continuity so diagnostics surfacing scaffold drift fails closed.
     - deterministic lane-C lowering/runtime diagnostics surfacing core feature
       metadata anchors for `M243-C003` with explicit `M243-C002` dependency
       continuity so core feature implementation drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing core feature
+      expansion metadata anchors for `M243-C004` with explicit `M243-C003`
+      dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing edge-case
+      compatibility completion metadata anchors for `M243-C005` with explicit
+      `M243-C004` dependency continuity so edge-case compatibility drift fails
+      closed.
     - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
       feature metadata anchors for `M243-B003` with explicit `M243-B002`
       dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
      feature expansion metadata anchors for `M243-B004` with explicit `M243-B003`
      dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     edge-case compatibility completion metadata anchors for `M243-B005` with
+     explicit `M243-B004` dependency continuity so edge-case compatibility
+     completion drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     edge-case expansion and robustness metadata anchors for `M243-B006` with
+     explicit `M243-B005` dependency continuity so edge-case expansion
+     robustness drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
@@ -299,6 +318,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and `M243-D002`, including
      mixed-lane maturity tokens needed to keep diagnostics quality gate/replay-policy core feature
      implementation governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy core feature expansion dependency anchors for
+     `M243-E003`, `M243-A004`, `M243-B004`, `M243-C003`, and `M243-D003`, including
+     cross-lane expansion maturity tokens needed to keep diagnostics quality gate/replay-policy core feature
+     expansion governance evidence fail-closed while lane readiness remains staged.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.

@@ -322,6 +322,17 @@ At minimum, the pass-graph gate shall validate:
   core-feature key continuity, diagnostics output path determinism, summary
   output path determinism, or stage-report output contract drift before lane-E
   core-feature readiness advances.
+- CLI/reporting and output core feature expansion governance shall preserve
+  explicit lane-D dependency anchors (`M243-D003`) and fail closed on
+  core-feature expansion key continuity, summary/diagnostics output payload
+  consistency, diagnostics emit-prefix filename contract continuity, or
+  stage-report output contract drift before lane-E core-feature expansion
+  readiness advances.
+- CLI/reporting and output edge-case compatibility completion governance shall preserve
+  explicit lane-D dependency anchors (`M243-D004`) and fail closed on
+  edge-case compatibility key continuity, case-folded output-path distinctness,
+  output-path control-character hygiene, or summary/diagnostics compatibility
+  contract drift before lane-E edge-case readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
@@ -347,6 +358,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and
   `M243-D002`) and fail closed when dependency references,
   diagnostics/replay core-feature evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy core feature expansion wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E003`, `M243-A004`, `M243-B004`, `M243-C003`, and
+  `M243-D003`) and fail closed when dependency references,
+  diagnostics/replay core-feature expansion evidence commands, or lane-E readiness hooks drift.
 - lowering/runtime diagnostics surfacing modular split scaffolding shall
   preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
   scaffolding evidence drift before diagnostics quality gate and replay policy
@@ -355,6 +370,15 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-C dependency anchors (`M243-C002`) and fail closed on
   core-feature evidence drift before diagnostics quality gate and replay policy
   validation advances.
+- lowering/runtime diagnostics surfacing core feature expansion shall preserve
+  explicit lane-C dependency anchors (`M243-C003`) and fail closed on
+  core-feature expansion evidence drift before diagnostics quality gate and
+  replay policy validation advances.
+- lowering/runtime diagnostics surfacing edge-case compatibility completion shall preserve
+  explicit lane-C dependency anchors (`M243-C004`) and fail closed on
+  compatibility continuity, edge-case surface readiness, or replay-key
+  transport drift before diagnostics quality gate and replay policy validation
+  advances.
 - semantic diagnostic taxonomy and fix-it synthesis core feature implementation
   shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
   core-feature evidence drift before diagnostics hardening and conformance
@@ -363,6 +387,14 @@ At minimum, the pass-graph gate shall validate:
   shall preserve lane-B dependency anchors (`M243-B003`) and fail closed on
   typed handoff-key continuity, replay-key readiness, or payload accounting
   drift before diagnostics hardening and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis edge-case compatibility completion
+  shall preserve lane-B dependency anchors (`M243-B004`) and fail closed on
+  compatibility-handoff continuity, parse edge robustness continuity, or replay
+  determinism drift before diagnostics hardening and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis edge-case expansion and robustness
+  shall preserve lane-B dependency anchors (`M243-B005`) and fail closed on
+  edge-case expansion consistency, robustness readiness, or robustness-key
+  continuity drift before diagnostics hardening and conformance expansions advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

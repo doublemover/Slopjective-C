@@ -8,6 +8,8 @@
 
 #include "lex/objc3_lexer.h"
 #include "parse/objc3_ast_builder_contract.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
+#include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_lowering_runtime_stability_invariant_scaffold.h"
@@ -19,6 +21,9 @@
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h"
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_core_feature_implementation_surface.h"
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_core_feature_expansion_surface.h"
+#include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_edge_case_compatibility_surface.h"
+#include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_edge_case_expansion_and_robustness_surface.h"
+#include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_diagnostics_hardening_surface.h"
 #include "pipeline/objc3_semantic_stability_core_feature_implementation_surface.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -792,6 +797,19 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.sema_parity_surface,
           result.typed_sema_to_lowering_contract_surface);
   result.parse_lowering_readiness_surface = BuildObjc3ParseLoweringReadinessSurface(result, options);
+  result.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface(
+          result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface,
+          result.parse_lowering_readiness_surface,
+          result.typed_sema_to_lowering_contract_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface(
+          result.semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface,
+          result.parse_lowering_readiness_surface);
+  result.semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface =
+      BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface(
+          result.semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface,
+          result.parse_lowering_readiness_surface);
   result.semantic_stability_spec_delta_closure_scaffold =
       BuildObjc3SemanticStabilitySpecDeltaClosureScaffold(
           result.typed_sema_to_lowering_contract_surface,
@@ -815,6 +833,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildObjc3LoweringRuntimeDiagnosticsSurfacingScaffold(result);
   result.lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface =
       BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface(
+          result);
+  result.lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface =
+      BuildObjc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface(
           result);
   result.lowering_runtime_stability_core_feature_implementation_surface =
       BuildObjc3LoweringRuntimeStabilityCoreFeatureImplementationSurface(

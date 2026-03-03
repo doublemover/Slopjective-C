@@ -10,6 +10,9 @@
 #include <string>
 #include <system_error>
 
+#include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
+#include "io/objc3_cli_reporting_output_contract_edge_case_expansion_and_robustness_surface.h"
+#include "io/objc3_cli_reporting_output_contract_edge_case_compatibility_surface.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
 
@@ -209,7 +212,8 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error,
-                             const Objc3CliReportingOutputContractCoreFeatureSurface &output_contract_core_feature_surface) {
+                             const Objc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurface
+                                 &output_contract_edge_case_robustness_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   const char *compatibility_mode_name =
@@ -246,15 +250,88 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       << kObjc3CliReportingDiagnosticsSchemaVersion << "\",\n";
   out << "    \"summary_mode\": \"" << kObjc3CliReportingSummaryMode << "\",\n";
   out << "    \"scaffold_key\": \""
-      << EscapeJsonString(output_contract_core_feature_surface.scaffold_key) << "\",\n";
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.scaffold_key) << "\",\n";
   out << "    \"core_feature_key\": \""
-      << EscapeJsonString(output_contract_core_feature_surface.core_feature_key) << "\",\n";
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.core_feature_key) << "\",\n";
+  out << "    \"core_feature_expansion_key\": \""
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.core_feature_expansion_key) << "\",\n";
+  out << "    \"edge_case_compatibility_key\": \""
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.edge_case_compatibility_key) << "\",\n";
+  out << "    \"edge_case_robustness_key\": \""
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.edge_case_robustness_key) << "\",\n";
   out << "    \"summary_output_path\": \""
-      << EscapeJsonString(output_contract_core_feature_surface.summary_output_path) << "\",\n";
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.summary_output_path) << "\",\n";
   out << "    \"diagnostics_output_path\": \""
-      << EscapeJsonString(output_contract_core_feature_surface.diagnostics_output_path) << "\",\n";
+      << EscapeJsonString(output_contract_edge_case_robustness_surface.diagnostics_output_path) << "\",\n";
+  out << "    \"summary_output_path_contract_consistent\": "
+      << (output_contract_edge_case_robustness_surface
+                  .edge_case_compatibility_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"diagnostics_output_path_contract_consistent\": "
+      << (output_contract_edge_case_robustness_surface
+                  .edge_case_compatibility_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"core_feature_expansion_ready\": "
+      << (output_contract_edge_case_robustness_surface.edge_case_compatibility_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"summary_output_extension_compatible\": "
+      << (output_contract_edge_case_robustness_surface.summary_output_parent_present
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"diagnostics_output_suffix_compatible\": "
+      << (output_contract_edge_case_robustness_surface.diagnostics_output_parent_present
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"case_folded_paths_distinct\": "
+      << (output_contract_edge_case_robustness_surface.output_paths_within_length_budget
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"output_paths_control_char_free\": "
+      << (output_contract_edge_case_robustness_surface
+                  .output_paths_no_trailing_space
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"edge_case_compatibility_consistent\": "
+      << (output_contract_edge_case_robustness_surface
+                  .edge_case_compatibility_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"edge_case_compatibility_ready\": "
+      << (output_contract_edge_case_robustness_surface.edge_case_compatibility_ready
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"edge_case_expansion_consistent\": "
+      << (output_contract_edge_case_robustness_surface.edge_case_expansion_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"edge_case_robustness_consistent\": "
+      << (output_contract_edge_case_robustness_surface.edge_case_robustness_consistent
+              ? "true"
+              : "false")
+      << ",\n";
+  out << "    \"edge_case_robustness_ready\": "
+      << (output_contract_edge_case_robustness_surface.edge_case_robustness_ready
+              ? "true"
+              : "false")
+      << ",\n";
   out << "    \"core_feature_impl_ready\": "
-      << (output_contract_core_feature_surface.core_feature_impl_ready ? "true" : "false") << "\n";
+      << (output_contract_edge_case_robustness_surface.core_feature_impl_ready
+              ? "true"
+              : "false")
+      << "\n";
   out << "  }\n";
   out << "}\n";
   return out.str();
@@ -406,12 +483,57 @@ int main(int argc, char **argv) {
     return 2;
   }
 
+  const Objc3CliReportingOutputContractCoreFeatureExpansionSurface
+      cli_reporting_output_contract_core_feature_expansion_surface =
+          BuildObjc3CliReportingOutputContractCoreFeatureExpansionSurface(
+              cli_reporting_output_contract_core_feature_surface,
+              options.emit_prefix,
+              summary_path,
+              diagnostics_output_path);
+  std::string output_contract_core_feature_expansion_reason;
+  if (!IsObjc3CliReportingOutputContractCoreFeatureExpansionSurfaceReady(
+          cli_reporting_output_contract_core_feature_expansion_surface,
+          output_contract_core_feature_expansion_reason)) {
+    std::cerr << "cli/reporting output core feature expansion fail-closed: "
+              << output_contract_core_feature_expansion_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
+  const Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface
+      cli_reporting_output_contract_edge_case_compatibility_surface =
+          BuildObjc3CliReportingOutputContractEdgeCaseCompatibilitySurface(
+              cli_reporting_output_contract_core_feature_expansion_surface);
+  std::string output_contract_edge_case_compatibility_reason;
+  if (!IsObjc3CliReportingOutputContractEdgeCaseCompatibilitySurfaceReady(
+          cli_reporting_output_contract_edge_case_compatibility_surface,
+          output_contract_edge_case_compatibility_reason)) {
+    std::cerr << "cli/reporting output edge-case compatibility fail-closed: "
+              << output_contract_edge_case_compatibility_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
+  const Objc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurface
+      cli_reporting_output_contract_edge_case_robustness_surface =
+          BuildObjc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurface(
+              cli_reporting_output_contract_edge_case_compatibility_surface);
+  std::string output_contract_edge_case_robustness_reason;
+  if (!IsObjc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurfaceReady(
+          cli_reporting_output_contract_edge_case_robustness_surface,
+          output_contract_edge_case_robustness_reason)) {
+    std::cerr << "cli/reporting output edge-case expansion and robustness fail-closed: "
+              << output_contract_edge_case_robustness_reason << "\n";
+    objc3c_frontend_c_context_destroy(context);
+    return 2;
+  }
+
   const std::string summary_json = BuildSummaryJson(
       options,
       status,
       result,
       last_error,
-      cli_reporting_output_contract_core_feature_surface);
+      cli_reporting_output_contract_edge_case_robustness_surface);
   std::string summary_error;
   if (!WriteSummary(summary_path, summary_json, summary_error)) {
     std::cerr << summary_error << "\n";

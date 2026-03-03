@@ -122,6 +122,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent = false;
   bool parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready = false;
   bool parser_diagnostic_grammar_hooks_core_feature_expansion_ready = false;
+  bool parser_diagnostic_grammar_hooks_edge_case_compatibility_consistent = false;
+  bool parser_diagnostic_grammar_hooks_edge_case_compatibility_ready = false;
   bool parser_token_count_budget_consistent = false;
   bool parse_artifact_layout_fingerprint_consistent = false;
   bool parse_artifact_fingerprint_consistent = false;
@@ -206,6 +208,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string parser_diagnostic_source_precision_scaffold_key;
   std::string parser_diagnostic_grammar_hooks_core_feature_key;
   std::string parser_diagnostic_grammar_hooks_core_feature_expansion_key;
+  std::string parser_diagnostic_grammar_hooks_edge_case_compatibility_key;
   std::string parse_artifact_edge_robustness_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;
@@ -292,6 +295,75 @@ struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurfa
   std::string arc_diagnostics_fixit_replay_key;
   std::string core_feature_key;
   std::string expansion_key;
+  std::string failure_reason;
+};
+
+struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface {
+  bool core_feature_expansion_ready = false;
+  bool typed_handoff_key_consistent = false;
+  bool compatibility_handoff_consistent = false;
+  bool language_version_pragma_coordinate_order_consistent = false;
+  bool parse_artifact_edge_case_robustness_consistent = false;
+  bool parse_artifact_replay_key_deterministic = false;
+  bool parse_recovery_determinism_hardening_consistent = false;
+  bool edge_case_compatibility_consistent = false;
+  bool edge_case_compatibility_ready = false;
+  std::size_t ownership_arc_diagnostic_candidate_sites = 0;
+  std::size_t ownership_arc_fixit_available_sites = 0;
+  std::size_t ownership_arc_profiled_sites = 0;
+  std::size_t ownership_arc_weak_unowned_conflict_diagnostic_sites = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites = 0;
+  std::size_t ownership_arc_contract_violation_sites = 0;
+  std::string typed_handoff_key;
+  std::string compatibility_handoff_key;
+  std::string parse_artifact_edge_robustness_key;
+  std::string parse_recovery_determinism_hardening_key;
+  std::string expansion_key;
+  std::string edge_case_compatibility_key;
+  std::string failure_reason;
+};
+
+struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface {
+  bool core_feature_expansion_ready = false;
+  bool edge_case_compatibility_consistent = false;
+  bool edge_case_compatibility_ready = false;
+  bool edge_case_expansion_consistent = false;
+  bool edge_case_robustness_ready = false;
+  std::size_t ownership_arc_diagnostic_candidate_sites = 0;
+  std::size_t ownership_arc_fixit_available_sites = 0;
+  std::size_t ownership_arc_profiled_sites = 0;
+  std::size_t ownership_arc_weak_unowned_conflict_diagnostic_sites = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites = 0;
+  std::size_t ownership_arc_contract_violation_sites = 0;
+  std::string typed_handoff_key;
+  std::string compatibility_handoff_key;
+  std::string parse_artifact_edge_robustness_key;
+  std::string long_tail_grammar_edge_case_robustness_key;
+  std::string parse_recovery_determinism_hardening_key;
+  std::string edge_case_compatibility_key;
+  std::string edge_case_robustness_key;
+  std::string failure_reason;
+};
+
+struct Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface {
+  bool edge_case_robustness_ready = false;
+  bool edge_case_expansion_consistent = false;
+  bool parser_diagnostic_surface_consistent = false;
+  bool parser_diagnostic_code_surface_deterministic = false;
+  bool parse_artifact_diagnostics_hardening_consistent = false;
+  bool long_tail_grammar_diagnostics_hardening_consistent = false;
+  bool long_tail_grammar_diagnostics_hardening_ready = false;
+  bool semantic_diagnostics_deterministic = false;
+  bool diagnostics_hardening_consistent = false;
+  bool diagnostics_hardening_ready = false;
+  std::size_t parser_diagnostic_code_count = 0;
+  std::size_t parser_diagnostic_grammar_hook_code_count = 0;
+  std::size_t parser_diagnostic_coordinate_tagged_count = 0;
+  std::string edge_case_robustness_key;
+  std::string parse_artifact_diagnostics_hardening_key;
+  std::string long_tail_grammar_diagnostics_hardening_key;
+  std::string typed_handoff_key;
+  std::string diagnostics_hardening_key;
   std::string failure_reason;
 };
 
@@ -497,6 +569,49 @@ struct Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface 
   std::string lowering_boundary_replay_key;
   std::string diagnostics_hardening_key;
   std::string core_feature_key;
+  std::string failure_reason;
+};
+
+struct Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface {
+  bool core_feature_impl_ready = false;
+  bool diagnostics_surfacing_scaffold_ready = false;
+  bool diagnostics_hardening_key_consistent = false;
+  bool diagnostics_payload_accounting_consistent = false;
+  bool expansion_replay_keys_ready = false;
+  bool lowering_pipeline_expansion_ready = false;
+  bool core_feature_expansion_ready = false;
+  std::size_t lexer_diagnostic_count = 0;
+  std::size_t parser_diagnostic_count = 0;
+  std::size_t semantic_diagnostic_count = 0;
+  std::size_t parser_diagnostic_code_count = 0;
+  std::string parse_artifact_replay_key;
+  std::string lowering_boundary_replay_key;
+  std::string diagnostics_hardening_key;
+  std::string core_feature_key;
+  std::string expansion_key;
+  std::string failure_reason;
+};
+
+struct Objc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface {
+  bool core_feature_expansion_ready = false;
+  bool compatibility_handoff_consistent = false;
+  bool language_version_pragma_coordinate_order_consistent = false;
+  bool parse_artifact_edge_case_robustness_consistent = false;
+  bool parse_artifact_replay_key_deterministic = false;
+  bool parse_recovery_determinism_hardening_consistent = false;
+  bool parse_edge_case_surfaces_consistent = false;
+  bool parse_edge_case_surfaces_ready = false;
+  bool lowering_pipeline_edge_case_compatibility_ready = false;
+  bool edge_case_compatibility_consistent = false;
+  bool edge_case_compatibility_replay_keys_ready = false;
+  bool edge_case_compatibility_ready = false;
+  std::string compatibility_handoff_key;
+  std::string parse_artifact_edge_robustness_key;
+  std::string parse_recovery_determinism_hardening_key;
+  std::string long_tail_grammar_edge_case_compatibility_key;
+  std::string parser_diagnostic_grammar_hooks_edge_case_compatibility_key;
+  std::string core_feature_expansion_key;
+  std::string edge_case_compatibility_key;
   std::string failure_reason;
 };
 
@@ -794,6 +909,12 @@ struct Objc3FrontendPipelineResult {
       semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface;
   Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface
       semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseCompatibilitySurface
+      semantic_diagnostic_taxonomy_and_fixit_edge_case_compatibility_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisEdgeCaseExpansionAndRobustnessSurface
+      semantic_diagnostic_taxonomy_and_fixit_edge_case_expansion_and_robustness_surface;
+  Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisDiagnosticsHardeningSurface
+      semantic_diagnostic_taxonomy_and_fixit_diagnostics_hardening_surface;
   Objc3ParseLoweringReadinessSurface parse_lowering_readiness_surface;
   Objc3SemanticStabilitySpecDeltaClosureScaffold semantic_stability_spec_delta_closure_scaffold;
   Objc3SemanticStabilityCoreFeatureImplementationSurface
@@ -806,6 +927,10 @@ struct Objc3FrontendPipelineResult {
       lowering_runtime_diagnostics_surfacing_scaffold;
   Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurface
       lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureExpansionSurface
+      lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface;
+  Objc3LoweringRuntimeDiagnosticsSurfacingEdgeCaseCompatibilitySurface
+      lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface;
   Objc3LoweringRuntimeStabilityCoreFeatureImplementationSurface
       lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;
