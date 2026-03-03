@@ -457,6 +457,7 @@ At minimum, the pass-graph gate shall validate:
   type-form contract drift before semantic compatibility and migration
   validation advances.
 - type-system diagnostics hardening governance shall preserve explicit lane-B dependency anchors (`M227-B007`, `M227-B006`) and fail closed on canonical ObjC type-form diagnostics consistency/readiness or diagnostics-key continuity drift before semantic compatibility and migration validation advances.
+- type-system recovery/determinism hardening governance shall preserve explicit lane-B dependency anchors (`M227-B008`, `M227-B007`) and fail closed on canonical ObjC type-form recovery consistency/readiness or recovery-key continuity drift before semantic compatibility and migration validation advances.
 - typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
   lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
   before semantic compatibility and runtime-facing metadata validation advances.
