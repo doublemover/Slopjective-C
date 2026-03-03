@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "parse/objc3_diagnostic_grammar_hooks_core_feature.h"
+#include "parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.h"
 #include "parse/objc3_diagnostic_source_precision_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
@@ -192,8 +193,12 @@ inline std::string BuildObjc3ParseArtifactDiagnosticsHardeningKey(
     bool parser_diagnostic_code_surface_deterministic,
     bool parser_diagnostic_source_precision_scaffold_consistent,
     bool parser_diagnostic_grammar_hooks_core_feature_consistent,
+    bool parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent,
+    bool parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready,
+    bool parser_diagnostic_grammar_hooks_core_feature_expansion_ready,
     const std::string &parser_diagnostic_source_precision_scaffold_key,
     const std::string &parser_diagnostic_grammar_hooks_core_feature_key,
+    const std::string &parser_diagnostic_grammar_hooks_core_feature_expansion_key,
     bool parse_artifact_diagnostics_hardening_consistent) {
   return "parser_diagnostics=" + std::to_string(parser_diagnostic_count) +
          ";snapshot_parser_diagnostics=" + std::to_string(parser_snapshot_diagnostic_count) +
@@ -206,8 +211,16 @@ inline std::string BuildObjc3ParseArtifactDiagnosticsHardeningKey(
          (parser_diagnostic_source_precision_scaffold_consistent ? "true" : "false") +
          ";grammar_hooks_core_feature_consistent=" +
          (parser_diagnostic_grammar_hooks_core_feature_consistent ? "true" : "false") +
+         ";grammar_hooks_core_feature_expansion_accounting_consistent=" +
+         (parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent ? "true" : "false") +
+         ";grammar_hooks_core_feature_expansion_replay_keys_ready=" +
+         (parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready ? "true" : "false") +
+         ";grammar_hooks_core_feature_expansion_ready=" +
+         (parser_diagnostic_grammar_hooks_core_feature_expansion_ready ? "true" : "false") +
          ";source_precision_scaffold_key=" + parser_diagnostic_source_precision_scaffold_key +
          ";grammar_hooks_core_feature_key=" + parser_diagnostic_grammar_hooks_core_feature_key +
+         ";grammar_hooks_core_feature_expansion_key=" +
+         parser_diagnostic_grammar_hooks_core_feature_expansion_key +
          ";consistent=" + (parse_artifact_diagnostics_hardening_consistent ? "true" : "false");
 }
 
@@ -1660,6 +1673,15 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           pipeline_result.stage_diagnostics.parser,
           parser_snapshot,
           parser_diagnostic_source_precision_scaffold);
+  const Objc3DiagnosticGrammarHooksCoreFeatureExpansionSurface
+      parser_diagnostic_grammar_hooks_core_feature_expansion =
+          BuildObjc3DiagnosticGrammarHooksCoreFeatureExpansionSurface(
+              parser_diagnostic_grammar_hooks_core_feature,
+              parser_diagnostic_source_precision_scaffold,
+              parser_diagnostic_code_coverage.unique_code_count,
+              parser_diagnostic_code_coverage.unique_code_fingerprint,
+              surface.parser_diagnostic_count,
+              parser_snapshot.parser_diagnostic_count);
   const bool parser_snapshot_breakdown_consistent =
       parser_snapshot_breakdown_count == parser_snapshot.top_level_declaration_count;
   surface.parser_diagnostic_surface_consistent =
@@ -1684,6 +1706,17 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.parser_diagnostic_grammar_hooks_core_feature_ready =
       IsObjc3DiagnosticGrammarHooksCoreFeatureReady(
           parser_diagnostic_grammar_hooks_core_feature);
+  surface.parser_diagnostic_grammar_hook_unique_code_count =
+      parser_diagnostic_grammar_hooks_core_feature_expansion.unique_diagnostic_code_count;
+  surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent =
+      parser_diagnostic_grammar_hooks_core_feature_expansion.accounting_consistent;
+  surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready =
+      parser_diagnostic_grammar_hooks_core_feature_expansion.replay_keys_ready;
+  surface.parser_diagnostic_grammar_hooks_core_feature_expansion_key =
+      parser_diagnostic_grammar_hooks_core_feature_expansion.expansion_key;
+  surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready =
+      IsObjc3DiagnosticGrammarHooksCoreFeatureExpansionReady(
+          parser_diagnostic_grammar_hooks_core_feature_expansion);
   surface.parser_diagnostic_code_count = parser_diagnostic_code_coverage.unique_code_count;
   surface.parser_diagnostic_code_fingerprint = parser_diagnostic_code_coverage.unique_code_fingerprint;
   surface.parser_diagnostic_code_surface_deterministic =
@@ -1696,8 +1729,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       surface.parser_diagnostic_source_precision_scaffold_ready &&
       surface.parser_diagnostic_grammar_hooks_core_feature_consistent &&
       surface.parser_diagnostic_grammar_hooks_core_feature_ready &&
+      surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent &&
+      surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready &&
+      surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready &&
       !surface.parser_diagnostic_source_precision_scaffold_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_core_feature_key.empty();
+      !surface.parser_diagnostic_grammar_hooks_core_feature_key.empty() &&
+      !surface.parser_diagnostic_grammar_hooks_core_feature_expansion_key.empty();
   surface.parser_token_count_budget_consistent =
       surface.parser_token_count >= parser_snapshot_breakdown_count &&
       surface.parser_token_count >= parser_snapshot.top_level_declaration_count &&
@@ -1786,8 +1823,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
           surface.parser_diagnostic_code_surface_deterministic,
           surface.parser_diagnostic_source_precision_scaffold_consistent,
           surface.parser_diagnostic_grammar_hooks_core_feature_consistent,
+          surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent,
+          surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready,
+          surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready,
           surface.parser_diagnostic_source_precision_scaffold_key,
           surface.parser_diagnostic_grammar_hooks_core_feature_key,
+          surface.parser_diagnostic_grammar_hooks_core_feature_expansion_key,
           surface.parse_artifact_diagnostics_hardening_consistent);
   surface.parse_artifact_edge_case_robustness_consistent =
       surface.parser_token_count_budget_consistent &&
@@ -2930,6 +2971,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     surface.failure_reason = "parser diagnostic source-precision scaffold is not ready";
   } else if (!surface.parser_diagnostic_grammar_hooks_core_feature_ready) {
     surface.failure_reason = "parser diagnostic grammar hooks core feature is not ready";
+  } else if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_accounting_consistent) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks core feature expansion accounting is inconsistent";
+  } else if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_replay_keys_ready) {
+    surface.failure_reason =
+        "parser diagnostic grammar hooks core feature expansion replay keys are not ready";
+  } else if (!surface.parser_diagnostic_grammar_hooks_core_feature_expansion_ready) {
+    surface.failure_reason = "parser diagnostic grammar hooks core feature expansion is not ready";
   } else if (!surface.parser_diagnostic_code_surface_deterministic) {
     surface.failure_reason = "parser diagnostic code surface is not deterministic";
   } else if (!surface.parse_artifact_handoff_deterministic) {
