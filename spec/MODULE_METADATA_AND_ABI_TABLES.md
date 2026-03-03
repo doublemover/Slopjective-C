@@ -246,6 +246,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C interop lowering/ABI conformance core-feature expansion metadata anchors for `M244-C004`
       with explicit `M244-C003` dependency continuity and fail-closed evidence
       so lowering/ABI core-feature expansion drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance edge-case and compatibility completion metadata anchors for `M244-C005`
+      with explicit `M244-C004` dependency continuity and fail-closed evidence
+      so lowering/ABI edge-case compatibility drift fails closed.
     - deterministic lane-D runtime/link bridge-path metadata anchors for `M244-D001`
       with explicit dependency tokens (`M244-A001`) and fail-closed evidence continuity
       so runtime/link bridge-path metadata drift fails closed.
