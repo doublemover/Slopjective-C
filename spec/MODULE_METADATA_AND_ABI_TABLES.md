@@ -835,6 +835,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M248-D011` dependency continuity and fail-closed cross-lane integration evidence continuity.
   - deterministic lane-D runner/platform operations docs/operator runbook synchronization metadata anchors for `M248-D013`
     with explicit `M248-D012` dependency continuity and fail-closed docs/runbook synchronization evidence continuity.
+  - deterministic lane-D runner/platform operations release-candidate replay dry-run metadata anchors for `M248-D014`
+    with explicit `M248-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 

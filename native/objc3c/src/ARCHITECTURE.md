@@ -849,6 +849,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d013_runner_reliability_and_platform_operations_docs_and_operator_runbook_synchronization_packet.md`,
   and `package.json` so docs/runbook continuity remains deterministic
   and fail-closed against `M248-D012` dependency drift.
+- M248 lane-D D014 release-candidate replay dry-run anchors runner/platform operations contract integration
+  explicit lane-D replay dry-run artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_release_candidate_and_replay_dry_run_d014_expectations.md`,
+  `spec/planning/compiler/m248/m248_d014_runner_reliability_and_platform_operations_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` so replay dry-run continuity remains deterministic
+  and fail-closed against `M248-D013` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
