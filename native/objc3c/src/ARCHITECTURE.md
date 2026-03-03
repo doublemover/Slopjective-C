@@ -192,6 +192,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
   (`check:objc3c:m227-a020-lane-a-readiness`) so advanced performance
   continuity drift fails closed before integration closeout workpacks.
+- M227 lane-A A021 integration closeout and gate sign-off anchors deterministic
+  closeout/sign-off readiness synthesis in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
+  (`check:objc3c:m227-a021-lane-a-readiness`) so sign-off governance drift
+  fails closed before lane-E integration gate consumption.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

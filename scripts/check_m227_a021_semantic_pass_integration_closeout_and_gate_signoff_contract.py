@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""Fail-closed validator for M227-A021 semantic pass integration closeout and gate sign-off shard1 contract."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+MODE = "m227-semantic-pass-integration-closeout-and-gate-signoff-contract-a021-v1"
+
+ARTIFACTS: dict[str, Path] = {
+    "a020_contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m227_semantic_pass_advanced_performance_workpack_shard1_expectations.md",
+    "contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m227_semantic_pass_integration_closeout_and_gate_signoff_expectations.md",
+    "packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m227"
+    / "m227_a021_semantic_pass_integration_closeout_and_gate_signoff_packet.md",
+    "parse_surface": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_parse_lowering_readiness_surface.h",
+    "frontend_types": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h",
+    "artifacts_source": ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp",
+    "runbook": ROOT / "docs" / "runbooks" / "m227_wave_execution_runbook.md",
+    "package_json": ROOT / "package.json",
+    "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
+    "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
+    "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+}
+
+REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "a020_contract_doc": (
+        (
+            "M227-A021-DEP-01",
+            "Contract ID: `objc3c-semantic-pass-advanced-performance-workpack-shard1/m227-a020-v1`",
+        ),
+    ),
+    "contract_doc": (
+        (
+            "M227-A021-DOC-01",
+            "Contract ID: `objc3c-semantic-pass-integration-closeout-and-gate-signoff/m227-a021-v1`",
+        ),
+        ("M227-A021-DOC-02", "Dependencies: `M227-A020`"),
+        ("M227-A021-DOC-03", "toolchain_runtime_ga_operations_integration_closeout_signoff_consistent"),
+        ("M227-A021-DOC-04", "toolchain_runtime_ga_operations_integration_closeout_signoff_ready"),
+        ("M227-A021-DOC-05", "toolchain_runtime_ga_operations_integration_closeout_signoff_key"),
+        (
+            "M227-A021-DOC-06",
+            "scripts/check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py",
+        ),
+        (
+            "M227-A021-DOC-07",
+            "tests/tooling/test_check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py",
+        ),
+        ("M227-A021-DOC-08", "npm run check:objc3c:m227-a021-lane-a-readiness"),
+    ),
+    "packet_doc": (
+        ("M227-A021-PKT-01", "Packet: `M227-A021`"),
+        ("M227-A021-PKT-02", "Dependencies: `M227-A020`"),
+        ("M227-A021-PKT-03", "objc3_parse_lowering_readiness_surface.h"),
+        (
+            "M227-A021-PKT-04",
+            "scripts/check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py",
+        ),
+    ),
+    "parse_surface": (
+        ("M227-A021-SUR-01", "IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffConsistent("),
+        ("M227-A021-SUR-02", "IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffReady("),
+        ("M227-A021-SUR-03", "BuildObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffKey("),
+        (
+            "M227-A021-SUR-04",
+            "surface.toolchain_runtime_ga_operations_integration_closeout_signoff_consistent =",
+        ),
+        (
+            "M227-A021-SUR-05",
+            "surface.toolchain_runtime_ga_operations_integration_closeout_signoff_ready =",
+        ),
+        (
+            "M227-A021-SUR-06",
+            "surface.toolchain_runtime_ga_operations_integration_closeout_signoff_key =",
+        ),
+        (
+            "M227-A021-SUR-07",
+            "\"toolchain/runtime GA operations integration closeout and sign-off is inconsistent\"",
+        ),
+        (
+            "M227-A021-SUR-08",
+            "\"toolchain/runtime GA operations integration closeout and sign-off is not ready\"",
+        ),
+    ),
+    "frontend_types": (
+        (
+            "M227-A021-TYP-01",
+            "bool toolchain_runtime_ga_operations_integration_closeout_signoff_consistent = false;",
+        ),
+        (
+            "M227-A021-TYP-02",
+            "bool toolchain_runtime_ga_operations_integration_closeout_signoff_ready = false;",
+        ),
+        (
+            "M227-A021-TYP-03",
+            "std::string toolchain_runtime_ga_operations_integration_closeout_signoff_key;",
+        ),
+    ),
+    "artifacts_source": (
+        (
+            "M227-A021-ART-01",
+            ",\\\"toolchain_runtime_ga_operations_integration_closeout_signoff_consistent\\\": ",
+        ),
+        (
+            "M227-A021-ART-02",
+            ",\\\"toolchain_runtime_ga_operations_integration_closeout_signoff_ready\\\": ",
+        ),
+        (
+            "M227-A021-ART-03",
+            "\\\",\\\"toolchain_runtime_ga_operations_integration_closeout_signoff_key\\\":\\\"",
+        ),
+    ),
+    "runbook": (
+        (
+            "M227-A021-RBK-01",
+            "objc3c-semantic-pass-integration-closeout-and-gate-signoff/m227-a021-v1",
+        ),
+        (
+            "M227-A021-RBK-02",
+            "python scripts/check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py",
+        ),
+        (
+            "M227-A021-RBK-03",
+            "python -m pytest tests/tooling/test_check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py -q",
+        ),
+        ("M227-A021-RBK-04", "npm run check:objc3c:m227-a021-lane-a-readiness"),
+    ),
+    "package_json": (
+        (
+            "M227-A021-CFG-01",
+            '"check:objc3c:m227-a021-semantic-pass-integration-closeout-and-gate-signoff-contract"',
+        ),
+        (
+            "M227-A021-CFG-02",
+            '"test:tooling:m227-a021-semantic-pass-integration-closeout-and-gate-signoff-contract"',
+        ),
+        ("M227-A021-CFG-03", '"check:objc3c:m227-a021-lane-a-readiness"'),
+        ("M227-A021-CFG-04", "check:objc3c:m227-a020-lane-a-readiness"),
+    ),
+    "architecture_doc": (
+        (
+            "M227-A021-ARC-01",
+            "M227 lane-A A021 integration closeout and gate sign-off anchors deterministic",
+        ),
+    ),
+    "lowering_spec": (
+        (
+            "M227-A021-SPC-01",
+            "semantic-pass integration closeout and gate sign-off wiring shall preserve deterministic",
+        ),
+    ),
+    "metadata_spec": (
+        (
+            "M227-A021-META-01",
+            "deterministic lane-A semantic-pass integration closeout and gate sign-off metadata anchors for `M227-A021`",
+        ),
+    ),
+}
+
+
+@dataclass(frozen=True)
+class Finding:
+    artifact: str
+    check_id: str
+    detail: str
+
+
+def canonical_json(payload: object) -> str:
+    return json.dumps(payload, indent=2) + "\n"
+
+
+def parse_args(argv: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--summary-out",
+        type=Path,
+        default=Path(
+            "tmp/reports/m227/M227-A021/integration_closeout_and_gate_signoff_contract_summary.json"
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def load_text(path: Path, *, artifact: str) -> str:
+    if not path.exists() or not path.is_file():
+        raise ValueError(f"{artifact} missing file: {path.as_posix()}")
+    return path.read_text(encoding="utf-8")
+
+
+def run(argv: Sequence[str]) -> int:
+    args = parse_args(argv)
+
+    findings: list[Finding] = []
+    total_checks = 0
+    passed_checks = 0
+
+    for artifact, path in ARTIFACTS.items():
+        text = load_text(path, artifact=artifact)
+        for check_id, snippet in REQUIRED_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                passed_checks += 1
+            else:
+                findings.append(Finding(artifact, check_id, f"expected snippet missing: {snippet}"))
+
+    ok = not findings
+    summary = {
+        "mode": MODE,
+        "ok": ok,
+        "checks_total": total_checks,
+        "checks_passed": passed_checks,
+        "failures": [
+            {"artifact": finding.artifact, "check_id": finding.check_id, "detail": finding.detail}
+            for finding in findings
+        ],
+    }
+    args.summary_out.parent.mkdir(parents=True, exist_ok=True)
+    args.summary_out.write_text(canonical_json(summary), encoding="utf-8")
+
+    if ok:
+        return 0
+    for finding in findings:
+        print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(run(sys.argv[1:]))
+
+

@@ -487,6 +487,12 @@ A conforming implementation shall preserve, for all exported declarations:
       `toolchain_runtime_ga_operations_advanced_performance_ready`,
       `toolchain_runtime_ga_operations_advanced_performance_key`) so advanced
       performance shard1 drift fails closed.
+    - deterministic lane-A semantic-pass integration closeout and gate sign-off metadata anchors for `M227-A021`
+      with closeout/sign-off consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_integration_closeout_signoff_consistent`,
+      `toolchain_runtime_ga_operations_integration_closeout_signoff_ready`,
+      `toolchain_runtime_ga_operations_integration_closeout_signoff_key`) so
+      integration closeout/sign-off drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

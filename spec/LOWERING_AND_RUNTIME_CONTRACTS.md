@@ -535,6 +535,12 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_advanced_performance_ready`, or
   `toolchain_runtime_ga_operations_advanced_performance_key` drift before
   integration closeout validation advances.
+- semantic-pass integration closeout and gate sign-off wiring shall preserve deterministic
+  sign-off dependency anchors (`M227-A021`) and fail closed
+  when `toolchain_runtime_ga_operations_integration_closeout_signoff_consistent`,
+  `toolchain_runtime_ga_operations_integration_closeout_signoff_ready`, or
+  `toolchain_runtime_ga_operations_integration_closeout_signoff_key` drift before
+  lane-E integration gate validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before
