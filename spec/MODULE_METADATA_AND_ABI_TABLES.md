@@ -411,6 +411,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-B type-system recovery/determinism hardening metadata anchors for `M227-B008`
       with canonical type-form recovery consistency/readiness and recovery-key continuity evidence,
       plus explicit `M227-B007` dependency continuity so recovery drift fails closed.
+    - deterministic lane-B type-system conformance matrix metadata anchors for `M227-B009`
+      with canonical type-form conformance matrix consistency/readiness and conformance-matrix-key continuity evidence,
+      plus explicit `M227-B008` dependency continuity so conformance matrix drift fails closed.
     - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
       with typed sema handoff evidence and lowering metadata continuity so
       sema-to-lowering contract drift fails closed.
