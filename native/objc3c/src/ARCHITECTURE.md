@@ -831,6 +831,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d010_runner_reliability_and_platform_operations_conformance_corpus_expansion_packet.md`,
   and `package.json` so conformance-corpus continuity remains deterministic
   and fail-closed against `M248-D009` dependency drift.
+- M248 lane-D D011 runner/platform operations performance and quality guardrails anchors
+  explicit lane-D performance/quality artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_performance_and_quality_guardrails_d011_expectations.md`,
+  `spec/planning/compiler/m248/m248_d011_runner_reliability_and_platform_operations_performance_and_quality_guardrails_packet.md`,
+  and `package.json` so performance/quality continuity remains deterministic
+  and fail-closed against `M248-D010` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,
