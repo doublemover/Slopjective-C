@@ -532,6 +532,12 @@ Current-state note:
   `parse/objc3_diagnostic_grammar_hooks_core_feature.cpp`, and
   `pipeline/objc3_parse_lowering_readiness_surface.h` so parser diagnostics
   grammar-hook namespace/order and source-precision handoff remain fail-closed.
+- M243 lane-A A004 core feature expansion anchors parser diagnostic
+  grammar-hook expansion guardrails in
+  `parse/objc3_diagnostic_grammar_hooks_core_feature_expansion_surface.h` and
+  `pipeline/objc3_parse_lowering_readiness_surface.h` so parser diagnostic
+  grammar-hook case accounting, replay keys, and source-precision coverage stay
+  deterministic and fail-closed for downstream lowering diagnostics surfaces.
 - M243 lane-B B001 semantic diagnostic taxonomy/fix-it synthesis anchors explicit
   sema diagnostics bus and pass-flow freeze in
   `sema/objc3_sema_pass_manager_contract.h` and
@@ -551,6 +557,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` so diagnostics surfacing readiness
   remains deterministic and fail-closed through parse/lowering handoff
   boundaries.
+- M243 lane-C C003 core feature implementation anchors lowering/runtime
+  diagnostics surfacing closure in
+  `pipeline/objc3_lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so diagnostics hardening/replay-key
+  invariants remain deterministic and fail-closed before lowering pipeline
+  emission advances.
 - M243 lane-B B002 modular split scaffolding anchors semantic diagnostic
   taxonomy/fix-it handoff closure in
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_scaffold.h`
@@ -563,6 +576,13 @@ Current-state note:
   `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_core_feature_implementation_surface.h`
   and `pipeline/objc3_frontend_pipeline.cpp` so lane-B core feature readiness
   remains deterministic for diagnostics UX and fix-it engine closure.
+- M243 lane-B B004 semantic diagnostic taxonomy/fix-it synthesis core feature
+  expansion anchors typed handoff-key continuity and replay-key/payload
+  accounting closure in
+  `pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_core_feature_expansion_surface.h`
+  and `pipeline/objc3_frontend_pipeline.cpp` so lane-B expansion readiness
+  remains deterministic and fail-closed for semantic diagnostics UX and fix-it
+  synthesis closure.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,
@@ -581,6 +601,16 @@ Current-state note:
   `spec/planning/compiler/m243/m243_d002_cli_reporting_and_output_contract_integration_modular_split_scaffolding_packet.md`,
   so diagnostics schema/summary output contracts remain deterministic and
   fail-closed against `M243-D001` dependency drift.
+- M243 lane-D D003 core feature implementation anchors CLI/reporting output contract integration
+  core closure in
+  `io/objc3_cli_reporting_output_contract_core_feature_surface.h`,
+  `io/objc3_cli_reporting_output_contract_scaffold.h`, and
+  `tools/objc3c_frontend_c_api_runner.cpp`, frozen by
+  `docs/contracts/m243_cli_reporting_and_output_contract_integration_core_feature_implementation_d003_expectations.md`
+  and
+  `spec/planning/compiler/m243/m243_d003_cli_reporting_and_output_contract_integration_core_feature_implementation_packet.md`,
+  so diagnostics schema/summary output contracts remain deterministic and
+  fail-closed against `M243-D002` dependency drift.
 - M243 lane-E E001 diagnostics quality gate/replay policy contract and architecture freeze
   anchors dependency references (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) in
@@ -596,6 +626,13 @@ Current-state note:
   and `package.json` so diagnostics quality gate/replay-policy modular split/scaffolding
   evidence remains deterministic and fail-closed while pending GH seed
   dependency tokens remain open.
+- M243 lane-E E003 diagnostics quality gate/replay policy core feature implementation anchors dependency references
+  (`M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and `M243-D002`) in
+  `docs/contracts/m243_lane_e_diagnostics_quality_gate_and_replay_policy_core_feature_implementation_e003_expectations.md`,
+  `spec/planning/compiler/m243/m243_e003_lane_e_diagnostics_quality_gate_and_replay_policy_core_feature_implementation_packet.md`,
+  and `package.json` so diagnostics quality gate/replay-policy core feature
+  implementation evidence remains deterministic and fail-closed across mixed
+  lane core/modular prerequisite maturity.
 - M250 lane-A frontend stability freeze anchors long-tail grammar closure to
   parser contract snapshots (`parse/objc3_parser_contract.h`) and parse/lowering
   readiness replay gates (`pipeline/objc3_parse_lowering_readiness_surface.h`)

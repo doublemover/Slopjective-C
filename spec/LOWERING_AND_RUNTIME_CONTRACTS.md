@@ -317,6 +317,11 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-D dependency anchors (`M243-D001`) and fail closed on
   scaffold key, summary mode, diagnostics schema, or stage-report output
   contract drift before lane-E modular split readiness advances.
+- CLI/reporting and output core feature implementation governance shall preserve
+  explicit lane-D dependency anchors (`M243-D002`) and fail closed on
+  core-feature key continuity, diagnostics output path determinism, summary
+  output path determinism, or stage-report output contract drift before lane-E
+  core-feature readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
@@ -338,14 +343,26 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M243-E001`, `M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
   diagnostics/replay modular split evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy core feature implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and
+  `M243-D002`) and fail closed when dependency references,
+  diagnostics/replay core-feature evidence commands, or lane-E readiness hooks drift.
 - lowering/runtime diagnostics surfacing modular split scaffolding shall
   preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
   scaffolding evidence drift before diagnostics quality gate and replay policy
+  validation advances.
+- lowering/runtime diagnostics surfacing core feature implementation shall
+  preserve explicit lane-C dependency anchors (`M243-C002`) and fail closed on
+  core-feature evidence drift before diagnostics quality gate and replay policy
   validation advances.
 - semantic diagnostic taxonomy and fix-it synthesis core feature implementation
   shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
   core-feature evidence drift before diagnostics hardening and conformance
   expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis core feature expansion
+  shall preserve lane-B dependency anchors (`M243-B003`) and fail closed on
+  typed handoff-key continuity, replay-key readiness, or payload accounting
+  drift before diagnostics hardening and conformance expansions advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.
