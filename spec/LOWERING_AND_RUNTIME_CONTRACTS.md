@@ -272,6 +272,9 @@ At minimum, the pass-graph gate shall validate:
   deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
   and fail closed on lowering and ABI conformance boundary drift before
   downstream runtime projection and cross-lane conformance expansion advances.
+- interop lowering and ABI conformance modular split scaffolding governance shall preserve explicit
+  lane-C dependency anchor (`M244-C001`) and fail closed when modular split
+  dependency references or readiness evidence commands drift.
 - runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
   downstream runtime projection and metadata integration advances.
 - interop semantic contracts and type mediation governance shall preserve
