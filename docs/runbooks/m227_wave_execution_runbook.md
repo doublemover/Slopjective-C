@@ -10,6 +10,7 @@
 - `objc3c-type-system-objc3-forms-advanced-core-workpack-shard1/m227-b015-v1`
 - `objc3c-type-system-objc3-forms-advanced-edge-compatibility-workpack-shard1/m227-b016-v1`
 - `objc3c-type-system-objc3-forms-advanced-diagnostics-workpack-shard1/m227-b017-v1`
+- `objc3c-type-system-objc3-forms-advanced-conformance-workpack-shard1/m227-b018-v1`
 - `objc3c-typed-sema-to-lowering-modular-split-scaffold/m227-c002-v1`
 - `objc3c-runtime-facing-type-metadata-semantics-contract/m227-d001-v1`
 - `objc3c-lane-e-semantic-conformance-quality-gate-contract/m227-e001-v1`
@@ -49,32 +50,35 @@
 21. `python scripts/check_m227_b017_type_system_objc3_forms_advanced_diagnostics_workpack_shard1_contract.py`
 22. `python -m pytest tests/tooling/test_check_m227_b017_type_system_objc3_forms_advanced_diagnostics_workpack_shard1_contract.py -q`
 23. `npm run check:objc3c:m227-b017-lane-b-readiness`
-24. `python scripts/check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py`
-25. `python -m pytest tests/tooling/test_check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py -q`
-26. `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m227_a014_semantic_pass_release_replay_dry_run.ps1`
-27. `npm run check:objc3c:m227-a014-lane-a-readiness`
-28. `npm run check:objc3c:m227-a014-milestone-optimization-replay-proof`
-29. `python scripts/check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py`
-30. `python -m pytest tests/tooling/test_check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py -q`
-31. `npm run check:objc3c:m227-a015-lane-a-readiness`
-32. `python scripts/check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py`
-33. `python -m pytest tests/tooling/test_check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py -q`
-34. `npm run check:objc3c:m227-a016-lane-a-readiness`
-35. `python scripts/check_m227_a017_semantic_pass_advanced_diagnostics_workpack_shard1_contract.py`
-36. `python -m pytest tests/tooling/test_check_m227_a017_semantic_pass_advanced_diagnostics_workpack_shard1_contract.py -q`
-37. `npm run check:objc3c:m227-a017-lane-a-readiness`
-38. `python scripts/check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py`
-39. `python -m pytest tests/tooling/test_check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py -q`
-40. `npm run check:objc3c:m227-a018-lane-a-readiness`
-41. `python scripts/check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py`
-42. `python -m pytest tests/tooling/test_check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py -q`
-43. `npm run check:objc3c:m227-a019-lane-a-readiness`
-44. `python scripts/check_m227_a020_semantic_pass_advanced_performance_workpack_shard1_contract.py`
-45. `python -m pytest tests/tooling/test_check_m227_a020_semantic_pass_advanced_performance_workpack_shard1_contract.py -q`
-46. `npm run check:objc3c:m227-a020-lane-a-readiness`
-47. `python scripts/check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py`
-48. `python -m pytest tests/tooling/test_check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py -q`
-49. `npm run check:objc3c:m227-a021-lane-a-readiness`
+24. `python scripts/check_m227_b018_type_system_objc3_forms_advanced_conformance_workpack_shard1_contract.py`
+25. `python -m pytest tests/tooling/test_check_m227_b018_type_system_objc3_forms_advanced_conformance_workpack_shard1_contract.py -q`
+26. `npm run check:objc3c:m227-b018-lane-b-readiness`
+27. `python scripts/check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py`
+28. `python -m pytest tests/tooling/test_check_m227_a014_semantic_pass_release_candidate_replay_dry_run_contract.py -q`
+29. `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_m227_a014_semantic_pass_release_replay_dry_run.ps1`
+30. `npm run check:objc3c:m227-a014-lane-a-readiness`
+31. `npm run check:objc3c:m227-a014-milestone-optimization-replay-proof`
+32. `python scripts/check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py`
+33. `python -m pytest tests/tooling/test_check_m227_a015_semantic_pass_advanced_core_workpack_shard1_contract.py -q`
+34. `npm run check:objc3c:m227-a015-lane-a-readiness`
+35. `python scripts/check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py`
+36. `python -m pytest tests/tooling/test_check_m227_a016_semantic_pass_advanced_edge_compatibility_workpack_shard1_contract.py -q`
+37. `npm run check:objc3c:m227-a016-lane-a-readiness`
+38. `python scripts/check_m227_a017_semantic_pass_advanced_diagnostics_workpack_shard1_contract.py`
+39. `python -m pytest tests/tooling/test_check_m227_a017_semantic_pass_advanced_diagnostics_workpack_shard1_contract.py -q`
+40. `npm run check:objc3c:m227-a017-lane-a-readiness`
+41. `python scripts/check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py`
+42. `python -m pytest tests/tooling/test_check_m227_a018_semantic_pass_advanced_conformance_workpack_shard1_contract.py -q`
+43. `npm run check:objc3c:m227-a018-lane-a-readiness`
+44. `python scripts/check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py`
+45. `python -m pytest tests/tooling/test_check_m227_a019_semantic_pass_advanced_integration_workpack_shard1_contract.py -q`
+46. `npm run check:objc3c:m227-a019-lane-a-readiness`
+47. `python scripts/check_m227_a020_semantic_pass_advanced_performance_workpack_shard1_contract.py`
+48. `python -m pytest tests/tooling/test_check_m227_a020_semantic_pass_advanced_performance_workpack_shard1_contract.py -q`
+49. `npm run check:objc3c:m227-a020-lane-a-readiness`
+50. `python scripts/check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py`
+51. `python -m pytest tests/tooling/test_check_m227_a021_semantic_pass_integration_closeout_and_gate_signoff_contract.py -q`
+52. `npm run check:objc3c:m227-a021-lane-a-readiness`
 
 ## Evidence
 
