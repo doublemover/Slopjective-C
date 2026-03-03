@@ -39,6 +39,14 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-b001-lane-b-readiness`) so canonical
   reference/message/bridge-top type-form routing in sema remains deterministic
   and fail-closed against ad-hoc compatibility drift.
+- M227 lane-B B007 type-system diagnostics hardening anchors
+  explicit lane-B diagnostics-hardening artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_diagnostics_hardening_b007_expectations.md`,
+  `spec/planning/compiler/m227/m227_b007_type_system_objc3_forms_diagnostics_hardening_packet.md`,
+  and `package.json` (`check:objc3c:m227-b007-lane-b-readiness`) so canonical
+  ObjC3 type-form diagnostics-hardening consistency/readiness and key
+  continuity remain deterministic and fail-closed against sema/type metadata
+  drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
