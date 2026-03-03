@@ -358,6 +358,11 @@ At minimum, the pass-graph gate shall validate:
   performance/quality guardrails consistency/readiness, guardrails-key
   continuity, or summary/diagnostics output contract drift before lane-E
   recovery readiness advances.
+- CLI/reporting and output cross-lane integration sync governance shall preserve
+  explicit lane-D dependency anchors (`M243-D011`) and fail closed on
+  cross-lane-integration-sync consistency/readiness,
+  cross-lane-integration-sync-key continuity, or summary/diagnostics output
+  contract drift before lane-E recovery readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
