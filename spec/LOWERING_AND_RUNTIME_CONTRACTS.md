@@ -508,6 +508,11 @@ At minimum, the pass-graph gate shall validate:
   cross-lane-integration-sync consistency, cross-lane-integration-sync readiness,
   or cross-lane-integration-sync-key continuity drift before downstream lane-B
   integration closures advance.
+- semantic diagnostic taxonomy and fix-it synthesis docs and operator runbook synchronization
+  shall preserve lane-B dependency anchors (`M243-B012`) and fail closed on
+  docs-runbook-synchronization consistency, docs-runbook-synchronization readiness,
+  or docs-runbook-synchronization-key continuity drift before downstream lane-B
+  integration closures advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

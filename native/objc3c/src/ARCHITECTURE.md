@@ -707,6 +707,12 @@ Current-state note:
   `spec/planning/compiler/m243/m243_b012_semantic_diagnostic_taxonomy_and_fix_it_synthesis_cross_lane_integration_sync_packet.md`,
   and `package.json` (`check:objc3c:m243-b012-lane-b-readiness`) so lane-B integration sync
   closure remains deterministic and fail-closed against `M243-B011` guardrail drift.
+- M243 lane-B B013 semantic diagnostic taxonomy/fix-it synthesis docs and operator runbook synchronization
+  anchors docs/runbook synchronization dependency/readiness continuity in
+  `docs/contracts/m243_semantic_diagnostic_taxonomy_and_fix_it_synthesis_docs_operator_runbook_synchronization_b013_expectations.md`,
+  `spec/planning/compiler/m243/m243_b013_semantic_diagnostic_taxonomy_and_fix_it_synthesis_docs_operator_runbook_synchronization_packet.md`,
+  and `package.json` (`check:objc3c:m243-b013-lane-b-readiness`) so lane-B docs/runbook synchronization
+  closure remains deterministic and fail-closed against `M243-B012` integration sync drift.
 - M243 lane-D D001 CLI/reporting and output contract integration anchors explicit
   CLI/frontend artifact handoff and deterministic diagnostics/summary outputs in
   `libobjc3c_frontend/objc3_cli_frontend.cpp`,

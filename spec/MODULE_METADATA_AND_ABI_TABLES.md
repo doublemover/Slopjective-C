@@ -349,6 +349,10 @@ A conforming implementation shall preserve, for all exported declarations:
      cross-lane integration sync metadata anchors for `M243-B012` with
      explicit `M243-B011` dependency continuity so cross-lane integration sync
      drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     docs/operator runbook synchronization metadata anchors for `M243-B013` with
+     explicit `M243-B012` dependency continuity so docs/runbook synchronization
+     drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
