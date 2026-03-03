@@ -822,6 +822,12 @@ Current-state note:
   `spec/planning/compiler/m246/m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_packet.md`,
   and `package.json` so optimizer hint-capture continuity remains deterministic
   and fail-closed against parser/AST hint drift.
+- M246 lane-C C001 IR optimization pass wiring and validation contract and architecture freeze anchors
+  explicit lane-C contract freeze artifacts in
+  `docs/contracts/m246_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m246/m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so optimizer pass-wiring continuity remains deterministic
+  and fail-closed against IR validation drift.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

@@ -440,6 +440,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
+    - deterministic lane-C IR optimization pass wiring metadata anchors for `M246-C001`
+      with IR pass-wiring evidence and optimizer replay-budget continuity so IR validation
+      drift fails closed.
     - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
       with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.
