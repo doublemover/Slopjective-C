@@ -105,6 +105,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-e001-lane-e-quality-gate-readiness`) so lane-E quality-gate
   governance evidence remains deterministic and fail-closed on dependency or
   readiness drift.
+- M227 lane-E E002 semantic conformance modular split/scaffolding anchors dependency references (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`) in
+  `docs/contracts/m227_lane_e_semantic_conformance_modular_split_e002_expectations.md`,
+  `spec/planning/compiler/m227/m227_e002_semantic_conformance_lane_e_modular_split_packet.md`,
+  `scripts/check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py`,
+  and `package.json` (`check:objc3c:m227-e002-lane-e-modular-split-readiness`) so lane-E modular split/scaffolding
+  governance evidence remains deterministic and fail-closed on dependency or
+  readiness drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
@@ -156,6 +163,13 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
   (`check:objc3c:m227-a017-lane-a-readiness`) so advanced diagnostics
   continuity drift fails closed before advanced conformance workpacks.
+- M227 lane-A A018 advanced conformance workpack (shard 1) anchors deterministic
+  conformance readiness synthesis in
+  `pipeline/objc3_parse_lowering_readiness_surface.h`,
+  `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with lane-A readiness wiring
+  (`check:objc3c:m227-a018-lane-a-readiness`) so advanced conformance
+  continuity drift fails closed before advanced integration workpacks.
 - M228 lane-A A001 lowering pipeline decomposition/pass-graph freeze anchors
   canonical stage-order and fail-closed lowering entrypoints in
   `pipeline/frontend_pipeline_contract.h`,

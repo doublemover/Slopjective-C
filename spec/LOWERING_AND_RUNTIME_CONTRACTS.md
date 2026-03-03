@@ -484,6 +484,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic conformance lane-E quality-gate contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`),
   preserve readiness continuity across `check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, and `check:objc3c:m227-d001-lane-d-readiness`,
   and fail closed when dependency tokens, package readiness hooks, or lane-E gate evidence drift.
+- semantic conformance lane-E modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`),
+  preserve readiness continuity across `check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, and `check:objc3c:m227-d002-lane-d-readiness`,
+  and fail closed when dependency tokens, package readiness hooks, or lane-E modular split/scaffolding evidence drift.
 - semantic-pass cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
   lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
@@ -513,6 +516,12 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_advanced_diagnostics_ready`, or
   `toolchain_runtime_ga_operations_advanced_diagnostics_key` drift before
   advanced conformance validation advances.
+- semantic-pass advanced conformance workpack (shard 1) wiring shall preserve deterministic
+  conformance dependency anchors (`M227-A018`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_conformance_consistent`,
+  `toolchain_runtime_ga_operations_advanced_conformance_ready`, or
+  `toolchain_runtime_ga_operations_advanced_conformance_key` drift before
+  advanced integration validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
   lane-B compatibility-mode and migration-assist handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before

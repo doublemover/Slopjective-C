@@ -435,6 +435,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E semantic conformance quality-gate dependency anchors for `M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`
       with fail-closed readiness continuity (`check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, `check:objc3c:m227-d001-lane-d-readiness`)
       so semantic conformance lane-E quality-gate metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance modular split/scaffolding dependency anchors for `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`
+      with fail-closed readiness continuity (`check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, `check:objc3c:m227-d002-lane-d-readiness`)
+      so semantic conformance lane-E modular split/scaffolding metadata governance drift fails closed.
     - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
       with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
       so semantic-pass cross-lane dependency drift fails closed.
@@ -462,6 +465,12 @@ A conforming implementation shall preserve, for all exported declarations:
       `toolchain_runtime_ga_operations_advanced_diagnostics_ready`,
       `toolchain_runtime_ga_operations_advanced_diagnostics_key`) so advanced
       diagnostics shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced conformance workpack (shard 1) metadata anchors for `M227-A018`
+      with conformance consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_conformance_consistent`,
+      `toolchain_runtime_ga_operations_advanced_conformance_ready`,
+      `toolchain_runtime_ga_operations_advanced_conformance_key`) so advanced
+      conformance shard1 drift fails closed.
     - deterministic lane-B semantic/lowering modular split metadata anchors for
       `M248-B002` with explicit `M248-B001` dependency continuity so semantic
       scaffolding drift fails closed.

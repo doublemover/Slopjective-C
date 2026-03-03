@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed prerequisite checker for the M227-E002 semantic conformance lane-E modular split contract."""
+"""Fail-closed checker for M227-E002 semantic conformance lane-E modular split/scaffolding."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m227-e002-semantic-conformance-lane-e-modular-split-contract-v1"
+MODE = "m227-e002-semantic-conformance-lane-e-modular-split-scaffolding-contract-v1"
 
 DEFAULT_EXPECTATIONS_DOC = (
     ROOT / "docs" / "contracts" / "m227_lane_e_semantic_conformance_modular_split_e002_expectations.md"
@@ -19,7 +19,11 @@ DEFAULT_EXPECTATIONS_DOC = (
 DEFAULT_PACKET_DOC = (
     ROOT / "spec" / "planning" / "compiler" / "m227" / "m227_e002_semantic_conformance_lane_e_modular_split_packet.md"
 )
-DEFAULT_SUMMARY_OUT = Path("tmp/reports/m227/m227_e002_semantic_conformance_lane_e_modular_split_contract_summary.json")
+DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
+DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
+DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
+DEFAULT_PACKAGE_JSON = ROOT / "package.json"
+DEFAULT_SUMMARY_OUT = Path("tmp/reports/m227/M227-E002/semantic_conformance_lane_e_modular_split_contract_summary.json")
 
 
 @dataclass(frozen=True)
@@ -104,24 +108,44 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         Path("spec/planning/compiler/m227/m227_b004_type_system_objc3_forms_core_feature_expansion_packet.md"),
     ),
     AssetCheck(
-        "M227-E002-D001-01",
-        "M227-D001",
-        Path("docs/contracts/m227_runtime_facing_type_metadata_semantics_expectations.md"),
+        "M227-E002-C003-01",
+        "M227-C003",
+        Path("docs/contracts/m227_typed_sema_to_lowering_core_feature_c003_expectations.md"),
     ),
     AssetCheck(
-        "M227-E002-D001-02",
-        "M227-D001",
-        Path("scripts/check_m227_d001_runtime_facing_type_metadata_semantics_contract.py"),
+        "M227-E002-C003-02",
+        "M227-C003",
+        Path("scripts/check_m227_c003_typed_sema_to_lowering_core_feature_contract.py"),
     ),
     AssetCheck(
-        "M227-E002-D001-03",
-        "M227-D001",
-        Path("tests/tooling/test_check_m227_d001_runtime_facing_type_metadata_semantics_contract.py"),
+        "M227-E002-C003-03",
+        "M227-C003",
+        Path("tests/tooling/test_check_m227_c003_typed_sema_to_lowering_core_feature_contract.py"),
     ),
     AssetCheck(
-        "M227-E002-D001-04",
-        "M227-D001",
-        Path("spec/planning/compiler/m227/m227_d001_runtime_facing_type_metadata_semantics_contract_freeze.md"),
+        "M227-E002-C003-04",
+        "M227-C003",
+        Path("spec/planning/compiler/m227/m227_c003_typed_sema_to_lowering_core_feature_packet.md"),
+    ),
+    AssetCheck(
+        "M227-E002-D002-01",
+        "M227-D002",
+        Path("docs/contracts/m227_runtime_facing_type_metadata_modular_split_d002_expectations.md"),
+    ),
+    AssetCheck(
+        "M227-E002-D002-02",
+        "M227-D002",
+        Path("scripts/check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py"),
+    ),
+    AssetCheck(
+        "M227-E002-D002-03",
+        "M227-D002",
+        Path("tests/tooling/test_check_m227_d002_runtime_facing_type_metadata_modular_split_contract.py"),
+    ),
+    AssetCheck(
+        "M227-E002-D002-04",
+        "M227-D002",
+        Path("spec/planning/compiler/m227/m227_d002_runtime_facing_type_metadata_modular_split_packet.md"),
     ),
 )
 
@@ -134,28 +158,27 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M227-E002-DOC-EXP-03",
         "Contract ID: `objc3c-lane-e-semantic-conformance-modular-split-contract/m227-e002-v1`",
     ),
-    SnippetCheck("M227-E002-DOC-EXP-04", "`M227-E001`"),
-    SnippetCheck("M227-E002-DOC-EXP-05", "`M227-A002`"),
-    SnippetCheck("M227-E002-DOC-EXP-06", "`M227-B004`"),
-    SnippetCheck("M227-E002-DOC-EXP-07", "`M227-C003`"),
-    SnippetCheck("M227-E002-DOC-EXP-08", "`M227-D001`"),
+    SnippetCheck("M227-E002-DOC-EXP-04", "Issue `#5160` defines canonical lane-E modular split/scaffolding scope."),
     SnippetCheck(
-        "M227-E002-DOC-EXP-09",
-        "`spec/planning/compiler/m227/m227_e002_semantic_conformance_lane_e_modular_split_packet.md`",
+        "M227-E002-DOC-EXP-05",
+        "Dependencies: `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, `M227-D002`",
     ),
     SnippetCheck(
-        "M227-E002-DOC-EXP-10",
-        "`python scripts/check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py`",
+        "M227-E002-DOC-EXP-06",
+        "m227_e002_semantic_conformance_lane_e_modular_split_packet.md",
     ),
     SnippetCheck(
-        "M227-E002-DOC-EXP-11",
-        "`python -m pytest tests/tooling/test_check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py -q`",
+        "M227-E002-DOC-EXP-07",
+        "`check:objc3c:m227-e002-lane-e-modular-split-readiness`",
     ),
-    SnippetCheck("M227-E002-DOC-EXP-12", "`npm run build:objc3c-native`"),
     SnippetCheck(
-        "M227-E002-DOC-EXP-13",
-        "`tmp/reports/m227/m227_e002_semantic_conformance_lane_e_modular_split_contract_summary.json`",
+        "M227-E002-DOC-EXP-08",
+        "`tmp/reports/m227/M227-E002/semantic_conformance_lane_e_modular_split_contract_summary.json`",
     ),
+    SnippetCheck("M227-E002-DOC-EXP-09", "`compile:objc3c`"),
+    SnippetCheck("M227-E002-DOC-EXP-10", "`proof:objc3c`"),
+    SnippetCheck("M227-E002-DOC-EXP-11", "`test:objc3c:execution-replay-proof`"),
+    SnippetCheck("M227-E002-DOC-EXP-12", "`test:objc3c:perf-budget`"),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -164,36 +187,84 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "# M227-E002 Semantic Conformance Lane-E Modular Split and Scaffolding Packet",
     ),
     SnippetCheck("M227-E002-DOC-PKT-03", "Packet: `M227-E002`"),
-    SnippetCheck("M227-E002-DOC-PKT-04", "Freeze date: `2026-03-02`"),
-    SnippetCheck(
-        "M227-E002-DOC-PKT-05",
-        "Dependencies: `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, `M227-D001`",
-    ),
+    SnippetCheck("M227-E002-DOC-PKT-04", "Issue: `#5160`"),
+    SnippetCheck("M227-E002-DOC-PKT-05", "Freeze date: `2026-03-03`"),
     SnippetCheck(
         "M227-E002-DOC-PKT-06",
-        "`docs/contracts/m227_lane_e_semantic_conformance_modular_split_e002_expectations.md`",
+        "Dependencies: `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, `M227-D002`",
     ),
     SnippetCheck(
         "M227-E002-DOC-PKT-07",
-        "`scripts/check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py`",
+        "`check:objc3c:m227-e002-semantic-conformance-lane-e-modular-split-contract`",
     ),
     SnippetCheck(
         "M227-E002-DOC-PKT-08",
-        "`tests/tooling/test_check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py`",
+        "`test:tooling:m227-e002-semantic-conformance-lane-e-modular-split-contract`",
     ),
     SnippetCheck(
         "M227-E002-DOC-PKT-09",
-        "`tmp/reports/m227/m227_e002_semantic_conformance_lane_e_modular_split_contract_summary.json`",
+        "`check:objc3c:m227-e002-lane-e-modular-split-readiness`",
     ),
     SnippetCheck(
         "M227-E002-DOC-PKT-10",
-        "`python scripts/check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py`",
+        "tmp/reports/m227/M227-E002/semantic_conformance_lane_e_modular_split_contract_summary.json",
+    ),
+    SnippetCheck("M227-E002-DOC-PKT-11", "`compile:objc3c`"),
+    SnippetCheck("M227-E002-DOC-PKT-12", "`proof:objc3c`"),
+    SnippetCheck("M227-E002-DOC-PKT-13", "`test:objc3c:execution-replay-proof`"),
+    SnippetCheck("M227-E002-DOC-PKT-14", "`test:objc3c:perf-budget`"),
+)
+
+ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E002-ARCH-02",
+        "M227 lane-E E002 semantic conformance modular split/scaffolding anchors dependency references (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`)",
     ),
     SnippetCheck(
-        "M227-E002-DOC-PKT-11",
-        "`python -m pytest tests/tooling/test_check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py -q`",
+        "M227-E002-ARCH-03",
+        "docs/contracts/m227_lane_e_semantic_conformance_modular_split_e002_expectations.md",
     ),
-    SnippetCheck("M227-E002-DOC-PKT-12", "`npm run build:objc3c-native`"),
+)
+
+LOWERING_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E002-SPC-02",
+        "semantic conformance lane-E modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`)",
+    ),
+    SnippetCheck(
+        "M227-E002-SPC-03",
+        "preserve readiness continuity across `check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, and `check:objc3c:m227-d002-lane-d-readiness`",
+    ),
+)
+
+METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E002-META-02",
+        "deterministic lane-E semantic conformance modular split/scaffolding dependency anchors for `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`",
+    ),
+    SnippetCheck(
+        "M227-E002-META-03",
+        "with fail-closed readiness continuity (`check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, `check:objc3c:m227-d002-lane-d-readiness`)",
+    ),
+)
+
+PACKAGE_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M227-E002-PKG-02",
+        '"check:objc3c:m227-e002-semantic-conformance-lane-e-modular-split-contract": "python scripts/check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py"',
+    ),
+    SnippetCheck(
+        "M227-E002-PKG-03",
+        '"test:tooling:m227-e002-semantic-conformance-lane-e-modular-split-contract": "python -m pytest tests/tooling/test_check_m227_e002_semantic_conformance_lane_e_modular_split_contract.py -q"',
+    ),
+    SnippetCheck(
+        "M227-E002-PKG-04",
+        '"check:objc3c:m227-e002-lane-e-modular-split-readiness": "npm run check:objc3c:m227-e001-lane-e-quality-gate-readiness && npm run check:objc3c:m227-a002-lane-a-readiness && npm run check:objc3c:m227-b004-lane-b-readiness && npm run check:objc3c:m227-c003-lane-c-readiness && npm run check:objc3c:m227-d002-lane-d-readiness && npm run check:objc3c:m227-e002-semantic-conformance-lane-e-modular-split-contract && npm run test:tooling:m227-e002-semantic-conformance-lane-e-modular-split-contract"',
+    ),
+    SnippetCheck("M227-E002-PKG-05", '"compile:objc3c": '),
+    SnippetCheck("M227-E002-PKG-06", '"proof:objc3c": '),
+    SnippetCheck("M227-E002-PKG-07", '"test:objc3c:execution-replay-proof": '),
+    SnippetCheck("M227-E002-PKG-08", '"test:objc3c:perf-budget": '),
 )
 
 
@@ -213,6 +284,10 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expectations-doc", type=Path, default=DEFAULT_EXPECTATIONS_DOC)
     parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
+    parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
+    parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
+    parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
+    parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 
@@ -310,23 +385,22 @@ def run(argv: Sequence[str]) -> int:
 
     checks_total, findings = check_prerequisite_assets()
 
-    expectations_checks, expectations_findings = check_doc_contract(
-        artifact_name="expectations_doc",
-        path=args.expectations_doc,
-        exists_check_id="M227-E002-DOC-EXP-01",
-        snippets=EXPECTATIONS_SNIPPETS,
-    )
-    checks_total += expectations_checks
-    findings.extend(expectations_findings)
-
-    packet_checks, packet_findings = check_doc_contract(
-        artifact_name="packet_doc",
-        path=args.packet_doc,
-        exists_check_id="M227-E002-DOC-PKT-01",
-        snippets=PACKET_SNIPPETS,
-    )
-    checks_total += packet_checks
-    findings.extend(packet_findings)
+    for artifact_name, path, exists_check_id, snippets in (
+        ("expectations_doc", args.expectations_doc, "M227-E002-DOC-EXP-01", EXPECTATIONS_SNIPPETS),
+        ("packet_doc", args.packet_doc, "M227-E002-DOC-PKT-01", PACKET_SNIPPETS),
+        ("architecture_doc", args.architecture_doc, "M227-E002-ARCH-01", ARCHITECTURE_SNIPPETS),
+        ("lowering_spec", args.lowering_spec, "M227-E002-SPC-01", LOWERING_SPEC_SNIPPETS),
+        ("metadata_spec", args.metadata_spec, "M227-E002-META-01", METADATA_SPEC_SNIPPETS),
+        ("package_json", args.package_json, "M227-E002-PKG-01", PACKAGE_SNIPPETS),
+    ):
+        section_checks, section_findings = check_doc_contract(
+            artifact_name=artifact_name,
+            path=path,
+            exists_check_id=exists_check_id,
+            snippets=snippets,
+        )
+        checks_total += section_checks
+        findings.extend(section_findings)
 
     findings = sorted(findings, key=lambda finding: (finding.check_id, finding.artifact, finding.detail))
     summary = {
@@ -344,9 +418,10 @@ def run(argv: Sequence[str]) -> int:
         ],
     }
 
+    summary_out = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
     try:
-        args.summary_out.parent.mkdir(parents=True, exist_ok=True)
-        args.summary_out.write_text(canonical_json(summary), encoding="utf-8")
+        summary_out.parent.mkdir(parents=True, exist_ok=True)
+        summary_out.write_text(canonical_json(summary), encoding="utf-8")
     except OSError as exc:
         print(
             "m227-e002-semantic-conformance-lane-e-modular-split-contract: "
