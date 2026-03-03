@@ -478,6 +478,12 @@ Current-state note:
   `spec/planning/compiler/m244/m244_d001_runtime_link_bridge_path_contract_and_architecture_freeze_packet.md`,
   and `package.json` so runtime/link bridge-path dependency continuity remains deterministic and fail-closed
   against `M244-A001` dependency-token drift before downstream runtime and metadata work begins.
+- M244 lane-D D002 runtime/link bridge-path modular split/scaffolding anchors
+  explicit lane-D modular split artifacts in
+  `docs/contracts/m244_runtime_link_bridge_path_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m244/m244_d002_runtime_link_bridge_path_modular_split_scaffolding_packet.md`,
+  and `package.json` so runtime/link bridge-path modular split continuity remains deterministic
+  and fail-closed against `M244-D001` dependency drift.
 - M244 lane-B B001 interop semantic contracts and type mediation anchors explicit
   lane-B contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_semantic_contracts_and_type_mediation_contract_freeze_b001_expectations.md`,
