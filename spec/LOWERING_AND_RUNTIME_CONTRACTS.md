@@ -129,6 +129,10 @@ At minimum, the pass-graph gate shall validate:
 - cross-lane integration sync shall preserve deterministic lane dependency
   anchors (`A011`, `B007`, `C005`, `D006`, `E006`) and fail closed when
   contract continuity drifts.
+- docs and operator runbook synchronization shall preserve deterministic lane-A
+  documentation/runbook anchors (`A011`, `B007`, `C005`, `D006`, `E006`,
+  `A012`) and fail closed when operator command sequencing or evidence-path
+  continuity drifts.
 - IR-emission core-feature expansion shall remain deterministic, preserve
   expansion readiness/key continuity, and fail closed when pass-graph
   expansion continuity or expansion metadata transport drifts.

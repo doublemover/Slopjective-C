@@ -107,6 +107,11 @@ Current-state note:
   lane-contract continuity (`A011`, `B007`, `C005`, `D006`, `E006`) through
   contract/spec tooling so lane-A integration evidence fails closed when
   cross-lane contract anchors drift.
+- M228 lane-A A013 docs and operator runbook synchronization anchors explicit
+  lane-A operator documentation/runbook continuity in
+  `docs/contracts/m228_lowering_pipeline_decomposition_pass_graph_docs_operator_runbook_sync_a013_expectations.md`
+  and `docs/runbooks/m228_wave_execution_runbook.md` so package/spec wiring
+  fails closed when runbook command sequencing or evidence-path anchors drift.
 - M228 lane-B B001 ownership-aware lowering behavior freeze anchors
   ownership qualifier, retain/release, autoreleasepool, and ARC diagnostics
   replay surfaces in `lower/objc3_lowering_contract.h`,
