@@ -313,6 +313,10 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-D diagnostics UX and fix-it engine reporting anchors and fail
   closed on summary payload, diagnostics artifact path, or stage-report output
   contract drift before lane-E integration readiness advances.
+- CLI/reporting and output modular split scaffolding governance shall preserve
+  explicit lane-D dependency anchors (`M243-D001`) and fail closed on
+  scaffold key, summary mode, diagnostics schema, or stage-report output
+  contract drift before lane-E modular split readiness advances.
 - release gate/docs/runbooks contract and architecture freeze wiring shall
   preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
   `M249-C001`, `M249-D001`) and fail closed when dependency references,
@@ -330,6 +334,18 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
   diagnostics/replay evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy modular split/scaffolding wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E001`, `M243-A001`, `M243-B001`, `M243-C001`, and
+  `M243-D001`) and fail closed when dependency references,
+  diagnostics/replay modular split evidence commands, or lane-E readiness hooks drift.
+- lowering/runtime diagnostics surfacing modular split scaffolding shall
+  preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
+  scaffolding evidence drift before diagnostics quality gate and replay policy
+  validation advances.
+- semantic diagnostic taxonomy and fix-it synthesis core feature implementation
+  shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
+  core-feature evidence drift before diagnostics hardening and conformance
+  expansions advance.
 - runner/platform operations governance shall preserve explicit lane-D
   compile-route anchors and fail closed on platform replay drift before
   performance budget and execution replay validation advances.

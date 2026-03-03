@@ -258,6 +258,15 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
      with diagnostics artifact and summary payload continuity so diagnostics UX
      and fix-it engine output contract drift fails closed.
+   - deterministic lane-D CLI/reporting output modular split scaffold metadata anchors for `M243-D002`
+     with explicit `M243-D001` dependency continuity so diagnostics UX and
+     fix-it engine output contract scaffolding drift fails closed.
+   - deterministic lane-C lowering/runtime diagnostics surfacing modular split
+     metadata anchors for `M243-C002` with explicit `M243-C001` dependency
+     continuity so diagnostics surfacing scaffold drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
+     feature metadata anchors for `M243-B003` with explicit `M243-B002`
+     dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-E release gate/docs/runbooks dependency anchors for
      `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
       pending-lane tokens needed to keep release-gate documentation/runbook
@@ -274,6 +283,10 @@ A conforming implementation shall preserve, for all exported declarations:
      `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
      pending-lane tokens needed to keep diagnostics quality gate/replay-policy
      governance evidence fail-closed before lane C-D contract-freeze assets are seeded.
+   - deterministic lane-E diagnostics quality gate and replay policy modular split/scaffolding dependency anchors for
+     `M243-E001`, `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
+     pending-lane tokens needed to keep diagnostics quality gate/replay-policy modular split/scaffolding
+     governance evidence fail-closed while dependency tokens remain pending GH seed.
    - deterministic lane-D runner operations metadata anchors for `M248-D001`
      with compile-route evidence and perf-budget continuity so platform
      operation drift fails closed.
