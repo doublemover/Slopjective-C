@@ -1516,6 +1516,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b011_semantic_parity_and_platform_constraints_performance_and_quality_guardrails_packet.md`,
   and `package.json` so perf/quality semantic continuity remains deterministic and
   fail-closed against `M245-B010` dependency drift.
+- M245 lane-B B012 semantic parity/platform constraints cross-lane integration
+  sync anchors explicit lane-B cross-lane integration artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_cross_lane_integration_sync_b012_expectations.md`,
+  `spec/planning/compiler/m245/m245_b012_semantic_parity_and_platform_constraints_cross_lane_integration_sync_packet.md`,
+  and `package.json` so cross-lane semantic continuity remains deterministic and
+  fail-closed against `M245-B011` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1600,6 +1606,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c011_lowering_ir_portability_contracts_performance_and_quality_guardrails_packet.md`,
   and `package.json` so perf/quality portability continuity remains deterministic
   and fail-closed against `M245-C010` dependency drift.
+- M245 lane-C C012 lowering/IR portability contracts cross-lane integration sync
+  anchors explicit lane-C cross-lane integration artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_cross_lane_integration_sync_c012_expectations.md`,
+  `spec/planning/compiler/m245/m245_c012_lowering_ir_portability_contracts_cross_lane_integration_sync_packet.md`,
+  and `package.json` so cross-lane portability continuity remains deterministic
+  and fail-closed against `M245-C011` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1660,6 +1672,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d011_build_link_runtime_reproducibility_operations_performance_and_quality_guardrails_packet.md`,
   and `package.json` so perf/quality reproducibility continuity remains deterministic
   and fail-closed against `M245-D010` dependency drift.
+- M245 lane-D D012 build/link/runtime reproducibility cross-lane integration sync
+  anchors explicit lane-D cross-lane integration artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_cross_lane_integration_sync_d012_expectations.md`,
+  `spec/planning/compiler/m245/m245_d012_build_link_runtime_reproducibility_operations_cross_lane_integration_sync_packet.md`,
+  and `package.json` so cross-lane reproducibility continuity remains deterministic
+  and fail-closed against `M245-D011` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1713,6 +1731,11 @@ Current-state note:
   `M245-C006`, and `M245-D008`) in lane-E perf/quality contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against perf/quality handoff drift.
+- M245 lane-E E012 portability gate/release checklist cross-lane integration sync
+  anchors dependency references (`M245-E011`, `M245-A005`, `M245-B005`,
+  `M245-C007`, and `M245-D009`) in lane-E cross-lane contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against cross-lane handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
