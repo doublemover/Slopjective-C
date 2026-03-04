@@ -627,6 +627,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E optimization gate and perf evidence core feature expansion dependency anchors for
       `M246-E003`, `M246-A003`, `M246-B004`, `M246-C007`, and `M246-D003` so gate
       expansion continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence edge-case and compatibility completion dependency anchors for
+      `M246-E004`, `M246-A004`, `M246-B005`, `M246-C009`, and `M246-D004` so gate
+      compatibility continuity evidence remains deterministic and fail-closed.
     - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
       with symbol policy evidence and object package continuity so CI artifact
      packaging drift fails closed.
