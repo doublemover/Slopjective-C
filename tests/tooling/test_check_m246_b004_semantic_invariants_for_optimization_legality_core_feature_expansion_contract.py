@@ -50,6 +50,42 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_b004() -> None:
     assert normalized.startswith("tmp/reports/m246/M246-B004/")
 
 
+def test_contract_emit_json_writes_canonical_summary_to_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    captured = capsys.readouterr()
+    assert captured.out == contract.canonical_json(payload)
+    assert captured.err == ""
+
+
+def test_contract_failures_are_sorted_deterministically(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        contract,
+        "EXPECTATIONS_SNIPPETS",
+        (
+            contract.SnippetCheck("M246-B004-DOC-EXP-Z", "__missing-z-snippet__"),
+            contract.SnippetCheck("M246-B004-DOC-EXP-A", "__missing-a-snippet__"),
+        ),
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert [failure["check_id"] for failure in payload["failures"]] == [
+        "M246-B004-DOC-EXP-A",
+        "M246-B004-DOC-EXP-Z",
+    ]
+
+
 def test_contract_fails_closed_when_prerequisite_asset_is_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -132,3 +168,26 @@ def test_contract_fails_closed_when_readiness_chain_drops_b003_pytest(tmp_path: 
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-B004-RUN-02" for failure in payload["failures"])
 
+
+def test_contract_fails_closed_when_expectations_read_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    drift_doc = (
+        tmp_path / "m246_semantic_invariants_for_optimization_legality_core_feature_expansion_b004_expectations.md"
+    )
+    drift_doc.write_text(contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"), encoding="utf-8")
+
+    original_read_text = contract.Path.read_text
+
+    def read_text_with_error(self: Path, encoding: str = "utf-8") -> str:
+        if self.resolve() == drift_doc.resolve():
+            raise OSError("simulated read failure for #5063")
+        return original_read_text(self, encoding=encoding)
+
+    monkeypatch.setattr(contract.Path, "read_text", read_text_with_error)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-B004-DOC-EXP-EXISTS" for failure in payload["failures"])
