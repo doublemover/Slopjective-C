@@ -235,6 +235,10 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M247-B008` dependency continuity so lane-B
       conformance matrix contract-gating evidence remains fail-closed before
       conformance corpus assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting conformance corpus metadata anchors for `M247-B010`
+      with explicit `M247-B009` dependency continuity so lane-B
+      conformance corpus contract-gating evidence remains fail-closed before
+      performance-quality guardrail assets are seeded.
     - deterministic lane-A frontend profiling and hot-path decomposition
       edge-case expansion/robustness metadata anchors for `M247-A006` with
       explicit `M247-A005` dependency continuity so parser-boundary profiling
