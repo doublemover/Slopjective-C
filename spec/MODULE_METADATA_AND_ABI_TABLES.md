@@ -243,9 +243,6 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C lowering/codegen recovery and determinism hardening metadata anchors for `M247-C008`
       with explicit `M247-C007` dependency continuity and fail-closed diagnostics hardening evidence continuity so
       lane-C recovery/determinism governance remains deterministic before conformance matrix stages advance.
-    - deterministic lane-C lowering/codegen conformance matrix implementation metadata anchors for `M247-C009`
-      with explicit `M247-C008` dependency continuity and fail-closed recovery/determinism evidence continuity so
-      lane-C conformance-matrix governance remains deterministic before conformance-corpus stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
@@ -317,12 +314,6 @@ A conforming implementation shall preserve, for all exported declarations:
       performance and quality guardrails metadata anchors for `M247-A011` with explicit
       `M247-A010` dependency continuity so performance and quality guardrails
       contract-gating evidence remains fail-closed before cross-lane integration assets are seeded.
-    - deterministic lane-A frontend profiling and hot-path decomposition
-      cross-lane integration sync metadata anchors for `M247-A012` with explicit
-      `M247-A011` dependency continuity so cross-lane synchronization
-      contract-gating evidence remains fail-closed while pending cross-lane
-      dependency continuity (`M247-B012`, `M247-C012`, `M247-D012`, `M247-E012`)
-      is tracked explicitly.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput

@@ -743,12 +743,6 @@ Current-state note:
   `spec/planning/compiler/m247/m247_c008_lowering_codegen_cost_profiling_and_controls_recovery_and_determinism_hardening_packet.md`,
   and `package.json` so recovery/determinism governance evidence remains
   deterministic and fail-closed while C007 dependency continuity is inherited.
-- M247 lane-C C009 lowering/codegen cost profiling and controls conformance matrix implementation anchors
-  dependency reference (`M247-C008`) in
-  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_conformance_matrix_implementation_c009_expectations.md`,
-  `spec/planning/compiler/m247/m247_c009_lowering_codegen_cost_profiling_and_controls_conformance_matrix_implementation_packet.md`,
-  and `package.json` so conformance matrix governance evidence remains
-  deterministic and fail-closed while C008 dependency continuity is inherited.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
@@ -875,13 +869,6 @@ Current-state note:
   and `package.json` so lane-A performance/quality contract-gating evidence
   remains deterministic and fail-closed while conformance corpus continuity
   is inherited from A010.
-- M247 lane-A A012 frontend profiling and hot-path decomposition cross-lane integration sync anchors
-  dependency reference (`M247-A011`) in
-  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_cross_lane_integration_sync_a012_expectations.md`,
-  `spec/planning/compiler/m247/m247_a012_frontend_profiling_and_hot_path_decomposition_cross_lane_integration_sync_packet.md`,
-  and `package.json` so lane-A cross-lane synchronization evidence remains
-  deterministic and fail-closed while cross-lane dependency continuity
-  (`M247-B012`, `M247-C012`, `M247-D012`, `M247-E012`) is tracked explicitly.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,
