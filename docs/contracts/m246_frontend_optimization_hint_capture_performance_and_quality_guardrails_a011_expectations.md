@@ -8,9 +8,12 @@ Scope: M246 lane-A performance and quality guardrails continuity for frontend op
 
 Fail closed unless lane-A performance and quality guardrails dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5058`
+
 ## Dependency Scope
 
-- Issue `#5058` defines canonical lane-A performance and quality guardrails scope.
 - Dependencies: `M246-A010`
 - M246-A010 conformance corpus expansion anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_conformance_corpus_expansion_a010_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A performance and quality guardrails dependency anchors 
 
 - `scripts/run_m246_a011_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a010_lane_a_readiness.py`
-  - `python scripts/check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py`
+  - `python scripts/check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py -q`
 
 ## Milestone Optimization Inputs

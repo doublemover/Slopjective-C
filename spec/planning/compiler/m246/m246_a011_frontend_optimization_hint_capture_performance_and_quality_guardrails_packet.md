@@ -39,7 +39,7 @@ Freeze lane-A performance and quality guardrails prerequisites for M246 frontend
 
 ## Gate Commands
 
-- `python scripts/check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py`
+- `python scripts/check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a011_frontend_optimization_hint_capture_performance_and_quality_guardrails_contract.py -q`
 - `python scripts/run_m246_a011_lane_a_readiness.py`
 
