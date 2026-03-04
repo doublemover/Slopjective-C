@@ -701,6 +701,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_c001_lowering_codegen_cost_profiling_and_controls_contract_and_architecture_freeze_packet.md`,
   and `package.json` so compile-time cost profiling governance evidence remains
   deterministic and fail-closed against lane-C contract-freeze drift.
+- M247 lane-C C002 lowering/codegen cost profiling and controls modular split/scaffolding anchors
+  dependency reference (`M247-C001`) in
+  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_modular_split_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m247/m247_c002_lowering_codegen_cost_profiling_and_controls_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split/scaffolding governance evidence remains
+  deterministic and fail-closed while C001 dependency continuity is inherited.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
@@ -772,6 +778,13 @@ Current-state note:
   and `package.json` so lane-A conformance matrix contract-gating evidence
   remains deterministic and fail-closed while recovery/determinism continuity
   is inherited from A008.
+- M247 lane-A A010 frontend profiling and hot-path decomposition conformance corpus expansion anchors
+  dependency reference (`M247-A009`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_conformance_corpus_expansion_a010_expectations.md`,
+  `spec/planning/compiler/m247/m247_a010_frontend_profiling_and_hot_path_decomposition_conformance_corpus_expansion_packet.md`,
+  and `package.json` so lane-A conformance corpus contract-gating evidence
+  remains deterministic and fail-closed while conformance matrix continuity
+  is inherited from A009.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,

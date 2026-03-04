@@ -222,6 +222,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C lowering/codegen cost profiling and controls metadata anchors for `M247-C001`
      with explicit dependency token (`none`) and fail-closed cost-profile evidence continuity so
      lane-C contract-freeze governance remains deterministic before modular split stages advance.
+   - deterministic lane-C lowering/codegen modular split/scaffolding metadata anchors for `M247-C002`
+     with explicit `M247-C001` dependency continuity and fail-closed modular split evidence continuity so
+     lane-C modular split/scaffolding governance remains deterministic before core-feature implementation stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
@@ -266,6 +269,11 @@ A conforming implementation shall preserve, for all exported declarations:
       `M247-A008` dependency continuity so conformance matrix
       contract-gating evidence remains fail-closed before conformance corpus
       assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      conformance corpus metadata anchors for `M247-A010` with explicit
+      `M247-A009` dependency continuity so conformance corpus
+      contract-gating evidence remains fail-closed before performance and
+      quality guardrail assets are seeded.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput
