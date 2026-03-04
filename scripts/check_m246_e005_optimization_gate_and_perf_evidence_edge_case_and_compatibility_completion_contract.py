@@ -39,6 +39,9 @@ DEFAULT_A004_EXPECTATIONS_DOC = (
     / "contracts"
     / "m246_frontend_optimization_hint_capture_core_feature_expansion_a004_expectations.md"
 )
+DEFAULT_E004_RUN_SCRIPT = ROOT / "scripts" / "run_m246_e004_lane_e_readiness.py"
+DEFAULT_A004_RUN_SCRIPT = ROOT / "scripts" / "run_m246_a004_lane_a_readiness.py"
+DEFAULT_RUN_SCRIPT = ROOT / "scripts" / "run_m246_e005_lane_e_readiness.py"
 DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
 DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
 DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
@@ -85,6 +88,10 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         Path("tests/tooling/test_check_m246_e004_optimization_gate_and_perf_evidence_core_feature_expansion_contract.py"),
     ),
     AssetCheck(
+        "M246-E005-DEP-E004-05",
+        Path("scripts/run_m246_e004_lane_e_readiness.py"),
+    ),
+    AssetCheck(
         "M246-E005-DEP-A004-01",
         Path("docs/contracts/m246_frontend_optimization_hint_capture_core_feature_expansion_a004_expectations.md"),
     ),
@@ -100,6 +107,10 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         "M246-E005-DEP-A004-04",
         Path("tests/tooling/test_check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py"),
     ),
+    AssetCheck(
+        "M246-E005-DEP-A004-05",
+        Path("scripts/run_m246_a004_lane_a_readiness.py"),
+    ),
 )
 
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -111,18 +122,24 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M246-E005-DOC-EXP-02",
         "Contract ID: `objc3c-optimization-gate-perf-evidence-edge-case-and-compatibility-completion/m246-e005-v1`",
     ),
-    SnippetCheck("M246-E005-DOC-EXP-03", "`M246-E004`"),
-    SnippetCheck("M246-E005-DOC-EXP-04", "`M246-A004`"),
-    SnippetCheck("M246-E005-DOC-EXP-05", "`M246-B005`"),
+    SnippetCheck("M246-E005-DOC-EXP-03", "- Issue: `#6696`"),
     SnippetCheck(
-        "M246-E005-DOC-EXP-06",
-        "| `M246-C009` | Dependency token `M246-C009` is mandatory as pending seeded lane-C edge-case completion assets. |",
+        "M246-E005-DOC-EXP-04",
+        "Dependencies: `M246-E004`, `M246-A004`, `M246-B005`, `M246-C009`, `M246-D004`",
     ),
-    SnippetCheck("M246-E005-DOC-EXP-07", "`M246-D004`"),
+    SnippetCheck("M246-E005-DOC-EXP-05", "`M246-E004`"),
+    SnippetCheck("M246-E005-DOC-EXP-06", "`M246-A004`"),
+    SnippetCheck("M246-E005-DOC-EXP-07", "`M246-B005`"),
     SnippetCheck(
         "M246-E005-DOC-EXP-08",
-        "`check:objc3c:m246-e005-optimization-gate-perf-evidence-edge-case-and-compatibility-completion-contract`",
+        "| `M246-C009` | Dependency token `M246-C009` is mandatory as pending seeded lane-C edge-case completion assets. |",
     ),
+    SnippetCheck("M246-E005-DOC-EXP-09", "`M246-D004`"),
+    SnippetCheck(
+        "M246-E005-DOC-EXP-10",
+        "`python scripts/check_m246_e005_optimization_gate_and_perf_evidence_edge_case_and_compatibility_completion_contract.py --emit-json --summary-out tmp/reports/m246/M246-E005/optimization_gate_perf_evidence_edge_case_compatibility_completion_summary.json`",
+    ),
+    SnippetCheck("M246-E005-DOC-EXP-11", "`python scripts/run_m246_e005_lane_e_readiness.py`"),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -136,13 +153,25 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M246-E005-DOC-PKT-04",
         "Dependencies: `M246-E004`, `M246-A004`, `M246-B005`, `M246-C009`, `M246-D004`",
     ),
-    SnippetCheck("M246-E005-DOC-PKT-05", "Pending seeded dependency tokens:"),
+    SnippetCheck("M246-E005-DOC-PKT-05", "scripts/run_m246_e005_lane_e_readiness.py"),
+    SnippetCheck("M246-E005-DOC-PKT-06", "scripts/run_m246_e004_lane_e_readiness.py"),
+    SnippetCheck("M246-E005-DOC-PKT-07", "scripts/run_m246_a004_lane_a_readiness.py"),
+    SnippetCheck(
+        "M246-E005-DOC-PKT-08",
+        "python scripts/check_m246_e005_optimization_gate_and_perf_evidence_edge_case_and_compatibility_completion_contract.py --emit-json --summary-out tmp/reports/m246/M246-E005/optimization_gate_perf_evidence_edge_case_compatibility_completion_summary.json",
+    ),
+    SnippetCheck("M246-E005-DOC-PKT-09", "python scripts/run_m246_e005_lane_e_readiness.py"),
 )
 
 E004_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M246-E005-E004-01",
         "# M246 Optimization Gate and Perf Evidence Core Feature Expansion Expectations (E004)",
+    ),
+    SnippetCheck("M246-E005-E004-02", "Issue: `#6695`"),
+    SnippetCheck(
+        "M246-E005-E004-03",
+        "Dependencies: `M246-E003`, `M246-A003`, `M246-B004`, `M246-C007`, `M246-D003`",
     ),
 )
 
@@ -151,6 +180,36 @@ A004_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M246-E005-A004-01",
         "# M246 Frontend Optimization Hint Capture Core Feature Expansion Expectations (A004)",
     ),
+    SnippetCheck("M246-E005-A004-02", "- Issue: `#5051`"),
+    SnippetCheck("M246-E005-A004-03", "Dependencies: `M246-A003`"),
+)
+
+E004_RUN_SCRIPT_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M246-E005-E004-RUN-01", "scripts/run_m246_a003_lane_a_readiness.py"),
+    SnippetCheck("M246-E005-E004-RUN-02", "M246-E004 lane-E readiness chain completed"),
+)
+
+A004_RUN_SCRIPT_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M246-E005-A004-RUN-01", "scripts/run_m246_a003_lane_a_readiness.py"),
+    SnippetCheck("M246-E005-A004-RUN-02", "M246-A004 lane-A readiness chain completed"),
+)
+
+RUN_SCRIPT_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M246-E005-RUN-01", "scripts/run_m246_e004_lane_e_readiness.py"),
+    SnippetCheck("M246-E005-RUN-02", "scripts/run_m246_a004_lane_a_readiness.py"),
+    SnippetCheck("M246-E005-RUN-03", "check:objc3c:m246-b005-lane-b-readiness"),
+    SnippetCheck("M246-E005-RUN-04", "check:objc3c:m246-c009-lane-c-readiness"),
+    SnippetCheck("M246-E005-RUN-05", "check:objc3c:m246-d004-lane-d-readiness"),
+    SnippetCheck(
+        "M246-E005-RUN-06",
+        "scripts/check_m246_e005_optimization_gate_and_perf_evidence_edge_case_and_compatibility_completion_contract.py",
+    ),
+    SnippetCheck("M246-E005-RUN-07", "--emit-json"),
+    SnippetCheck(
+        "M246-E005-RUN-08",
+        "tests/tooling/test_check_m246_e005_optimization_gate_and_perf_evidence_edge_case_and_compatibility_completion_contract.py",
+    ),
+    SnippetCheck("M246-E005-RUN-09", "M246-E005 lane-E readiness chain completed"),
 )
 
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -233,11 +292,15 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
     parser.add_argument("--e004-expectations-doc", type=Path, default=DEFAULT_E004_EXPECTATIONS_DOC)
     parser.add_argument("--a004-expectations-doc", type=Path, default=DEFAULT_A004_EXPECTATIONS_DOC)
+    parser.add_argument("--e004-run-script", type=Path, default=DEFAULT_E004_RUN_SCRIPT)
+    parser.add_argument("--a004-run-script", type=Path, default=DEFAULT_A004_RUN_SCRIPT)
+    parser.add_argument("--run-script", type=Path, default=DEFAULT_RUN_SCRIPT)
     parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
     parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -282,12 +345,27 @@ def check_doc_contract(
         findings.append(Finding(display_path(path), exists_check_id, f"required path is not a file: {display_path(path)}"))
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        findings.append(
+            Finding(
+                display_path(path),
+                f"{exists_check_id}-READ",
+                f"failed to read required document as utf-8 text: {display_path(path)}",
+            )
+        )
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
             findings.append(Finding(display_path(path), snippet.check_id, f"missing required snippet: {snippet.snippet}"))
     return checks_total, findings
+
+
+def finding_sort_key(finding: Finding) -> tuple[str, str, str]:
+    return (finding.artifact, finding.check_id, finding.detail)
 
 
 def run(argv: Sequence[str]) -> int:
@@ -304,6 +382,9 @@ def run(argv: Sequence[str]) -> int:
         (args.packet_doc, "M246-E005-DOC-PKT-EXISTS", PACKET_SNIPPETS),
         (args.e004_expectations_doc, "M246-E005-E004-DOC-EXISTS", E004_SNIPPETS),
         (args.a004_expectations_doc, "M246-E005-A004-DOC-EXISTS", A004_SNIPPETS),
+        (args.e004_run_script, "M246-E005-E004-RUN-EXISTS", E004_RUN_SCRIPT_SNIPPETS),
+        (args.a004_run_script, "M246-E005-A004-RUN-EXISTS", A004_RUN_SCRIPT_SNIPPETS),
+        (args.run_script, "M246-E005-RUN-EXISTS", RUN_SCRIPT_SNIPPETS),
         (args.architecture_doc, "M246-E005-ARCH-EXISTS", ARCHITECTURE_SNIPPETS),
         (args.lowering_spec, "M246-E005-SPC-EXISTS", LOWERING_SPEC_SNIPPETS),
         (args.metadata_spec, "M246-E005-META-EXISTS", METADATA_SPEC_SNIPPETS),
@@ -313,6 +394,7 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures.sort(key=finding_sort_key)
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -326,14 +408,18 @@ def run(argv: Sequence[str]) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
+    if args.emit_json:
+        json.dump(summary_payload, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+
     if failures:
         for finding in failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
-
