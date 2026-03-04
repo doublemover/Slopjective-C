@@ -751,6 +751,13 @@ Current-state note:
   and `package.json` so lane-B conformance corpus contract-gating evidence
   remains deterministic and fail-closed while conformance matrix continuity
   is inherited from B009.
+- M247 lane-B B012 semantic hot-path analysis/budgeting cross-lane integration sync anchors
+  dependency reference (`M247-B011`) in
+  `docs/contracts/m247_semantic_hot_path_analysis_and_budgeting_cross_lane_integration_sync_b012_expectations.md`,
+  `spec/planning/compiler/m247/m247_b012_semantic_hot_path_analysis_and_budgeting_cross_lane_integration_sync_packet.md`,
+  and `package.json` so lane-B cross-lane integration contract-gating evidence
+  remains deterministic and fail-closed while performance/quality continuity
+  is inherited from B011.
 - M247 lane-A A006 frontend profiling and hot-path decomposition edge-case
   expansion and robustness anchors dependency reference (`M247-A005`) in
   `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_a006_expectations.md`,
