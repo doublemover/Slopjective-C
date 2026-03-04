@@ -327,6 +327,7 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-B dependency anchor (`M247-B014`) and fail closed when dependency references, advanced-core-workpack command sequencing continuity, advanced-core-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
 - frontend profiling and hot-path decomposition contract and architecture freeze wiring shall preserve explicit lane-A dependency anchor (`none`) and fail closed when dependency references,
   deterministic lane-A parser/AST profiling and hot-path decomposition anchors and fail closed on contract-freeze drift.
+- frontend profiling and hot-path decomposition modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M247-A001`) and fail closed on scaffolding evidence drift.
 - frontend profiling and hot-path decomposition edge-case expansion and
   robustness wiring shall preserve explicit lane-A dependency anchor
   (`M247-A005`) and fail closed when dependency references, parser-boundary

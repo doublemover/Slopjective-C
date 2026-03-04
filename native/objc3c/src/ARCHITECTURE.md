@@ -840,6 +840,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_packet.md`,
   and `package.json` so lane-A contract-freeze profiling governance evidence
   remains deterministic and fail-closed before modular split stages advance.
+- M247 lane-A A002 frontend profiling and hot-path decomposition modular split/scaffolding anchors
+  dependency reference (`M247-A001`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m247/m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_packet.md`,
+  and `package.json` so lane-A modular split/scaffolding evidence remains
+  deterministic and fail-closed while A001 dependency continuity is inherited.
 - M247 lane-A A006 frontend profiling and hot-path decomposition edge-case
   expansion and robustness anchors dependency reference (`M247-A005`) in
   `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_a006_expectations.md`,
