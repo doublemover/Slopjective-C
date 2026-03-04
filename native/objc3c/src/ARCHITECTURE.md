@@ -1355,6 +1355,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d014_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_packet.md`,
   and `package.json` so replay-dry-run continuity remains deterministic and
   fail-closed against `M249-D013` dependency drift.
+- M249 lane-D D015 advanced core workpack (shard 1) anchors installer/runtime operations and support tooling continuity
+  explicit lane-D advanced-core artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_core_workpack_shard1_d015_expectations.md`,
+  `spec/planning/compiler/m249/m249_d015_installer_runtime_operations_and_support_tooling_advanced_core_workpack_shard1_packet.md`,
+  and `package.json` so advanced-core continuity remains deterministic and
+  fail-closed against `M249-D014` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in
