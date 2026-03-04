@@ -8,9 +8,12 @@ Scope: M246 lane-A edge-case and compatibility completion continuity for fronten
 
 Fail closed unless lane-A edge-case and compatibility completion dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5052`
+
 ## Dependency Scope
 
-- Issue `#5052` defines canonical lane-A edge-case and compatibility completion scope.
 - Dependencies: `M246-A004`
 - M246-A004 core feature expansion anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_core_feature_expansion_a004_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A edge-case and compatibility completion dependency anch
 
 - `scripts/run_m246_a005_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a004_lane_a_readiness.py`
-  - `python scripts/check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py`
+  - `python scripts/check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py -q`
 
 ## Milestone Optimization Inputs

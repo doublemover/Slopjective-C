@@ -16,6 +16,7 @@ COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
         sys.executable,
         "scripts/check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py",
+        "--emit-json",
     ),
     (
         sys.executable,
@@ -44,4 +45,3 @@ def run_chain() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run_chain())
-

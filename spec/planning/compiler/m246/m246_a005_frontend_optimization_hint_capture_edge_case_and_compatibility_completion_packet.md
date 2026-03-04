@@ -39,7 +39,7 @@ Freeze lane-A edge-case and compatibility completion prerequisites for M246 fron
 
 ## Gate Commands
 
-- `python scripts/check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py`
+- `python scripts/check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a005_frontend_optimization_hint_capture_edge_case_and_compatibility_completion_contract.py -q`
 - `python scripts/run_m246_a005_lane_a_readiness.py`
 
