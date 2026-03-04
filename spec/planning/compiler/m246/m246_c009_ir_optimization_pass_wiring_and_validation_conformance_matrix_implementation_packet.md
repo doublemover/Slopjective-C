@@ -14,6 +14,12 @@ continuity for M246 so dependency surfaces and optimizer validation governance
 remain deterministic and fail-closed, with code/spec anchors and milestone
 optimization improvements treated as mandatory scope inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5085`
+- Dependency-chain integrity for C009 remains pinned to issue `#5085` across
+  expectations, checker, tests, and readiness surfaces.
+
 ## Scope Anchors
 
 - Contract:
@@ -55,6 +61,7 @@ optimization improvements treated as mandatory scope inputs.
 
 ## Gate Commands
 
+- `python scripts/check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py --emit-json --summary-out tmp/reports/m246/M246-C009/ir_optimization_pass_wiring_validation_conformance_matrix_implementation_summary.json`
 - `python scripts/check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py -q`
 - `python scripts/run_m246_c009_lane_c_readiness.py`
@@ -62,4 +69,3 @@ optimization improvements treated as mandatory scope inputs.
 ## Evidence Output
 
 - `tmp/reports/m246/M246-C009/ir_optimization_pass_wiring_validation_conformance_matrix_implementation_summary.json`
-

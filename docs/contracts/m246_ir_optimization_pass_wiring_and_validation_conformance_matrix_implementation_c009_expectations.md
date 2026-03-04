@@ -11,6 +11,12 @@ hardening anchors remain explicit, deterministic, and traceable across
 dependency surfaces, including code/spec anchors and milestone optimization
 improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5085`
+- Lane-C C009 conformance matrix implementation scope remains pinned to issue
+  `#5085` for dependency-chain drift detection.
+
 ## Dependency Scope
 
 - Issue `#5085` defines canonical lane-C conformance matrix implementation scope.
@@ -49,6 +55,7 @@ improvements as mandatory scope inputs.
 
 ## Validation
 
+- `python scripts/check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py --emit-json --summary-out tmp/reports/m246/M246-C009/ir_optimization_pass_wiring_validation_conformance_matrix_implementation_summary.json`
 - `python scripts/check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c009_ir_optimization_pass_wiring_and_validation_conformance_matrix_implementation_contract.py -q`
 - `python scripts/run_m246_c009_lane_c_readiness.py`
@@ -56,4 +63,3 @@ improvements as mandatory scope inputs.
 ## Evidence Path
 
 - `tmp/reports/m246/M246-C009/ir_optimization_pass_wiring_validation_conformance_matrix_implementation_summary.json`
-
