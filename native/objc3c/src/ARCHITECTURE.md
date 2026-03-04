@@ -744,6 +744,13 @@ Current-state note:
   and `package.json` so recovery replay determinism and compile-time budget
   contract-gating evidence remains deterministic and fail-closed while lane-A
   A007 assets are pending GH seed.
+- M247 lane-A A009 frontend profiling and hot-path decomposition conformance matrix implementation anchors
+  dependency reference (`M247-A008`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_a009_expectations.md`,
+  `spec/planning/compiler/m247/m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_packet.md`,
+  and `package.json` so lane-A conformance matrix contract-gating evidence
+  remains deterministic and fail-closed while recovery/determinism continuity
+  is inherited from A008.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,

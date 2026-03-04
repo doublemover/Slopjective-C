@@ -254,6 +254,11 @@ A conforming implementation shall preserve, for all exported declarations:
       `M247-A007` dependency continuity so recovery replay determinism and
       compile-time budget contract-gating evidence remains fail-closed before
       lane-A A007 assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      conformance matrix metadata anchors for `M247-A009` with explicit
+      `M247-A008` dependency continuity so conformance matrix
+      contract-gating evidence remains fail-closed before conformance corpus
+      assets are seeded.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput
