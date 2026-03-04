@@ -639,6 +639,8 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M249-D002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-D installer/runtime operations core feature expansion metadata anchors for `M249-D004`
      with explicit `M249-D003` dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-D installer/runtime operations and support tooling release-candidate replay dry-run metadata anchors for `M249-D014`
+     with explicit `M249-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
    - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
      with diagnostics artifact and summary payload continuity so diagnostics UX
      and fix-it engine output contract drift fails closed.

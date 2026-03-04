@@ -1349,6 +1349,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d004_installer_runtime_operations_and_support_tooling_core_feature_expansion_packet.md`,
   and `package.json` so core-feature expansion installer/runtime continuity
   remains deterministic and fail-closed against `M249-D003` dependency drift.
+- M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
+  explicit lane-D release replay artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,
+  `spec/planning/compiler/m249/m249_d014_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` so replay-dry-run continuity remains deterministic and
+  fail-closed against `M249-D013` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in

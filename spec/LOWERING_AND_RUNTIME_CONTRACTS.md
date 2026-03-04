@@ -673,6 +673,9 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling core feature expansion shall
   preserve explicit lane-D dependency anchors (`M249-D003`) and fail closed on
   core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
+- installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
+  explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
+  release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.
 - CLI/reporting and output contract integration governance shall preserve
   explicit lane-D diagnostics UX and fix-it engine reporting anchors and fail
   closed on summary payload, diagnostics artifact path, or stage-report output
