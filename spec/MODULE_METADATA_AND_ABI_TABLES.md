@@ -231,16 +231,28 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit pending token `M247-B007` continuity so lane-B
       recovery/determinism contract-gating evidence remains fail-closed before
       diagnostics hardening assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting conformance matrix metadata anchors for `M247-B009`
+      with explicit `M247-B008` dependency continuity so lane-B
+      conformance matrix contract-gating evidence remains fail-closed before
+      conformance corpus assets are seeded.
     - deterministic lane-A frontend profiling and hot-path decomposition
       edge-case expansion/robustness metadata anchors for `M247-A006` with
       explicit `M247-A005` dependency continuity so parser-boundary profiling
       contract-gating evidence remains fail-closed before lane-A A005 assets
       are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      diagnostics-hardening metadata anchors for `M247-A007` with explicit
+      `M247-A006` dependency continuity so profiling diagnostics and
+      compile-time budget contract-gating evidence remains fail-closed before
+      lane-A A006 assets are seeded.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput
       contract-gating evidence remains fail-closed before lane-D core-feature
       implementation assets are seeded.
+    - deterministic lane-D runtime/link/build throughput optimization edge-case and compatibility completion metadata anchors for `M247-D005`
+      with explicit `M247-D004` dependency continuity and fail-closed compatibility evidence continuity so
+      throughput edge-case governance remains fail-closed before lane-D compatibility closure is promoted.
    - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
       with explicit dependency tokens (`none`) and fail-closed evidence continuity
       so interop declaration-form metadata drift fails closed.

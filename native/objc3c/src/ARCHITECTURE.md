@@ -717,12 +717,26 @@ Current-state note:
   and `package.json` so lane-B recovery/determinism contract-gating evidence
   remains deterministic and fail-closed while diagnostics hardening assets are
   pending GH seed.
+- M247 lane-B B009 semantic hot-path analysis/budgeting conformance matrix implementation anchors
+  dependency reference (`M247-B008`) in
+  `docs/contracts/m247_semantic_hot_path_analysis_and_budgeting_conformance_matrix_implementation_b009_expectations.md`,
+  `spec/planning/compiler/m247/m247_b009_semantic_hot_path_analysis_and_budgeting_conformance_matrix_implementation_packet.md`,
+  and `package.json` so lane-B conformance matrix contract-gating evidence
+  remains deterministic and fail-closed while recovery/determinism continuity
+  is inherited from B008.
 - M247 lane-A A006 frontend profiling and hot-path decomposition edge-case
   expansion and robustness anchors dependency reference (`M247-A005`) in
   `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_a006_expectations.md`,
   `spec/planning/compiler/m247/m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_packet.md`,
   and `package.json` so parser-boundary profiling governance evidence remains
   deterministic and fail-closed while lane-A A005 assets are pending GH seed.
+- M247 lane-A A007 frontend profiling and hot-path decomposition diagnostics hardening anchors
+  dependency reference (`M247-A006`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_a007_expectations.md`,
+  `spec/planning/compiler/m247/m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_packet.md`,
+  and `package.json` so profiling diagnostics and compile-time budget
+  contract-gating evidence remains deterministic and fail-closed while lane-A
+  A006 assets are pending GH seed.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,
@@ -730,6 +744,12 @@ Current-state note:
   and `package.json` so throughput optimization contract-gating evidence remains
   deterministic and fail-closed while lane-D core-feature implementation assets
   remain pending GH seed.
+- M247 lane-D D005 runtime/link/build throughput optimization edge-case and compatibility completion
+  anchors dependency reference (`M247-D004`) in
+  `docs/contracts/m247_runtime_link_build_throughput_optimization_edge_case_and_compatibility_completion_d005_expectations.md`,
+  `spec/planning/compiler/m247/m247_d005_runtime_link_build_throughput_optimization_edge_case_and_compatibility_completion_packet.md`,
+  and `package.json` so throughput optimization edge-case compatibility evidence
+  remains deterministic and fail-closed against `M247-D004` dependency drift.
 - M248 lane-A A001 suite partitioning and fixture ownership anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m248_suite_partitioning_and_fixture_ownership_contract_freeze_a001_expectations.md`,
