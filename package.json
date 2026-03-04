@@ -722,6 +722,9 @@
     "check:objc3c:m249-e009-lane-e-release-gate-docs-runbooks-conformance-matrix-implementation-contract": "python scripts/check_m249_e009_lane_e_release_gate_docs_and_runbooks_conformance_matrix_implementation_contract.py",
     "test:tooling:m249-e009-lane-e-release-gate-docs-runbooks-conformance-matrix-implementation-contract": "python -m pytest tests/tooling/test_check_m249_e009_lane_e_release_gate_docs_and_runbooks_conformance_matrix_implementation_contract.py -q",
     "check:objc3c:m249-e009-lane-e-readiness": "python scripts/run_m249_e009_lane_e_readiness.py",
+    "check:objc3c:m249-e010-lane-e-release-gate-docs-runbooks-conformance-corpus-expansion-contract": "python scripts/check_m249_e010_lane_e_release_gate_docs_and_runbooks_conformance_corpus_expansion_contract.py",
+    "test:tooling:m249-e010-lane-e-release-gate-docs-runbooks-conformance-corpus-expansion-contract": "python -m pytest tests/tooling/test_check_m249_e010_lane_e_release_gate_docs_and_runbooks_conformance_corpus_expansion_contract.py -q",
+    "check:objc3c:m249-e010-lane-e-readiness": "python scripts/run_m249_e010_lane_e_readiness.py",
     "check:objc3c:m249-e011-lane-e-release-gate-docs-runbooks-performance-and-quality-guardrails-contract": "python scripts/check_m249_e011_lane_e_release_gate_docs_and_runbooks_performance_and_quality_guardrails_contract.py",
     "test:tooling:m249-e011-lane-e-release-gate-docs-runbooks-performance-and-quality-guardrails-contract": "python -m pytest tests/tooling/test_check_m249_e011_lane_e_release_gate_docs_and_runbooks_performance_and_quality_guardrails_contract.py -q",
     "check:objc3c:m249-e011-lane-e-readiness": "python scripts/run_m249_e011_lane_e_readiness.py",
@@ -1950,7 +1953,6 @@
     "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
-
 
 
 
