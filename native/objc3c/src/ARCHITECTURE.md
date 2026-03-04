@@ -1636,6 +1636,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c015_lowering_ir_portability_contracts_advanced_core_workpack_shard1_packet.md`,
   and `package.json` so advanced-core portability continuity remains deterministic
   and fail-closed against `M245-C014` dependency drift.
+- M245 lane-C C016 lowering/IR portability contracts integration closeout and gate sign-off
+  anchors explicit lane-C integration closeout artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_integration_closeout_and_gate_signoff_c016_expectations.md`,
+  `spec/planning/compiler/m245/m245_c016_lowering_ir_portability_contracts_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so integration closeout portability continuity remains deterministic
+  and fail-closed against `M245-C015` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1720,6 +1726,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d015_build_link_runtime_reproducibility_operations_advanced_core_workpack_shard1_packet.md`,
   and `package.json` so advanced-core reproducibility continuity remains deterministic
   and fail-closed against `M245-D014` dependency drift.
+- M245 lane-D D016 build/link/runtime reproducibility advanced edge compatibility workpack (shard 1)
+  anchors explicit lane-D advanced-edge artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_advanced_edge_compatibility_workpack_shard1_d016_expectations.md`,
+  `spec/planning/compiler/m245/m245_d016_build_link_runtime_reproducibility_operations_advanced_edge_compatibility_workpack_shard1_packet.md`,
+  and `package.json` so advanced-edge reproducibility continuity remains deterministic
+  and fail-closed against `M245-D015` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1793,6 +1805,11 @@ Current-state note:
   `M245-C008`, and `M245-D011`) in lane-E advanced-core contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against advanced-core handoff drift.
+- M245 lane-E E016 portability gate/release checklist advanced edge compatibility workpack (shard 1)
+  anchors dependency references (`M245-E015`, `M245-A006`, `M245-B007`,
+  `M245-C009`, and `M245-D012`) in lane-E advanced-edge contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against advanced-edge handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
