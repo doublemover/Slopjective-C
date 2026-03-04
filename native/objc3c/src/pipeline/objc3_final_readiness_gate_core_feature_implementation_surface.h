@@ -205,6 +205,12 @@ inline std::string BuildObjc3FinalReadinessGateCoreFeatureImplementationKey(
       << (surface.advanced_edge_compatibility_shard4_ready ? "true" : "false")
       << ";advanced_edge_compatibility_shard4_key_ready="
       << (!surface.advanced_edge_compatibility_shard4_key.empty() ? "true" : "false")
+      << ";m248_integration_closeout_signoff_consistent="
+      << (surface.m248_integration_closeout_signoff_consistent ? "true" : "false")
+      << ";m248_integration_closeout_signoff_ready="
+      << (surface.m248_integration_closeout_signoff_ready ? "true" : "false")
+      << ";m248_integration_closeout_signoff_key_ready="
+      << (!surface.m248_integration_closeout_signoff_key.empty() ? "true" : "false")
       << ";advanced_conformance_shard2_consistent="
       << (surface.advanced_conformance_shard2_consistent ? "true" : "false")
       << ";advanced_conformance_shard2_ready="
@@ -1001,6 +1007,36 @@ BuildObjc3FinalReadinessGateAdvancedEdgeCompatibilityShard4Key(
                                                                  : "false")
       << ";advanced-edge-compatibility-shard4-ready="
       << (surface.advanced_edge_compatibility_shard4_ready ? "true" : "false");
+  return key.str();
+}
+
+inline std::string BuildObjc3FinalReadinessGateM248IntegrationCloseoutSignoffKey(
+    const Objc3FinalReadinessGateCoreFeatureImplementationSurface &surface,
+    bool lane_a_integration_closeout_signoff_ready,
+    bool lane_b_integration_closeout_signoff_ready,
+    bool lane_c_integration_closeout_signoff_ready,
+    bool lane_d_integration_closeout_signoff_ready,
+    bool lane_d_integration_closeout_signoff_key_ready) {
+  std::ostringstream key;
+  key << "final-readiness-gate-m248-integration-closeout-signoff:v1:"
+      << "dependency-chain-ready="
+      << (surface.dependency_chain_ready ? "true" : "false")
+      << ";advanced-edge-compatibility-shard4-ready="
+      << (surface.advanced_edge_compatibility_shard4_ready ? "true" : "false")
+      << ";lane-a-integration-closeout-signoff-ready="
+      << (lane_a_integration_closeout_signoff_ready ? "true" : "false")
+      << ";lane-b-integration-closeout-signoff-ready="
+      << (lane_b_integration_closeout_signoff_ready ? "true" : "false")
+      << ";lane-c-integration-closeout-signoff-ready="
+      << (lane_c_integration_closeout_signoff_ready ? "true" : "false")
+      << ";lane-d-integration-closeout-signoff-ready="
+      << (lane_d_integration_closeout_signoff_ready ? "true" : "false")
+      << ";lane-d-integration-closeout-signoff-key-ready="
+      << (lane_d_integration_closeout_signoff_key_ready ? "true" : "false")
+      << ";m248-integration-closeout-signoff-consistent="
+      << (surface.m248_integration_closeout_signoff_consistent ? "true" : "false")
+      << ";m248-integration-closeout-signoff-ready="
+      << (surface.m248_integration_closeout_signoff_ready ? "true" : "false");
   return key.str();
 }
 
@@ -1957,6 +1993,36 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   surface.advanced_edge_compatibility_shard4_ready =
       surface.advanced_edge_compatibility_shard4_ready &&
       !surface.advanced_edge_compatibility_shard4_key.empty();
+  const bool lane_m248_integration_closeout_signoff_consistent =
+      lane_a_surface.integration_closeout_signoff_ready &&
+      lane_b_surface.integration_closeout_signoff_ready &&
+      lane_c_surface.integration_closeout_signoff_ready &&
+      lane_d_surface.integration_closeout_signoff_ready &&
+      !lane_d_surface.integration_closeout_signoff_key.empty();
+  const bool m248_integration_closeout_signoff_consistent =
+      surface.advanced_edge_compatibility_shard4_ready &&
+      lane_m248_integration_closeout_signoff_consistent;
+  const bool m248_integration_closeout_signoff_ready =
+      m248_integration_closeout_signoff_consistent &&
+      !surface.governance_key.empty() &&
+      !surface.modular_split_key.empty() &&
+      !surface.advanced_edge_compatibility_shard4_key.empty() &&
+      !lane_d_surface.integration_closeout_signoff_key.empty();
+  surface.m248_integration_closeout_signoff_consistent =
+      m248_integration_closeout_signoff_consistent;
+  surface.m248_integration_closeout_signoff_ready =
+      m248_integration_closeout_signoff_ready;
+  surface.m248_integration_closeout_signoff_key =
+      BuildObjc3FinalReadinessGateM248IntegrationCloseoutSignoffKey(
+          surface,
+          lane_a_surface.integration_closeout_signoff_ready,
+          lane_b_surface.integration_closeout_signoff_ready,
+          lane_c_surface.integration_closeout_signoff_ready,
+          lane_d_surface.integration_closeout_signoff_ready,
+          !lane_d_surface.integration_closeout_signoff_key.empty());
+  surface.m248_integration_closeout_signoff_ready =
+      surface.m248_integration_closeout_signoff_ready &&
+      !surface.m248_integration_closeout_signoff_key.empty();
   const bool lane_advanced_edge_compatibility_shard2_consistent =
       lane_a_surface.recovery_determinism_ready &&
       lane_b_surface.conformance_corpus_ready &&
@@ -2163,6 +2229,7 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
       surface.advanced_performance_shard3_ready &&
       surface.advanced_core_shard4_ready &&
       surface.advanced_edge_compatibility_shard4_ready &&
+      surface.m248_integration_closeout_signoff_ready &&
       surface.advanced_edge_compatibility_shard2_ready &&
       surface.advanced_diagnostics_shard2_ready &&
       surface.advanced_conformance_shard2_ready &&
@@ -2508,6 +2575,18 @@ BuildObjc3FinalReadinessGateCoreFeatureImplementationSurface(
   } else if (surface.advanced_edge_compatibility_shard4_key.empty()) {
     surface.failure_reason =
         "final readiness gate advanced edge compatibility workpack shard4 key is not ready";
+  } else if (!lane_m248_integration_closeout_signoff_consistent) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off is inconsistent";
+  } else if (!surface.m248_integration_closeout_signoff_consistent) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off consistency is not satisfied";
+  } else if (!surface.m248_integration_closeout_signoff_ready) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off is not ready";
+  } else if (surface.m248_integration_closeout_signoff_key.empty()) {
+    surface.failure_reason =
+        "final readiness gate integration closeout and gate sign-off key is not ready";
   } else if (!lane_advanced_edge_compatibility_shard2_consistent) {
     surface.failure_reason =
         "final readiness gate advanced edge compatibility workpack shard2 is inconsistent";

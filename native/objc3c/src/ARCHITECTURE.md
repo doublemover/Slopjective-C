@@ -2561,6 +2561,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E033/A013/B016/C018/D024 edge prerequisites
   drift before milestone closeout can remain green.
+- M248 lane-E E035 integration closeout and gate sign-off anchors explicit final
+  readiness M248 integration-closeout sign-off guardrails
+  (`m248_integration_closeout_signoff_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E034/A013/B016/C019/D025 closeout prerequisites
+  drift before milestone closeout can remain green.
 - M250 lane-E E027 integration closeout sign-off anchors explicit final
   readiness integration-closeout sign-off guardrails
   (`integration_closeout_signoff_*`) in
