@@ -5,7 +5,7 @@ Milestone: `M246`
 Lane: `C`
 Issue: `#5079`
 Freeze date: `2026-03-04`
-Dependencies: `M246-C001`, `M246-C002`
+Dependency anchor: `M246-C002`
 
 ## Purpose
 

@@ -135,7 +135,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-C003-DOC-EXP-04",
-        "Dependencies: `M246-C001`, `M246-C002`",
+        "Dependency anchor: `M246-C002`",
     ),
     SnippetCheck(
         "M246-C003-DOC-EXP-05",
@@ -172,7 +172,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M246-C003-DOC-PKT-03", "Issue: `#5079`"),
     SnippetCheck(
         "M246-C003-DOC-PKT-04",
-        "Dependencies: `M246-C001`, `M246-C002`",
+        "Dependency anchor: `M246-C002`",
     ),
     SnippetCheck("M246-C003-DOC-PKT-05", "Freeze date: `2026-03-04`"),
     SnippetCheck(
@@ -276,7 +276,16 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--readiness-script", type=Path, default=DEFAULT_READINESS_SCRIPT)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument(
+        "--emit-json",
+        action="store_true",
+        help="emit canonical JSON summary to stdout",
+    )
     return parser.parse_args(argv)
+
+
+def sort_findings(findings: Sequence[Finding]) -> list[Finding]:
+    return sorted(findings, key=lambda finding: (finding.check_id, finding.artifact, finding.detail))
 
 
 def check_prerequisite_assets() -> tuple[int, list[Finding]]:
@@ -367,24 +376,29 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
-    checks_passed = checks_total - len(failures)
+    sorted_failures = sort_findings(failures)
+    checks_passed = checks_total - len(sorted_failures)
     summary_payload = {
         "mode": MODE,
-        "ok": not failures,
+        "ok": not sorted_failures,
         "checks_total": checks_total,
         "checks_passed": checks_passed,
-        "failures": [{"artifact": f.artifact, "check_id": f.check_id, "detail": f.detail} for f in failures],
+        "failures": [{"artifact": f.artifact, "check_id": f.check_id, "detail": f.detail} for f in sorted_failures],
     }
 
     summary_path = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
-    if failures:
-        for finding in failures:
+    if args.emit_json:
+        print(canonical_json(summary_payload), end="")
+
+    if sorted_failures:
+        for finding in sorted_failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

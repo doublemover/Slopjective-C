@@ -14,7 +14,7 @@ improvements as mandatory scope inputs.
 ## Dependency Scope
 
 - Issue `#5079` defines canonical lane-C core feature implementation scope.
-- Dependencies: `M246-C001`, `M246-C002`
+- Dependency anchor: `M246-C002`
 - Upstream C001/C002 assets remain mandatory prerequisites:
   - `docs/contracts/m246_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_c001_expectations.md`
   - `spec/planning/compiler/m246/m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_packet.md`
