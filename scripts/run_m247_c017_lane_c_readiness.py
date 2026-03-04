@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run M247-C017 lane-C readiness checks without deep npm nesting."""
+"""Run M247-C017 lane-C readiness checks with deterministic dependency chaining."""
 
 from __future__ import annotations
 
@@ -7,8 +7,6 @@ import subprocess
 import sys
 from typing import Sequence
 
-
-DEPENDENCY_TOKEN = "M247-C016"
 
 COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
@@ -30,10 +28,6 @@ COMMAND_CHAIN: tuple[Sequence[str], ...] = (
 
 
 def run_chain() -> int:
-    print(
-        "[info] dependency continuity token: "
-        f"{DEPENDENCY_TOKEN} (inherits lane-C advanced edge compatibility workpack readiness)"
-    )
     for command in COMMAND_CHAIN:
         command_text = " ".join(command)
         print(f"[run] {command_text}")
@@ -50,5 +44,3 @@ def run_chain() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run_chain())
-
-

@@ -26,9 +26,10 @@ sys.modules[SPEC.name] = contract
 SPEC.loader.exec_module(contract)
 
 
-def replace_once(text: str, old: str, new: str) -> str:
-    assert old in text
-    return text.replace(old, new, 1)
+def replace_all_occurrences(text: str, old: str, new: str) -> str:
+    count = text.count(old)
+    assert count > 0, f"expected snippet not found for drift mutation: {old}"
+    return text.replace(old, new)
 
 
 def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
@@ -37,11 +38,12 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
 
     assert exit_code == 0
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["mode"] == (
-        "m247-c017-lowering-codegen-cost-profiling-controls-integration-closeout-and-gate-signoff-contract-v1"
+    assert (
+        payload["mode"]
+        == "m247-c017-lowering-codegen-cost-profiling-controls-integration-closeout-and-gate-signoff-contract-v1"
     )
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 55
+    assert payload["checks_total"] >= 60
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
@@ -52,38 +54,37 @@ def test_contract_default_summary_out_is_under_tmp_reports_m247_c017() -> None:
     assert normalized.startswith("tmp/reports/m247/M247-C017/")
 
 
-def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_contract_fails_closed_when_prerequisite_asset_is_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_assets = list(contract.PREREQUISITE_ASSETS)
+    original = drift_assets[0]
+    drift_assets[0] = contract.AssetCheck(
+        check_id=original.check_id,
+        relative_path=Path("scripts/does_not_exist_m247_c017_dependency.py"),
+    )
+    monkeypatch.setattr(contract, "PREREQUISITE_ASSETS", tuple(drift_assets))
+
     summary_out = tmp_path / "summary.json"
-    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+    exit_code = contract.run(["--summary-out", str(summary_out)])
 
-    assert exit_code == 0
-    payload = json.loads(capsys.readouterr().out)
-    assert payload["mode"] == contract.MODE
-    assert payload["ok"] is True
-    assert payload["checks_total"] == payload["checks_passed"]
-
-
-def test_contract_summary_json_is_deterministic(tmp_path: Path) -> None:
-    summary_out_a = tmp_path / "summary_a.json"
-    summary_out_b = tmp_path / "summary_b.json"
-
-    assert contract.run(["--summary-out", str(summary_out_a)]) == 0
-    assert contract.run(["--summary-out", str(summary_out_b)]) == 0
-
-    text_a = summary_out_a.read_text(encoding="utf-8")
-    text_b = summary_out_b.read_text(encoding="utf-8")
-    assert text_a == text_b
-    payload = json.loads(text_a)
-    assert text_a == contract.canonical_json(payload)
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == original.check_id for failure in payload["failures"])
 
 
 def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:
-    drift_doc = tmp_path / "m247_c017_expectations.md"
+    drift_doc = (
+        tmp_path
+        / "m247_lane_c_lowering_codegen_cost_profiling_and_controls_integration_closeout_and_gate_signoff_c017_expectations.md"
+    )
     drift_doc.write_text(
-        replace_once(
+        replace_all_occurrences(
             contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
             "Dependencies: `M247-C016`",
-            "Dependencies: `M247-D099`",
+            "Dependencies: `M247-C099`",
         ),
         encoding="utf-8",
     )
@@ -97,10 +98,33 @@ def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_pat
     assert any(failure["check_id"] == "M247-C017-DOC-EXP-04" for failure in payload["failures"])
 
 
+def test_contract_fails_closed_when_expectations_issue_anchor_drifts(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "m247_c017_expectations_issue_drift.md"
+    drift_doc.write_text(
+        replace_all_occurrences(
+            contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "Issue `#6758` defines canonical lane-C integration closeout and gate sign-off scope.",
+            "Issue `#6999` defines canonical lane-C integration closeout and gate sign-off scope.",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-C017-DOC-EXP-03" for failure in payload["failures"])
+
+
 def test_contract_fails_closed_when_packet_issue_metadata_drifts(tmp_path: Path) -> None:
-    drift_packet = tmp_path / "m247_c017_packet.md"
+    drift_packet = (
+        tmp_path
+        / "m247_c017_lowering_codegen_cost_profiling_and_controls_integration_closeout_and_gate_signoff_packet.md"
+    )
     drift_packet.write_text(
-        replace_once(
+        replace_all_occurrences(
             contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
             "Issue: `#6758`",
             "Issue: `#6000`",
@@ -117,33 +141,90 @@ def test_contract_fails_closed_when_packet_issue_metadata_drifts(tmp_path: Path)
     assert any(failure["check_id"] == "M247-C017-DOC-PKT-03" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_readiness_runner_drops_c016_chain(tmp_path: Path) -> None:
-    drift_runner = tmp_path / "run_m247_c017_lane_c_readiness.py"
-    drift_runner.write_text(
-        replace_once(
-            contract.DEFAULT_READINESS_RUNNER.read_text(encoding="utf-8"),
-            "scripts/run_m247_c016_lane_c_readiness.py",
-            "scripts/run_m247_c015_lane_c_readiness.py",
+def test_contract_fails_closed_when_c015_dependency_anchor_drifts(tmp_path: Path) -> None:
+    drift_c015_doc = (
+        tmp_path
+        / "m247_lane_c_lowering_codegen_cost_profiling_and_controls_advanced_core_workpack_shard_1_c015_expectations.md"
+    )
+    drift_c015_doc.write_text(
+        replace_all_occurrences(
+            contract.DEFAULT_C015_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "Dependencies: `M247-C016`",
+            "Dependencies: `M247-C099`",
         ),
         encoding="utf-8",
     )
 
     summary_out = tmp_path / "summary.json"
-    exit_code = contract.run(["--readiness-runner", str(drift_runner), "--summary-out", str(summary_out)])
+    exit_code = contract.run(
+        [
+            "--c015-expectations-doc",
+            str(drift_c015_doc),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
 
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-C017-RUN-02" for failure in payload["failures"])
+    assert any(failure["check_id"] == "M247-C017-C015-EXP-02" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Path) -> None:
+def test_contract_fails_closed_when_c015_readiness_drops_c014_chain(tmp_path: Path) -> None:
+    drift_readiness = tmp_path / "run_m247_c015_lane_c_readiness.py"
+    drift_readiness.write_text(
+        replace_all_occurrences(
+            contract.DEFAULT_C015_READINESS_SCRIPT.read_text(encoding="utf-8"),
+            "scripts/run_m247_c014_lane_c_readiness.py",
+            "scripts/run_m247_c099_lane_c_readiness.py",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--c015-readiness-script",
+            str(drift_readiness),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-C017-C015-RUN-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_c017_readiness_drops_c015_chain(tmp_path: Path) -> None:
+    drift_readiness = tmp_path / "run_m247_c017_lane_c_readiness.py"
+    drift_readiness.write_text(
+        replace_all_occurrences(
+            contract.DEFAULT_READINESS_SCRIPT.read_text(encoding="utf-8"),
+            "scripts/run_m247_c016_lane_c_readiness.py",
+            "scripts/run_m247_c099_lane_c_readiness.py",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--readiness-script", str(drift_readiness), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-C017-RUN-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_package_drops_perf_budget_input(tmp_path: Path) -> None:
     drift_package = tmp_path / "package.json"
     drift_package.write_text(
-        replace_once(
+        replace_all_occurrences(
             contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
-            '"check:objc3c:m247-c017-lane-c-readiness": "python scripts/run_m247_c017_lane_c_readiness.py"',
-            '"check:objc3c:m247-c017-lane-c-readiness": "python scripts/check_m247_c017_lowering_codegen_cost_profiling_and_controls_integration_closeout_and_gate_signoff_contract.py"',
+            '"test:objc3c:perf-budget": ',
+            '"test:objc3c:perf-budget-disabled": ',
         ),
         encoding="utf-8",
     )
@@ -154,23 +235,4 @@ def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Pa
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-C017-PKG-VAL-03" for failure in payload["failures"])
-
-
-def test_contract_fails_closed_when_c016_checker_dependency_path_missing(tmp_path: Path) -> None:
-    summary_out = tmp_path / "summary.json"
-    exit_code = contract.run(
-        [
-            "--c016-checker",
-            str(tmp_path / "missing_c016_checker.py"),
-            "--summary-out",
-            str(summary_out),
-        ]
-    )
-
-    assert exit_code == 1
-    payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-C017-DEP-C016-ARG-01" for failure in payload["failures"])
-
-
+    assert any(failure["check_id"] == "M247-C017-PKG-05" for failure in payload["failures"])
