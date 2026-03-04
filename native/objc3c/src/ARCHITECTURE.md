@@ -1384,7 +1384,13 @@ Current-state note:
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_d019_expectations.md`,
   `spec/planning/compiler/m249/m249_d019_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_packet.md`,
   and `package.json` so advanced integration continuity remains deterministic and
-  fail-closed against `M249-D017` dependency drift.
+  fail-closed against `M249-D018` dependency drift.
+- M249 lane-D D020 integration closeout and gate sign-off anchors installer/runtime operations and support tooling continuity
+  explicit lane-D integration closeout/sign-off artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_integration_closeout_and_gate_signoff_d020_expectations.md`,
+  `spec/planning/compiler/m249/m249_d020_installer_runtime_operations_and_support_tooling_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so integration closeout/sign-off continuity remains deterministic and
+  fail-closed against `M249-D019` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in

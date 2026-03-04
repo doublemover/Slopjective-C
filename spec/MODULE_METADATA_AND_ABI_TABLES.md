@@ -651,6 +651,8 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M249-D017` dependency continuity and fail-closed advanced conformance evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling advanced integration workpack (shard 1) metadata anchors for `M249-D019`
      with explicit `M249-D018` dependency continuity and fail-closed advanced integration evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling integration closeout and gate sign-off metadata anchors for `M249-D020`
+     with explicit `M249-D019` dependency continuity and fail-closed integration closeout/sign-off evidence continuity.
    - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
      with diagnostics artifact and summary payload continuity so diagnostics UX
      and fix-it engine output contract drift fails closed.
