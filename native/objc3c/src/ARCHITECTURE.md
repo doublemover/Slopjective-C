@@ -1624,6 +1624,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c013_lowering_ir_portability_contracts_docs_and_operator_runbook_synchronization_packet.md`,
   and `package.json` so docs/runbook portability continuity remains deterministic
   and fail-closed against `M245-C012` dependency drift.
+- M245 lane-C C014 lowering/IR portability contracts release-candidate and replay dry-run
+  anchors explicit lane-C release/replay artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_release_candidate_and_replay_dry_run_c014_expectations.md`,
+  `spec/planning/compiler/m245/m245_c014_lowering_ir_portability_contracts_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` so release/replay portability continuity remains deterministic
+  and fail-closed against `M245-C013` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1696,6 +1702,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d013_build_link_runtime_reproducibility_operations_docs_and_operator_runbook_synchronization_packet.md`,
   and `package.json` so docs/runbook reproducibility continuity remains deterministic
   and fail-closed against `M245-D012` dependency drift.
+- M245 lane-D D014 build/link/runtime reproducibility release-candidate and replay dry-run
+  anchors explicit lane-D release/replay artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_release_candidate_and_replay_dry_run_d014_expectations.md`,
+  `spec/planning/compiler/m245/m245_d014_build_link_runtime_reproducibility_operations_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` so release/replay reproducibility continuity remains deterministic
+  and fail-closed against `M245-D013` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1759,6 +1771,11 @@ Current-state note:
   `M245-C007`, and `M245-D009`) in lane-E docs/runbook contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against docs/runbook handoff drift.
+- M245 lane-E E014 portability gate/release checklist release-candidate and replay dry-run
+  anchors dependency references (`M245-E013`, `M245-A005`, `M245-B006`,
+  `M245-C008`, and `M245-D010`) in lane-E release/replay contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against release/replay handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,

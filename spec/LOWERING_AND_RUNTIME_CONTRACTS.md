@@ -710,6 +710,7 @@ At minimum, the pass-graph gate shall validate:
 - lowering/IR portability contracts performance and quality guardrails shall preserve explicit lane-C dependency anchors (`M245-C010`) and fail closed on performance and quality evidence drift before runtime portability cross-lane-integration-sync validation advances.
 - lowering/IR portability contracts cross-lane integration sync shall preserve explicit lane-C dependency anchors (`M245-C011`) and fail closed on cross-lane integration sync evidence drift before runtime portability docs-and-operator-runbook-synchronization validation advances.
 - lowering/IR portability contracts docs and operator runbook synchronization shall preserve explicit lane-C dependency anchors (`M245-C012`) and fail closed on docs and operator runbook synchronization evidence drift before runtime portability release-candidate-and-replay-dry-run validation advances.
+- lowering/IR portability contracts release-candidate and replay dry-run shall preserve explicit lane-C dependency anchors (`M245-C013`) and fail closed on release-candidate and replay dry-run evidence drift before runtime portability advanced-core-workpack validation advances.
 - frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
 - frontend behavior parity core feature implementation governance shall preserve explicit lane-A dependency anchors (`M245-A002`) and fail closed on core-feature evidence drift before parser portability implementation advances.
 - frontend behavior parity core feature expansion governance shall preserve explicit
@@ -805,6 +806,9 @@ At minimum, the pass-graph gate shall validate:
 - build/link/runtime reproducibility docs and operator runbook synchronization governance shall preserve explicit
   lane-D dependency anchors (`M245-D012`) and fail closed on docs and operator runbook synchronization evidence drift
   before runtime reproducibility release-candidate-and-replay-dry-run validation advances.
+- build/link/runtime reproducibility release-candidate and replay dry-run governance shall preserve explicit
+  lane-D dependency anchors (`M245-D013`) and fail closed on release-candidate and replay dry-run evidence drift
+  before runtime reproducibility advanced-core-workpack validation advances.
 - portability gate/release checklist contract and architecture freeze wiring shall
   preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
   `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
@@ -854,6 +858,10 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-E dependency anchors (`M245-E012`, `M245-A005`, `M245-B006`,
   `M245-C007`, and `M245-D009`) and fail closed on docs and operator runbook
   synchronization handoff drift.
+- portability gate/release checklist release-candidate and replay dry-run wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E013`, `M245-A005`, `M245-B006`,
+  `M245-C008`, and `M245-D010`) and fail closed on release-candidate and replay
+  dry-run handoff drift.
 - frontend optimization hint capture governance shall preserve explicit
   deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
   before optimizer pipeline integration and invariants validation advances.

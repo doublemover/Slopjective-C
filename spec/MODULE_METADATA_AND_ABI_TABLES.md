@@ -773,6 +773,9 @@ A conforming implementation shall preserve, for all exported declarations:
      - deterministic lane-C lowering/IR portability docs and operator runbook synchronization metadata anchors for `M245-C013`
        with explicit `M245-C012` dependency continuity and fail-closed docs/runbook continuity so
        portability docs and operator runbook synchronization drift fails closed.
+     - deterministic lane-C lowering/IR portability release-candidate and replay dry-run metadata anchors for `M245-C014`
+       with explicit `M245-C013` dependency continuity and fail-closed release/replay continuity so
+       portability release-candidate and replay dry-run drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility modular split metadata anchors for `M245-D002`
       with explicit `M245-D001` dependency continuity so reproducibility scaffolding drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility core feature metadata anchors for `M245-D003`
@@ -797,6 +800,8 @@ A conforming implementation shall preserve, for all exported declarations:
        with explicit `M245-D011` dependency continuity so cross-lane integration sync drift fails closed.
      - deterministic lane-D build/link/runtime reproducibility docs and operator runbook synchronization metadata anchors for `M245-D013`
        with explicit `M245-D012` dependency continuity so docs/runbook synchronization drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility release-candidate and replay dry-run metadata anchors for `M245-D014`
+       with explicit `M245-D013` dependency continuity so release/replay drift fails closed.
     - deterministic lane-E portability gate/release checklist dependency anchors for
       `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
       integration freeze evidence remains deterministic and fail-closed.
@@ -836,6 +841,9 @@ A conforming implementation shall preserve, for all exported declarations:
      - deterministic lane-E portability gate/release checklist docs and operator runbook synchronization dependency anchors for
        `M245-E012`, `M245-A005`, `M245-B006`, `M245-C007`, and `M245-D009` so lane
        docs/runbook synchronization continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist release-candidate and replay dry-run dependency anchors for
+       `M245-E013`, `M245-A005`, `M245-B006`, `M245-C008`, and `M245-D010` so lane
+       release/replay continuity evidence remains deterministic and fail-closed.
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
