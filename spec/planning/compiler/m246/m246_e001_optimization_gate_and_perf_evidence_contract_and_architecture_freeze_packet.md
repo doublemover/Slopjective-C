@@ -49,7 +49,7 @@ Freeze lane-E optimization gate and perf evidence contract prerequisites for M24
 
 ## Gate Commands
 
-- `python scripts/check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-e001-lane-e-readiness`
 

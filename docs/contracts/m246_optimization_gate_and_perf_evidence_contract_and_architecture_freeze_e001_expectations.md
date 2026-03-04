@@ -3,6 +3,8 @@
 Contract ID: `objc3c-optimization-gate-perf-evidence-contract-freeze/m246-e001-v1`
 Status: Accepted
 Scope: M246 lane-E optimization gate and perf evidence contract and architecture freeze for optimizer pipeline integration and invariants continuity.
+Issue: `#6692`
+Dependencies: `M246-A001`, `M246-B001`, `M246-C002`, `M246-D001`
 
 ## Objective
 
@@ -38,7 +40,7 @@ Fail closed unless M246 lane-E contract-freeze dependency anchors remain explici
 
 ## Validation
 
-- `python scripts/check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_e001_optimization_gate_and_perf_evidence_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-e001-lane-e-readiness`
 
