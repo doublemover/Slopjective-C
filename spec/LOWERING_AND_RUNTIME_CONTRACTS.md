@@ -701,17 +701,24 @@ At minimum, the pass-graph gate shall validate:
 - lowering/IR portability modular split/scaffolding governance shall preserve explicit lane-C dependency anchors (`M245-C001`) and fail closed on modular split evidence drift before runtime portability scaffolding advances.
 - lowering/IR portability contracts core feature implementation shall preserve explicit lane-C dependency anchors (`M245-C001`, `M245-C002`) and fail closed on core-feature evidence drift before runtime portability implementation advances.
 - lowering/IR portability contracts core feature expansion shall preserve explicit lane-C dependency token (`M245-C003`) and fail closed on core-feature expansion evidence drift before runtime portability edge-case compatibility advances.
+- lowering/IR portability contracts edge-case and compatibility completion shall preserve explicit lane-C dependency anchors (`M245-C004`) and fail closed on edge-case and compatibility completion evidence drift before runtime portability robustness validation advances.
 - frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
 - frontend behavior parity core feature implementation governance shall preserve explicit lane-A dependency anchors (`M245-A002`) and fail closed on core-feature evidence drift before parser portability implementation advances.
 - frontend behavior parity core feature expansion governance shall preserve explicit
   lane-A dependency anchors (`M245-A003`) and fail closed on core-feature expansion evidence drift
   before parser portability edge-case compatibility advances.
+- frontend behavior parity edge-case and compatibility completion governance shall preserve explicit
+  lane-A dependency anchors (`M245-A004`) and fail closed on edge-case and compatibility completion evidence drift
+  before parser portability robustness validation advances.
 - semantic parity and platform constraints core feature implementation shall
   preserve explicit lane-B dependency anchors (`M245-B002`) and fail closed on core-feature evidence drift
   before portability gate and semantic stability expansion validation advances.
 - semantic parity and platform constraints core feature expansion shall
   preserve explicit lane-B dependency anchors (`M245-B003`) and fail closed on core-feature expansion evidence drift
   before portability gate and semantic stability edge-case compatibility validation advances.
+- semantic parity and platform constraints edge-case and compatibility completion shall
+  preserve explicit lane-B dependency anchors (`M245-B004`) and fail closed on edge-case and compatibility completion evidence drift
+  before portability gate and semantic stability robustness validation advances.
 - build/link/runtime reproducibility modular split/scaffolding governance shall preserve explicit
   lane-D dependency anchors (`M245-D001`) and fail closed on modular split evidence drift
   before runtime reproducibility scaffolding advances.
@@ -721,6 +728,9 @@ At minimum, the pass-graph gate shall validate:
 - build/link/runtime reproducibility core feature expansion governance shall preserve explicit
   lane-D dependency anchors (`M245-D003`) and fail closed on core-feature expansion evidence drift
   before runtime reproducibility edge-compatibility advances.
+- build/link/runtime reproducibility edge-case and compatibility completion governance shall preserve explicit
+  lane-D dependency anchors (`M245-D004`) and fail closed on edge-case and compatibility completion evidence drift
+  before runtime reproducibility robustness validation advances.
 - portability gate/release checklist contract and architecture freeze wiring shall
   preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
   `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
@@ -733,6 +743,10 @@ At minimum, the pass-graph gate shall validate:
 - portability gate/release checklist core feature expansion wiring shall preserve
   explicit lane-E dependency anchors (`M245-E003`, `M245-A002`, `M245-B002`,
   `M245-C002`, and `M245-D003`) and fail closed on core-feature expansion
+  handoff drift.
+- portability gate/release checklist edge-case and compatibility completion wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E004`, `M245-A002`, `M245-B002`,
+  `M245-C003`, and `M245-D004`) and fail closed on edge-case and compatibility completion
   handoff drift.
 - frontend optimization hint capture governance shall preserve explicit
   deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift

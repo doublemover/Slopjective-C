@@ -535,6 +535,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M245-A002` dependency continuity so core feature implementation drift fails closed.
     - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A004`
       with explicit `M245-A003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-A frontend behavior parity edge-case and compatibility completion metadata anchors for `M245-A005`
+      with explicit `M245-A004` dependency continuity so edge-case and compatibility completion drift fails closed.
     - deterministic lane-A feature packaging metadata anchors for `M249-A001`
       with release packaging compatibility evidence and parser replay-budget continuity
       so distribution surface drift fails closed.
@@ -690,6 +692,8 @@ A conforming implementation shall preserve, for all exported declarations:
      `M245-B003` with explicit `M245-B002` dependency continuity so core feature implementation drift fails closed.
    - deterministic lane-B semantic parity/platform constraints core feature expansion metadata anchors for
      `M245-B004` with explicit `M245-B003` dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints edge-case and compatibility completion metadata anchors for
+     `M245-B005` with explicit `M245-B004` dependency continuity so edge-case and compatibility completion drift fails closed.
    - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
      with sema pass-flow compatibility evidence and parse/lowering compatibility handoff continuity
      so migration drift fails closed.
@@ -714,12 +718,17 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C lowering/IR portability core-feature expansion metadata anchors for `M245-C004`
       with explicit `M245-C003` dependency continuity and fail-closed core-feature expansion evidence continuity so
       portability expansion drift fails closed.
+    - deterministic lane-C lowering/IR portability edge-case and compatibility completion metadata anchors for `M245-C005`
+      with explicit `M245-C004` dependency continuity and fail-closed edge-case compatibility continuity so
+      portability edge-case and compatibility completion drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility modular split metadata anchors for `M245-D002`
       with explicit `M245-D001` dependency continuity so reproducibility scaffolding drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility core feature metadata anchors for `M245-D003`
       with explicit `M245-D002` dependency continuity so core feature implementation drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility core feature expansion metadata anchors for `M245-D004`
       with explicit `M245-D003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility edge-case and compatibility completion metadata anchors for `M245-D005`
+      with explicit `M245-D004` dependency continuity so edge-case and compatibility completion drift fails closed.
     - deterministic lane-E portability gate/release checklist dependency anchors for
       `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
       integration freeze evidence remains deterministic and fail-closed.
@@ -732,6 +741,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E portability gate/release checklist core feature expansion dependency anchors for
       `M245-E003`, `M245-A002`, `M245-B002`, `M245-C002`, and `M245-D003` so lane
       expansion continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist edge-case and compatibility completion dependency anchors for
+      `M245-E004`, `M245-A002`, `M245-B002`, `M245-C003`, and `M245-D004` so lane
+      edge-case and compatibility completion continuity evidence remains deterministic and fail-closed.
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
