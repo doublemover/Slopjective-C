@@ -826,6 +826,9 @@ At minimum, the pass-graph gate shall validate:
 - build/link/runtime reproducibility advanced integration workpack (shard 1) governance shall preserve explicit
   lane-D dependency anchors (`M245-D018`) and fail closed on advanced integration evidence drift
   before runtime reproducibility advanced-performance-workpack validation advances.
+- build/link/runtime reproducibility advanced performance workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D019`) and fail closed on advanced performance evidence drift
+  before runtime reproducibility milestone closeout validation advances.
 - portability gate/release checklist contract and architecture freeze wiring shall
   preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
   `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
@@ -898,6 +901,10 @@ At minimum, the pass-graph gate shall validate:
 - portability gate/release checklist advanced integration workpack (shard 1) wiring shall preserve
   explicit lane-E dependency anchors (`M245-E018`, `M245-A007`, `M245-B009`,
   `M245-C010`, and `M245-D014`) and fail closed on advanced integration
+  handoff drift.
+- portability gate/release checklist advanced performance workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E019`, `M245-A008`, `M245-B009`,
+  `M245-C011`, and `M245-D014`) and fail closed on advanced performance
   handoff drift.
 - frontend optimization hint capture governance shall preserve explicit
   deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
