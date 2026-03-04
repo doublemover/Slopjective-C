@@ -228,6 +228,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C lowering/codegen core feature implementation metadata anchors for `M247-C003`
      with explicit `M247-C002` dependency continuity and fail-closed core feature evidence continuity so
      lane-C core feature implementation governance remains deterministic before core-feature expansion stages advance.
+   - deterministic lane-C lowering/codegen core feature expansion metadata anchors for `M247-C004`
+     with explicit `M247-C003` dependency continuity and fail-closed core feature expansion evidence continuity so
+     lane-C core feature expansion governance remains deterministic before edge-case compatibility stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
@@ -240,6 +243,10 @@ A conforming implementation shall preserve, for all exported declarations:
        `M247-A003`, `M247-B003`, `M247-C003`, and `M247-D002`, including
        pending-lane tokens needed to keep core feature implementation governance
        evidence fail-closed while lane A/B/C/D seeds remain pending.
+     - deterministic lane-E performance SLO edge-case expansion/robustness metadata anchors for `M247-E006`
+       with explicit `M247-E005`, `M247-A006`, `M247-B007`, `M247-C006`, and
+       `M247-D005` dependency continuity so lane-E robustness contract-gating
+       evidence remains fail-closed before diagnostics-hardening assets are seeded.
      - deterministic lane-B semantic hot-path analysis/budgeting metadata anchors for `M247-B008`
        with explicit pending token `M247-B007` continuity so lane-B
        recovery/determinism contract-gating evidence remains fail-closed before
@@ -256,6 +263,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M247-B011` dependency continuity so lane-B
       cross-lane integration contract-gating evidence remains fail-closed before
       docs/runbook synchronization assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting docs/operator runbook synchronization metadata anchors for `M247-B013`
+      with explicit `M247-B012` dependency continuity so lane-B docs/runbook synchronization contract-gating evidence remains fail-closed.
     - deterministic lane-A frontend profiling and hot-path decomposition
       edge-case expansion/robustness metadata anchors for `M247-A006` with
       explicit `M247-A005` dependency continuity so parser-boundary profiling

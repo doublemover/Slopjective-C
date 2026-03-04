@@ -271,6 +271,8 @@ At minimum, the pass-graph gate shall validate:
   readiness chaining, or modular split/scaffolding evidence commands drift.
 - lowering/codegen core feature implementation wiring shall preserve explicit lane-C dependency anchor (`M247-C002`) and fail closed when dependency references,
   readiness chaining, or core feature implementation evidence commands drift.
+- lowering/codegen core feature expansion wiring shall preserve explicit lane-C dependency anchor (`M247-C003`) and fail closed when dependency references,
+  readiness chaining, or core feature expansion evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or
@@ -283,6 +285,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M247-E002`, `M247-A003`, `M247-B003`, `M247-C003`,
   `M247-D002`) and fail closed when dependency references, readiness chaining,
   pending-token continuity, or core implementation evidence commands drift.
+- performance SLO edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E005`, `M247-A006`, `M247-B007`, `M247-C006`,
+  `M247-D005`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or edge-case robustness evidence commands drift.
 - semantic hot-path analysis/budgeting recovery and determinism hardening wiring
   shall preserve explicit lane-B dependency anchor (`M247-B007`) and fail closed
   when dependency references, pending-token continuity, or contract-gating
@@ -299,6 +305,8 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-B dependency anchor (`M247-B011`) and fail closed
   when dependency references, cross-lane synchronization continuity, or
   contract-gating evidence commands drift.
+- semantic hot-path analysis/budgeting docs and operator runbook synchronization wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B012`) and fail closed when dependency references, docs-runbook-synchronization consistency/readiness, docs-runbook-synchronization-key continuity, or contract-gating evidence commands drift.
 - frontend profiling and hot-path decomposition edge-case expansion and
   robustness wiring shall preserve explicit lane-A dependency anchor
   (`M247-A005`) and fail closed when dependency references, parser-boundary
