@@ -75,10 +75,14 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-D003-DOC-EXP-09",
-        "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
+        "python scripts/check_m246_d003_toolchain_integration_and_optimization_controls_core_feature_implementation_contract.py --emit-json",
     ),
     SnippetCheck(
         "M246-D003-DOC-EXP-10",
+        "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
+    ),
+    SnippetCheck(
+        "M246-D003-DOC-EXP-11",
         "tmp/reports/m246/M246-D003/toolchain_integration_optimization_controls_core_feature_implementation_contract_summary.json",
     ),
 )
@@ -108,6 +112,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M246-D003-DOC-PKT-10",
         "tmp/reports/m246/M246-D003/toolchain_integration_optimization_controls_core_feature_implementation_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D003-DOC-PKT-11",
+        "python scripts/check_m246_d003_toolchain_integration_and_optimization_controls_core_feature_implementation_contract.py --emit-json",
     ),
 )
 
@@ -143,6 +151,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
     parser.add_argument("--readiness-script", type=Path, default=DEFAULT_READINESS_SCRIPT)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument(
+        "--emit-json",
+        action="store_true",
+        help="Emit canonical summary JSON to stdout.",
+    )
     return parser.parse_args(argv)
 
 
@@ -173,7 +186,18 @@ def check_text_artifact(
         )
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id=exists_check_id,
+                detail=f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
@@ -205,6 +229,7 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(failures, key=lambda failure: (failure.check_id, failure.artifact, failure.detail))
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -221,11 +246,18 @@ def run(argv: Sequence[str]) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
+    if args.emit_json:
+        print(canonical_json(summary_payload), end="")
+
     if failures:
-        for finding in failures:
-            print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+        if not args.emit_json:
+            print(f"{MODE}: contract drift detected ({len(failures)} failed check(s)).", file=sys.stderr)
+            for finding in failures:
+                print(f"- [{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

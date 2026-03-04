@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = (
     ROOT
@@ -46,6 +48,41 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_d003() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m246/M246-D003/")
+
+
+def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout = capsys.readouterr().out
+    payload = json.loads(stdout)
+    assert payload["mode"] == contract.MODE
+    assert payload["ok"] is True
+    assert payload["checks_total"] == payload["checks_passed"]
+
+
+def test_contract_reports_failures_in_deterministic_sorted_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        contract,
+        "EXPECTATIONS_SNIPPETS",
+        (
+            contract.SnippetCheck("M246-D003-SORT-02", "missing snippet B"),
+            contract.SnippetCheck("M246-D003-SORT-01", "missing snippet A"),
+        ),
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    check_ids = [failure["check_id"] for failure in payload["failures"]]
+    assert check_ids == sorted(check_ids)
 
 
 def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:

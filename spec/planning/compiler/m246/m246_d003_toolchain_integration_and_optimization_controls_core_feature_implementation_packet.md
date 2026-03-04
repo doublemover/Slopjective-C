@@ -12,6 +12,7 @@ Dependencies: `M246-D002`
 Freeze lane-D toolchain integration and optimization controls core feature
 implementation prerequisites for M246 so dependency continuity remains
 deterministic and fail-closed, including code/spec anchors and milestone optimization improvements as mandatory scope inputs.
+Contract checker failure reporting must remain deterministic/sorted and support canonical JSON emission via `--emit-json`.
 
 ## Scope Anchors
 
@@ -39,7 +40,7 @@ deterministic and fail-closed, including code/spec anchors and milestone optimiz
 
 ## Gate Commands
 
-- `python scripts/check_m246_d003_toolchain_integration_and_optimization_controls_core_feature_implementation_contract.py`
+- `python scripts/check_m246_d003_toolchain_integration_and_optimization_controls_core_feature_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_d003_toolchain_integration_and_optimization_controls_core_feature_implementation_contract.py -q`
 - `python scripts/run_m246_d003_lane_d_readiness.py`
 
