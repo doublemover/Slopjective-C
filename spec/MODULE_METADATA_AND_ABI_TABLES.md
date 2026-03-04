@@ -308,6 +308,10 @@ A conforming implementation shall preserve, for all exported declarations:
       `M247-A009` dependency continuity so conformance corpus
       contract-gating evidence remains fail-closed before performance and
       quality guardrail assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      performance and quality guardrails metadata anchors for `M247-A011` with explicit
+      `M247-A010` dependency continuity so performance and quality guardrails
+      contract-gating evidence remains fail-closed before cross-lane integration assets are seeded.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput

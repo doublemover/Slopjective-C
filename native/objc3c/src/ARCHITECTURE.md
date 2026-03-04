@@ -856,6 +856,13 @@ Current-state note:
   and `package.json` so lane-A conformance corpus contract-gating evidence
   remains deterministic and fail-closed while conformance matrix continuity
   is inherited from A009.
+- M247 lane-A A011 frontend profiling and hot-path decomposition performance and quality guardrails anchors
+  dependency reference (`M247-A010`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_performance_and_quality_guardrails_a011_expectations.md`,
+  `spec/planning/compiler/m247/m247_a011_frontend_profiling_and_hot_path_decomposition_performance_and_quality_guardrails_packet.md`,
+  and `package.json` so lane-A performance/quality contract-gating evidence
+  remains deterministic and fail-closed while conformance corpus continuity
+  is inherited from A010.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,
