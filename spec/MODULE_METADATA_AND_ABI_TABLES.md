@@ -240,6 +240,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C lowering/codegen diagnostics hardening metadata anchors for `M247-C007`
       with explicit `M247-C006` dependency continuity and fail-closed edge-case robustness evidence continuity so
       lane-C diagnostics-hardening governance remains deterministic before recovery/determinism stages advance.
+    - deterministic lane-C lowering/codegen recovery and determinism hardening metadata anchors for `M247-C008`
+      with explicit `M247-C007` dependency continuity and fail-closed diagnostics hardening evidence continuity so
+      lane-C recovery/determinism governance remains deterministic before conformance matrix stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract

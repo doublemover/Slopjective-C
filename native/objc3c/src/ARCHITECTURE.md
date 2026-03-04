@@ -737,6 +737,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_c007_lowering_codegen_cost_profiling_and_controls_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening governance evidence remains
   deterministic and fail-closed while C006 dependency continuity is inherited.
+- M247 lane-C C008 lowering/codegen cost profiling and controls recovery and determinism hardening anchors
+  dependency reference (`M247-C007`) in
+  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_recovery_and_determinism_hardening_c008_expectations.md`,
+  `spec/planning/compiler/m247/m247_c008_lowering_codegen_cost_profiling_and_controls_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism governance evidence remains
+  deterministic and fail-closed while C007 dependency continuity is inherited.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
