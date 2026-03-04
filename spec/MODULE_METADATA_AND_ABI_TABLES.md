@@ -219,17 +219,24 @@ A conforming implementation shall preserve, for all exported declarations:
       continuity tokens remain pending.
     - deterministic toolchain/runtime core-feature expansion readiness/key markers for
       backend marker-path and marker payload-to-route consistency evidence.
+   - deterministic lane-C lowering/codegen cost profiling and controls metadata anchors for `M247-C001`
+     with explicit dependency token (`none`) and fail-closed cost-profile evidence continuity so
+     lane-C contract-freeze governance remains deterministic before modular split stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
      assets are seeded.
-    - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
-      `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
-      pending-lane tokens needed to keep modular split governance evidence
-      fail-closed before lane A-D modular split assets are seeded.
-    - deterministic lane-B semantic hot-path analysis/budgeting metadata anchors for `M247-B008`
-      with explicit pending token `M247-B007` continuity so lane-B
-      recovery/determinism contract-gating evidence remains fail-closed before
+     - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
+       `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
+       pending-lane tokens needed to keep modular split governance evidence
+       fail-closed before lane A-D modular split assets are seeded.
+     - deterministic lane-E performance SLO core feature implementation dependency anchors for `M247-E002`,
+       `M247-A003`, `M247-B003`, `M247-C003`, and `M247-D002`, including
+       pending-lane tokens needed to keep core feature implementation governance
+       evidence fail-closed while lane A/B/C/D seeds remain pending.
+     - deterministic lane-B semantic hot-path analysis/budgeting metadata anchors for `M247-B008`
+       with explicit pending token `M247-B007` continuity so lane-B
+       recovery/determinism contract-gating evidence remains fail-closed before
       diagnostics hardening assets are seeded.
     - deterministic lane-B semantic hot-path analysis/budgeting conformance matrix metadata anchors for `M247-B009`
       with explicit `M247-B008` dependency continuity so lane-B

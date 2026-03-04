@@ -695,6 +695,12 @@ Current-state note:
   and `package.json` so conformance-matrix implementation closeout evidence
   remains deterministic and fail-closed while issue-dependency continuity
   tokens remain pending.
+- M247 lane-C C001 lowering/codegen cost profiling and controls contract-freeze anchors
+  dependency token (`none`) in
+  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m247/m247_c001_lowering_codegen_cost_profiling_and_controls_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so compile-time cost profiling governance evidence remains
+  deterministic and fail-closed against lane-C contract-freeze drift.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
@@ -710,6 +716,14 @@ Current-state note:
   and `package.json` so modular split/scaffolding governance evidence remains
   deterministic and fail-closed while lane A-D modular split assets are pending
   GH seed.
+- M247 lane-E E003 performance SLO core feature implementation anchors
+  dependency references (`M247-E002`, `M247-A003`, `M247-B003`, `M247-C003`,
+  and `M247-D002`) in
+  `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_core_feature_implementation_e003_expectations.md`,
+  `spec/planning/compiler/m247/m247_e003_performance_slo_gate_and_reporting_core_feature_implementation_packet.md`,
+  and `package.json` so core feature implementation governance evidence remains
+  deterministic and fail-closed while lane A/B/C/D seeds remain pending GH
+  seed.
 - M247 lane-B B008 semantic hot-path analysis/budgeting recovery and determinism hardening anchors
   dependency reference (`M247-B007`) in
   `docs/contracts/m247_semantic_hot_path_analysis_and_budgeting_recovery_and_determinism_hardening_b008_expectations.md`,
@@ -724,6 +738,13 @@ Current-state note:
   and `package.json` so lane-B conformance matrix contract-gating evidence
   remains deterministic and fail-closed while recovery/determinism continuity
   is inherited from B008.
+- M247 lane-B B010 semantic hot-path analysis/budgeting conformance corpus expansion anchors
+  dependency reference (`M247-B009`) in
+  `docs/contracts/m247_semantic_hot_path_analysis_and_budgeting_conformance_corpus_expansion_b010_expectations.md`,
+  `spec/planning/compiler/m247/m247_b010_semantic_hot_path_analysis_and_budgeting_conformance_corpus_expansion_packet.md`,
+  and `package.json` so lane-B conformance corpus contract-gating evidence
+  remains deterministic and fail-closed while conformance matrix continuity
+  is inherited from B009.
 - M247 lane-A A006 frontend profiling and hot-path decomposition edge-case
   expansion and robustness anchors dependency reference (`M247-A005`) in
   `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_a006_expectations.md`,

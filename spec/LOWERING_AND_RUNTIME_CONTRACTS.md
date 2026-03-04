@@ -265,6 +265,8 @@ At minimum, the pass-graph gate shall validate:
   `M228-B010`, `M228-C017`, `M228-D007`) and fail closed when dependency
   references, readiness chaining, pending-token continuity, or closeout
   evidence commands drift.
+- lowering/codegen cost profiling and controls contract-freeze wiring shall preserve explicit lane-C dependency anchors (`none`) and fail closed when dependency
+  references, compile-route proof hooks, or perf-budget evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or
@@ -273,6 +275,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M247-E001`, `M247-A002`, `M247-B002`, `M247-C002`,
   `M247-D002`) and fail closed when dependency references or modular split
   evidence commands drift.
+- performance SLO core feature implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E002`, `M247-A003`, `M247-B003`, `M247-C003`,
+  `M247-D002`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or core implementation evidence commands drift.
 - semantic hot-path analysis/budgeting recovery and determinism hardening wiring
   shall preserve explicit lane-B dependency anchor (`M247-B007`) and fail closed
   when dependency references, pending-token continuity, or contract-gating
