@@ -10,7 +10,7 @@ from typing import Sequence
 NPM_EXECUTABLE = "npm.cmd" if sys.platform == "win32" else "npm"
 
 BASELINE_DEPENDENCIES = ("M247-E003",)
-PENDING_SEEDED_DEPENDENCY_TOKENS = ("M247-A004", "M247-B004", "M247-C004", "M247-D003")
+PENDING_SEEDED_DEPENDENCY_TOKENS = ("M247-A004", "M247-B005", "M247-C004", "M247-D003")
 
 INITIAL_COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
@@ -28,7 +28,7 @@ INITIAL_COMMAND_CHAIN: tuple[Sequence[str], ...] = (
         NPM_EXECUTABLE,
         "run",
         "--if-present",
-        "check:objc3c:m247-b004-lane-b-readiness",
+        "check:objc3c:m247-b005-lane-b-readiness",
     ),
     (
         NPM_EXECUTABLE,

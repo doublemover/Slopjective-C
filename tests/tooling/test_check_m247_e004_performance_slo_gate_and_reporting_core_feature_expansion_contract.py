@@ -91,12 +91,12 @@ def test_contract_fails_closed_when_expectations_drop_dependency_token(tmp_path:
     assert any(failure["check_id"] == "M247-E004-DOC-EXP-06" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_runner_chain_drops_b004_readiness(tmp_path: Path) -> None:
+def test_contract_fails_closed_when_runner_chain_drops_b005_readiness(tmp_path: Path) -> None:
     drift_runner = tmp_path / "run_m247_e004_lane_e_readiness.py"
     drift_runner.write_text(
         replace_once(
             contract.DEFAULT_RUNNER_SCRIPT.read_text(encoding="utf-8"),
-            "check:objc3c:m247-b004-lane-b-readiness",
+            "check:objc3c:m247-b005-lane-b-readiness",
             "check:objc3c:m247-b099-lane-b-readiness",
         ),
         encoding="utf-8",

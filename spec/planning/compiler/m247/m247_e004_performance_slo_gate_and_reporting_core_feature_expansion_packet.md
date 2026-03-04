@@ -5,7 +5,7 @@ Milestone: `M247`
 Lane: `E`
 Issue: `#6775`
 Freeze date: `2026-03-04`
-Dependencies: `M247-E003`, `M247-A004`, `M247-B004`, `M247-C004`, `M247-D003`
+Dependencies: `M247-E003`, `M247-A004`, `M247-B005`, `M247-C004`, `M247-D003`
 
 ## Purpose
 
@@ -32,7 +32,7 @@ milestone optimization improvements as mandatory scope inputs.
   - `scripts/run_m247_e003_lane_e_readiness.py`
 - Pending seeded dependency tokens:
   - `M247-A004`
-  - `M247-B004`
+  - `M247-B005`
   - `M247-C004`
   - `M247-D003`
 - Build/readiness scripts (`package.json`):

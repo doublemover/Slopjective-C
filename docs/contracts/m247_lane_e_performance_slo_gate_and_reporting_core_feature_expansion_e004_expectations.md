@@ -17,7 +17,7 @@ mandatory scope inputs.
 | --- | --- |
 | `M247-E003` | Contract assets for E003 are required and must remain present/readable. |
 | `M247-A004` | Dependency token `M247-A004` is mandatory as pending seeded lane-A core feature expansion assets. |
-| `M247-B004` | Dependency token `M247-B004` is mandatory as pending seeded lane-B core feature expansion assets. |
+| `M247-B005` | Dependency token `M247-B005` is mandatory as pending seeded lane-B core feature expansion assets. |
 | `M247-C004` | Dependency token `M247-C004` is mandatory as pending seeded lane-C core feature expansion assets. |
 | `M247-D003` | Dependency token `M247-D003` remains mandatory as pending seeded lane-D core feature implementation assets. |
 
@@ -36,7 +36,7 @@ mandatory scope inputs.
 - `scripts/run_m247_e004_lane_e_readiness.py` chains:
   - `check:objc3c:m247-e003-lane-e-readiness`
   - `check:objc3c:m247-a004-lane-a-readiness` (`--if-present`)
-  - `check:objc3c:m247-b004-lane-b-readiness` (`--if-present`)
+  - `check:objc3c:m247-b005-lane-b-readiness` (`--if-present`)
   - `check:objc3c:m247-c004-lane-c-readiness` (`--if-present`)
   - `check:objc3c:m247-d003-lane-d-readiness` (`--if-present`)
 - `scripts/check_m247_e004_performance_slo_gate_and_reporting_core_feature_expansion_contract.py` is the fail-closed gate.

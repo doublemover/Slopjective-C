@@ -93,7 +93,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck("M247-E004-DOC-EXP-03", "`M247-E003`"),
     SnippetCheck("M247-E004-DOC-EXP-04", "`M247-A004`"),
-    SnippetCheck("M247-E004-DOC-EXP-05", "`M247-B004`"),
+    SnippetCheck("M247-E004-DOC-EXP-05", "`M247-B005`"),
     SnippetCheck(
         "M247-E004-DOC-EXP-06",
         "| `M247-C004` | Dependency token `M247-C004` is mandatory as pending seeded lane-C core feature expansion assets. |",
@@ -126,7 +126,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M247-E004-DOC-PKT-03", "Issue: `#6775`"),
     SnippetCheck(
         "M247-E004-DOC-PKT-04",
-        "Dependencies: `M247-E003`, `M247-A004`, `M247-B004`, `M247-C004`, `M247-D003`",
+        "Dependencies: `M247-E003`, `M247-A004`, `M247-B005`, `M247-C004`, `M247-D003`",
     ),
     SnippetCheck(
         "M247-E004-DOC-PKT-05",
@@ -172,11 +172,11 @@ RUNNER_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M247-E004-RUN-03",
-        'PENDING_SEEDED_DEPENDENCY_TOKENS = ("M247-A004", "M247-B004", "M247-C004", "M247-D003")',
+        'PENDING_SEEDED_DEPENDENCY_TOKENS = ("M247-A004", "M247-B005", "M247-C004", "M247-D003")',
     ),
     SnippetCheck("M247-E004-RUN-04", "check:objc3c:m247-e003-lane-e-readiness"),
     SnippetCheck("M247-E004-RUN-05", "check:objc3c:m247-a004-lane-a-readiness"),
-    SnippetCheck("M247-E004-RUN-06", "check:objc3c:m247-b004-lane-b-readiness"),
+    SnippetCheck("M247-E004-RUN-06", "check:objc3c:m247-b005-lane-b-readiness"),
     SnippetCheck("M247-E004-RUN-07", "check:objc3c:m247-c004-lane-c-readiness"),
     SnippetCheck("M247-E004-RUN-08", "check:objc3c:m247-d003-lane-d-readiness"),
     SnippetCheck(
