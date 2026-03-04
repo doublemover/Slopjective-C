@@ -843,6 +843,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_d005_runtime_link_build_throughput_optimization_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so throughput optimization edge-case compatibility evidence
   remains deterministic and fail-closed against `M247-D004` dependency drift.
+- M247 lane-D D009 runtime/link/build throughput optimization conformance matrix implementation anchors
+  dependency reference (`M247-D008`) in
+  `docs/contracts/m247_runtime_link_build_throughput_optimization_conformance_matrix_implementation_d009_expectations.md`,
+  `spec/planning/compiler/m247/m247_d009_runtime_link_build_throughput_optimization_conformance_matrix_implementation_packet.md`,
+  and `package.json` so throughput conformance-matrix evidence remains deterministic
+  and fail-closed against `M247-D008` dependency drift.
 - M248 lane-A A001 suite partitioning and fixture ownership anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m248_suite_partitioning_and_fixture_ownership_contract_freeze_a001_expectations.md`,

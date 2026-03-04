@@ -339,6 +339,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-D dependency anchor (`M247-D004`) and fail
   closed when dependency references or throughput edge-compatibility evidence
   commands drift.
+- runtime/link/build throughput optimization conformance matrix implementation wiring
+  shall preserve explicit lane-D dependency anchor (`M247-D008`) and fail
+  closed when dependency references, conformance-matrix continuity, or throughput conformance-matrix evidence
+  commands drift.
 - interop surface syntax and declaration forms governance shall preserve
   deterministic lane-A anchors, explicit dependency tokens (`none` for `M244-A001`),
   and fail closed on declaration-form boundary drift before downstream interop

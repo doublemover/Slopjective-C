@@ -304,6 +304,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-D runtime/link/build throughput optimization edge-case and compatibility completion metadata anchors for `M247-D005`
       with explicit `M247-D004` dependency continuity and fail-closed compatibility evidence continuity so
       throughput edge-case governance remains fail-closed before lane-D compatibility closure is promoted.
+    - deterministic lane-D runtime/link/build throughput optimization conformance matrix implementation metadata anchors for `M247-D009`
+      with explicit `M247-D008` dependency continuity and fail-closed conformance matrix evidence continuity so
+      throughput conformance matrix governance remains fail-closed before lane-D conformance-corpus assets are promoted.
    - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
       with explicit dependency tokens (`none`) and fail-closed evidence continuity
       so interop declaration-form metadata drift fails closed.
