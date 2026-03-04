@@ -45,7 +45,7 @@ determinism hardening inputs.
 
 ## Gate Commands
 
-- `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py`
+- `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py -q`
 - `python scripts/run_m247_a008_lane_a_readiness.py`
 - `npm run check:objc3c:m247-a008-lane-a-readiness`

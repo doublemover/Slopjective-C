@@ -10,9 +10,12 @@ Fail closed unless lane-A recovery and determinism hardening dependency anchors
 remain explicit, deterministic, and traceable across dependency surfaces, including
 code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6715`
+
 ## Dependency Scope
 
-- Issue `#6715` defines canonical lane-A recovery and determinism hardening scope.
 - Recovery replay stability and compile-time budget determinism are mandatory
   recovery hardening scope inputs for lane-A contract gating.
 - Dependencies: `M247-A007`
@@ -45,7 +48,7 @@ code/spec anchors and milestone optimization improvements as mandatory scope inp
 - `package.json` includes `check:objc3c:m247-a008-lane-a-readiness`.
 - lane-A readiness chaining remains deterministic and fail-closed:
   - `npm run --if-present check:objc3c:m247-a007-lane-a-readiness`
-  - `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py`
+  - `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py -q`
 
 ## Milestone Optimization Inputs
@@ -57,7 +60,7 @@ code/spec anchors and milestone optimization improvements as mandatory scope inp
 
 ## Validation
 
-- `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py`
+- `python scripts/check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_contract.py -q`
 - `python scripts/run_m247_a008_lane_a_readiness.py`
 - `npm run check:objc3c:m247-a008-lane-a-readiness`
