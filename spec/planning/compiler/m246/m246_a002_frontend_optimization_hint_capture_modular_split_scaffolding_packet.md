@@ -3,7 +3,8 @@
 Packet: `M246-A002`
 Milestone: `M246`
 Lane: `A`
-Freeze date: `2026-03-03`
+Issue: `#5049`
+Freeze date: `2026-03-04`
 Dependencies: `M246-A001`
 
 ## Purpose
@@ -37,7 +38,7 @@ Freeze lane-A modular split/scaffolding prerequisites for M246 frontend optimiza
 
 ## Gate Commands
 
-- `python scripts/check_m246_a002_frontend_optimization_hint_capture_modular_split_scaffolding_contract.py`
+- `python scripts/check_m246_a002_frontend_optimization_hint_capture_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a002_frontend_optimization_hint_capture_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m246-a002-lane-a-readiness`
 

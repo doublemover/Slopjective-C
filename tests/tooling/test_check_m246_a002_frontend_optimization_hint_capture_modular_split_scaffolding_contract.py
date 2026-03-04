@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = (
     ROOT / "scripts" / "check_m246_a002_frontend_optimization_hint_capture_modular_split_scaffolding_contract.py"
@@ -22,11 +24,9 @@ sys.modules[SPEC.name] = contract
 SPEC.loader.exec_module(contract)
 
 
-def replace_all(text: str, old: str, new: str) -> str:
+def replace_once(text: str, old: str, new: str) -> str:
     assert old in text
-    replaced = text.replace(old, new)
-    assert old not in replaced
-    return replaced
+    return text.replace(old, new, 1)
 
 
 def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
@@ -48,13 +48,28 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_a002() -> None:
     assert normalized.startswith("tmp/reports/m246/M246-A002/")
 
 
-def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:
-    drift_doc = tmp_path / "m246_a002_expectations.md"
+def test_contract_emit_json_parity_with_summary_file(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout_payload = json.loads(capsys.readouterr().out)
+    file_payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert stdout_payload == file_payload
+    assert stdout_payload["mode"] == contract.MODE
+    assert stdout_payload["ok"] is True
+
+
+def test_contract_fails_closed_when_expectations_issue_anchor_drifts(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "expectations.md"
     drift_doc.write_text(
-        replace_all(
+        replace_once(
             contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
-            "Dependencies: `M246-A001`",
-            "Dependencies: `M246-A099`",
+            "- Issue: `#5049`",
+            "- Issue: `#5000`",
         ),
         encoding="utf-8",
     )
@@ -68,10 +83,30 @@ def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_pat
     assert any(failure["check_id"] == "M246-A002-DOC-EXP-03" for failure in payload["failures"])
 
 
+def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "expectations_dep.md"
+    drift_doc.write_text(
+        replace_once(
+            contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "Dependencies: `M246-A001`",
+            "Dependencies: `M246-A099`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-A002-DOC-EXP-04" for failure in payload["failures"])
+
+
 def test_contract_fails_closed_when_package_readiness_chain_drops_a001(tmp_path: Path) -> None:
     drift_package = tmp_path / "package.json"
     drift_package.write_text(
-        replace_all(
+        replace_once(
             contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
             '"check:objc3c:m246-a002-lane-a-readiness": '
             '"npm run check:objc3c:m246-a001-lane-a-readiness '
@@ -109,3 +144,28 @@ def test_contract_fails_closed_when_a001_checker_dependency_path_missing(tmp_pat
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-A002-DEP-A001-ARG-01" for failure in payload["failures"])
+
+
+def test_contract_failures_are_sorted_deterministically(tmp_path: Path) -> None:
+    drift_expectations = tmp_path / "expectations.md"
+    drift_expectations.write_text("# drift\n", encoding="utf-8")
+    drift_packet = tmp_path / "packet.md"
+    drift_packet.write_text("# drift\n", encoding="utf-8")
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--expectations-doc",
+            str(drift_expectations),
+            "--packet-doc",
+            str(drift_packet),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    sorted_failures = sorted(failures, key=lambda item: (item["artifact"], item["check_id"], item["detail"]))
+    assert failures == sorted_failures
