@@ -1373,6 +1373,18 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_packet.md`,
   and `package.json` so advanced diagnostics continuity remains deterministic and
   fail-closed against `M249-D016` dependency drift.
+- M249 lane-D D018 advanced conformance workpack (shard 1) anchors installer/runtime operations and support tooling continuity
+  explicit lane-D advanced conformance artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_d018_expectations.md`,
+  `spec/planning/compiler/m249/m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_packet.md`,
+  and `package.json` so advanced conformance continuity remains deterministic and
+  fail-closed against `M249-D017` dependency drift.
+- M249 lane-D D019 advanced integration workpack (shard 1) anchors installer/runtime operations and support tooling continuity
+  explicit lane-D advanced integration artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_d019_expectations.md`,
+  `spec/planning/compiler/m249/m249_d019_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_packet.md`,
+  and `package.json` so advanced integration continuity remains deterministic and
+  fail-closed against `M249-D017` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in
