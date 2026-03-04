@@ -679,6 +679,9 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling advanced core workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M249-D015`, `M249-D014`) and fail closed on
   advanced-core evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D016`, `M249-D015`) and fail closed on
+  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
 - CLI/reporting and output contract integration governance shall preserve
   explicit lane-D diagnostics UX and fix-it engine reporting anchors and fail
   closed on summary payload, diagnostics artifact path, or stage-report output

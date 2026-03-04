@@ -689,6 +689,9 @@
     "check:objc3c:m249-d015-installer-runtime-operations-support-tooling-advanced-core-workpack-shard1-contract": "python scripts/check_m249_d015_installer_runtime_operations_and_support_tooling_advanced_core_workpack_shard1_contract.py",
     "test:tooling:m249-d015-installer-runtime-operations-support-tooling-advanced-core-workpack-shard1-contract": "python -m pytest tests/tooling/test_check_m249_d015_installer_runtime_operations_and_support_tooling_advanced_core_workpack_shard1_contract.py -q",
     "check:objc3c:m249-d015-lane-d-readiness": "python scripts/run_m249_d015_lane_d_readiness.py",
+    "check:objc3c:m249-d016-installer-runtime-operations-support-tooling-advanced-edge-compatibility-workpack-shard1-contract": "python scripts/check_m249_d016_installer_runtime_operations_and_support_tooling_advanced_edge_compatibility_workpack_shard1_contract.py",
+    "test:tooling:m249-d016-installer-runtime-operations-support-tooling-advanced-edge-compatibility-workpack-shard1-contract": "python -m pytest tests/tooling/test_check_m249_d016_installer_runtime_operations_and_support_tooling_advanced_edge_compatibility_workpack_shard1_contract.py -q",
+    "check:objc3c:m249-d016-lane-d-readiness": "python scripts/run_m249_d016_lane_d_readiness.py",
     "check:objc3c:m245-e001-lane-e-portability-gate-release-checklist-contract": "python scripts/check_m245_e001_lane_e_portability_gate_and_release_checklist_contract_and_architecture_freeze_contract.py",
     "test:tooling:m245-e001-lane-e-portability-gate-release-checklist-contract": "python -m pytest tests/tooling/test_check_m245_e001_lane_e_portability_gate_and_release_checklist_contract_and_architecture_freeze_contract.py -q",
     "check:objc3c:m245-e001-lane-e-readiness": "npm run check:objc3c:m245-e001-lane-e-portability-gate-release-checklist-contract && npm run test:tooling:m245-e001-lane-e-portability-gate-release-checklist-contract",
@@ -737,6 +740,9 @@
     "check:objc3c:m249-e013-lane-e-release-gate-docs-runbooks-docs-operator-runbook-synchronization-contract": "python scripts/check_m249_e013_lane_e_release_gate_docs_and_runbooks_docs_and_operator_runbook_synchronization_contract.py",
     "test:tooling:m249-e013-lane-e-release-gate-docs-runbooks-docs-operator-runbook-synchronization-contract": "python -m pytest tests/tooling/test_check_m249_e013_lane_e_release_gate_docs_and_runbooks_docs_and_operator_runbook_synchronization_contract.py -q",
     "check:objc3c:m249-e013-lane-e-readiness": "python scripts/run_m249_e013_lane_e_readiness.py",
+    "check:objc3c:m249-e014-lane-e-release-gate-docs-runbooks-release-candidate-replay-dry-run-contract": "python scripts/check_m249_e014_lane_e_release_gate_docs_and_runbooks_release_candidate_and_replay_dry_run_contract.py",
+    "test:tooling:m249-e014-lane-e-release-gate-docs-runbooks-release-candidate-replay-dry-run-contract": "python -m pytest tests/tooling/test_check_m249_e014_lane_e_release_gate_docs_and_runbooks_release_candidate_and_replay_dry_run_contract.py -q",
+    "check:objc3c:m249-e014-lane-e-readiness": "python scripts/run_m249_e014_lane_e_readiness.py",
     "check:objc3c:m227-a001-semantic-pass-decomposition-contract": "python scripts/check_m227_a001_semantic_pass_decomposition_contract.py",
     "test:tooling:m227-a001-semantic-pass-decomposition-contract": "python -m pytest tests/tooling/test_check_m227_a001_semantic_pass_decomposition_contract.py -q",
     "check:objc3c:m227-a001-lane-a-readiness": "npm run check:objc3c:m227-a001-semantic-pass-decomposition-contract && npm run test:tooling:m227-a001-semantic-pass-decomposition-contract",
@@ -1956,4 +1962,3 @@
     "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
-

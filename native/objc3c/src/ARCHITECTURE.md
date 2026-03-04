@@ -1361,6 +1361,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d015_installer_runtime_operations_and_support_tooling_advanced_core_workpack_shard1_packet.md`,
   and `package.json` so advanced-core continuity remains deterministic and
   fail-closed against `M249-D014` dependency drift.
+- M249 lane-D D016 advanced edge compatibility workpack (shard 1) anchors installer/runtime operations and support tooling continuity
+  explicit lane-D advanced edge-compatibility artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_edge_compatibility_workpack_shard1_d016_expectations.md`,
+  `spec/planning/compiler/m249/m249_d016_installer_runtime_operations_and_support_tooling_advanced_edge_compatibility_workpack_shard1_packet.md`,
+  and `package.json` so advanced edge-compatibility continuity remains deterministic and
+  fail-closed against `M249-D015` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in

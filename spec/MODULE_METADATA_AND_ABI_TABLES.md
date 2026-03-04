@@ -643,6 +643,8 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M249-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling advanced core workpack (shard 1) metadata anchors for `M249-D015`
      with explicit `M249-D014` dependency continuity and fail-closed advanced core evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) metadata anchors for `M249-D016`
+     with explicit `M249-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
    - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
      with diagnostics artifact and summary payload continuity so diagnostics UX
      and fix-it engine output contract drift fails closed.
