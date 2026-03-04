@@ -4,7 +4,7 @@ Packet: `M246-A001`
 Milestone: `M246`
 Lane: `A`
 Issue: `#5048`
-Freeze date: `2026-03-03`
+Freeze date: `2026-03-04`
 Dependencies: none
 
 ## Purpose
@@ -37,7 +37,7 @@ Freeze lane-A frontend optimization hint capture contract prerequisites for M246
 
 ## Gate Commands
 
-- `python scripts/check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-a001-lane-a-readiness`
 

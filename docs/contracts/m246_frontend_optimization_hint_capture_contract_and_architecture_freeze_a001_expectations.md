@@ -8,9 +8,12 @@ Scope: M246 lane-A frontend optimization hint capture contract and architecture 
 
 Fail closed unless lane-A frontend optimization hint capture anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5048`
+
 ## Dependency Scope
 
-- Issue `#5048` defines canonical lane-A contract freeze scope.
 - Dependencies: none
 - Packet/checker/test assets remain mandatory:
   - `spec/planning/compiler/m246/m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_packet.md`
@@ -38,7 +41,7 @@ Fail closed unless lane-A frontend optimization hint capture anchors remain expl
 
 ## Validation
 
-- `python scripts/check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a001_frontend_optimization_hint_capture_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-a001-lane-a-readiness`
 
