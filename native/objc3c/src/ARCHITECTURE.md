@@ -1438,6 +1438,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a007_frontend_behavior_parity_across_toolchains_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening continuity remains
   deterministic and fail-closed against `M245-A006` dependency drift.
+- M245 lane-A A008 frontend behavior parity recovery and determinism hardening anchors
+  explicit lane-A recovery/determinism hardening artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_recovery_and_determinism_hardening_a008_expectations.md`,
+  `spec/planning/compiler/m245/m245_a008_frontend_behavior_parity_across_toolchains_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism hardening continuity remains
+  deterministic and fail-closed against `M245-A007` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
@@ -1468,6 +1474,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b007_semantic_parity_and_platform_constraints_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening semantic continuity remains
   deterministic and fail-closed against `M245-B006` dependency drift.
+- M245 lane-B B008 semantic parity/platform constraints recovery and determinism hardening anchors
+  explicit lane-B recovery/determinism hardening artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_recovery_and_determinism_hardening_b008_expectations.md`,
+  `spec/planning/compiler/m245/m245_b008_semantic_parity_and_platform_constraints_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism hardening semantic continuity remains
+  deterministic and fail-closed against `M245-B007` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1528,6 +1540,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c007_lowering_ir_portability_contracts_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening portability continuity remains
   deterministic and fail-closed against `M245-C006` dependency drift.
+- M245 lane-C C008 lowering/IR portability contracts recovery and determinism hardening anchors
+  explicit lane-C recovery/determinism hardening artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_recovery_and_determinism_hardening_c008_expectations.md`,
+  `spec/planning/compiler/m245/m245_c008_lowering_ir_portability_contracts_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism hardening portability continuity remains
+  deterministic and fail-closed against `M245-C007` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1564,6 +1582,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d007_build_link_runtime_reproducibility_operations_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics hardening reproducibility continuity remains
   deterministic and fail-closed against `M245-D006` dependency drift.
+- M245 lane-D D008 build/link/runtime reproducibility recovery and determinism hardening anchors
+  explicit lane-D recovery/determinism hardening artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_recovery_and_determinism_hardening_d008_expectations.md`,
+  `spec/planning/compiler/m245/m245_d008_build_link_runtime_reproducibility_operations_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism hardening reproducibility continuity remains
+  deterministic and fail-closed against `M245-D007` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1597,6 +1621,11 @@ Current-state note:
   `M245-C004`, and `M245-D005`) in lane-E diagnostics hardening contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against diagnostics hardening handoff drift.
+- M245 lane-E E008 portability gate/release checklist recovery and determinism hardening
+  anchors dependency references (`M245-E007`, `M245-A003`, `M245-B004`,
+  `M245-C004`, and `M245-D006`) in lane-E recovery/determinism hardening contract
+  packet, checker, and readiness wiring so release gate continuity remains
+  deterministic and fail-closed against recovery/determinism handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,

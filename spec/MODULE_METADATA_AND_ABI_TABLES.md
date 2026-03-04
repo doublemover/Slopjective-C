@@ -541,6 +541,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M245-A005` dependency continuity so edge-case expansion and robustness drift fails closed.
     - deterministic lane-A frontend behavior parity diagnostics hardening metadata anchors for `M245-A007`
       with explicit `M245-A006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-A frontend behavior parity recovery and determinism hardening metadata anchors for `M245-A008`
+      with explicit `M245-A007` dependency continuity so recovery and determinism hardening drift fails closed.
     - deterministic lane-A feature packaging metadata anchors for `M249-A001`
       with release packaging compatibility evidence and parser replay-budget continuity
       so distribution surface drift fails closed.
@@ -702,6 +704,8 @@ A conforming implementation shall preserve, for all exported declarations:
      `M245-B006` with explicit `M245-B005` dependency continuity so edge-case expansion and robustness drift fails closed.
    - deterministic lane-B semantic parity/platform constraints diagnostics hardening metadata anchors for
      `M245-B007` with explicit `M245-B006` dependency continuity so diagnostics hardening drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints recovery and determinism hardening metadata anchors for
+     `M245-B008` with explicit `M245-B007` dependency continuity so recovery and determinism hardening drift fails closed.
    - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
      with sema pass-flow compatibility evidence and parse/lowering compatibility handoff continuity
      so migration drift fails closed.
@@ -735,6 +739,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C lowering/IR portability diagnostics hardening metadata anchors for `M245-C007`
       with explicit `M245-C006` dependency continuity and fail-closed diagnostics hardening continuity so
       portability diagnostics hardening drift fails closed.
+    - deterministic lane-C lowering/IR portability recovery and determinism hardening metadata anchors for `M245-C008`
+      with explicit `M245-C007` dependency continuity and fail-closed recovery/determinism continuity so
+      portability recovery and determinism hardening drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility modular split metadata anchors for `M245-D002`
       with explicit `M245-D001` dependency continuity so reproducibility scaffolding drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility core feature metadata anchors for `M245-D003`
@@ -747,6 +754,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M245-D005` dependency continuity so edge-case expansion and robustness drift fails closed.
     - deterministic lane-D build/link/runtime reproducibility diagnostics hardening metadata anchors for `M245-D007`
       with explicit `M245-D006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility recovery and determinism hardening metadata anchors for `M245-D008`
+      with explicit `M245-D007` dependency continuity so recovery and determinism hardening drift fails closed.
     - deterministic lane-E portability gate/release checklist dependency anchors for
       `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
       integration freeze evidence remains deterministic and fail-closed.
@@ -768,6 +777,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E portability gate/release checklist diagnostics hardening dependency anchors for
       `M245-E006`, `M245-A003`, `M245-B003`, `M245-C004`, and `M245-D005` so lane
       diagnostics hardening continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist recovery and determinism hardening dependency anchors for
+      `M245-E007`, `M245-A003`, `M245-B004`, `M245-C004`, and `M245-D006` so lane
+      recovery and determinism hardening continuity evidence remains deterministic and fail-closed.
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
