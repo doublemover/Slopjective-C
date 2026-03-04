@@ -1440,6 +1440,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_e018_lane_e_release_gate_docs_and_runbooks_advanced_conformance_workpack_shard1_packet.md`,
   and `package.json` so advanced conformance continuity remains deterministic and
   fail-closed against `M249-E017` dependency drift.
+- M249 lane-E E019 advanced integration workpack (shard 1) anchors release gate/docs/runbooks continuity
+  dependency references (`M249-E018`, `M249-A007`, `M249-B009`, `M249-C010`, and `M249-D016`) in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_advanced_integration_workpack_shard1_e019_expectations.md`,
+  `spec/planning/compiler/m249/m249_e019_lane_e_release_gate_docs_and_runbooks_advanced_integration_workpack_shard1_packet.md`,
+  and `package.json` so advanced integration continuity remains deterministic and
+  fail-closed against `M249-E018` dependency drift.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

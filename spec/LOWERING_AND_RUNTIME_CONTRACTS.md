@@ -784,6 +784,11 @@ At minimum, the pass-graph gate shall validate:
   `M249-C009`, and `M249-D015`) and fail closed on
   advanced conformance command sequencing, dependency evidence continuity, or
   release gate/docs/runbooks advanced conformance continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced integration workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E019`, `M249-E018`, `M249-A007`, `M249-B009`,
+  `M249-C010`, and `M249-D016`) and fail closed on
+  advanced integration command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced integration continuity drift before lane-E readiness advances.
 - diagnostics quality gate and replay policy wiring shall preserve explicit
   lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
