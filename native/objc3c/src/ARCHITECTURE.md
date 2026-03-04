@@ -861,6 +861,13 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d015_runner_reliability_and_platform_operations_advanced_core_workpack_shard1_packet.md`,
   and `package.json` so advanced-core continuity remains deterministic
   and fail-closed against `M248-D014` dependency drift.
+- M248 lane-D D016 advanced edge compatibility workpack (shard 1) anchors runner/platform operations contract integration
+  explicit lane-D advanced edge-compatibility artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_advanced_edge_compatibility_workpack_shard1_d016_expectations.md`,
+  `spec/planning/compiler/m248/m248_d016_runner_reliability_and_platform_operations_advanced_edge_compatibility_workpack_shard1_packet.md`,
+  and `package.json` so `toolchain_runtime_ga_operations_advanced_edge_compatibility_*`
+  continuity remains deterministic and fail-closed against `M248-D015`
+  dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

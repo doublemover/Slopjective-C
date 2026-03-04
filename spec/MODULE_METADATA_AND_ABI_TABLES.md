@@ -839,6 +839,8 @@ A conforming implementation shall preserve, for all exported declarations:
     with explicit `M248-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
   - deterministic lane-D runner/platform operations advanced core workpack (shard 1) metadata anchors for `M248-D015`
     with explicit `M248-D014` dependency continuity and fail-closed advanced core evidence continuity.
+  - deterministic lane-D runner/platform operations advanced edge compatibility workpack (shard 1) metadata anchors for `M248-D016`
+    with explicit `M248-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) {#d-2-1}
 
