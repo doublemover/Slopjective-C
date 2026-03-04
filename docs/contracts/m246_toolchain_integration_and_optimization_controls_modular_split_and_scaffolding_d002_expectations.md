@@ -38,7 +38,7 @@ traceable across dependency surfaces, including code/spec anchors and milestone 
 
 ## Validation
 
-- `python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py`
+- `python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py -q`
 - `python scripts/run_m246_d002_lane_d_readiness.py`
 

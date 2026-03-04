@@ -110,6 +110,10 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M246-D002-DOC-EXP-10",
         "tmp/reports/m246/M246-D002/toolchain_integration_optimization_controls_modular_split_and_scaffolding_contract_summary.json",
     ),
+    SnippetCheck(
+        "M246-D002-DOC-EXP-11",
+        "python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json",
+    ),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -137,6 +141,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M246-D002-DOC-PKT-10",
         "tmp/reports/m246/M246-D002/toolchain_integration_optimization_controls_modular_split_and_scaffolding_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D002-DOC-PKT-11",
+        "python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json",
     ),
 )
 
@@ -229,6 +237,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--d004-readiness-script", type=Path, default=DEFAULT_D004_READINESS_SCRIPT)
     parser.add_argument("--d005-readiness-script", type=Path, default=DEFAULT_D005_READINESS_SCRIPT)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -318,6 +327,15 @@ def check_dependency_path(path: Path, check_id: str) -> tuple[int, list[Finding]
     return 1, findings
 
 
+def write_summary(summary_path: Path, payload: object) -> tuple[bool, str]:
+    try:
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(canonical_json(payload), encoding="utf-8")
+    except OSError as exc:
+        return False, f"unable to write summary file: {exc}"
+    return True, ""
+
+
 def run(argv: Sequence[str]) -> int:
     args = parse_args(argv)
     checks_total = 0
@@ -355,6 +373,10 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(
+        failures,
+        key=lambda finding: (finding.artifact, finding.check_id, finding.detail),
+    )
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -368,14 +390,26 @@ def run(argv: Sequence[str]) -> int:
     }
 
     summary_path = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
+    summary_ok, summary_error = write_summary(summary_path, summary_payload)
+    if not summary_ok:
+        print(
+            f"[M246-D002-SUMMARY-WRITE-01] {display_path(summary_path)}: {summary_error}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.emit_json:
+        print(canonical_json(summary_payload), end="")
 
     if failures:
-        for finding in failures:
-            print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+        if not args.emit_json:
+            print(f"{MODE}: contract drift detected ({len(failures)} failed check(s)).", file=sys.stderr)
+            for finding in failures:
+                print(f"- [{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

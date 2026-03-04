@@ -3,6 +3,8 @@
 Contract ID: `objc3c-optimization-gate-perf-evidence-modular-split-scaffolding/m246-e002-v1`
 Status: Accepted
 Scope: M246 lane-E modular split/scaffolding continuity for optimization gate and perf evidence dependency wiring.
+Issue: `#6693`
+Dependencies: `M246-E001`, `M246-A002`, `M246-B002`, `M246-C004`, `M246-D002`
 
 ## Objective
 
@@ -39,7 +41,7 @@ Fail closed unless M246 lane-E modular split/scaffolding dependency anchors rema
 
 ## Validation
 
-- `python scripts/check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py`
+- `python scripts/check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m246-e002-lane-e-readiness`
 

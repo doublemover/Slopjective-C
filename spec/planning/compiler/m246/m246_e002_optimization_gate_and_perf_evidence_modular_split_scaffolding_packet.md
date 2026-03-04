@@ -50,7 +50,7 @@ Freeze lane-E modular split/scaffolding prerequisites for M246 optimization gate
 
 ## Gate Commands
 
-- `python scripts/check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py`
+- `python scripts/check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_e002_optimization_gate_and_perf_evidence_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m246-e002-lane-e-readiness`
 

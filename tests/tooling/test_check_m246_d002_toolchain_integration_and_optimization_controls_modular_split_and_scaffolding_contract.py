@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = (
     ROOT
@@ -54,6 +56,18 @@ def test_contract_passes_on_repository_sources_and_emits_summary_contract(tmp_pa
     assert payload["failures"] == []
 
 
+def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout = capsys.readouterr().out
+    payload = json.loads(stdout)
+    assert payload["mode"] == contract.MODE
+    assert payload["ok"] is True
+    assert stdout == contract.canonical_json(payload)
+
+
 def test_contract_fails_closed_when_readiness_chain_drops_d001_checker(tmp_path: Path) -> None:
     drift_readiness = tmp_path / "run_m246_d002_lane_d_readiness.py"
     drift_readiness.write_text(
@@ -72,6 +86,72 @@ def test_contract_fails_closed_when_readiness_chain_drops_d001_checker(tmp_path:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-D002-RDY-02" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_packet_issue_anchor_drifts(tmp_path: Path) -> None:
+    drift_packet = tmp_path / "m246_d002_packet.md"
+    drift_packet.write_text(
+        replace_once(
+            contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
+            "Issue: `#5107`",
+            "Issue: `#5999`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--packet-doc", str(drift_packet), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-D002-DOC-PKT-03" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_packet_dependency_anchor_drifts(tmp_path: Path) -> None:
+    drift_packet = tmp_path / "m246_d002_packet.md"
+    drift_packet.write_text(
+        replace_once(
+            contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
+            "Dependencies: `M246-D001`",
+            "Dependencies: `M246-D999`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--packet-doc", str(drift_packet), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-D002-DOC-PKT-04" for failure in payload["failures"])
+
+
+def test_contract_failures_are_sorted_deterministically(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "m246_d002_expectations.md"
+    drift_doc.write_text(
+        replace_once(
+            replace_once(
+                contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+                "Issue `#5107` defines canonical lane-D modular split and scaffolding scope.",
+                "Issue `#5999` defines canonical lane-D modular split and scaffolding scope.",
+            ),
+            "Dependencies: `M246-D001`",
+            "Dependencies: `M246-D999`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    assert failures == sorted(failures, key=lambda failure: (failure["artifact"], failure["check_id"], failure["detail"]))
+    assert any(failure["check_id"] == "M246-D002-DOC-EXP-03" for failure in failures)
+    assert any(failure["check_id"] == "M246-D002-DOC-EXP-04" for failure in failures)
 
 
 def test_contract_failure_summary_contract_contains_finding_shape(tmp_path: Path) -> None:
