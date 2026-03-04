@@ -231,6 +231,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-C lowering/codegen core feature expansion metadata anchors for `M247-C004`
      with explicit `M247-C003` dependency continuity and fail-closed core feature expansion evidence continuity so
      lane-C core feature expansion governance remains deterministic before edge-case compatibility stages advance.
+   - deterministic lane-C lowering/codegen edge-case and compatibility completion metadata anchors for `M247-C005`
+     with explicit `M247-C004` dependency continuity and fail-closed edge-case compatibility evidence continuity so
+     lane-C edge-case compatibility governance remains deterministic before robustness expansion stages advance.
    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
      compile/perf-budget governance evidence fail-closed before lane A-D contract
