@@ -11,6 +11,12 @@ hardening anchors remain explicit, deterministic, and traceable across
 dependency surfaces, including code/spec anchors and milestone optimization
 improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5083`
+- Lane-C C007 diagnostics hardening scope remains pinned to issue `#5083` for
+  dependency-chain drift detection.
+
 ## Dependency Scope
 
 - Issue `#5083` defines canonical lane-C diagnostics hardening scope.
@@ -31,6 +37,11 @@ improvements as mandatory scope inputs.
   - `scripts/check_m246_c006_ir_optimization_pass_wiring_and_validation_edge_case_expansion_and_robustness_contract.py`
   - `tests/tooling/test_check_m246_c006_ir_optimization_pass_wiring_and_validation_edge_case_expansion_and_robustness_contract.py`
   - `scripts/run_m246_c006_lane_c_readiness.py`
+- C007 packet/checker/test/readiness assets remain mandatory:
+  - `spec/planning/compiler/m246/m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_packet.md`
+  - `scripts/check_m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_contract.py`
+  - `tests/tooling/test_check_m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_contract.py`
+  - `scripts/run_m246_c007_lane_c_readiness.py`
 
 ## Build and Readiness Integration
 
@@ -49,6 +60,7 @@ improvements as mandatory scope inputs.
 
 ## Validation
 
+- `python scripts/check_m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_contract.py --emit-json --summary-out tmp/reports/m246/M246-C007/ir_optimization_pass_wiring_validation_diagnostics_hardening_summary.json`
 - `python scripts/check_m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c007_ir_optimization_pass_wiring_and_validation_diagnostics_hardening_contract.py -q`
 - `python scripts/run_m246_c007_lane_c_readiness.py`
@@ -56,4 +68,3 @@ improvements as mandatory scope inputs.
 ## Evidence Path
 
 - `tmp/reports/m246/M246-C007/ir_optimization_pass_wiring_validation_diagnostics_hardening_summary.json`
-
