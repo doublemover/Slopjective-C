@@ -1732,6 +1732,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d016_build_link_runtime_reproducibility_operations_advanced_edge_compatibility_workpack_shard1_packet.md`,
   and `package.json` so advanced-edge reproducibility continuity remains deterministic
   and fail-closed against `M245-D015` dependency drift.
+- M245 lane-D D017 build/link/runtime reproducibility advanced diagnostics workpack (shard 1)
+  anchors explicit lane-D advanced-diagnostics artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_advanced_diagnostics_workpack_shard1_d017_expectations.md`,
+  `spec/planning/compiler/m245/m245_d017_build_link_runtime_reproducibility_operations_advanced_diagnostics_workpack_shard1_packet.md`,
+  and `package.json` so advanced-diagnostics reproducibility continuity remains deterministic
+  and fail-closed against `M245-D016` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1810,6 +1816,11 @@ Current-state note:
   `M245-C009`, and `M245-D012`) in lane-E advanced-edge contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against advanced-edge handoff drift.
+- M245 lane-E E017 portability gate/release checklist advanced diagnostics workpack (shard 1)
+  anchors dependency references (`M245-E016`, `M245-A006`, `M245-B008`,
+  `M245-C009`, and `M245-D012`) in lane-E advanced-diagnostics contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against advanced-diagnostics handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,

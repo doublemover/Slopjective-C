@@ -812,6 +812,8 @@ A conforming implementation shall preserve, for all exported declarations:
        with explicit `M245-D014` dependency continuity so advanced-core drift fails closed.
      - deterministic lane-D build/link/runtime reproducibility advanced edge compatibility workpack (shard 1) metadata anchors for `M245-D016`
        with explicit `M245-D015` dependency continuity so advanced-edge drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced diagnostics workpack (shard 1) metadata anchors for `M245-D017`
+       with explicit `M245-D016` dependency continuity so advanced-diagnostics drift fails closed.
     - deterministic lane-E portability gate/release checklist dependency anchors for
       `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
       integration freeze evidence remains deterministic and fail-closed.
@@ -860,6 +862,9 @@ A conforming implementation shall preserve, for all exported declarations:
      - deterministic lane-E portability gate/release checklist advanced edge compatibility workpack (shard 1) dependency anchors for
        `M245-E015`, `M245-A006`, `M245-B007`, `M245-C009`, and `M245-D012` so lane
        advanced-edge continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced diagnostics workpack (shard 1) dependency anchors for
+       `M245-E016`, `M245-A006`, `M245-B008`, `M245-C009`, and `M245-D012` so lane
+       advanced-diagnostics continuity evidence remains deterministic and fail-closed.
     - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
       with parser/AST hint-capture evidence and optimizer budget continuity so optimization
       hint-capture drift fails closed.
