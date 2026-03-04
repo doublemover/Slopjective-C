@@ -645,6 +645,8 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M249-D014` dependency continuity and fail-closed advanced core evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) metadata anchors for `M249-D016`
      with explicit `M249-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced diagnostics workpack (shard 1) metadata anchors for `M249-D017`
+     with explicit `M249-D016` dependency continuity and fail-closed advanced diagnostics evidence continuity.
    - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
      with diagnostics artifact and summary payload continuity so diagnostics UX
      and fix-it engine output contract drift fails closed.
@@ -767,6 +769,13 @@ A conforming implementation shall preserve, for all exported declarations:
      `M249-E002`, `M249-A003`, `M249-B003`, `M249-C003`, and `M249-D003`,
      including pending-lane tokens needed to keep release-gate documentation/runbook core feature implementation
      governance evidence fail-closed before lane A-D core feature assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks advanced core workpack (shard 1) dependency anchors for
+     `M249-E014`, `M249-A006`, `M249-B007`, `M249-C008`, and `M249-D015`,
+     including advanced-core continuity tokens needed to keep release-gate
+     documentation/runbook advanced-core governance evidence fail-closed while
+     shard-1 dependency readiness remains staged.
+   - deterministic lane-E release gate/docs/runbooks advanced edge compatibility workpack (shard 1) metadata anchors for `M249-E016`
+     with explicit `M249-E015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
    - deterministic lane-E diagnostics quality gate and replay policy dependency anchors for
      `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
      pending-lane tokens needed to keep diagnostics quality gate/replay-policy

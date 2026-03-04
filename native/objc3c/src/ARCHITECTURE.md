@@ -1367,6 +1367,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d016_installer_runtime_operations_and_support_tooling_advanced_edge_compatibility_workpack_shard1_packet.md`,
   and `package.json` so advanced edge-compatibility continuity remains deterministic and
   fail-closed against `M249-D015` dependency drift.
+- M249 lane-D D017 advanced diagnostics workpack (shard 1) anchors installer/runtime operations and support tooling continuity
+  explicit lane-D advanced diagnostics artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_d017_expectations.md`,
+  `spec/planning/compiler/m249/m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_packet.md`,
+  and `package.json` so advanced diagnostics continuity remains deterministic and
+  fail-closed against `M249-D016` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in
@@ -1391,6 +1397,19 @@ Current-state note:
   and `package.json` so release-gate documentation/runbook core-feature
   governance evidence remains deterministic and fail-closed while lane A-D core
   feature assets are pending GH seed.
+- M249 lane-E E015 release gate/docs/runbooks advanced core workpack (shard 1) anchors dependency references
+  (`M249-E014`, `M249-A006`, `M249-B007`, `M249-C008`, and `M249-D015`) in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_advanced_core_workpack_shard1_e015_expectations.md`,
+  `spec/planning/compiler/m249/m249_e015_lane_e_release_gate_docs_and_runbooks_advanced_core_workpack_shard1_packet.md`,
+  and `package.json` so release-gate documentation/runbook advanced-core
+  governance evidence remains deterministic and fail-closed against
+  `M249-E014` dependency drift.
+- M249 lane-E E016 advanced edge compatibility workpack (shard 1) anchors release gate/docs/runbooks continuity
+  explicit lane-E advanced edge-compatibility artifacts in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_advanced_edge_compatibility_workpack_shard1_e016_expectations.md`,
+  `spec/planning/compiler/m249/m249_e016_lane_e_release_gate_docs_and_runbooks_advanced_edge_compatibility_workpack_shard1_packet.md`,
+  and `package.json` so advanced edge-compatibility continuity remains deterministic and
+  fail-closed against `M249-E015` dependency drift.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and

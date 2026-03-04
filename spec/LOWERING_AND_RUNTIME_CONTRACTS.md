@@ -682,6 +682,9 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) governance shall preserve
   explicit lane-D dependency anchors (`M249-D016`, `M249-D015`) and fail closed on
   advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced diagnostics workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D017`, `M249-D016`) and fail closed on
+  advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
 - CLI/reporting and output contract integration governance shall preserve
   explicit lane-D diagnostics UX and fix-it engine reporting anchors and fail
   closed on summary payload, diagnostics artifact path, or stage-report output
@@ -754,6 +757,14 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-E dependency anchors (`M249-E002`, `M249-A003`, `M249-B003`,
   `M249-C003`, and `M249-D003`) and fail closed when dependency references,
   docs/runbook core-feature evidence commands, or release gate readiness hooks drift.
+- release gate/docs/runbooks advanced core workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M249-E014`, `M249-A006`, `M249-B007`,
+  `M249-C008`, and `M249-D015`) and fail closed when dependency references,
+  docs/runbook advanced-core evidence commands, or release gate readiness hooks drift.
+- release gate/docs/runbooks advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E016`, `M249-E015`) and fail closed on
+  advanced edge-compatibility command sequencing, evidence-path continuity, or
+  release gate/docs/runbooks advanced edge-compatibility continuity drift before lane-E readiness advances.
 - diagnostics quality gate and replay policy wiring shall preserve explicit
   lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
