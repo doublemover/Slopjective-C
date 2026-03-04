@@ -277,6 +277,8 @@ At minimum, the pass-graph gate shall validate:
   readiness chaining, or edge-case compatibility evidence commands drift.
 - lowering/codegen edge-case expansion and robustness wiring shall preserve explicit lane-C dependency anchor (`M247-C005`) and fail closed when dependency references,
   readiness chaining, or edge-case robustness evidence commands drift.
+- lowering/codegen diagnostics hardening wiring shall preserve explicit lane-C dependency anchor (`M247-C006`) and fail closed when dependency references,
+  readiness chaining, or edge-case robustness evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or
@@ -293,6 +295,10 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M247-E005`, `M247-A006`, `M247-B007`, `M247-C006`,
   `M247-D005`) and fail closed when dependency references, readiness chaining,
   pending-token continuity, or edge-case robustness evidence commands drift.
+- performance SLO diagnostics hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E006`, `M247-A007`, `M247-B007`, `M247-C007`,
+  `M247-D007`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or diagnostics hardening evidence commands drift.
 - semantic hot-path analysis/budgeting recovery and determinism hardening wiring
   shall preserve explicit lane-B dependency anchor (`M247-B007`) and fail closed
   when dependency references, pending-token continuity, or contract-gating
@@ -311,6 +317,8 @@ At minimum, the pass-graph gate shall validate:
   contract-gating evidence commands drift.
 - semantic hot-path analysis/budgeting docs and operator runbook synchronization wiring
   shall preserve explicit lane-B dependency anchor (`M247-B012`) and fail closed when dependency references, docs-runbook-synchronization consistency/readiness, docs-runbook-synchronization-key continuity, or contract-gating evidence commands drift.
+- semantic hot-path analysis/budgeting release-candidate and replay dry-run wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B013`) and fail closed when dependency references, release-candidate/replay command sequencing continuity, release-candidate-replay-key continuity, or contract-gating evidence commands drift.
 - frontend profiling and hot-path decomposition edge-case expansion and
   robustness wiring shall preserve explicit lane-A dependency anchor
   (`M247-A005`) and fail closed when dependency references, parser-boundary
