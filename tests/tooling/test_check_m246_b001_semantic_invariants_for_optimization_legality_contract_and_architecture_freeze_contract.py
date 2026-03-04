@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = (
     ROOT / "scripts" / "check_m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_contract.py"
@@ -39,6 +41,42 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_b001() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m246/M246-B001/")
+
+
+def test_contract_emit_json_writes_canonical_summary_to_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    captured = capsys.readouterr()
+    assert captured.out == contract.canonical_json(payload)
+    assert captured.err == ""
+
+
+def test_contract_failures_are_sorted_deterministically(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        contract,
+        "EXPECTATIONS_SNIPPETS",
+        (
+            contract.SnippetCheck("M246-B001-DOC-EXP-Z", "__missing-z-snippet__"),
+            contract.SnippetCheck("M246-B001-DOC-EXP-A", "__missing-a-snippet__"),
+        ),
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert [failure["check_id"] for failure in payload["failures"]] == [
+        "M246-B001-DOC-EXP-A",
+        "M246-B001-DOC-EXP-Z",
+    ]
 
 
 def test_contract_fails_closed_when_expectations_drop_issue_anchor(tmp_path: Path) -> None:

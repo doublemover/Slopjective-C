@@ -37,7 +37,7 @@ Freeze lane-B semantic invariants for optimization legality contract prerequisit
 
 ## Gate Commands
 
-- `python scripts/check_m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_b001_semantic_invariants_for_optimization_legality_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-b001-lane-b-readiness`
 
