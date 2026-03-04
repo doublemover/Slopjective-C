@@ -273,6 +273,18 @@ At minimum, the pass-graph gate shall validate:
   lane-E dependency anchors (`M247-E001`, `M247-A002`, `M247-B002`, `M247-C002`,
   `M247-D002`) and fail closed when dependency references or modular split
   evidence commands drift.
+- semantic hot-path analysis/budgeting recovery and determinism hardening wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B007`) and fail closed
+  when dependency references, pending-token continuity, or contract-gating
+  evidence commands drift.
+- frontend profiling and hot-path decomposition edge-case expansion and
+  robustness wiring shall preserve explicit lane-A dependency anchor
+  (`M247-A005`) and fail closed when dependency references, parser-boundary
+  replay hooks, or profiling evidence commands drift.
+- runtime/link/build throughput optimization core-feature expansion wiring
+  shall preserve explicit lane-D dependency anchor (`M247-D003`) and fail
+  closed when dependency references, pending-token continuity, or throughput
+  contract-gating evidence commands drift.
 - interop surface syntax and declaration forms governance shall preserve
   deterministic lane-A anchors, explicit dependency tokens (`none` for `M244-A001`),
   and fail closed on declaration-form boundary drift before downstream interop
