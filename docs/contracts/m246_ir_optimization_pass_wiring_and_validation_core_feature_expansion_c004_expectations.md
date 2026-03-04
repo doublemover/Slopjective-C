@@ -54,6 +54,7 @@ improvements as mandatory scope inputs.
 
 ## Validation
 
+- `python scripts/check_m246_c004_ir_optimization_pass_wiring_and_validation_core_feature_expansion_contract.py --emit-json --summary-out tmp/reports/m246/M246-C004/ir_optimization_pass_wiring_validation_core_feature_expansion_summary.json`
 - `python scripts/check_m246_c004_ir_optimization_pass_wiring_and_validation_core_feature_expansion_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c004_ir_optimization_pass_wiring_and_validation_core_feature_expansion_contract.py -q`
 - `python scripts/run_m246_c004_lane_c_readiness.py`
