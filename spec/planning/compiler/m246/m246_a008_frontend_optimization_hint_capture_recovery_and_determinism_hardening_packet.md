@@ -39,7 +39,7 @@ Freeze lane-A recovery and determinism hardening prerequisites for M246 frontend
 
 ## Gate Commands
 
-- `python scripts/check_m246_a008_frontend_optimization_hint_capture_recovery_and_determinism_hardening_contract.py`
+- `python scripts/check_m246_a008_frontend_optimization_hint_capture_recovery_and_determinism_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a008_frontend_optimization_hint_capture_recovery_and_determinism_hardening_contract.py -q`
 - `python scripts/run_m246_a008_lane_a_readiness.py`
 
