@@ -1456,6 +1456,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a010_frontend_behavior_parity_across_toolchains_conformance_corpus_expansion_packet.md`,
   and `package.json` so conformance corpus continuity remains deterministic and
   fail-closed against `M245-A009` dependency drift.
+- M245 lane-A A011 frontend behavior parity integration closeout and gate sign-off
+  anchors explicit lane-A integration-closeout artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_integration_closeout_and_gate_signoff_a011_expectations.md`,
+  `spec/planning/compiler/m245/m245_a011_frontend_behavior_parity_across_toolchains_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so integration closeout continuity remains deterministic and
+  fail-closed against `M245-A010` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
@@ -1504,6 +1510,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b010_semantic_parity_and_platform_constraints_conformance_corpus_expansion_packet.md`,
   and `package.json` so conformance corpus semantic continuity remains deterministic
   and fail-closed against `M245-B009` dependency drift.
+- M245 lane-B B011 semantic parity/platform constraints performance and quality
+  guardrails anchors explicit lane-B perf/quality artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_performance_and_quality_guardrails_b011_expectations.md`,
+  `spec/planning/compiler/m245/m245_b011_semantic_parity_and_platform_constraints_performance_and_quality_guardrails_packet.md`,
+  and `package.json` so perf/quality semantic continuity remains deterministic and
+  fail-closed against `M245-B010` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1582,6 +1594,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c010_lowering_ir_portability_contracts_conformance_corpus_expansion_packet.md`,
   and `package.json` so conformance corpus portability continuity remains deterministic
   and fail-closed against `M245-C009` dependency drift.
+- M245 lane-C C011 lowering/IR portability contracts performance and quality
+  guardrails anchors explicit lane-C perf/quality artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_performance_and_quality_guardrails_c011_expectations.md`,
+  `spec/planning/compiler/m245/m245_c011_lowering_ir_portability_contracts_performance_and_quality_guardrails_packet.md`,
+  and `package.json` so perf/quality portability continuity remains deterministic
+  and fail-closed against `M245-C010` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1636,6 +1654,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d010_build_link_runtime_reproducibility_operations_conformance_corpus_expansion_packet.md`,
   and `package.json` so conformance corpus reproducibility continuity remains deterministic
   and fail-closed against `M245-D009` dependency drift.
+- M245 lane-D D011 build/link/runtime reproducibility performance and quality
+  guardrails anchors explicit lane-D perf/quality artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_performance_and_quality_guardrails_d011_expectations.md`,
+  `spec/planning/compiler/m245/m245_d011_build_link_runtime_reproducibility_operations_performance_and_quality_guardrails_packet.md`,
+  and `package.json` so perf/quality reproducibility continuity remains deterministic
+  and fail-closed against `M245-D010` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1684,6 +1708,11 @@ Current-state note:
   `M245-C006`, and `M245-D007`) in lane-E conformance-corpus contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against conformance corpus handoff drift.
+- M245 lane-E E011 portability gate/release checklist performance and quality
+  guardrails anchors dependency references (`M245-E010`, `M245-A004`, `M245-B005`,
+  `M245-C006`, and `M245-D008`) in lane-E perf/quality contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against perf/quality handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,

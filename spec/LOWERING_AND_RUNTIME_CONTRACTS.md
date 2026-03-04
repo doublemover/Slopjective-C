@@ -707,6 +707,7 @@ At minimum, the pass-graph gate shall validate:
 - lowering/IR portability contracts recovery and determinism hardening shall preserve explicit lane-C dependency anchors (`M245-C007`) and fail closed on recovery and determinism hardening evidence drift before runtime portability conformance-matrix validation advances.
 - lowering/IR portability contracts conformance matrix implementation shall preserve explicit lane-C dependency anchors (`M245-C008`) and fail closed on conformance matrix evidence drift before runtime portability conformance-corpus expansion validation advances.
 - lowering/IR portability contracts conformance corpus expansion shall preserve explicit lane-C dependency anchors (`M245-C009`) and fail closed on conformance corpus evidence drift before runtime portability performance-and-quality-guardrails validation advances.
+- lowering/IR portability contracts performance and quality guardrails shall preserve explicit lane-C dependency anchors (`M245-C010`) and fail closed on performance and quality evidence drift before runtime portability cross-lane-integration-sync validation advances.
 - frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
 - frontend behavior parity core feature implementation governance shall preserve explicit lane-A dependency anchors (`M245-A002`) and fail closed on core-feature evidence drift before parser portability implementation advances.
 - frontend behavior parity core feature expansion governance shall preserve explicit
@@ -730,6 +731,9 @@ At minimum, the pass-graph gate shall validate:
 - frontend behavior parity conformance corpus expansion governance shall preserve explicit
   lane-A dependency anchors (`M245-A009`) and fail closed on conformance corpus expansion evidence drift
   before parser portability performance-and-quality-guardrails validation advances.
+- frontend behavior parity integration closeout and gate sign-off governance shall preserve explicit
+  lane-A dependency anchors (`M245-A010`) and fail closed on integration closeout and gate sign-off evidence drift
+  before parser portability cross-lane-integration-sync validation advances.
 - semantic parity and platform constraints core feature implementation shall
   preserve explicit lane-B dependency anchors (`M245-B002`) and fail closed on core-feature evidence drift
   before portability gate and semantic stability expansion validation advances.
@@ -754,6 +758,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic parity and platform constraints conformance corpus expansion shall
   preserve explicit lane-B dependency anchors (`M245-B009`) and fail closed on conformance corpus evidence drift
   before portability gate and semantic stability performance-and-quality-guardrails validation advances.
+- semantic parity and platform constraints performance and quality guardrails shall
+  preserve explicit lane-B dependency anchors (`M245-B010`) and fail closed on performance and quality evidence drift
+  before portability gate and semantic stability cross-lane-integration-sync validation advances.
 - build/link/runtime reproducibility modular split/scaffolding governance shall preserve explicit
   lane-D dependency anchors (`M245-D001`) and fail closed on modular split evidence drift
   before runtime reproducibility scaffolding advances.
@@ -781,6 +788,9 @@ At minimum, the pass-graph gate shall validate:
 - build/link/runtime reproducibility conformance corpus expansion governance shall preserve explicit
   lane-D dependency anchors (`M245-D009`) and fail closed on conformance corpus evidence drift
   before runtime reproducibility performance-and-quality-guardrails validation advances.
+- build/link/runtime reproducibility performance and quality guardrails governance shall preserve explicit
+  lane-D dependency anchors (`M245-D010`) and fail closed on performance and quality evidence drift
+  before runtime reproducibility cross-lane-integration-sync validation advances.
 - portability gate/release checklist contract and architecture freeze wiring shall
   preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
   `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
@@ -817,6 +827,10 @@ At minimum, the pass-graph gate shall validate:
 - portability gate/release checklist conformance corpus expansion wiring shall preserve
   explicit lane-E dependency anchors (`M245-E009`, `M245-A004`, `M245-B004`,
   `M245-C006`, and `M245-D007`) and fail closed on conformance corpus
+  handoff drift.
+- portability gate/release checklist performance and quality guardrails wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E010`, `M245-A004`, `M245-B005`,
+  `M245-C006`, and `M245-D008`) and fail closed on performance and quality
   handoff drift.
 - frontend optimization hint capture governance shall preserve explicit
   deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
