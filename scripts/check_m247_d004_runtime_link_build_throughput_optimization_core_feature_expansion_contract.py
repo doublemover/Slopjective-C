@@ -27,6 +27,33 @@ DEFAULT_PACKET_DOC = (
     / "m247"
     / "m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_packet.md"
 )
+DEFAULT_READINESS_SCRIPT = ROOT / "scripts" / "run_m247_d004_lane_d_readiness.py"
+DEFAULT_D003_EXPECTATIONS_DOC = (
+    ROOT
+    / "docs"
+    / "contracts"
+    / "m247_runtime_link_build_throughput_optimization_core_feature_implementation_d003_expectations.md"
+)
+DEFAULT_D003_PACKET_DOC = (
+    ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m247"
+    / "m247_d003_runtime_link_build_throughput_optimization_core_feature_implementation_packet.md"
+)
+DEFAULT_D003_CHECKER = (
+    ROOT
+    / "scripts"
+    / "check_m247_d003_runtime_link_build_throughput_optimization_core_feature_implementation_contract.py"
+)
+DEFAULT_D003_TEST = (
+    ROOT
+    / "tests"
+    / "tooling"
+    / "test_check_m247_d003_runtime_link_build_throughput_optimization_core_feature_implementation_contract.py"
+)
+DEFAULT_D003_READINESS_SCRIPT = ROOT / "scripts" / "run_m247_d003_lane_d_readiness.py"
 DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
 DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
 DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
@@ -58,22 +85,28 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M247-D004-DOC-EXP-02",
         "Contract ID: `objc3c-runtime-link-build-throughput-optimization-core-feature-expansion-contract/m247-d004-v1`",
     ),
-    SnippetCheck("M247-D004-DOC-EXP-03", "Issue `#6762` defines canonical lane-D core feature expansion scope."),
-    SnippetCheck("M247-D004-DOC-EXP-04", "Dependencies: `M247-D003`"),
+    SnippetCheck("M247-D004-DOC-EXP-03", "Dependencies: `M247-D003`"),
+    SnippetCheck("M247-D004-DOC-EXP-04", "Issue `#6762` defines canonical lane-D core feature expansion scope."),
     SnippetCheck(
         "M247-D004-DOC-EXP-05",
-        "pending seeded lane-D core",
+        "scripts/check_m247_d003_runtime_link_build_throughput_optimization_core_feature_implementation_contract.py",
     ),
     SnippetCheck(
         "M247-D004-DOC-EXP-06",
-        "check:objc3c:m247-d004-lane-d-readiness",
+        "scripts/run_m247_d004_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M247-D004-DOC-EXP-07",
-        "mandatory scope inputs.",
+        "Readiness chain order: `D003 readiness -> D004 checker -> D004 pytest`.",
     ),
-    SnippetCheck("M247-D004-DOC-EXP-08", "- `compile:objc3c`"),
-    SnippetCheck("M247-D004-DOC-EXP-09", "- `test:objc3c:perf-budget`"),
+    SnippetCheck(
+        "M247-D004-DOC-EXP-08",
+        "code/spec anchors and milestone optimization",
+    ),
+    SnippetCheck(
+        "M247-D004-DOC-EXP-09",
+        "tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py",
+    ),
     SnippetCheck(
         "M247-D004-DOC-EXP-10",
         "tmp/reports/m247/M247-D004/runtime_link_build_throughput_optimization_core_feature_expansion_contract_summary.json",
@@ -91,20 +124,72 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M247-D004-DOC-PKT-05", "Freeze date: `2026-03-04`"),
     SnippetCheck(
         "M247-D004-DOC-PKT-06",
-        "check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract",
+        "scripts/run_m247_d004_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M247-D004-DOC-PKT-07",
-        "check:objc3c:m247-d004-lane-d-readiness",
+        "python scripts/run_m247_d004_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M247-D004-DOC-PKT-08",
-        "milestone optimization improvements as mandatory scope inputs.",
+        "Chain order: `D003 readiness -> D004 checker -> D004 pytest`",
     ),
     SnippetCheck(
         "M247-D004-DOC-PKT-09",
+        "milestone optimization improvements as mandatory scope inputs.",
+    ),
+    SnippetCheck(
+        "M247-D004-DOC-PKT-10",
         "tmp/reports/m247/M247-D004/runtime_link_build_throughput_optimization_core_feature_expansion_contract_summary.json",
     ),
+)
+
+D003_EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M247-D004-D003-DOC-01",
+        "Contract ID: `objc3c-runtime-link-build-throughput-optimization-core-feature-implementation/m247-d003-v1`",
+    ),
+    SnippetCheck(
+        "M247-D004-D003-DOC-02",
+        "Dependencies: `M247-D002`",
+    ),
+    SnippetCheck(
+        "M247-D004-D003-DOC-03",
+        "Issue `#6761` defines canonical lane-D core feature implementation scope.",
+    ),
+)
+
+D003_PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M247-D004-D003-PKT-01", "Packet: `M247-D003`"),
+    SnippetCheck("M247-D004-D003-PKT-02", "Issue: `#6761`"),
+    SnippetCheck("M247-D004-D003-PKT-03", "Dependencies: `M247-D002`"),
+    SnippetCheck("M247-D004-D003-PKT-04", "Freeze date: `2026-03-04`"),
+)
+
+READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M247-D004-RUN-01", 'DEPENDENCY_TOKEN = "M247-D003"'),
+    SnippetCheck(
+        "M247-D004-RUN-02",
+        "scripts/run_m247_d003_lane_d_readiness.py",
+    ),
+    SnippetCheck(
+        "M247-D004-RUN-03",
+        "scripts/check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py",
+    ),
+    SnippetCheck(
+        "M247-D004-RUN-04",
+        "tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py",
+    ),
+    SnippetCheck("M247-D004-RUN-05", "[ok] M247-D004 lane-D readiness chain completed"),
+)
+
+D003_READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M247-D004-D003-RUN-01", 'DEPENDENCY_TOKEN = "M247-D002"'),
+    SnippetCheck(
+        "M247-D004-D003-RUN-02",
+        "scripts/run_m247_d002_lane_d_readiness.py",
+    ),
+    SnippetCheck("M247-D004-D003-RUN-03", "[ok] M247-D003 lane-D readiness chain completed"),
 )
 
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -143,30 +228,26 @@ METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
 PACKAGE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M247-D004-PKG-01",
-        '"check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract": '
-        '"python scripts/check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py"',
+        '"check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract": ',
     ),
     SnippetCheck(
         "M247-D004-PKG-02",
-        '"test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract": '
-        '"python -m pytest tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py -q"',
+        '"test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract": ',
     ),
     SnippetCheck(
         "M247-D004-PKG-03",
-        '"check:objc3c:m247-d004-lane-d-readiness": '
-        '"npm run --if-present check:objc3c:m247-d003-lane-d-readiness '
-        '&& npm run check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract '
-        '&& npm run test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract"',
+        '"check:objc3c:m247-d004-lane-d-readiness": ',
     ),
-    SnippetCheck("M247-D004-PKG-04", '"compile:objc3c": '),
-    SnippetCheck("M247-D004-PKG-05", '"proof:objc3c": '),
-    SnippetCheck("M247-D004-PKG-06", '"test:objc3c:execution-replay-proof": '),
-    SnippetCheck("M247-D004-PKG-07", '"test:objc3c:perf-budget": '),
+    SnippetCheck("M247-D004-PKG-04", "npm run --if-present check:objc3c:m247-d003-lane-d-readiness"),
+    SnippetCheck("M247-D004-PKG-05", '"compile:objc3c": '),
+    SnippetCheck("M247-D004-PKG-06", '"proof:objc3c": '),
+    SnippetCheck("M247-D004-PKG-07", '"test:objc3c:execution-replay-proof": '),
+    SnippetCheck("M247-D004-PKG-08", '"test:objc3c:perf-budget": '),
 )
 
 
 def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2) + "\n"
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
 def display_path(path: Path) -> str:
@@ -181,6 +262,12 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expectations-doc", type=Path, default=DEFAULT_EXPECTATIONS_DOC)
     parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
+    parser.add_argument("--readiness-script", type=Path, default=DEFAULT_READINESS_SCRIPT)
+    parser.add_argument("--d003-expectations-doc", type=Path, default=DEFAULT_D003_EXPECTATIONS_DOC)
+    parser.add_argument("--d003-packet-doc", type=Path, default=DEFAULT_D003_PACKET_DOC)
+    parser.add_argument("--d003-checker", type=Path, default=DEFAULT_D003_CHECKER)
+    parser.add_argument("--d003-test", type=Path, default=DEFAULT_D003_TEST)
+    parser.add_argument("--d003-readiness-script", type=Path, default=DEFAULT_D003_READINESS_SCRIPT)
     parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
     parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
@@ -189,7 +276,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def check_doc_contract(
+def check_text_artifact(
     *,
     path: Path,
     exists_check_id: str,
@@ -216,7 +303,18 @@ def check_doc_contract(
         )
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id=exists_check_id,
+                detail=f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
@@ -230,6 +328,36 @@ def check_doc_contract(
     return checks_total, findings
 
 
+def check_dependency_path(path: Path, check_id: str) -> tuple[int, list[Finding]]:
+    findings: list[Finding] = []
+    if not path.exists():
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id=check_id,
+                detail=f"required dependency path is missing: {display_path(path)}",
+            )
+        )
+    elif not path.is_file():
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id=check_id,
+                detail=f"required dependency path is not a file: {display_path(path)}",
+            )
+        )
+    return 1, findings
+
+
+def write_summary(summary_path: Path, payload: object) -> tuple[bool, str]:
+    try:
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(canonical_json(payload), encoding="utf-8")
+    except OSError as exc:
+        return False, f"unable to write summary file: {exc}"
+    return True, ""
+
+
 def run(argv: Sequence[str]) -> int:
     args = parse_args(argv)
     checks_total = 0
@@ -238,19 +366,32 @@ def run(argv: Sequence[str]) -> int:
     for path, exists_check_id, snippets in (
         (args.expectations_doc, "M247-D004-DOC-EXP-EXISTS", EXPECTATIONS_SNIPPETS),
         (args.packet_doc, "M247-D004-DOC-PKT-EXISTS", PACKET_SNIPPETS),
+        (args.d003_expectations_doc, "M247-D004-D003-DOC-EXISTS", D003_EXPECTATIONS_SNIPPETS),
+        (args.d003_packet_doc, "M247-D004-D003-PKT-EXISTS", D003_PACKET_SNIPPETS),
+        (args.readiness_script, "M247-D004-RUN-EXISTS", READINESS_SNIPPETS),
+        (args.d003_readiness_script, "M247-D004-D003-RUN-EXISTS", D003_READINESS_SNIPPETS),
         (args.architecture_doc, "M247-D004-ARCH-EXISTS", ARCHITECTURE_SNIPPETS),
         (args.lowering_spec, "M247-D004-SPC-EXISTS", LOWERING_SPEC_SNIPPETS),
         (args.metadata_spec, "M247-D004-META-EXISTS", METADATA_SPEC_SNIPPETS),
         (args.package_json, "M247-D004-PKG-EXISTS", PACKAGE_SNIPPETS),
     ):
-        check_count, findings = check_doc_contract(
+        count, findings = check_text_artifact(
             path=path,
             exists_check_id=exists_check_id,
             snippets=snippets,
         )
-        checks_total += check_count
+        checks_total += count
         failures.extend(findings)
 
+    for path, check_id in (
+        (args.d003_checker, "M247-D004-DEP-D003-ARG-01"),
+        (args.d003_test, "M247-D004-DEP-D003-ARG-02"),
+    ):
+        count, findings = check_dependency_path(path, check_id)
+        checks_total += count
+        failures.extend(findings)
+
+    failures = sorted(failures, key=lambda finding: (finding.artifact, finding.check_id, finding.detail))
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -258,23 +399,25 @@ def run(argv: Sequence[str]) -> int:
         "checks_total": checks_total,
         "checks_passed": checks_passed,
         "failures": [
-            {
-                "artifact": finding.artifact,
-                "check_id": finding.check_id,
-                "detail": finding.detail,
-            }
+            {"artifact": finding.artifact, "check_id": finding.check_id, "detail": finding.detail}
             for finding in failures
         ],
     }
 
     summary_path = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
+    summary_ok, summary_error = write_summary(summary_path, summary_payload)
+    if not summary_ok:
+        print(
+            f"[M247-D004-SUMMARY-WRITE-01] {display_path(summary_path)}: {summary_error}",
+            file=sys.stderr,
+        )
+        return 1
 
     if failures:
         for finding in failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
+
     print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 

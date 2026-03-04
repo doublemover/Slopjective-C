@@ -37,7 +37,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 35
+    assert payload["checks_total"] >= 61
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
@@ -46,6 +46,20 @@ def test_contract_default_summary_out_is_under_tmp_reports_m247_d004() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m247/M247-D004/")
+
+
+def test_contract_summary_json_is_deterministic(tmp_path: Path) -> None:
+    summary_out_a = tmp_path / "summary_a.json"
+    summary_out_b = tmp_path / "summary_b.json"
+
+    assert contract.run(["--summary-out", str(summary_out_a)]) == 0
+    assert contract.run(["--summary-out", str(summary_out_b)]) == 0
+
+    text_a = summary_out_a.read_text(encoding="utf-8")
+    text_b = summary_out_b.read_text(encoding="utf-8")
+    assert text_a == text_b
+    payload = json.loads(text_a)
+    assert text_a == contract.canonical_json(payload)
 
 
 def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:
@@ -65,7 +79,7 @@ def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_pat
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-D004-DOC-EXP-04" for failure in payload["failures"])
+    assert any(failure["check_id"] == "M247-D004-DOC-EXP-03" for failure in payload["failures"])
 
 
 def test_contract_fails_closed_when_packet_issue_metadata_drifts(tmp_path: Path) -> None:
@@ -88,18 +102,104 @@ def test_contract_fails_closed_when_packet_issue_metadata_drifts(tmp_path: Path)
     assert any(failure["check_id"] == "M247-D004-DOC-PKT-03" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_package_readiness_drops_pending_d003_chain(tmp_path: Path) -> None:
+def test_contract_fails_closed_when_readiness_runner_drops_d003_chain(tmp_path: Path) -> None:
+    drift_readiness = tmp_path / "run_m247_d004_lane_d_readiness.py"
+    drift_readiness.write_text(
+        replace_once(
+            contract.DEFAULT_READINESS_SCRIPT.read_text(encoding="utf-8"),
+            "scripts/run_m247_d003_lane_d_readiness.py",
+            "scripts/run_m247_d099_lane_d_readiness.py",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--readiness-script", str(drift_readiness), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-D004-RUN-02" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_d003_expectations_dependency_token_drifts(tmp_path: Path) -> None:
+    drift_d003_expectations = tmp_path / "m247_d003_expectations.md"
+    drift_d003_expectations.write_text(
+        replace_once(
+            contract.DEFAULT_D003_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "Dependencies: `M247-D002`",
+            "Dependencies: `M247-D099`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--d003-expectations-doc",
+            str(drift_d003_expectations),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-D004-D003-DOC-02" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_d003_readiness_dependency_token_drifts(tmp_path: Path) -> None:
+    drift_d003_readiness = tmp_path / "run_m247_d003_lane_d_readiness.py"
+    drift_d003_readiness.write_text(
+        replace_once(
+            contract.DEFAULT_D003_READINESS_SCRIPT.read_text(encoding="utf-8"),
+            'DEPENDENCY_TOKEN = "M247-D002"',
+            'DEPENDENCY_TOKEN = "M247-D099"',
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--d003-readiness-script",
+            str(drift_d003_readiness),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-D004-D003-RUN-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_d003_checker_dependency_path_is_missing(tmp_path: Path) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--d003-checker",
+            str(tmp_path / "missing_d003_checker.py"),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-D004-DEP-D003-ARG-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_package_pending_d003_chain_drifts(tmp_path: Path) -> None:
     drift_package = tmp_path / "package.json"
     drift_package.write_text(
         replace_once(
             contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
-            '"check:objc3c:m247-d004-lane-d-readiness": '
-            '"npm run --if-present check:objc3c:m247-d003-lane-d-readiness '
-            "&& npm run check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract "
-            '&& npm run test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract"',
-            '"check:objc3c:m247-d004-lane-d-readiness": '
-            '"npm run check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract '
-            '&& npm run test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract"',
+            "npm run --if-present check:objc3c:m247-d003-lane-d-readiness",
+            "npm run --if-present check:objc3c:m247-d099-lane-d-readiness",
         ),
         encoding="utf-8",
     )
@@ -110,44 +210,4 @@ def test_contract_fails_closed_when_package_readiness_drops_pending_d003_chain(t
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-D004-PKG-03" for failure in payload["failures"])
-
-
-def test_contract_fails_closed_when_architecture_anchor_drifts(tmp_path: Path) -> None:
-    drift_architecture = tmp_path / "ARCHITECTURE.md"
-    drift_architecture.write_text(
-        replace_once(
-            contract.DEFAULT_ARCHITECTURE_DOC.read_text(encoding="utf-8"),
-            "M247 lane-D D004 runtime/link/build throughput optimization core feature",
-            "M247 lane-D D004 runtime/link throughput optimization core feature",
-        ),
-        encoding="utf-8",
-    )
-
-    summary_out = tmp_path / "summary.json"
-    exit_code = contract.run(["--architecture-doc", str(drift_architecture), "--summary-out", str(summary_out)])
-
-    assert exit_code == 1
-    payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-D004-ARCH-01" for failure in payload["failures"])
-
-
-def test_contract_fails_closed_when_package_drops_perf_budget_input(tmp_path: Path) -> None:
-    drift_package = tmp_path / "package.json"
-    drift_package.write_text(
-        replace_once(
-            contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
-            '"test:objc3c:perf-budget": ',
-            '"test:objc3c:perf-budget-disabled": ',
-        ),
-        encoding="utf-8",
-    )
-
-    summary_out = tmp_path / "summary.json"
-    exit_code = contract.run(["--package-json", str(drift_package), "--summary-out", str(summary_out)])
-
-    assert exit_code == 1
-    payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-D004-PKG-07" for failure in payload["failures"])
+    assert any(failure["check_id"] == "M247-D004-PKG-04" for failure in payload["failures"])

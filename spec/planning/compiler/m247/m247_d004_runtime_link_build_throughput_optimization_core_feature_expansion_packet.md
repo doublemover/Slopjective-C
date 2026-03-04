@@ -27,6 +27,8 @@ milestone optimization improvements as mandatory scope inputs.
   - `check:objc3c:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract`
   - `test:tooling:m247-d004-runtime-link-build-throughput-optimization-core-feature-expansion-contract`
   - `check:objc3c:m247-d004-lane-d-readiness`
+- Lane-D readiness runner:
+  - `scripts/run_m247_d004_lane_d_readiness.py`
 - Architecture/spec anchors:
   - `native/objc3c/src/ARCHITECTURE.md`
   - `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`
@@ -49,7 +51,9 @@ milestone optimization improvements as mandatory scope inputs.
 
 - `python scripts/check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py`
 - `python -m pytest tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py -q`
+- `python scripts/run_m247_d004_lane_d_readiness.py`
 - `npm run check:objc3c:m247-d004-lane-d-readiness`
+- Chain order: `D003 readiness -> D004 checker -> D004 pytest`
 
 ## Evidence Output
 

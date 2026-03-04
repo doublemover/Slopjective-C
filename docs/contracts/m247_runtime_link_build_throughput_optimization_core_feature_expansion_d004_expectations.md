@@ -17,11 +17,15 @@ improvements as mandatory scope inputs.
 - Dependencies: `M247-D003`
 - Dependency token `M247-D003` remains mandatory as pending seeded lane-D core
   feature implementation assets.
+- Dependency continuity anchor remains mandatory:
+  - `scripts/check_m247_d003_runtime_link_build_throughput_optimization_core_feature_implementation_contract.py`
 - Packet/checker/test/readiness assets for `M247-D004` remain mandatory:
   - `spec/planning/compiler/m247/m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_packet.md`
   - `scripts/check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py`
+  - `scripts/run_m247_d004_lane_d_readiness.py`
   - `tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py`
   - `check:objc3c:m247-d004-lane-d-readiness` in `package.json`
+- Readiness chain order: `D003 readiness -> D004 checker -> D004 pytest`.
 
 ## Architecture and Spec Anchors
 
@@ -44,6 +48,7 @@ improvements as mandatory scope inputs.
 
 - `python scripts/check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py`
 - `python -m pytest tests/tooling/test_check_m247_d004_runtime_link_build_throughput_optimization_core_feature_expansion_contract.py -q`
+- `python scripts/run_m247_d004_lane_d_readiness.py`
 - `npm run check:objc3c:m247-d004-lane-d-readiness`
 
 ## Evidence Path
