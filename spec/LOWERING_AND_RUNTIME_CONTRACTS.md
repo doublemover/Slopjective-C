@@ -281,6 +281,8 @@ At minimum, the pass-graph gate shall validate:
   readiness chaining, or edge-case robustness evidence commands drift.
 - lowering/codegen recovery and determinism hardening wiring shall preserve explicit lane-C dependency anchor (`M247-C007`) and fail closed when dependency references,
   readiness chaining, or recovery/determinism evidence commands drift.
+- lowering/codegen conformance matrix implementation wiring shall preserve explicit lane-C dependency anchor (`M247-C008`) and fail closed when dependency references,
+  readiness chaining, or conformance-matrix continuity evidence commands drift.
 - performance SLO gate/reporting wiring shall preserve explicit lane-E
   dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
   fail closed when dependency references, compile-route proof hooks, or
