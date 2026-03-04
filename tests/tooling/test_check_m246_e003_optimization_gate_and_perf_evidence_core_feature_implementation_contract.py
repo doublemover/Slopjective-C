@@ -24,6 +24,13 @@ sys.modules[SPEC.name] = contract
 SPEC.loader.exec_module(contract)
 
 
+def replace_once(text: str, old: str, new: str) -> str:
+    assert old in text
+    updated = text.replace(old, new, 1)
+    assert updated != text
+    return updated
+
+
 def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     summary_out = tmp_path / "summary.json"
     exit_code = contract.run(["--summary-out", str(summary_out)])
@@ -41,6 +48,17 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_e003() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m246/M246-E003/")
+
+
+def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["mode"] == contract.MODE
+    assert payload["ok"] is True
+    assert payload["checks_total"] == payload["checks_passed"]
 
 
 def test_contract_fails_closed_when_prerequisite_asset_is_missing(
@@ -69,10 +87,10 @@ def test_contract_fails_closed_when_expectations_drop_dependency_token(tmp_path:
         tmp_path / "m246_optimization_gate_and_perf_evidence_core_feature_implementation_e003_expectations.md"
     )
     drift_doc.write_text(
-        contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8").replace(
+        replace_once(
+            contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
             "| `M246-C005` | Dependency token `M246-C005` is mandatory as pending seeded lane-C edge-case completion assets. |",
             "| `M246-C099` | Dependency token `M246-C099` is mandatory as pending seeded lane-C edge-case completion assets. |",
-            1,
         ),
         encoding="utf-8",
     )
@@ -86,10 +104,33 @@ def test_contract_fails_closed_when_expectations_drop_dependency_token(tmp_path:
     assert any(failure["check_id"] == "M246-E003-DOC-EXP-06" for failure in payload["failures"])
 
 
+def test_contract_fails_closed_when_expectations_issue_anchor_drifts(tmp_path: Path) -> None:
+    drift_doc = (
+        tmp_path / "m246_optimization_gate_and_perf_evidence_core_feature_implementation_e003_expectations.md"
+    )
+    drift_doc.write_text(
+        replace_once(
+            contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "Issue: `#6694`",
+            "Issue: `#6699`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-E003-DOC-EXP-09" for failure in payload["failures"])
+
+
 def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Path) -> None:
     drift_package = tmp_path / "package.json"
     drift_package.write_text(
-        contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8").replace(
+        replace_once(
+            contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
             '"check:objc3c:m246-e003-lane-e-readiness": '
             '"npm run check:objc3c:m246-e002-lane-e-readiness '
             '&& npm run check:objc3c:m246-a002-lane-a-readiness '
@@ -100,7 +141,6 @@ def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Pa
             '&& npm run test:tooling:m246-e003-optimization-gate-perf-evidence-core-feature-implementation-contract"',
             '"check:objc3c:m246-e003-lane-e-readiness": '
             '"npm run check:objc3c:m246-e002-optimization-gate-perf-evidence-modular-split-scaffolding-contract"',
-            1,
         ),
         encoding="utf-8",
     )
@@ -112,4 +152,32 @@ def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Pa
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-E003-PKG-03" for failure in payload["failures"])
+
+
+def test_contract_failure_ordering_is_stable(tmp_path: Path) -> None:
+    summary_out = tmp_path / "summary.json"
+    missing_expectations = tmp_path / "missing_expectations.md"
+    missing_package = tmp_path / "missing_package.json"
+
+    exit_code = contract.run(
+        [
+            "--expectations-doc",
+            str(missing_expectations),
+            "--package-json",
+            str(missing_package),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    assert len(failures) >= 2
+    assert failures == sorted(
+        failures,
+        key=lambda failure: (failure["artifact"], failure["check_id"], failure["detail"]),
+    )
+    assert any(failure["check_id"] == "M246-E003-DOC-EXP-EXISTS" for failure in failures)
+    assert any(failure["check_id"] == "M246-E003-PKG-EXISTS" for failure in failures)
 

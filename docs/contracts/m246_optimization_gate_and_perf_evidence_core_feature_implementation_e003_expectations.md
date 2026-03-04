@@ -3,6 +3,8 @@
 Contract ID: `objc3c-optimization-gate-perf-evidence-core-feature-implementation/m246-e003-v1`
 Status: Accepted
 Scope: M246 lane-E core feature implementation continuity for optimization gate and perf evidence dependency wiring.
+Issue: `#6694`
+Dependencies: `M246-E002`, `M246-A002`, `M246-B003`, `M246-C005`, `M246-D002`
 
 ## Objective
 
@@ -41,7 +43,7 @@ Fail closed unless M246 lane-E core feature implementation dependency anchors re
 
 ## Validation
 
-- `python scripts/check_m246_e003_optimization_gate_and_perf_evidence_core_feature_implementation_contract.py`
+- `python scripts/check_m246_e003_optimization_gate_and_perf_evidence_core_feature_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_e003_optimization_gate_and_perf_evidence_core_feature_implementation_contract.py -q`
 - `npm run check:objc3c:m246-e003-lane-e-readiness`
 
