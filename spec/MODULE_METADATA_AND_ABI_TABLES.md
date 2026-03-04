@@ -803,6 +803,9 @@ A conforming implementation shall preserve, for all exported declarations:
   - deterministic lane-E release gate/docs/runbooks advanced diagnostics workpack (shard 2) metadata anchors for `M249-E023`
     with explicit `M249-E022`, `M249-A009`, `M249-B011`, `M249-C012`, and `M249-D019` dependency continuity
     and fail-closed advanced diagnostics (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks integration closeout and gate signoff metadata anchors for `M249-E024`
+    with explicit `M249-E023`, `M249-A009`, `M249-B011`, `M249-C012`, and `M249-D020` dependency continuity
+    and fail-closed integration closeout/gate-signoff evidence continuity.
   - deterministic lane-E diagnostics quality gate and replay policy dependency anchors for
     `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
     pending-lane tokens needed to keep diagnostics quality gate/replay-policy

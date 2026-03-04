@@ -809,6 +809,11 @@ At minimum, the pass-graph gate shall validate:
   `M249-C012`, and `M249-D019`) and fail closed on
   advanced diagnostics (shard 2) command sequencing, dependency evidence continuity, or
   release gate/docs/runbooks advanced diagnostics (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks integration closeout and gate signoff governance shall preserve
+  explicit lane-E dependency anchors (`M249-E024`, `M249-E023`, `M249-A009`, `M249-B011`,
+  `M249-C012`, and `M249-D020`) and fail closed on
+  integration closeout/gate-signoff command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks integration closeout/gate-signoff continuity drift before lane-E readiness advances.
 - diagnostics quality gate and replay policy wiring shall preserve explicit
   lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
