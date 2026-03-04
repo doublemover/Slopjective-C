@@ -1306,6 +1306,10 @@ Current-state note:
   dependency references (`M246-E001`, `M246-A002`, `M246-B002`, `M246-C004`, and `M246-D002`)
   in lane-E scaffolding packet, checker, and readiness wiring so gate continuity
   remains deterministic and fail-closed while dependent lane scaffolding assets seed.
+- M246 lane-E E003 optimization gate and perf evidence core feature implementation anchors
+  dependency references (`M246-E002`, `M246-A002`, `M246-B003`, `M246-C005`, and `M246-D002`)
+  in lane-E core-feature packet, checker, and readiness wiring so gate continuity
+  remains deterministic and fail-closed while dependent lane core-feature assets seed.
 - M249 lane-C C001 IR/object packaging and symbol policy contract anchors
   explicit lane-C contract freeze artifacts in
   `docs/contracts/m249_ir_object_packaging_and_symbol_policy_contract_freeze_c001_expectations.md`,

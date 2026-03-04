@@ -642,6 +642,9 @@ At minimum, the pass-graph gate shall validate:
 - optimization gate and perf evidence modular split/scaffolding wiring shall preserve
   explicit lane-E dependency anchors (`M246-E001`, `M246-A002`, `M246-B002`,
   `M246-C004`, and `M246-D002`) and fail closed on modular split handoff drift.
+- optimization gate and perf evidence core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E002`, `M246-A002`, `M246-B003`,
+  `M246-C005`, and `M246-D002`) and fail closed on core-feature handoff drift.
 - semantic compatibility and migration checks core feature implementation shall
   preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
   before semantic stability expansion validation advances.
