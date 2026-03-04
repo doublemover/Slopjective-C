@@ -4,7 +4,10 @@ Contract ID: `objc3c-frontend-profiling-hot-path-decomposition-edge-case-expansi
 Status: Accepted
 Scope: M247 lane-A edge-case expansion and robustness contract gating for frontend profiling and hot-path decomposition continuity.
 
-Dependencies: `M247-A005`
+## Issue Anchor
+
+- Issue: `#6713`
+- Dependencies: `M247-A005`
 
 ## Objective
 
@@ -46,7 +49,7 @@ anchors remain explicit, deterministic, and traceable across code/spec anchors a
 
 ## Validation
 
-- `python scripts/check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py`
+- `python scripts/check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py -q`
 - `npm run check:objc3c:m247-a006-lane-a-readiness`
 

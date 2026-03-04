@@ -3,6 +3,7 @@
 Packet: `M247-A006`
 Milestone: `M247`
 Lane: `A`
+Issue: `#6713`
 Freeze date: `2026-03-04`
 Dependencies: `M247-A005`
 
@@ -44,7 +45,7 @@ evidence remains deterministic and fail-closed, including code/spec anchors and 
 
 ## Gate Commands
 
-- `python scripts/check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py`
+- `python scripts/check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a006_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_contract.py -q`
 - `npm run check:objc3c:m247-a006-lane-a-readiness`
 
