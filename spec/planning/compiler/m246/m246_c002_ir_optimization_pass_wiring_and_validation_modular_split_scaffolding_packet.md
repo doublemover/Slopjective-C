@@ -42,7 +42,7 @@ Freeze lane-C IR optimization pass wiring and validation modular split/scaffoldi
 
 ## Gate Commands
 
-- `python scripts/check_m246_c002_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_contract.py`
+- `python scripts/check_m246_c002_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_c002_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m246-c002-lane-c-readiness`
 

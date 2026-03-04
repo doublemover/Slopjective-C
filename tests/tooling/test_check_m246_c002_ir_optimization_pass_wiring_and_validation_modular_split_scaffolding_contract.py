@@ -43,6 +43,17 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_c002() -> None:
     assert normalized.startswith("tmp/reports/m246/M246-C002/")
 
 
+def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["mode"] == contract.MODE
+    assert payload["ok"] is True
+    assert payload["checks_total"] == payload["checks_passed"]
+
+
 def test_contract_fails_closed_when_prerequisite_asset_is_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -104,3 +115,32 @@ def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Pa
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-C002-PKG-03" for failure in payload["failures"])
+
+
+def test_contract_reports_failures_in_deterministic_sorted_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_assets = list(contract.PREREQUISITE_ASSETS)
+    original = drift_assets[0]
+    drift_assets[0] = contract.AssetCheck(
+        check_id=original.check_id,
+        relative_path=Path("scripts/does_not_exist_m246_c002_contract.py"),
+    )
+    monkeypatch.setattr(contract, "PREREQUISITE_ASSETS", tuple(drift_assets))
+
+    drift_doc = (
+        tmp_path / "m246_ir_optimization_pass_wiring_and_validation_modular_split_scaffolding_c002_expectations.md"
+    )
+    drift_doc.write_text(
+        contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8").replace("`M246-C001`", "`M246-C099`", 1),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    sort_key = lambda failure: (failure["check_id"], failure["artifact"], failure["detail"])
+    assert payload["failures"] == sorted(payload["failures"], key=sort_key)
