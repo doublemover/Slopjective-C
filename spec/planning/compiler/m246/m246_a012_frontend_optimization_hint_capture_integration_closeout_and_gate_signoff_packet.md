@@ -39,7 +39,7 @@ Freeze lane-A integration closeout and gate sign-off prerequisites for M246 fron
 
 ## Gate Commands
 
-- `python scripts/check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py`
+- `python scripts/check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py -q`
 - `python scripts/run_m246_a012_lane_a_readiness.py`
 

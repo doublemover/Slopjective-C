@@ -8,9 +8,12 @@ Scope: M246 lane-A integration closeout and gate sign-off continuity for fronten
 
 Fail closed unless lane-A integration closeout and gate sign-off dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5059`
+
 ## Dependency Scope
 
-- Issue `#5059` defines canonical lane-A integration closeout and gate sign-off scope.
 - Dependencies: `M246-A011`
 - M246-A011 performance and quality guardrails anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_performance_and_quality_guardrails_a011_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A integration closeout and gate sign-off dependency anch
 
 - `scripts/run_m246_a012_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a011_lane_a_readiness.py`
-  - `python scripts/check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py`
+  - `python scripts/check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a012_frontend_optimization_hint_capture_integration_closeout_and_gate_signoff_contract.py -q`
 
 ## Milestone Optimization Inputs
