@@ -855,6 +855,12 @@ Current-state note:
   `spec/planning/compiler/m248/m248_d014_runner_reliability_and_platform_operations_release_candidate_and_replay_dry_run_packet.md`,
   and `package.json` so replay dry-run continuity remains deterministic
   and fail-closed against `M248-D013` dependency drift.
+- M248 lane-D D015 advanced core workpack (shard 1) anchors runner/platform operations contract integration
+  explicit lane-D advanced-core artifacts in
+  `docs/contracts/m248_runner_reliability_and_platform_operations_advanced_core_workpack_shard1_d015_expectations.md`,
+  `spec/planning/compiler/m248/m248_d015_runner_reliability_and_platform_operations_advanced_core_workpack_shard1_packet.md`,
+  and `package.json` so advanced-core continuity remains deterministic
+  and fail-closed against `M248-D014` dependency drift.
 - M244 lane-A A001 interop surface syntax and declaration forms anchors explicit
   lane-A contract and architecture freeze artifacts in
   `docs/contracts/m244_interop_surface_syntax_and_declaration_forms_contract_and_architecture_freeze_a001_expectations.md`,

@@ -956,6 +956,10 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-D dependency anchors (`M248-D013`) and fail closed on replay
   dry-run evidence drift before downstream platform replay and lane-e
   conformance matrix advances.
+- runner/platform operations advanced core workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M248-D014`) and fail closed on advanced
+  core evidence drift before downstream platform replay and lane-e conformance
+  matrix advances.
 
 ### C.3.1 Optional message send `[receiver? ...]` (normative) {#c-3-1}
 
