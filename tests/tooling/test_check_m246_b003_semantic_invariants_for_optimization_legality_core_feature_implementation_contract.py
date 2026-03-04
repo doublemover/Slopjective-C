@@ -45,6 +45,42 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_b003() -> None:
     assert normalized.startswith("tmp/reports/m246/M246-B003/")
 
 
+def test_contract_emit_json_writes_canonical_summary_to_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    captured = capsys.readouterr()
+    assert captured.out == contract.canonical_json(payload)
+    assert captured.err == ""
+
+
+def test_contract_failures_are_sorted_deterministically(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        contract,
+        "EXPECTATIONS_SNIPPETS",
+        (
+            contract.SnippetCheck("M246-B003-DOC-EXP-Z", "__missing-z-snippet__"),
+            contract.SnippetCheck("M246-B003-DOC-EXP-A", "__missing-a-snippet__"),
+        ),
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert [failure["check_id"] for failure in payload["failures"]] == [
+        "M246-B003-DOC-EXP-A",
+        "M246-B003-DOC-EXP-Z",
+    ]
+
+
 def test_contract_fails_closed_when_prerequisite_asset_is_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

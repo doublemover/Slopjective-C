@@ -21,13 +21,13 @@ Fail closed unless lane-B semantic invariants for optimization legality core fea
 ## Core Feature Contract Anchors
 
 - `spec/planning/compiler/m246/m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_packet.md` remains canonical for B003 packet metadata.
-- `scripts/check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py` remains canonical for fail-closed B003 contract checks.
+- `scripts/check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py` remains canonical for fail-closed B003 contract checks with deterministic sorted failures and `--emit-json` support.
 - `tests/tooling/test_check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py` remains canonical for fail-closed checker regression coverage.
 - `scripts/run_m246_b003_lane_b_readiness.py` remains canonical for local lane-B checker+pytest readiness chaining.
 
 ## Validation
 
-- `python scripts/check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py`
+- `python scripts/check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_b003_semantic_invariants_for_optimization_legality_core_feature_implementation_contract.py -q`
 - `python scripts/run_m246_b003_lane_b_readiness.py`
 
