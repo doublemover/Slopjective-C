@@ -876,6 +876,13 @@ Current-state note:
   and `package.json` so lane-A cross-lane synchronization evidence remains
   deterministic and fail-closed while cross-lane dependency continuity
   (`M247-B012`, `M247-C012`, `M247-D012`, `M247-E012`) is tracked explicitly.
+- M247 lane-A A013 frontend profiling and hot-path decomposition docs and operator runbook synchronization anchors
+  dependency reference (`M247-A012`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_docs_and_operator_runbook_synchronization_a013_expectations.md`,
+  `spec/planning/compiler/m247/m247_a013_frontend_profiling_and_hot_path_decomposition_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` so lane-A docs/runbook synchronization evidence remains
+  deterministic and fail-closed while cross-lane dependency continuity
+  (`M247-B013`, `M247-C013`, `M247-D013`, `M247-E013`) is tracked explicitly.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,
