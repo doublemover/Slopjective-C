@@ -782,6 +782,9 @@ A conforming implementation shall preserve, for all exported declarations:
      shard-1 dependency readiness remains staged.
    - deterministic lane-E release gate/docs/runbooks advanced edge compatibility workpack (shard 1) metadata anchors for `M249-E016`
      with explicit `M249-E015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+   - deterministic lane-E release gate/docs/runbooks advanced diagnostics workpack (shard 1) metadata anchors for `M249-E017`
+     with explicit `M249-E016`, `M249-A007`, `M249-B008`, `M249-C009`, and `M249-D017` dependency continuity
+     and fail-closed advanced diagnostics evidence continuity.
    - deterministic lane-E diagnostics quality gate and replay policy dependency anchors for
      `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
      pending-lane tokens needed to keep diagnostics quality gate/replay-policy

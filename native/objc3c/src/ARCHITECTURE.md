@@ -1428,6 +1428,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_e016_lane_e_release_gate_docs_and_runbooks_advanced_edge_compatibility_workpack_shard1_packet.md`,
   and `package.json` so advanced edge-compatibility continuity remains deterministic and
   fail-closed against `M249-E015` dependency drift.
+- M249 lane-E E017 advanced diagnostics workpack (shard 1) anchors release gate/docs/runbooks continuity
+  dependency references (`M249-E016`, `M249-A007`, `M249-B008`, `M249-C009`, and `M249-D017`) in
+  `docs/contracts/m249_lane_e_release_gate_docs_and_runbooks_advanced_diagnostics_workpack_shard1_e017_expectations.md`,
+  `spec/planning/compiler/m249/m249_e017_lane_e_release_gate_docs_and_runbooks_advanced_diagnostics_workpack_shard1_packet.md`,
+  and `package.json` so advanced diagnostics continuity remains deterministic and
+  fail-closed against `M249-E016` dependency drift.
 - M243 lane-A A001 diagnostic grammar hooks/source precision anchors explicit
   parser diagnostic coordinate and fingerprint freeze in
   `parse/objc3_parse_support.cpp`, `parse/objc3_parser_contract.h`, and
