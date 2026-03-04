@@ -59,7 +59,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M247-A001-DOC-EXP-02",
         "Contract ID: `objc3c-frontend-profiling-hot-path-decomposition-contract-and-architecture-freeze/m247-a001-v1`",
     ),
-    SnippetCheck("M247-A001-DOC-EXP-03", "Issue `#6708` defines canonical lane-A contract freeze scope."),
+    SnippetCheck("M247-A001-DOC-EXP-03", "- Issue: `#6708`"),
     SnippetCheck("M247-A001-DOC-EXP-04", "Dependencies: none"),
     SnippetCheck(
         "M247-A001-DOC-EXP-05",
@@ -75,6 +75,10 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M247-A001-DOC-EXP-08",
+        "`python scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py --emit-json`",
+    ),
+    SnippetCheck(
+        "M247-A001-DOC-EXP-09",
         "`tmp/reports/m247/M247-A001/frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_summary.json`",
     ),
 )
@@ -92,6 +96,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "`check:objc3c:m247-a001-frontend-profiling-hot-path-decomposition-contract-and-architecture-freeze-contract`",
     ),
     SnippetCheck("M247-A001-DOC-PKT-06", "`compile:objc3c`"),
+    SnippetCheck(
+        "M247-A001-DOC-PKT-07",
+        "python scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py --emit-json",
+    ),
 )
 
 READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -100,11 +108,12 @@ READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M247-A001-RUN-02",
         "scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py",
     ),
+    SnippetCheck("M247-A001-RUN-03", "--emit-json"),
     SnippetCheck(
-        "M247-A001-RUN-03",
+        "M247-A001-RUN-04",
         "tests/tooling/test_check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py",
     ),
-    SnippetCheck("M247-A001-RUN-04", "[ok] M247-A001 lane-A readiness chain completed"),
+    SnippetCheck("M247-A001-RUN-05", "[ok] M247-A001 lane-A readiness chain completed"),
 )
 
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -184,6 +193,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -214,7 +224,17 @@ def check_doc_contract(
         )
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(
+            Finding(
+                artifact=display_path(path),
+                check_id=exists_check_id,
+                detail=f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
@@ -226,6 +246,10 @@ def check_doc_contract(
                 )
             )
     return checks_total, findings
+
+
+def finding_sort_key(finding: Finding) -> tuple[str, str, str]:
+    return (finding.artifact, finding.check_id, finding.detail)
 
 
 def run(argv: Sequence[str]) -> int:
@@ -246,6 +270,7 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(failures, key=finding_sort_key)
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -264,11 +289,15 @@ def run(argv: Sequence[str]) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
+    if args.emit_json:
+        sys.stdout.write(canonical_json(summary_payload))
+
     if failures:
         for finding in failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

@@ -8,9 +8,12 @@ Scope: M247 lane-A frontend profiling and hot-path decomposition contract and ar
 
 Fail closed unless lane-A frontend profiling and hot-path decomposition contract-freeze anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6708`
+
 ## Dependency Scope
 
-- Issue `#6708` defines canonical lane-A contract freeze scope.
 - Dependencies: none
 - Packet/checker/test assets remain mandatory:
   - `spec/planning/compiler/m247/m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_packet.md`
@@ -39,7 +42,7 @@ Fail closed unless lane-A frontend profiling and hot-path decomposition contract
 
 ## Validation
 
-- `python scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py -q`
 - `python scripts/run_m247_a001_lane_a_readiness.py`
 
