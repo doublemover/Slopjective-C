@@ -8,6 +8,10 @@ Scope: M247 lane-A modular split/scaffolding continuity for frontend profiling a
 
 Fail closed unless lane-A modular split/scaffolding dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6709`
+
 ## Dependency Scope
 
 - Dependencies: `M247-A001`
@@ -44,7 +48,7 @@ Fail closed unless lane-A modular split/scaffolding dependency anchors remain ex
 
 ## Validation
 
-- `python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py`
+- `python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m247-a002-lane-a-readiness`
 

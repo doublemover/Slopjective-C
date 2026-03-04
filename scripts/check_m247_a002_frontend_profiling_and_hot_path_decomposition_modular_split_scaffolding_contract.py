@@ -106,30 +106,35 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M247-A002-DOC-EXP-02",
         "Contract ID: `objc3c-frontend-profiling-hot-path-decomposition-modular-split-scaffolding/m247-a002-v1`",
     ),
-    SnippetCheck("M247-A002-DOC-EXP-03", "Dependencies: `M247-A001`"),
+    SnippetCheck("M247-A002-DOC-EXP-03", "- Issue: `#6709`"),
+    SnippetCheck("M247-A002-DOC-EXP-04", "Dependencies: `M247-A001`"),
     SnippetCheck(
-        "M247-A002-DOC-EXP-04",
+        "M247-A002-DOC-EXP-05",
         "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
     ),
     SnippetCheck(
-        "M247-A002-DOC-EXP-05",
+        "M247-A002-DOC-EXP-06",
         "docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_a001_expectations.md",
     ),
     SnippetCheck(
-        "M247-A002-DOC-EXP-06",
+        "M247-A002-DOC-EXP-07",
         "scripts/check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py",
     ),
     SnippetCheck(
-        "M247-A002-DOC-EXP-07",
+        "M247-A002-DOC-EXP-08",
         "tests/tooling/test_check_m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_contract.py",
     ),
     SnippetCheck(
-        "M247-A002-DOC-EXP-08",
+        "M247-A002-DOC-EXP-09",
         "`check:objc3c:m247-a002-frontend-profiling-hot-path-decomposition-modular-split-scaffolding-contract`",
     ),
-    SnippetCheck("M247-A002-DOC-EXP-09", "`compile:objc3c`"),
     SnippetCheck(
         "M247-A002-DOC-EXP-10",
+        "`python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py --emit-json`",
+    ),
+    SnippetCheck("M247-A002-DOC-EXP-11", "`compile:objc3c`"),
+    SnippetCheck(
+        "M247-A002-DOC-EXP-12",
         "`tmp/reports/m247/M247-A002/frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_summary.json`",
     ),
 )
@@ -140,30 +145,35 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "# M247-A002 Frontend Profiling and Hot-Path Decomposition Modular Split/Scaffolding Packet",
     ),
     SnippetCheck("M247-A002-DOC-PKT-02", "Packet: `M247-A002`"),
-    SnippetCheck("M247-A002-DOC-PKT-03", "Dependencies: `M247-A001`"),
+    SnippetCheck("M247-A002-DOC-PKT-03", "Issue: `#6709`"),
+    SnippetCheck("M247-A002-DOC-PKT-04", "Dependencies: `M247-A001`"),
     SnippetCheck(
-        "M247-A002-DOC-PKT-04",
+        "M247-A002-DOC-PKT-05",
         "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
     ),
     SnippetCheck(
-        "M247-A002-DOC-PKT-05",
+        "M247-A002-DOC-PKT-06",
         "docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_a002_expectations.md",
     ),
     SnippetCheck(
-        "M247-A002-DOC-PKT-06",
+        "M247-A002-DOC-PKT-07",
         "scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py",
     ),
     SnippetCheck(
-        "M247-A002-DOC-PKT-07",
+        "M247-A002-DOC-PKT-08",
         "tests/tooling/test_check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py",
     ),
-    SnippetCheck("M247-A002-DOC-PKT-08", "`npm run check:objc3c:m247-a002-lane-a-readiness`"),
     SnippetCheck(
         "M247-A002-DOC-PKT-09",
+        "python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py --emit-json",
+    ),
+    SnippetCheck("M247-A002-DOC-PKT-10", "`npm run check:objc3c:m247-a002-lane-a-readiness`"),
+    SnippetCheck(
+        "M247-A002-DOC-PKT-11",
         "`tmp/reports/m247/M247-A002/frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_summary.json`",
     ),
     SnippetCheck(
-        "M247-A002-DOC-PKT-10",
+        "M247-A002-DOC-PKT-12",
         "spec/planning/compiler/m247/m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_packet.md",
     ),
 )
@@ -272,6 +282,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -328,7 +339,18 @@ def check_doc_contract(
         )
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(
+            Finding(
+                display_path(path),
+                exists_check_id,
+                f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
@@ -340,6 +362,10 @@ def check_doc_contract(
                 )
             )
     return checks_total, findings
+
+
+def finding_sort_key(finding: Finding) -> tuple[str, str, str]:
+    return (finding.artifact, finding.check_id, finding.detail)
 
 
 def run(argv: Sequence[str]) -> int:
@@ -392,6 +418,7 @@ def run(argv: Sequence[str]) -> int:
                 )
             )
 
+    failures = sorted(failures, key=finding_sort_key)
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -408,11 +435,15 @@ def run(argv: Sequence[str]) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
+    if args.emit_json:
+        sys.stdout.write(canonical_json(summary_payload))
+
     if failures:
         for finding in failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

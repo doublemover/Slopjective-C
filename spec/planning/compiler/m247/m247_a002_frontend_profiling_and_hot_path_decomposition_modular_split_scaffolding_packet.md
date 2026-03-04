@@ -3,6 +3,7 @@
 Packet: `M247-A002`
 Milestone: `M247`
 Lane: `A`
+Issue: `#6709`
 Freeze date: `2026-03-04`
 Dependencies: `M247-A001`
 
@@ -37,7 +38,7 @@ Freeze lane-A modular split/scaffolding prerequisites for M247 frontend profilin
 
 ## Gate Commands
 
-- `python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py`
+- `python scripts/check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a002_frontend_profiling_and_hot_path_decomposition_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m247-a002-lane-a-readiness`
 
