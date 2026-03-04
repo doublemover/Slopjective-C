@@ -12,6 +12,12 @@ traceable across
 dependency surfaces, including code/spec anchors and milestone optimization
 improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5081`
+- Lane-C C005 edge-case and compatibility completion scope remains pinned to
+  issue `#5081` for dependency-chain drift detection.
+
 ## Dependency Scope
 
 - Issue `#5081` defines canonical lane-C edge-case and compatibility completion scope.
@@ -55,6 +61,7 @@ improvements as mandatory scope inputs.
 
 ## Validation
 
+- `python scripts/check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py --emit-json --summary-out tmp/reports/m246/M246-C005/ir_optimization_pass_wiring_validation_edge_case_and_compatibility_completion_summary.json`
 - `python scripts/check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py -q`
 - `python scripts/run_m246_c005_lane_c_readiness.py`

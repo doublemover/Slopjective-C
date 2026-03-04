@@ -15,6 +15,12 @@ validation governance remain deterministic and fail-closed, with code/spec
 anchors and milestone optimization improvements treated as mandatory scope
 inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5081`
+- Dependency-chain integrity for C005 remains pinned to issue `#5081` across
+  expectations, checker, tests, and readiness surfaces.
+
 ## Scope Anchors
 
 - Contract:
@@ -56,6 +62,7 @@ inputs.
 
 ## Gate Commands
 
+- `python scripts/check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py --emit-json --summary-out tmp/reports/m246/M246-C005/ir_optimization_pass_wiring_validation_edge_case_and_compatibility_completion_summary.json`
 - `python scripts/check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c005_ir_optimization_pass_wiring_and_validation_edge_case_and_compatibility_completion_contract.py -q`
 - `python scripts/run_m246_c005_lane_c_readiness.py`

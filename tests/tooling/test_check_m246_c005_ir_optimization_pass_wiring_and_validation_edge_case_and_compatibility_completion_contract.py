@@ -48,6 +48,20 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     assert payload["failures"] == []
 
 
+def test_contract_emit_json_writes_canonical_payload_to_stdout(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout_payload = json.loads(capsys.readouterr().out)
+    file_payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert stdout_payload == file_payload
+    assert stdout_payload["ok"] is True
+
+
 def test_contract_default_summary_out_is_under_tmp_reports_m246_c005() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
@@ -233,3 +247,66 @@ def test_contract_fails_closed_when_package_drops_perf_budget_input(tmp_path: Pa
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-C005-PKG-05" for failure in payload["failures"])
+
+
+def test_check_text_artifact_fails_closed_when_read_raises_os_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_doc = tmp_path / "drift.md"
+    drift_doc.write_text("content", encoding="utf-8")
+    original_read_text = contract.Path.read_text
+
+    def failing_read_text(self: Path, *args: object, **kwargs: object) -> str:
+        if self == drift_doc:
+            raise OSError("simulated read failure")
+        return original_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(contract.Path, "read_text", failing_read_text)
+
+    checks_total, failures = contract.check_text_artifact(
+        path=drift_doc,
+        exists_check_id="M246-C005-TEST-EXISTS",
+        snippets=(),
+    )
+
+    assert checks_total == 1
+    assert len(failures) == 1
+    assert failures[0].check_id == "M246-C005-TEST-EXISTS"
+    assert "unable to read required document:" in failures[0].detail
+
+
+def test_contract_sorts_failures_by_check_id_artifact_and_detail(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(contract, "check_prerequisite_assets", lambda: (0, []))
+
+    def fake_check_text_artifact(*, path: Path, exists_check_id: str, snippets: tuple[contract.SnippetCheck, ...]):
+        if exists_check_id == "M246-C005-DOC-EXP-EXISTS":
+            return (
+                1,
+                [
+                    contract.Finding(artifact="zeta.md", check_id="M246-C005-Z", detail="z detail"),
+                    contract.Finding(artifact="alpha.md", check_id="M246-C005-A", detail="z detail"),
+                    contract.Finding(artifact="alpha.md", check_id="M246-C005-A", detail="a detail"),
+                ],
+            )
+        return 1, []
+
+    monkeypatch.setattr(contract, "check_text_artifact", fake_check_text_artifact)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    assert [failure["check_id"] for failure in failures] == ["M246-C005-A", "M246-C005-A", "M246-C005-Z"]
+    assert [failure["artifact"] for failure in failures] == ["alpha.md", "alpha.md", "zeta.md"]
+    assert [failure["detail"] for failure in failures] == ["a detail", "z detail", "z detail"]
+    stderr_lines = [line for line in capsys.readouterr().err.splitlines() if line.strip()]
+    assert stderr_lines[0].startswith("[M246-C005-A] alpha.md: a detail")
+    assert stderr_lines[1].startswith("[M246-C005-A] alpha.md: z detail")
+    assert stderr_lines[2].startswith("[M246-C005-Z] zeta.md: z detail")
