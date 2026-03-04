@@ -770,6 +770,18 @@
     "check:objc3c:m249-e019-lane-e-release-gate-docs-runbooks-advanced-integration-workpack-shard1-contract": "python scripts/check_m249_e019_lane_e_release_gate_docs_and_runbooks_advanced_integration_workpack_shard1_contract.py",
     "test:tooling:m249-e019-lane-e-release-gate-docs-runbooks-advanced-integration-workpack-shard1-contract": "python -m pytest tests/tooling/test_check_m249_e019_lane_e_release_gate_docs_and_runbooks_advanced_integration_workpack_shard1_contract.py -q",
     "check:objc3c:m249-e019-lane-e-readiness": "python scripts/run_m249_e019_lane_e_readiness.py",
+    "check:objc3c:m249-e020-lane-e-release-gate-docs-runbooks-advanced-performance-workpack-shard1-contract": "python scripts/check_m249_e020_lane_e_release_gate_docs_and_runbooks_advanced_performance_workpack_shard1_contract.py",
+    "test:tooling:m249-e020-lane-e-release-gate-docs-runbooks-advanced-performance-workpack-shard1-contract": "python -m pytest tests/tooling/test_check_m249_e020_lane_e_release_gate_docs_and_runbooks_advanced_performance_workpack_shard1_contract.py -q",
+    "check:objc3c:m249-e020-lane-e-readiness": "python scripts/run_m249_e020_lane_e_readiness.py",
+    "check:objc3c:m249-e021-lane-e-release-gate-docs-runbooks-advanced-core-workpack-shard2-contract": "python scripts/check_m249_e021_lane_e_release_gate_docs_and_runbooks_advanced_core_workpack_shard2_contract.py",
+    "test:tooling:m249-e021-lane-e-release-gate-docs-runbooks-advanced-core-workpack-shard2-contract": "python -m pytest tests/tooling/test_check_m249_e021_lane_e_release_gate_docs_and_runbooks_advanced_core_workpack_shard2_contract.py -q",
+    "check:objc3c:m249-e021-lane-e-readiness": "python scripts/run_m249_e021_lane_e_readiness.py",
+    "check:objc3c:m249-e022-lane-e-release-gate-docs-runbooks-advanced-edge-compatibility-workpack-shard2-contract": "python scripts/check_m249_e022_lane_e_release_gate_docs_and_runbooks_advanced_edge_compatibility_workpack_shard2_contract.py",
+    "test:tooling:m249-e022-lane-e-release-gate-docs-runbooks-advanced-edge-compatibility-workpack-shard2-contract": "python -m pytest tests/tooling/test_check_m249_e022_lane_e_release_gate_docs_and_runbooks_advanced_edge_compatibility_workpack_shard2_contract.py -q",
+    "check:objc3c:m249-e022-lane-e-readiness": "python scripts/run_m249_e022_lane_e_readiness.py",
+    "check:objc3c:m249-e023-lane-e-release-gate-docs-runbooks-advanced-diagnostics-workpack-shard2-contract": "python scripts/check_m249_e023_lane_e_release_gate_docs_and_runbooks_advanced_diagnostics_workpack_shard2_contract.py",
+    "test:tooling:m249-e023-lane-e-release-gate-docs-runbooks-advanced-diagnostics-workpack-shard2-contract": "python -m pytest tests/tooling/test_check_m249_e023_lane_e_release_gate_docs_and_runbooks_advanced_diagnostics_workpack_shard2_contract.py -q",
+    "check:objc3c:m249-e023-lane-e-readiness": "python scripts/run_m249_e023_lane_e_readiness.py",
     "check:objc3c:m227-a001-semantic-pass-decomposition-contract": "python scripts/check_m227_a001_semantic_pass_decomposition_contract.py",
     "test:tooling:m227-a001-semantic-pass-decomposition-contract": "python -m pytest tests/tooling/test_check_m227_a001_semantic_pass_decomposition_contract.py -q",
     "check:objc3c:m227-a001-lane-a-readiness": "npm run check:objc3c:m227-a001-semantic-pass-decomposition-contract && npm run test:tooling:m227-a001-semantic-pass-decomposition-contract",
@@ -1989,3 +2001,4 @@
     "check:md:all": "npm run build:spec && npm run check:md"
   }
 }
+

@@ -789,6 +789,26 @@ At minimum, the pass-graph gate shall validate:
   `M249-C010`, and `M249-D016`) and fail closed on
   advanced integration command sequencing, dependency evidence continuity, or
   release gate/docs/runbooks advanced integration continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced performance workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E020`, `M249-E019`, `M249-A008`, `M249-B009`,
+  `M249-C010`, and `M249-D017`) and fail closed on
+  advanced performance command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced performance continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced core workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E021`, `M249-E020`, `M249-A008`, `M249-B010`,
+  `M249-C011`, and `M249-D018`) and fail closed on
+  advanced core (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced core (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced edge compatibility workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E022`, `M249-E021`, `M249-A008`, `M249-B010`,
+  `M249-C011`, and `M249-D018`) and fail closed on
+  advanced edge compatibility (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced edge compatibility (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced diagnostics workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E023`, `M249-E022`, `M249-A009`, `M249-B011`,
+  `M249-C012`, and `M249-D019`) and fail closed on
+  advanced diagnostics (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced diagnostics (shard 2) continuity drift before lane-E readiness advances.
 - diagnostics quality gate and replay policy wiring shall preserve explicit
   lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
   `M243-D001`) and fail closed when dependency references,
@@ -1286,3 +1306,4 @@ typed sema-to-lowering advanced conformance workpack (shard 2) governance shall 
 typed sema-to-lowering advanced integration workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C025`, `M227-C024`) so typed advanced-integration-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
 
 typed sema-to-lowering integration closeout and gate sign-off governance shall preserve explicit lane-C dependency anchors (`M227-C026`, `M227-C025`) so typed integration-closeout/sign-off continuity and parse/lowering alignment stay deterministic and fail-closed when sign-off drift occurs.
+

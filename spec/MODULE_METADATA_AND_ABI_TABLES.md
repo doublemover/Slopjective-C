@@ -791,6 +791,18 @@ A conforming implementation shall preserve, for all exported declarations:
   - deterministic lane-E release gate/docs/runbooks advanced integration workpack (shard 1) metadata anchors for `M249-E019`
     with explicit `M249-E018`, `M249-A007`, `M249-B009`, `M249-C010`, and `M249-D016` dependency continuity
     and fail-closed advanced integration evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced performance workpack (shard 1) metadata anchors for `M249-E020`
+    with explicit `M249-E019`, `M249-A008`, `M249-B009`, `M249-C010`, and `M249-D017` dependency continuity
+    and fail-closed advanced performance evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced core workpack (shard 2) metadata anchors for `M249-E021`
+    with explicit `M249-E020`, `M249-A008`, `M249-B010`, `M249-C011`, and `M249-D018` dependency continuity
+    and fail-closed advanced core (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced edge compatibility workpack (shard 2) metadata anchors for `M249-E022`
+    with explicit `M249-E021`, `M249-A008`, `M249-B010`, `M249-C011`, and `M249-D018` dependency continuity
+    and fail-closed advanced edge compatibility (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced diagnostics workpack (shard 2) metadata anchors for `M249-E023`
+    with explicit `M249-E022`, `M249-A009`, `M249-B011`, `M249-C012`, and `M249-D019` dependency continuity
+    and fail-closed advanced diagnostics (shard 2) evidence continuity.
   - deterministic lane-E diagnostics quality gate and replay policy dependency anchors for
     `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
     pending-lane tokens needed to keep diagnostics quality gate/replay-policy
@@ -1139,3 +1151,4 @@ deterministic lane-C typed sema-to-lowering advanced-conformance-shard2 metadata
 deterministic lane-C typed sema-to-lowering advanced-integration-shard2 metadata anchors for `M227-C025` must remain synchronized across typed integration-shard2 keys, parse integration-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 integration closure can pass.
 
 deterministic lane-C typed sema-to-lowering integration-closeout-signoff metadata anchors for `M227-C026` must remain synchronized across typed integration-closeout keys, parse integration-closeout keys, and readiness alignment metadata surfaces before lane-C sign-off closure can pass.
+
