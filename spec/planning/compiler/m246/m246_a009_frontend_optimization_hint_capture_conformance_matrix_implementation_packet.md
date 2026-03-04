@@ -39,7 +39,7 @@ Freeze lane-A conformance matrix implementation prerequisites for M246 frontend 
 
 ## Gate Commands
 
-- `python scripts/check_m246_a009_frontend_optimization_hint_capture_conformance_matrix_implementation_contract.py`
+- `python scripts/check_m246_a009_frontend_optimization_hint_capture_conformance_matrix_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a009_frontend_optimization_hint_capture_conformance_matrix_implementation_contract.py -q`
 - `python scripts/run_m246_a009_lane_a_readiness.py`
 
