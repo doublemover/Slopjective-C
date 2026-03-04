@@ -326,6 +326,9 @@ A conforming implementation shall preserve, for all exported declarations:
       synchronization contract-gating evidence remains fail-closed while pending
       cross-lane dependency continuity (`M247-B013`, `M247-C013`, `M247-D013`,
       `M247-E013`) is tracked explicitly.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      release-candidate/replay dry-run metadata anchors for `M247-A014`
+      with explicit `M247-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput

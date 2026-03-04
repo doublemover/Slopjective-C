@@ -355,6 +355,9 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-A dependency anchor (`M247-A012`) and fail closed
   when dependency references, docs/runbook synchronization continuity, or
   contract-gating evidence commands drift.
+- frontend profiling and hot-path decomposition release-candidate and replay dry-run wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A013`) and fail closed
+  when dependency references, release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
 - runtime/link/build throughput optimization core-feature expansion wiring
   shall preserve explicit lane-D dependency anchor (`M247-D003`) and fail
   closed when dependency references, pending-token continuity, or throughput
