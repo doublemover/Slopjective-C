@@ -707,6 +707,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_c002_lowering_codegen_cost_profiling_and_controls_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split/scaffolding governance evidence remains
   deterministic and fail-closed while C001 dependency continuity is inherited.
+- M247 lane-C C003 lowering/codegen cost profiling and controls core feature implementation anchors
+  dependency reference (`M247-C002`) in
+  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m247/m247_c003_lowering_codegen_cost_profiling_and_controls_core_feature_implementation_packet.md`,
+  and `package.json` so core feature implementation governance evidence remains
+  deterministic and fail-closed while C002 dependency continuity is inherited.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
