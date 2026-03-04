@@ -54,6 +54,7 @@ DEFAULT_B003_TEST = (
 )
 DEFAULT_B003_READINESS_RUNNER = ROOT / "scripts" / "run_m247_b003_lane_b_readiness.py"
 DEFAULT_READINESS_RUNNER = ROOT / "scripts" / "run_m247_b004_lane_b_readiness.py"
+DEFAULT_PACKAGE_JSON = ROOT / "package.json"
 DEFAULT_SUMMARY_OUT = Path(
     "tmp/reports/m247/M247-B004/semantic_hot_path_analysis_and_budgeting_core_feature_expansion_contract_summary.json"
 )
@@ -177,6 +178,23 @@ B003_READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M247-B004-B003-RUN-03", "[ok] M247-B003 lane-B readiness chain completed"),
 )
 
+PACKAGE_JSON_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck(
+        "M247-B004-PKG-01",
+        '"check:objc3c:m247-b004-semantic-hot-path-analysis-and-budgeting-core-feature-expansion-contract": '
+        '"python scripts/check_m247_b004_semantic_hot_path_analysis_and_budgeting_core_feature_expansion_contract.py"',
+    ),
+    SnippetCheck(
+        "M247-B004-PKG-02",
+        '"test:tooling:m247-b004-semantic-hot-path-analysis-and-budgeting-core-feature-expansion-contract": '
+        '"python -m pytest tests/tooling/test_check_m247_b004_semantic_hot_path_analysis_and_budgeting_core_feature_expansion_contract.py -q"',
+    ),
+    SnippetCheck(
+        "M247-B004-PKG-03",
+        '"check:objc3c:m247-b004-lane-b-readiness": "python scripts/run_m247_b004_lane_b_readiness.py"',
+    ),
+)
+
 
 def canonical_json(payload: object) -> str:
     return json.dumps(payload, indent=2) + "\n"
@@ -200,6 +218,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--b003-test", type=Path, default=DEFAULT_B003_TEST)
     parser.add_argument("--b003-readiness-runner", type=Path, default=DEFAULT_B003_READINESS_RUNNER)
     parser.add_argument("--readiness-runner", type=Path, default=DEFAULT_READINESS_RUNNER)
+    parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
 
@@ -298,6 +317,7 @@ def run(argv: Sequence[str]) -> int:
         (args.b003_packet_doc, "M247-B004-B003-PKT-EXISTS", B003_PACKET_SNIPPETS),
         (args.readiness_runner, "M247-B004-RUN-EXISTS", READINESS_RUNNER_SNIPPETS),
         (args.b003_readiness_runner, "M247-B004-B003-RUN-EXISTS", B003_READINESS_SNIPPETS),
+        (args.package_json, "M247-B004-PKG-EXISTS", PACKAGE_JSON_SNIPPETS),
     ):
         count, found = check_text_artifact(
             path=path,

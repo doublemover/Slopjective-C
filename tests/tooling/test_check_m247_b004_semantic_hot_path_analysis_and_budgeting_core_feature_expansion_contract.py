@@ -37,7 +37,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["mode"] == "m247-b004-semantic-hot-path-analysis-and-budgeting-core-feature-expansion-contract-v1"
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 40
+    assert payload["checks_total"] >= 45
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
@@ -143,6 +143,26 @@ def test_contract_fails_closed_when_b003_checker_dependency_path_is_missing(tmp_
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M247-B004-DEP-B003-ARG-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Path) -> None:
+    drift_package = tmp_path / "package.json"
+    drift_package.write_text(
+        replace_once(
+            contract.DEFAULT_PACKAGE_JSON.read_text(encoding="utf-8"),
+            '"check:objc3c:m247-b004-lane-b-readiness": "python scripts/run_m247_b004_lane_b_readiness.py"',
+            '"check:objc3c:m247-b004-lane-b-readiness": "python scripts/run_m247_b099_lane_b_readiness.py"',
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--package-json", str(drift_package), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M247-B004-PKG-03" for failure in payload["failures"])
 
 
 
