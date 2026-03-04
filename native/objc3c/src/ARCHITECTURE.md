@@ -1343,6 +1343,12 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d003_installer_runtime_operations_and_support_tooling_core_feature_implementation_packet.md`,
   and `package.json` so core feature installer/runtime continuity remains
   deterministic and fail-closed against `M249-D002` dependency drift.
+- M249 lane-D D004 installer/runtime operations core feature expansion anchors
+  explicit lane-D core-feature expansion artifacts in
+  `docs/contracts/m249_installer_runtime_operations_and_support_tooling_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m249/m249_d004_installer_runtime_operations_and_support_tooling_core_feature_expansion_packet.md`,
+  and `package.json` so core-feature expansion installer/runtime continuity
+  remains deterministic and fail-closed against `M249-D003` dependency drift.
 - M249 lane-E E001 release gate/docs/runbooks contract and architecture freeze
   anchors dependency references (`M249-A001`, `M249-B001`, `M249-C001`, and
   `M249-D001`) in
