@@ -725,6 +725,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_c005_lowering_codegen_cost_profiling_and_controls_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case compatibility governance evidence remains
   deterministic and fail-closed while C004 dependency continuity is inherited.
+- M247 lane-C C006 lowering/codegen cost profiling and controls edge-case expansion and robustness anchors
+  dependency reference (`M247-C005`) in
+  `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_edge_case_expansion_and_robustness_c006_expectations.md`,
+  `spec/planning/compiler/m247/m247_c006_lowering_codegen_cost_profiling_and_controls_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case robustness governance evidence remains
+  deterministic and fail-closed while C005 dependency continuity is inherited.
 - M247 lane-E E001 performance SLO gate/reporting anchors dependency references
   (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) in
   `docs/contracts/m247_lane_e_performance_slo_gate_and_reporting_e001_expectations.md`,
