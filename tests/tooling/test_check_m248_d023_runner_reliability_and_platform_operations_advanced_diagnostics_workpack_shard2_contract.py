@@ -1,0 +1,149 @@
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT_PATH = (
+    ROOT
+    / "scripts"
+    / "check_m248_d023_runner_reliability_and_platform_operations_advanced_diagnostics_workpack_shard2_contract.py"
+)
+SPEC = importlib.util.spec_from_file_location(
+    "check_m248_d023_runner_reliability_and_platform_operations_advanced_diagnostics_workpack_shard2_contract",
+    SCRIPT_PATH,
+)
+assert SPEC is not None and SPEC.loader is not None
+contract = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = contract
+SPEC.loader.exec_module(contract)
+
+
+def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert (
+        payload["mode"]
+        == "m248-runner-reliability-platform-operations-advanced-diagnostics-workpack-shard2-contract-d023-v1"
+    )
+    assert payload["ok"] is True
+    assert payload["checks_total"] >= 26
+    assert payload["checks_total"] == payload["checks_passed"]
+
+
+def test_contract_fails_closed_when_contract_id_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_doc = (
+        tmp_path
+        / "m248_runner_reliability_and_platform_operations_advanced_diagnostics_workpack_shard2_d023_expectations.md"
+    )
+    drift_doc.write_text(
+        contract.ARTIFACTS["contract_doc"].read_text(encoding="utf-8").replace(
+            "Contract ID: `objc3c-runner-reliability-platform-operations-advanced-diagnostics-workpack-shard2/m248-d023-v1`",
+            "Contract ID: `objc3c-runner-reliability-platform-operations-advanced-diagnostics-workpack-shard2/m248-d023-drift`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["contract_doc"] = drift_doc
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M248-D023-DOC-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_dependency_contract_id_drifts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_doc = (
+        tmp_path
+        / "m248_runner_reliability_and_platform_operations_advanced_edge_compatibility_workpack_shard2_d022_expectations.md"
+    )
+    drift_doc.write_text(
+        contract.ARTIFACTS["d022_contract_doc"].read_text(encoding="utf-8").replace(
+            "Contract ID: `objc3c-runner-reliability-platform-operations-advanced-edge-compatibility-workpack-shard2/m248-d022-v1`",
+            "Contract ID: `objc3c-runner-reliability-platform-operations-advanced-edge-compatibility-workpack-shard2/m248-d022-drift`",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["d022_contract_doc"] = drift_doc
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M248-D023-DEP-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_surface_forces_advanced_diagnostics_consistency(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_surface = tmp_path / "objc3_parse_lowering_readiness_surface.h"
+    drift_surface.write_text(
+        contract.ARTIFACTS["parse_surface_header"].read_text(encoding="utf-8")
+        + "\ntoolchain_runtime_ga_operations_advanced_diagnostics_consistent = true;\n",
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["parse_surface_header"] = drift_surface
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M248-D023-FORB-01" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_advanced_diagnostics_failure_reason_is_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    drift_surface = tmp_path / "objc3_parse_lowering_readiness_surface.h"
+    drift_surface.write_text(
+        contract.ARTIFACTS["parse_surface_header"].read_text(encoding="utf-8").replace(
+            "toolchain/runtime GA operations advanced diagnostics workpack is not ready",
+            "toolchain/runtime GA operations advanced diagnostics shard2 drift marker",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    artifact_overrides = dict(contract.ARTIFACTS)
+    artifact_overrides["parse_surface_header"] = drift_surface
+    monkeypatch.setattr(contract, "ARTIFACTS", artifact_overrides)
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M248-D023-SUR-08" for failure in payload["failures"])
