@@ -12,7 +12,8 @@ Dependencies: `M247-A006`
 Freeze lane-A frontend profiling and hot-path decomposition diagnostics
 hardening prerequisites for M247 so dependency continuity stays explicit,
 deterministic, and fail-closed, including code/spec anchors and milestone
-optimization improvements as mandatory scope inputs.
+optimization improvements as mandatory scope inputs. Performance profiling and
+compile-time budget evidence remain mandatory diagnostics hardening inputs.
 
 ## Scope Anchors
 

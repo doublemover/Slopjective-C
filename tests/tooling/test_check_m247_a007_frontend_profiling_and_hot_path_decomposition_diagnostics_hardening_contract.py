@@ -67,7 +67,7 @@ def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_pat
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M247-A007-DOC-EXP-04" for failure in payload["failures"])
+    assert any(failure["check_id"] == "M247-A007-DOC-EXP-05" for failure in payload["failures"])
 
 
 def test_contract_fails_closed_when_packet_drops_mandatory_scope_wording(tmp_path: Path) -> None:

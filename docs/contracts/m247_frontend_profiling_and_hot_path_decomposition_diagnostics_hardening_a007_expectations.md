@@ -13,6 +13,8 @@ code/spec anchors and milestone optimization improvements as mandatory scope inp
 ## Dependency Scope
 
 - Issue `#6714` defines canonical lane-A diagnostics hardening scope.
+- Performance profiling and compile-time budgets are mandatory diagnostics
+  hardening scope inputs for lane-A contract gating.
 - Dependencies: `M247-A006`
 - `M247-A006` remains a mandatory dependency token while lane-A edge-case
   expansion and robustness assets are pending GH seed.

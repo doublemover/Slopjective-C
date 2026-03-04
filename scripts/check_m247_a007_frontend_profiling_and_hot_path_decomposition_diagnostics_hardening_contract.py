@@ -59,18 +59,22 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "Contract ID: `objc3c-frontend-profiling-hot-path-decomposition-diagnostics-hardening/m247-a007-v1`",
     ),
     SnippetCheck("M247-A007-DOC-EXP-03", "Issue `#6714` defines canonical lane-A diagnostics hardening scope."),
-    SnippetCheck("M247-A007-DOC-EXP-04", "Dependencies: `M247-A006`"),
-    SnippetCheck("M247-A007-DOC-EXP-05", "`M247-A006` remains a mandatory dependency token"),
     SnippetCheck(
-        "M247-A007-DOC-EXP-06",
+        "M247-A007-DOC-EXP-04",
+        "Performance profiling and compile-time budgets are mandatory diagnostics",
+    ),
+    SnippetCheck("M247-A007-DOC-EXP-05", "Dependencies: `M247-A006`"),
+    SnippetCheck("M247-A007-DOC-EXP-06", "`M247-A006` remains a mandatory dependency token"),
+    SnippetCheck(
+        "M247-A007-DOC-EXP-07",
         "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
     ),
-    SnippetCheck("M247-A007-DOC-EXP-07", "`check:objc3c:m247-a007-lane-a-readiness`"),
+    SnippetCheck("M247-A007-DOC-EXP-08", "`check:objc3c:m247-a007-lane-a-readiness`"),
     SnippetCheck(
-        "M247-A007-DOC-EXP-08",
+        "M247-A007-DOC-EXP-09",
         "`tmp/reports/m247/M247-A007/frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract_summary.json`",
     ),
-    SnippetCheck("M247-A007-DOC-EXP-09", "`npm run check:objc3c:m247-a006-lane-a-readiness`"),
+    SnippetCheck("M247-A007-DOC-EXP-10", "`npm run check:objc3c:m247-a006-lane-a-readiness`"),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -93,6 +97,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M247-A007-DOC-PKT-09",
+        "compile-time budget evidence remain mandatory diagnostics hardening inputs.",
+    ),
+    SnippetCheck(
+        "M247-A007-DOC-PKT-10",
         "tmp/reports/m247/M247-A007/frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract_summary.json",
     ),
 )
