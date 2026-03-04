@@ -1,0 +1,51 @@
+# M248-C019 Replay Harness and Artifact Contracts Integration Closeout and Gate Sign-off Packet
+
+Packet: `M248-C019`
+Milestone: `M248`
+Lane: `C`
+Issue: `#6835`
+Dependencies: `M248-C018`
+
+## Purpose
+
+Add lane-C integration closeout and gate sign-off contract governance
+on top of the C018 advanced-diagnostics closure so dependency chaining and readiness
+wiring remain deterministic and fail closed against drift.
+Code/spec anchors and milestone optimization improvements are mandatory scope inputs.
+
+## Scope Anchors
+
+- Contract:
+  `docs/contracts/m248_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_c019_expectations.md`
+- Checker:
+  `scripts/check_m248_c019_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract.py`
+- Tooling tests:
+  `tests/tooling/test_check_m248_c019_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract.py`
+- Readiness runner:
+  `scripts/run_m248_c019_lane_c_readiness.py`
+- Package wiring:
+  - `check:objc3c:m248-c019-replay-harness-artifact-contracts-integration-closeout-and-gate-signoff-contract`
+  - `test:tooling:m248-c019-replay-harness-artifact-contracts-integration-closeout-and-gate-signoff-contract`
+  - `check:objc3c:m248-c019-lane-c-readiness`
+
+## Dependency Anchors (M248-C018)
+
+- `docs/contracts/m248_replay_harness_and_artifact_contracts_advanced_conformance_workpack_shard1_c018_expectations.md`
+- `spec/planning/compiler/m248/m248_c018_replay_harness_and_artifact_contracts_advanced_conformance_workpack_shard1_packet.md`
+- `scripts/check_m248_c018_replay_harness_and_artifact_contracts_advanced_conformance_workpack_shard1_contract.py`
+- `tests/tooling/test_check_m248_c018_replay_harness_and_artifact_contracts_advanced_conformance_workpack_shard1_contract.py`
+- `scripts/run_m248_c018_lane_c_readiness.py`
+
+## Gate Commands
+
+- `python scripts/run_m248_c018_lane_c_readiness.py`
+- `python scripts/check_m248_c019_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract.py`
+- `python scripts/check_m248_c019_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract.py --emit-json`
+- `python -m pytest tests/tooling/test_check_m248_c019_replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract.py -q`
+- `python scripts/run_m248_c019_lane_c_readiness.py`
+
+## Required Evidence
+
+- `tmp/reports/m248/M248-C019/replay_harness_and_artifact_contracts_integration_closeout_and_gate_signoff_contract_summary.json`
+
+
