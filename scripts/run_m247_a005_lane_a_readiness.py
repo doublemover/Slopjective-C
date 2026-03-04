@@ -16,6 +16,7 @@ COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
         sys.executable,
         "scripts/check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py",
+        "--emit-json",
     ),
     (
         sys.executable,

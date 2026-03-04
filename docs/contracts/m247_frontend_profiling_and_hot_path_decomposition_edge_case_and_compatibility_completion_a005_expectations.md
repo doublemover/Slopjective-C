@@ -8,9 +8,12 @@ Scope: M247 lane-A edge-case and compatibility completion continuity for fronten
 
 Fail closed unless lane-A edge-case and compatibility completion dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6712`
+
 ## Dependency Scope
 
-- Issue `#6712` defines canonical lane-A edge-case and compatibility completion scope.
 - Dependencies: `M247-A004`
 - M247-A004 core feature expansion anchors remain mandatory prerequisites:
   - `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_a004_expectations.md`
@@ -40,7 +43,7 @@ Fail closed unless lane-A edge-case and compatibility completion dependency anch
 
 ## Validation
 
-- `python scripts/check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py`
+- `python scripts/check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py -q`
 - `python scripts/run_m247_a005_lane_a_readiness.py`
 

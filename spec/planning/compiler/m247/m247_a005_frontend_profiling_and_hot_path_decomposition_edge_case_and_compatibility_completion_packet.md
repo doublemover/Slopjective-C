@@ -39,7 +39,7 @@ Freeze lane-A edge-case and compatibility completion prerequisites for M247 fron
 
 ## Gate Commands
 
-- `python scripts/check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py`
+- `python scripts/check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a005_frontend_profiling_and_hot_path_decomposition_edge_case_and_compatibility_completion_contract.py -q`
 - `python scripts/run_m247_a005_lane_a_readiness.py`
 
