@@ -12,6 +12,12 @@ across
 dependency surfaces, including code/spec anchors and milestone optimization
 improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Primary issue anchor: `#5082`
+- Lane-C C006 edge-case expansion and robustness scope remains pinned to
+  issue `#5082` for dependency-chain drift detection.
+
 ## Dependency Scope
 
 - Issue `#5082` defines canonical lane-C edge-case expansion and robustness scope.
@@ -55,6 +61,7 @@ improvements as mandatory scope inputs.
 
 ## Validation
 
+- `python scripts/check_m246_c006_ir_optimization_pass_wiring_and_validation_edge_case_expansion_and_robustness_contract.py --emit-json --summary-out tmp/reports/m246/M246-C006/ir_optimization_pass_wiring_validation_edge_case_expansion_and_robustness_summary.json`
 - `python scripts/check_m246_c006_ir_optimization_pass_wiring_and_validation_edge_case_expansion_and_robustness_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_c006_ir_optimization_pass_wiring_and_validation_edge_case_expansion_and_robustness_contract.py -q`
 - `python scripts/run_m246_c006_lane_c_readiness.py`
