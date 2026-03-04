@@ -737,6 +737,13 @@ Current-state note:
   and `package.json` so profiling diagnostics and compile-time budget
   contract-gating evidence remains deterministic and fail-closed while lane-A
   A006 assets are pending GH seed.
+- M247 lane-A A008 frontend profiling and hot-path decomposition recovery and determinism hardening anchors
+  dependency reference (`M247-A007`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_a008_expectations.md`,
+  `spec/planning/compiler/m247/m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery replay determinism and compile-time budget
+  contract-gating evidence remains deterministic and fail-closed while lane-A
+  A007 assets are pending GH seed.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,

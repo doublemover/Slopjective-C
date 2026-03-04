@@ -289,6 +289,10 @@ At minimum, the pass-graph gate shall validate:
   shall preserve explicit lane-A dependency anchor (`M247-A006`) and fail closed
   when dependency references, profiling diagnostics, or compile-time budget
   evidence commands drift.
+- frontend profiling and hot-path decomposition recovery and determinism hardening wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A007`) and fail closed
+  when dependency references, recovery replay proofs, or compile-time budget
+  evidence commands drift.
 - runtime/link/build throughput optimization core-feature expansion wiring
   shall preserve explicit lane-D dependency anchor (`M247-D003`) and fail
   closed when dependency references, pending-token continuity, or throughput
