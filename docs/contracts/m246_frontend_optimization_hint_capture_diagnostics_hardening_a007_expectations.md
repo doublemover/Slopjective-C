@@ -8,9 +8,12 @@ Scope: M246 lane-A diagnostics hardening continuity for frontend optimization hi
 
 Fail closed unless lane-A diagnostics hardening dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5054`
+
 ## Dependency Scope
 
-- Issue `#5054` defines canonical lane-A diagnostics hardening scope.
 - Dependencies: `M246-A006`
 - M246-A006 edge-case expansion and robustness completion anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_edge_case_expansion_and_robustness_a006_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A diagnostics hardening dependency anchors remain explic
 
 - `scripts/run_m246_a007_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a006_lane_a_readiness.py`
-  - `python scripts/check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py`
+  - `python scripts/check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py -q`
 
 ## Milestone Optimization Inputs
@@ -47,4 +50,3 @@ Fail closed unless lane-A diagnostics hardening dependency anchors remain explic
 ## Evidence Path
 
 - `tmp/reports/m246/M246-A007/frontend_optimization_hint_capture_diagnostics_hardening_summary.json`
-

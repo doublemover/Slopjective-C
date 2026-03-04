@@ -52,6 +52,21 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_a007() -> None:
     assert normalized.startswith("tmp/reports/m246/M246-A007/")
 
 
+def test_contract_emit_json_parity_with_summary_file(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout_payload = json.loads(capsys.readouterr().out)
+    file_payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert stdout_payload == file_payload
+    assert stdout_payload["mode"] == contract.MODE
+    assert stdout_payload["ok"] is True
+
+
 def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_path: Path) -> None:
     drift_doc = tmp_path / "m246_a007_expectations.md"
     drift_doc.write_text(
@@ -90,6 +105,26 @@ def test_contract_fails_closed_when_packet_issue_token_drifts(tmp_path: Path) ->
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-A007-DOC-PKT-04" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_expectations_issue_token_drifts(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "m246_a007_expectations_issue.md"
+    drift_doc.write_text(
+        replace_first(
+            contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+            "- Issue: `#5054`",
+            "- Issue: `#5000`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-A007-DOC-EXP-03" for failure in payload["failures"])
 
 
 def test_contract_fails_closed_when_runner_chain_drops_a006_prerequisite(tmp_path: Path) -> None:
@@ -173,3 +208,27 @@ def test_contract_summary_payload_contract_and_determinism(tmp_path: Path) -> No
     assert isinstance(payload["checks_passed"], int)
     assert isinstance(payload["failures"], list)
 
+
+def test_contract_failures_are_sorted_deterministically(tmp_path: Path) -> None:
+    drift_expectations = tmp_path / "expectations.md"
+    drift_expectations.write_text("# drift\n", encoding="utf-8")
+    drift_packet = tmp_path / "packet.md"
+    drift_packet.write_text("# drift\n", encoding="utf-8")
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(
+        [
+            "--expectations-doc",
+            str(drift_expectations),
+            "--packet-doc",
+            str(drift_packet),
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    sorted_failures = sorted(failures, key=lambda item: (item["artifact"], item["check_id"], item["detail"]))
+    assert failures == sorted_failures

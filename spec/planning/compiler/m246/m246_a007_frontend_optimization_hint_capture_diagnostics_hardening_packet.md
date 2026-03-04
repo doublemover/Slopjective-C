@@ -39,11 +39,10 @@ Freeze lane-A diagnostics hardening prerequisites for M246 frontend optimization
 
 ## Gate Commands
 
-- `python scripts/check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py`
+- `python scripts/check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a007_frontend_optimization_hint_capture_diagnostics_hardening_contract.py -q`
 - `python scripts/run_m246_a007_lane_a_readiness.py`
 
 ## Evidence Output
 
 - `tmp/reports/m246/M246-A007/frontend_optimization_hint_capture_diagnostics_hardening_summary.json`
-
