@@ -37,7 +37,7 @@ Freeze lane-A core feature implementation prerequisites for M246 frontend optimi
 
 ## Gate Commands
 
-- `python scripts/check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py`
+- `python scripts/check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py -q`
 - `python scripts/run_m246_a003_lane_a_readiness.py`
 

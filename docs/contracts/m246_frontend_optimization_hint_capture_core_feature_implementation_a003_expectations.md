@@ -8,9 +8,12 @@ Scope: M246 lane-A core feature implementation continuity for frontend optimizat
 
 Fail closed unless lane-A core feature implementation dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5050`
+
 ## Dependency Scope
 
-- Issue `#5050` defines canonical lane-A core feature implementation scope.
 - Dependencies: `M246-A002`
 - M246-A002 modular split/scaffolding anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_modular_split_scaffolding_a002_expectations.md`
@@ -39,7 +42,7 @@ Fail closed unless lane-A core feature implementation dependency anchors remain 
 
 ## Validation
 
-- `python scripts/check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py`
+- `python scripts/check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a003_frontend_optimization_hint_capture_core_feature_implementation_contract.py -q`
 - `python scripts/run_m246_a003_lane_a_readiness.py`
 
