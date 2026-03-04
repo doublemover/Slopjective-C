@@ -79,6 +79,10 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M246-D001-DOC-EXP-08",
         "`tmp/reports/m246/M246-D001/toolchain_integration_optimization_controls_contract_summary.json`",
     ),
+    SnippetCheck(
+        "M246-D001-DOC-EXP-09",
+        "`python scripts/check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py --emit-json`",
+    ),
 )
 
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -94,6 +98,10 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "`check:objc3c:m246-d001-toolchain-integration-optimization-controls-contract`",
     ),
     SnippetCheck("M246-D001-DOC-PKT-06", "`compile:objc3c`"),
+    SnippetCheck(
+        "M246-D001-DOC-PKT-07",
+        "`python scripts/check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py --emit-json`",
+    ),
 )
 
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -174,6 +182,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -192,12 +201,26 @@ def check_doc_contract(
         findings.append(Finding(display_path(path), exists_check_id, f"required path is not a file: {display_path(path)}"))
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(Finding(display_path(path), exists_check_id, f"unable to read required document: {exc}"))
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
             findings.append(Finding(display_path(path), snippet.check_id, f"missing required snippet: {snippet.snippet}"))
     return checks_total, findings
+
+
+def write_summary(summary_path: Path, payload: object) -> tuple[bool, str]:
+    try:
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(canonical_json(payload), encoding="utf-8")
+    except OSError as exc:
+        return False, f"unable to write summary file: {exc}"
+    return True, ""
 
 
 def run(argv: Sequence[str]) -> int:
@@ -217,6 +240,10 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(
+        failures,
+        key=lambda finding: (finding.artifact, finding.check_id, finding.detail),
+    )
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -227,14 +254,26 @@ def run(argv: Sequence[str]) -> int:
     }
 
     summary_path = args.summary_out if args.summary_out.is_absolute() else ROOT / args.summary_out
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
+    summary_ok, summary_error = write_summary(summary_path, summary_payload)
+    if not summary_ok:
+        print(
+            f"[M246-D001-SUMMARY-WRITE-01] {display_path(summary_path)}: {summary_error}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.emit_json:
+        print(canonical_json(summary_payload), end="")
 
     if failures:
-        for finding in failures:
-            print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+        if not args.emit_json:
+            print(f"{MODE}: contract drift detected ({len(failures)} failed check(s)).", file=sys.stderr)
+            for finding in failures:
+                print(f"- [{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

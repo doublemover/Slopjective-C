@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = (
     ROOT / "scripts" / "check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py"
@@ -20,6 +22,11 @@ if SPEC is None or SPEC.loader is None:
 contract = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = contract
 SPEC.loader.exec_module(contract)
+
+
+def replace_once(text: str, old: str, new: str) -> str:
+    assert old in text
+    return text.replace(old, new, 1)
 
 
 def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
@@ -39,6 +46,18 @@ def test_contract_default_summary_out_is_under_tmp_reports_m246_d001() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m246/M246-D001/")
+
+
+def test_contract_emits_json_when_requested(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--summary-out", str(summary_out), "--emit-json"])
+
+    assert exit_code == 0
+    stdout = capsys.readouterr().out
+    payload = json.loads(stdout)
+    assert payload["mode"] == contract.MODE
+    assert payload["ok"] is True
+    assert stdout == contract.canonical_json(payload)
 
 
 def test_contract_fails_closed_when_expectations_drop_issue_anchor(tmp_path: Path) -> None:
@@ -63,6 +82,46 @@ def test_contract_fails_closed_when_expectations_drop_issue_anchor(tmp_path: Pat
     assert any(failure["check_id"] == "M246-D001-DOC-EXP-03" for failure in payload["failures"])
 
 
+def test_contract_fails_closed_when_packet_issue_anchor_drifts(tmp_path: Path) -> None:
+    drift_packet = tmp_path / "m246_d001_packet.md"
+    drift_packet.write_text(
+        replace_once(
+            contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
+            "Issue: `#5106`",
+            "Issue: `#5000`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--packet-doc", str(drift_packet), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-D001-DOC-PKT-03" for failure in payload["failures"])
+
+
+def test_contract_fails_closed_when_packet_dependency_baseline_drifts(tmp_path: Path) -> None:
+    drift_packet = tmp_path / "m246_d001_packet.md"
+    drift_packet.write_text(
+        replace_once(
+            contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
+            "Dependencies: none",
+            "Dependencies: `M246-D099`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--packet-doc", str(drift_packet), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any(failure["check_id"] == "M246-D001-DOC-PKT-04" for failure in payload["failures"])
+
+
 def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Path) -> None:
     drift_package = tmp_path / "package.json"
     drift_package.write_text(
@@ -84,6 +143,32 @@ def test_contract_fails_closed_when_package_readiness_script_drifts(tmp_path: Pa
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M246-D001-PKG-03" for failure in payload["failures"])
+
+
+def test_contract_failures_are_sorted_deterministically(tmp_path: Path) -> None:
+    drift_doc = tmp_path / "m246_d001_expectations.md"
+    drift_doc.write_text(
+        replace_once(
+            replace_once(
+                contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
+                "Issue `#5106` defines canonical lane-D contract freeze scope.",
+                "Issue `#5000` defines canonical lane-D contract freeze scope.",
+            ),
+            "Dependencies: none",
+            "Dependencies: `M246-D099`",
+        ),
+        encoding="utf-8",
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = contract.run(["--expectations-doc", str(drift_doc), "--summary-out", str(summary_out)])
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    failures = payload["failures"]
+    assert failures == sorted(failures, key=lambda failure: (failure["artifact"], failure["check_id"], failure["detail"]))
+    assert any(failure["check_id"] == "M246-D001-DOC-EXP-03" for failure in failures)
+    assert any(failure["check_id"] == "M246-D001-DOC-EXP-04" for failure in failures)
 
 
 def test_contract_fails_closed_when_package_drops_perf_budget_input(tmp_path: Path) -> None:

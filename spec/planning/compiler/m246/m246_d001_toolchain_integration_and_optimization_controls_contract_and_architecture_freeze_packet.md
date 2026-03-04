@@ -37,7 +37,7 @@ Freeze lane-D toolchain integration and optimization controls contract prerequis
 
 ## Gate Commands
 
-- `python scripts/check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_d001_toolchain_integration_and_optimization_controls_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-d001-lane-d-readiness`
 
