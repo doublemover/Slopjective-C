@@ -1426,6 +1426,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a005_frontend_behavior_parity_across_toolchains_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case and compatibility completion continuity remains
   deterministic and fail-closed against `M245-A004` dependency drift.
+- M245 lane-A A006 frontend behavior parity edge-case expansion and robustness anchors
+  explicit lane-A edge-case robustness artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_edge_case_expansion_and_robustness_a006_expectations.md`,
+  `spec/planning/compiler/m245/m245_a006_frontend_behavior_parity_across_toolchains_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case expansion and robustness continuity remains
+  deterministic and fail-closed against `M245-A005` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
@@ -1444,6 +1450,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b005_semantic_parity_and_platform_constraints_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case and compatibility completion semantic continuity remains
   deterministic and fail-closed against `M245-B004` dependency drift.
+- M245 lane-B B006 semantic parity/platform constraints edge-case expansion and robustness
+  anchors explicit lane-B edge-case robustness artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_edge_case_expansion_and_robustness_b006_expectations.md`,
+  `spec/planning/compiler/m245/m245_b006_semantic_parity_and_platform_constraints_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case expansion and robustness semantic continuity remains
+  deterministic and fail-closed against `M245-B005` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1492,6 +1504,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c005_lowering_ir_portability_contracts_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case and compatibility completion portability continuity remains
   deterministic and fail-closed against `M245-C004` dependency drift.
+- M245 lane-C C006 lowering/IR portability contracts edge-case expansion and robustness
+  anchors explicit lane-C edge-case robustness artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_edge_case_expansion_and_robustness_c006_expectations.md`,
+  `spec/planning/compiler/m245/m245_c006_lowering_ir_portability_contracts_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case expansion and robustness portability continuity remains
+  deterministic and fail-closed against `M245-C005` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1516,6 +1534,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d005_build_link_runtime_reproducibility_operations_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case and compatibility completion reproducibility continuity remains
   deterministic and fail-closed against `M245-D004` dependency drift.
+- M245 lane-D D006 build/link/runtime reproducibility edge-case expansion and robustness
+  anchors explicit lane-D edge-case robustness artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_edge_case_expansion_and_robustness_d006_expectations.md`,
+  `spec/planning/compiler/m245/m245_d006_build_link_runtime_reproducibility_operations_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case expansion and robustness reproducibility continuity remains
+  deterministic and fail-closed against `M245-D005` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1539,6 +1563,11 @@ Current-state note:
   `M245-C003`, and `M245-D004`) in lane-E edge-case/compatibility contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against edge-case compatibility handoff drift.
+- M245 lane-E E006 portability gate/release checklist edge-case expansion and robustness
+  anchors dependency references (`M245-E005`, `M245-A002`, `M245-B003`,
+  `M245-C003`, and `M245-D004`) in lane-E edge-case robustness contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against edge-case robustness handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
