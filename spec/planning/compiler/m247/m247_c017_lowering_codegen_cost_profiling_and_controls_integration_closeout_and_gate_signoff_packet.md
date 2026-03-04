@@ -1,4 +1,4 @@
-# M247-C017 Lowering/Codegen Cost Profiling and Controls Advanced Edge Compatibility Workpack (Shard 1) Packet
+# M247-C017 Lowering/Codegen Cost Profiling and Controls Integration Closeout and Gate Sign-Off Packet
 
 Packet: `M247-C017`
 Milestone: `M247`
@@ -9,11 +9,10 @@ Dependencies: `M247-C016`
 
 ## Purpose
 
-Freeze lane-C lowering/codegen cost profiling and controls advanced edge
-compatibility workpack (shard 1) continuity for M247 so `M247-C016`
-dependency surfaces and governance remain deterministic and fail-closed, with
-code/spec anchors and milestone optimization improvements treated as mandatory
-scope inputs.
+Freeze lane-C lowering/codegen cost profiling and controls integration closeout
+and gate sign-off continuity for M247 so `M247-C016` dependency surfaces and
+governance remain deterministic and fail-closed, with code/spec anchors and
+milestone optimization improvements treated as mandatory scope inputs.
 
 ## Scope Anchors
 
@@ -29,12 +28,12 @@ scope inputs.
 ## Dependency Anchors
 
 - Primary dependency: `M247-C016`
-- Predecessor anchors inherited via `M247-C016`: `M247-C001`, `M247-C002`, `M247-C003`, `M247-C004`, `M247-C005`, `M247-C006`, `M247-C007`, `M247-C008`, `M247-C009`, `M247-C010`, `M247-C011`, `M247-C012`, `M247-C013`, `M247-C015`.
+- Predecessor anchors inherited via `M247-C016`: `M247-C001`, `M247-C002`, `M247-C003`, `M247-C004`, `M247-C005`, `M247-C006`, `M247-C007`, `M247-C008`, `M247-C009`, `M247-C010`, `M247-C011`, `M247-C012`, `M247-C013`, `M247-C014`, `M247-C015`.
 - Dependency anchors (`M247-C016`):
-  - `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_advanced_core_workpack_shard_1_c015_expectations.md`
-  - `spec/planning/compiler/m247/m247_c015_lowering_codegen_cost_profiling_and_controls_advanced_core_workpack_shard_1_packet.md`
-  - `scripts/check_m247_c015_lowering_codegen_cost_profiling_and_controls_advanced_core_workpack_shard_1_contract.py`
-  - `tests/tooling/test_check_m247_c015_lowering_codegen_cost_profiling_and_controls_advanced_core_workpack_shard_1_contract.py`
+  - `docs/contracts/m247_lane_c_lowering_codegen_cost_profiling_and_controls_advanced_edge_compatibility_workpack_shard_1_c016_expectations.md`
+  - `spec/planning/compiler/m247/m247_c016_lowering_codegen_cost_profiling_and_controls_advanced_edge_compatibility_workpack_shard_1_packet.md`
+  - `scripts/check_m247_c016_lowering_codegen_cost_profiling_and_controls_advanced_edge_compatibility_workpack_shard_1_contract.py`
+  - `tests/tooling/test_check_m247_c016_lowering_codegen_cost_profiling_and_controls_advanced_edge_compatibility_workpack_shard_1_contract.py`
   - `scripts/run_m247_c016_lane_c_readiness.py`
 
 ## Milestone Optimization Improvements (Mandatory Scope Inputs)
@@ -53,4 +52,4 @@ scope inputs.
 
 ## Evidence Output
 
-- `tmp/reports/m247/M247-C017/lowering_codegen_cost_profiling_and_controls_advanced_edge_compatibility_workpack_shard_1_summary.json`
+- `tmp/reports/m247/M247-C017/lowering_codegen_cost_profiling_and_controls_integration_closeout_and_gate_signoff_summary.json`
