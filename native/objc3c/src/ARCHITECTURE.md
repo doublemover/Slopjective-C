@@ -834,6 +834,12 @@ Current-state note:
   `spec/planning/compiler/m247/m247_b015_semantic_hot_path_analysis_and_budgeting_advanced_core_workpack_shard_1_packet.md`,
   and `package.json` so `M247-B014` dependency continuity and advanced core
   workpack (shard 1) evidence remain fail-closed.
+- M247 lane-A A001 frontend profiling and hot-path decomposition contract and architecture freeze anchors
+  dependency token (`none`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m247/m247_a001_frontend_profiling_and_hot_path_decomposition_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so lane-A contract-freeze profiling governance evidence
+  remains deterministic and fail-closed before modular split stages advance.
 - M247 lane-A A006 frontend profiling and hot-path decomposition edge-case
   expansion and robustness anchors dependency reference (`M247-A005`) in
   `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_edge_case_expansion_and_robustness_a006_expectations.md`,

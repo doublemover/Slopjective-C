@@ -288,6 +288,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M247-B013` dependency continuity so lane-B release-candidate/replay dry-run contract-gating evidence remains fail-closed.
     - deterministic lane-B semantic hot-path analysis/budgeting advanced core workpack (shard 1) metadata anchors for `M247-B015`
       with explicit `M247-B014` dependency continuity so lane-B advanced core workpack (shard 1) contract-gating evidence remains fail-closed.
+    - deterministic lane-A frontend profiling and hot-path decomposition contract-freeze metadata anchors for `M247-A001`
+      with explicit dependency token (`none`) so parser/AST profiling and hot-path decomposition evidence and compile-time budget continuity remain fail-closed before lane-A modular split stages advance.
     - deterministic lane-A frontend profiling and hot-path decomposition
       edge-case expansion/robustness metadata anchors for `M247-A006` with
       explicit `M247-A005` dependency continuity so parser-boundary profiling
