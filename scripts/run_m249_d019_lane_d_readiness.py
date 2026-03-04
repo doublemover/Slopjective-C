@@ -11,7 +11,7 @@ from typing import Sequence
 COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
         sys.executable,
-        "scripts/run_m249_d017_lane_d_readiness.py",
+        "scripts/run_m249_d018_lane_d_readiness.py",
     ),
     (
         sys.executable,

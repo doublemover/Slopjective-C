@@ -5,7 +5,7 @@ Issue: `#6946`
 Milestone: `M249`
 Lane: `D`
 Freeze date: `2026-03-04`
-Dependencies: `M249-D017`
+Dependencies: `M249-D018`
 
 ## Purpose
 
@@ -24,13 +24,13 @@ optimization improvements as mandatory scope inputs.
   `tests/tooling/test_check_m249_d019_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_contract.py`
 - Readiness runner:
   `scripts/run_m249_d019_lane_d_readiness.py`
-  - Chains through `python scripts/run_m249_d017_lane_d_readiness.py` before D019 checks.
-- Dependency anchors from `M249-D017`:
-  - `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_d017_expectations.md`
-  - `spec/planning/compiler/m249/m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_packet.md`
-  - `scripts/check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py`
-  - `tests/tooling/test_check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py`
-  - `scripts/run_m249_d017_lane_d_readiness.py`
+  - Chains through `python scripts/run_m249_d018_lane_d_readiness.py` before D019 checks.
+- Dependency anchors from `M249-D018`:
+  - `docs/contracts/m249_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_d018_expectations.md`
+  - `spec/planning/compiler/m249/m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_packet.md`
+  - `scripts/check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py`
+  - `tests/tooling/test_check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py`
+  - `scripts/run_m249_d018_lane_d_readiness.py`
 - Existing build/readiness anchors (`package.json`):
   - `check:objc3c:m249-d019-installer-runtime-operations-support-tooling-advanced-integration-workpack-shard1-contract`
   - `test:tooling:m249-d019-installer-runtime-operations-support-tooling-advanced-integration-workpack-shard1-contract`

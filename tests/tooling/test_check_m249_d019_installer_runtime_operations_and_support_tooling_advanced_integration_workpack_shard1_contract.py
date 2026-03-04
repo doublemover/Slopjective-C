@@ -57,7 +57,7 @@ def test_contract_fails_closed_when_expectations_dependency_token_drifts(tmp_pat
     drift_doc.write_text(
         replace_once(
             contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
-            "Dependencies: `M249-D017`",
+            "Dependencies: `M249-D018`",
             "Dependencies: `M249-D099`",
         ),
         encoding="utf-8",
@@ -92,12 +92,12 @@ def test_contract_fails_closed_when_packet_mandatory_scope_wording_drifts(tmp_pa
     assert any(failure["check_id"] == "M249-D019-DOC-PKT-07" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_readiness_runner_no_longer_chains_d017(tmp_path: Path) -> None:
+def test_contract_fails_closed_when_readiness_runner_no_longer_chains_d018(tmp_path: Path) -> None:
     drift_runner = tmp_path / "run_m249_d019_lane_d_readiness.py"
     drift_runner.write_text(
         replace_once(
             contract.DEFAULT_READINESS_RUNNER.read_text(encoding="utf-8"),
-            "scripts/run_m249_d017_lane_d_readiness.py",
+            "scripts/run_m249_d018_lane_d_readiness.py",
             "scripts/run_m249_d007_lane_d_readiness.py",
         ),
         encoding="utf-8",
@@ -132,12 +132,12 @@ def test_contract_fails_closed_when_package_readiness_script_drifted(
     assert any(failure["check_id"] == "M249-D019-PKG-03" for failure in payload["failures"])
 
 
-def test_contract_fails_closed_when_d017_checker_dependency_path_missing(tmp_path: Path) -> None:
+def test_contract_fails_closed_when_d018_checker_dependency_path_missing(tmp_path: Path) -> None:
     summary_out = tmp_path / "summary.json"
     exit_code = contract.run(
         [
-            "--d017-checker",
-            str(tmp_path / "missing_d017_checker.py"),
+            "--d018-checker",
+            str(tmp_path / "missing_d018_checker.py"),
             "--summary-out",
             str(summary_out),
         ]
@@ -146,4 +146,4 @@ def test_contract_fails_closed_when_d017_checker_dependency_path_missing(tmp_pat
     assert exit_code == 1
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
-    assert any(failure["check_id"] == "M249-D019-DEP-D017-ARG-01" for failure in payload["failures"])
+    assert any(failure["check_id"] == "M249-D019-DEP-D018-ARG-01" for failure in payload["failures"])

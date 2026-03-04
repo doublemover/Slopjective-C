@@ -27,32 +27,32 @@ DEFAULT_PACKET_DOC = (
     / "m249"
     / "m249_d019_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_packet.md"
 )
-DEFAULT_D017_EXPECTATIONS_DOC = (
+DEFAULT_D018_EXPECTATIONS_DOC = (
     ROOT
     / "docs"
     / "contracts"
-    / "m249_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_d017_expectations.md"
+    / "m249_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_d018_expectations.md"
 )
-DEFAULT_D017_PACKET_DOC = (
+DEFAULT_D018_PACKET_DOC = (
     ROOT
     / "spec"
     / "planning"
     / "compiler"
     / "m249"
-    / "m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_packet.md"
+    / "m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_packet.md"
 )
-DEFAULT_D017_CHECKER = (
+DEFAULT_D018_CHECKER = (
     ROOT
     / "scripts"
-    / "check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py"
+    / "check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py"
 )
-DEFAULT_D017_TEST = (
+DEFAULT_D018_TEST = (
     ROOT
     / "tests"
     / "tooling"
-    / "test_check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py"
+    / "test_check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py"
 )
-DEFAULT_D017_READINESS_RUNNER = ROOT / "scripts" / "run_m249_d017_lane_d_readiness.py"
+DEFAULT_D018_READINESS_RUNNER = ROOT / "scripts" / "run_m249_d018_lane_d_readiness.py"
 DEFAULT_READINESS_RUNNER = ROOT / "scripts" / "run_m249_d019_lane_d_readiness.py"
 DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
 DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
@@ -85,11 +85,11 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M249-D019-DOC-EXP-02",
         "Contract ID: `objc3c-installer-runtime-operations-support-tooling-advanced-integration-workpack-shard1/m249-d019-v1`",
     ),
-    SnippetCheck("M249-D019-DOC-EXP-03", "Dependencies: `M249-D017`"),
+    SnippetCheck("M249-D019-DOC-EXP-03", "Dependencies: `M249-D018`"),
     SnippetCheck("M249-D019-DOC-EXP-04", "Issue: `#6946`"),
     SnippetCheck(
         "M249-D019-DOC-EXP-05",
-        "scripts/check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py",
+        "scripts/check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py",
     ),
     SnippetCheck("M249-D019-DOC-EXP-06", "scripts/run_m249_d019_lane_d_readiness.py"),
     SnippetCheck("M249-D019-DOC-EXP-07", "code/spec anchors and milestone optimization"),
@@ -106,14 +106,14 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck("M249-D019-DOC-PKT-02", "Packet: `M249-D019`"),
     SnippetCheck("M249-D019-DOC-PKT-03", "Issue: `#6946`"),
-    SnippetCheck("M249-D019-DOC-PKT-04", "Dependencies: `M249-D017`"),
+    SnippetCheck("M249-D019-DOC-PKT-04", "Dependencies: `M249-D018`"),
     SnippetCheck(
         "M249-D019-DOC-PKT-05",
-        "scripts/check_m249_d017_installer_runtime_operations_and_support_tooling_advanced_diagnostics_workpack_shard1_contract.py",
+        "scripts/check_m249_d018_installer_runtime_operations_and_support_tooling_advanced_conformance_workpack_shard1_contract.py",
     ),
     SnippetCheck(
         "M249-D019-DOC-PKT-06",
-        "python scripts/run_m249_d017_lane_d_readiness.py",
+        "python scripts/run_m249_d018_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M249-D019-DOC-PKT-07",
@@ -121,18 +121,18 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
 )
 
-D017_EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
+D018_EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
-        "M249-D019-D017-DOC-01",
-        "Contract ID: `objc3c-installer-runtime-operations-support-tooling-advanced-diagnostics-workpack-shard1/m249-d017-v1`",
+        "M249-D019-D018-DOC-01",
+        "Contract ID: `objc3c-installer-runtime-operations-support-tooling-advanced-conformance-workpack-shard1/m249-d018-v1`",
     ),
-    SnippetCheck("M249-D019-D017-DOC-02", "Dependencies: `M249-D016`"),
+    SnippetCheck("M249-D019-D018-DOC-02", "Dependencies: `M249-D017`"),
 )
 
-D017_PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck("M249-D019-D017-PKT-01", "Packet: `M249-D017`"),
-    SnippetCheck("M249-D019-D017-PKT-02", "Issue: `#6944`"),
-    SnippetCheck("M249-D019-D017-PKT-03", "Dependencies"),
+D018_PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
+    SnippetCheck("M249-D019-D018-PKT-01", "Packet: `M249-D018`"),
+    SnippetCheck("M249-D019-D018-PKT-02", "Issue: `#6945`"),
+    SnippetCheck("M249-D019-D018-PKT-03", "Dependencies: `M249-D017`"),
 )
 
 READINESS_RUNNER_SNIPPETS: tuple[SnippetCheck, ...] = (
@@ -140,7 +140,7 @@ READINESS_RUNNER_SNIPPETS: tuple[SnippetCheck, ...] = (
         "M249-D019-RUN-01",
         '"""Run M249-D019 lane-D readiness checks without deep npm nesting."""',
     ),
-    SnippetCheck("M249-D019-RUN-02", "scripts/run_m249_d017_lane_d_readiness.py"),
+    SnippetCheck("M249-D019-RUN-02", "scripts/run_m249_d018_lane_d_readiness.py"),
     SnippetCheck(
         "M249-D019-RUN-03",
         "scripts/check_m249_d019_installer_runtime_operations_and_support_tooling_advanced_integration_workpack_shard1_contract.py",
@@ -170,7 +170,7 @@ LOWERING_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M249-D019-SPC-02",
-        "explicit lane-D dependency anchors (`M249-D019`, `M249-D017`) and fail closed on",
+        "explicit lane-D dependency anchors (`M249-D019`, `M249-D018`) and fail closed on",
     ),
 )
 
@@ -181,7 +181,7 @@ METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M249-D019-META-02",
-        "with explicit `M249-D017` dependency continuity and fail-closed advanced diagnostics evidence continuity.",
+        "with explicit `M249-D018` dependency continuity and fail-closed advanced integration evidence continuity.",
     ),
 )
 
@@ -221,11 +221,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expectations-doc", type=Path, default=DEFAULT_EXPECTATIONS_DOC)
     parser.add_argument("--packet-doc", type=Path, default=DEFAULT_PACKET_DOC)
-    parser.add_argument("--d017-expectations-doc", type=Path, default=DEFAULT_D017_EXPECTATIONS_DOC)
-    parser.add_argument("--d017-packet-doc", type=Path, default=DEFAULT_D017_PACKET_DOC)
-    parser.add_argument("--d017-checker", type=Path, default=DEFAULT_D017_CHECKER)
-    parser.add_argument("--d017-test", type=Path, default=DEFAULT_D017_TEST)
-    parser.add_argument("--d017-readiness-runner", type=Path, default=DEFAULT_D017_READINESS_RUNNER)
+    parser.add_argument("--d018-expectations-doc", type=Path, default=DEFAULT_D018_EXPECTATIONS_DOC)
+    parser.add_argument("--d018-packet-doc", type=Path, default=DEFAULT_D018_PACKET_DOC)
+    parser.add_argument("--d018-checker", type=Path, default=DEFAULT_D018_CHECKER)
+    parser.add_argument("--d018-test", type=Path, default=DEFAULT_D018_TEST)
+    parser.add_argument("--d018-readiness-runner", type=Path, default=DEFAULT_D018_READINESS_RUNNER)
     parser.add_argument("--readiness-runner", type=Path, default=DEFAULT_READINESS_RUNNER)
     parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
     parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
@@ -285,8 +285,8 @@ def run(argv: Sequence[str]) -> int:
     for path, exists_check_id, snippets in (
         (args.expectations_doc, "M249-D019-DOC-EXP-EXISTS", EXPECTATIONS_SNIPPETS),
         (args.packet_doc, "M249-D019-DOC-PKT-EXISTS", PACKET_SNIPPETS),
-        (args.d017_expectations_doc, "M249-D019-D017-DOC-EXISTS", D017_EXPECTATIONS_SNIPPETS),
-        (args.d017_packet_doc, "M249-D019-D017-PKT-EXISTS", D017_PACKET_SNIPPETS),
+        (args.d018_expectations_doc, "M249-D019-D018-DOC-EXISTS", D018_EXPECTATIONS_SNIPPETS),
+        (args.d018_packet_doc, "M249-D019-D018-PKT-EXISTS", D018_PACKET_SNIPPETS),
         (args.readiness_runner, "M249-D019-RUN-EXISTS", READINESS_RUNNER_SNIPPETS),
         (args.architecture_doc, "M249-D019-ARCH-EXISTS", ARCHITECTURE_SNIPPETS),
         (args.lowering_spec, "M249-D019-SPC-EXISTS", LOWERING_SPEC_SNIPPETS),
@@ -302,9 +302,9 @@ def run(argv: Sequence[str]) -> int:
         failures.extend(findings)
 
     for path, check_id in (
-        (args.d017_checker, "M249-D019-DEP-D017-ARG-01"),
-        (args.d017_test, "M249-D019-DEP-D017-ARG-02"),
-        (args.d017_readiness_runner, "M249-D019-DEP-D017-ARG-03"),
+        (args.d018_checker, "M249-D019-DEP-D018-ARG-01"),
+        (args.d018_test, "M249-D019-DEP-D018-ARG-02"),
+        (args.d018_readiness_runner, "M249-D019-DEP-D018-ARG-03"),
     ):
         checks_total += 1
         if not path.exists():
