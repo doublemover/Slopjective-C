@@ -1444,6 +1444,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a008_frontend_behavior_parity_across_toolchains_recovery_and_determinism_hardening_packet.md`,
   and `package.json` so recovery/determinism hardening continuity remains
   deterministic and fail-closed against `M245-A007` dependency drift.
+- M245 lane-A A009 frontend behavior parity conformance matrix implementation anchors
+  explicit lane-A conformance-matrix artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_conformance_matrix_implementation_a009_expectations.md`,
+  `spec/planning/compiler/m245/m245_a009_frontend_behavior_parity_across_toolchains_conformance_matrix_implementation_packet.md`,
+  and `package.json` so conformance matrix continuity remains deterministic and
+  fail-closed against `M245-A008` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
@@ -1480,6 +1486,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b008_semantic_parity_and_platform_constraints_recovery_and_determinism_hardening_packet.md`,
   and `package.json` so recovery/determinism hardening semantic continuity remains
   deterministic and fail-closed against `M245-B007` dependency drift.
+- M245 lane-B B009 semantic parity/platform constraints conformance matrix implementation
+  anchors explicit lane-B conformance-matrix artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_conformance_matrix_implementation_b009_expectations.md`,
+  `spec/planning/compiler/m245/m245_b009_semantic_parity_and_platform_constraints_conformance_matrix_implementation_packet.md`,
+  and `package.json` so conformance matrix semantic continuity remains deterministic
+  and fail-closed against `M245-B008` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1546,6 +1558,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c008_lowering_ir_portability_contracts_recovery_and_determinism_hardening_packet.md`,
   and `package.json` so recovery/determinism hardening portability continuity remains
   deterministic and fail-closed against `M245-C007` dependency drift.
+- M245 lane-C C009 lowering/IR portability contracts conformance matrix implementation
+  anchors explicit lane-C conformance-matrix artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_conformance_matrix_implementation_c009_expectations.md`,
+  `spec/planning/compiler/m245/m245_c009_lowering_ir_portability_contracts_conformance_matrix_implementation_packet.md`,
+  and `package.json` so conformance matrix portability continuity remains deterministic
+  and fail-closed against `M245-C008` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1588,6 +1606,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d008_build_link_runtime_reproducibility_operations_recovery_and_determinism_hardening_packet.md`,
   and `package.json` so recovery/determinism hardening reproducibility continuity remains
   deterministic and fail-closed against `M245-D007` dependency drift.
+- M245 lane-D D009 build/link/runtime reproducibility conformance matrix implementation
+  anchors explicit lane-D conformance-matrix artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_conformance_matrix_implementation_d009_expectations.md`,
+  `spec/planning/compiler/m245/m245_d009_build_link_runtime_reproducibility_operations_conformance_matrix_implementation_packet.md`,
+  and `package.json` so conformance matrix reproducibility continuity remains deterministic
+  and fail-closed against `M245-D008` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1626,6 +1650,11 @@ Current-state note:
   `M245-C004`, and `M245-D006`) in lane-E recovery/determinism hardening contract
   packet, checker, and readiness wiring so release gate continuity remains
   deterministic and fail-closed against recovery/determinism handoff drift.
+- M245 lane-E E009 portability gate/release checklist conformance matrix implementation
+  anchors dependency references (`M245-E008`, `M245-A003`, `M245-B004`,
+  `M245-C005`, and `M245-D007`) in lane-E conformance-matrix contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against conformance matrix handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
