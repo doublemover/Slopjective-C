@@ -14,11 +14,13 @@ COMMAND_CHAIN: tuple[Sequence[str], ...] = (
     (
         NPM_EXECUTABLE,
         "run",
+        "--if-present",
         "check:objc3c:m247-a002-lane-a-readiness",
     ),
     (
         sys.executable,
         "scripts/check_m247_a003_frontend_profiling_and_hot_path_decomposition_core_feature_implementation_contract.py",
+        "--emit-json",
     ),
     (
         sys.executable,
