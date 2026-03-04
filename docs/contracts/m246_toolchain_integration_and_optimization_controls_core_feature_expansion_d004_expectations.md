@@ -9,6 +9,7 @@ Scope: M246 lane-D toolchain integration and optimization controls core feature 
 Fail closed unless M246 lane-D toolchain integration and optimization controls
 core feature expansion anchors remain explicit, deterministic, and traceable
 across dependency surfaces, including code/spec anchors and milestone optimization improvements as mandatory scope inputs.
+Checker outputs must remain deterministically sorted, fail closed on document read errors, and support canonical JSON emission via `--emit-json`.
 
 ## Dependency Scope
 
@@ -35,6 +36,7 @@ across dependency surfaces, including code/spec anchors and milestone optimizati
 
 ## Validation
 
+- `python scripts/check_m246_d004_toolchain_integration_and_optimization_controls_core_feature_expansion_contract.py --emit-json --summary-out tmp/reports/m246/M246-D004/toolchain_integration_optimization_controls_core_feature_expansion_contract_summary.json`
 - `python scripts/check_m246_d004_toolchain_integration_and_optimization_controls_core_feature_expansion_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_d004_toolchain_integration_and_optimization_controls_core_feature_expansion_contract.py -q`
 - `python scripts/run_m246_d004_lane_d_readiness.py`
