@@ -8,9 +8,12 @@ Scope: M247 lane-A core feature expansion continuity for frontend profiling and 
 
 Fail closed unless lane-A core feature expansion dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6711`
+
 ## Dependency Scope
 
-- Issue `#6711` defines canonical lane-A core feature expansion scope.
 - Dependencies: `M247-A003`
 - M247-A003 core feature implementation anchors remain mandatory prerequisites:
   - `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_core_feature_implementation_a003_expectations.md`
@@ -40,7 +43,7 @@ Fail closed unless lane-A core feature expansion dependency anchors remain expli
 
 ## Validation
 
-- `python scripts/check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py`
+- `python scripts/check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py -q`
 - `python scripts/run_m247_a004_lane_a_readiness.py`
 

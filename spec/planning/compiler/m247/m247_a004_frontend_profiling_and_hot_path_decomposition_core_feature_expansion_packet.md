@@ -39,7 +39,7 @@ Freeze lane-A core feature expansion prerequisites for M247 frontend profiling a
 
 ## Gate Commands
 
-- `python scripts/check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py`
+- `python scripts/check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a004_frontend_profiling_and_hot_path_decomposition_core_feature_expansion_contract.py -q`
 - `python scripts/run_m247_a004_lane_a_readiness.py`
 
