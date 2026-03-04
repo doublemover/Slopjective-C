@@ -1522,6 +1522,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_b012_semantic_parity_and_platform_constraints_cross_lane_integration_sync_packet.md`,
   and `package.json` so cross-lane semantic continuity remains deterministic and
   fail-closed against `M245-B011` dependency drift.
+- M245 lane-B B013 semantic parity/platform constraints integration closeout and gate sign-off
+  anchors explicit lane-B integration closeout artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_integration_closeout_and_gate_signoff_b013_expectations.md`,
+  `spec/planning/compiler/m245/m245_b013_semantic_parity_and_platform_constraints_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so integration closeout continuity remains deterministic and
+  fail-closed against `M245-B012` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1612,6 +1618,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c012_lowering_ir_portability_contracts_cross_lane_integration_sync_packet.md`,
   and `package.json` so cross-lane portability continuity remains deterministic
   and fail-closed against `M245-C011` dependency drift.
+- M245 lane-C C013 lowering/IR portability contracts docs and operator runbook synchronization
+  anchors explicit lane-C docs/runbook artifacts in
+  `docs/contracts/m245_lowering_ir_portability_contracts_docs_and_operator_runbook_synchronization_c013_expectations.md`,
+  `spec/planning/compiler/m245/m245_c013_lowering_ir_portability_contracts_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` so docs/runbook portability continuity remains deterministic
+  and fail-closed against `M245-C012` dependency drift.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1678,6 +1690,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d012_build_link_runtime_reproducibility_operations_cross_lane_integration_sync_packet.md`,
   and `package.json` so cross-lane reproducibility continuity remains deterministic
   and fail-closed against `M245-D011` dependency drift.
+- M245 lane-D D013 build/link/runtime reproducibility docs and operator runbook synchronization
+  anchors explicit lane-D docs/runbook artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_docs_and_operator_runbook_synchronization_d013_expectations.md`,
+  `spec/planning/compiler/m245/m245_d013_build_link_runtime_reproducibility_operations_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` so docs/runbook reproducibility continuity remains deterministic
+  and fail-closed against `M245-D012` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1736,6 +1754,11 @@ Current-state note:
   `M245-C007`, and `M245-D009`) in lane-E cross-lane contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against cross-lane handoff drift.
+- M245 lane-E E013 portability gate/release checklist docs and operator runbook synchronization
+  anchors dependency references (`M245-E012`, `M245-A005`, `M245-B006`,
+  `M245-C007`, and `M245-D009`) in lane-E docs/runbook contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against docs/runbook handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
