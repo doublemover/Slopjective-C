@@ -112,7 +112,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-D002-DOC-EXP-11",
-        "python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json",
+        "`python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json`",
     ),
 )
 
@@ -144,7 +144,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-D002-DOC-PKT-11",
-        "python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json",
+        "`python scripts/check_m246_d002_toolchain_integration_and_optimization_controls_modular_split_and_scaffolding_contract.py --emit-json`",
     ),
 )
 
