@@ -11,7 +11,17 @@ Dependencies: `M246-D005`
 
 Freeze lane-D toolchain integration and optimization controls edge-case
 expansion and robustness prerequisites for M246 so predecessor continuity
-remains explicit, deterministic, and fail-closed, including code/spec anchors and milestone optimization improvements as mandatory scope inputs.
+remains explicit, deterministic, and fail-closed, including dependency chain
+integrity, code/spec anchors, and milestone optimization improvements as
+mandatory scope inputs.
+Contract checker failure reporting must remain deterministic/sorted, fail
+closed on read errors, and support canonical JSON emission via `--emit-json`.
+
+## Issue Anchor
+
+- Canonical issue: `#6685`
+- Canonical scope anchor: lane-D toolchain integration and optimization
+  controls edge-case expansion and robustness.
 
 ## Scope Anchors
 
@@ -43,6 +53,7 @@ remains explicit, deterministic, and fail-closed, including code/spec anchors an
 
 ## Gate Commands
 
+- `python scripts/check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py --emit-json --summary-out tmp/reports/m246/M246-D006/toolchain_integration_optimization_controls_edge_case_expansion_and_robustness_contract_summary.json`
 - `python scripts/check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py`
 - `python -m pytest tests/tooling/test_check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py -q`
 - `python scripts/run_m246_d006_lane_d_readiness.py`

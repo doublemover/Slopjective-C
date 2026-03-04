@@ -83,32 +83,48 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-D006-DOC-EXP-03",
-        "Issue `#6685` defines canonical lane-D edge-case expansion and robustness scope.",
+        "## Issue Anchor",
     ),
-    SnippetCheck("M246-D006-DOC-EXP-04", "Dependencies: `M246-D005`"),
     SnippetCheck(
-        "M246-D006-DOC-EXP-05",
-        "scripts/check_m246_d005_toolchain_integration_and_optimization_controls_edge_case_and_compatibility_completion_contract.py",
+        "M246-D006-DOC-EXP-04",
+        "Canonical issue: `#6685`",
     ),
+    SnippetCheck("M246-D006-DOC-EXP-05", "Dependencies: `M246-D005`"),
     SnippetCheck(
         "M246-D006-DOC-EXP-06",
-        "scripts/run_m246_d006_lane_d_readiness.py",
+        "Dependency chain integrity is mandatory: all `M246-D005` anchors must remain",
     ),
     SnippetCheck(
         "M246-D006-DOC-EXP-07",
-        "code/spec anchors and milestone optimization improvements as mandatory scope inputs.",
+        "scripts/check_m246_d005_toolchain_integration_and_optimization_controls_edge_case_and_compatibility_completion_contract.py",
     ),
     SnippetCheck(
         "M246-D006-DOC-EXP-08",
-        "Readiness chain order: `D005 readiness -> D006 checker -> D006 pytest`.",
+        "scripts/run_m246_d006_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M246-D006-DOC-EXP-09",
-        "tests/tooling/test_check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py",
+        "code/spec anchors, and milestone optimization improvements as mandatory scope",
     ),
     SnippetCheck(
         "M246-D006-DOC-EXP-10",
+        "python scripts/check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py --emit-json --summary-out tmp/reports/m246/M246-D006/toolchain_integration_optimization_controls_edge_case_expansion_and_robustness_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-EXP-11",
+        "`python scripts/run_m246_d006_lane_d_readiness.py`",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-EXP-12",
+        "tests/tooling/test_check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-EXP-13",
         "tmp/reports/m246/M246-D006/toolchain_integration_optimization_controls_edge_case_expansion_and_robustness_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-EXP-14",
+        "Checker outputs must remain deterministically sorted, fail closed on document",
     ),
 )
 
@@ -121,22 +137,38 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M246-D006-DOC-PKT-03", "Issue: `#6685`"),
     SnippetCheck("M246-D006-DOC-PKT-04", "Dependencies: `M246-D005`"),
     SnippetCheck("M246-D006-DOC-PKT-05", "Freeze date: `2026-03-04`"),
-    SnippetCheck("M246-D006-DOC-PKT-06", "Dependency anchors from `M246-D005`:"),
+    SnippetCheck("M246-D006-DOC-PKT-06", "## Issue Anchor"),
     SnippetCheck(
         "M246-D006-DOC-PKT-07",
-        "scripts/run_m246_d006_lane_d_readiness.py",
+        "Canonical issue: `#6685`",
     ),
     SnippetCheck(
         "M246-D006-DOC-PKT-08",
-        "python -m pytest tests/tooling/test_check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py -q",
+        "Dependency anchors from `M246-D005`:",
     ),
     SnippetCheck(
         "M246-D006-DOC-PKT-09",
-        "`D005 readiness -> D006 checker -> D006 pytest`",
+        "scripts/run_m246_d006_lane_d_readiness.py",
     ),
     SnippetCheck(
         "M246-D006-DOC-PKT-10",
+        "python scripts/check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py --emit-json --summary-out tmp/reports/m246/M246-D006/toolchain_integration_optimization_controls_edge_case_expansion_and_robustness_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-PKT-11",
+        "python -m pytest tests/tooling/test_check_m246_d006_toolchain_integration_and_optimization_controls_edge_case_expansion_and_robustness_contract.py -q",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-PKT-12",
+        "including dependency chain",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-PKT-13",
         "tmp/reports/m246/M246-D006/toolchain_integration_optimization_controls_edge_case_expansion_and_robustness_contract_summary.json",
+    ),
+    SnippetCheck(
+        "M246-D006-DOC-PKT-14",
+        "Contract checker failure reporting must remain deterministic/sorted, fail",
     ),
 )
 
@@ -151,7 +183,7 @@ D005_EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M246-D006-D005-DOC-03",
-        "Issue `#5110` defines canonical lane-D edge-case and compatibility completion scope.",
+        "Canonical issue: `#5110`",
     ),
 )
 
@@ -190,7 +222,7 @@ D005_READINESS_SNIPPETS: tuple[SnippetCheck, ...] = (
 
 
 def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return json.dumps(payload, indent=2) + "\n"
 
 
 def display_path(path: Path) -> str:
@@ -212,6 +244,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--d005-test", type=Path, default=DEFAULT_D005_TEST)
     parser.add_argument("--d005-readiness-script", type=Path, default=DEFAULT_D005_READINESS_SCRIPT)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument(
+        "--emit-json",
+        action="store_true",
+        help="Emit canonical summary JSON to stdout.",
+    )
     return parser.parse_args(argv)
 
 
@@ -244,7 +281,7 @@ def check_text_artifact(
 
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         findings.append(
             Finding(
                 artifact=display_path(path),
@@ -288,6 +325,10 @@ def check_dependency_path(path: Path, check_id: str) -> tuple[int, list[Finding]
     return 1, findings
 
 
+def finding_sort_key(failure: Finding) -> tuple[str, str, str]:
+    return (failure.artifact, failure.check_id, failure.detail)
+
+
 def write_summary(summary_path: Path, payload: object) -> tuple[bool, str]:
     try:
         summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -326,6 +367,7 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(failures, key=finding_sort_key)
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -347,11 +389,17 @@ def run(argv: Sequence[str]) -> int:
         )
         return 1
 
+    if args.emit_json:
+        print(canonical_json(summary_payload), end="")
+
     if failures:
-        for finding in failures:
-            print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+        if not args.emit_json:
+            print(f"{MODE}: contract drift detected ({len(failures)} failed check(s)).", file=sys.stderr)
+            for finding in failures:
+                print(f"- [{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 
