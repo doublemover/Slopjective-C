@@ -44,7 +44,7 @@ compile-time budget evidence remain mandatory diagnostics hardening inputs.
 
 ## Gate Commands
 
-- `python scripts/check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py`
+- `python scripts/check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py -q`
 - `npm run check:objc3c:m247-a007-lane-a-readiness`
 

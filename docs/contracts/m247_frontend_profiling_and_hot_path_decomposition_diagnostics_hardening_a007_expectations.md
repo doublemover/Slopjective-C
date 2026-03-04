@@ -10,9 +10,12 @@ Fail closed unless lane-A diagnostics hardening dependency anchors remain
 explicit, deterministic, and traceable across dependency surfaces, including
 code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6714`
+
 ## Dependency Scope
 
-- Issue `#6714` defines canonical lane-A diagnostics hardening scope.
 - Performance profiling and compile-time budgets are mandatory diagnostics
   hardening scope inputs for lane-A contract gating.
 - Dependencies: `M247-A006`
@@ -56,7 +59,7 @@ code/spec anchors and milestone optimization improvements as mandatory scope inp
 
 ## Validation
 
-- `python scripts/check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py`
+- `python scripts/check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a007_frontend_profiling_and_hot_path_decomposition_diagnostics_hardening_contract.py -q`
 - `npm run check:objc3c:m247-a007-lane-a-readiness`
 
