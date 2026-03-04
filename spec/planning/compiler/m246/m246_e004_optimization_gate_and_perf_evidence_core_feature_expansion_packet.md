@@ -50,9 +50,9 @@ Freeze lane-E core feature expansion prerequisites for M246 optimization gate an
 
 ## Gate Commands
 
-- `python scripts/check_m246_e004_optimization_gate_and_perf_evidence_core_feature_expansion_contract.py`
+- `python scripts/check_m246_e004_optimization_gate_and_perf_evidence_core_feature_expansion_contract.py --emit-json --summary-out tmp/reports/m246/M246-E004/optimization_gate_perf_evidence_core_feature_expansion_summary.json`
 - `python -m pytest tests/tooling/test_check_m246_e004_optimization_gate_and_perf_evidence_core_feature_expansion_contract.py -q`
-- `npm run check:objc3c:m246-e004-lane-e-readiness`
+- `python scripts/run_m246_e004_lane_e_readiness.py`
 
 ## Evidence Output
 
