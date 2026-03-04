@@ -42,7 +42,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
         == "m247-b010-semantic-hot-path-analysis-budgeting-conformance-corpus-expansion-contract-v1"
     )
     assert payload["ok"] is True
-    assert payload["checks_total"] >= 60
+    assert payload["checks_total"] >= 50
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 

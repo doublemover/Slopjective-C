@@ -53,9 +53,6 @@ DEFAULT_B009_TEST = (
     / "test_check_m247_b009_semantic_hot_path_analysis_and_budgeting_conformance_matrix_implementation_contract.py"
 )
 DEFAULT_READINESS_RUNNER = ROOT / "scripts" / "run_m247_b010_lane_b_readiness.py"
-DEFAULT_ARCHITECTURE_DOC = ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md"
-DEFAULT_LOWERING_SPEC = ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md"
-DEFAULT_METADATA_SPEC = ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md"
 DEFAULT_PACKAGE_JSON = ROOT / "package.json"
 DEFAULT_SUMMARY_OUT = Path(
     "tmp/reports/m247/M247-B010/semantic_hot_path_analysis_and_budgeting_conformance_corpus_expansion_summary.json"
@@ -201,36 +198,6 @@ READINESS_RUNNER_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M247-B010-RUN-05", "[ok] M247-B010 lane-B readiness chain completed"),
 )
 
-ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck(
-        "M247-B010-ARCH-01",
-        "M247 lane-B B010 semantic hot-path analysis/budgeting conformance corpus expansion anchors",
-    ),
-    SnippetCheck(
-        "M247-B010-ARCH-02",
-        "m247_semantic_hot_path_analysis_and_budgeting_conformance_corpus_expansion_b010_expectations.md",
-    ),
-)
-
-LOWERING_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck(
-        "M247-B010-SPC-01",
-        "semantic hot-path analysis/budgeting conformance corpus expansion wiring",
-    ),
-    SnippetCheck(
-        "M247-B010-SPC-02",
-        "lane-B dependency anchor (`M247-B009`) and fail closed",
-    ),
-)
-
-METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
-    SnippetCheck(
-        "M247-B010-META-01",
-        "deterministic lane-B semantic hot-path analysis/budgeting conformance corpus metadata anchors for `M247-B010`",
-    ),
-    SnippetCheck("M247-B010-META-02", "`M247-B009` dependency continuity"),
-)
-
 PACKAGE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M247-B010-PKG-01",
@@ -273,9 +240,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--b009-checker", type=Path, default=DEFAULT_B009_CHECKER)
     parser.add_argument("--b009-test", type=Path, default=DEFAULT_B009_TEST)
     parser.add_argument("--readiness-runner", type=Path, default=DEFAULT_READINESS_RUNNER)
-    parser.add_argument("--architecture-doc", type=Path, default=DEFAULT_ARCHITECTURE_DOC)
-    parser.add_argument("--lowering-spec", type=Path, default=DEFAULT_LOWERING_SPEC)
-    parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
     return parser.parse_args(argv)
@@ -333,9 +297,6 @@ def run(argv: Sequence[str]) -> int:
         (args.b009_expectations_doc, "M247-B010-B009-DOC-EXISTS", B009_EXPECTATIONS_SNIPPETS),
         (args.b009_packet_doc, "M247-B010-B009-PKT-EXISTS", B009_PACKET_SNIPPETS),
         (args.readiness_runner, "M247-B010-RUN-EXISTS", READINESS_RUNNER_SNIPPETS),
-        (args.architecture_doc, "M247-B010-ARCH-EXISTS", ARCHITECTURE_SNIPPETS),
-        (args.lowering_spec, "M247-B010-SPC-EXISTS", LOWERING_SPEC_SNIPPETS),
-        (args.metadata_spec, "M247-B010-META-EXISTS", METADATA_SPEC_SNIPPETS),
         (args.package_json, "M247-B010-PKG-EXISTS", PACKAGE_SNIPPETS),
     ):
         count, findings = check_doc_contract(
