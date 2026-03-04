@@ -39,11 +39,10 @@ Freeze lane-A edge-case expansion and robustness prerequisites for M246 frontend
 
 ## Gate Commands
 
-- `python scripts/check_m246_a006_frontend_optimization_hint_capture_edge_case_expansion_and_robustness_contract.py`
+- `python scripts/check_m246_a006_frontend_optimization_hint_capture_edge_case_expansion_and_robustness_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a006_frontend_optimization_hint_capture_edge_case_expansion_and_robustness_contract.py -q`
 - `python scripts/run_m246_a006_lane_a_readiness.py`
 
 ## Evidence Output
 
 - `tmp/reports/m246/M246-A006/frontend_optimization_hint_capture_edge_case_expansion_and_robustness_summary.json`
-
