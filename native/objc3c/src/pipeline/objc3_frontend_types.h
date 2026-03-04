@@ -1068,6 +1068,8 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   bool advanced_edge_compatibility_shard3_ready = false;
   bool advanced_diagnostics_shard2_consistent = false;
   bool advanced_diagnostics_shard2_ready = false;
+  bool advanced_diagnostics_shard3_consistent = false;
+  bool advanced_diagnostics_shard3_ready = false;
   bool advanced_conformance_shard2_consistent = false;
   bool advanced_conformance_shard2_ready = false;
   bool advanced_integration_shard2_consistent = false;
@@ -1106,6 +1108,7 @@ struct Objc3FinalReadinessGateCoreFeatureImplementationSurface {
   std::string advanced_edge_compatibility_shard2_key;
   std::string advanced_edge_compatibility_shard3_key;
   std::string advanced_diagnostics_shard2_key;
+  std::string advanced_diagnostics_shard3_key;
   std::string advanced_conformance_shard2_key;
   std::string advanced_integration_shard2_key;
   std::string advanced_performance_shard2_key;

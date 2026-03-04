@@ -2526,6 +2526,12 @@ Current-state note:
   `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
   so lane-E fails closed when E027/A010/B013/C015/D020 edge prerequisites
   drift before milestone closeout can remain green.
+- M248 lane-E E029 advanced diagnostics shard3 anchors explicit final
+  readiness advanced-diagnostics shard3 guardrails
+  (`advanced_diagnostics_shard3_*`) in
+  `pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h`
+  so lane-E fails closed when E028/A011/B013/C016/D021 diagnostics
+  prerequisites drift before milestone closeout can remain green.
 - M250 lane-E E027 integration closeout sign-off anchors explicit final
   readiness integration-closeout sign-off guardrails
   (`integration_closeout_signoff_*`) in
