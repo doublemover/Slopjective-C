@@ -8,9 +8,12 @@ Scope: M246 lane-A core feature expansion continuity for frontend optimization h
 
 Fail closed unless lane-A core feature expansion dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5051`
+
 ## Dependency Scope
 
-- Issue `#5051` defines canonical lane-A core feature expansion scope.
 - Dependencies: `M246-A003`
 - M246-A003 core feature implementation anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_core_feature_implementation_a003_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A core feature expansion dependency anchors remain expli
 
 - `scripts/run_m246_a004_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a003_lane_a_readiness.py`
-  - `python scripts/check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py`
+  - `python scripts/check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py -q`
 
 ## Milestone Optimization Inputs

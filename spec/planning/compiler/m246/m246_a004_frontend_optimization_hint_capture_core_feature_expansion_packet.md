@@ -39,7 +39,7 @@ Freeze lane-A core feature expansion prerequisites for M246 frontend optimizatio
 
 ## Gate Commands
 
-- `python scripts/check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py`
+- `python scripts/check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a004_frontend_optimization_hint_capture_core_feature_expansion_contract.py -q`
 - `python scripts/run_m246_a004_lane_a_readiness.py`
 
