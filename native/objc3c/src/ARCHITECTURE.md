@@ -1738,6 +1738,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d017_build_link_runtime_reproducibility_operations_advanced_diagnostics_workpack_shard1_packet.md`,
   and `package.json` so advanced-diagnostics reproducibility continuity remains deterministic
   and fail-closed against `M245-D016` dependency drift.
+- M245 lane-D D018 build/link/runtime reproducibility advanced conformance workpack (shard 1)
+  anchors explicit lane-D advanced-conformance artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_advanced_conformance_workpack_shard1_d018_expectations.md`,
+  `spec/planning/compiler/m245/m245_d018_build_link_runtime_reproducibility_operations_advanced_conformance_workpack_shard1_packet.md`,
+  and `package.json` so advanced-conformance reproducibility continuity remains deterministic
+  and fail-closed against `M245-D017` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1821,6 +1827,11 @@ Current-state note:
   `M245-C009`, and `M245-D012`) in lane-E advanced-diagnostics contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against advanced-diagnostics handoff drift.
+- M245 lane-E E018 portability gate/release checklist advanced conformance workpack (shard 1)
+  anchors dependency references (`M245-E017`, `M245-A007`, `M245-B008`,
+  `M245-C010`, and `M245-D013`) in lane-E advanced-conformance contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against advanced-conformance handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
