@@ -1414,12 +1414,24 @@ Current-state note:
   `spec/planning/compiler/m245/m245_a003_frontend_behavior_parity_across_toolchains_core_feature_implementation_packet.md`,
   and `package.json` so core feature portability continuity remains
   deterministic and fail-closed against `M245-A002` dependency drift.
+- M245 lane-A A004 frontend behavior parity core feature expansion anchors
+  explicit lane-A core-feature expansion artifacts in
+  `docs/contracts/m245_frontend_behavior_parity_across_toolchains_core_feature_expansion_a004_expectations.md`,
+  `spec/planning/compiler/m245/m245_a004_frontend_behavior_parity_across_toolchains_core_feature_expansion_packet.md`,
+  and `package.json` so core feature expansion portability continuity remains
+  deterministic and fail-closed against `M245-A003` dependency drift.
 - M245 lane-B B003 semantic parity/platform constraints core feature implementation anchors
   explicit lane-B core feature artifacts in
   `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_implementation_b003_expectations.md`,
   `spec/planning/compiler/m245/m245_b003_semantic_parity_and_platform_constraints_core_feature_implementation_packet.md`,
   and `package.json` so core feature semantic parity/platform constraints continuity remains
   deterministic and fail-closed against `M245-B002` dependency drift.
+- M245 lane-B B004 semantic parity/platform constraints core feature expansion anchors
+  explicit lane-B core feature expansion artifacts in
+  `docs/contracts/m245_semantic_parity_and_platform_constraints_core_feature_expansion_b004_expectations.md`,
+  `spec/planning/compiler/m245/m245_b004_semantic_parity_and_platform_constraints_core_feature_expansion_packet.md`,
+  and `package.json` so core feature expansion semantic parity/platform constraints continuity remains
+  deterministic and fail-closed against `M245-B003` dependency drift.
 - M249 lane-A A001 feature packaging surface and compatibility anchors explicit
   lane-A contract freeze artifacts in
   `docs/contracts/m249_feature_packaging_surface_and_compatibility_contracts_contract_freeze_a001_expectations.md`,
@@ -1456,6 +1468,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_c003_lowering_ir_portability_contracts_core_feature_implementation_packet.md`,
   and `package.json` so core feature portability continuity remains
   deterministic and fail-closed against `M245-C001` and `M245-C002` dependency drift.
+- M245 lane-C C004 lowering/IR portability contracts core feature expansion anchors
+  dependency token (`M245-C003`) in
+  `docs/contracts/m245_lowering_ir_portability_contracts_core_feature_expansion_c004_expectations.md`,
+  `spec/planning/compiler/m245/m245_c004_lowering_ir_portability_contracts_core_feature_expansion_packet.md`,
+  and `package.json` so core feature expansion portability continuity remains
+  deterministic and fail-closed while C003 dependency continuity is inherited.
 - M245 lane-D D002 build/link/runtime reproducibility modular split/scaffolding anchors
   explicit lane-D scaffolding artifacts in
   `docs/contracts/m245_build_link_runtime_reproducibility_operations_modular_split_scaffolding_d002_expectations.md`,
@@ -1468,6 +1486,12 @@ Current-state note:
   `spec/planning/compiler/m245/m245_d003_build_link_runtime_reproducibility_operations_core_feature_implementation_packet.md`,
   and `package.json` so core feature reproducibility continuity remains
   deterministic and fail-closed against `M245-D002` dependency drift.
+- M245 lane-D D004 build/link/runtime reproducibility core feature expansion anchors
+  explicit lane-D core-feature expansion artifacts in
+  `docs/contracts/m245_build_link_runtime_reproducibility_operations_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m245/m245_d004_build_link_runtime_reproducibility_operations_core_feature_expansion_packet.md`,
+  and `package.json` so core feature expansion reproducibility continuity remains
+  deterministic and fail-closed against `M245-D003` dependency drift.
 - M245 lane-E E001 portability gate/release checklist contract and architecture freeze
   anchors dependency freeze evidence for `M245-A001`, `M245-B001`, `M245-C001`,
   and `M245-D001` across contract packet, checker, and lane-E readiness wiring.
@@ -1481,6 +1505,11 @@ Current-state note:
   `M245-C002`, and `M245-D002`) in lane-E core-feature contract packet,
   checker, and readiness wiring so release gate continuity remains deterministic
   and fail-closed against modular split handoff drift.
+- M245 lane-E E004 portability gate/release checklist core feature expansion anchors
+  dependency references (`M245-E003`, `M245-A002`, `M245-B002`,
+  `M245-C002`, and `M245-D003`) in lane-E core-feature expansion contract packet,
+  checker, and readiness wiring so release gate continuity remains deterministic
+  and fail-closed against core-feature handoff drift.
 - M246 lane-A A001 frontend optimization hint capture contract and architecture freeze anchors
   explicit lane-A contract freeze artifacts in
   `docs/contracts/m246_frontend_optimization_hint_capture_contract_and_architecture_freeze_a001_expectations.md`,
