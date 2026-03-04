@@ -8,9 +8,12 @@ Scope: M246 lane-A conformance corpus expansion continuity for frontend optimiza
 
 Fail closed unless lane-A conformance corpus expansion dependency anchors remain explicit, deterministic, and traceable across code/spec anchors and milestone optimization improvements as mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#5057`
+
 ## Dependency Scope
 
-- Issue `#5057` defines canonical lane-A conformance corpus expansion scope.
 - Dependencies: `M246-A009`
 - M246-A009 conformance matrix implementation anchors remain mandatory prerequisites:
   - `docs/contracts/m246_frontend_optimization_hint_capture_conformance_matrix_implementation_a009_expectations.md`
@@ -28,7 +31,7 @@ Fail closed unless lane-A conformance corpus expansion dependency anchors remain
 
 - `scripts/run_m246_a010_lane_a_readiness.py` must execute lane-A readiness in deterministic order:
   - `python scripts/run_m246_a009_lane_a_readiness.py`
-  - `python scripts/check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py`
+  - `python scripts/check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py -q`
 
 ## Milestone Optimization Inputs

@@ -39,7 +39,7 @@ Freeze lane-A conformance corpus expansion prerequisites for M246 frontend optim
 
 ## Gate Commands
 
-- `python scripts/check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py`
+- `python scripts/check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_a010_frontend_optimization_hint_capture_conformance_corpus_expansion_contract.py -q`
 - `python scripts/run_m246_a010_lane_a_readiness.py`
 
