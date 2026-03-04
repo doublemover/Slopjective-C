@@ -191,6 +191,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--metadata-spec", type=Path, default=DEFAULT_METADATA_SPEC)
     parser.add_argument("--package-json", type=Path, default=DEFAULT_PACKAGE_JSON)
     parser.add_argument("--summary-out", type=Path, default=DEFAULT_SUMMARY_OUT)
+    parser.add_argument("--emit-json", action="store_true", help="Emit canonical summary JSON to stdout.")
     return parser.parse_args(argv)
 
 
@@ -229,18 +230,51 @@ def check_doc_contract(
     checks_total = 1
     findings: list[Finding] = []
     if not path.exists():
-        findings.append(Finding(display_path(path), exists_check_id, f"required document is missing: {display_path(path)}"))
+        findings.append(
+            Finding(
+                display_path(path),
+                exists_check_id,
+                f"required document is missing: {display_path(path)}",
+            )
+        )
         return checks_total, findings
     if not path.is_file():
-        findings.append(Finding(display_path(path), exists_check_id, f"required path is not a file: {display_path(path)}"))
+        findings.append(
+            Finding(
+                display_path(path),
+                exists_check_id,
+                f"required path is not a file: {display_path(path)}",
+            )
+        )
         return checks_total, findings
 
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        findings.append(
+            Finding(
+                display_path(path),
+                exists_check_id,
+                f"unable to read required document: {exc}",
+            )
+        )
+        return checks_total, findings
+
     for snippet in snippets:
         checks_total += 1
         if snippet.snippet not in text:
-            findings.append(Finding(display_path(path), snippet.check_id, f"missing required snippet: {snippet.snippet}"))
+            findings.append(
+                Finding(
+                    display_path(path),
+                    snippet.check_id,
+                    f"missing required snippet: {snippet.snippet}",
+                )
+            )
     return checks_total, findings
+
+
+def finding_sort_key(finding: Finding) -> tuple[str, str, str]:
+    return (finding.artifact, finding.check_id, finding.detail)
 
 
 def run(argv: Sequence[str]) -> int:
@@ -264,6 +298,7 @@ def run(argv: Sequence[str]) -> int:
         checks_total += count
         failures.extend(findings)
 
+    failures = sorted(failures, key=finding_sort_key)
     checks_passed = checks_total - len(failures)
     summary_payload = {
         "mode": MODE,
@@ -277,11 +312,16 @@ def run(argv: Sequence[str]) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(canonical_json(summary_payload), encoding="utf-8")
 
+    if args.emit_json:
+        sys.stdout.write(canonical_json(summary_payload))
+
     if failures:
         for finding in failures:
             print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
+
+    if not args.emit_json:
+        print(f"[ok] {MODE}: {checks_passed}/{checks_total} checks passed")
     return 0
 
 

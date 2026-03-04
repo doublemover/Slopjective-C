@@ -39,7 +39,7 @@ Fail closed unless lane-B semantic invariants for optimization legality modular 
 
 ## Validation
 
-- `python scripts/check_m246_b002_semantic_invariants_for_optimization_legality_modular_split_scaffolding_contract.py`
+- `python scripts/check_m246_b002_semantic_invariants_for_optimization_legality_modular_split_scaffolding_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_b002_semantic_invariants_for_optimization_legality_modular_split_scaffolding_contract.py -q`
 - `npm run check:objc3c:m246-b002-lane-b-readiness`
 
