@@ -48,7 +48,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 
 ## Gate Commands
 
-- `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py`
+- `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py -q`
 - `python scripts/run_m247_a009_lane_a_readiness.py`
 - `npm run check:objc3c:m247-a009-lane-a-readiness`
@@ -56,4 +56,3 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 ## Evidence Output
 
 - `tmp/reports/m247/M247-A009/frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_summary.json`
-

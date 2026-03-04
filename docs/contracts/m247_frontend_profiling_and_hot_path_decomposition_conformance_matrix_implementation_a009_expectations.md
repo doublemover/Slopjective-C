@@ -13,9 +13,12 @@ Deterministic anchors, explicit dependency tokens, and fail-closed behavior are 
 Performance profiling and compile-time budgets.
 Code/spec anchors and milestone optimization improvements are mandatory scope inputs.
 
+## Issue Anchor
+
+- Issue: `#6716`
+
 ## Dependency Scope
 
-- Issue `#6716` defines canonical lane-A conformance matrix implementation scope.
 - `M247-A008` recovery and determinism hardening anchors remain mandatory prerequisites:
   - `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_a008_expectations.md`
   - `spec/planning/compiler/m247/m247_a008_frontend_profiling_and_hot_path_decomposition_recovery_and_determinism_hardening_packet.md`
@@ -46,7 +49,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 - `package.json` includes `check:objc3c:m247-a009-lane-a-readiness`.
 - lane-A readiness chaining remains deterministic and fail-closed:
   - `python scripts/run_m247_a008_lane_a_readiness.py`
-  - `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py`
+  - `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py --emit-json`
   - `python -m pytest tests/tooling/test_check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py -q`
 
 ## Milestone Optimization Inputs
@@ -58,7 +61,7 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 
 ## Validation
 
-- `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py`
+- `python scripts/check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m247_a009_frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_contract.py -q`
 - `python scripts/run_m247_a009_lane_a_readiness.py`
 - `npm run check:objc3c:m247-a009-lane-a-readiness`
@@ -66,4 +69,3 @@ Code/spec anchors and milestone optimization improvements are mandatory scope in
 ## Evidence Path
 
 - `tmp/reports/m247/M247-A009/frontend_profiling_and_hot_path_decomposition_conformance_matrix_implementation_summary.json`
-
