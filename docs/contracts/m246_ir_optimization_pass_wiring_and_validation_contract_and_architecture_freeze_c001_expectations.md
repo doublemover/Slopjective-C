@@ -38,7 +38,7 @@ Fail closed unless lane-C IR optimization pass wiring and validation anchors rem
 
 ## Validation
 
-- `python scripts/check_m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_contract.py`
+- `python scripts/check_m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_contract.py --emit-json`
 - `python -m pytest tests/tooling/test_check_m246_c001_ir_optimization_pass_wiring_and_validation_contract_and_architecture_freeze_contract.py -q`
 - `npm run check:objc3c:m246-c001-lane-c-readiness`
 
