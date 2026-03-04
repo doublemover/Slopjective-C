@@ -909,6 +909,13 @@ Current-state note:
   deterministic and fail-closed while cross-lane dependency continuity
   (`M247-B014`, `M247-C014`, `M247-D014`, `M247-E014`) is tracked explicitly.
   `M247-A013` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
+- M247 lane-A A016 frontend profiling and hot-path decomposition advanced edge compatibility workpack (shard 1) anchors
+  dependency reference (`M247-A015`) in
+  `docs/contracts/m247_frontend_profiling_and_hot_path_decomposition_advanced_edge_compatibility_workpack_shard_1_a016_expectations.md`,
+  `spec/planning/compiler/m247/m247_a016_frontend_profiling_and_hot_path_decomposition_advanced_edge_compatibility_workpack_shard_1_packet.md`,
+  and `package.json` so lane-A advanced edge compatibility workpack (shard 1) evidence remains
+  deterministic and fail-closed while dependency continuity from A015 remains explicit.
+  `M247-A015` dependency continuity and advanced edge compatibility workpack (shard 1) evidence remain fail-closed.
 - M247 lane-D D004 runtime/link/build throughput optimization core feature
   expansion anchors dependency reference (`M247-D003`) in
   `docs/contracts/m247_runtime_link_build_throughput_optimization_core_feature_expansion_d004_expectations.md`,

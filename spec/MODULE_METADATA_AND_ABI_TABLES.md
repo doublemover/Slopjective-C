@@ -336,6 +336,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A frontend profiling and hot-path decomposition
       release-candidate/replay dry-run metadata anchors for `M247-A014`
       with explicit `M247-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      advanced edge compatibility workpack (shard 1) metadata anchors for `M247-A016`
+      with explicit `M247-A015` dependency continuity so lane-A advanced edge compatibility workpack (shard 1) contract-gating evidence remains fail-closed.
     - deterministic lane-D runtime/link/build throughput optimization core
       feature expansion metadata anchors for `M247-D004` with explicit pending
       dependency token continuity for `M247-D003` so throughput
