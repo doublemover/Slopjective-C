@@ -569,6 +569,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization governance shall preserve
   deterministic lane-A boundary anchors and fail closed on nullability/generics/qualifier semantics drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M235-A001`) and fail closed on scaffolding evidence drift
+  before semantic parity and lowering portability validation advances.
 - accessor and ivar lowering contracts governance shall preserve deterministic lane-C
   boundary anchors and fail closed on property/ivar lowering semantics drift before
   runtime property metadata and integration validation advances.

@@ -1534,6 +1534,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a001_qualifier_and_generic_grammar_normalization_contract_and_architecture_freeze_packet.md`,
   and `package.json` so nullability/generics/qualifier semantics boundary evidence remains
   deterministic and fail-closed across qualifier and generic grammar permutations.
+- M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m235/m235_a002_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_packet.md`,
+  and `package.json` (`check:objc3c:m235-a002-lane-a-readiness`) so `M235-A001`
+  dependency continuity remains deterministic and fail-closed against scaffolding drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
