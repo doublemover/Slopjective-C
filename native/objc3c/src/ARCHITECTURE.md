@@ -3314,4 +3314,12 @@ Forbidden:
   (`check:objc3c:m232-c013-lane-c-readiness`) so message-send lowering and
   call-emission docs/runbook continuity remains deterministic and fail-closed
   against `M232-C012` dependency drift.
+- M232 lane-C C014 message send lowering and call emission release-candidate and replay dry-run anchors
+  explicit lane-C release/replay artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_release_candidate_and_replay_dry_run_c014_expectations.md`,
+  `spec/planning/compiler/m232/m232_c014_message_send_lowering_and_call_emission_release_candidate_and_replay_dry_run_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c014-lane-c-readiness`) so message-send lowering and
+  call-emission release/replay continuity remains deterministic and fail-closed
+  against `M232-C013` dependency drift.
 

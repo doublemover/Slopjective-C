@@ -702,6 +702,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C message-send lowering and call-emission docs and operator runbook synchronization metadata anchors for `M232-C013`
       with explicit `M232-C012` dependency continuity and fail-closed docs and operator runbook synchronization
       evidence so message-send lowering docs and operator runbook synchronization drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission release-candidate and replay dry-run metadata anchors for `M232-C014`
+      with explicit `M232-C013` dependency continuity and fail-closed release-candidate and replay dry-run
+      evidence so message-send lowering release-candidate and replay dry-run drift fails closed.
     - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
       with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
     - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`
