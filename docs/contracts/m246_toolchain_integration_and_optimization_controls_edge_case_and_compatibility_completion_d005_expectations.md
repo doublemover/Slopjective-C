@@ -17,6 +17,7 @@ read errors, and support canonical JSON emission via `--emit-json`.
 ## Issue Anchor
 
 - Canonical issue: `#5110`
+- Issue `#5110` defines canonical lane-D edge-case and compatibility completion scope.
 - Canonical scope anchor: lane-D toolchain integration and optimization
   controls edge-case and compatibility completion.
 
