@@ -1594,6 +1594,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b010_qualifier_and_generic_semantic_inference_conformance_corpus_expansion_packet.md`,
   and `package.json` (`check:objc3c:m235-b010-lane-b-readiness`) so `M235-B009`
   dependency continuity remains deterministic and fail-closed against conformance corpus expansion drift.
+- M235 lane-B B011 qualifier/generic semantic inference performance and quality guardrails anchors
+  explicit lane-B performance and quality guardrails artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_performance_and_quality_guardrails_b011_expectations.md`,
+  `spec/planning/compiler/m235/m235_b011_qualifier_and_generic_semantic_inference_performance_and_quality_guardrails_packet.md`,
+  and `package.json` (`check:objc3c:m235-b011-lane-b-readiness`) so `M235-B010`
+  dependency continuity remains deterministic and fail-closed against performance and quality guardrails drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,

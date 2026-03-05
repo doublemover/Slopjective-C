@@ -599,6 +599,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference conformance corpus expansion governance shall preserve explicit
   lane-B dependency anchors (`M235-B009`) and fail closed on conformance corpus expansion evidence drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference performance and quality guardrails governance shall preserve explicit
+  lane-B dependency anchors (`M235-B010`) and fail closed on performance and quality guardrails evidence drift
+  before semantic parity and lowering portability validation advances.
 - qualifier/generic grammar normalization modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M235-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
