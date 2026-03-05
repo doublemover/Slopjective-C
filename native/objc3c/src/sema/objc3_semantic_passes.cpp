@@ -127,6 +127,28 @@ static bool IsScalarBoolCompatibleType(const SemanticTypeInfo &info) {
   return !info.is_vector && (info.type == ValueType::Bool || info.type == ValueType::I32);
 }
 
+static bool IsObjCReferenceAliasValueType(ValueType type) {
+  switch (type) {
+    case ValueType::ObjCId:
+    case ValueType::ObjCClass:
+    case ValueType::ObjCSel:
+    case ValueType::ObjCProtocol:
+    case ValueType::ObjCInstancetype:
+    case ValueType::ObjCObjectPtr:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static bool IsScalarI32CompatibleType(const SemanticTypeInfo &info) {
+  return !info.is_vector && (info.type == ValueType::I32 || IsObjCReferenceAliasValueType(info.type));
+}
+
+static bool AreScalarI32AliasCompatible(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
+  return IsScalarI32CompatibleType(lhs) && IsScalarI32CompatibleType(rhs);
+}
+
 static bool IsCanonicalObjc3TypeFormScaffoldReady() {
   static const Objc3TypeFormScaffoldSummary summary = BuildObjc3TypeFormScaffoldSummary();
   return IsReadyObjc3TypeFormScaffoldSummary(summary);
@@ -640,6 +662,14 @@ static bool SupportsOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl
 
 static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
   return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+}
+
+static bool IsObjCReferenceAnnotationSite(bool id_spelling,
+                                          bool class_spelling,
+                                          bool instancetype_spelling,
+                                          bool object_pointer_type_spelling) {
+  return id_spelling || class_spelling || instancetype_spelling ||
+         object_pointer_type_spelling;
 }
 
 static bool HasInvalidGenericParamTypeSuffix(const FuncParam &param) {
@@ -1749,12 +1779,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
           ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics, max_message_send_args);
 
       if (expr->op == "+" || expr->op == "-" || expr->op == "*" || expr->op == "/" || expr->op == "%") {
-        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(lhs) && !IsScalarI32CompatibleType(lhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for arithmetic lhs, got '" +
                                              SemanticTypeName(lhs) + "'"));
         }
-        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(rhs) && !IsScalarI32CompatibleType(rhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for arithmetic rhs, got '" +
                                              SemanticTypeName(rhs) + "'"));
@@ -1763,12 +1793,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       }
 
       if (expr->op == "&" || expr->op == "|" || expr->op == "^" || expr->op == "<<" || expr->op == ">>") {
-        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(lhs) && !IsScalarI32CompatibleType(lhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for bitwise lhs, got '" +
                                              SemanticTypeName(lhs) + "'"));
         }
-        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(rhs) && !IsScalarI32CompatibleType(rhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for bitwise rhs, got '" +
                                              SemanticTypeName(rhs) + "'"));
@@ -1789,7 +1819,9 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
         const bool bool_to_i32_literal =
             (lhs.type == ValueType::Bool && rhs.type == ValueType::I32 && IsBoolLikeI32Literal(expr->right.get())) ||
             (rhs.type == ValueType::Bool && lhs.type == ValueType::I32 && IsBoolLikeI32Literal(expr->left.get()));
-        if (!IsUnknownSemanticType(lhs) && !IsUnknownSemanticType(rhs) && lhs.type != rhs.type && !bool_to_i32_literal) {
+        const bool i32_alias_coercion = AreScalarI32AliasCompatible(lhs, rhs);
+        if (!IsUnknownSemanticType(lhs) && !IsUnknownSemanticType(rhs) && lhs.type != rhs.type &&
+            !bool_to_i32_literal && !i32_alias_coercion) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: equality compares '" + SemanticTypeName(lhs) +
                                              "' with '" + SemanticTypeName(rhs) + "'"));
@@ -1798,12 +1830,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       }
 
       if (expr->op == "<" || expr->op == "<=" || expr->op == ">" || expr->op == ">=") {
-        if (!IsUnknownSemanticType(lhs) && (lhs.is_vector || lhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(lhs) && !IsScalarI32CompatibleType(lhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for relational lhs, got '" +
                                              SemanticTypeName(lhs) + "'"));
         }
-        if (!IsUnknownSemanticType(rhs) && (rhs.is_vector || rhs.type != ValueType::I32)) {
+        if (!IsUnknownSemanticType(rhs) && !IsScalarI32CompatibleType(rhs)) {
           diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                          "type mismatch: expected i32 for relational rhs, got '" +
                                              SemanticTypeName(rhs) + "'"));
@@ -1855,6 +1887,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       const bool else_scalar = IsScalarSemanticType(else_type) &&
                                (else_type.type == ValueType::I32 || else_type.type == ValueType::Bool);
       if (then_scalar && else_scalar) {
+        if (then_type.type == else_type.type) {
+          return then_type;
+        }
+        return MakeScalarSemanticType(ValueType::I32);
+      }
+      if (AreScalarI32AliasCompatible(then_type, else_type)) {
         if (then_type.type == else_type.type) {
           return then_type;
         }
@@ -1923,11 +1961,13 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
           const SemanticTypeInfo expected = MakeSemanticTypeFromFunctionInfoParam(fn_it->second, i);
           const bool bool_coercion =
               !expected.is_vector && expected.type == ValueType::Bool && !arg_type.is_vector && arg_type.type == ValueType::I32;
+          const bool i32_alias_coercion = AreScalarI32AliasCompatible(expected, arg_type);
           const bool objc_reference_coercion =
               AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
               !IsSameSemanticType(arg_type, expected) &&
               !bool_coercion &&
+              !i32_alias_coercion &&
               !objc_reference_coercion) {
             diagnostics.push_back(MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S206",
                                            "type mismatch: expected '" + SemanticTypeName(expected) +
@@ -2012,13 +2052,15 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
     const bool value_known_objc_ref = IsObjCReferenceSemanticType(value_type);
     const bool assign_matches =
         IsSameSemanticType(target_type, value_type) ||
+        AreScalarI32AliasCompatible(target_type, value_type) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::I32 &&
          value_type.type == ValueType::Bool) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::Bool &&
          value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr)) ||
         (target_known_objc_ref && value_known_objc_ref &&
          AreObjCReferenceTypesAssignmentCompatible(target_type, value_type));
-    if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) && !value_known_scalar) {
+    if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) &&
+        !value_known_scalar && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
                                          SemanticTypeName(target_type) + "', got '" +
@@ -2056,10 +2098,10 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
   if (!IsCompoundAssignmentOperator(op)) {
     if (op == "++" || op == "--") {
       if (found_target && !IsUnknownSemanticType(target_type) &&
-          (target_type.is_vector || target_type.type != ValueType::I32)) {
+          !IsScalarI32CompatibleType(target_type)) {
         diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                        "type mismatch: update operator '" + op + "' target '" + target_name +
-                                           "' must be 'i32', got '" + SemanticTypeName(target_type) + "'; " +
+                                            "' must be 'i32', got '" + SemanticTypeName(target_type) + "'; " +
                                            FormatAtomicMemoryOrderMappingHint(op)));
       }
       return;
@@ -2072,14 +2114,14 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
   if (!found_target) {
     return;
   }
-  if (!IsUnknownSemanticType(target_type) && (target_type.is_vector || target_type.type != ValueType::I32)) {
+  if (!IsUnknownSemanticType(target_type) && !IsScalarI32CompatibleType(target_type)) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' target '" + target_name +
                                        "' must be 'i32', got '" + SemanticTypeName(target_type) + "'; " +
                                        FormatAtomicMemoryOrderMappingHint(op)));
   }
-  if (target_type.type == ValueType::I32 && !target_type.is_vector &&
-      !IsUnknownSemanticType(value_type) && (value_type.is_vector || value_type.type != ValueType::I32)) {
+  if (IsScalarI32CompatibleType(target_type) &&
+      !IsUnknownSemanticType(value_type) && !IsScalarI32CompatibleType(value_type)) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                    "type mismatch: compound assignment '" + op + "' value for '" + target_name +
                                        "' must be 'i32', got '" + SemanticTypeName(value_type) + "'; " +
@@ -2283,6 +2325,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         const SemanticTypeInfo return_type =
             ValidateExpr(ret->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
         const bool return_matches = IsSameSemanticType(return_type, expected_return_type) ||
+            AreScalarI32AliasCompatible(expected_return_type, return_type) ||
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
              expected_return_type.type == ValueType::I32 && return_type.type == ValueType::Bool) ||
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
@@ -2994,6 +3037,9 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
       function_info.param_has_pointer_declarator.size() != arity ||
       function_info.param_has_nullability_suffix.size() != arity ||
       function_info.param_has_ownership_qualifier.size() != arity ||
+      function_info.param_id_spelling.size() != arity ||
+      function_info.param_class_spelling.size() != arity ||
+      function_info.param_instancetype_spelling.size() != arity ||
       function_info.param_object_pointer_type_spelling.size() != arity ||
       function_info.param_has_invalid_generic_suffix.size() != arity ||
       function_info.param_has_invalid_pointer_declarator.size() != arity ||
@@ -3017,7 +3063,10 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
     if (function_info.param_has_ownership_qualifier[i]) {
       ++summary.ownership_qualifier_sites;
     }
-    if (function_info.param_object_pointer_type_spelling[i]) {
+    if (IsObjCReferenceAnnotationSite(function_info.param_id_spelling[i],
+                                      function_info.param_class_spelling[i],
+                                      function_info.param_instancetype_spelling[i],
+                                      function_info.param_object_pointer_type_spelling[i])) {
       ++summary.object_pointer_type_sites;
     }
     if (function_info.param_has_invalid_generic_suffix[i]) {
@@ -3054,7 +3103,10 @@ static void AccumulateTypeAnnotationSummaryFromFunctionInfo(const FunctionInfo &
   if (function_info.return_has_ownership_qualifier) {
     ++summary.ownership_qualifier_sites;
   }
-  if (function_info.return_object_pointer_type_spelling) {
+  if (IsObjCReferenceAnnotationSite(function_info.return_id_spelling,
+                                    function_info.return_class_spelling,
+                                    function_info.return_instancetype_spelling,
+                                    function_info.return_object_pointer_type_spelling)) {
     ++summary.object_pointer_type_sites;
   }
   if (function_info.return_has_invalid_generic_suffix) {
@@ -3086,6 +3138,9 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
       method_info.param_has_pointer_declarator.size() != arity ||
       method_info.param_has_nullability_suffix.size() != arity ||
       method_info.param_has_ownership_qualifier.size() != arity ||
+      method_info.param_id_spelling.size() != arity ||
+      method_info.param_class_spelling.size() != arity ||
+      method_info.param_instancetype_spelling.size() != arity ||
       method_info.param_object_pointer_type_spelling.size() != arity ||
       method_info.param_has_invalid_generic_suffix.size() != arity ||
       method_info.param_has_invalid_pointer_declarator.size() != arity ||
@@ -3109,7 +3164,10 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
     if (method_info.param_has_ownership_qualifier[i]) {
       ++summary.ownership_qualifier_sites;
     }
-    if (method_info.param_object_pointer_type_spelling[i]) {
+    if (IsObjCReferenceAnnotationSite(method_info.param_id_spelling[i],
+                                      method_info.param_class_spelling[i],
+                                      method_info.param_instancetype_spelling[i],
+                                      method_info.param_object_pointer_type_spelling[i])) {
       ++summary.object_pointer_type_sites;
     }
     if (method_info.param_has_invalid_generic_suffix[i]) {
@@ -3145,7 +3203,10 @@ static void AccumulateTypeAnnotationSummaryFromMethodInfo(const Objc3MethodInfo 
   if (method_info.return_has_ownership_qualifier) {
     ++summary.ownership_qualifier_sites;
   }
-  if (method_info.return_object_pointer_type_spelling) {
+  if (IsObjCReferenceAnnotationSite(method_info.return_id_spelling,
+                                    method_info.return_class_spelling,
+                                    method_info.return_instancetype_spelling,
+                                    method_info.return_object_pointer_type_spelling)) {
     ++summary.object_pointer_type_sites;
   }
   if (method_info.return_has_invalid_generic_suffix) {
@@ -3183,7 +3244,10 @@ static void AccumulateTypeAnnotationSummaryFromPropertyInfo(const Objc3PropertyI
   if (property_info.has_ownership_qualifier) {
     ++summary.ownership_qualifier_sites;
   }
-  if (property_info.object_pointer_type_spelling) {
+  if (IsObjCReferenceAnnotationSite(property_info.id_spelling,
+                                    property_info.class_spelling,
+                                    property_info.instancetype_spelling,
+                                    property_info.object_pointer_type_spelling)) {
     ++summary.object_pointer_type_sites;
   }
   if (property_info.has_invalid_generic_suffix) {
@@ -10049,6 +10113,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
             metadata.param_has_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_nullability_suffix.size() != metadata.arity ||
             metadata.param_has_ownership_qualifier.size() != metadata.arity ||
+            metadata.param_id_spelling.size() != metadata.arity ||
+            metadata.param_class_spelling.size() != metadata.arity ||
+            metadata.param_instancetype_spelling.size() != metadata.arity ||
             metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
             metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
             metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
@@ -10071,7 +10138,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_ownership_qualifier[i]) {
             ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
           }
-          if (metadata.param_object_pointer_type_spelling[i]) {
+          if (IsObjCReferenceAnnotationSite(metadata.param_id_spelling[i],
+                                            metadata.param_class_spelling[i],
+                                            metadata.param_instancetype_spelling[i],
+                                            metadata.param_object_pointer_type_spelling[i])) {
             ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
           }
           if (metadata.param_has_invalid_generic_suffix[i]) {
@@ -10106,7 +10176,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_ownership_qualifier) {
           ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
         }
-        if (metadata.return_object_pointer_type_spelling) {
+        if (IsObjCReferenceAnnotationSite(metadata.return_id_spelling,
+                                          metadata.return_class_spelling,
+                                          metadata.return_instancetype_spelling,
+                                          metadata.return_object_pointer_type_spelling)) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
         if (metadata.return_has_invalid_generic_suffix) {
@@ -10135,6 +10208,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
             metadata.param_has_pointer_declarator.size() != metadata.arity ||
             metadata.param_has_nullability_suffix.size() != metadata.arity ||
             metadata.param_has_ownership_qualifier.size() != metadata.arity ||
+            metadata.param_id_spelling.size() != metadata.arity ||
+            metadata.param_class_spelling.size() != metadata.arity ||
+            metadata.param_instancetype_spelling.size() != metadata.arity ||
             metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
             metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
             metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
@@ -10157,7 +10233,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           if (metadata.param_has_ownership_qualifier[i]) {
             ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
           }
-          if (metadata.param_object_pointer_type_spelling[i]) {
+          if (IsObjCReferenceAnnotationSite(metadata.param_id_spelling[i],
+                                            metadata.param_class_spelling[i],
+                                            metadata.param_instancetype_spelling[i],
+                                            metadata.param_object_pointer_type_spelling[i])) {
             ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
           }
           if (metadata.param_has_invalid_generic_suffix[i]) {
@@ -10192,7 +10271,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.return_has_ownership_qualifier) {
           ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
         }
-        if (metadata.return_object_pointer_type_spelling) {
+        if (IsObjCReferenceAnnotationSite(metadata.return_id_spelling,
+                                          metadata.return_class_spelling,
+                                          metadata.return_instancetype_spelling,
+                                          metadata.return_object_pointer_type_spelling)) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
         if (metadata.return_has_invalid_generic_suffix) {
@@ -10229,7 +10311,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
         if (metadata.has_ownership_qualifier) {
           ++handoff.type_annotation_surface_summary.ownership_qualifier_sites;
         }
-        if (metadata.object_pointer_type_spelling) {
+        if (IsObjCReferenceAnnotationSite(metadata.id_spelling,
+                                          metadata.class_spelling,
+                                          metadata.instancetype_spelling,
+                                          metadata.object_pointer_type_spelling)) {
           ++handoff.type_annotation_surface_summary.object_pointer_type_sites;
         }
         if (metadata.has_invalid_generic_suffix) {
@@ -10850,6 +10935,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
         metadata.param_has_ownership_qualifier.size() != metadata.arity ||
+        metadata.param_id_spelling.size() != metadata.arity ||
+        metadata.param_class_spelling.size() != metadata.arity ||
+        metadata.param_instancetype_spelling.size() != metadata.arity ||
         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
@@ -10872,7 +10960,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_ownership_qualifier[i]) {
         ++type_annotation_summary.ownership_qualifier_sites;
       }
-      if (metadata.param_object_pointer_type_spelling[i]) {
+      if (IsObjCReferenceAnnotationSite(metadata.param_id_spelling[i],
+                                        metadata.param_class_spelling[i],
+                                        metadata.param_instancetype_spelling[i],
+                                        metadata.param_object_pointer_type_spelling[i])) {
         ++type_annotation_summary.object_pointer_type_sites;
       }
       if (metadata.param_has_invalid_generic_suffix[i]) {
@@ -10907,7 +10998,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_ownership_qualifier) {
       ++type_annotation_summary.ownership_qualifier_sites;
     }
-    if (metadata.return_object_pointer_type_spelling) {
+    if (IsObjCReferenceAnnotationSite(metadata.return_id_spelling,
+                                      metadata.return_class_spelling,
+                                      metadata.return_instancetype_spelling,
+                                      metadata.return_object_pointer_type_spelling)) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
     if (metadata.return_has_invalid_generic_suffix) {
@@ -10936,6 +11030,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
         metadata.param_has_pointer_declarator.size() != metadata.arity ||
         metadata.param_has_nullability_suffix.size() != metadata.arity ||
         metadata.param_has_ownership_qualifier.size() != metadata.arity ||
+        metadata.param_id_spelling.size() != metadata.arity ||
+        metadata.param_class_spelling.size() != metadata.arity ||
+        metadata.param_instancetype_spelling.size() != metadata.arity ||
         metadata.param_object_pointer_type_spelling.size() != metadata.arity ||
         metadata.param_has_invalid_generic_suffix.size() != metadata.arity ||
         metadata.param_has_invalid_pointer_declarator.size() != metadata.arity ||
@@ -10958,7 +11055,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       if (metadata.param_has_ownership_qualifier[i]) {
         ++type_annotation_summary.ownership_qualifier_sites;
       }
-      if (metadata.param_object_pointer_type_spelling[i]) {
+      if (IsObjCReferenceAnnotationSite(metadata.param_id_spelling[i],
+                                        metadata.param_class_spelling[i],
+                                        metadata.param_instancetype_spelling[i],
+                                        metadata.param_object_pointer_type_spelling[i])) {
         ++type_annotation_summary.object_pointer_type_sites;
       }
       if (metadata.param_has_invalid_generic_suffix[i]) {
@@ -10993,7 +11093,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.return_has_ownership_qualifier) {
       ++type_annotation_summary.ownership_qualifier_sites;
     }
-    if (metadata.return_object_pointer_type_spelling) {
+    if (IsObjCReferenceAnnotationSite(metadata.return_id_spelling,
+                                      metadata.return_class_spelling,
+                                      metadata.return_instancetype_spelling,
+                                      metadata.return_object_pointer_type_spelling)) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
     if (metadata.return_has_invalid_generic_suffix) {
@@ -11030,7 +11133,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
     if (metadata.has_ownership_qualifier) {
       ++type_annotation_summary.ownership_qualifier_sites;
     }
-    if (metadata.object_pointer_type_spelling) {
+    if (IsObjCReferenceAnnotationSite(metadata.id_spelling,
+                                      metadata.class_spelling,
+                                      metadata.instancetype_spelling,
+                                      metadata.object_pointer_type_spelling)) {
       ++type_annotation_summary.object_pointer_type_sites;
     }
     if (metadata.has_invalid_generic_suffix) {
