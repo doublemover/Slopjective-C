@@ -1664,3 +1664,5 @@ message send lowering and call emission advanced edge compatibility workpack (sh
 
 message send lowering and call emission advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C017`, `M232-C016`) and fail closed on advanced-diagnostics-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced diagnostics shard-2 stages advance.
 
+message send lowering and call emission advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C018`, `M232-C017`) and fail closed on advanced-conformance-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced conformance shard-2 stages advance.
+
