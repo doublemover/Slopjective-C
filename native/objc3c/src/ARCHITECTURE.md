@@ -1528,6 +1528,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a001_property_and_ivar_syntax_surface_completion_contract_and_architecture_freeze_packet.md`,
   and `package.json` so property/ivar semantics boundary evidence remains
   deterministic and fail-closed across accessor synthesis permutations.
+- M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
+  lane-C contract-freeze artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m234/m234_c001_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so lowering boundary evidence remains deterministic and
+  fail-closed across accessor/ivar lowering permutations.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,

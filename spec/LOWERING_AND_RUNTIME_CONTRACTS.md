@@ -566,6 +566,9 @@ At minimum, the pass-graph gate shall validate:
 - property and ivar syntax surface completion governance shall preserve
   deterministic lane-A boundary anchors and fail closed on property/ivar semantics drift
   before semantic parity and lowering portability validation advances.
+- accessor and ivar lowering contracts governance shall preserve deterministic lane-C
+  boundary anchors and fail closed on property/ivar lowering semantics drift before
+  runtime property metadata and integration validation advances.
 - property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
