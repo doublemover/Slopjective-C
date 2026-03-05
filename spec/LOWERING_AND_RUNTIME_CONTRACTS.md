@@ -1640,3 +1640,5 @@ message send lowering and call emission core feature expansion governance shall 
 
 message send lowering and call emission edge-case and compatibility completion governance shall preserve explicit lane-C dependency anchors (`M232-C005`, `M232-C004`) and fail closed on edge-case/compatibility continuity, operator command sequencing, or architecture/spec anchor drift before lane-C robustness workpacks advance.
 
+message send lowering and call emission edge-case expansion and robustness governance shall preserve explicit lane-C dependency anchors (`M232-C006`, `M232-C005`) and fail closed on edge-case expansion/robustness continuity, operator command sequencing, or architecture/spec anchor drift before lane-C diagnostics workpacks advance.
+

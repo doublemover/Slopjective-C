@@ -3250,4 +3250,12 @@ Forbidden:
   (`check:objc3c:m232-c005-lane-c-readiness`) so message-send lowering and
   call-emission edge-case/compatibility continuity remains deterministic and
   fail-closed against `M232-C004` dependency drift.
+- M232 lane-C C006 message send lowering and call emission edge-case expansion and robustness anchors
+  explicit lane-C edge-case expansion/robustness artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_edge_case_expansion_and_robustness_c006_expectations.md`,
+  `spec/planning/compiler/m232/m232_c006_message_send_lowering_and_call_emission_edge_case_expansion_and_robustness_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c006-lane-c-readiness`) so message-send lowering and
+  call-emission edge-case expansion/robustness continuity remains deterministic
+  and fail-closed against `M232-C005` dependency drift.
 
