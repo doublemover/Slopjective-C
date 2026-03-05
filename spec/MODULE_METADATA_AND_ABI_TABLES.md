@@ -621,6 +621,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-B type-system advanced performance workpack (shard 2) metadata anchors for `M227-B026`
       with lane-B advanced-performance-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
       plus explicit `M227-B025` dependency continuity so advanced performance workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced core workpack (shard 3) metadata anchors for `M227-B027`
+      with lane-B advanced-core-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B026` dependency continuity so advanced core workpack (shard 3) drift fails closed.
     - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
       with typed sema handoff evidence and lowering metadata continuity so
       sema-to-lowering contract drift fails closed.
