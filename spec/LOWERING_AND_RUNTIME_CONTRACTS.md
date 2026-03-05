@@ -611,6 +611,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
   lane-A dependency anchor (`M235-A015`) and fail closed when
   advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+- qualifier/generic grammar normalization integration closeout and gate sign-off wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A016`) and fail closed when
+  integration-closeout-and-gate-signoff command sequencing continuity, integration-closeout-and-gate-signoff-key continuity, or contract-gating evidence commands drift.
 - accessor and ivar lowering contracts governance shall preserve deterministic lane-C
   boundary anchors and fail closed on property/ivar lowering semantics drift before
   runtime property metadata and integration validation advances.
