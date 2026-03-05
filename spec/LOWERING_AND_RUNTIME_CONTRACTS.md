@@ -599,6 +599,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization performance and quality guardrails wiring shall preserve explicit
   lane-A dependency anchor (`M235-A010`) and fail closed on performance and quality guardrails evidence drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization cross-lane integration sync wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A011`) and fail closed on cross-lane integration sync evidence drift
+  before semantic parity and lowering portability validation advances.
 - accessor and ivar lowering contracts governance shall preserve deterministic lane-C
   boundary anchors and fail closed on property/ivar lowering semantics drift before
   runtime property metadata and integration validation advances.
