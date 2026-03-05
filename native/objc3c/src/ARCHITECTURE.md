@@ -1616,6 +1616,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C012`) in lane-C readiness chaining so
   docs and operator runbook synchronization continuity remains deterministic and
   fail-closed against `M234-C012` dependency drift.
+- M234 lane-C C014 accessor and ivar lowering contracts release-candidate and replay dry-run anchors
+  explicit lane-C release-candidate and replay dry-run artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_release_candidate_and_replay_dry_run_c014_expectations.md`,
+  `spec/planning/compiler/m234/m234_c014_accessor_and_ivar_lowering_contracts_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` with dependency token (`M234-C013`) in lane-C readiness chaining so
+  release-candidate and replay dry-run continuity remains deterministic and
+  fail-closed against `M234-C013` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
