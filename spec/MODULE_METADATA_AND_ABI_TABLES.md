@@ -547,6 +547,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M234-C004` dependency continuity so edge-case and compatibility completion drift fails closed.
     - deterministic lane-C accessor and ivar lowering edge-case expansion and robustness metadata anchors for `M234-C006`
       with explicit `M234-C005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-C accessor and ivar lowering diagnostics hardening metadata anchors for `M234-C007`
+      with explicit `M234-C006` dependency continuity so diagnostics hardening drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion modular split metadata anchors for `M234-A002`
       with explicit `M234-A001` dependency continuity so property/ivar scaffolding drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion core feature metadata anchors for `M234-A003`

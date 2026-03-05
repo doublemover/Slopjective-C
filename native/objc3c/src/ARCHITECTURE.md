@@ -1567,6 +1567,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C005`) in lane-C readiness chaining so
   edge-case expansion and robustness continuity remains deterministic and
   fail-closed against `M234-C005` dependency drift.
+- M234 lane-C C007 accessor and ivar lowering contracts diagnostics hardening anchors
+  explicit lane-C diagnostics hardening artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_diagnostics_hardening_c007_expectations.md`,
+  `spec/planning/compiler/m234/m234_c007_accessor_and_ivar_lowering_contracts_diagnostics_hardening_packet.md`,
+  and `package.json` with dependency token (`M234-C006`) in lane-C readiness chaining so
+  diagnostics hardening continuity remains deterministic and
+  fail-closed against `M234-C006` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
