@@ -1630,3 +1630,5 @@ typed sema-to-lowering advanced integration workpack (shard 2) governance shall 
 
 typed sema-to-lowering integration closeout and gate sign-off governance shall preserve explicit lane-C dependency anchors (`M227-C026`, `M227-C025`) so typed integration-closeout/sign-off continuity and parse/lowering alignment stay deterministic and fail-closed when sign-off drift occurs.
 
+message send lowering and call emission contract and architecture freeze governance shall preserve explicit lane-C dependency anchors (`M232-C001`) and fail closed on semantic-to-lowering handoff continuity, operator command sequencing, or architecture/spec anchor drift before lane-C expansion workpacks advance.
+

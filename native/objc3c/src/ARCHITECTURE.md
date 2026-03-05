@@ -3210,4 +3210,12 @@ Forbidden:
   require fail-closed integration-closeout/sign-off continuity between
   typed handoff surfaces and parse/lowering readiness before lane-C sign-off
   closure can pass.
+- M232 lane-C C001 message send lowering and call emission contract and architecture freeze anchors
+  explicit lane-C contract-freeze artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m232/m232_c001_message_send_lowering_and_call_emission_contract_and_architecture_freeze_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c001-lane-c-readiness`) so message-send lowering and
+  call-emission contract continuity remains deterministic and fail-closed
+  against lane-C handoff/architecture drift.
 
