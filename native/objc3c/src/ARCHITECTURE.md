@@ -1546,6 +1546,13 @@ Current-state note:
   `spec/planning/compiler/m234/m234_c003_accessor_and_ivar_lowering_contracts_core_feature_implementation_packet.md`,
   and `package.json` so core-feature continuity remains deterministic and
   fail-closed against `M234-C001` and `M234-C002` dependency drift.
+- M234 lane-C C004 accessor and ivar lowering contracts core feature expansion anchors
+  explicit lane-C core-feature expansion artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_core_feature_expansion_c004_expectations.md`,
+  `spec/planning/compiler/m234/m234_c004_accessor_and_ivar_lowering_contracts_core_feature_expansion_packet.md`,
+  and `package.json` with dependency token (`M234-C003`) in lane-C readiness chaining so
+  core-feature expansion continuity remains deterministic and fail-closed against
+  `M234-C003` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,

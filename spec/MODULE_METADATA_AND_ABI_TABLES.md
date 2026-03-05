@@ -540,6 +540,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C accessor and ivar lowering core-feature metadata anchors for `M234-C003`
       with explicit `M234-C001` and `M234-C002` dependency continuity so accessor/ivar lowering
       core-feature implementation drift fails closed.
+    - deterministic lane-C accessor and ivar lowering core-feature expansion metadata anchors for `M234-C004`
+      with explicit `M234-C003` dependency continuity and fail-closed core-feature expansion evidence continuity
+      so accessor/ivar lowering core-feature expansion drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion modular split metadata anchors for `M234-A002`
       with explicit `M234-A001` dependency continuity so property/ivar scaffolding drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion core feature metadata anchors for `M234-A003`
