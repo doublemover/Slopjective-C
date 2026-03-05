@@ -1552,6 +1552,18 @@ Current-state note:
   `spec/planning/compiler/m235/m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_packet.md`,
   and `package.json` (`check:objc3c:m235-c002-lane-c-readiness`) so `M235-C001`
   dependency continuity remains deterministic and fail-closed against modular split/scaffolding drift.
+- M235 lane-D D001 interop behavior for qualified generic APIs anchors explicit
+  lane-D contract-freeze artifacts in
+  `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m235/m235_d001_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`check:objc3c:m235-d001-lane-d-readiness`) so `M235-C001`
+  dependency continuity remains deterministic and fail-closed across interop boundary permutations.
+- M235 lane-E E001 qualifier/generic conformance gate anchors explicit
+  lane-E contract-freeze artifacts in
+  `docs/contracts/m235_qualifier_generic_conformance_gate_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m235/m235_e001_qualifier_generic_conformance_gate_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`check:objc3c:m235-e001-lane-e-readiness`) so `M235-A001`/`M235-B001`/`M235-C001`
+  dependency continuity remains deterministic and fail-closed across lane-E gate permutations.
 - M235 lane-B B002 qualifier/generic semantic inference modular split/scaffolding anchors
   explicit lane-B scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_semantic_inference_modular_split_scaffolding_b002_expectations.md`,
