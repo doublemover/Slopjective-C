@@ -1045,6 +1045,10 @@ At minimum, the pass-graph gate shall validate:
 - runtime metadata and lookup plumbing integration closeout and gate sign-off governance shall preserve
   explicit lane-D dependency anchors (`M233-D028`, `M233-D027`) and fail closed on
   integration-closeout evidence continuity drift before lane-D completion sign-off.
+- conformance corpus and gate closeout contract and architecture freeze wiring shall preserve
+  explicit lane-E dependency anchors (`M233-A001`, `M233-B001`, `M233-C001`, and
+  `M233-D002`) and fail closed on dependency tokens, package readiness hooks, or
+  lane-E conformance corpus and gate closeout evidence drift.
 - installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
   explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
   release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.

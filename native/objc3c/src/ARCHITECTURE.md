@@ -2192,6 +2192,14 @@ Current-state note:
   `spec/planning/compiler/m233/m233_d028_runtime_metadata_and_lookup_plumbing_integration_closeout_and_gate_signoff_packet.md`,
   and `package.json` so lane-D integration closeout continuity remains deterministic
   and fail-closed against `M233-D027` dependency drift.
+- M233 lane-E E001 conformance corpus and gate closeout contract and architecture freeze
+  anchors dependency references (`M233-A001`, `M233-B001`, `M233-C001`, and
+  `M233-D002`) in
+  `docs/contracts/m233_lane_e_conformance_corpus_and_gate_closeout_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m233/m233_e001_lane_e_conformance_corpus_and_gate_closeout_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so lane-E conformance corpus/gate closeout governance
+  evidence remains deterministic and fail-closed while lane A-D contract-freeze
+  assets are pending GH seed.
 - M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
   explicit lane-D release replay artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,
