@@ -1605,6 +1605,11 @@ Current-state note:
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_release_candidate_and_replay_dry_run_a014_expectations.md`,
   `spec/planning/compiler/m234/m234_a014_property_and_ivar_syntax_surface_completion_release_candidate_and_replay_dry_run_packet.md`,
   and `package.json` so `M234-A013` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
+- M234 lane-A A015 property and ivar syntax surface completion advanced core workpack (shard 1) anchors
+  explicit lane-A advanced-core artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_advanced_core_workpack_shard_1_a015_expectations.md`,
+  `spec/planning/compiler/m234/m234_a015_property_and_ivar_syntax_surface_completion_advanced_core_workpack_shard_1_packet.md`,
+  and `package.json` so `M234-A014` dependency continuity and advanced-core evidence remain fail-closed.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,

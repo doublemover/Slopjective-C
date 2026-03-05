@@ -604,6 +604,8 @@ At minimum, the pass-graph gate shall validate:
   before semantic parity and lowering portability validation advances.
 - property and ivar syntax surface completion release-candidate and replay dry-run wiring shall preserve explicit
   lane-A dependency anchor (`M234-A013`) and fail closed when release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
+- property and ivar syntax surface completion advanced core workpack (shard 1) wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A014`) and fail closed when advanced-core command sequencing continuity or shard-1 evidence drift occurs.
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.
