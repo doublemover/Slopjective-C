@@ -1564,6 +1564,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b005_qualifier_and_generic_semantic_inference_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` (`check:objc3c:m235-b005-lane-b-readiness`) so `M235-B004`
   dependency continuity remains deterministic and fail-closed against edge-case and compatibility drift.
+- M235 lane-B B006 qualifier/generic semantic inference edge-case expansion and robustness anchors
+  explicit lane-B edge-case expansion and robustness artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_edge_case_expansion_and_robustness_b006_expectations.md`,
+  `spec/planning/compiler/m235/m235_b006_qualifier_and_generic_semantic_inference_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` (`check:objc3c:m235-b006-lane-b-readiness`) so `M235-B005`
+  dependency continuity remains deterministic and fail-closed against edge-case expansion and robustness drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
