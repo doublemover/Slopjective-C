@@ -1552,6 +1552,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a005_property_and_ivar_syntax_surface_completion_edge_case_and_compatibility_completion_packet.md`,
   and `package.json` so edge-case and compatibility continuity remains
   deterministic and fail-closed against `M234-A004` dependency drift.
+- M234 lane-A A006 property and ivar syntax surface completion edge-case expansion and robustness anchors
+  explicit lane-A edge robustness artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_edge_case_expansion_and_robustness_a006_expectations.md`,
+  `spec/planning/compiler/m234/m234_a006_property_and_ivar_syntax_surface_completion_edge_case_expansion_and_robustness_packet.md`,
+  and `package.json` so edge-case expansion continuity remains deterministic
+  and fail-closed against `M234-A005` dependency drift.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
