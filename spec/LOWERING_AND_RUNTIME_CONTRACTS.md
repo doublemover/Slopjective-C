@@ -1644,3 +1644,5 @@ message send lowering and call emission edge-case expansion and robustness gover
 
 message send lowering and call emission diagnostics hardening governance shall preserve explicit lane-C dependency anchors (`M232-C007`, `M232-C006`) and fail closed on diagnostics-hardening continuity, operator command sequencing, or architecture/spec anchor drift before lane-C recovery workpacks advance.
 
+message send lowering and call emission recovery and determinism hardening governance shall preserve explicit lane-C dependency anchors (`M232-C008`, `M232-C007`) and fail closed on recovery/determinism-hardening continuity, operator command sequencing, or architecture/spec anchor drift before lane-C conformance workpacks advance.
+
