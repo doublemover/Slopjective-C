@@ -1602,6 +1602,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C010`) in lane-C readiness chaining so
   performance and quality guardrails continuity remains deterministic and
   fail-closed against `M234-C010` dependency drift.
+- M234 lane-C C012 accessor and ivar lowering contracts cross-lane integration sync anchors
+  explicit lane-C cross-lane integration sync artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_cross_lane_integration_sync_c012_expectations.md`,
+  `spec/planning/compiler/m234/m234_c012_accessor_and_ivar_lowering_contracts_cross_lane_integration_sync_packet.md`,
+  and `package.json` with dependency token (`M234-C011`) in lane-C readiness chaining so
+  cross-lane integration sync continuity remains deterministic and
+  fail-closed against `M234-C011` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
