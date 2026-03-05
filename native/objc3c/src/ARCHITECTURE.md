@@ -1528,6 +1528,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a001_property_and_ivar_syntax_surface_completion_contract_and_architecture_freeze_packet.md`,
   and `package.json` so property/ivar semantics boundary evidence remains
   deterministic and fail-closed across accessor synthesis permutations.
+- M235 lane-A A001 qualifier/generic grammar normalization anchors explicit
+  lane-A contract-freeze artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m235/m235_a001_qualifier_and_generic_grammar_normalization_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so nullability/generics/qualifier semantics boundary evidence remains
+  deterministic and fail-closed across qualifier and generic grammar permutations.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
