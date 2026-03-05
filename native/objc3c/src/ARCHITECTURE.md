@@ -2168,6 +2168,12 @@ Current-state note:
   `spec/planning/compiler/m233/m233_d024_runtime_metadata_and_lookup_plumbing_advanced_conformance_workpack_shard2_packet.md`,
   and `package.json` so advanced conformance continuity remains deterministic
   and fail-closed against `M233-D023` dependency drift.
+- M233 lane-D D025 advanced integration workpack (shard 2) anchors runtime metadata and lookup plumbing continuity
+  explicit lane-D advanced-integration artifacts in
+  `docs/contracts/m233_runtime_metadata_and_lookup_plumbing_advanced_integration_workpack_shard2_d025_expectations.md`,
+  `spec/planning/compiler/m233/m233_d025_runtime_metadata_and_lookup_plumbing_advanced_integration_workpack_shard2_packet.md`,
+  and `package.json` so advanced integration continuity remains deterministic
+  and fail-closed against `M233-D024` dependency drift.
 - M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
   explicit lane-D release replay artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,

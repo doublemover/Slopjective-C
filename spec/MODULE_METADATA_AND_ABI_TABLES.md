@@ -1063,6 +1063,8 @@ A conforming implementation shall preserve, for all exported declarations:
      with explicit `M233-D022` dependency continuity and fail-closed advanced diagnostics evidence continuity.
    - deterministic lane-D runtime metadata and lookup plumbing advanced conformance workpack (shard 2) metadata anchors for `M233-D024`
      with explicit `M233-D023` dependency continuity and fail-closed advanced conformance evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced integration workpack (shard 2) metadata anchors for `M233-D025`
+     with explicit `M233-D024` dependency continuity and fail-closed advanced integration evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling release-candidate replay dry-run metadata anchors for `M249-D014`
      with explicit `M249-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling advanced core workpack (shard 1) metadata anchors for `M249-D015`
