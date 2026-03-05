@@ -3274,4 +3274,12 @@ Forbidden:
   (`check:objc3c:m232-c008-lane-c-readiness`) so message-send lowering and
   call-emission recovery/determinism-hardening continuity remains deterministic
   and fail-closed against `M232-C007` dependency drift.
+- M232 lane-C C009 message send lowering and call emission conformance matrix implementation anchors
+  explicit lane-C conformance-matrix artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_conformance_matrix_implementation_c009_expectations.md`,
+  `spec/planning/compiler/m232/m232_c009_message_send_lowering_and_call_emission_conformance_matrix_implementation_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c009-lane-c-readiness`) so message-send lowering and
+  call-emission conformance-matrix continuity remains deterministic and
+  fail-closed against `M232-C008` dependency drift.
 
