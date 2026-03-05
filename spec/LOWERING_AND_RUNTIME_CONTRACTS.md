@@ -608,6 +608,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization release-candidate and replay dry-run wiring shall preserve explicit
   lane-A dependency anchor (`M235-A013`) and fail closed when
   release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
+- qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A015`) and fail closed when
+  advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
 - accessor and ivar lowering contracts governance shall preserve deterministic lane-C
   boundary anchors and fail closed on property/ivar lowering semantics drift before
   runtime property metadata and integration validation advances.
@@ -1893,4 +1896,3 @@ property conformance gate and docs modular split/scaffolding wiring shall preser
 property conformance gate and docs core feature implementation wiring shall preserve explicit lane-E dependency anchors (`M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`) and fail closed when lane-E core feature implementation dependency continuity drifts.
 
 property conformance gate and docs core feature expansion wiring shall preserve explicit lane-E dependency anchors (`M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`) and fail closed when lane-E core feature expansion dependency continuity drifts.
-

@@ -1612,6 +1612,11 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a014_qualifier_and_generic_grammar_normalization_release_candidate_and_replay_dry_run_packet.md`,
   and `package.json` (`check:objc3c:m235-a014-lane-a-readiness`) so `M235-A013` dependency continuity remains deterministic
   and fail-closed against release/replay drift.
+- M235 lane-A A016 qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) anchors
+  explicit lane-A advanced-edge artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_advanced_edge_compatibility_workpack_shard_1_a016_expectations.md`,
+  `spec/planning/compiler/m235/m235_a016_qualifier_and_generic_grammar_normalization_advanced_edge_compatibility_workpack_shard_1_packet.md`,
+  and `package.json` (`check:objc3c:m235-a016-lane-a-readiness`) so `M235-A015` dependency continuity and advanced edge compatibility workpack (shard 1) evidence remain fail-closed.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
