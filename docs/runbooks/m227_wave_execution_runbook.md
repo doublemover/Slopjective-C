@@ -31,6 +31,7 @@
 - `objc3c-type-system-objc3-forms-advanced-conformance-workpack-shard4/m227-b036-v1`
 - `objc3c-type-system-objc3-forms-advanced-integration-workpack-shard4/m227-b037-v1`
 - `objc3c-type-system-objc3-forms-advanced-performance-workpack-shard4/m227-b038-v1`
+- `objc3c-type-system-objc3-forms-integration-closeout-and-gate-signoff/m227-b039-v1`
 - `objc3c-typed-sema-to-lowering-modular-split-scaffold/m227-c002-v1`
 - `objc3c-runtime-facing-type-metadata-semantics-contract/m227-d001-v1`
 - `objc3c-lane-e-semantic-conformance-quality-gate-contract/m227-e001-v1`
@@ -159,6 +160,9 @@
 110. `python scripts/check_m227_b038_type_system_objc3_forms_advanced_performance_workpack_shard4_contract.py`
 111. `python -m pytest tests/tooling/test_check_m227_b038_type_system_objc3_forms_advanced_performance_workpack_shard4_contract.py -q`
 112. `npm run check:objc3c:m227-b038-lane-b-readiness`
+113. `python scripts/check_m227_b039_type_system_objc3_forms_integration_closeout_and_gate_signoff_contract.py`
+114. `python -m pytest tests/tooling/test_check_m227_b039_type_system_objc3_forms_integration_closeout_and_gate_signoff_contract.py -q`
+115. `npm run check:objc3c:m227-b039-lane-b-readiness`
 
 ## Evidence
 
