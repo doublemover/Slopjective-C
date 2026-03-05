@@ -175,6 +175,14 @@ Current-state note:
   (`check:objc3c:m227-b024-lane-b-readiness`) so `M227-B023` dependency
   continuity and lane-B advanced-conformance-shard2 command sequencing remain
   deterministic and fail-closed against governance drift.
+- M227 lane-B B025 type-system advanced integration workpack (shard 2) anchors
+  explicit lane-B advanced integration workpack (shard 2) artifacts in
+  `docs/contracts/m227_type_system_objc3_forms_advanced_integration_workpack_shard2_b025_expectations.md`,
+  `spec/planning/compiler/m227/m227_b025_type_system_objc3_forms_advanced_integration_workpack_shard2_packet.md`,
+  `docs/runbooks/m227_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m227-b025-lane-b-readiness`) so `M227-B024` dependency
+  continuity and lane-B advanced-integration-shard2 command sequencing remain
+  deterministic and fail-closed against governance drift.
 - M227 lane-C C001 typed sema-to-lowering contracts contract and architecture freeze anchors
   explicit lane-C contract-freeze artifacts in
   `docs/contracts/m227_typed_sema_to_lowering_contract_expectations.md`,
