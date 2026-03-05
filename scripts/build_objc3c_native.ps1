@@ -48,6 +48,12 @@ $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
 
+function Write-BuildStep {
+  param([Parameter(Mandatory = $true)][string]$Message)
+
+  Write-Output ("[build:objc3c-native] " + $Message)
+}
+
 function Publish-ArtifactWithRetry {
   param(
     [Parameter(Mandatory = $true)]
@@ -1054,6 +1060,12 @@ foreach ($sourcePath in @($nativeSourcePaths + $capiRunnerSourcePaths)) {
   }
 }
 
+Write-BuildStep ("repo_root=" + $repoRoot)
+Write-BuildStep ("llvm_root=" + $llvmRoot)
+Write-BuildStep ("clangxx=" + $clangxx)
+Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
+Write-BuildStep ("compile_start=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+
 & $clangxx `
   -std=c++20 `
   -Wall `
@@ -1068,6 +1080,8 @@ foreach ($sourcePath in @($nativeSourcePaths + $capiRunnerSourcePaths)) {
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
+Write-BuildStep ("compile_done=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+Write-BuildStep ("compile_start=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 
 & $clangxx `
   -std=c++20 `
@@ -1083,6 +1097,8 @@ Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
 
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
+Write-BuildStep ("compile_done=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+Write-BuildStep "artifact_generation_start=frontend_contract_packets"
 Write-FrontendModuleScaffoldArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendScaffoldPath `
@@ -1135,6 +1151,7 @@ Write-FrontendIntegrationCloseoutArtifact `
   -RepoRoot $repoRoot `
   -OutputPath $frontendIntegrationCloseoutPath `
   -FrontendConformanceCorpusPath $frontendConformanceCorpusPath
+Write-BuildStep "artifact_generation_done=frontend_contract_packets"
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
