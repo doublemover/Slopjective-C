@@ -3218,4 +3218,12 @@ Forbidden:
   (`check:objc3c:m232-c001-lane-c-readiness`) so message-send lowering and
   call-emission contract continuity remains deterministic and fail-closed
   against lane-C handoff/architecture drift.
+- M232 lane-C C002 message send lowering and call emission modular split and scaffolding anchors
+  explicit lane-C modular-split/scaffolding artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_modular_split_and_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m232/m232_c002_message_send_lowering_and_call_emission_modular_split_and_scaffolding_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c002-lane-c-readiness`) so message-send lowering and
+  call-emission modular split/scaffolding continuity remains deterministic and
+  fail-closed against `M232-C001` dependency drift.
 

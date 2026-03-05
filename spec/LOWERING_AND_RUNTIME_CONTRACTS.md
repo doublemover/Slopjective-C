@@ -1632,3 +1632,5 @@ typed sema-to-lowering integration closeout and gate sign-off governance shall p
 
 message send lowering and call emission contract and architecture freeze governance shall preserve explicit lane-C dependency anchors (`M232-C001`) and fail closed on semantic-to-lowering handoff continuity, operator command sequencing, or architecture/spec anchor drift before lane-C expansion workpacks advance.
 
+message send lowering and call emission modular split and scaffolding governance shall preserve explicit lane-C dependency anchors (`M232-C002`, `M232-C001`) and fail closed on modular split/scaffolding continuity, operator command sequencing, or architecture/spec anchor drift before lane-C core-feature workpacks advance.
+
