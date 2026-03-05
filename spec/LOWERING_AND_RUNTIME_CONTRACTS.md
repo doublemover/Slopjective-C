@@ -601,6 +601,9 @@ At minimum, the pass-graph gate shall validate:
 - accessor and ivar lowering contracts cross-lane integration sync governance shall preserve explicit
   lane-C dependency anchors (`M234-C011`) and fail closed on cross-lane integration sync evidence drift
   before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts docs and operator runbook synchronization governance shall preserve explicit
+  lane-C dependency anchors (`M234-C012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before runtime property metadata and integration validation advances.
 - property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
