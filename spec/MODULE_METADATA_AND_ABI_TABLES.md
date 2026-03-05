@@ -572,6 +572,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-D runtime property metadata integration metadata anchors for `M234-D001`
       with runtime property metadata evidence and metadata replay-budget continuity
       so runtime property metadata integration drift fails closed.
+    - deterministic lane-D runtime property metadata integration modular split metadata anchors for
+      `M234-D002` with explicit `M234-D001` dependency continuity so runtime property metadata
+      modular split/scaffolding drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion modular split metadata anchors for `M234-A002`
       with explicit `M234-A001` dependency continuity so property/ivar scaffolding drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion core feature metadata anchors for `M234-A003`

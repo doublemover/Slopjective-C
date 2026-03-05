@@ -1650,6 +1650,13 @@ Current-state note:
   `spec/planning/compiler/m234/m234_d001_runtime_property_metadata_integration_contract_and_architecture_freeze_packet.md`,
   and `package.json` so runtime property metadata integration boundaries remain deterministic
   and fail-closed across runtime metadata integration permutations.
+- M234 lane-D D002 runtime property metadata integration modular split/scaffolding anchors
+  explicit lane-D scaffolding artifacts in
+  `docs/contracts/m234_runtime_property_metadata_integration_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m234/m234_d002_runtime_property_metadata_integration_modular_split_scaffolding_packet.md`,
+  and `package.json` with dependency token (`M234-D001`) in lane-D readiness chaining so
+  modular split continuity remains deterministic and fail-closed against
+  `M234-D001` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
