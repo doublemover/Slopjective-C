@@ -2083,6 +2083,31 @@ Current-state note:
   `spec/planning/compiler/m249/m249_d004_installer_runtime_operations_and_support_tooling_core_feature_expansion_packet.md`,
   and `package.json` so core-feature expansion installer/runtime continuity
   remains deterministic and fail-closed against `M249-D003` dependency drift.
+- M233 lane-D D001 runtime metadata and lookup plumbing anchors
+  explicit lane-D contract and architecture freeze artifacts in
+  `docs/contracts/m233_runtime_metadata_and_lookup_plumbing_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m233/m233_d001_runtime_metadata_and_lookup_plumbing_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so runtime metadata and lookup plumbing boundaries and support
+  tooling continuity remain deterministic and fail-closed for release
+  governance readiness.
+- M233 lane-D D002 runtime metadata and lookup plumbing modular split/scaffolding
+  anchors explicit lane-D scaffolding artifacts in
+  `docs/contracts/m233_runtime_metadata_and_lookup_plumbing_modular_split_scaffolding_d002_expectations.md`,
+  `spec/planning/compiler/m233/m233_d002_runtime_metadata_and_lookup_plumbing_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split installer/runtime continuity remains
+  deterministic and fail-closed against `M233-D001` dependency drift.
+- M233 lane-D D003 runtime metadata and lookup plumbing core feature implementation anchors
+  explicit lane-D core-feature artifacts in
+  `docs/contracts/m233_runtime_metadata_and_lookup_plumbing_core_feature_implementation_d003_expectations.md`,
+  `spec/planning/compiler/m233/m233_d003_runtime_metadata_and_lookup_plumbing_core_feature_implementation_packet.md`,
+  and `package.json` so core feature installer/runtime continuity remains
+  deterministic and fail-closed against `M233-D002` dependency drift.
+- M233 lane-D D004 runtime metadata and lookup plumbing core feature expansion anchors
+  explicit lane-D core-feature expansion artifacts in
+  `docs/contracts/m233_runtime_metadata_and_lookup_plumbing_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m233/m233_d004_runtime_metadata_and_lookup_plumbing_core_feature_expansion_packet.md`,
+  and `package.json` so core-feature expansion installer/runtime continuity
+  remains deterministic and fail-closed against `M233-D003` dependency drift.
 - M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
   explicit lane-D release replay artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,

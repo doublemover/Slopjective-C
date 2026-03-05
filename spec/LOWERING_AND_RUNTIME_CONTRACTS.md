@@ -991,6 +991,18 @@ At minimum, the pass-graph gate shall validate:
 - installer/runtime operations and support tooling core feature expansion shall
   preserve explicit lane-D dependency anchors (`M249-D003`) and fail closed on
   core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
+- runtime metadata and lookup plumbing governance shall preserve
+  explicit lane-D installer/runtime operation anchors and fail closed on
+  lookup-plumbing replay drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing modular split scaffolding shall
+  preserve explicit lane-D dependency anchors (`M233-D001`) and fail closed on
+  scaffolding evidence drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M233-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing core feature expansion shall
+  preserve explicit lane-D dependency anchors (`M233-D003`) and fail closed on
+  core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
 - installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
   explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
   release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.
