@@ -3746,3 +3746,7 @@ Forbidden:
   explicit lane-E dependency anchors with `M234-E002`, `M234-A003`, `M234-B003`,
   `M234-C003`, and `M234-D002` so lane-E core feature implementation continuity remains deterministic and fail-closed.
 
+- M234 lane-E E004 property conformance gate and docs core feature expansion anchors
+  explicit lane-E dependency anchors with `M234-E003`, `M234-A004`, `M234-B004`,
+  `M234-C004`, and `M234-D003` so lane-E core feature expansion continuity remains deterministic and fail-closed.
+

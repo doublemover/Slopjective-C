@@ -1681,3 +1681,5 @@ deterministic property conformance gate and docs modular split/scaffolding depen
 
 deterministic property conformance gate and docs core feature implementation dependency anchors for `M234-E003` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`.
 
+deterministic property conformance gate and docs core feature expansion dependency anchors for `M234-E004` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`.
+
