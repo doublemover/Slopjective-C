@@ -1588,6 +1588,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b009_qualifier_and_generic_semantic_inference_conformance_matrix_implementation_packet.md`,
   and `package.json` (`check:objc3c:m235-b009-lane-b-readiness`) so `M235-B008`
   dependency continuity remains deterministic and fail-closed against conformance matrix implementation drift.
+- M235 lane-B B010 qualifier/generic semantic inference conformance corpus expansion anchors
+  explicit lane-B conformance corpus expansion artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_conformance_corpus_expansion_b010_expectations.md`,
+  `spec/planning/compiler/m235/m235_b010_qualifier_and_generic_semantic_inference_conformance_corpus_expansion_packet.md`,
+  and `package.json` (`check:objc3c:m235-b010-lane-b-readiness`) so `M235-B009`
+  dependency continuity remains deterministic and fail-closed against conformance corpus expansion drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,

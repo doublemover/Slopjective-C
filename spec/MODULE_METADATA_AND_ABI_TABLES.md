@@ -554,6 +554,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-B007` dependency continuity so recovery and determinism hardening drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference conformance matrix implementation metadata anchors for `M235-B009`
       with explicit `M235-B008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference conformance corpus expansion metadata anchors for `M235-B010`
+      with explicit `M235-B009` dependency continuity so conformance corpus expansion drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization modular split metadata anchors for `M235-A002`
       with explicit `M235-A001` dependency continuity so nullability/generics/qualifier scaffolding drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization core feature metadata anchors for `M235-A003`
