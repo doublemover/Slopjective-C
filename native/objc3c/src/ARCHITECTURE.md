@@ -3226,4 +3226,12 @@ Forbidden:
   (`check:objc3c:m232-c002-lane-c-readiness`) so message-send lowering and
   call-emission modular split/scaffolding continuity remains deterministic and
   fail-closed against `M232-C001` dependency drift.
+- M232 lane-C C003 message send lowering and call emission core feature implementation anchors
+  explicit lane-C core-feature artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m232/m232_c003_message_send_lowering_and_call_emission_core_feature_implementation_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c003-lane-c-readiness`) so message-send lowering and
+  call-emission core-feature continuity remains deterministic and fail-closed
+  against `M232-C002` dependency drift.
 

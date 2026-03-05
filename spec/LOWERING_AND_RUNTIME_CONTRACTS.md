@@ -1634,3 +1634,5 @@ message send lowering and call emission contract and architecture freeze governa
 
 message send lowering and call emission modular split and scaffolding governance shall preserve explicit lane-C dependency anchors (`M232-C002`, `M232-C001`) and fail closed on modular split/scaffolding continuity, operator command sequencing, or architecture/spec anchor drift before lane-C core-feature workpacks advance.
 
+message send lowering and call emission core feature implementation governance shall preserve explicit lane-C dependency anchors (`M232-C003`, `M232-C002`) and fail closed on core-feature continuity, operator command sequencing, or architecture/spec anchor drift before lane-C expansion workpacks advance.
+
