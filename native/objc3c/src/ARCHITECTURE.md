@@ -1546,6 +1546,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_c001_qualified_type_lowering_and_abi_representation_contract_and_architecture_freeze_packet.md`,
   and `package.json` so lowering/ABI boundary evidence remains deterministic and
   fail-closed across qualified-type lowering and ABI representation permutations.
+- M235 lane-C C002 qualified type lowering and ABI representation modular split/scaffolding anchors
+  explicit lane-C modular split/scaffolding artifacts in
+  `docs/contracts/m235_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_c002_expectations.md`,
+  `spec/planning/compiler/m235/m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_packet.md`,
+  and `package.json` (`check:objc3c:m235-c002-lane-c-readiness`) so `M235-C001`
+  dependency continuity remains deterministic and fail-closed against modular split/scaffolding drift.
 - M235 lane-B B002 qualifier/generic semantic inference modular split/scaffolding anchors
   explicit lane-B scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_semantic_inference_modular_split_scaffolding_b002_expectations.md`,

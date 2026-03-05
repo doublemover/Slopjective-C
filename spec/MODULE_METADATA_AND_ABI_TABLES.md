@@ -541,6 +541,8 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M235-C001`
       with qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
       so qualified-type lowering and ABI representation drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation modular split/scaffolding metadata anchors for `M235-C002`
+      with explicit `M235-C001` dependency continuity so modular split/scaffolding lowering and ABI drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference modular split metadata anchors for `M235-B002`
       with explicit `M235-B001` dependency continuity so nullability/generics/qualifier semantic-inference scaffolding drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference core feature metadata anchors for `M235-B003`
