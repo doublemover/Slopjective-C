@@ -638,6 +638,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference advanced diagnostics workpack (shard 2) governance shall preserve explicit
   lane-B dependency anchors (`M235-B022`) and fail closed on advanced diagnostics workpack (shard 2) evidence drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced conformance workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B023`) and fail closed on advanced conformance workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
 - qualifier/generic grammar normalization modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M235-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
