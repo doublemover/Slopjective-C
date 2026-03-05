@@ -605,6 +605,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic semantic inference cross-lane integration sync governance shall preserve explicit
   lane-B dependency anchors (`M235-B011`) and fail closed on cross-lane integration sync evidence drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference docs and operator runbook synchronization governance shall preserve explicit
+  lane-B dependency anchors (`M235-B012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before semantic parity and lowering portability validation advances.
 - qualifier/generic grammar normalization modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M235-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
