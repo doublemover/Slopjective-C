@@ -2200,6 +2200,14 @@ Current-state note:
   and `package.json` so lane-E conformance corpus/gate closeout governance
   evidence remains deterministic and fail-closed while lane A-D contract-freeze
   assets are pending GH seed.
+- M233 lane-E E002 conformance corpus and gate closeout modular split/scaffolding
+  anchors dependency references (`M233-E001`, `M233-A001`, `M233-B002`,
+  `M233-C003`, and `M233-D003`) in
+  `docs/contracts/m233_lane_e_conformance_corpus_and_gate_closeout_modular_split_scaffolding_e002_expectations.md`,
+  `spec/planning/compiler/m233/m233_e002_lane_e_conformance_corpus_and_gate_closeout_modular_split_scaffolding_packet.md`,
+  and `package.json` so lane-E modular split/scaffolding governance evidence
+  remains deterministic and fail-closed while lane A-D modular split/scaffolding
+  assets are pending GH seed.
 - M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
   explicit lane-D release replay artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,
