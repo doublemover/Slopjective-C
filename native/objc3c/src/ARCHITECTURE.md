@@ -3290,4 +3290,12 @@ Forbidden:
   (`check:objc3c:m232-c010-lane-c-readiness`) so message-send lowering and
   call-emission conformance-corpus continuity remains deterministic and
   fail-closed against `M232-C009` dependency drift.
+- M232 lane-C C011 message send lowering and call emission performance and quality guardrails anchors
+  explicit lane-C performance/quality artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_performance_and_quality_guardrails_c011_expectations.md`,
+  `spec/planning/compiler/m232/m232_c011_message_send_lowering_and_call_emission_performance_and_quality_guardrails_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c011-lane-c-readiness`) so message-send lowering and
+  call-emission performance/quality continuity remains deterministic and
+  fail-closed against `M232-C010` dependency drift.
 
