@@ -543,6 +543,8 @@ A conforming implementation shall preserve, for all exported declarations:
       so qualified-type lowering and ABI representation drift fails closed.
     - deterministic lane-C qualified type lowering and ABI representation modular split/scaffolding metadata anchors for `M235-C002`
       with explicit `M235-C001` dependency continuity so modular split/scaffolding lowering and ABI drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation core feature implementation metadata anchors for `M235-C003`
+      with explicit `M235-C002` dependency continuity so core feature implementation lowering and ABI drift fails closed.
     - deterministic lane-D interop behavior for qualified generic APIs metadata anchors for `M235-D001`
       with explicit `M235-C001` dependency continuity so interop contract and architecture drift fails closed.
     - deterministic lane-E qualifier/generic conformance gate metadata anchors for `M235-E001`

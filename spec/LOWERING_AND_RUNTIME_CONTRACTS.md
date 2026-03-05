@@ -578,6 +578,9 @@ At minimum, the pass-graph gate shall validate:
 - qualified type lowering and ABI representation modular split/scaffolding governance shall preserve explicit
   lane-C dependency anchors (`M235-C001`) and fail closed on modular split/scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation core feature implementation governance shall preserve explicit
+  lane-C dependency anchors (`M235-C002`) and fail closed on core feature implementation evidence drift
+  before semantic parity and lowering portability validation advances.
 - interop behavior for qualified generic APIs governance shall preserve explicit
   lane-D dependency anchors (`M235-C001`) and fail closed on interop contract and architecture evidence drift
   before semantic parity and lowering portability validation advances.
