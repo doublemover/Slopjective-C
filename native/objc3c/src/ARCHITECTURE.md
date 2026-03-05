@@ -1612,6 +1612,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b013_qualifier_and_generic_semantic_inference_docs_and_operator_runbook_synchronization_packet.md`,
   and `package.json` (`check:objc3c:m235-b013-lane-b-readiness`) so `M235-B012`
   dependency continuity remains deterministic and fail-closed against docs and operator runbook synchronization drift.
+- M235 lane-B B014 qualifier/generic semantic inference release-candidate and replay dry-run anchors
+  explicit lane-B release-candidate and replay dry-run artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_release_candidate_and_replay_dry_run_b014_expectations.md`,
+  `spec/planning/compiler/m235/m235_b014_qualifier_and_generic_semantic_inference_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` (`check:objc3c:m235-b014-lane-b-readiness`) so `M235-B013`
+  dependency continuity remains deterministic and fail-closed against release-candidate and replay dry-run drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,

@@ -562,6 +562,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-B011` dependency continuity so cross-lane integration sync drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference docs and operator runbook synchronization metadata anchors for `M235-B013`
       with explicit `M235-B012` dependency continuity so docs and operator runbook synchronization drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference release-candidate and replay dry-run metadata anchors for `M235-B014`
+      with explicit `M235-B013` dependency continuity so release-candidate and replay dry-run drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization modular split metadata anchors for `M235-A002`
       with explicit `M235-A001` dependency continuity so nullability/generics/qualifier scaffolding drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization core feature metadata anchors for `M235-A003`
