@@ -1540,6 +1540,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_c002_accessor_and_ivar_lowering_contracts_modular_split_scaffolding_packet.md`,
   and `package.json` so modular split continuity remains deterministic and
   fail-closed against `M234-C001` dependency drift.
+- M234 lane-C C003 accessor and ivar lowering contracts core feature implementation anchors
+  explicit lane-C core-feature artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m234/m234_c003_accessor_and_ivar_lowering_contracts_core_feature_implementation_packet.md`,
+  and `package.json` so core-feature continuity remains deterministic and
+  fail-closed against `M234-C001` and `M234-C002` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
