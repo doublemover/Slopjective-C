@@ -17,6 +17,7 @@ read errors, and support canonical JSON emission via `--emit-json`.
 ## Issue Anchor
 
 - Canonical issue: `#6685`
+- Issue `#6685` defines canonical lane-D edge-case expansion and robustness scope.
 - Canonical scope anchor: lane-D toolchain integration and optimization
   controls edge-case expansion and robustness.
 
