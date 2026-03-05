@@ -1570,6 +1570,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a007_qualifier_and_generic_grammar_normalization_diagnostics_hardening_packet.md`,
   and `package.json` (`check:objc3c:m235-a007-lane-a-readiness`) so `M235-A006`
   dependency continuity remains deterministic and fail-closed against diagnostics hardening drift.
+- M235 lane-A A008 qualifier/generic grammar normalization recovery and determinism hardening anchors
+  explicit lane-A recovery and determinism hardening artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_recovery_and_determinism_hardening_a008_expectations.md`,
+  `spec/planning/compiler/m235/m235_a008_qualifier_and_generic_grammar_normalization_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` (`check:objc3c:m235-a008-lane-a-readiness`) so `M235-A007`
+  dependency continuity remains deterministic and fail-closed against recovery and determinism hardening drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,

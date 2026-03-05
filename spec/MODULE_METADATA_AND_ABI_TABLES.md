@@ -547,6 +547,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-A005` dependency continuity so edge-case expansion and robustness drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization diagnostics hardening metadata anchors for `M235-A007`
       with explicit `M235-A006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization recovery and determinism hardening metadata anchors for `M235-A008`
+      with explicit `M235-A007` dependency continuity so recovery and determinism hardening drift fails closed.
     - deterministic lane-C accessor and ivar lowering metadata anchors for `M234-C001`
       with property/ivar lowering evidence and lowering replay-budget continuity
       so accessor/ivar lowering surface drift fails closed.
