@@ -1660,3 +1660,5 @@ message send lowering and call emission release-candidate and replay dry-run gov
 
 message send lowering and call emission advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C015`, `M232-C014`) and fail closed on advanced-core-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility stages advance.
 
+message send lowering and call emission advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C016`, `M232-C015`) and fail closed on advanced-edge-compatibility-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility shard-2 stages advance.
+

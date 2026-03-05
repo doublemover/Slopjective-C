@@ -3331,3 +3331,12 @@ Forbidden:
   call-emission advanced-core-shard1 continuity remains deterministic and
   fail-closed against `M232-C014` dependency drift.
 
+- M232 lane-C C016 message send lowering and call emission advanced edge compatibility workpack (shard 1) anchors
+  explicit lane-C advanced-edge-compatibility-shard1 artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_advanced_edge_compatibility_workpack_shard1_c016_expectations.md`,
+  `spec/planning/compiler/m232/m232_c016_message_send_lowering_and_call_emission_advanced_edge_compatibility_workpack_shard1_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c016-lane-c-readiness`) so message-send lowering and
+  call-emission advanced-edge-compatibility-shard1 continuity remains
+  deterministic and fail-closed against `M232-C015` dependency drift.
+
