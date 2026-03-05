@@ -1053,6 +1053,10 @@ At minimum, the pass-graph gate shall validate:
   explicit lane-E dependency anchors (`M233-E001`, `M233-A001`, `M233-B002`,
   `M233-C003`, and `M233-D003`) and fail closed on dependency tokens,
   dependency-reference commands, or lane-E modular split/scaffolding evidence drift.
+- conformance corpus and gate closeout core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M233-E002`, `M233-A002`, `M233-B003`,
+  `M233-C004`, and `M233-D005`) and fail closed on dependency tokens,
+  dependency-reference commands, or lane-E core-feature evidence drift.
 - installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
   explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
   release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.

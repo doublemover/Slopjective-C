@@ -1075,6 +1075,8 @@ A conforming implementation shall preserve, for all exported declarations:
      `M233-A001`, `M233-B001`, `M233-C001`, and `M233-D002` so lane-E metadata governance drift fails closed.
    - deterministic lane-E conformance corpus and gate closeout modular split/scaffolding dependency anchors for
      `M233-E001`, `M233-A001`, `M233-B002`, `M233-C003`, and `M233-D003` so lane-E modular split/scaffolding metadata governance drift fails closed.
+   - deterministic lane-E conformance corpus and gate closeout core feature implementation dependency anchors for
+     `M233-E002`, `M233-A002`, `M233-B003`, `M233-C004`, and `M233-D005` so lane-E core-feature metadata governance drift fails closed.
    - deterministic lane-D installer/runtime operations and support tooling release-candidate replay dry-run metadata anchors for `M249-D014`
      with explicit `M249-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
    - deterministic lane-D installer/runtime operations and support tooling advanced core workpack (shard 1) metadata anchors for `M249-D015`
