@@ -572,6 +572,9 @@ At minimum, the pass-graph gate shall validate:
 - property and ivar syntax surface completion core feature implementation governance shall preserve explicit
   lane-A dependency anchors (`M234-A002`) and fail closed on core-feature evidence drift
   before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion core feature expansion governance shall preserve explicit
+  lane-A dependency anchors (`M234-A003`) and fail closed on core-feature expansion evidence drift
+  before semantic parity and lowering portability validation advances.
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.
