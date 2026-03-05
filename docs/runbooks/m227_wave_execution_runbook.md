@@ -18,6 +18,7 @@
 - `objc3c-type-system-objc3-forms-advanced-diagnostics-workpack-shard2/m227-b023-v1`
 - `objc3c-type-system-objc3-forms-advanced-conformance-workpack-shard2/m227-b024-v1`
 - `objc3c-type-system-objc3-forms-advanced-integration-workpack-shard2/m227-b025-v1`
+- `objc3c-type-system-objc3-forms-advanced-performance-workpack-shard2/m227-b026-v1`
 - `objc3c-typed-sema-to-lowering-modular-split-scaffold/m227-c002-v1`
 - `objc3c-runtime-facing-type-metadata-semantics-contract/m227-d001-v1`
 - `objc3c-lane-e-semantic-conformance-quality-gate-contract/m227-e001-v1`
@@ -107,6 +108,9 @@
 71. `python scripts/check_m227_b025_type_system_objc3_forms_advanced_integration_workpack_shard2_contract.py`
 72. `python -m pytest tests/tooling/test_check_m227_b025_type_system_objc3_forms_advanced_integration_workpack_shard2_contract.py -q`
 73. `npm run check:objc3c:m227-b025-lane-b-readiness`
+74. `python scripts/check_m227_b026_type_system_objc3_forms_advanced_performance_workpack_shard2_contract.py`
+75. `python -m pytest tests/tooling/test_check_m227_b026_type_system_objc3_forms_advanced_performance_workpack_shard2_contract.py -q`
+76. `npm run check:objc3c:m227-b026-lane-b-readiness`
 
 ## Evidence
 
