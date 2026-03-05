@@ -1564,6 +1564,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a007_property_and_ivar_syntax_surface_completion_diagnostics_hardening_packet.md`,
   and `package.json` so diagnostics continuity remains deterministic and
   fail-closed against `M234-A006` dependency drift.
+- M234 lane-A A008 property and ivar syntax surface completion recovery and determinism hardening anchors
+  explicit lane-A recovery/determinism artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_recovery_and_determinism_hardening_a008_expectations.md`,
+  `spec/planning/compiler/m234/m234_a008_property_and_ivar_syntax_surface_completion_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` so recovery/determinism continuity remains deterministic
+  and fail-closed against `M234-A007` dependency drift.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
