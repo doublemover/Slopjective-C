@@ -1648,3 +1648,5 @@ message send lowering and call emission recovery and determinism hardening gover
 
 message send lowering and call emission conformance matrix implementation governance shall preserve explicit lane-C dependency anchors (`M232-C009`, `M232-C008`) and fail closed on conformance-matrix continuity, operator command sequencing, or architecture/spec anchor drift before lane-C corpus-expansion workpacks advance.
 
+message send lowering and call emission conformance corpus expansion governance shall preserve explicit lane-C dependency anchors (`M232-C010`, `M232-C009`) and fail closed on conformance-corpus continuity, operator command sequencing, or architecture/spec anchor drift before lane-C guardrail workpacks advance.
+
