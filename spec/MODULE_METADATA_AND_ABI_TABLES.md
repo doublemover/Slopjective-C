@@ -1677,3 +1677,5 @@ deterministic lane-C typed sema-to-lowering integration-closeout-signoff metadat
 
 deterministic property conformance gate and docs dependency anchors for `M234-E001` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-A001`, `M234-B001`, `M234-C001`, and `M234-D001`.
 
+deterministic property conformance gate and docs modular split/scaffolding dependency anchors for `M234-E002` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E001`, `M234-A002`, `M234-B002`, `M234-C002`, and `M234-D002`.
+

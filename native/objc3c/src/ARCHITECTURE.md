@@ -3738,3 +3738,7 @@ Forbidden:
   explicit lane-E dependency anchors with `M234-A001`, `M234-B001`, `M234-C001`,
   and `M234-D001` so lane-E contract-freeze continuity remains deterministic and fail-closed.
 
+- M234 lane-E E002 property conformance gate and docs modular split/scaffolding anchors
+  explicit lane-E dependency anchors with `M234-E001`, `M234-A002`, `M234-B002`,
+  `M234-C002`, and `M234-D002` so lane-E modular split/scaffolding continuity remains deterministic and fail-closed.
+
