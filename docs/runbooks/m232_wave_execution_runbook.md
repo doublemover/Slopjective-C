@@ -14,6 +14,7 @@
 - `objc3c-message-send-lowering-and-call-emission-conformance-corpus-expansion/m232-c010-v1`
 - `objc3c-message-send-lowering-and-call-emission-performance-and-quality-guardrails/m232-c011-v1`
 - `objc3c-message-send-lowering-and-call-emission-cross-lane-integration-sync/m232-c012-v1`
+- `objc3c-message-send-lowering-and-call-emission-docs-and-operator-runbook-synchronization/m232-c013-v1`
 
 ## Operator Command Sequence
 
@@ -53,6 +54,9 @@
 34. `python scripts/check_m232_c012_message_send_lowering_and_call_emission_cross_lane_integration_sync_contract.py`
 35. `python -m pytest tests/tooling/test_check_m232_c012_message_send_lowering_and_call_emission_cross_lane_integration_sync_contract.py -q`
 36. `npm run check:objc3c:m232-c012-lane-c-readiness`
+37. `python scripts/check_m232_c013_message_send_lowering_and_call_emission_docs_and_operator_runbook_synchronization_contract.py`
+38. `python -m pytest tests/tooling/test_check_m232_c013_message_send_lowering_and_call_emission_docs_and_operator_runbook_synchronization_contract.py -q`
+39. `npm run check:objc3c:m232-c013-lane-c-readiness`
 
 ## Evidence
 

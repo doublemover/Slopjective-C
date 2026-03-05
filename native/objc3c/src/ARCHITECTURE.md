@@ -3306,4 +3306,12 @@ Forbidden:
   (`check:objc3c:m232-c012-lane-c-readiness`) so message-send lowering and
   call-emission cross-lane-sync continuity remains deterministic and fail-closed
   against `M232-C011` dependency drift.
+- M232 lane-C C013 message send lowering and call emission docs and operator runbook synchronization anchors
+  explicit lane-C docs/runbook artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_docs_and_operator_runbook_synchronization_c013_expectations.md`,
+  `spec/planning/compiler/m232/m232_c013_message_send_lowering_and_call_emission_docs_and_operator_runbook_synchronization_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c013-lane-c-readiness`) so message-send lowering and
+  call-emission docs/runbook continuity remains deterministic and fail-closed
+  against `M232-C012` dependency drift.
 

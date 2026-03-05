@@ -1654,3 +1654,5 @@ message send lowering and call emission performance and quality guardrails gover
 
 message send lowering and call emission cross-lane integration sync governance shall preserve explicit lane-C dependency anchors (`M232-C012`, `M232-C011`) and fail closed on cross-lane-sync continuity, operator command sequencing, or architecture/spec anchor drift before lane-C docs/runbook workpacks advance.
 
+message send lowering and call emission docs and operator runbook synchronization governance shall preserve explicit lane-C dependency anchors (`M232-C013`, `M232-C012`) and fail closed on docs/runbook synchronization continuity, operator command sequencing, or architecture/spec anchor drift before lane-C release-replay workpacks advance.
+
