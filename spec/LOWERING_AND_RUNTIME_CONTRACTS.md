@@ -610,6 +610,9 @@ At minimum, the pass-graph gate shall validate:
 - accessor and ivar lowering contracts advanced core workpack (shard 1) governance shall preserve explicit
   lane-C dependency anchors (`M234-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
   before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+  lane-C dependency anchors (`M234-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+  before runtime property metadata and integration validation advances.
 - property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
