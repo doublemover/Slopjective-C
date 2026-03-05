@@ -1637,6 +1637,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C015`) in lane-C readiness chaining so
   advanced edge compatibility workpack (shard 1) continuity remains deterministic and
   fail-closed against `M234-C015` dependency drift.
+- M234 lane-C C017 accessor and ivar lowering contracts integration closeout and gate sign-off anchors
+  explicit lane-C integration closeout and gate sign-off artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_integration_closeout_and_gate_sign_off_c017_expectations.md`,
+  `spec/planning/compiler/m234/m234_c017_accessor_and_ivar_lowering_contracts_integration_closeout_and_gate_sign_off_packet.md`,
+  and `package.json` with dependency token (`M234-C016`) in lane-C readiness chaining so
+  integration closeout and gate sign-off continuity remains deterministic and
+  fail-closed against `M234-C016` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
