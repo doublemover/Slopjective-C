@@ -1664,6 +1664,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-D002`) in lane-D readiness chaining so
   core feature implementation continuity remains deterministic and fail-closed against
   `M234-D002` dependency drift.
+- M234 lane-D D004 runtime property metadata integration core feature expansion anchors
+  explicit lane-D core feature expansion artifacts in
+  `docs/contracts/m234_runtime_property_metadata_integration_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m234/m234_d004_runtime_property_metadata_integration_core_feature_expansion_packet.md`,
+  and `package.json` with dependency token (`M234-D003`) in lane-D readiness chaining so
+  core feature expansion continuity remains deterministic and fail-closed against
+  `M234-D003` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
