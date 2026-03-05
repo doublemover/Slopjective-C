@@ -548,6 +548,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M234-A007` dependency continuity so recovery and determinism hardening drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion conformance matrix implementation metadata anchors for `M234-A009`
       with explicit `M234-A008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion conformance corpus expansion metadata anchors for `M234-A010`
+      with explicit `M234-A009` dependency continuity so conformance corpus expansion drift fails closed.
     - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
       with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
     - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A003`

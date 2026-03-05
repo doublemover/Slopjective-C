@@ -1576,6 +1576,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a009_property_and_ivar_syntax_surface_completion_conformance_matrix_implementation_packet.md`,
   and `package.json` so conformance-matrix continuity remains deterministic
   and fail-closed against `M234-A008` dependency drift.
+- M234 lane-A A010 property and ivar syntax surface completion conformance corpus expansion anchors
+  explicit lane-A conformance-corpus artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_conformance_corpus_expansion_a010_expectations.md`,
+  `spec/planning/compiler/m234/m234_a010_property_and_ivar_syntax_surface_completion_conformance_corpus_expansion_packet.md`,
+  and `package.json` so conformance-corpus continuity remains deterministic
+  and fail-closed against `M234-A009` dependency drift.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
