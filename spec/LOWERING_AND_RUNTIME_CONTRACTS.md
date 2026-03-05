@@ -1030,6 +1030,9 @@ At minimum, the pass-graph gate shall validate:
 - runtime metadata and lookup plumbing advanced diagnostics workpack (shard 2) governance shall preserve
   explicit lane-D dependency anchors (`M233-D023`, `M233-D022`) and fail closed on
   advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced conformance workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D024`, `M233-D023`) and fail closed on
+  advanced conformance evidence continuity drift before lane-D closeout readiness advances.
 - installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
   explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
   release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.
