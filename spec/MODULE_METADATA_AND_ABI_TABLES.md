@@ -554,6 +554,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M234-A010` dependency continuity so guardrail drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion cross-lane integration sync metadata anchors for `M234-A012`
       with explicit `M234-A011` dependency continuity so cross-lane drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion docs and operator runbook synchronization metadata anchors for `M234-A013`
+      with explicit `M234-A012` dependency continuity so docs/runbook drift fails closed.
     - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
       with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
     - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A003`

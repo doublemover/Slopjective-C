@@ -599,6 +599,9 @@ At minimum, the pass-graph gate shall validate:
 - property and ivar syntax surface completion cross-lane integration sync wiring shall preserve explicit
   lane-A dependency anchor (`M234-A011`) and fail closed on cross-lane integration evidence drift
   before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion docs and operator runbook synchronization wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A012`) and fail closed on docs/runbook synchronization drift
+  before semantic parity and lowering portability validation advances.
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.

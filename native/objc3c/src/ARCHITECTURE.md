@@ -1594,6 +1594,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a012_property_and_ivar_syntax_surface_completion_cross_lane_integration_sync_packet.md`,
   and `package.json` so cross-lane continuity remains deterministic and
   fail-closed against `M234-A011` dependency drift.
+- M234 lane-A A013 property and ivar syntax surface completion docs and operator runbook synchronization anchors
+  explicit lane-A docs/runbook artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_docs_and_operator_runbook_synchronization_a013_expectations.md`,
+  `spec/planning/compiler/m234/m234_a013_property_and_ivar_syntax_surface_completion_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` so docs/runbook continuity remains deterministic and
+  fail-closed against `M234-A012` dependency drift.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
