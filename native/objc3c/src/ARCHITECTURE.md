@@ -1708,6 +1708,18 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b028_qualifier_and_generic_semantic_inference_advanced_edge_compatibility_workpack_shard_3_packet.md`,
   and `package.json` (`check:objc3c:m235-b028-lane-b-readiness`) so `M235-B027`
   dependency continuity remains deterministic and fail-closed against advanced edge compatibility workpack (shard 3) drift.
+- M235 lane-B B029 qualifier/generic semantic inference advanced diagnostics workpack (shard 3) anchors
+  explicit lane-B advanced diagnostics workpack (shard 3) artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_advanced_diagnostics_workpack_shard_3_b029_expectations.md`,
+  `spec/planning/compiler/m235/m235_b029_qualifier_and_generic_semantic_inference_advanced_diagnostics_workpack_shard_3_packet.md`,
+  and `package.json` (`check:objc3c:m235-b029-lane-b-readiness`) so `M235-B028`
+  dependency continuity remains deterministic and fail-closed against advanced diagnostics workpack (shard 3) drift.
+- M235 lane-B B030 qualifier/generic semantic inference integration closeout and gate sign-off anchors
+  explicit lane-B integration closeout and gate sign-off artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_integration_closeout_and_gate_signoff_b030_expectations.md`,
+  `spec/planning/compiler/m235/m235_b030_qualifier_and_generic_semantic_inference_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` (`check:objc3c:m235-b030-lane-b-readiness`) so `M235-B029`
+  dependency continuity remains deterministic and fail-closed against integration closeout and gate sign-off drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
