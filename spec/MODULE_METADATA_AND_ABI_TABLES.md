@@ -560,6 +560,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M234-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
     - deterministic lane-A property and ivar syntax surface completion advanced core workpack (shard 1) metadata anchors for `M234-A015`
       with explicit `M234-A014` dependency continuity so advanced-core-shard1 evidence remains fail-closed.
+    - deterministic lane-A property and ivar syntax surface completion integration closeout and gate sign-off metadata anchors for `M234-A016`
+      with explicit `M234-A015` dependency continuity so lane-A integration closeout and gate sign-off contract-gating evidence remains fail-closed.
     - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
       with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
     - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A003`

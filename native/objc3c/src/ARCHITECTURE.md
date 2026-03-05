@@ -1610,6 +1610,11 @@ Current-state note:
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_advanced_core_workpack_shard_1_a015_expectations.md`,
   `spec/planning/compiler/m234/m234_a015_property_and_ivar_syntax_surface_completion_advanced_core_workpack_shard_1_packet.md`,
   and `package.json` so `M234-A014` dependency continuity and advanced-core evidence remain fail-closed.
+- M234 lane-A A016 property and ivar syntax surface completion integration closeout and gate sign-off anchors
+  explicit lane-A integration-closeout artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_integration_closeout_and_gate_signoff_a016_expectations.md`,
+  `spec/planning/compiler/m234/m234_a016_property_and_ivar_syntax_surface_completion_integration_closeout_and_gate_signoff_packet.md`,
+  and `package.json` so `M234-A015` dependency continuity and integration closeout and gate sign-off evidence remain fail-closed.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
