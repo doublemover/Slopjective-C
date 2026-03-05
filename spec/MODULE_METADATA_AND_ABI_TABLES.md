@@ -696,6 +696,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C message-send lowering and call-emission performance and quality guardrails metadata anchors for `M232-C011`
       with explicit `M232-C010` dependency continuity and fail-closed performance and quality guardrails
       evidence so message-send lowering performance and quality guardrails drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission cross-lane integration sync metadata anchors for `M232-C012`
+      with explicit `M232-C011` dependency continuity and fail-closed cross-lane integration sync
+      evidence so message-send lowering cross-lane integration sync drift fails closed.
     - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
       with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
     - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`

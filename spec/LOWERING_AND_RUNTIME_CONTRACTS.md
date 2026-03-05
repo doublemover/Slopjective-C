@@ -1652,3 +1652,5 @@ message send lowering and call emission conformance corpus expansion governance 
 
 message send lowering and call emission performance and quality guardrails governance shall preserve explicit lane-C dependency anchors (`M232-C011`, `M232-C010`) and fail closed on performance/quality continuity, operator command sequencing, or architecture/spec anchor drift before lane-C cross-lane sync workpacks advance.
 
+message send lowering and call emission cross-lane integration sync governance shall preserve explicit lane-C dependency anchors (`M232-C012`, `M232-C011`) and fail closed on cross-lane-sync continuity, operator command sequencing, or architecture/spec anchor drift before lane-C docs/runbook workpacks advance.
+
