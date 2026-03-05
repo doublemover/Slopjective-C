@@ -1546,6 +1546,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a003_qualifier_and_generic_grammar_normalization_core_feature_implementation_packet.md`,
   and `package.json` (`check:objc3c:m235-a003-lane-a-readiness`) so `M235-A002`
   dependency continuity remains deterministic and fail-closed against core-feature drift.
+- M235 lane-A A004 qualifier/generic grammar normalization core feature expansion anchors
+  explicit lane-A core-feature expansion artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_core_feature_expansion_a004_expectations.md`,
+  `spec/planning/compiler/m235/m235_a004_qualifier_and_generic_grammar_normalization_core_feature_expansion_packet.md`,
+  and `package.json` (`check:objc3c:m235-a004-lane-a-readiness`) so `M235-A003`
+  dependency continuity remains deterministic and fail-closed against core-feature expansion drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
