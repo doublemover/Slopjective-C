@@ -1534,6 +1534,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a001_qualifier_and_generic_grammar_normalization_contract_and_architecture_freeze_packet.md`,
   and `package.json` so nullability/generics/qualifier semantics boundary evidence remains
   deterministic and fail-closed across qualifier and generic grammar permutations.
+- M235 lane-B B001 qualifier/generic semantic inference anchors explicit
+  lane-B contract-freeze artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_contract_and_architecture_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m235/m235_b001_qualifier_and_generic_semantic_inference_contract_and_architecture_freeze_packet.md`,
+  and `package.json` so nullability/generics/qualifier semantic-inference boundary evidence remains
+  deterministic and fail-closed across inference and mediation permutations.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,

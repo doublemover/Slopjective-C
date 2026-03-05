@@ -535,6 +535,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M235-A001`
       with nullability/generics/qualifier semantics evidence and parser replay-budget continuity
       so qualifier and generic grammar surface drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference metadata anchors for `M235-B001`
+      with nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+      so qualifier and generic semantic-inference mediation drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization modular split metadata anchors for `M235-A002`
       with explicit `M235-A001` dependency continuity so nullability/generics/qualifier scaffolding drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization core feature metadata anchors for `M235-A003`
