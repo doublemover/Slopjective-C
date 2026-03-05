@@ -1600,6 +1600,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a012_qualifier_and_generic_grammar_normalization_cross_lane_integration_sync_packet.md`,
   and `package.json` (`check:objc3c:m235-a012-lane-a-readiness`) so `M235-A011`
   dependency continuity remains deterministic and fail-closed against cross-lane integration sync drift.
+- M235 lane-A A013 qualifier/generic grammar normalization docs and operator runbook synchronization anchors
+  explicit lane-A docs and operator runbook synchronization artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_docs_and_operator_runbook_synchronization_a013_expectations.md`,
+  `spec/planning/compiler/m235/m235_a013_qualifier_and_generic_grammar_normalization_docs_and_operator_runbook_synchronization_packet.md`,
+  and `package.json` (`check:objc3c:m235-a013-lane-a-readiness`) so `M235-A012`
+  dependency continuity remains deterministic and fail-closed against docs/runbook synchronization drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
