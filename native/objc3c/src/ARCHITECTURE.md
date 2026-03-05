@@ -3322,4 +3322,12 @@ Forbidden:
   (`check:objc3c:m232-c014-lane-c-readiness`) so message-send lowering and
   call-emission release/replay continuity remains deterministic and fail-closed
   against `M232-C013` dependency drift.
+- M232 lane-C C015 message send lowering and call emission advanced core workpack (shard 1) anchors
+  explicit lane-C advanced-core-shard1 artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_advanced_core_workpack_shard1_c015_expectations.md`,
+  `spec/planning/compiler/m232/m232_c015_message_send_lowering_and_call_emission_advanced_core_workpack_shard1_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c015-lane-c-readiness`) so message-send lowering and
+  call-emission advanced-core-shard1 continuity remains deterministic and
+  fail-closed against `M232-C014` dependency drift.
 

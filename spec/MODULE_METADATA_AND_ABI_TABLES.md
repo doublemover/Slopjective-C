@@ -705,6 +705,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C message-send lowering and call-emission release-candidate and replay dry-run metadata anchors for `M232-C014`
       with explicit `M232-C013` dependency continuity and fail-closed release-candidate and replay dry-run
       evidence so message-send lowering release-candidate and replay dry-run drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission advanced core workpack (shard 1) metadata anchors for `M232-C015`
+      with explicit `M232-C014` dependency continuity and fail-closed advanced core workpack (shard 1)
+      evidence so message-send lowering advanced core workpack (shard 1) drift fails closed.
     - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
       with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
     - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`
