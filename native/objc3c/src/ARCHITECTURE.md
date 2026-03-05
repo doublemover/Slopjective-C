@@ -1624,6 +1624,24 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b015_qualifier_and_generic_semantic_inference_advanced_core_workpack_shard_1_packet.md`,
   and `package.json` (`check:objc3c:m235-b015-lane-b-readiness`) so `M235-B014`
   dependency continuity remains deterministic and fail-closed against advanced core workpack (shard 1) drift.
+- M235 lane-B B016 qualifier/generic semantic inference advanced edge compatibility workpack (shard 1) anchors
+  explicit lane-B advanced edge compatibility workpack (shard 1) artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_advanced_edge_compatibility_workpack_shard_1_b016_expectations.md`,
+  `spec/planning/compiler/m235/m235_b016_qualifier_and_generic_semantic_inference_advanced_edge_compatibility_workpack_shard_1_packet.md`,
+  and `package.json` (`check:objc3c:m235-b016-lane-b-readiness`) so `M235-B015`
+  dependency continuity remains deterministic and fail-closed against advanced edge compatibility workpack (shard 1) drift.
+- M235 lane-B B017 qualifier/generic semantic inference advanced diagnostics workpack (shard 1) anchors
+  explicit lane-B advanced diagnostics workpack (shard 1) artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_advanced_diagnostics_workpack_shard_1_b017_expectations.md`,
+  `spec/planning/compiler/m235/m235_b017_qualifier_and_generic_semantic_inference_advanced_diagnostics_workpack_shard_1_packet.md`,
+  and `package.json` (`check:objc3c:m235-b017-lane-b-readiness`) so `M235-B016`
+  dependency continuity remains deterministic and fail-closed against advanced diagnostics workpack (shard 1) drift.
+- M235 lane-B B018 qualifier/generic semantic inference advanced conformance workpack (shard 1) anchors
+  explicit lane-B advanced conformance workpack (shard 1) artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_advanced_conformance_workpack_shard_1_b018_expectations.md`,
+  `spec/planning/compiler/m235/m235_b018_qualifier_and_generic_semantic_inference_advanced_conformance_workpack_shard_1_packet.md`,
+  and `package.json` (`check:objc3c:m235-b018-lane-b-readiness`) so `M235-B017`
+  dependency continuity remains deterministic and fail-closed against advanced conformance workpack (shard 1) drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,

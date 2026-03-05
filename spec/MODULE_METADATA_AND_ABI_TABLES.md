@@ -566,6 +566,12 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-B013` dependency continuity so release-candidate and replay dry-run drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference advanced core workpack (shard 1) metadata anchors for `M235-B015`
       with explicit `M235-B014` dependency continuity so advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced edge compatibility workpack (shard 1) metadata anchors for `M235-B016`
+      with explicit `M235-B015` dependency continuity so advanced edge compatibility workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced diagnostics workpack (shard 1) metadata anchors for `M235-B017`
+      with explicit `M235-B016` dependency continuity so advanced diagnostics workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced conformance workpack (shard 1) metadata anchors for `M235-B018`
+      with explicit `M235-B017` dependency continuity so advanced conformance workpack (shard 1) drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization modular split metadata anchors for `M235-A002`
       with explicit `M235-A001` dependency continuity so nullability/generics/qualifier scaffolding drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization core feature metadata anchors for `M235-A003`
