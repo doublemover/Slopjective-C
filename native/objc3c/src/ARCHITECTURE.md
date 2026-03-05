@@ -1588,6 +1588,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C008`) in lane-C readiness chaining so
   conformance matrix implementation continuity remains deterministic and
   fail-closed against `M234-C008` dependency drift.
+- M234 lane-C C010 accessor and ivar lowering contracts conformance corpus expansion anchors
+  explicit lane-C conformance corpus expansion artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_conformance_corpus_expansion_c010_expectations.md`,
+  `spec/planning/compiler/m234/m234_c010_accessor_and_ivar_lowering_contracts_conformance_corpus_expansion_packet.md`,
+  and `package.json` with dependency token (`M234-C009`) in lane-C readiness chaining so
+  conformance corpus expansion continuity remains deterministic and
+  fail-closed against `M234-C009` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
