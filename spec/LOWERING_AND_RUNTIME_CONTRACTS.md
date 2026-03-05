@@ -563,6 +563,9 @@ At minimum, the pass-graph gate shall validate:
 - frontend behavior parity across toolchains governance shall preserve
   deterministic lane-A boundary anchors and fail closed on toolchain portability drift
   before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on property/ivar semantics drift
+  before semantic parity and lowering portability validation advances.
 - feature packaging surface and compatibility governance shall preserve
   deterministic lane-A boundary anchors and fail closed on release packaging drift
   before semantic migration and IR/object policy validation advances.
