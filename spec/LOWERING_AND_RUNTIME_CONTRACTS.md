@@ -1844,3 +1844,5 @@ message send lowering and call emission advanced diagnostics workpack (shard 1) 
 
 message send lowering and call emission advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C018`, `M232-C017`) and fail closed on advanced-conformance-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced conformance shard-2 stages advance.
 
+property conformance gate and docs contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M234-A001`, `M234-B001`, `M234-C001`, and `M234-D001`) and fail closed when lane-E contract-freeze dependency continuity drifts.
+

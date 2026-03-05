@@ -3734,3 +3734,7 @@ Forbidden:
   call-emission advanced-conformance-shard1 continuity remains deterministic
   and fail-closed against `M232-C017` dependency drift.
 
+- M234 lane-E E001 property conformance gate and docs contract and architecture freeze anchors
+  explicit lane-E dependency anchors with `M234-A001`, `M234-B001`, `M234-C001`,
+  and `M234-D001` so lane-E contract-freeze continuity remains deterministic and fail-closed.
+

@@ -1675,3 +1675,5 @@ deterministic lane-C typed sema-to-lowering advanced-integration-shard2 metadata
 
 deterministic lane-C typed sema-to-lowering integration-closeout-signoff metadata anchors for `M227-C026` must remain synchronized across typed integration-closeout keys, parse integration-closeout keys, and readiness alignment metadata surfaces before lane-C sign-off closure can pass.
 
+deterministic property conformance gate and docs dependency anchors for `M234-E001` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-A001`, `M234-B001`, `M234-C001`, and `M234-D001`.
+
