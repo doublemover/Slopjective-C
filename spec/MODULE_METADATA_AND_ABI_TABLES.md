@@ -556,6 +556,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M234-A011` dependency continuity so cross-lane drift fails closed.
     - deterministic lane-A property and ivar syntax surface completion docs and operator runbook synchronization metadata anchors for `M234-A013`
       with explicit `M234-A012` dependency continuity so docs/runbook drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion release-candidate/replay dry-run metadata anchors for `M234-A014`
+      with explicit `M234-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
     - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
       with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
     - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A003`
