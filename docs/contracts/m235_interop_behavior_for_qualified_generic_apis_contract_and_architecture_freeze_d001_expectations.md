@@ -19,6 +19,7 @@ milestone optimization improvements as mandatory scope inputs.
   - `spec/planning/compiler/m235/m235_d001_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_packet.md`
   - `scripts/check_m235_d001_interop_behavior_for_qualified_generic_apis_contract.py`
   - `tests/tooling/test_check_m235_d001_interop_behavior_for_qualified_generic_apis_contract.py`
+- Lane-D D001 freeze remains issue-local and fail-closed against `M235-C001` drift.
 - Dependency anchor assets from `M235-C001` remain mandatory:
   - `docs/contracts/m235_qualified_type_lowering_and_abi_representation_contract_and_architecture_freeze_c001_expectations.md`
   - `scripts/check_m235_c001_qualified_type_lowering_and_abi_representation_contract.py`

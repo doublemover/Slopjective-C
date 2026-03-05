@@ -28,6 +28,7 @@ inputs.
   - `spec/planning/compiler/m235/m235_c001_qualified_type_lowering_and_abi_representation_contract_and_architecture_freeze_packet.md`
   - `scripts/check_m235_c001_qualified_type_lowering_and_abi_representation_contract.py`
   - `tests/tooling/test_check_m235_c001_qualified_type_lowering_and_abi_representation_contract.py`
+- `M235-C001` dependency continuity remains fail-closed across lane-D evidence checks.
 - Architecture/spec anchors:
   - `native/objc3c/src/ARCHITECTURE.md`
   - `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`
