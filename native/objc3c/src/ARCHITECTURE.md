@@ -1528,6 +1528,12 @@ Current-state note:
   `spec/planning/compiler/m234/m234_a001_property_and_ivar_syntax_surface_completion_contract_and_architecture_freeze_packet.md`,
   and `package.json` so property/ivar semantics boundary evidence remains
   deterministic and fail-closed across accessor synthesis permutations.
+- M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
+  explicit lane-A scaffolding artifacts in
+  `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m234/m234_a002_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_packet.md`,
+  and `package.json` so modular split continuity remains deterministic and
+  fail-closed against `M234-A001` dependency drift.
 - M245 lane-A A002 frontend behavior parity modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m245_frontend_behavior_parity_across_toolchains_modular_split_scaffolding_a002_expectations.md`,
