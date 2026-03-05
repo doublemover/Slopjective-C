@@ -2216,6 +2216,13 @@ Current-state note:
   and `package.json` so lane-E core-feature governance evidence remains
   deterministic and fail-closed while lane A-D core-feature assets are pending
   GH seed.
+- M233 lane-E E004 conformance corpus and gate closeout core feature expansion anchors
+  dependency references (`M233-E003`, `M233-A003`, `M233-B004`, `M233-C005`, and `M233-D007`) in
+  `docs/contracts/m233_lane_e_conformance_corpus_and_gate_closeout_core_feature_expansion_e004_expectations.md`,
+  `spec/planning/compiler/m233/m233_e004_lane_e_conformance_corpus_and_gate_closeout_core_feature_expansion_packet.md`,
+  and `package.json` so lane-E core-feature expansion governance evidence
+  remains deterministic and fail-closed while lane A-D expansion assets are
+  pending GH seed.
 - M249 lane-D D014 release-candidate replay dry-run anchors installer/runtime operations and support tooling contract integration
   explicit lane-D release replay artifacts in
   `docs/contracts/m249_installer_runtime_operations_and_support_tooling_release_candidate_and_replay_dry_run_d014_expectations.md`,
