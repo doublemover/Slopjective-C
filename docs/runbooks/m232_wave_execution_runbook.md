@@ -6,6 +6,7 @@
 - `objc3c-message-send-lowering-and-call-emission-modular-split-and-scaffolding/m232-c002-v1`
 - `objc3c-message-send-lowering-and-call-emission-core-feature-implementation/m232-c003-v1`
 - `objc3c-message-send-lowering-and-call-emission-core-feature-expansion/m232-c004-v1`
+- `objc3c-message-send-lowering-and-call-emission-edge-case-and-compatibility-completion/m232-c005-v1`
 
 ## Operator Command Sequence
 
@@ -21,6 +22,9 @@
 10. `python scripts/check_m232_c004_message_send_lowering_and_call_emission_core_feature_expansion_contract.py`
 11. `python -m pytest tests/tooling/test_check_m232_c004_message_send_lowering_and_call_emission_core_feature_expansion_contract.py -q`
 12. `npm run check:objc3c:m232-c004-lane-c-readiness`
+13. `python scripts/check_m232_c005_message_send_lowering_and_call_emission_edge_case_and_compatibility_completion_contract.py`
+14. `python -m pytest tests/tooling/test_check_m232_c005_message_send_lowering_and_call_emission_edge_case_and_compatibility_completion_contract.py -q`
+15. `npm run check:objc3c:m232-c005-lane-c-readiness`
 
 ## Evidence
 
