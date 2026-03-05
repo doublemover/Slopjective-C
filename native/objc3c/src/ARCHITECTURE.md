@@ -1600,6 +1600,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b011_qualifier_and_generic_semantic_inference_performance_and_quality_guardrails_packet.md`,
   and `package.json` (`check:objc3c:m235-b011-lane-b-readiness`) so `M235-B010`
   dependency continuity remains deterministic and fail-closed against performance and quality guardrails drift.
+- M235 lane-B B012 qualifier/generic semantic inference cross-lane integration sync anchors
+  explicit lane-B cross-lane integration sync artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_cross_lane_integration_sync_b012_expectations.md`,
+  `spec/planning/compiler/m235/m235_b012_qualifier_and_generic_semantic_inference_cross_lane_integration_sync_packet.md`,
+  and `package.json` (`check:objc3c:m235-b012-lane-b-readiness`) so `M235-B011`
+  dependency continuity remains deterministic and fail-closed against cross-lane integration sync drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
