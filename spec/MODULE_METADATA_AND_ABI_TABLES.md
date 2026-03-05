@@ -553,6 +553,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-A008` dependency continuity so conformance matrix implementation drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization conformance corpus expansion metadata anchors for `M235-A010`
       with explicit `M235-A009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization performance and quality guardrails metadata anchors for `M235-A011`
+      with explicit `M235-A010` dependency continuity so performance and quality guardrails drift fails closed.
     - deterministic lane-C accessor and ivar lowering metadata anchors for `M234-C001`
       with property/ivar lowering evidence and lowering replay-budget continuity
       so accessor/ivar lowering surface drift fails closed.

@@ -596,6 +596,9 @@ At minimum, the pass-graph gate shall validate:
 - qualifier/generic grammar normalization conformance corpus expansion governance shall preserve explicit
   lane-A dependency anchors (`M235-A009`) and fail closed on conformance corpus expansion evidence drift
   before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization performance and quality guardrails wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A010`) and fail closed on performance and quality guardrails evidence drift
+  before semantic parity and lowering portability validation advances.
 - accessor and ivar lowering contracts governance shall preserve deterministic lane-C
   boundary anchors and fail closed on property/ivar lowering semantics drift before
   runtime property metadata and integration validation advances.
@@ -1881,4 +1884,5 @@ property conformance gate and docs modular split/scaffolding wiring shall preser
 property conformance gate and docs core feature implementation wiring shall preserve explicit lane-E dependency anchors (`M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`) and fail closed when lane-E core feature implementation dependency continuity drifts.
 
 property conformance gate and docs core feature expansion wiring shall preserve explicit lane-E dependency anchors (`M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`) and fail closed when lane-E core feature expansion dependency continuity drifts.
+
 

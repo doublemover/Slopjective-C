@@ -1588,6 +1588,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a010_qualifier_and_generic_grammar_normalization_conformance_corpus_expansion_packet.md`,
   and `package.json` (`check:objc3c:m235-a010-lane-a-readiness`) so `M235-A009`
   dependency continuity remains deterministic and fail-closed against conformance corpus expansion drift.
+- M235 lane-A A011 qualifier/generic grammar normalization performance and quality guardrails anchors
+  explicit lane-A performance and quality guardrails artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_performance_and_quality_guardrails_a011_expectations.md`,
+  `spec/planning/compiler/m235/m235_a011_qualifier_and_generic_grammar_normalization_performance_and_quality_guardrails_packet.md`,
+  and `package.json` (`check:objc3c:m235-a011-lane-a-readiness`) so `M235-A010`
+  dependency continuity remains deterministic and fail-closed against performance and quality guardrails drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,

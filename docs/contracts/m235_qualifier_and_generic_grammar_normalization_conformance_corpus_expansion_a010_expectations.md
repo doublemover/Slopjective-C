@@ -10,7 +10,7 @@ Fail closed unless lane-A conformance corpus expansion dependency anchors remain
 
 ## Dependency Scope
 
-- Issue: `#5680`
+- Issue: `#5773`
 - Dependencies: `M235-A009`
 - M235-A009 conformance matrix implementation anchors remain mandatory prerequisites:
   - `docs/contracts/m235_qualifier_and_generic_grammar_normalization_conformance_matrix_implementation_a009_expectations.md`
@@ -50,6 +50,7 @@ Fail closed unless lane-A conformance corpus expansion dependency anchors remain
 ## Evidence Path
 
 - `tmp/reports/m235/M235-A010/qualifier_and_generic_grammar_normalization_conformance_corpus_expansion_summary.json`
+
 
 
 

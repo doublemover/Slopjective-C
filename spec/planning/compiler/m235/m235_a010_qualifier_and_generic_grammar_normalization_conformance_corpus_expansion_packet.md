@@ -3,7 +3,7 @@
 Packet: `M235-A010`
 Milestone: `M235`
 Lane: `A`
-Issue: `#5680`
+Issue: `#5773`
 Freeze date: `2026-03-04`
 Dependencies: `M235-A009`
 
@@ -43,6 +43,7 @@ Freeze lane-A conformance corpus expansion prerequisites for M235 qualifier/gene
 ## Evidence Output
 
 - `tmp/reports/m235/M235-A010/qualifier_and_generic_grammar_normalization_conformance_corpus_expansion_summary.json`
+
 
 
 

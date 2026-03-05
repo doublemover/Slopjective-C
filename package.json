@@ -808,6 +808,9 @@
     "check:objc3c:m235-a010-qualifier-and-generic-grammar-normalization-conformance-corpus-expansion-contract": "python scripts/check_m235_a010_qualifier_and_generic_grammar_normalization_conformance_corpus_expansion_contract.py",
     "test:tooling:m235-a010-qualifier-and-generic-grammar-normalization-conformance-corpus-expansion-contract": "python -m pytest tests/tooling/test_check_m235_a010_qualifier_and_generic_grammar_normalization_conformance_corpus_expansion_contract.py -q",
     "check:objc3c:m235-a010-lane-a-readiness": "npm run check:objc3c:m235-a009-lane-a-readiness && npm run check:objc3c:m235-a010-qualifier-and-generic-grammar-normalization-conformance-corpus-expansion-contract && npm run test:tooling:m235-a010-qualifier-and-generic-grammar-normalization-conformance-corpus-expansion-contract",
+    "check:objc3c:m235-a011-qualifier-and-generic-grammar-normalization-performance-and-quality-guardrails-contract": "python scripts/check_m235_a011_qualifier_and_generic_grammar_normalization_performance_and_quality_guardrails_contract.py",
+    "test:tooling:m235-a011-qualifier-and-generic-grammar-normalization-performance-and-quality-guardrails-contract": "python -m pytest tests/tooling/test_check_m235_a011_qualifier_and_generic_grammar_normalization_performance_and_quality_guardrails_contract.py -q",
+    "check:objc3c:m235-a011-lane-a-readiness": "python scripts/run_m235_a011_lane_a_readiness.py",
     "check:objc3c:m234-a002-property-and-ivar-syntax-surface-completion-modular-split-scaffolding-contract": "python scripts/check_m234_a002_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_contract.py",
     "test:tooling:m234-a002-property-and-ivar-syntax-surface-completion-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m234_a002_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_contract.py -q",
     "check:objc3c:m234-a002-lane-a-readiness": "npm run check:objc3c:m234-a001-lane-a-readiness && npm run check:objc3c:m234-a002-property-and-ivar-syntax-surface-completion-modular-split-scaffolding-contract && npm run test:tooling:m234-a002-property-and-ivar-syntax-surface-completion-modular-split-scaffolding-contract",
@@ -2926,3 +2929,4 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py"
   }
 }
+
