@@ -3234,4 +3234,12 @@ Forbidden:
   (`check:objc3c:m232-c003-lane-c-readiness`) so message-send lowering and
   call-emission core-feature continuity remains deterministic and fail-closed
   against `M232-C002` dependency drift.
+- M232 lane-C C004 message send lowering and call emission core feature expansion anchors
+  explicit lane-C core-feature-expansion artifacts in
+  `docs/contracts/m232_message_send_lowering_and_call_emission_core_feature_expansion_c004_expectations.md`,
+  `spec/planning/compiler/m232/m232_c004_message_send_lowering_and_call_emission_core_feature_expansion_packet.md`,
+  `docs/runbooks/m232_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m232-c004-lane-c-readiness`) so message-send lowering and
+  call-emission core-feature-expansion continuity remains deterministic and
+  fail-closed against `M232-C003` dependency drift.
 

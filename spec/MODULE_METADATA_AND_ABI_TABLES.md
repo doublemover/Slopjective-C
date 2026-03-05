@@ -672,6 +672,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C message-send lowering and call-emission core-feature metadata anchors for `M232-C003`
       with explicit `M232-C002` dependency continuity and fail-closed core-feature
       evidence so message-send lowering core-feature drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission core-feature expansion metadata anchors for `M232-C004`
+      with explicit `M232-C003` dependency continuity and fail-closed core-feature expansion
+      evidence so message-send lowering core-feature-expansion drift fails closed.
     - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
       with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
     - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`
