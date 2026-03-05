@@ -559,6 +559,8 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-A011` dependency continuity so cross-lane integration sync drift fails closed.
     - deterministic lane-A qualifier/generic grammar normalization docs and operator runbook synchronization metadata anchors for `M235-A013`
       with explicit `M235-A012` dependency continuity so docs/runbook synchronization drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization release-candidate/replay dry-run metadata anchors for `M235-A014`
+      with explicit `M235-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
     - deterministic lane-C accessor and ivar lowering metadata anchors for `M234-C001`
       with property/ivar lowering evidence and lowering replay-budget continuity
       so accessor/ivar lowering surface drift fails closed.
@@ -1709,4 +1711,3 @@ deterministic property conformance gate and docs modular split/scaffolding depen
 deterministic property conformance gate and docs core feature implementation dependency anchors for `M234-E003` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`.
 
 deterministic property conformance gate and docs core feature expansion dependency anchors for `M234-E004` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`.
-

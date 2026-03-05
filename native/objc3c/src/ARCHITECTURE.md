@@ -1606,6 +1606,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_a013_qualifier_and_generic_grammar_normalization_docs_and_operator_runbook_synchronization_packet.md`,
   and `package.json` (`check:objc3c:m235-a013-lane-a-readiness`) so `M235-A012`
   dependency continuity remains deterministic and fail-closed against docs/runbook synchronization drift.
+- M235 lane-A A014 qualifier/generic grammar normalization release-candidate and replay dry-run anchors
+  explicit lane-A release/replay artifacts in
+  `docs/contracts/m235_qualifier_and_generic_grammar_normalization_release_candidate_and_replay_dry_run_a014_expectations.md`,
+  `spec/planning/compiler/m235/m235_a014_qualifier_and_generic_grammar_normalization_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` (`check:objc3c:m235-a014-lane-a-readiness`) so `M235-A013` dependency continuity remains deterministic
+  and fail-closed against release/replay drift.
 - M234 lane-C C001 accessor and ivar lowering contracts anchors explicit
   lane-C contract-freeze artifacts in
   `docs/contracts/m234_accessor_and_ivar_lowering_contracts_contract_and_architecture_freeze_c001_expectations.md`,
@@ -3827,4 +3833,3 @@ Forbidden:
 - M234 lane-E E004 property conformance gate and docs core feature expansion anchors
   explicit lane-E dependency anchors with `M234-E003`, `M234-A004`, `M234-B004`,
   `M234-C004`, and `M234-D003` so lane-E core feature expansion continuity remains deterministic and fail-closed.
-
