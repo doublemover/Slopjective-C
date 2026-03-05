@@ -1553,6 +1553,13 @@ Current-state note:
   and `package.json` with dependency token (`M234-C003`) in lane-C readiness chaining so
   core-feature expansion continuity remains deterministic and fail-closed against
   `M234-C003` dependency drift.
+- M234 lane-C C005 accessor and ivar lowering contracts edge-case and compatibility completion anchors
+  explicit lane-C edge-case and compatibility completion artifacts in
+  `docs/contracts/m234_accessor_and_ivar_lowering_contracts_edge_case_and_compatibility_completion_c005_expectations.md`,
+  `spec/planning/compiler/m234/m234_c005_accessor_and_ivar_lowering_contracts_edge_case_and_compatibility_completion_packet.md`,
+  and `package.json` with dependency token (`M234-C004`) in lane-C readiness chaining so
+  edge-case and compatibility completion continuity remains deterministic and
+  fail-closed against `M234-C004` dependency drift.
 - M234 lane-A A002 property and ivar syntax surface completion modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m234_property_and_ivar_syntax_surface_completion_modular_split_scaffolding_a002_expectations.md`,

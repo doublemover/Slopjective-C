@@ -577,6 +577,9 @@ At minimum, the pass-graph gate shall validate:
   evidence drift before runtime property metadata and integration validation advances.
 - accessor and ivar lowering contracts core feature expansion shall preserve explicit lane-C dependency token (`M234-C003`) and fail closed on core-feature expansion evidence drift
   before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts edge-case and compatibility completion governance shall preserve explicit
+  lane-C dependency anchors (`M234-C004`) and fail closed on edge-case and compatibility completion evidence drift
+  before runtime property metadata and integration validation advances.
 - property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
