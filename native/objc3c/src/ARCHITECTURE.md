@@ -1696,6 +1696,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b027_qualifier_and_generic_semantic_inference_advanced_core_workpack_shard_3_packet.md`,
   and `package.json` (`check:objc3c:m235-b027-lane-b-readiness`) so `M235-B026`
   dependency continuity remains deterministic and fail-closed against advanced core workpack (shard 3) drift.
+- M235 lane-B B028 qualifier/generic semantic inference advanced edge compatibility workpack (shard 3) anchors
+  explicit lane-B advanced edge compatibility workpack (shard 3) artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_advanced_edge_compatibility_workpack_shard_3_b028_expectations.md`,
+  `spec/planning/compiler/m235/m235_b028_qualifier_and_generic_semantic_inference_advanced_edge_compatibility_workpack_shard_3_packet.md`,
+  and `package.json` (`check:objc3c:m235-b028-lane-b-readiness`) so `M235-B027`
+  dependency continuity remains deterministic and fail-closed against advanced edge compatibility workpack (shard 3) drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
