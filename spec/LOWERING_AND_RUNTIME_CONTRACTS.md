@@ -623,6 +623,9 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-D dependency anchors (`M234-D001`) and fail closed on
   modular split/scaffolding evidence drift before runtime property metadata
   conformance and runtime validation advances.
+- runtime property metadata integration core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M234-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
 - property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
   lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
   before semantic parity and lowering portability validation advances.
