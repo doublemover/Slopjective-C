@@ -1576,6 +1576,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_b007_qualifier_and_generic_semantic_inference_diagnostics_hardening_packet.md`,
   and `package.json` (`check:objc3c:m235-b007-lane-b-readiness`) so `M235-B006`
   dependency continuity remains deterministic and fail-closed against diagnostics hardening drift.
+- M235 lane-B B008 qualifier/generic semantic inference recovery and determinism hardening anchors
+  explicit lane-B recovery and determinism hardening artifacts in
+  `docs/contracts/m235_qualifier_and_generic_semantic_inference_recovery_and_determinism_hardening_b008_expectations.md`,
+  `spec/planning/compiler/m235/m235_b008_qualifier_and_generic_semantic_inference_recovery_and_determinism_hardening_packet.md`,
+  and `package.json` (`check:objc3c:m235-b008-lane-b-readiness`) so `M235-B007`
+  dependency continuity remains deterministic and fail-closed against recovery and determinism hardening drift.
 - M235 lane-A A002 qualifier/generic grammar normalization modular split/scaffolding anchors
   explicit lane-A scaffolding artifacts in
   `docs/contracts/m235_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_a002_expectations.md`,
