@@ -1848,3 +1848,5 @@ property conformance gate and docs contract and architecture freeze wiring shall
 
 property conformance gate and docs modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M234-E001`, `M234-A002`, `M234-B002`, `M234-C002`, and `M234-D002`) and fail closed when lane-E modular split/scaffolding dependency continuity drifts.
 
+property conformance gate and docs core feature implementation wiring shall preserve explicit lane-E dependency anchors (`M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`) and fail closed when lane-E core feature implementation dependency continuity drifts.
+
