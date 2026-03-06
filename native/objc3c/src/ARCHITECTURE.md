@@ -4542,3 +4542,7 @@ Forbidden:
 - M231 lane-A A021 declaration grammar expansion and normalization advanced core workpack (shard 2) anchors
   m231_declaration_grammar_expansion_and_normalization_advanced_core_workpack_shard2_a021_expectations.md
 
+
+- M231 lane-A A022 declaration grammar expansion and normalization integration closeout and gate sign-off anchors
+  m231_declaration_grammar_expansion_and_normalization_integration_closeout_and_gate_sign_off_a022_expectations.md
+

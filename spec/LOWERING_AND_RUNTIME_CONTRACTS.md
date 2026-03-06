@@ -2296,3 +2296,7 @@ lane-A dependency anchors (`M231-A019`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization advanced core workpack (shard 2) governance shall preserve explicit
 lane-A dependency anchors (`M231-A020`) and fail closed on core-feature evidence drift
 
+
+declaration grammar expansion and normalization integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M231-A021`) and fail closed on core-feature evidence drift
+
