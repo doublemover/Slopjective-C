@@ -4937,3 +4937,7 @@ Forbidden:
 - M233 lane-B B014 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_release_candidate_and_replay_dry_run_b014_expectations.md
 
+
+- M233 lane-B B015 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_advanced_core_workpack_shard1_b015_expectations.md
+
