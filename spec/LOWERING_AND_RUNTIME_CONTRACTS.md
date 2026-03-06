@@ -2184,3 +2184,7 @@ conformance corpus governance and sharding core feature implementation governanc
 conformance corpus governance and sharding core feature expansion governance shall preserve explicit lane-A dependency anchors (`M230-A003`) and fail closed on core-feature-expansion evidence drift before lane-A edge-case and compatibility workpacks advance.
 
 conformance corpus governance and sharding edge-case and compatibility completion governance shall preserve explicit lane-A dependency anchors (`M230-A004`) and fail closed on edge-case-and-compatibility-completion evidence drift before lane-A robustness workpacks advance.
+
+conformance corpus governance and sharding edge-case expansion and robustness governance shall preserve explicit
+lane-A dependency anchors (`M230-A005`) and fail closed on edge-case-expansion-and-robustness evidence drift
+

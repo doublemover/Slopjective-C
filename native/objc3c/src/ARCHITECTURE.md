@@ -4430,3 +4430,7 @@ Forbidden:
 - M234 lane-E E004 property conformance gate and docs core feature expansion anchors
   explicit lane-E dependency anchors with `M234-E003`, `M234-A004`, `M234-B004`,
   `M234-C004`, and `M234-D003` so lane-E core feature expansion continuity remains deterministic and fail-closed.
+
+- M230 lane-A A006 conformance corpus governance and sharding edge-case expansion and robustness anchors
+  m230_conformance_corpus_governance_and_sharding_edge_case_expansion_and_robustness_a006_expectations.md
+
