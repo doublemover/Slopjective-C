@@ -4502,3 +4502,7 @@ Forbidden:
 - M231 lane-A A011 declaration grammar expansion and normalization performance and quality guardrails anchors
   m231_declaration_grammar_expansion_and_normalization_performance_and_quality_guardrails_a011_expectations.md
 
+
+- M231 lane-A A012 declaration grammar expansion and normalization cross-lane integration sync anchors
+  m231_declaration_grammar_expansion_and_normalization_cross_lane_integration_sync_a012_expectations.md
+
