@@ -2777,3 +2777,9 @@ IR-emission advanced core workpack (shard 3) governance shall
 
 lane-C dependency anchors (`M228-C027`, `M228-C026`)
 
+
+IR-emission advanced edge compatibility workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C028`, `M228-C027`)
+
