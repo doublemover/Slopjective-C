@@ -2919,3 +2919,7 @@ lane-A dependency anchors (`M229-A005`) and fail closed on edge-case-expansion-a
 class/protocol/category metadata generation diagnostics hardening governance shall preserve explicit
 lane-A dependency anchors (`M229-A006`) and fail closed on diagnostics-hardening evidence drift
 
+
+class/protocol/category metadata generation recovery and determinism hardening governance shall preserve explicit
+lane-A dependency anchors (`M229-A007`) and fail closed on recovery-and-determinism-hardening evidence drift
+
