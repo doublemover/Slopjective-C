@@ -2638,3 +2638,7 @@ deterministic lane-E cross-lane integration sync dependency anchors
 deterministic lane-E docs and operator runbook synchronization dependency anchors
 
 
+
+deterministic lane-E release-candidate and replay dry-run dependency anchors
+
+
