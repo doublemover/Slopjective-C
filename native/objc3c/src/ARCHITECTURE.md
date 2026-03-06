@@ -4841,3 +4841,7 @@ Forbidden:
 - M233 lane-A A002 protocol/category grammar and AST shape contract-freeze anchors
   m233_protocol_category_grammar_and_ast_shape_modular_split_and_scaffolding_a002_expectations.md
 
+
+- M233 lane-A A003 protocol/category grammar and AST shape contract-freeze anchors
+  m233_protocol_category_grammar_and_ast_shape_core_feature_implementation_a003_expectations.md
+
