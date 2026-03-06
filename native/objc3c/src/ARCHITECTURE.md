@@ -5426,3 +5426,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M229 lane-E B001 runtime release gate and operational docs contract-freeze anchors
   m229_runtime_release_gate_and_operational_docs_contract_and_architecture_freeze_e001_expectations.md
 
+  m229_runtime_release_gate_and_operational_docs_modular_split_and_scaffolding_e002_expectations.md
+
