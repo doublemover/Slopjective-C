@@ -739,6 +739,13 @@ Current-state note:
   (`parse_lowering_performance_quality_guardrails_*`), and IR metadata
   transport so ownership-aware lowering remains fail-closed on
   performance/quality drift before IR emission.
+- M228 lane-B B012 cross-lane integration sync extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
+  `ir/objc3_ir_emitter.cpp` with deterministic ownership-lane to pass-graph
+  integration consistency/readiness (`cross_lane_integration_*`) and
+  integration-key transport so ownership-aware lowering remains fail-closed on
+  lane-A/lane-B integration drift before IR emission.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so

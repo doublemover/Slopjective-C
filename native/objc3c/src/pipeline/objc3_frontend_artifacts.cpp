@@ -2075,7 +2075,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result.parse_lowering_readiness_surface
               .parse_lowering_performance_quality_guardrails_failed_case_count,
           pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_performance_quality_guardrails_key);
+              .parse_lowering_performance_quality_guardrails_key,
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+              .conformance_corpus_ready,
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+              .conformance_corpus_key,
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+              .performance_quality_guardrails_ready,
+          pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+              .performance_quality_guardrails_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -2164,6 +2172,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L328",
         "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
             ownership_aware_lowering_behavior_performance_quality_guardrails_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_cross_lane_integration_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_cross_lane_integration_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L329",
+        "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
+            ownership_aware_lowering_behavior_cross_lane_integration_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -5479,6 +5500,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ownership_aware_lowering_behavior_scaffold.performance_quality_guardrails_ready;
   ir_frontend_metadata.ownership_aware_lowering_performance_quality_guardrails_key =
       ownership_aware_lowering_behavior_scaffold.performance_quality_guardrails_key;
+  ir_frontend_metadata.ownership_aware_lowering_cross_lane_integration_ready =
+      ownership_aware_lowering_behavior_scaffold.cross_lane_integration_ready;
+  ir_frontend_metadata.ownership_aware_lowering_cross_lane_integration_key =
+      ownership_aware_lowering_behavior_scaffold.cross_lane_integration_key;
   ir_frontend_metadata.lowering_pass_graph_core_feature_ready =
       pipeline_result.ir_emission_completeness_scaffold.core_feature_ready;
   ir_frontend_metadata.lowering_pass_graph_core_feature_key =

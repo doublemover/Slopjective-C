@@ -206,6 +206,12 @@ At minimum, the pass-graph gate shall validate:
   (`parse_lowering_performance_quality_guardrails_*`) and shall fail closed
   before IR emission when guardrail consistency, readiness, key continuity, or
   case-pass continuity drifts.
+- ownership-aware lowering cross-lane integration sync shall include
+  deterministic lane-B/lane-A integration consistency/readiness and
+  cross-lane-integration-key transport gates derived from ownership-aware
+  performance/quality guardrails and lowering pass-graph conformance/performance
+  continuity, and shall fail closed before IR emission when integration
+  continuity or key continuity drifts.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output

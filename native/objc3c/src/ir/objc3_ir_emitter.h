@@ -481,6 +481,8 @@ struct Objc3IRFrontendMetadata {
   std::string ownership_aware_lowering_core_feature_expansion_key;
   bool ownership_aware_lowering_performance_quality_guardrails_ready = false;
   std::string ownership_aware_lowering_performance_quality_guardrails_key;
+  bool ownership_aware_lowering_cross_lane_integration_ready = false;
+  std::string ownership_aware_lowering_cross_lane_integration_key;
   bool lowering_pass_graph_core_feature_ready = false;
   std::string lowering_pass_graph_core_feature_key;
   bool lowering_pass_graph_core_feature_expansion_ready = false;

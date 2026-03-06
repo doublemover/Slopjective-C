@@ -341,6 +341,19 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    if (!frontend_metadata_
+             .ownership_aware_lowering_cross_lane_integration_key.empty()) {
+      out << "; ownership_aware_lowering_cross_lane_integration = "
+          << frontend_metadata_
+                 .ownership_aware_lowering_cross_lane_integration_key
+          << "\n";
+    }
+    out << "; ownership_aware_lowering_cross_lane_integration_ready = "
+        << (frontend_metadata_
+                    .ownership_aware_lowering_cross_lane_integration_ready
+                ? "true"
+                : "false")
+        << "\n";
     if (!frontend_metadata_.lowering_pass_graph_core_feature_key.empty()) {
       out << "; lowering_pass_graph_core_feature = "
           << frontend_metadata_.lowering_pass_graph_core_feature_key << "\n";

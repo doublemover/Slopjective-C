@@ -36,6 +36,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   bool conformance_corpus_ready = false;
   bool performance_quality_guardrails_consistent = false;
   bool performance_quality_guardrails_ready = false;
+  bool lowering_pass_graph_conformance_corpus_ready = false;
+  bool lowering_pass_graph_performance_quality_guardrails_ready = false;
+  bool cross_lane_integration_consistent = false;
+  bool cross_lane_integration_ready = false;
   bool parse_recovery_determinism_hardening_consistent = false;
   bool parse_lowering_conformance_matrix_consistent = false;
   bool parse_lowering_conformance_corpus_consistent = false;
@@ -60,6 +64,9 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
   std::string performance_quality_guardrails_key;
+  std::string lowering_pass_graph_conformance_corpus_key;
+  std::string lowering_pass_graph_performance_quality_guardrails_key;
+  std::string cross_lane_integration_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;
   std::string parse_lowering_conformance_corpus_key;
@@ -259,6 +266,33 @@ inline std::string BuildObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGua
   return key.str();
 }
 
+inline std::string BuildObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationKey(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold) {
+  std::ostringstream key;
+  key << "ownership-aware-lowering-cross-lane-integration-sync:v1:"
+      << "performance-quality-guardrails-ready="
+      << (scaffold.performance_quality_guardrails_ready ? "true" : "false")
+      << ";lowering-pass-graph-performance-quality-guardrails-ready="
+      << (scaffold.lowering_pass_graph_performance_quality_guardrails_ready ? "true"
+                                                                            : "false")
+      << ";conformance-corpus-ready="
+      << (scaffold.conformance_corpus_ready ? "true" : "false")
+      << ";lowering-pass-graph-conformance-corpus-ready="
+      << (scaffold.lowering_pass_graph_conformance_corpus_ready ? "true" : "false")
+      << ";cross-lane-integration-consistent="
+      << (scaffold.cross_lane_integration_consistent ? "true" : "false")
+      << ";cross-lane-integration-ready="
+      << (scaffold.cross_lane_integration_ready ? "true" : "false")
+      << ";performance-quality-guardrails-key="
+      << scaffold.performance_quality_guardrails_key
+      << ";lowering-pass-graph-performance-quality-guardrails-key="
+      << scaffold.lowering_pass_graph_performance_quality_guardrails_key
+      << ";conformance-corpus-key=" << scaffold.conformance_corpus_key
+      << ";lowering-pass-graph-conformance-corpus-key="
+      << scaffold.lowering_pass_graph_conformance_corpus_key;
+  return key.str();
+}
+
 inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
     const Objc3OwnershipQualifierLoweringContract &ownership_qualifier_contract,
     const std::string &ownership_qualifier_replay_key,
@@ -287,7 +321,11 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     std::size_t parse_lowering_performance_quality_guardrails_case_count,
     std::size_t parse_lowering_performance_quality_guardrails_passed_case_count,
     std::size_t parse_lowering_performance_quality_guardrails_failed_case_count,
-    const std::string &parse_lowering_performance_quality_guardrails_key) {
+    const std::string &parse_lowering_performance_quality_guardrails_key,
+    bool lowering_pass_graph_conformance_corpus_ready,
+    const std::string &lowering_pass_graph_conformance_corpus_key,
+    bool lowering_pass_graph_performance_quality_guardrails_ready,
+    const std::string &lowering_pass_graph_performance_quality_guardrails_key) {
   Objc3OwnershipAwareLoweringBehaviorScaffold scaffold;
   scaffold.ownership_qualifier_contract_ready =
       IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_contract) &&
@@ -343,6 +381,14 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_lowering_conformance_corpus_key;
   scaffold.parse_lowering_performance_quality_guardrails_key =
       parse_lowering_performance_quality_guardrails_key;
+  scaffold.lowering_pass_graph_conformance_corpus_ready =
+      lowering_pass_graph_conformance_corpus_ready;
+  scaffold.lowering_pass_graph_conformance_corpus_key =
+      lowering_pass_graph_conformance_corpus_key;
+  scaffold.lowering_pass_graph_performance_quality_guardrails_ready =
+      lowering_pass_graph_performance_quality_guardrails_ready;
+  scaffold.lowering_pass_graph_performance_quality_guardrails_key =
+      lowering_pass_graph_performance_quality_guardrails_key;
   scaffold.ownership_profile_accounting_consistent =
       ownership_qualifier_contract.object_pointer_type_annotation_sites >=
           ownership_qualifier_contract.ownership_qualifier_sites &&
@@ -490,6 +536,19 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       !scaffold.performance_quality_guardrails_key.empty() &&
       !scaffold.parse_lowering_performance_quality_guardrails_key.empty() &&
       !scaffold.conformance_corpus_key.empty();
+  scaffold.cross_lane_integration_consistent =
+      scaffold.performance_quality_guardrails_ready &&
+      scaffold.lowering_pass_graph_performance_quality_guardrails_ready &&
+      scaffold.conformance_corpus_ready &&
+      scaffold.lowering_pass_graph_conformance_corpus_ready;
+  scaffold.cross_lane_integration_ready =
+      scaffold.cross_lane_integration_consistent &&
+      !scaffold.performance_quality_guardrails_key.empty() &&
+      !scaffold.lowering_pass_graph_performance_quality_guardrails_key.empty() &&
+      !scaffold.conformance_corpus_key.empty() &&
+      !scaffold.lowering_pass_graph_conformance_corpus_key.empty();
+  scaffold.cross_lane_integration_key =
+      BuildObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationKey(scaffold);
 
   if (scaffold.modular_split_ready &&
       scaffold.expansion_ready &&
@@ -506,7 +565,9 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.conformance_corpus_ready &&
       !scaffold.conformance_corpus_key.empty() &&
       scaffold.performance_quality_guardrails_ready &&
-      !scaffold.performance_quality_guardrails_key.empty()) {
+      !scaffold.performance_quality_guardrails_key.empty() &&
+      scaffold.cross_lane_integration_ready &&
+      !scaffold.cross_lane_integration_key.empty()) {
     return scaffold;
   }
 
@@ -608,6 +669,22 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     scaffold.failure_reason = "ownership-aware lowering performance quality guardrails key is empty";
   } else if (!scaffold.performance_quality_guardrails_ready) {
     scaffold.failure_reason = "ownership-aware lowering performance quality guardrails are not ready";
+  } else if (!scaffold.lowering_pass_graph_conformance_corpus_ready) {
+    scaffold.failure_reason = "ownership-aware lowering lane-A pass-graph conformance corpus is not ready";
+  } else if (scaffold.lowering_pass_graph_conformance_corpus_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering lane-A pass-graph conformance corpus key is empty";
+  } else if (!scaffold.lowering_pass_graph_performance_quality_guardrails_ready) {
+    scaffold.failure_reason =
+        "ownership-aware lowering lane-A pass-graph performance quality guardrails are not ready";
+  } else if (scaffold.lowering_pass_graph_performance_quality_guardrails_key.empty()) {
+    scaffold.failure_reason =
+        "ownership-aware lowering lane-A pass-graph performance quality guardrails key is empty";
+  } else if (!scaffold.cross_lane_integration_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering cross-lane integration is inconsistent";
+  } else if (!scaffold.cross_lane_integration_ready) {
+    scaffold.failure_reason = "ownership-aware lowering cross-lane integration is not ready";
+  } else if (scaffold.cross_lane_integration_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering cross-lane integration key is empty";
   } else {
     scaffold.failure_reason = "ownership-aware lowering modular split scaffold not ready";
   }
@@ -753,6 +830,22 @@ inline bool IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsRea
 
   reason = scaffold.failure_reason.empty()
                ? "ownership-aware lowering performance quality guardrails are not ready"
+               : scaffold.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold,
+    std::string &reason) {
+  if (scaffold.cross_lane_integration_consistent &&
+      scaffold.cross_lane_integration_ready &&
+      !scaffold.cross_lane_integration_key.empty()) {
+    reason.clear();
+    return true;
+  }
+
+  reason = scaffold.failure_reason.empty()
+               ? "ownership-aware lowering cross-lane integration is not ready"
                : scaffold.failure_reason;
   return false;
 }
