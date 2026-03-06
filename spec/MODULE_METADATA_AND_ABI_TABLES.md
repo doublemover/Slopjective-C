@@ -1959,3 +1959,7 @@ explicit `M230-A011` dependency continuity so conformance corpus governance/shar
 deterministic lane-A declaration grammar expansion and normalization contract-freeze anchors for `M231-A001`
 explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
 
+
+deterministic lane-A declaration grammar expansion and normalization modular split anchors for `M231-A002`
+explicit `M231-A001` dependency continuity so declaration grammar expansion/normalization scaffolding drift fails closed
+

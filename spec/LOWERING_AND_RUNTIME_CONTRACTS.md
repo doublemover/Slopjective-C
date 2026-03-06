@@ -2216,3 +2216,7 @@ lane-A dependency anchors (`M230-A011`) and fail closed on integration-closeout-
 declaration grammar expansion and normalization contract-freeze governance shall preserve explicit
 lane-A deterministic boundary anchors (`M231-A001`) and fail closed on contract-freeze evidence drift
 
+
+declaration grammar expansion and normalization modular split/scaffolding governance shall preserve explicit
+lane-A dependency anchors (`M231-A001`) and fail closed on scaffolding evidence drift
+
