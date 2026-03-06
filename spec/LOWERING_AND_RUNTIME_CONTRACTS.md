@@ -2385,3 +2385,6 @@ lane-D deterministic boundary anchors (`M232-D009`) and fail closed on contract-
 
 message semantics gate and replay evidence contract-freeze governance shall preserve explicit
 lane-E deterministic boundary anchors (`M232-E001`) and fail closed on contract-freeze evidence drift
+
+lane-E deterministic boundary anchors (`M232-E002`) and fail closed on contract-freeze evidence drift
+
