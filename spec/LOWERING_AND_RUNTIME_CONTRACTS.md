@@ -3058,3 +3058,6 @@ lane-C deterministic boundary anchors (`M229-C022`) and fail closed on contract-
 packaging and runtime launch ergonomics contract-freeze governance shall preserve explicit
 lane-D deterministic boundary anchors (`M229-D001`) and fail closed on contract-freeze evidence drift
 
+
+lane-D deterministic boundary anchors (`M229-D002`) and fail closed on contract-freeze evidence drift
+
