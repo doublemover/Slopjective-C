@@ -2694,3 +2694,7 @@ explicit `M229-A009` dependency continuity so class/protocol/category metadata c
 deterministic lane-A class/protocol/category metadata generation integration closeout and gate sign-off anchors for `M229-A011`
 explicit `M229-A010` dependency continuity so class/protocol/category metadata integration-closeout-and-gate-sign-off drift fails closed
 
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B001`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+

@@ -5252,3 +5252,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M229 lane-A A011 class/protocol/category metadata generation integration closeout and gate sign-off anchors
   m229_class_protocol_category_metadata_generation_integration_closeout_and_gate_sign_off_a011_expectations.md
 
+
+- M229 lane-B B001 dispatch ABI and selector resolution contract-freeze anchors
+  m229_dispatch_abi_and_selector_resolution_contract_and_architecture_freeze_b001_expectations.md
+
