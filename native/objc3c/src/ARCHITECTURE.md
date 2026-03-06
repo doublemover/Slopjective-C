@@ -5566,3 +5566,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M230 lane-C C016 Documentation generation as source-of-truth contract-freeze anchors
   m230_documentation_generation_as_source_of_truth_advanced_diagnostics_workpack_shard_1_c017_expectations.md
 
+
+- M230 lane-C C017 Documentation generation as source-of-truth contract-freeze anchors
+  m230_documentation_generation_as_source_of_truth_integration_closeout_and_gate_sign_off_c018_expectations.md
+
