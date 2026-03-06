@@ -5264,3 +5264,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M229 lane-B B003 dispatch ABI and selector resolution contract-freeze anchors
   m229_dispatch_abi_and_selector_resolution_core_feature_implementation_b003_expectations.md
 
+
+- M229 lane-B B004 dispatch ABI and selector resolution contract-freeze anchors
+  m229_dispatch_abi_and_selector_resolution_core_feature_expansion_b004_expectations.md
+
