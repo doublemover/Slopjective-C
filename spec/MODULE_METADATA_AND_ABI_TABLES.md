@@ -1935,3 +1935,7 @@ explicit `M230-A005` dependency continuity so conformance corpus governance/shar
 deterministic lane-A conformance corpus governance and sharding diagnostics hardening anchors for `M230-A007`
 explicit `M230-A006` dependency continuity so conformance corpus governance/sharding diagnostics-hardening drift fails closed
 
+
+deterministic lane-A conformance corpus governance and sharding recovery and determinism hardening anchors for `M230-A008`
+explicit `M230-A007` dependency continuity so conformance corpus governance/sharding recovery-and-determinism-hardening drift fails closed
+
