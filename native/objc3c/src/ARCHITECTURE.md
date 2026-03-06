@@ -4510,3 +4510,7 @@ Forbidden:
 - M231 lane-A A013 declaration grammar expansion and normalization docs and operator runbook synchronization anchors
   m231_declaration_grammar_expansion_and_normalization_docs_and_operator_runbook_synchronization_a013_expectations.md
 
+
+- M231 lane-A A014 declaration grammar expansion and normalization release-candidate and replay dry-run anchors
+  m231_declaration_grammar_expansion_and_normalization_release_candidate_and_replay_dry_run_a014_expectations.md
+
