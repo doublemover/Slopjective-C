@@ -2650,3 +2650,7 @@ deterministic lane-E advanced core workpack (shard 1) dependency anchors
 deterministic lane-E advanced edge compatibility workpack (shard 1) dependency anchors
 
 
+
+deterministic lane-E advanced diagnostics workpack (shard 1) dependency anchors
+
+

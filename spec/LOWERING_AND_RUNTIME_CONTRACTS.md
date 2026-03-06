@@ -2891,3 +2891,7 @@ replay-proof/performance advanced core workpack (shard 1) closeout wiring
 replay-proof/performance advanced edge compatibility workpack (shard 1) closeout wiring
 
 
+
+replay-proof/performance advanced diagnostics workpack (shard 1) closeout wiring
+
+
