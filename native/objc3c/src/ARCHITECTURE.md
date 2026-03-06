@@ -4490,3 +4490,7 @@ Forbidden:
 - M231 lane-A A008 declaration grammar expansion and normalization recovery and determinism hardening anchors
   m231_declaration_grammar_expansion_and_normalization_recovery_and_determinism_hardening_a008_expectations.md
 
+
+- M231 lane-A A009 declaration grammar expansion and normalization conformance matrix implementation anchors
+  m231_declaration_grammar_expansion_and_normalization_conformance_matrix_implementation_a009_expectations.md
+
