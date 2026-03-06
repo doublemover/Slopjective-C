@@ -5366,3 +5366,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m229_interop_boundary_abi_handling_integration_closeout_and_gate_sign_off_c022_expectations.md
 
+
+- M229 lane-D B001 packaging and runtime launch ergonomics contract-freeze anchors
+  m229_packaging_runtime_launch_ergonomics_contract_and_architecture_freeze_d001_expectations.md
+

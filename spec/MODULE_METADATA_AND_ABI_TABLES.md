@@ -2850,3 +2850,7 @@ explicit lane-C contract-freeze metadata continuity so interop boundary ABI hand
 deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C022`
 explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
 
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D001`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
