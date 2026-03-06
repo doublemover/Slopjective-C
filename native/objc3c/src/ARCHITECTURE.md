@@ -5224,3 +5224,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M228 lane-E E020 replay-proof/performance closeout integration closeout and gate sign-off anchors
   
 
+
+- M229 lane-A A005 class/protocol/category metadata generation edge-case and compatibility completion anchors
+  m229_class_protocol_category_metadata_generation_edge_case_and_compatibility_completion_a005_expectations.md
+

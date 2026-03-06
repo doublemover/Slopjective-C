@@ -2907,3 +2907,7 @@ replay-proof/performance advanced integration workpack (shard 1) closeout wiring
 replay-proof/performance integration closeout and gate sign-off closeout wiring
 
 
+
+class/protocol/category metadata generation edge-case and compatibility completion governance shall preserve explicit
+lane-A dependency anchors (`M229-A004`) and fail closed on edge-case-and-compatibility-completion evidence drift
+
