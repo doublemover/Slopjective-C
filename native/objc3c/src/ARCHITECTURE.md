@@ -5420,3 +5420,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m229_packaging_runtime_launch_ergonomics_advanced_performance_workpack_shard_2_d026_expectations.md
 
+  m229_packaging_runtime_launch_ergonomics_integration_closeout_and_gate_sign_off_d027_expectations.md
+
