@@ -2304,3 +2304,6 @@ lane-A dependency anchors (`M231-A021`) and fail closed on core-feature evidence
 message expression grammar and selector forms contract-freeze governance shall preserve explicit
 lane-A deterministic boundary anchors (`M232-A001`) and fail closed on contract-freeze evidence drift
 
+
+lane-A deterministic boundary anchors (`M232-A002`) and fail closed on contract-freeze evidence drift
+
