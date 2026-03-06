@@ -4651,3 +4651,6 @@ Forbidden:
 - M232 lane-D D009 runtime selector binding integration contract-freeze anchors
   m232_runtime_selector_binding_integration_integration_closeout_and_gate_sign_off_d009_expectations.md
 
+
+- M232 lane-E E001 message semantics gate and replay evidence contract-freeze anchors
+  m232_message_semantics_gate_and_replay_evidence_contract_and_architecture_freeze_e001_expectations.md

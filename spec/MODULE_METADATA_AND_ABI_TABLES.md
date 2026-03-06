@@ -2148,3 +2148,6 @@ explicit lane-D contract-freeze metadata continuity so runtime selector binding 
 deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D009`
 explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
 
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E001`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
