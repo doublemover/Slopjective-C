@@ -4518,3 +4518,7 @@ Forbidden:
 - M231 lane-A A015 declaration grammar expansion and normalization advanced core workpack (shard 1) anchors
   m231_declaration_grammar_expansion_and_normalization_advanced_core_workpack_shard1_a015_expectations.md
 
+
+- M231 lane-A A016 declaration grammar expansion and normalization advanced edge compatibility workpack (shard 1) anchors
+  m231_declaration_grammar_expansion_and_normalization_advanced_edge_compatibility_workpack_shard1_a016_expectations.md
+
