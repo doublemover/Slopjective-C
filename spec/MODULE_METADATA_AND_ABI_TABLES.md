@@ -3113,3 +3113,7 @@ explicit lane-C contract-freeze metadata continuity so Documentation generation 
 deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C005`
 explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
 
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C006`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
