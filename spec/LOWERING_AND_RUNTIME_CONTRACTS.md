@@ -2355,3 +2355,6 @@ message send lowering and call emission advanced integration workpack (shard 1) 
 
 message send lowering and call emission integration closeout and gate sign-off governance shall preserve explicit lane-C dependency anchors (`M232-C020`, `M232-C019`)
 
+
+runtime selector binding integration contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M232-D001`) and fail closed on contract-freeze evidence drift

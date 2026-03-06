@@ -4616,3 +4616,6 @@ Forbidden:
 
 - M232 lane-C C020 message send lowering and call emission integration closeout and gate sign-off anchors
 
+
+- M232 lane-D D001 runtime selector binding integration contract-freeze anchors
+  m232_runtime_selector_binding_integration_contract_and_architecture_freeze_d001_expectations.md

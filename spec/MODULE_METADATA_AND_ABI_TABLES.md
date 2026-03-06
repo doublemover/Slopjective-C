@@ -2113,3 +2113,6 @@ explicit lane-A contract-freeze metadata continuity so declaration grammar expan
 
 - deterministic lane-C message-send lowering and call-emission integration closeout and gate sign-off metadata anchors for `M232-C020`
 
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D001`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
