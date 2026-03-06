@@ -5466,3 +5466,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M230 lane-B A001 CI matrix simplification and flake elimination contract-freeze anchors
   m230_ci_matrix_simplification_and_flake_elimination_contract_and_architecture_freeze_b001_expectations.md
 
+  m230_ci_matrix_simplification_and_flake_elimination_modular_split_and_scaffolding_b002_expectations.md
+
