@@ -5358,3 +5358,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m229_interop_boundary_abi_handling_advanced_conformance_workpack_shard1_c018_expectations.md
 
+  m229_interop_boundary_abi_handling_advanced_integration_workpack_shard1_c019_expectations.md
+
