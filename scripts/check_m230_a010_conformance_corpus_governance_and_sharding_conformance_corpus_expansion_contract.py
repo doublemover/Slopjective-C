@@ -91,7 +91,7 @@ PREREQUISITE_ASSETS: tuple[tuple[str, Path], ...] = (
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-A010-DOC-EXP-01",
-        "# M230 Conformance Corpus Governance and Sharding Conformance Matrix Implementation Expectations (A010)",
+        "# M230 Conformance Corpus Governance and Sharding Conformance Corpus Expansion Expectations (A010)",
     ),
     SnippetCheck(
         "M230-A010-DOC-EXP-02",
@@ -115,7 +115,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-A010-DOC-PKT-01",
-        "# M230-A010 Conformance Corpus Governance and Sharding Conformance Matrix Implementation Packet",
+        "# M230-A010 Conformance Corpus Governance and Sharding Conformance Corpus Expansion Packet",
     ),
     SnippetCheck("M230-A010-DOC-PKT-02", "Packet: `M230-A010`"),
     SnippetCheck("M230-A010-DOC-PKT-03", "Dependencies: `M230-A009`"),
@@ -132,7 +132,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
 A009_EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-A010-A009-EXP-01",
-        "# M230 Conformance Corpus Governance and Sharding Recovery and Determinism Hardening Expectations (A009)",
+        "# M230 Conformance Corpus Governance and Sharding Conformance Matrix Implementation Expectations (A009)",
     ),
     SnippetCheck(
         "M230-A010-A009-EXP-02",

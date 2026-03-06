@@ -1,4 +1,4 @@
-# M230-A010 Conformance Corpus Governance and Sharding Conformance Matrix Implementation Packet
+# M230-A010 Conformance Corpus Governance and Sharding Conformance Corpus Expansion Packet
 
 Packet: `M230-A010`
 Milestone: `M230`

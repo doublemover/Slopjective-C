@@ -1,4 +1,4 @@
-# M230 Conformance Corpus Governance and Sharding Conformance Matrix Implementation Expectations (A010)
+# M230 Conformance Corpus Governance and Sharding Conformance Corpus Expansion Expectations (A010)
 
 Contract ID: `objc3c-conformance-corpus-governance-and-sharding-conformance-corpus-expansion/m230-a010-v1`
 Status: Accepted
