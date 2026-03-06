@@ -151,6 +151,9 @@ A conforming implementation shall preserve, for all exported declarations:
      advanced-edge-compatibility-shard1 metadata anchors for `M228-B016` plus
      explicit `M228-B015` dependency continuity so
      advanced-edge-compatibility-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-diagnostics-shard1
+     metadata anchors for `M228-B017` plus explicit `M228-B016` dependency
+     continuity so advanced-diagnostics-shard1 drift fails closed,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion
