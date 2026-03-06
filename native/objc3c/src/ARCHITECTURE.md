@@ -898,6 +898,14 @@ Current-state note:
   and `package.json` with dependency token (`M228-C012`) in lane-C readiness chaining so
   docs/operator runbook synchronization continuity remains deterministic and
   fail-closed against `M228-C012` dependency drift.
+- M228 lane-C C014 IR-emission release-candidate and replay dry-run anchors
+  explicit lane-C release/replay synchronization artifacts in
+  `docs/contracts/m228_ir_emission_completeness_release_candidate_and_replay_dry_run_c014_expectations.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`,
+  `spec/planning/compiler/m228/m228_c014_ir_emission_completeness_release_candidate_and_replay_dry_run_packet.md`,
+  and `package.json` with dependency token (`M228-C013`) in lane-C readiness chaining so
+  release/replay continuity remains deterministic and fail-closed against
+  `M228-C013` dependency drift.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and

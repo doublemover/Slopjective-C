@@ -197,6 +197,10 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-C dependency anchors (`M228-C013`, `M228-C012`) and
   fail closed on docs/runbook command sequencing, evidence path continuity, or
   dependency-anchor drift before release-candidate dry-run gates advance.
+- IR-emission release-candidate and replay dry-run governance shall preserve
+  explicit lane-C dependency anchors (`M228-C014`, `M228-C013`) and fail
+  closed on release/replay command sequencing, evidence path continuity, or
+  dependency-anchor drift before advanced workpack gates advance.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.

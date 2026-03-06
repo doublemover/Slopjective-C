@@ -193,6 +193,9 @@ A conforming implementation shall preserve, for all exported declarations:
       synchronization metadata anchors for `M228-C013` plus explicit
       `M228-C012` dependency continuity so docs/runbook synchronization drift
       fails closed before release-candidate dry-run closure,
+    - deterministic lane-C IR-emission release-candidate/replay
+      metadata anchors for `M228-C014` plus explicit `M228-C013` dependency
+      continuity so release/replay drift fails closed,
     - deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`
       with canonical reference type-form order, runtime dispatch default symbol
       continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
