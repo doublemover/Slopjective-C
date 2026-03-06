@@ -2188,3 +2188,7 @@ conformance corpus governance and sharding edge-case and compatibility completio
 conformance corpus governance and sharding edge-case expansion and robustness governance shall preserve explicit
 lane-A dependency anchors (`M230-A005`) and fail closed on edge-case-expansion-and-robustness evidence drift
 
+
+conformance corpus governance and sharding diagnostics hardening governance shall preserve explicit
+lane-A dependency anchors (`M230-A006`) and fail closed on diagnostics-hardening evidence drift
+
