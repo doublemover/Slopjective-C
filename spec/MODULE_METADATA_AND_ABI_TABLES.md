@@ -547,8 +547,12 @@ A conforming implementation shall preserve, for all exported declarations:
       with explicit `M235-C002` dependency continuity so core feature implementation lowering and ABI drift fails closed.
     - deterministic lane-D interop behavior for qualified generic APIs metadata anchors for `M235-D001`
       with explicit `M235-C001` dependency continuity so interop contract and architecture drift fails closed.
+    - deterministic lane-D interop behavior for qualified generic APIs modular split/scaffolding metadata anchors for `M235-D002`
+      with explicit `M235-D001` dependency continuity so modular split/scaffolding interop drift fails closed.
     - deterministic lane-E qualifier/generic conformance gate metadata anchors for `M235-E001`
       with explicit `M235-A001`/`M235-B001`/`M235-C001` dependency continuity so lane-E freeze drift fails closed.
+    - deterministic lane-E qualifier/generic conformance gate modular split/scaffolding metadata anchors for `M235-E002`
+      with explicit `M235-E001`/`M235-A002`/`M235-B004`/`M235-C003`/`M235-D001` dependency continuity so lane-E modular split/scaffolding drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference modular split metadata anchors for `M235-B002`
       with explicit `M235-B001` dependency continuity so nullability/generics/qualifier semantic-inference scaffolding drift fails closed.
     - deterministic lane-B qualifier/generic semantic inference core feature metadata anchors for `M235-B003`

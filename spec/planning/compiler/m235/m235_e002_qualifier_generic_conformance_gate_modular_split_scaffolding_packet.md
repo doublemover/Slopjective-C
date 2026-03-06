@@ -5,7 +5,7 @@ Milestone: `M235`
 Lane: `E`
 Issue: `#5841`
 Scaffold date: `2026-03-05`
-Dependencies: `M235-E001`, `M235-A002`, `M235-B002`, `M235-C002`, `M235-D001`
+Dependencies: `M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`
 
 ## Purpose
 
@@ -30,14 +30,14 @@ across lane-A/B/C scaffolding assets and the lane-D interop freeze anchor.
   - `spec/planning/compiler/m235/m235_a002_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_packet.md`
   - `scripts/check_m235_a002_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_contract.py`
   - `tests/tooling/test_check_m235_a002_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_contract.py`
-  - `docs/contracts/m235_qualifier_and_generic_semantic_inference_modular_split_scaffolding_b002_expectations.md`
-  - `spec/planning/compiler/m235/m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_packet.md`
-  - `scripts/check_m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_contract.py`
-  - `tests/tooling/test_check_m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_contract.py`
-  - `docs/contracts/m235_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_c002_expectations.md`
-  - `spec/planning/compiler/m235/m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_packet.md`
-  - `scripts/check_m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_contract.py`
-  - `tests/tooling/test_check_m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_contract.py`
+  - `docs/contracts/m235_qualifier_and_generic_semantic_inference_core_feature_expansion_b004_expectations.md`
+  - `spec/planning/compiler/m235/m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_packet.md`
+  - `scripts/check_m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_contract.py`
+  - `tests/tooling/test_check_m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_contract.py`
+  - `docs/contracts/m235_qualified_type_lowering_and_abi_representation_core_feature_implementation_c003_expectations.md`
+  - `spec/planning/compiler/m235/m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_packet.md`
+  - `scripts/check_m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_contract.py`
+  - `tests/tooling/test_check_m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_contract.py`
   - `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_d001_expectations.md`
   - `spec/planning/compiler/m235/m235_d001_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_packet.md`
   - `scripts/check_m235_d001_interop_behavior_for_qualified_generic_apis_contract.py`
@@ -49,8 +49,8 @@ across lane-A/B/C scaffolding assets and the lane-D interop freeze anchor.
 | --- | --- | --- |
 | `M235-E001` | `M235-E001` | Issue `#5840`; `check:objc3c:m235-e001-lane-e-readiness` |
 | `M235-A002` | `M235-A002` | Issue `#5765`; `check:objc3c:m235-a002-lane-a-readiness` |
-| `M235-B002` | `M235-B002` | Issue `#5782`; `check:objc3c:m235-b002-lane-b-readiness` |
-| `M235-C002` | `M235-C002` | Issue `#5812`; `check:objc3c:m235-c002-lane-c-readiness` |
+| `M235-B004` | `M235-B004` | Issue `#5784`; `check:objc3c:m235-b004-lane-b-readiness` |
+| `M235-C003` | `M235-C003` | Issue `#5813`; `check:objc3c:m235-c003-lane-c-readiness` |
 | `M235-D001` | `M235-D001` | Issue `#5831`; `check:objc3c:m235-d001-lane-d-readiness` |
 
 ## Gate Commands
@@ -61,4 +61,3 @@ across lane-A/B/C scaffolding assets and the lane-D interop freeze anchor.
 ## Evidence Output
 
 - `tmp/reports/m235/M235-E002/local_check_summary.json`
-

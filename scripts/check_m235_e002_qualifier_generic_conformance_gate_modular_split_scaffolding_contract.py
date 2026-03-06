@@ -83,36 +83,36 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
         Path("tests/tooling/test_check_m235_a002_qualifier_and_generic_grammar_normalization_modular_split_scaffolding_contract.py"),
     ),
     AssetCheck(
-        "M235-E002-DEP-B002-01",
-        Path("docs/contracts/m235_qualifier_and_generic_semantic_inference_modular_split_scaffolding_b002_expectations.md"),
+        "M235-E002-DEP-B004-01",
+        Path("docs/contracts/m235_qualifier_and_generic_semantic_inference_core_feature_expansion_b004_expectations.md"),
     ),
     AssetCheck(
-        "M235-E002-DEP-B002-02",
-        Path("spec/planning/compiler/m235/m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_packet.md"),
+        "M235-E002-DEP-B004-02",
+        Path("spec/planning/compiler/m235/m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_packet.md"),
     ),
     AssetCheck(
-        "M235-E002-DEP-B002-03",
-        Path("scripts/check_m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_contract.py"),
+        "M235-E002-DEP-B004-03",
+        Path("scripts/check_m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_contract.py"),
     ),
     AssetCheck(
-        "M235-E002-DEP-B002-04",
-        Path("tests/tooling/test_check_m235_b002_qualifier_and_generic_semantic_inference_modular_split_scaffolding_contract.py"),
+        "M235-E002-DEP-B004-04",
+        Path("tests/tooling/test_check_m235_b004_qualifier_and_generic_semantic_inference_core_feature_expansion_contract.py"),
     ),
     AssetCheck(
-        "M235-E002-DEP-C002-01",
-        Path("docs/contracts/m235_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_c002_expectations.md"),
+        "M235-E002-DEP-C003-01",
+        Path("docs/contracts/m235_qualified_type_lowering_and_abi_representation_core_feature_implementation_c003_expectations.md"),
     ),
     AssetCheck(
-        "M235-E002-DEP-C002-02",
-        Path("spec/planning/compiler/m235/m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_packet.md"),
+        "M235-E002-DEP-C003-02",
+        Path("spec/planning/compiler/m235/m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_packet.md"),
     ),
     AssetCheck(
-        "M235-E002-DEP-C002-03",
-        Path("scripts/check_m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_contract.py"),
+        "M235-E002-DEP-C003-03",
+        Path("scripts/check_m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_contract.py"),
     ),
     AssetCheck(
-        "M235-E002-DEP-C002-04",
-        Path("tests/tooling/test_check_m235_c002_qualified_type_lowering_and_abi_representation_modular_split_scaffolding_contract.py"),
+        "M235-E002-DEP-C003-04",
+        Path("tests/tooling/test_check_m235_c003_qualified_type_lowering_and_abi_representation_core_feature_implementation_contract.py"),
     ),
     AssetCheck(
         "M235-E002-DEP-D001-01",
@@ -144,7 +144,7 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M235-E002-DOC-EXP-03", "Issue: `#5841`"),
     SnippetCheck(
         "M235-E002-DOC-EXP-04",
-        "Dependencies: `M235-E001`, `M235-A002`, `M235-B002`, `M235-C002`, `M235-D001`",
+        "Dependencies: `M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`",
     ),
     SnippetCheck(
         "M235-E002-DOC-EXP-05",
@@ -156,8 +156,8 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck("M235-E002-DOC-EXP-07", "| `M235-E001` |"),
     SnippetCheck("M235-E002-DOC-EXP-08", "| `M235-A002` |"),
-    SnippetCheck("M235-E002-DOC-EXP-09", "| `M235-B002` |"),
-    SnippetCheck("M235-E002-DOC-EXP-10", "| `M235-C002` |"),
+    SnippetCheck("M235-E002-DOC-EXP-09", "| `M235-B004` |"),
+    SnippetCheck("M235-E002-DOC-EXP-10", "| `M235-C003` |"),
     SnippetCheck("M235-E002-DOC-EXP-11", "| `M235-D001` |"),
     SnippetCheck(
         "M235-E002-DOC-EXP-12",
@@ -182,7 +182,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M235-E002-DOC-PKT-03", "Issue: `#5841`"),
     SnippetCheck(
         "M235-E002-DOC-PKT-04",
-        "Dependencies: `M235-E001`, `M235-A002`, `M235-B002`, `M235-C002`, `M235-D001`",
+        "Dependencies: `M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`",
     ),
     SnippetCheck(
         "M235-E002-DOC-PKT-05",

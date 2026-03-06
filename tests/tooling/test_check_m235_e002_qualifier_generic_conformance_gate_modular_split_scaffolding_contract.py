@@ -98,8 +98,8 @@ def test_contract_fails_closed_when_packet_drops_d001_dependency(tmp_path: Path)
     drift_packet.write_text(
         replace_once(
             contract.DEFAULT_PACKET_DOC.read_text(encoding="utf-8"),
-            "Dependencies: `M235-E001`, `M235-A002`, `M235-B002`, `M235-C002`, `M235-D001`",
-            "Dependencies: `M235-E001`, `M235-A002`, `M235-B002`, `M235-C002`",
+            "Dependencies: `M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`",
+            "Dependencies: `M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`",
         ),
         encoding="utf-8",
     )
@@ -111,4 +111,3 @@ def test_contract_fails_closed_when_packet_drops_d001_dependency(tmp_path: Path)
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M235-E002-DOC-PKT-04" for failure in payload["failures"])
-
