@@ -2208,3 +2208,7 @@ lane-A dependency anchors (`M230-A009`) and fail closed on conformance-corpus-ex
 conformance corpus governance and sharding performance and quality guardrails governance shall preserve explicit
 lane-A dependency anchors (`M230-A010`) and fail closed on performance-and-quality-guardrails evidence drift
 
+
+conformance corpus governance and sharding integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M230-A011`) and fail closed on integration-closeout-and-gate-sign-off evidence drift
+

@@ -4454,3 +4454,7 @@ Forbidden:
 - M230 lane-A A011 conformance corpus governance and sharding performance and quality guardrails anchors
   m230_conformance_corpus_governance_and_sharding_performance_and_quality_guardrails_a011_expectations.md
 
+
+- M230 lane-A A012 conformance corpus governance and sharding integration closeout and gate sign-off anchors
+  m230_conformance_corpus_governance_and_sharding_integration_closeout_and_gate_sign_off_a012_expectations.md
+

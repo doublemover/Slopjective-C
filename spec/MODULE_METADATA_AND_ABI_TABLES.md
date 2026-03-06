@@ -1951,3 +1951,7 @@ explicit `M230-A009` dependency continuity so conformance corpus governance/shar
 deterministic lane-A conformance corpus governance and sharding performance and quality guardrails anchors for `M230-A011`
 explicit `M230-A010` dependency continuity so conformance corpus governance/sharding performance-and-quality-guardrails drift fails closed
 
+
+deterministic lane-A conformance corpus governance and sharding integration closeout and gate sign-off anchors for `M230-A012`
+explicit `M230-A011` dependency continuity so conformance corpus governance/sharding integration-closeout-and-gate-sign-off drift fails closed
+
