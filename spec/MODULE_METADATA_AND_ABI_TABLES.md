@@ -144,6 +144,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic lane-B ownership-aware lowering release-candidate/replay
      metadata anchors for `M228-B014` plus explicit `M228-B013` dependency
      continuity so release/replay drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-core-shard1
+     metadata anchors for `M228-B015` plus explicit `M228-B014` dependency
+     continuity so advanced-core-shard1 drift fails closed,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion
