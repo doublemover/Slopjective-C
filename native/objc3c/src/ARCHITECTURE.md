@@ -5492,3 +5492,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m230_ci_matrix_simplification_and_flake_elimination_release_candidate_and_replay_dry_run_b014_expectations.md
 
+  m230_ci_matrix_simplification_and_flake_elimination_integration_closeout_and_gate_sign_off_b015_expectations.md
+
