@@ -4594,3 +4594,7 @@ Forbidden:
 - M232 lane-A A012 message expression grammar and selector forms contract-freeze anchors
   m232_message_expression_grammar_and_selector_forms_cross_lane_integration_sync_a012_expectations.md
 
+
+- M232 lane-A A013 message expression grammar and selector forms contract-freeze anchors
+  m232_message_expression_grammar_and_selector_forms_docs_and_operator_runbook_synchronization_a013_expectations.md
+
