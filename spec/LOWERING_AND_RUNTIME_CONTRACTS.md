@@ -2168,3 +2168,5 @@ property conformance gate and docs core feature expansion wiring shall preserve 
 class/protocol/category metadata generation governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on class/protocol/category metadata linkage drift before lane-A modular split/scaffolding workpacks advance.
 
 class/protocol/category metadata generation contract freeze shall preserve deterministic lane-A boundary anchors and fail closed on class/protocol/category metadata linkage drift, parser declaration continuity drift, or typed sema-to-lowering handoff drift before runtime ABI expansion stages advance.
+
+class/protocol/category metadata generation modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on scaffolding evidence drift before lane-A core feature implementation workpacks advance.

@@ -1911,3 +1911,5 @@ deterministic property conformance gate and docs core feature expansion dependen
 deterministic lane-A class/protocol/category metadata generation anchors for `M229-A001` must remain synchronized across parser declaration metadata, semantic linking summaries, typed handoff surfaces, and IR frontend metadata profiles.
 
 deterministic lane-A class/protocol/category metadata generation metadata anchors for `M229-A001` must preserve class/protocol/category metadata evidence and parser replay-budget continuity so runtime ABI metadata linkage drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation modular split anchors for `M229-A002` must preserve explicit `M229-A001` dependency continuity so class/protocol/category metadata scaffolding drift fails closed.

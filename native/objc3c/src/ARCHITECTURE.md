@@ -601,6 +601,13 @@ Current-state note:
   (`check:objc3c:m229-a001-lane-a-readiness`) so class/protocol/category
   metadata linkage evidence remains deterministic and fail-closed before lane-A
   modular split workpacks advance.
+- M229 lane-A A002 class/protocol/category metadata generation modular split/scaffolding anchors
+  explicit lane-A modular split/scaffolding artifacts in
+  `docs/contracts/m229_class_protocol_category_metadata_generation_modular_split_scaffolding_a002_expectations.md`,
+  `spec/planning/compiler/m229/m229_a002_class_protocol_category_metadata_generation_modular_split_scaffolding_packet.md`,
+  and `package.json` (`check:objc3c:m229-a002-lane-a-readiness`) so
+  `M229-A001` dependency continuity remains deterministic and fail-closed
+  against scaffolding drift.
 - M228 lane-A A002 modular split scaffolding extracts pass-graph readiness
   synthesis into `pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp`
   and enforces fail-closed pass-graph gating in
