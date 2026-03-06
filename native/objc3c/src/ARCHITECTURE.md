@@ -5458,3 +5458,11 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m229_runtime_release_gate_and_operational_docs_integration_closeout_and_gate_sign_off_e017_expectations.md
 
+
+- M230 lane-A A001 CI matrix simplification and flake elimination contract-freeze anchors
+  m230_ci_matrix_simplification_and_flake_elimination_contract_and_architecture_freeze_b001_expectations.md
+
+
+- M230 lane-B A001 CI matrix simplification and flake elimination contract-freeze anchors
+  m230_ci_matrix_simplification_and_flake_elimination_contract_and_architecture_freeze_b001_expectations.md
+

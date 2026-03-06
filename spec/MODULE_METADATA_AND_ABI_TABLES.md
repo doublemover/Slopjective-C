@@ -3026,3 +3026,11 @@ explicit lane-E contract-freeze metadata continuity so runtime release gate and 
 deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E017`
 explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
 
+
+deterministic lane-A CI matrix simplification and flake elimination contract-freeze anchors for `M230-B001`
+explicit lane-A contract-freeze metadata continuity so conformance corpus governance/sharding drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B001`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+

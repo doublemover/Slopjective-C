@@ -3188,3 +3188,10 @@ lane-E deterministic boundary anchors (`M229-E016`) and fail closed on contract-
 
 lane-E deterministic boundary anchors (`M229-E017`) and fail closed on contract-freeze evidence drift
 
+
+CI matrix simplification and flake elimination contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M230-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B001`) and fail closed on contract-freeze evidence drift
+
