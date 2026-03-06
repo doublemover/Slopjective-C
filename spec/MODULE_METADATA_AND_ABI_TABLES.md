@@ -2242,3 +2242,7 @@ explicit lane-B contract-freeze metadata continuity so method lookup and overloa
 deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B009`
 explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
 
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B010`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
