@@ -2450,3 +2450,7 @@ explicit lane-B contract-freeze metadata continuity so conformance checking and 
 deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C001`
 explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
 
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C002`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
