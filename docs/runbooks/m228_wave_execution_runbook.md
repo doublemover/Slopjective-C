@@ -250,3 +250,10 @@ Persist wave evidence under:
 91. `python -m pytest tests/tooling/test_check_m228_c038_ir_emission_completeness_integration_closeout_and_gate_signoff_contract.py -q`
 92. `npm run check:objc3c:m228-c038-lane-c-readiness`
 
+
+
+
+
+objc3c-object-emission-link-path-reliability-cross-lane-integration-sync/m228-d012-v1
+
+npm run check:objc3c:m228-d012-lane-d-readiness

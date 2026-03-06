@@ -5162,3 +5162,5 @@ Forbidden:
 
 - M228 lane-C C038 IR-emission integration closeout and gate sign-off anchors
 
+
+M228 lane-D D012 cross-lane integration sync anchors deterministic

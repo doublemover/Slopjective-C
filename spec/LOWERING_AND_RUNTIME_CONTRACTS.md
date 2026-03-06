@@ -2843,3 +2843,7 @@ IR-emission integration closeout and gate sign-off governance shall
 
 lane-C dependency anchors (`M228-C038`, `M228-C037`)
 
+
+toolchain/runtime cross-lane integration sync shall remain
+
+
