@@ -2939,3 +2939,6 @@ lane-A dependency anchors (`M229-A010`) and fail closed on integration-closeout-
 dispatch ABI and selector resolution contract-freeze governance shall preserve explicit
 lane-B deterministic boundary anchors (`M229-B001`) and fail closed on contract-freeze evidence drift
 
+
+lane-B deterministic boundary anchors (`M229-B002`) and fail closed on contract-freeze evidence drift
+
