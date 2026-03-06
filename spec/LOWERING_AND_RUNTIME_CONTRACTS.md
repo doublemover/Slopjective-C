@@ -2164,3 +2164,7 @@ property conformance gate and docs modular split/scaffolding wiring shall preser
 property conformance gate and docs core feature implementation wiring shall preserve explicit lane-E dependency anchors (`M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`) and fail closed when lane-E core feature implementation dependency continuity drifts.
 
 property conformance gate and docs core feature expansion wiring shall preserve explicit lane-E dependency anchors (`M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`) and fail closed when lane-E core feature expansion dependency continuity drifts.
+
+class/protocol/category metadata generation governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on class/protocol/category metadata linkage drift before lane-A modular split/scaffolding workpacks advance.
+
+class/protocol/category metadata generation contract freeze shall preserve deterministic lane-A boundary anchors and fail closed on class/protocol/category metadata linkage drift, parser declaration continuity drift, or typed sema-to-lowering handoff drift before runtime ABI expansion stages advance.

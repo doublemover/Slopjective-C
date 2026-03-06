@@ -591,6 +591,16 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp`, and
   `lower/objc3_lowering_contract.cpp` so direct LLVM IR emission hardening can
   build on deterministic decomposition boundaries.
+- M229 lane-A A001 class/protocol/category metadata generation anchors explicit
+  lane-A contract-freeze artifacts in
+  `docs/contracts/m229_class_protocol_category_metadata_generation_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m229/m229_a001_class_protocol_category_metadata_generation_contract_and_architecture_freeze_packet.md`,
+  `parse/objc3_parser.cpp`, `sema/objc3_sema_pass_manager.cpp`,
+  `pipeline/objc3_typed_sema_to_lowering_contract_surface.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` with `package.json`
+  (`check:objc3c:m229-a001-lane-a-readiness`) so class/protocol/category
+  metadata linkage evidence remains deterministic and fail-closed before lane-A
+  modular split workpacks advance.
 - M228 lane-A A002 modular split scaffolding extracts pass-graph readiness
   synthesis into `pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp`
   and enforces fail-closed pass-graph gating in
