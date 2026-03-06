@@ -5180,3 +5180,7 @@ M228 lane-D D015 advanced core workpack (shard 1) anchors deterministic
 M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 (`integration_closeout_and_gate_signoff_*`)
+
+- M228 lane-E E010 replay-proof/performance closeout conformance corpus expansion anchors
+  
+
