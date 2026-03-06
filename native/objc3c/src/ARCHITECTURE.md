@@ -4869,3 +4869,7 @@ Forbidden:
 - M233 lane-A A009 protocol/category grammar and AST shape contract-freeze anchors
   m233_protocol_category_grammar_and_ast_shape_conformance_matrix_implementation_a009_expectations.md
 
+
+- M233 lane-A A010 protocol/category grammar and AST shape contract-freeze anchors
+  m233_protocol_category_grammar_and_ast_shape_conformance_corpus_expansion_a010_expectations.md
+
