@@ -1582,18 +1582,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_d003_interop_behavior_for_qualified_generic_apis_core_feature_implementation_packet.md`,
   and `package.json` (`check:objc3c:m235-d003-lane-d-readiness`) so `M235-D002`
   dependency continuity remains deterministic and fail-closed against core feature implementation interop drift.
-- M235 lane-D D003 interop behavior for qualified generic APIs core feature implementation anchors explicit
-  lane-D core feature implementation artifacts in
-  `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_core_feature_implementation_d003_expectations.md`,
-  `spec/planning/compiler/m235/m235_d003_interop_behavior_for_qualified_generic_apis_core_feature_implementation_packet.md`,
-  and `package.json` (`check:objc3c:m235-d003-lane-d-readiness`) so `M235-D002`
-  dependency continuity remains deterministic and fail-closed against core feature implementation interop drift.
-- M235 lane-D D003 interop behavior for qualified generic APIs core feature implementation anchors explicit
-  lane-D core feature implementation artifacts in
-  `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_core_feature_implementation_d003_expectations.md`,
-  `spec/planning/compiler/m235/m235_d003_interop_behavior_for_qualified_generic_apis_core_feature_implementation_packet.md`,
-  and `package.json` (`check:objc3c:m235-d003-lane-d-readiness`) so `M235-D002`
-  dependency continuity remains deterministic and fail-closed against core feature implementation interop drift.
+- M235 lane-D D004 interop behavior for qualified generic APIs core feature expansion anchors explicit
+  lane-D core feature expansion artifacts in
+  `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_core_feature_expansion_d004_expectations.md`,
+  `spec/planning/compiler/m235/m235_d004_interop_behavior_for_qualified_generic_apis_core_feature_expansion_packet.md`,
+  and `package.json` (`check:objc3c:m235-d004-lane-d-readiness`) so `M235-D003`
+  dependency continuity remains deterministic and fail-closed against core feature expansion interop drift.
 - M235 lane-E E001 qualifier/generic conformance gate anchors explicit
   lane-E contract-freeze artifacts in
   `docs/contracts/m235_qualifier_generic_conformance_gate_contract_and_architecture_freeze_e001_expectations.md`,
