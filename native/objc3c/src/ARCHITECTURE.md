@@ -890,6 +890,14 @@ Current-state note:
   `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
   `ir/objc3_ir_emitter.cpp` so direct LLVM IR emission fails closed when
   pass-graph or parse-artifact cross-lane integration evidence drifts.
+- M228 lane-C C013 IR-emission docs and operator runbook synchronization anchors
+  explicit lane-C docs/runbook synchronization artifacts in
+  `docs/contracts/m228_ir_emission_completeness_docs_operator_runbook_sync_c013_expectations.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`,
+  `spec/planning/compiler/m228/m228_c013_ir_emission_completeness_docs_operator_runbook_sync_packet.md`,
+  and `package.json` with dependency token (`M228-C012`) in lane-C readiness chaining so
+  docs/operator runbook synchronization continuity remains deterministic and
+  fail-closed against `M228-C012` dependency drift.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and

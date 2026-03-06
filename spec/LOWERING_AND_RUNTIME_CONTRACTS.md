@@ -193,6 +193,10 @@ At minimum, the pass-graph gate shall validate:
   preserve cross-lane integration consistency/readiness and
   cross-lane-integration-key continuity, and fail closed when pass-graph or
   parse-artifact cross-lane integration evidence drifts.
+- IR-emission docs and operator runbook synchronization governance shall
+  preserve explicit lane-C dependency anchors (`M228-C013`, `M228-C012`) and
+  fail closed on docs/runbook command sequencing, evidence path continuity, or
+  dependency-anchor drift before release-candidate dry-run gates advance.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.
