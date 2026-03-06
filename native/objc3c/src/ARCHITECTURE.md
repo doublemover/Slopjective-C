@@ -5037,3 +5037,7 @@ Forbidden:
 - M233 lane-C C022 lowering of protocol/category artifacts contract-freeze anchors
   m233_lowering_of_protocol_category_artifacts_integration_closeout_and_gate_sign_off_c022_expectations.md
 
+
+- M239 lane-B B003 semantic flow analysis and invariants contract-freeze anchors
+  m239_semantic_flow_analysis_and_invariants_core_feature_implementation_b003_expectations.md
+

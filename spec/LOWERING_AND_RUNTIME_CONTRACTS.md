@@ -2677,3 +2677,7 @@ lane-C deterministic boundary anchors (`M233-C021`) and fail closed on contract-
 
 lane-C deterministic boundary anchors (`M233-C022`) and fail closed on contract-freeze evidence drift
 
+
+semantic flow analysis and invariants contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M239-B003`) and fail closed on contract-freeze evidence drift
+
