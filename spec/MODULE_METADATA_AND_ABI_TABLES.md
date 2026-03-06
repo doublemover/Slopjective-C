@@ -2914,3 +2914,7 @@ explicit lane-D contract-freeze metadata continuity so packaging and runtime lau
 deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D016`
 explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
 
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D017`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
