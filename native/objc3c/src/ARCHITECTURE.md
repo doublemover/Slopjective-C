@@ -4949,3 +4949,7 @@ Forbidden:
 - M233 lane-B B017 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_integration_closeout_and_gate_sign_off_b017_expectations.md
 
+
+- M233 lane-C C001 lowering of protocol/category artifacts contract-freeze anchors
+  m233_lowering_of_protocol_category_artifacts_contract_and_architecture_freeze_c001_expectations.md
+
