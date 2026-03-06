@@ -2268,3 +2268,7 @@ lane-A dependency anchors (`M231-A012`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization release-candidate and replay dry-run governance shall preserve explicit
 lane-A dependency anchors (`M231-A013`) and fail closed on core-feature evidence drift
 
+
+declaration grammar expansion and normalization advanced core workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A014`) and fail closed on core-feature evidence drift
+

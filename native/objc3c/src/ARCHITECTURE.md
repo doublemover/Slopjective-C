@@ -4514,3 +4514,7 @@ Forbidden:
 - M231 lane-A A014 declaration grammar expansion and normalization release-candidate and replay dry-run anchors
   m231_declaration_grammar_expansion_and_normalization_release_candidate_and_replay_dry_run_a014_expectations.md
 
+
+- M231 lane-A A015 declaration grammar expansion and normalization advanced core workpack (shard 1) anchors
+  m231_declaration_grammar_expansion_and_normalization_advanced_core_workpack_shard1_a015_expectations.md
+
