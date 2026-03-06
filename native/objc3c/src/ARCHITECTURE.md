@@ -5168,3 +5168,7 @@ M228 lane-D D012 cross-lane integration sync anchors deterministic
 M228 lane-D D013 docs and operator runbook synchronization anchors deterministic
 
 (`docs_operator_runbook_sync_*`)
+
+M228 lane-D D014 release-candidate and replay dry-run anchors deterministic
+
+(`release_candidate_and_replay_dry_run_*`)

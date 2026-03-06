@@ -2610,3 +2610,7 @@ deterministic lane-D toolchain/runtime cross-lane integration sync
 deterministic lane-D toolchain/runtime docs and operator runbook synchronization
 
 
+
+deterministic lane-D toolchain/runtime release-candidate and replay dry-run
+
+

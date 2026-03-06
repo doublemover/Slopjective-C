@@ -262,3 +262,8 @@ npm run check:objc3c:m228-d012-lane-d-readiness
 objc3c-object-emission-link-path-reliability-docs-operator-runbook-sync/m228-d013-v1
 
 npm run check:objc3c:m228-d013-lane-d-readiness
+
+
+objc3c-object-emission-link-path-reliability-release-candidate-and-replay-dry-run/m228-d014-v1
+
+npm run check:objc3c:m228-d014-lane-d-readiness
