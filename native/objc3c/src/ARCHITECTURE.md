@@ -4825,3 +4825,7 @@ Forbidden:
 - M232 lane-B B029 method lookup and overload semantics contract-freeze anchors
   m232_method_lookup_and_overload_semantics_advanced_diagnostics_workpack_shard_3_b029_expectations.md
 
+
+- M232 lane-B B030 method lookup and overload semantics contract-freeze anchors
+  m232_method_lookup_and_overload_semantics_integration_closeout_and_gate_sign_off_b030_expectations.md
+
