@@ -210,6 +210,11 @@ At minimum, the pass-graph gate shall validate:
   fail closed on advanced-edge-compatibility shard1 consistency,
   key-transport continuity, or dependency-anchor drift before advanced
   diagnostics gates advance.
+- IR-emission advanced diagnostics workpack (shard 1) governance shall
+  preserve explicit lane-C dependency anchors (`M228-C017`, `M228-C016`) and
+  fail closed on advanced-diagnostics shard1 consistency, key-transport
+  continuity, or dependency-anchor drift before advanced conformance gates
+  advance.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.
