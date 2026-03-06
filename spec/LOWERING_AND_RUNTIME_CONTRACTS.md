@@ -2931,3 +2931,7 @@ lane-A dependency anchors (`M229-A008`) and fail closed on conformance-matrix-im
 class/protocol/category metadata generation conformance corpus expansion governance shall preserve explicit
 lane-A dependency anchors (`M229-A009`) and fail closed on conformance-corpus-expansion evidence drift
 
+
+class/protocol/category metadata generation integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M229-A010`) and fail closed on integration-closeout-and-gate-sign-off evidence drift
+

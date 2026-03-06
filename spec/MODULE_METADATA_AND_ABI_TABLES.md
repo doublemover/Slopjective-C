@@ -2690,3 +2690,7 @@ explicit `M229-A008` dependency continuity so class/protocol/category metadata c
 deterministic lane-A class/protocol/category metadata generation conformance corpus expansion anchors for `M229-A010`
 explicit `M229-A009` dependency continuity so class/protocol/category metadata conformance-corpus-expansion drift fails closed
 
+
+deterministic lane-A class/protocol/category metadata generation integration closeout and gate sign-off anchors for `M229-A011`
+explicit `M229-A010` dependency continuity so class/protocol/category metadata integration-closeout-and-gate-sign-off drift fails closed
+
