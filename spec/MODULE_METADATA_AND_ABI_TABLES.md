@@ -1967,3 +1967,7 @@ explicit `M231-A001` dependency continuity so declaration grammar expansion/norm
 deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A003`
 explicit `M231-A002` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
 
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A004`
+explicit `M231-A003` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+

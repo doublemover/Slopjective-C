@@ -4470,3 +4470,7 @@ Forbidden:
 - M231 lane-A A003 declaration grammar expansion and normalization core feature implementation anchors
   m231_declaration_grammar_expansion_and_normalization_core_feature_implementation_a003_expectations.md
 
+
+- M231 lane-A A004 declaration grammar expansion and normalization core feature expansion anchors
+  m231_declaration_grammar_expansion_and_normalization_core_feature_expansion_a004_expectations.md
+
