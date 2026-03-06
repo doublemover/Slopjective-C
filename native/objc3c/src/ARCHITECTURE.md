@@ -818,6 +818,14 @@ Current-state note:
   (`check:objc3c:m228-b021-lane-b-readiness`) so `M228-B020` dependency
   continuity and lane-B advanced-core-shard2 command sequencing remain
   deterministic and fail-closed against governance drift.
+- M228 lane-B B022 ownership-aware lowering integration closeout and gate sign-off anchors
+  explicit lane-B integration-closeout-signoff assets in
+  `docs/contracts/m228_ownership_aware_lowering_behavior_integration_closeout_and_gate_signoff_b022_expectations.md`,
+  `spec/planning/compiler/m228/m228_b022_ownership_aware_lowering_behavior_integration_closeout_and_gate_signoff_packet.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m228-b022-lane-b-readiness`) so `M228-B021` dependency
+  continuity and lane-B integration-closeout-signoff command sequencing remain
+  deterministic and fail-closed against governance drift.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so

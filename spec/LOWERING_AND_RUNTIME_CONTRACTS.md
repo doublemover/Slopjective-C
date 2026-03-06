@@ -254,6 +254,10 @@ At minimum, the pass-graph gate shall validate:
   preserve explicit lane-B dependency anchors (`M228-B021`, `M228-B020`) and
   fail closed on advanced-core-shard2 continuity, command sequencing, or
   evidence-path drift before lane-B integration closeout validation advances.
+- ownership-aware lowering integration closeout and gate sign-off governance
+  shall preserve explicit lane-B dependency anchors (`M228-B022`, `M228-B021`)
+  and fail closed on integration-closeout-signoff continuity, command
+  sequencing, or evidence-path drift before lane-B closeout readiness advances.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output
