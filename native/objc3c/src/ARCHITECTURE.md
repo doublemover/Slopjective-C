@@ -608,6 +608,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m229-a002-lane-a-readiness`) so
   `M229-A001` dependency continuity remains deterministic and fail-closed
   against scaffolding drift.
+- M229 lane-A A003 class/protocol/category metadata generation core feature implementation anchors
+  explicit lane-A core-feature artifacts in
+  `docs/contracts/m229_class_protocol_category_metadata_generation_core_feature_implementation_a003_expectations.md`,
+  `spec/planning/compiler/m229/m229_a003_class_protocol_category_metadata_generation_core_feature_implementation_packet.md`,
+  and `package.json` (`check:objc3c:m229-a003-lane-a-readiness`) so
+  `M229-A002` dependency continuity remains deterministic and fail-closed
+  against core-feature implementation drift.
 - M228 lane-A A002 modular split scaffolding extracts pass-graph readiness
   synthesis into `pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp`
   and enforces fail-closed pass-graph gating in

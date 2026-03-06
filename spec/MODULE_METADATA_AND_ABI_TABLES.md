@@ -1913,3 +1913,5 @@ deterministic lane-A class/protocol/category metadata generation anchors for `M2
 deterministic lane-A class/protocol/category metadata generation metadata anchors for `M229-A001` must preserve class/protocol/category metadata evidence and parser replay-budget continuity so runtime ABI metadata linkage drift fails closed.
 
 deterministic lane-A class/protocol/category metadata generation modular split anchors for `M229-A002` must preserve explicit `M229-A001` dependency continuity so class/protocol/category metadata scaffolding drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation core feature anchors for `M229-A003` must preserve explicit `M229-A002` dependency continuity so class/protocol/category metadata core-feature drift fails closed.
