@@ -5200,3 +5200,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M228 lane-E E014 replay-proof/performance closeout release-candidate and replay dry-run anchors
   
 
+
+- M228 lane-E E015 replay-proof/performance closeout advanced core workpack (shard 1) anchors
+  
+

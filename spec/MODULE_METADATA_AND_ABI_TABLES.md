@@ -2642,3 +2642,7 @@ deterministic lane-E docs and operator runbook synchronization dependency anchor
 deterministic lane-E release-candidate and replay dry-run dependency anchors
 
 
+
+deterministic lane-E advanced core workpack (shard 1) dependency anchors
+
+
