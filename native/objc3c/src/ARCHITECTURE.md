@@ -4494,3 +4494,7 @@ Forbidden:
 - M231 lane-A A009 declaration grammar expansion and normalization conformance matrix implementation anchors
   m231_declaration_grammar_expansion_and_normalization_conformance_matrix_implementation_a009_expectations.md
 
+
+- M231 lane-A A010 declaration grammar expansion and normalization conformance corpus expansion anchors
+  m231_declaration_grammar_expansion_and_normalization_conformance_corpus_expansion_a010_expectations.md
+
