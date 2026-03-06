@@ -5093,3 +5093,7 @@ Forbidden:
 - M239 lane-B B016 semantic flow analysis and invariants contract-freeze anchors
   m239_semantic_flow_analysis_and_invariants_advanced_edge_compatibility_workpack_shard1_b016_expectations.md
 
+
+- M239 lane-B B017 semantic flow analysis and invariants contract-freeze anchors
+  m239_semantic_flow_analysis_and_invariants_advanced_diagnostics_workpack_shard1_b017_expectations.md
+
