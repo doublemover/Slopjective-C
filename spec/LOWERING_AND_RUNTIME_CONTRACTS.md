@@ -2220,3 +2220,7 @@ lane-A deterministic boundary anchors (`M231-A001`) and fail closed on contract-
 declaration grammar expansion and normalization modular split/scaffolding governance shall preserve explicit
 lane-A dependency anchors (`M231-A001`) and fail closed on scaffolding evidence drift
 
+
+declaration grammar expansion and normalization core feature implementation governance shall preserve explicit
+lane-A dependency anchors (`M231-A002`) and fail closed on core-feature evidence drift
+

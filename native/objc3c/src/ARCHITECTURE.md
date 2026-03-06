@@ -4466,3 +4466,7 @@ Forbidden:
 - M231 lane-A A002 declaration grammar expansion and normalization modular split/scaffolding anchors
   docs/contracts/m231_declaration_grammar_expansion_and_normalization_modular_split_scaffolding_a002_expectations.md
 
+
+- M231 lane-A A003 declaration grammar expansion and normalization core feature implementation anchors
+  m231_declaration_grammar_expansion_and_normalization_core_feature_implementation_a003_expectations.md
+
