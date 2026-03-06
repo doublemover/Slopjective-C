@@ -523,6 +523,8 @@ struct Objc3IRFrontendMetadata {
   std::string ir_emission_core_feature_performance_quality_guardrails_key;
   bool ir_emission_core_feature_cross_lane_integration_sync_ready = false;
   std::string ir_emission_core_feature_cross_lane_integration_sync_key;
+  bool ir_emission_core_feature_advanced_core_shard1_ready = false;
+  std::string ir_emission_core_feature_advanced_core_shard1_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };
