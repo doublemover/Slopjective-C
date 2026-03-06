@@ -754,6 +754,14 @@ Current-state note:
   (`check:objc3c:m228-b013-lane-b-readiness`) so `M228-B012` dependency
   continuity and lane-B docs/runbook command sequencing remain deterministic
   and fail-closed against governance drift.
+- M228 lane-B B014 ownership-aware lowering release-candidate and replay dry-run anchors
+  explicit lane-B release/replay assets in
+  `docs/contracts/m228_ownership_aware_lowering_behavior_release_candidate_and_replay_dry_run_b014_expectations.md`,
+  `spec/planning/compiler/m228/m228_b014_ownership_aware_lowering_behavior_release_candidate_and_replay_dry_run_packet.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m228-b014-lane-b-readiness`) so `M228-B013` dependency
+  continuity and lane-B release/replay command sequencing remain deterministic
+  and fail-closed against governance drift.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
