@@ -4829,3 +4829,7 @@ Forbidden:
 - M232 lane-B B030 method lookup and overload semantics contract-freeze anchors
   m232_method_lookup_and_overload_semantics_integration_closeout_and_gate_sign_off_b030_expectations.md
 
+
+- M242 lane-B B008 preprocessor semantic model and expansion rules contract-freeze anchors
+  m242_preprocessor_semantic_model_and_expansion_rules_recovery_and_determinism_hardening_b008_expectations.md
+
