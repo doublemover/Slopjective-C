@@ -2163,3 +2163,7 @@ explicit lane-E contract-freeze metadata continuity so message semantics gate an
 deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E004`
 explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
 
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E005`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
