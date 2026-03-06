@@ -5033,3 +5033,7 @@ Forbidden:
 - M233 lane-C C021 lowering of protocol/category artifacts contract-freeze anchors
   m233_lowering_of_protocol_category_artifacts_advanced_core_workpack_shard2_c021_expectations.md
 
+
+- M233 lane-C C022 lowering of protocol/category artifacts contract-freeze anchors
+  m233_lowering_of_protocol_category_artifacts_integration_closeout_and_gate_sign_off_c022_expectations.md
+
