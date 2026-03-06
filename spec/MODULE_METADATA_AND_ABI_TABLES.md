@@ -2330,3 +2330,7 @@ explicit lane-B contract-freeze metadata continuity so method lookup and overloa
 deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B008`
 explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
 
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A001`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+

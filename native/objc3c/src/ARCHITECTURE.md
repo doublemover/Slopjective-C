@@ -4833,3 +4833,7 @@ Forbidden:
 - M242 lane-B B008 preprocessor semantic model and expansion rules contract-freeze anchors
   m242_preprocessor_semantic_model_and_expansion_rules_recovery_and_determinism_hardening_b008_expectations.md
 
+
+- M233 lane-A A001 protocol/category grammar and AST shape contract-freeze anchors
+  m233_protocol_category_grammar_and_ast_shape_contract_and_architecture_freeze_a001_expectations.md
+
