@@ -21,6 +21,7 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-ownership-aware-lowering-behavior-advanced-conformance-workpack-shard1/m228-b018-v1`
 - `objc3c-ownership-aware-lowering-behavior-advanced-integration-workpack-shard1/m228-b019-v1`
 - `objc3c-ownership-aware-lowering-behavior-advanced-performance-workpack-shard1/m228-b020-v1`
+- `objc3c-ownership-aware-lowering-behavior-advanced-core-workpack-shard2/m228-b021-v1`
 - `objc3c-lowering-pipeline-pass-graph-release-replay-dry-run/m228-a014-v1`
 - `objc3c-lowering-pipeline-pass-graph-advanced-core-workpack-shard1/m228-a015-v1`
 - `objc3c-lowering-pipeline-pass-graph-integration-closeout-gate-signoff/m228-a016-v1`
@@ -105,7 +106,12 @@ This runbook tracks current M228 lane sync coverage for:
    - `python -m pytest tests/tooling/test_check_m228_b020_ownership_aware_lowering_behavior_advanced_performance_workpack_shard1_contract.py -q`
 30. Run lane-B readiness chain:
    - `npm run check:objc3c:m228-b020-lane-b-readiness`
-31. Optional milestone optimization replay/compile sweeps:
+31. Validate lane-B advanced core workpack (shard 2) gate:
+   - `python scripts/check_m228_b021_ownership_aware_lowering_behavior_advanced_core_workpack_shard2_contract.py`
+   - `python -m pytest tests/tooling/test_check_m228_b021_ownership_aware_lowering_behavior_advanced_core_workpack_shard2_contract.py -q`
+32. Run lane-B readiness chain:
+   - `npm run check:objc3c:m228-b021-lane-b-readiness`
+33. Optional milestone optimization replay/compile sweeps:
    - `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m228-b014 --emit-prefix module`
    - `npm run proof:objc3c`
    - `npm run test:objc3c:execution-smoke`
