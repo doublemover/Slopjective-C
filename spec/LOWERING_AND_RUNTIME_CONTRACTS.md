@@ -2349,3 +2349,6 @@ lane-A deterministic boundary anchors (`M232-A015`) and fail closed on contract-
 
 lane-A deterministic boundary anchors (`M232-A016`) and fail closed on contract-freeze evidence drift
 
+
+message send lowering and call emission advanced integration workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C019`, `M232-C018`)
+
