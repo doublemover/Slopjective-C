@@ -272,3 +272,8 @@ npm run check:objc3c:m228-d014-lane-d-readiness
 objc3c-object-emission-link-path-reliability-advanced-core-workpack-shard1/m228-d015-v1
 
 npm run check:objc3c:m228-d015-lane-d-readiness
+
+
+objc3c-object-emission-link-path-reliability-integration-closeout-and-gate-signoff/m228-d016-v1
+
+npm run check:objc3c:m228-d016-lane-d-readiness

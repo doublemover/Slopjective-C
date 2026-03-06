@@ -5176,3 +5176,7 @@ M228 lane-D D014 release-candidate and replay dry-run anchors deterministic
 M228 lane-D D015 advanced core workpack (shard 1) anchors deterministic
 
 (`advanced_core_workpack_shard1_*`)
+
+M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
+
+(`integration_closeout_and_gate_signoff_*`)
