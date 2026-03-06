@@ -1925,3 +1925,5 @@ deterministic lane-A conformance corpus governance and sharding modular split an
 deterministic lane-A conformance corpus governance and sharding core feature anchors for `M230-A003` must preserve explicit `M230-A002` dependency continuity so conformance corpus governance/sharding core-feature drift fails closed.
 
 deterministic lane-A conformance corpus governance and sharding core feature expansion anchors for `M230-A004` must preserve explicit `M230-A003` dependency continuity so conformance corpus governance/sharding core-feature-expansion drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding edge-case and compatibility completion anchors for `M230-A005` must preserve explicit `M230-A004` dependency continuity so conformance corpus governance/sharding edge-case-and-compatibility-completion drift fails closed.
