@@ -16,6 +16,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool pass_graph_recovery_determinism_ready = false;
   bool pass_graph_conformance_matrix_ready = false;
   bool pass_graph_conformance_corpus_ready = false;
+  bool pass_graph_performance_quality_guardrails_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
   bool expansion_metadata_transport_ready = false;
@@ -26,11 +27,13 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool parse_artifact_recovery_determinism_hardening_consistent = false;
   bool parse_artifact_conformance_matrix_consistent = false;
   bool parse_artifact_conformance_corpus_consistent = false;
+  bool parse_artifact_performance_quality_guardrails_consistent = false;
   bool edge_case_expansion_consistent = false;
   bool diagnostics_hardening_consistent = false;
   bool recovery_determinism_consistent = false;
   bool conformance_matrix_consistent = false;
   bool conformance_corpus_consistent = false;
+  bool performance_quality_guardrails_consistent = false;
   bool parse_artifact_edge_case_robustness_ready = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool edge_case_compatibility_key_transport_ready = false;
@@ -39,6 +42,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool recovery_determinism_key_transport_ready = false;
   bool conformance_matrix_key_transport_ready = false;
   bool conformance_corpus_key_transport_ready = false;
+  bool performance_quality_guardrails_key_transport_ready = false;
   bool core_feature_impl_ready = false;
   bool core_feature_expansion_ready = false;
   bool core_feature_edge_case_compatibility_ready = false;
@@ -47,6 +51,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool core_feature_recovery_determinism_ready = false;
   bool core_feature_conformance_matrix_ready = false;
   bool core_feature_conformance_corpus_ready = false;
+  bool core_feature_performance_quality_guardrails_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string expansion_key;
@@ -56,11 +61,13 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string pass_graph_recovery_determinism_key;
   std::string pass_graph_conformance_matrix_key;
   std::string pass_graph_conformance_corpus_key;
+  std::string pass_graph_performance_quality_guardrails_key;
   std::string compatibility_handoff_key;
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_recovery_determinism_hardening_key;
   std::string parse_artifact_conformance_matrix_key;
   std::string parse_artifact_conformance_corpus_key;
+  std::string parse_artifact_performance_quality_guardrails_key;
   std::string parse_artifact_edge_case_expansion_key;
   std::string parse_artifact_edge_robustness_key;
   std::string edge_case_compatibility_key;
@@ -69,6 +76,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string failure_reason;
   std::string expansion_failure_reason;
   std::string edge_case_compatibility_failure_reason;
@@ -77,6 +85,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string recovery_determinism_failure_reason;
   std::string conformance_matrix_failure_reason;
   std::string conformance_corpus_failure_reason;
+  std::string performance_quality_guardrails_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -280,6 +289,35 @@ inline std::string BuildObjc3IREmissionCoreFeatureConformanceCorpusKey(
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-performance-quality-guardrails:v1:"
+      << "conformance-corpus-ready="
+      << (surface.core_feature_conformance_corpus_ready ? "true" : "false")
+      << ";pass-graph-performance-quality-guardrails-ready="
+      << (surface.pass_graph_performance_quality_guardrails_ready ? "true"
+                                                                  : "false")
+      << ";parse-artifact-performance-quality-guardrails-consistent="
+      << (surface.parse_artifact_performance_quality_guardrails_consistent
+              ? "true"
+              : "false")
+      << ";performance-quality-guardrails-consistent="
+      << (surface.performance_quality_guardrails_consistent ? "true" : "false")
+      << ";performance-quality-guardrails-key-transport-ready="
+      << (surface.performance_quality_guardrails_key_transport_ready ? "true"
+                                                                     : "false")
+      << ";performance-quality-guardrails-ready="
+      << (surface.core_feature_performance_quality_guardrails_ready ? "true"
+                                                                    : "false")
+      << ";pass-graph-performance-quality-guardrails-key="
+      << surface.pass_graph_performance_quality_guardrails_key
+      << ";parse-artifact-performance-quality-guardrails-key="
+      << surface.parse_artifact_performance_quality_guardrails_key
+      << ";conformance-corpus-key=" << surface.conformance_corpus_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -312,6 +350,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_conformance_corpus_ready =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .conformance_corpus_ready;
+  surface.pass_graph_performance_quality_guardrails_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -332,6 +373,8 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_lowering_conformance_matrix_consistent;
   surface.parse_artifact_conformance_corpus_consistent =
       parse_surface.parse_lowering_conformance_corpus_consistent;
+  surface.parse_artifact_performance_quality_guardrails_consistent =
+      parse_surface.parse_lowering_performance_quality_guardrails_consistent;
   surface.edge_case_expansion_consistent =
       parse_surface.long_tail_grammar_edge_case_expansion_consistent;
   surface.parse_artifact_edge_case_robustness_ready =
@@ -356,6 +399,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_conformance_corpus_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .conformance_corpus_key;
+  surface.pass_graph_performance_quality_guardrails_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_key;
   surface.compatibility_handoff_key = parse_surface.compatibility_handoff_key;
   surface.parse_artifact_diagnostics_hardening_key =
       parse_surface.parse_artifact_diagnostics_hardening_key;
@@ -365,6 +411,8 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_lowering_conformance_matrix_key;
   surface.parse_artifact_conformance_corpus_key =
       parse_surface.parse_lowering_conformance_corpus_key;
+  surface.parse_artifact_performance_quality_guardrails_key =
+      parse_surface.parse_lowering_performance_quality_guardrails_key;
   surface.parse_artifact_edge_case_expansion_key =
       parse_surface.long_tail_grammar_expansion_key;
   surface.parse_artifact_edge_robustness_key =
@@ -469,6 +517,20 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.conformance_corpus_key_transport_ready;
   surface.conformance_corpus_key =
       BuildObjc3IREmissionCoreFeatureConformanceCorpusKey(surface);
+  surface.performance_quality_guardrails_consistent =
+      surface.core_feature_conformance_corpus_ready &&
+      surface.parse_artifact_performance_quality_guardrails_consistent;
+  surface.performance_quality_guardrails_key_transport_ready =
+      !surface.pass_graph_performance_quality_guardrails_key.empty() &&
+      !surface.parse_artifact_performance_quality_guardrails_key.empty() &&
+      !surface.conformance_corpus_key.empty();
+  surface.core_feature_performance_quality_guardrails_ready =
+      surface.core_feature_conformance_corpus_ready &&
+      surface.pass_graph_performance_quality_guardrails_ready &&
+      surface.performance_quality_guardrails_consistent &&
+      surface.performance_quality_guardrails_key_transport_ready;
+  surface.performance_quality_guardrails_key =
+      BuildObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsKey(surface);
 
   if (surface.core_feature_expansion_ready) {
     surface.expansion_failure_reason.clear();
@@ -628,6 +690,28 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
         "IR emission core feature conformance corpus surface is not ready";
   }
 
+  if (surface.core_feature_performance_quality_guardrails_ready) {
+    surface.performance_quality_guardrails_failure_reason.clear();
+  } else if (!surface.core_feature_conformance_corpus_ready) {
+    surface.performance_quality_guardrails_failure_reason =
+        "IR emission core feature conformance corpus is not ready";
+  } else if (!surface.pass_graph_performance_quality_guardrails_ready) {
+    surface.performance_quality_guardrails_failure_reason =
+        "pass-graph performance quality guardrails are not ready";
+  } else if (!surface.parse_artifact_performance_quality_guardrails_consistent) {
+    surface.performance_quality_guardrails_failure_reason =
+        "IR emission core feature parse artifact performance quality guardrails are inconsistent";
+  } else if (!surface.performance_quality_guardrails_consistent) {
+    surface.performance_quality_guardrails_failure_reason =
+        "IR emission core feature performance quality guardrails are inconsistent";
+  } else if (!surface.performance_quality_guardrails_key_transport_ready) {
+    surface.performance_quality_guardrails_failure_reason =
+        "IR emission core feature performance quality guardrails key transport is not ready";
+  } else {
+    surface.performance_quality_guardrails_failure_reason =
+        "IR emission core feature performance quality guardrails surface is not ready";
+  }
+
   if (surface.core_feature_impl_ready) {
     return surface;
   }
@@ -772,5 +856,21 @@ inline bool IsObjc3IREmissionCoreFeatureConformanceCorpusReady(
       surface.conformance_corpus_failure_reason.empty()
           ? "IR emission core feature conformance corpus surface is not ready"
           : surface.conformance_corpus_failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_performance_quality_guardrails_ready &&
+      surface.performance_quality_guardrails_key_transport_ready &&
+      !surface.performance_quality_guardrails_key.empty()) {
+    reason.clear();
+    return true;
+  }
+  reason =
+      surface.performance_quality_guardrails_failure_reason.empty()
+          ? "IR emission core feature performance quality guardrails surface is not ready"
+          : surface.performance_quality_guardrails_failure_reason;
   return false;
 }

@@ -185,6 +185,10 @@ At minimum, the pass-graph gate shall validate:
   preserve conformance-corpus consistency/readiness and
   conformance-corpus-key continuity, and fail closed when pass-graph or
   parse-artifact conformance-corpus evidence drifts.
+- IR-emission performance and quality guardrails shall remain deterministic,
+  preserve performance/quality consistency/readiness and
+  performance-quality-key continuity, and fail closed when pass-graph or
+  parse-artifact performance-quality evidence drifts.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.

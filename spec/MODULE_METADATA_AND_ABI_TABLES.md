@@ -183,6 +183,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic IR-emission conformance corpus expansion
       consistency/readiness and conformance-corpus-key anchors for lane-C
       fail-closed evidence continuity,
+    - deterministic IR-emission performance-quality guardrails
+      consistency/readiness and performance-quality-key anchors for lane-C
+      fail-closed evidence continuity,
     - deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`
       with canonical reference type-form order, runtime dispatch default symbol
       continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
