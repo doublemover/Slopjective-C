@@ -463,6 +463,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-e014-lane-e-readiness`) so lane-E release-candidate-and-replay-dry-run
   governance evidence remains deterministic and fail-closed on dependency-token/reference
   or readiness drift.
+- M227 lane-E E015 semantic conformance advanced core workpack (shard 1) anchors dependency references (`M227-E014`, `M227-A016`, `M227-B029`, `M227-C020`, and `M227-D009`) in
+  `docs/contracts/m227_lane_e_semantic_conformance_advanced_core_workpack_shard1_e015_expectations.md`,
+  `spec/planning/compiler/m227/m227_e015_semantic_conformance_lane_e_advanced_core_workpack_shard1_packet.md`,
+  `scripts/check_m227_e015_semantic_conformance_lane_e_advanced_core_workpack_shard1_contract.py`,
+  and `package.json` (`check:objc3c:m227-e015-lane-e-readiness`) so lane-E advanced-core-workpack-shard1
+  governance evidence remains deterministic and fail-closed on dependency-token/reference
+  or readiness drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
