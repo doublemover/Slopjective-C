@@ -2430,3 +2430,6 @@ lane-E deterministic boundary anchors (`M232-E015`) and fail closed on contract-
 
 method lookup and overload semantics contract-freeze governance shall preserve explicit
 lane-B deterministic boundary anchors (`M232-B001`) and fail closed on contract-freeze evidence drift
+
+lane-B deterministic boundary anchors (`M232-B002`) and fail closed on contract-freeze evidence drift
+
