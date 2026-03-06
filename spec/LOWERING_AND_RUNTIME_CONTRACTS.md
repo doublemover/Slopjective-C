@@ -2178,3 +2178,5 @@ class/protocol/category metadata generation core feature expansion governance sh
 conformance corpus governance and sharding contract-freeze governance shall preserve explicit lane-A deterministic boundary anchors (`M230-A001`) and fail closed on contract-freeze evidence drift before lane-A modular split/scaffolding workpacks advance.
 
 conformance corpus governance and sharding modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M230-A001`) and fail closed on scaffolding evidence drift before lane-A core feature implementation workpacks advance.
+
+conformance corpus governance and sharding core feature implementation governance shall preserve explicit lane-A dependency anchors (`M230-A002`) and fail closed on core-feature evidence drift before lane-A core-feature expansion workpacks advance.

@@ -1921,3 +1921,5 @@ deterministic lane-A class/protocol/category metadata generation core feature ex
 deterministic lane-A conformance corpus governance and sharding contract-freeze anchors for `M230-A001` must preserve explicit lane-A contract-freeze metadata continuity so conformance corpus governance/sharding drift fails closed.
 
 deterministic lane-A conformance corpus governance and sharding modular split anchors for `M230-A002` must preserve explicit `M230-A001` dependency continuity so conformance corpus governance/sharding scaffolding drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding core feature anchors for `M230-A003` must preserve explicit `M230-A002` dependency continuity so conformance corpus governance/sharding core-feature drift fails closed.
