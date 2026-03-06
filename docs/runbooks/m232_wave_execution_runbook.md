@@ -21,6 +21,7 @@
 - `objc3c-message-send-lowering-and-call-emission-advanced-diagnostics-workpack-shard1/m232-c017-v1`
 - `objc3c-message-send-lowering-and-call-emission-advanced-conformance-workpack-shard1/m232-c018-v1`
 - `objc3c-message-send-lowering-and-call-emission-advanced-integration-workpack-shard1/m232-c019-v1`
+- `objc3c-message-send-lowering-and-call-emission-integration-closeout-and-gate-sign-off/m232-c020-v1`
 
 ## Operator Command Sequence
 
@@ -85,4 +86,7 @@
 55. `python scripts/check_m232_c019_message_send_lowering_and_call_emission_advanced_integration_workpack_shard1_contract.py`
 56. `python -m pytest tests/tooling/test_check_m232_c019_message_send_lowering_and_call_emission_advanced_integration_workpack_shard1_contract.py -q`
 57. `npm run check:objc3c:m232-c019-lane-c-readiness`
+58. `python scripts/check_m232_c020_message_send_lowering_and_call_emission_integration_closeout_and_gate_sign_off_contract.py`
+59. `python -m pytest tests/tooling/test_check_m232_c020_message_send_lowering_and_call_emission_integration_closeout_and_gate_sign_off_contract.py -q`
+60. `npm run check:objc3c:m232-c020-lane-c-readiness`
 

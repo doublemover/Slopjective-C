@@ -4613,3 +4613,6 @@ Forbidden:
 
 - M232 lane-C C019 message send lowering and call emission advanced integration workpack (shard 1) anchors
 
+
+- M232 lane-C C020 message send lowering and call emission integration closeout and gate sign-off anchors
+
