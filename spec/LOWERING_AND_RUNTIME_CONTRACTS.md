@@ -2212,3 +2212,7 @@ lane-A dependency anchors (`M230-A010`) and fail closed on performance-and-quali
 conformance corpus governance and sharding integration closeout and gate sign-off governance shall preserve explicit
 lane-A dependency anchors (`M230-A011`) and fail closed on integration-closeout-and-gate-sign-off evidence drift
 
+
+declaration grammar expansion and normalization contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M231-A001`) and fail closed on contract-freeze evidence drift
+

@@ -4458,3 +4458,7 @@ Forbidden:
 - M230 lane-A A012 conformance corpus governance and sharding integration closeout and gate sign-off anchors
   m230_conformance_corpus_governance_and_sharding_integration_closeout_and_gate_sign_off_a012_expectations.md
 
+
+- M231 lane-A A001 declaration grammar expansion and normalization contract-freeze anchors
+  m231_declaration_grammar_expansion_and_normalization_contract_and_architecture_freeze_a001_expectations.md
+

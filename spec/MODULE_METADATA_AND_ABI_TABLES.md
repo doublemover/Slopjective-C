@@ -1955,3 +1955,7 @@ explicit `M230-A010` dependency continuity so conformance corpus governance/shar
 deterministic lane-A conformance corpus governance and sharding integration closeout and gate sign-off anchors for `M230-A012`
 explicit `M230-A011` dependency continuity so conformance corpus governance/sharding integration-closeout-and-gate-sign-off drift fails closed
 
+
+deterministic lane-A declaration grammar expansion and normalization contract-freeze anchors for `M231-A001`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
