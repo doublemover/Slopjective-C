@@ -4530,3 +4530,7 @@ Forbidden:
 - M231 lane-A A018 declaration grammar expansion and normalization advanced conformance workpack (shard 1) anchors
   m231_declaration_grammar_expansion_and_normalization_advanced_conformance_workpack_shard1_a018_expectations.md
 
+
+- M231 lane-A A019 declaration grammar expansion and normalization advanced integration workpack (shard 1) anchors
+  m231_declaration_grammar_expansion_and_normalization_advanced_integration_workpack_shard1_a019_expectations.md
+
