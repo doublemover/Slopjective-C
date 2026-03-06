@@ -5212,3 +5212,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M228 lane-E E017 replay-proof/performance closeout advanced diagnostics workpack (shard 1) anchors
   
 
+
+- M228 lane-E E018 replay-proof/performance closeout advanced conformance workpack (shard 1) anchors
+  
+
