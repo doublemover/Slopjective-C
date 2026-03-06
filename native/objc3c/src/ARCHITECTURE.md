@@ -4562,3 +4562,7 @@ Forbidden:
 - M232 lane-A A004 message expression grammar and selector forms contract-freeze anchors
   m232_message_expression_grammar_and_selector_forms_core_feature_expansion_a004_expectations.md
 
+
+- M232 lane-A A005 message expression grammar and selector forms contract-freeze anchors
+  m232_message_expression_grammar_and_selector_forms_edge_case_and_compatibility_completion_a005_expectations.md
+
