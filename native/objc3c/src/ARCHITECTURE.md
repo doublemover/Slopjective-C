@@ -4710,3 +4710,6 @@ Forbidden:
 - M232 lane-E E015 message semantics gate and replay evidence contract-freeze anchors
   m232_message_semantics_gate_and_replay_evidence_integration_closeout_and_gate_sign_off_e015_expectations.md
 
+
+- M232 lane-B B001 method lookup and overload semantics contract-freeze anchors
+  m232_method_lookup_and_overload_semantics_contract_and_architecture_freeze_b001_expectations.md
