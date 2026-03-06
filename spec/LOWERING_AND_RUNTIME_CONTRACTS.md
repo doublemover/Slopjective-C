@@ -960,6 +960,9 @@ At minimum, the pass-graph gate shall validate:
 - semantic conformance lane-E advanced conformance workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E017`, `M227-A019`, `M227-B035`, `M227-C023`, and `M227-D011`),
   preserve readiness continuity across direct `M227-E017`, `M227-A019`, and `M227-D011` checker/test commands plus `check:objc3c:m227-b035-lane-b-readiness` and `check:objc3c:m227-c023-lane-c-readiness`,
   and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced conformance workpack (shard 1) evidence drift.
+- semantic conformance lane-E advanced integration workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E018`, `M227-A020`, `M227-B037`, `M227-C025`, and `M227-D011`),
+  preserve readiness continuity across direct `M227-E018`, `M227-A020`, and `M227-D011` checker/test commands plus `check:objc3c:m227-b037-lane-b-readiness` and `check:objc3c:m227-c025-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced integration workpack (shard 1) evidence drift.
 - semantic-pass cross-lane integration sync governance shall preserve explicit
   lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
   lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
