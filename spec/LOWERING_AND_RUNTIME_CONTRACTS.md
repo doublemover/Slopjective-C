@@ -3237,3 +3237,7 @@ lane-B deterministic boundary anchors (`M230-B014`) and fail closed on contract-
 
 lane-B deterministic boundary anchors (`M230-B015`) and fail closed on contract-freeze evidence drift
 
+
+Documentation generation as source-of-truth contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M230-C001`) and fail closed on contract-freeze evidence drift
+
