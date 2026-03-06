@@ -590,11 +590,17 @@ At minimum, the pass-graph gate shall validate:
 - interop behavior for qualified generic APIs modular split/scaffolding governance shall preserve explicit
   lane-D dependency anchors (`M235-D001`) and fail closed on modular split/scaffolding interop evidence drift
   before semantic parity and lowering portability validation advances.
+- interop behavior for qualified generic APIs core feature implementation governance shall preserve explicit
+  lane-D dependency anchors (`M235-D002`) and fail closed on core feature implementation interop evidence drift
+  before semantic parity and lowering portability validation advances.
 - qualifier/generic conformance gate governance shall preserve explicit
   lane-E dependency anchors (`M235-A001`, `M235-B001`, `M235-C001`) and fail closed on lane-E contract freeze evidence drift
   before cross-lane conformance gate expansion validation advances.
 - qualifier/generic conformance gate modular split/scaffolding governance shall preserve explicit
   lane-E dependency anchors (`M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`) and fail closed on lane-E modular split/scaffolding evidence drift
+  before cross-lane conformance gate expansion validation advances.
+- qualifier/generic conformance gate core feature implementation governance shall preserve explicit
+  lane-E dependency anchors (`M235-E002`, `M235-A003`, `M235-B006`, `M235-C004`, `M235-D002`) and fail closed on lane-E core feature implementation evidence drift
   before cross-lane conformance gate expansion validation advances.
 - qualifier/generic semantic inference modular split/scaffolding governance shall preserve explicit
   lane-B dependency anchors (`M235-B001`) and fail closed on scaffolding evidence drift
