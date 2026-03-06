@@ -2200,3 +2200,7 @@ lane-A dependency anchors (`M230-A007`) and fail closed on recovery-and-determin
 conformance corpus governance and sharding conformance matrix implementation governance shall preserve explicit
 lane-A dependency anchors (`M230-A008`) and fail closed on conformance-matrix-implementation evidence drift
 
+
+conformance corpus governance and sharding conformance corpus expansion governance shall preserve explicit
+lane-A dependency anchors (`M230-A009`) and fail closed on conformance-corpus-expansion evidence drift
+

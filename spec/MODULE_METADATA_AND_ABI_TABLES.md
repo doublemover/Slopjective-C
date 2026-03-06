@@ -1943,3 +1943,7 @@ explicit `M230-A007` dependency continuity so conformance corpus governance/shar
 deterministic lane-A conformance corpus governance and sharding conformance matrix implementation anchors for `M230-A009`
 explicit `M230-A008` dependency continuity so conformance corpus governance/sharding conformance-matrix-implementation drift fails closed
 
+
+deterministic lane-A conformance corpus governance and sharding conformance corpus expansion anchors for `M230-A010`
+explicit `M230-A009` dependency continuity so conformance corpus governance/sharding conformance-corpus-expansion drift fails closed
+

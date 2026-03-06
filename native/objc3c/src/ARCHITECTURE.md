@@ -4446,3 +4446,7 @@ Forbidden:
 - M230 lane-A A009 conformance corpus governance and sharding conformance matrix implementation anchors
   m230_conformance_corpus_governance_and_sharding_conformance_matrix_implementation_a009_expectations.md
 
+
+- M230 lane-A A010 conformance corpus governance and sharding conformance corpus expansion anchors
+  m230_conformance_corpus_governance_and_sharding_conformance_corpus_expansion_a010_expectations.md
+
