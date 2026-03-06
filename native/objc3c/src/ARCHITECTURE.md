@@ -5085,3 +5085,7 @@ Forbidden:
 - M239 lane-B B014 semantic flow analysis and invariants contract-freeze anchors
   m239_semantic_flow_analysis_and_invariants_release_candidate_and_replay_dry_run_b014_expectations.md
 
+
+- M239 lane-B B015 semantic flow analysis and invariants contract-freeze anchors
+  m239_semantic_flow_analysis_and_invariants_advanced_core_workpack_shard1_b015_expectations.md
+
