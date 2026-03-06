@@ -2525,3 +2525,6 @@ lane-B deterministic boundary anchors (`M242-B008`) and fail closed on contract-
 protocol/category grammar and AST shape contract-freeze governance shall preserve explicit
 lane-A deterministic boundary anchors (`M233-A001`) and fail closed on contract-freeze evidence drift
 
+
+lane-A deterministic boundary anchors (`M233-A002`) and fail closed on contract-freeze evidence drift
+
