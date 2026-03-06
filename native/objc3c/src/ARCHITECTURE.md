@@ -4506,3 +4506,7 @@ Forbidden:
 - M231 lane-A A012 declaration grammar expansion and normalization cross-lane integration sync anchors
   m231_declaration_grammar_expansion_and_normalization_cross_lane_integration_sync_a012_expectations.md
 
+
+- M231 lane-A A013 declaration grammar expansion and normalization docs and operator runbook synchronization anchors
+  m231_declaration_grammar_expansion_and_normalization_docs_and_operator_runbook_synchronization_a013_expectations.md
+
