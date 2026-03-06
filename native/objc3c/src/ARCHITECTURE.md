@@ -622,6 +622,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m229-a004-lane-a-readiness`) so
   `M229-A003` dependency continuity remains deterministic and fail-closed
   against core-feature expansion drift.
+- M230 lane-A A001 conformance corpus governance and sharding contract-freeze anchors
+  explicit lane-A contract-freeze artifacts in
+  `docs/contracts/m230_conformance_corpus_governance_and_sharding_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m230/m230_a001_conformance_corpus_governance_and_sharding_contract_and_architecture_freeze_packet.md`,
+  and `package.json` (`check:objc3c:m230-a001-lane-a-readiness`) so
+  lane-A conformance corpus governance/sharding freeze continuity remains
+  deterministic and fail-closed against `M230-A001` drift.
 - M228 lane-A A002 modular split scaffolding extracts pass-graph readiness
   synthesis into `pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp`
   and enforces fail-closed pass-graph gating in
