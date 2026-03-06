@@ -517,6 +517,8 @@ struct Objc3IRFrontendMetadata {
   std::string ir_emission_core_feature_recovery_determinism_key;
   bool ir_emission_core_feature_conformance_matrix_ready = false;
   std::string ir_emission_core_feature_conformance_matrix_key;
+  bool ir_emission_core_feature_conformance_corpus_ready = false;
+  std::string ir_emission_core_feature_conformance_corpus_key;
 
   std::size_t migration_legacy_total() const { return migration_legacy_yes + migration_legacy_no + migration_legacy_null; }
 };
