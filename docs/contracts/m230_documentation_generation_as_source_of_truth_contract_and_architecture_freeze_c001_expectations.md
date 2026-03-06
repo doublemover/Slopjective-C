@@ -1,9 +1,9 @@
-# M230 Conformance Corpus Governance and Sharding Contract and Architecture Freeze Expectations (A001)
+# M230 Documentation generation as source-of-truth Contract and Architecture Freeze Expectations (C001)
 
 Contract ID: `objc3c-documentation-generation-as-source-of-truth/m230-c001-v1`
 Status: Accepted
 Owner: Objective-C 3 native lane-C
-Issue: `#5395`
+Issue: `#5422`
 Dependencies: none
 
 ## Objective

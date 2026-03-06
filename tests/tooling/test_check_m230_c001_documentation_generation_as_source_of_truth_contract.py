@@ -41,7 +41,7 @@ def test_contract_fails_closed_when_expectations_issue_drifts(tmp_path: Path) ->
     drift_doc = tmp_path / "expectations.md"
     drift_doc.write_text(
         contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8").replace(
-            "Issue: `#5395`",
+            "Issue: `#5422`",
             "Issue: `#0000`",
             1,
         ),

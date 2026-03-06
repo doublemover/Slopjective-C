@@ -1,9 +1,9 @@
-# M230-C001 Conformance Corpus Governance and Sharding Contract and Architecture Freeze Packet
+# M230-C001 Documentation generation as source-of-truth Contract and Architecture Freeze Packet
 
 Packet: `M230-C001`
 Milestone: `M230`
 Lane: `A`
-Issue: `#5395`
+Issue: `#5422`
 Freeze date: `2026-03-06`
 Dependencies: none
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed checker for M230-C001 CI matrix simplification/flake elimination contract freeze."""
+"""Fail-closed checker for M230-C001 Documentation generation as source-of-truth contract freeze."""
 
 from __future__ import annotations
 
@@ -52,13 +52,13 @@ class Finding:
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-C001-DOC-EXP-01",
-        "# M230 Conformance Corpus Governance and Sharding Contract and Architecture Freeze Expectations (A001)",
+        "# M230 Documentation generation as source-of-truth Contract and Architecture Freeze Expectations (C001)",
     ),
     SnippetCheck(
         "M230-C001-DOC-EXP-02",
         "Contract ID: `objc3c-documentation-generation-as-source-of-truth/m230-c001-v1`",
     ),
-    SnippetCheck("M230-C001-DOC-EXP-03", "Issue: `#5395`"),
+    SnippetCheck("M230-C001-DOC-EXP-03", "Issue: `#5422`"),
     SnippetCheck("M230-C001-DOC-EXP-04", "Dependencies: none"),
     SnippetCheck(
         "M230-C001-DOC-EXP-05",
@@ -77,10 +77,10 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
 PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-C001-DOC-PKT-01",
-        "# M230-C001 Conformance Corpus Governance and Sharding Contract and Architecture Freeze Packet",
+        "# M230-C001 Documentation generation as source-of-truth Contract and Architecture Freeze Packet",
     ),
     SnippetCheck("M230-C001-DOC-PKT-02", "Packet: `M230-C001`"),
-    SnippetCheck("M230-C001-DOC-PKT-03", "Issue: `#5395`"),
+    SnippetCheck("M230-C001-DOC-PKT-03", "Issue: `#5422`"),
     SnippetCheck("M230-C001-DOC-PKT-04", "Dependencies: none"),
     SnippetCheck(
         "M230-C001-DOC-PKT-05",
@@ -95,7 +95,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
 ARCHITECTURE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M230-C001-ARCH-01",
-        "M230 lane-C A001 Documentation generation as source-of-truth contract-freeze anchors",
+        "M230 lane-C C001 Documentation generation as source-of-truth contract-freeze anchors",
     ),
     SnippetCheck(
         "M230-C001-ARCH-02",
@@ -121,7 +121,7 @@ METADATA_SPEC_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M230-C001-META-02",
-        "explicit lane-C contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed",
+        "explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed",
     ),
 )
 
