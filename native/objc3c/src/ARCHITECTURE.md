@@ -4945,3 +4945,7 @@ Forbidden:
 - M233 lane-B B016 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_advanced_edge_compatibility_workpack_shard1_b016_expectations.md
 
+
+- M233 lane-B B017 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_integration_closeout_and_gate_sign_off_b017_expectations.md
+
