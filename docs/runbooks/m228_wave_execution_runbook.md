@@ -18,6 +18,7 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-ir-emission-completeness-docs-operator-runbook-sync/m228-c013-v1`
 - `objc3c-ir-emission-completeness-release-candidate-and-replay-dry-run/m228-c014-v1`
 - `objc3c-ir-emission-completeness-advanced-core-workpack-shard1/m228-c015-v1`
+- `objc3c-ir-emission-completeness-advanced-edge-compatibility-workpack-shard1/m228-c016-v1`
 - `objc3c-ownership-aware-lowering-behavior-release-candidate-and-replay-dry-run/m228-b014-v1`
 - `objc3c-ownership-aware-lowering-behavior-advanced-core-workpack-shard1/m228-b015-v1`
 - `objc3c-ownership-aware-lowering-behavior-advanced-edge-compatibility-workpack-shard1/m228-b016-v1`
@@ -91,6 +92,11 @@ This runbook tracks current M228 lane sync coverage for:
    - `python -m pytest tests/tooling/test_check_m228_c015_ir_emission_completeness_advanced_core_workpack_shard1_contract.py -q`
 22. Run lane-C readiness chain:
    - `npm run check:objc3c:m228-c015-lane-c-readiness`
+23. Validate lane-C advanced edge compatibility workpack (shard 1) gate:
+   - `python scripts/check_m228_c016_ir_emission_completeness_advanced_edge_compatibility_workpack_shard1_contract.py`
+   - `python -m pytest tests/tooling/test_check_m228_c016_ir_emission_completeness_advanced_edge_compatibility_workpack_shard1_contract.py -q`
+24. Run lane-C readiness chain:
+   - `npm run check:objc3c:m228-c016-lane-c-readiness`
 17. Validate lane-B release-candidate and replay dry-run gate:
    - `npm run check:objc3c:m228-b013-lane-b-readiness`
    - `python scripts/check_m228_b014_ownership_aware_lowering_behavior_release_candidate_and_replay_dry_run_contract.py`
