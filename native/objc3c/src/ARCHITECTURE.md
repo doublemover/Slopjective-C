@@ -5057,3 +5057,7 @@ Forbidden:
 - M239 lane-B B007 semantic flow analysis and invariants contract-freeze anchors
   m239_semantic_flow_analysis_and_invariants_diagnostics_hardening_b007_expectations.md
 
+
+- M239 lane-B B008 semantic flow analysis and invariants contract-freeze anchors
+  m239_semantic_flow_analysis_and_invariants_recovery_and_determinism_hardening_b008_expectations.md
+
