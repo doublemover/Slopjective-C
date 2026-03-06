@@ -17,6 +17,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool pass_graph_conformance_matrix_ready = false;
   bool pass_graph_conformance_corpus_ready = false;
   bool pass_graph_performance_quality_guardrails_ready = false;
+  bool pass_graph_cross_lane_integration_sync_ready = false;
   bool runtime_boundary_handoff_ready = false;
   bool direct_ir_entrypoint_ready = false;
   bool expansion_metadata_transport_ready = false;
@@ -28,12 +29,14 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool parse_artifact_conformance_matrix_consistent = false;
   bool parse_artifact_conformance_corpus_consistent = false;
   bool parse_artifact_performance_quality_guardrails_consistent = false;
+  bool parse_artifact_cross_lane_integration_sync_consistent = false;
   bool edge_case_expansion_consistent = false;
   bool diagnostics_hardening_consistent = false;
   bool recovery_determinism_consistent = false;
   bool conformance_matrix_consistent = false;
   bool conformance_corpus_consistent = false;
   bool performance_quality_guardrails_consistent = false;
+  bool cross_lane_integration_sync_consistent = false;
   bool parse_artifact_edge_case_robustness_ready = false;
   bool parse_artifact_replay_key_deterministic = false;
   bool edge_case_compatibility_key_transport_ready = false;
@@ -43,6 +46,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool conformance_matrix_key_transport_ready = false;
   bool conformance_corpus_key_transport_ready = false;
   bool performance_quality_guardrails_key_transport_ready = false;
+  bool cross_lane_integration_sync_key_transport_ready = false;
   bool core_feature_impl_ready = false;
   bool core_feature_expansion_ready = false;
   bool core_feature_edge_case_compatibility_ready = false;
@@ -52,6 +56,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   bool core_feature_conformance_matrix_ready = false;
   bool core_feature_conformance_corpus_ready = false;
   bool core_feature_performance_quality_guardrails_ready = false;
+  bool core_feature_cross_lane_integration_sync_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string expansion_key;
@@ -62,12 +67,14 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string pass_graph_conformance_matrix_key;
   std::string pass_graph_conformance_corpus_key;
   std::string pass_graph_performance_quality_guardrails_key;
+  std::string pass_graph_cross_lane_integration_sync_key;
   std::string compatibility_handoff_key;
   std::string parse_artifact_diagnostics_hardening_key;
   std::string parse_artifact_recovery_determinism_hardening_key;
   std::string parse_artifact_conformance_matrix_key;
   std::string parse_artifact_conformance_corpus_key;
   std::string parse_artifact_performance_quality_guardrails_key;
+  std::string parse_artifact_cross_lane_integration_sync_key;
   std::string parse_artifact_edge_case_expansion_key;
   std::string parse_artifact_edge_robustness_key;
   std::string edge_case_compatibility_key;
@@ -77,6 +84,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
   std::string performance_quality_guardrails_key;
+  std::string cross_lane_integration_sync_key;
   std::string failure_reason;
   std::string expansion_failure_reason;
   std::string edge_case_compatibility_failure_reason;
@@ -86,6 +94,7 @@ struct Objc3IREmissionCoreFeatureImplementationSurface {
   std::string conformance_matrix_failure_reason;
   std::string conformance_corpus_failure_reason;
   std::string performance_quality_guardrails_failure_reason;
+  std::string cross_lane_integration_sync_failure_reason;
 };
 
 inline std::string BuildObjc3IREmissionCoreFeatureImplementationKey(
@@ -318,6 +327,37 @@ inline std::string BuildObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsKe
   return key.str();
 }
 
+inline std::string BuildObjc3IREmissionCoreFeatureCrossLaneIntegrationSyncKey(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface) {
+  std::ostringstream key;
+  key << "ir-emission-core-feature-cross-lane-integration-sync:v1:"
+      << "performance-quality-guardrails-ready="
+      << (surface.core_feature_performance_quality_guardrails_ready ? "true"
+                                                                    : "false")
+      << ";pass-graph-cross-lane-integration-sync-ready="
+      << (surface.pass_graph_cross_lane_integration_sync_ready ? "true"
+                                                               : "false")
+      << ";parse-artifact-cross-lane-integration-sync-consistent="
+      << (surface.parse_artifact_cross_lane_integration_sync_consistent
+              ? "true"
+              : "false")
+      << ";cross-lane-integration-sync-consistent="
+      << (surface.cross_lane_integration_sync_consistent ? "true" : "false")
+      << ";cross-lane-integration-sync-key-transport-ready="
+      << (surface.cross_lane_integration_sync_key_transport_ready ? "true"
+                                                                  : "false")
+      << ";cross-lane-integration-sync-ready="
+      << (surface.core_feature_cross_lane_integration_sync_ready ? "true"
+                                                                 : "false")
+      << ";pass-graph-cross-lane-integration-sync-key="
+      << surface.pass_graph_cross_lane_integration_sync_key
+      << ";parse-artifact-cross-lane-integration-sync-key="
+      << surface.parse_artifact_cross_lane_integration_sync_key
+      << ";performance-quality-guardrails-key="
+      << surface.performance_quality_guardrails_key;
+  return key.str();
+}
+
 inline Objc3IREmissionCoreFeatureImplementationSurface
 BuildObjc3IREmissionCoreFeatureImplementationSurface(
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -353,6 +393,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_performance_quality_guardrails_ready =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .performance_quality_guardrails_ready;
+  surface.pass_graph_cross_lane_integration_sync_ready =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_ready;
   surface.runtime_boundary_handoff_ready =
       typed_surface.lowering_boundary_ready &&
       !typed_surface.lowering_boundary_replay_key.empty();
@@ -375,6 +418,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_lowering_conformance_corpus_consistent;
   surface.parse_artifact_performance_quality_guardrails_consistent =
       parse_surface.parse_lowering_performance_quality_guardrails_consistent;
+  surface.parse_artifact_cross_lane_integration_sync_consistent =
+      parse_surface.typed_sema_cross_lane_integration_consistent &&
+      parse_surface.toolchain_runtime_ga_operations_cross_lane_integration_consistent;
   surface.edge_case_expansion_consistent =
       parse_surface.long_tail_grammar_edge_case_expansion_consistent;
   surface.parse_artifact_edge_case_robustness_ready =
@@ -402,6 +448,9 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
   surface.pass_graph_performance_quality_guardrails_key =
       pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
           .performance_quality_guardrails_key;
+  surface.pass_graph_cross_lane_integration_sync_key =
+      pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
+          .performance_quality_guardrails_key;
   surface.compatibility_handoff_key = parse_surface.compatibility_handoff_key;
   surface.parse_artifact_diagnostics_hardening_key =
       parse_surface.parse_artifact_diagnostics_hardening_key;
@@ -413,6 +462,10 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       parse_surface.parse_lowering_conformance_corpus_key;
   surface.parse_artifact_performance_quality_guardrails_key =
       parse_surface.parse_lowering_performance_quality_guardrails_key;
+  surface.parse_artifact_cross_lane_integration_sync_key =
+      parse_surface.typed_sema_cross_lane_integration_key + "|" +
+      parse_surface.toolchain_runtime_ga_operations_cross_lane_integration_key +
+      "|" + parse_surface.parse_lowering_performance_quality_guardrails_key;
   surface.parse_artifact_edge_case_expansion_key =
       parse_surface.long_tail_grammar_expansion_key;
   surface.parse_artifact_edge_robustness_key =
@@ -531,6 +584,22 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
       surface.performance_quality_guardrails_key_transport_ready;
   surface.performance_quality_guardrails_key =
       BuildObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsKey(surface);
+  surface.cross_lane_integration_sync_consistent =
+      surface.core_feature_performance_quality_guardrails_ready &&
+      surface.parse_artifact_cross_lane_integration_sync_consistent &&
+      parse_surface.typed_sema_cross_lane_integration_ready &&
+      parse_surface.toolchain_runtime_ga_operations_cross_lane_integration_ready;
+  surface.cross_lane_integration_sync_key_transport_ready =
+      !surface.pass_graph_cross_lane_integration_sync_key.empty() &&
+      !surface.parse_artifact_cross_lane_integration_sync_key.empty() &&
+      !surface.performance_quality_guardrails_key.empty();
+  surface.core_feature_cross_lane_integration_sync_ready =
+      surface.core_feature_performance_quality_guardrails_ready &&
+      surface.pass_graph_cross_lane_integration_sync_ready &&
+      surface.cross_lane_integration_sync_consistent &&
+      surface.cross_lane_integration_sync_key_transport_ready;
+  surface.cross_lane_integration_sync_key =
+      BuildObjc3IREmissionCoreFeatureCrossLaneIntegrationSyncKey(surface);
 
   if (surface.core_feature_expansion_ready) {
     surface.expansion_failure_reason.clear();
@@ -712,6 +781,28 @@ BuildObjc3IREmissionCoreFeatureImplementationSurface(
         "IR emission core feature performance quality guardrails surface is not ready";
   }
 
+  if (surface.core_feature_cross_lane_integration_sync_ready) {
+    surface.cross_lane_integration_sync_failure_reason.clear();
+  } else if (!surface.core_feature_performance_quality_guardrails_ready) {
+    surface.cross_lane_integration_sync_failure_reason =
+        "IR emission core feature performance quality guardrails are not ready";
+  } else if (!surface.pass_graph_cross_lane_integration_sync_ready) {
+    surface.cross_lane_integration_sync_failure_reason =
+        "pass-graph cross-lane integration sync is not ready";
+  } else if (!surface.parse_artifact_cross_lane_integration_sync_consistent) {
+    surface.cross_lane_integration_sync_failure_reason =
+        "IR emission core feature parse artifact cross-lane integration sync is inconsistent";
+  } else if (!surface.cross_lane_integration_sync_consistent) {
+    surface.cross_lane_integration_sync_failure_reason =
+        "IR emission core feature cross-lane integration sync is inconsistent";
+  } else if (!surface.cross_lane_integration_sync_key_transport_ready) {
+    surface.cross_lane_integration_sync_failure_reason =
+        "IR emission core feature cross-lane integration sync key transport is not ready";
+  } else {
+    surface.cross_lane_integration_sync_failure_reason =
+        "IR emission core feature cross-lane integration sync surface is not ready";
+  }
+
   if (surface.core_feature_impl_ready) {
     return surface;
   }
@@ -872,5 +963,20 @@ inline bool IsObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsReady(
       surface.performance_quality_guardrails_failure_reason.empty()
           ? "IR emission core feature performance quality guardrails surface is not ready"
           : surface.performance_quality_guardrails_failure_reason;
+  return false;
+}
+
+inline bool IsObjc3IREmissionCoreFeatureCrossLaneIntegrationSyncReady(
+    const Objc3IREmissionCoreFeatureImplementationSurface &surface,
+    std::string &reason) {
+  if (surface.core_feature_cross_lane_integration_sync_ready &&
+      surface.cross_lane_integration_sync_key_transport_ready &&
+      !surface.cross_lane_integration_sync_key.empty()) {
+    reason.clear();
+    return true;
+  }
+  reason = surface.cross_lane_integration_sync_failure_reason.empty()
+               ? "IR emission core feature cross-lane integration sync surface is not ready"
+               : surface.cross_lane_integration_sync_failure_reason;
   return false;
 }

@@ -189,6 +189,10 @@ At minimum, the pass-graph gate shall validate:
   preserve performance/quality consistency/readiness and
   performance-quality-key continuity, and fail closed when pass-graph or
   parse-artifact performance-quality evidence drifts.
+- IR-emission cross-lane integration sync shall remain deterministic,
+  preserve cross-lane integration consistency/readiness and
+  cross-lane-integration-key continuity, and fail closed when pass-graph or
+  parse-artifact cross-lane integration evidence drifts.
 - ownership-aware lowering edge-case and compatibility completion shall include
   deterministic compatibility consistency/readiness and compatibility-key
   transport gates that fail closed before IR emission.
