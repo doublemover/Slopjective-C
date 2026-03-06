@@ -4647,3 +4647,7 @@ Forbidden:
 - M232 lane-D D008 runtime selector binding integration contract-freeze anchors
   m232_runtime_selector_binding_integration_recovery_and_determinism_hardening_d008_expectations.md
 
+
+- M232 lane-D D009 runtime selector binding integration contract-freeze anchors
+  m232_runtime_selector_binding_integration_integration_closeout_and_gate_sign_off_d009_expectations.md
+
