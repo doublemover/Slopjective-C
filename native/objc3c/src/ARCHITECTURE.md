@@ -4885,3 +4885,7 @@ Forbidden:
 - M233 lane-B B001 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_contract_and_architecture_freeze_b001_expectations.md
 
+
+- M233 lane-B B002 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_modular_split_and_scaffolding_b002_expectations.md
+

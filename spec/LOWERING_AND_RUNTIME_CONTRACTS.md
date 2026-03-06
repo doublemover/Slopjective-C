@@ -2562,3 +2562,6 @@ lane-A deterministic boundary anchors (`M233-A012`) and fail closed on contract-
 conformance checking and diagnostics contract-freeze governance shall preserve explicit
 lane-B deterministic boundary anchors (`M233-B001`) and fail closed on contract-freeze evidence drift
 
+
+lane-B deterministic boundary anchors (`M233-B002`) and fail closed on contract-freeze evidence drift
+
