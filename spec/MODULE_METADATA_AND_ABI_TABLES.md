@@ -2762,3 +2762,7 @@ explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector
 deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B017`
 explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
 
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C001`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+

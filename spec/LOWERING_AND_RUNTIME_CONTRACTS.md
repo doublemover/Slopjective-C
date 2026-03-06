@@ -2987,3 +2987,7 @@ lane-B deterministic boundary anchors (`M229-B016`) and fail closed on contract-
 
 lane-B deterministic boundary anchors (`M229-B017`) and fail closed on contract-freeze evidence drift
 
+
+interop boundary ABI handling contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M229-C001`) and fail closed on contract-freeze evidence drift
+
