@@ -2300,3 +2300,7 @@ lane-A dependency anchors (`M231-A020`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization integration closeout and gate sign-off governance shall preserve explicit
 lane-A dependency anchors (`M231-A021`) and fail closed on core-feature evidence drift
 
+
+message expression grammar and selector forms contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M232-A001`) and fail closed on contract-freeze evidence drift
+

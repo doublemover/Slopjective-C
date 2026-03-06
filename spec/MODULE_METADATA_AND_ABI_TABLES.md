@@ -2043,3 +2043,7 @@ explicit `M231-A020` dependency continuity so declaration grammar expansion/norm
 deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A022`
 explicit `M231-A021` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
 
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A001`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+

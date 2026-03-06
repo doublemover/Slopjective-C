@@ -4546,3 +4546,7 @@ Forbidden:
 - M231 lane-A A022 declaration grammar expansion and normalization integration closeout and gate sign-off anchors
   m231_declaration_grammar_expansion_and_normalization_integration_closeout_and_gate_sign_off_a022_expectations.md
 
+
+- M232 lane-A A001 message expression grammar and selector forms contract-freeze anchors
+  m232_message_expression_grammar_and_selector_forms_contract_and_architecture_freeze_a001_expectations.md
+
