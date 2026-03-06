@@ -4981,3 +4981,7 @@ Forbidden:
 - M233 lane-C C008 lowering of protocol/category artifacts contract-freeze anchors
   m233_lowering_of_protocol_category_artifacts_recovery_and_determinism_hardening_c008_expectations.md
 
+
+- M233 lane-C C009 lowering of protocol/category artifacts contract-freeze anchors
+  m233_lowering_of_protocol_category_artifacts_conformance_matrix_implementation_c009_expectations.md
+
