@@ -2911,3 +2911,7 @@ replay-proof/performance integration closeout and gate sign-off closeout wiring
 class/protocol/category metadata generation edge-case and compatibility completion governance shall preserve explicit
 lane-A dependency anchors (`M229-A004`) and fail closed on edge-case-and-compatibility-completion evidence drift
 
+
+class/protocol/category metadata generation edge-case expansion and robustness governance shall preserve explicit
+lane-A dependency anchors (`M229-A005`) and fail closed on edge-case-expansion-and-robustness evidence drift
+
