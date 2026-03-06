@@ -5232,3 +5232,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M229 lane-A A006 class/protocol/category metadata generation edge-case expansion and robustness anchors
   m229_class_protocol_category_metadata_generation_edge_case_expansion_and_robustness_a006_expectations.md
 
+
+- M229 lane-A A007 class/protocol/category metadata generation diagnostics hardening anchors
+  m229_class_protocol_category_metadata_generation_diagnostics_hardening_a007_expectations.md
+
