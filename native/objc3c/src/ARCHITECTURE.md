@@ -5126,3 +5126,6 @@ Forbidden:
 
 - M228 lane-C C026 IR-emission advanced performance workpack (shard 2) anchors
 
+
+- M228 lane-C C027 IR-emission advanced core workpack (shard 3) anchors
+
