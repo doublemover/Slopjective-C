@@ -4913,3 +4913,7 @@ Forbidden:
 - M233 lane-B B008 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_recovery_and_determinism_hardening_b008_expectations.md
 
+
+- M233 lane-B B009 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_conformance_matrix_implementation_b009_expectations.md
+
