@@ -3185,3 +3185,6 @@ lane-E deterministic boundary anchors (`M229-E015`) and fail closed on contract-
 
 lane-E deterministic boundary anchors (`M229-E016`) and fail closed on contract-freeze evidence drift
 
+
+lane-E deterministic boundary anchors (`M229-E017`) and fail closed on contract-freeze evidence drift
+
