@@ -4498,3 +4498,7 @@ Forbidden:
 - M231 lane-A A010 declaration grammar expansion and normalization conformance corpus expansion anchors
   m231_declaration_grammar_expansion_and_normalization_conformance_corpus_expansion_a010_expectations.md
 
+
+- M231 lane-A A011 declaration grammar expansion and normalization performance and quality guardrails anchors
+  m231_declaration_grammar_expansion_and_normalization_performance_and_quality_guardrails_a011_expectations.md
+

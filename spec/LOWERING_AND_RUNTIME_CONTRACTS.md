@@ -2252,3 +2252,7 @@ lane-A dependency anchors (`M231-A008`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization conformance corpus expansion governance shall preserve explicit
 lane-A dependency anchors (`M231-A009`) and fail closed on core-feature evidence drift
 
+
+declaration grammar expansion and normalization performance and quality guardrails governance shall preserve explicit
+lane-A dependency anchors (`M231-A010`) and fail closed on core-feature evidence drift
+
