@@ -4474,3 +4474,7 @@ Forbidden:
 - M231 lane-A A004 declaration grammar expansion and normalization core feature expansion anchors
   m231_declaration_grammar_expansion_and_normalization_core_feature_expansion_a004_expectations.md
 
+
+- M231 lane-A A005 declaration grammar expansion and normalization edge-case and compatibility completion anchors
+  m231_declaration_grammar_expansion_and_normalization_edge_case_and_compatibility_completion_a005_expectations.md
+
