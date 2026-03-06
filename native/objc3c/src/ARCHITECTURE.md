@@ -4442,3 +4442,7 @@ Forbidden:
 - M230 lane-A A008 conformance corpus governance and sharding recovery and determinism hardening anchors
   m230_conformance_corpus_governance_and_sharding_recovery_and_determinism_hardening_a008_expectations.md
 
+
+- M230 lane-A A009 conformance corpus governance and sharding conformance matrix implementation anchors
+  m230_conformance_corpus_governance_and_sharding_conformance_matrix_implementation_a009_expectations.md
+

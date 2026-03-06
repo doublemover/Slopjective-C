@@ -2196,3 +2196,7 @@ lane-A dependency anchors (`M230-A006`) and fail closed on diagnostics-hardening
 conformance corpus governance and sharding recovery and determinism hardening governance shall preserve explicit
 lane-A dependency anchors (`M230-A007`) and fail closed on recovery-and-determinism-hardening evidence drift
 
+
+conformance corpus governance and sharding conformance matrix implementation governance shall preserve explicit
+lane-A dependency anchors (`M230-A008`) and fail closed on conformance-matrix-implementation evidence drift
+
