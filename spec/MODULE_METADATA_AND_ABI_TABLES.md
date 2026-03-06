@@ -2614,3 +2614,7 @@ deterministic lane-D toolchain/runtime docs and operator runbook synchronization
 deterministic lane-D toolchain/runtime release-candidate and replay dry-run
 
 
+
+deterministic lane-D toolchain/runtime advanced core workpack (shard 1)
+
+

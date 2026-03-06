@@ -2855,3 +2855,7 @@ toolchain/runtime docs and operator runbook synchronization shall remain
 toolchain/runtime release-candidate and replay dry-run shall remain
 
 
+
+toolchain/runtime advanced core workpack (shard 1) shall remain
+
+

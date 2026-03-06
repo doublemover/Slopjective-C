@@ -5172,3 +5172,7 @@ M228 lane-D D013 docs and operator runbook synchronization anchors deterministic
 M228 lane-D D014 release-candidate and replay dry-run anchors deterministic
 
 (`release_candidate_and_replay_dry_run_*`)
+
+M228 lane-D D015 advanced core workpack (shard 1) anchors deterministic
+
+(`advanced_core_workpack_shard1_*`)
