@@ -938,6 +938,14 @@ Current-state note:
   and `package.json` with dependency token (`M228-C017`) in lane-C readiness chaining so
   advanced-conformance-shard1 continuity remains deterministic and
   fail-closed against `M228-C017` dependency drift.
+- M228 lane-C C019 IR-emission advanced integration workpack (shard 1) anchors
+  explicit lane-C advanced-integration-shard1 artifacts in
+  `docs/contracts/m228_ir_emission_completeness_advanced_integration_workpack_shard1_c019_expectations.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`,
+  `spec/planning/compiler/m228/m228_c019_ir_emission_completeness_advanced_integration_workpack_shard1_packet.md`,
+  and `package.json` with dependency token (`M228-C018`) in lane-C readiness chaining so
+  advanced-integration-shard1 continuity remains deterministic and
+  fail-closed against `M228-C018` dependency drift.
 - M228 lane-D D001 object emission/link-path reliability freeze anchors compile
   route APIs and backend-route scaffolds in `io/objc3_process.cpp`,
   `io/objc3_toolchain_runtime_ga_operations_scaffold.h`, and

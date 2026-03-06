@@ -208,6 +208,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-C IR-emission advanced-conformance-shard1 metadata anchors
       for `M228-C018` plus explicit `M228-C017` dependency continuity so
       advanced-conformance-shard1 drift fails closed,
+    - deterministic lane-C IR-emission advanced-integration-shard1 metadata anchors
+      for `M228-C019` plus explicit `M228-C018` dependency continuity so
+      advanced-integration-shard1 drift fails closed,
     - deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`
       with canonical reference type-form order, runtime dispatch default symbol
       continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
