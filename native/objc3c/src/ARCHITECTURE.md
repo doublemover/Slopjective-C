@@ -4881,3 +4881,7 @@ Forbidden:
 - M233 lane-A A012 protocol/category grammar and AST shape contract-freeze anchors
   m233_protocol_category_grammar_and_ast_shape_integration_closeout_and_gate_sign_off_a012_expectations.md
 
+
+- M233 lane-B B001 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_contract_and_architecture_freeze_b001_expectations.md
+

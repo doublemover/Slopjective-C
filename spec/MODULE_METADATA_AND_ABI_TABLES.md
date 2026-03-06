@@ -2378,3 +2378,7 @@ explicit lane-A contract-freeze metadata continuity so protocol/category grammar
 deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A012`
 explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
 
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B001`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
