@@ -4694,3 +4694,7 @@ Forbidden:
 - M232 lane-E E011 message semantics gate and replay evidence contract-freeze anchors
   m232_message_semantics_gate_and_replay_evidence_performance_and_quality_guardrails_e011_expectations.md
 
+
+- M232 lane-E E012 message semantics gate and replay evidence contract-freeze anchors
+  m232_message_semantics_gate_and_replay_evidence_cross_lane_integration_sync_e012_expectations.md
+
