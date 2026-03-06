@@ -137,6 +137,10 @@ A conforming implementation shall preserve, for all exported declarations:
      consistency/readiness and cross-lane-integration-key anchors for lane-B
      B012 evidence linking ownership-aware guardrails with lane-A pass-graph
      conformance/performance continuity,
+   - deterministic lane-B ownership-aware lowering docs/operator runbook
+     synchronization metadata anchors for `M228-B013` plus explicit
+     `M228-B012` dependency continuity so docs/runbook synchronization drift
+     fails closed,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion

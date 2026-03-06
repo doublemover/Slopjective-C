@@ -12,6 +12,8 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-lane-e-replay-proof-performance-closeout-gate-diagnostics-hardening-contract/m228-e007-v1`
 - `objc3c-lowering-pipeline-pass-graph-cross-lane-integration-sync/m228-a012-v1`
 - `objc3c-lowering-pipeline-pass-graph-docs-operator-runbook-sync/m228-a013-v1`
+- `objc3c-ownership-aware-lowering-behavior-cross-lane-integration-sync/m228-b012-v1`
+- `objc3c-ownership-aware-lowering-behavior-docs-operator-runbook-sync/m228-b013-v1`
 - `objc3c-lowering-pipeline-pass-graph-release-replay-dry-run/m228-a014-v1`
 - `objc3c-lowering-pipeline-pass-graph-advanced-core-workpack-shard1/m228-a015-v1`
 - `objc3c-lowering-pipeline-pass-graph-integration-closeout-gate-signoff/m228-a016-v1`
@@ -54,6 +56,13 @@ This runbook tracks current M228 lane sync coverage for:
    - `python -m pytest tests/tooling/test_check_m228_e007_replay_proof_and_performance_closeout_gate_diagnostics_hardening_contract.py -q`
 14. Run lane-E readiness chain:
    - `npm run check:objc3c:m228-e007-lane-e-readiness`
+15. Validate lane-B cross-lane integration sync gate:
+   - `python scripts/check_m228_b012_ownership_aware_lowering_behavior_cross_lane_integration_sync_contract.py`
+16. Validate lane-B docs/operator runbook synchronization gate:
+   - `python scripts/check_m228_b013_ownership_aware_lowering_behavior_docs_operator_runbook_sync_contract.py`
+   - `python -m pytest tests/tooling/test_check_m228_b013_ownership_aware_lowering_behavior_docs_operator_runbook_sync_contract.py -q`
+17. Run lane-B readiness chain:
+   - `npm run check:objc3c:m228-b013-lane-b-readiness`
 
 ## Evidence
 

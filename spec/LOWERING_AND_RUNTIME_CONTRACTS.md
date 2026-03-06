@@ -212,6 +212,10 @@ At minimum, the pass-graph gate shall validate:
   performance/quality guardrails and lowering pass-graph conformance/performance
   continuity, and shall fail closed before IR emission when integration
   continuity or key continuity drifts.
+- ownership-aware lowering docs and operator runbook synchronization governance
+  shall preserve explicit lane-B dependency anchors (`M228-B013`, `M228-B012`)
+  and fail closed on docs/runbook synchronization continuity, command
+  sequencing, or evidence-path drift before lane-B release validation advances.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output

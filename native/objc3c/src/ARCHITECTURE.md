@@ -746,6 +746,14 @@ Current-state note:
   integration consistency/readiness (`cross_lane_integration_*`) and
   integration-key transport so ownership-aware lowering remains fail-closed on
   lane-A/lane-B integration drift before IR emission.
+- M228 lane-B B013 ownership-aware lowering docs and operator runbook synchronization anchors
+  explicit docs/runbook synchronization assets in
+  `docs/contracts/m228_ownership_aware_lowering_behavior_docs_operator_runbook_sync_b013_expectations.md`,
+  `spec/planning/compiler/m228/m228_b013_ownership_aware_lowering_behavior_docs_operator_runbook_sync_packet.md`,
+  `docs/runbooks/m228_wave_execution_runbook.md`, and `package.json`
+  (`check:objc3c:m228-b013-lane-b-readiness`) so `M228-B012` dependency
+  continuity and lane-B docs/runbook command sequencing remain deterministic
+  and fail-closed against governance drift.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so
