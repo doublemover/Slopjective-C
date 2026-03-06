@@ -2837,3 +2837,9 @@ IR-emission advanced integration workpack (shard 4) governance shall
 
 lane-C dependency anchors (`M228-C037`, `M228-C036`)
 
+
+IR-emission integration closeout and gate sign-off governance shall
+
+
+lane-C dependency anchors (`M228-C038`, `M228-C037`)
+
