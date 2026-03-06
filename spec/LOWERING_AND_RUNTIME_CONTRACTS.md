@@ -2729,3 +2729,9 @@ lane-B deterministic boundary anchors (`M239-B018`) and fail closed on contract-
 
 lane-B deterministic boundary anchors (`M239-B019`) and fail closed on contract-freeze evidence drift
 
+
+IR-emission advanced performance workpack (shard 1) governance shall
+
+
+lane-C dependency anchors (`M228-C020`, `M228-C019`)
+

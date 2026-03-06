@@ -5105,3 +5105,6 @@ Forbidden:
 - M239 lane-B B019 semantic flow analysis and invariants contract-freeze anchors
   m239_semantic_flow_analysis_and_invariants_integration_closeout_and_gate_sign_off_b019_expectations.md
 
+
+- M228 lane-C C020 IR-emission advanced performance workpack (shard 1) anchors
+
