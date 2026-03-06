@@ -5436,3 +5436,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m229_runtime_release_gate_and_operational_docs_edge_case_expansion_and_robustness_e006_expectations.md
 
+  m229_runtime_release_gate_and_operational_docs_diagnostics_hardening_e007_expectations.md
+
