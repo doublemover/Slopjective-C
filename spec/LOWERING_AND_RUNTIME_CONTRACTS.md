@@ -2358,3 +2358,6 @@ message send lowering and call emission integration closeout and gate sign-off g
 
 runtime selector binding integration contract-freeze governance shall preserve explicit
 lane-D deterministic boundary anchors (`M232-D001`) and fail closed on contract-freeze evidence drift
+
+lane-D deterministic boundary anchors (`M232-D002`) and fail closed on contract-freeze evidence drift
+
