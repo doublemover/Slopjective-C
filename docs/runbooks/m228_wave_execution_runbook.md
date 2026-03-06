@@ -40,6 +40,7 @@ This runbook tracks current M228 lane sync coverage for:
 - `objc3c-ir-emission-completeness-advanced-edge-compatibility-workpack-shard2/m228-c022-v1`
 - `objc3c-ir-emission-completeness-advanced-diagnostics-workpack-shard2/m228-c023-v1`
 - `objc3c-ir-emission-completeness-advanced-conformance-workpack-shard2/m228-c024-v1`
+- `objc3c-ir-emission-completeness-advanced-integration-workpack-shard2/m228-c025-v1`
 
 ## Canonical Validation Sequence
 
@@ -193,4 +194,7 @@ Persist wave evidence under:
 48. `python scripts/check_m228_c024_ir_emission_completeness_advanced_conformance_workpack_shard2_contract.py`
 49. `python -m pytest tests/tooling/test_check_m228_c024_ir_emission_completeness_advanced_conformance_workpack_shard2_contract.py -q`
 50. `npm run check:objc3c:m228-c024-lane-c-readiness`
+51. `python scripts/check_m228_c025_ir_emission_completeness_advanced_integration_workpack_shard2_contract.py`
+52. `python -m pytest tests/tooling/test_check_m228_c025_ir_emission_completeness_advanced_integration_workpack_shard2_contract.py -q`
+53. `npm run check:objc3c:m228-c025-lane-c-readiness`
 
