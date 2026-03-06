@@ -950,6 +950,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E semantic conformance corpus expansion dependency anchors for `M227-E009`, `M227-A011`, `M227-B020`, `M227-C013`, and `M227-D006`
       with fail-closed readiness continuity (`check:objc3c:m227-e010-lane-e-readiness`)
       so semantic conformance lane-E conformance corpus expansion metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance performance and quality guardrails dependency anchors for `M227-E010`, `M227-A012`, `M227-B021`, `M227-C014`, and `M227-D007`
+      with fail-closed readiness continuity (`check:objc3c:m227-e011-lane-e-readiness`)
+      so semantic conformance lane-E performance and quality guardrails metadata governance drift fails closed.
     - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
       with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
       so semantic-pass cross-lane dependency drift fails closed.

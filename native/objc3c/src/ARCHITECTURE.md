@@ -435,6 +435,13 @@ Current-state note:
   and `package.json` (`check:objc3c:m227-e010-lane-e-readiness`) so lane-E conformance-corpus-expansion
   governance evidence remains deterministic and fail-closed on dependency-token/reference
   or readiness drift.
+- M227 lane-E E011 semantic conformance performance and quality guardrails anchors dependency references (`M227-E010`, `M227-A012`, `M227-B021`, `M227-C014`, and `M227-D007`) in
+  `docs/contracts/m227_lane_e_semantic_conformance_performance_quality_guardrails_e011_expectations.md`,
+  `spec/planning/compiler/m227/m227_e011_semantic_conformance_lane_e_performance_quality_guardrails_packet.md`,
+  `scripts/check_m227_e011_semantic_conformance_lane_e_performance_quality_guardrails_contract.py`,
+  and `package.json` (`check:objc3c:m227-e011-lane-e-readiness`) so lane-E performance/quality-guardrail
+  governance evidence remains deterministic and fail-closed on dependency-token/reference
+  or readiness drift.
 - M227 lane-A A009 conformance matrix implementation anchors explicit semantic-pass
   parser/sema conformance matrix gates (`parser_sema_conformance_matrix`,
   `parser_sema_conformance_corpus`) in sema handoff/manager contracts and
