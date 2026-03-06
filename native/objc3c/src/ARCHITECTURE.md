@@ -4929,3 +4929,7 @@ Forbidden:
 - M233 lane-B B012 conformance checking and diagnostics contract-freeze anchors
   m233_conformance_checking_and_diagnostics_cross_lane_integration_sync_b012_expectations.md
 
+
+- M233 lane-B B013 conformance checking and diagnostics contract-freeze anchors
+  m233_conformance_checking_and_diagnostics_docs_and_operator_runbook_synchronization_b013_expectations.md
+
