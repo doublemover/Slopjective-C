@@ -2065,7 +2065,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result.parse_lowering_readiness_surface
               .parse_lowering_conformance_corpus_case_count,
           pipeline_result.parse_lowering_readiness_surface
-              .parse_lowering_conformance_corpus_key);
+              .parse_lowering_conformance_corpus_key,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_performance_quality_guardrails_consistent,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_performance_quality_guardrails_case_count,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_performance_quality_guardrails_passed_case_count,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_performance_quality_guardrails_failed_case_count,
+          pipeline_result.parse_lowering_readiness_surface
+              .parse_lowering_performance_quality_guardrails_key);
   std::string ownership_aware_lowering_behavior_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
@@ -2141,6 +2151,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L320",
         "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
             ownership_aware_lowering_behavior_conformance_corpus_error)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+  std::string ownership_aware_lowering_behavior_performance_quality_guardrails_error;
+  if (!IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
+          ownership_aware_lowering_behavior_scaffold,
+          ownership_aware_lowering_behavior_performance_quality_guardrails_error)) {
+    bundle.post_pipeline_diagnostics = {MakeDiag(
+        1,
+        1,
+        "O3L328",
+        "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
+            ownership_aware_lowering_behavior_performance_quality_guardrails_error)};
     bundle.diagnostics = bundle.post_pipeline_diagnostics;
     return bundle;
   }
@@ -5452,6 +5475,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ownership_aware_lowering_behavior_scaffold.expansion_ready;
   ir_frontend_metadata.ownership_aware_lowering_core_feature_expansion_key =
       ownership_aware_lowering_behavior_scaffold.expansion_key;
+  ir_frontend_metadata.ownership_aware_lowering_performance_quality_guardrails_ready =
+      ownership_aware_lowering_behavior_scaffold.performance_quality_guardrails_ready;
+  ir_frontend_metadata.ownership_aware_lowering_performance_quality_guardrails_key =
+      ownership_aware_lowering_behavior_scaffold.performance_quality_guardrails_key;
   ir_frontend_metadata.lowering_pass_graph_core_feature_ready =
       pipeline_result.ir_emission_completeness_scaffold.core_feature_ready;
   ir_frontend_metadata.lowering_pass_graph_core_feature_key =

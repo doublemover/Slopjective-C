@@ -130,6 +130,9 @@ A conforming implementation shall preserve, for all exported declarations:
    - deterministic ownership-aware lowering conformance corpus
      consistency/readiness and conformance-corpus-key anchors for lane-B B010
      conformance corpus expansion evidence,
+   - deterministic ownership-aware lowering performance and quality guardrails
+     consistency/readiness, performance-quality-key, and parse-lowering
+     performance/quality accounting anchors for lane-B B011 evidence,
    - deterministic IR-emission core-feature expansion readiness/key anchors for
      lane-C expansion evidence continuity,
    - deterministic IR-emission edge-case compatibility completion

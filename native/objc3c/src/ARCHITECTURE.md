@@ -730,6 +730,15 @@ Current-state note:
   consistency/readiness (`conformance_corpus_*`) and conformance-corpus-key
   transport so ownership-aware lowering remains fail-closed on conformance
   corpus drift before IR emission.
+- M228 lane-B B011 performance and quality guardrails extends
+  `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`, and
+  `ir/objc3_ir_emitter.cpp` with deterministic performance/quality
+  consistency/readiness (`performance_quality_guardrails_*`),
+  parse-lowering performance/quality accounting
+  (`parse_lowering_performance_quality_guardrails_*`), and IR metadata
+  transport so ownership-aware lowering remains fail-closed on
+  performance/quality drift before IR emission.
 - M228 lane-C C001 IR emission completeness freeze anchors direct IR metadata
   and fail-closed emission routing in `ir/objc3_ir_emitter.h`,
   `ir/objc3_ir_emitter.cpp`, and `pipeline/objc3_frontend_artifacts.cpp` so

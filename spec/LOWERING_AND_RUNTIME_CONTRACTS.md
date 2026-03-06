@@ -199,6 +199,13 @@ At minimum, the pass-graph gate shall validate:
 - ownership-aware lowering conformance corpus expansion shall include
   deterministic conformance-corpus consistency/readiness and
   conformance-corpus-key transport gates that fail closed before IR emission.
+- ownership-aware lowering performance and quality guardrails shall include
+  deterministic performance/quality consistency/readiness and
+  performance-quality-key transport gates derived from parse-lowering
+  performance/quality case accounting
+  (`parse_lowering_performance_quality_guardrails_*`) and shall fail closed
+  before IR emission when guardrail consistency, readiness, key continuity, or
+  case-pass continuity drifts.
 - toolchain/runtime edge-case compatibility completion shall remain
   deterministic, preserve compatibility consistency/readiness and
   compatibility-key continuity, and fail closed when backend route/output

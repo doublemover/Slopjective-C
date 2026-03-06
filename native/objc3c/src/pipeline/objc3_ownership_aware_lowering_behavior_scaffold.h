@@ -34,10 +34,16 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   bool conformance_matrix_ready = false;
   bool conformance_corpus_consistent = false;
   bool conformance_corpus_ready = false;
+  bool performance_quality_guardrails_consistent = false;
+  bool performance_quality_guardrails_ready = false;
   bool parse_recovery_determinism_hardening_consistent = false;
   bool parse_lowering_conformance_matrix_consistent = false;
   bool parse_lowering_conformance_corpus_consistent = false;
+  bool parse_lowering_performance_quality_guardrails_consistent = false;
   std::size_t parse_lowering_conformance_corpus_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_passed_case_count = 0;
+  std::size_t parse_lowering_performance_quality_guardrails_failed_case_count = 0;
   std::string ownership_qualifier_replay_key;
   std::string retain_release_replay_key;
   std::string autoreleasepool_scope_replay_key;
@@ -53,9 +59,11 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   std::string recovery_determinism_key;
   std::string conformance_matrix_key;
   std::string conformance_corpus_key;
+  std::string performance_quality_guardrails_key;
   std::string parse_recovery_determinism_hardening_key;
   std::string parse_lowering_conformance_matrix_key;
   std::string parse_lowering_conformance_corpus_key;
+  std::string parse_lowering_performance_quality_guardrails_key;
   std::string failure_reason;
 };
 
@@ -228,6 +236,29 @@ inline std::string BuildObjc3OwnershipAwareLoweringBehaviorConformanceCorpusKey(
   return key.str();
 }
 
+inline std::string BuildObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsKey(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold) {
+  std::ostringstream key;
+  key << "ownership-aware-lowering-performance-quality-guardrails:v1:"
+      << "conformance-corpus-ready="
+      << (scaffold.conformance_corpus_ready ? "true" : "false")
+      << ";parse-lowering-performance-quality-guardrails-consistent="
+      << (scaffold.parse_lowering_performance_quality_guardrails_consistent ? "true"
+                                                                            : "false")
+      << ";parse-lowering-performance-quality-guardrails-case-count="
+      << scaffold.parse_lowering_performance_quality_guardrails_case_count
+      << ";parse-lowering-performance-quality-guardrails-passed-case-count="
+      << scaffold.parse_lowering_performance_quality_guardrails_passed_case_count
+      << ";parse-lowering-performance-quality-guardrails-failed-case-count="
+      << scaffold.parse_lowering_performance_quality_guardrails_failed_case_count
+      << ";parse-artifact-replay-key-deterministic="
+      << (scaffold.parse_artifact_replay_key_deterministic ? "true" : "false")
+      << ";conformance-corpus-key=" << scaffold.conformance_corpus_key
+      << ";parse-lowering-performance-quality-guardrails-key="
+      << scaffold.parse_lowering_performance_quality_guardrails_key;
+  return key.str();
+}
+
 inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLoweringBehaviorScaffold(
     const Objc3OwnershipQualifierLoweringContract &ownership_qualifier_contract,
     const std::string &ownership_qualifier_replay_key,
@@ -251,7 +282,12 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     const std::string &parse_lowering_conformance_matrix_key,
     bool parse_lowering_conformance_corpus_consistent,
     std::size_t parse_lowering_conformance_corpus_case_count,
-    const std::string &parse_lowering_conformance_corpus_key) {
+    const std::string &parse_lowering_conformance_corpus_key,
+    bool parse_lowering_performance_quality_guardrails_consistent,
+    std::size_t parse_lowering_performance_quality_guardrails_case_count,
+    std::size_t parse_lowering_performance_quality_guardrails_passed_case_count,
+    std::size_t parse_lowering_performance_quality_guardrails_failed_case_count,
+    const std::string &parse_lowering_performance_quality_guardrails_key) {
   Objc3OwnershipAwareLoweringBehaviorScaffold scaffold;
   scaffold.ownership_qualifier_contract_ready =
       IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_contract) &&
@@ -288,6 +324,14 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_lowering_conformance_corpus_consistent;
   scaffold.parse_lowering_conformance_corpus_case_count =
       parse_lowering_conformance_corpus_case_count;
+  scaffold.parse_lowering_performance_quality_guardrails_consistent =
+      parse_lowering_performance_quality_guardrails_consistent;
+  scaffold.parse_lowering_performance_quality_guardrails_case_count =
+      parse_lowering_performance_quality_guardrails_case_count;
+  scaffold.parse_lowering_performance_quality_guardrails_passed_case_count =
+      parse_lowering_performance_quality_guardrails_passed_case_count;
+  scaffold.parse_lowering_performance_quality_guardrails_failed_case_count =
+      parse_lowering_performance_quality_guardrails_failed_case_count;
   scaffold.compatibility_handoff_key = compatibility_handoff_key;
   scaffold.parse_artifact_edge_robustness_key =
       parse_artifact_edge_robustness_key;
@@ -297,6 +341,8 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       parse_lowering_conformance_matrix_key;
   scaffold.parse_lowering_conformance_corpus_key =
       parse_lowering_conformance_corpus_key;
+  scaffold.parse_lowering_performance_quality_guardrails_key =
+      parse_lowering_performance_quality_guardrails_key;
   scaffold.ownership_profile_accounting_consistent =
       ownership_qualifier_contract.object_pointer_type_annotation_sites >=
           ownership_qualifier_contract.ownership_qualifier_sites &&
@@ -421,6 +467,29 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.conformance_corpus_consistent &&
       !scaffold.conformance_corpus_key.empty() &&
       !scaffold.parse_lowering_conformance_corpus_key.empty();
+  const bool parse_lowering_performance_quality_guardrails_case_accounting_consistent =
+      scaffold.parse_lowering_performance_quality_guardrails_case_count ==
+          scaffold.parse_lowering_performance_quality_guardrails_passed_case_count +
+              scaffold.parse_lowering_performance_quality_guardrails_failed_case_count &&
+      scaffold.parse_lowering_performance_quality_guardrails_case_count > 0 &&
+      scaffold.parse_lowering_performance_quality_guardrails_passed_case_count <=
+          scaffold.parse_lowering_performance_quality_guardrails_case_count &&
+      scaffold.parse_lowering_performance_quality_guardrails_failed_case_count ==
+          (scaffold.parse_lowering_performance_quality_guardrails_case_count -
+           scaffold.parse_lowering_performance_quality_guardrails_passed_case_count);
+  scaffold.performance_quality_guardrails_consistent =
+      scaffold.conformance_corpus_ready &&
+      scaffold.parse_lowering_performance_quality_guardrails_consistent &&
+      parse_lowering_performance_quality_guardrails_case_accounting_consistent &&
+      scaffold.parse_artifact_replay_key_deterministic;
+  scaffold.performance_quality_guardrails_key =
+      BuildObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsKey(scaffold);
+  scaffold.performance_quality_guardrails_ready =
+      scaffold.performance_quality_guardrails_consistent &&
+      scaffold.parse_lowering_performance_quality_guardrails_failed_case_count == 0 &&
+      !scaffold.performance_quality_guardrails_key.empty() &&
+      !scaffold.parse_lowering_performance_quality_guardrails_key.empty() &&
+      !scaffold.conformance_corpus_key.empty();
 
   if (scaffold.modular_split_ready &&
       scaffold.expansion_ready &&
@@ -435,7 +504,9 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
       scaffold.conformance_matrix_ready &&
       !scaffold.conformance_matrix_key.empty() &&
       scaffold.conformance_corpus_ready &&
-      !scaffold.conformance_corpus_key.empty()) {
+      !scaffold.conformance_corpus_key.empty() &&
+      scaffold.performance_quality_guardrails_ready &&
+      !scaffold.performance_quality_guardrails_key.empty()) {
     return scaffold;
   }
 
@@ -519,6 +590,24 @@ inline Objc3OwnershipAwareLoweringBehaviorScaffold BuildObjc3OwnershipAwareLower
     scaffold.failure_reason = "ownership-aware lowering conformance corpus key is empty";
   } else if (!scaffold.conformance_corpus_ready) {
     scaffold.failure_reason = "ownership-aware lowering conformance corpus is not ready";
+  } else if (!scaffold.parse_lowering_performance_quality_guardrails_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering parse performance quality guardrails are inconsistent";
+  } else if (scaffold.parse_lowering_performance_quality_guardrails_case_count == 0) {
+    scaffold.failure_reason = "ownership-aware lowering parse performance quality guardrails case count is zero";
+  } else if (scaffold.parse_lowering_performance_quality_guardrails_case_count !=
+             scaffold.parse_lowering_performance_quality_guardrails_passed_case_count +
+                 scaffold.parse_lowering_performance_quality_guardrails_failed_case_count) {
+    scaffold.failure_reason = "ownership-aware lowering parse performance quality guardrails case accounting is inconsistent";
+  } else if (scaffold.parse_lowering_performance_quality_guardrails_failed_case_count != 0) {
+    scaffold.failure_reason = "ownership-aware lowering parse performance quality guardrails include failing cases";
+  } else if (scaffold.parse_lowering_performance_quality_guardrails_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering parse performance quality guardrails key is empty";
+  } else if (!scaffold.performance_quality_guardrails_consistent) {
+    scaffold.failure_reason = "ownership-aware lowering performance quality guardrails are inconsistent";
+  } else if (scaffold.performance_quality_guardrails_key.empty()) {
+    scaffold.failure_reason = "ownership-aware lowering performance quality guardrails key is empty";
+  } else if (!scaffold.performance_quality_guardrails_ready) {
+    scaffold.failure_reason = "ownership-aware lowering performance quality guardrails are not ready";
   } else {
     scaffold.failure_reason = "ownership-aware lowering modular split scaffold not ready";
   }
@@ -648,6 +737,22 @@ inline bool IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
 
   reason = scaffold.failure_reason.empty()
                ? "ownership-aware lowering conformance corpus is not ready"
+               : scaffold.failure_reason;
+  return false;
+}
+
+inline bool IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
+    const Objc3OwnershipAwareLoweringBehaviorScaffold &scaffold,
+    std::string &reason) {
+  if (scaffold.performance_quality_guardrails_consistent &&
+      scaffold.performance_quality_guardrails_ready &&
+      !scaffold.performance_quality_guardrails_key.empty()) {
+    reason.clear();
+    return true;
+  }
+
+  reason = scaffold.failure_reason.empty()
+               ? "ownership-aware lowering performance quality guardrails are not ready"
                : scaffold.failure_reason;
   return false;
 }
