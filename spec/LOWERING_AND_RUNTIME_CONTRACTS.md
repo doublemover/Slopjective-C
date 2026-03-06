@@ -3003,3 +3003,6 @@ lane-C deterministic boundary anchors (`M229-C004`) and fail closed on contract-
 
 lane-C deterministic boundary anchors (`M229-C005`) and fail closed on contract-freeze evidence drift
 
+
+lane-C deterministic boundary anchors (`M229-C006`) and fail closed on contract-freeze evidence drift
+
