@@ -1564,6 +1564,12 @@ Current-state note:
   `spec/planning/compiler/m235/m235_c004_qualified_type_lowering_and_abi_representation_core_feature_expansion_packet.md`,
   and `package.json` (`check:objc3c:m235-c004-lane-c-readiness`) so `M235-C003`
   dependency continuity remains deterministic and fail-closed against core feature expansion drift.
+- M235 lane-C C005 qualified type lowering and ABI representation edge-case and compatibility completion anchors
+  explicit lane-C edge-case and compatibility completion artifacts in
+  `docs/contracts/m235_qualified_type_lowering_and_abi_representation_edge_case_and_compatibility_completion_c005_expectations.md`,
+  `spec/planning/compiler/m235/m235_c005_qualified_type_lowering_and_abi_representation_edge_case_and_compatibility_completion_packet.md`,
+  and `package.json` (`check:objc3c:m235-c005-lane-c-readiness`) so `M235-C004`
+  dependency continuity remains deterministic and fail-closed against edge-case and compatibility completion drift.
 - M235 lane-D D001 interop behavior for qualified generic APIs anchors explicit
   lane-D contract-freeze artifacts in
   `docs/contracts/m235_interop_behavior_for_qualified_generic_apis_contract_and_architecture_freeze_d001_expectations.md`,
