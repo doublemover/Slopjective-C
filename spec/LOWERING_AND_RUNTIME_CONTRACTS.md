@@ -2240,3 +2240,7 @@ lane-A dependency anchors (`M231-A005`) and fail closed on core-feature evidence
 declaration grammar expansion and normalization diagnostics hardening governance shall preserve explicit
 lane-A dependency anchors (`M231-A006`) and fail closed on core-feature evidence drift
 
+
+declaration grammar expansion and normalization recovery and determinism hardening governance shall preserve explicit
+lane-A dependency anchors (`M231-A007`) and fail closed on core-feature evidence drift
+
