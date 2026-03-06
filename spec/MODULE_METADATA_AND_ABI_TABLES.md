@@ -959,6 +959,9 @@ A conforming implementation shall preserve, for all exported declarations:
     - deterministic lane-E semantic conformance docs and operator runbook synchronization dependency anchors for `M227-E012`, `M227-A014`, `M227-B025`, `M227-C017`, and `M227-D008`
       with fail-closed readiness continuity (`check:objc3c:m227-e013-lane-e-readiness`)
       so semantic conformance lane-E docs and operator runbook synchronization metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance release-candidate and replay dry-run dependency anchors for `M227-E013`, `M227-A015`, `M227-B027`, `M227-C018`, and `M227-D008`
+      with fail-closed readiness continuity (`check:objc3c:m227-e014-lane-e-readiness`)
+      so semantic conformance lane-E release-candidate and replay dry-run metadata governance drift fails closed.
     - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
       with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
       so semantic-pass cross-lane dependency drift fails closed.
