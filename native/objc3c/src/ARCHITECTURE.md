@@ -4482,3 +4482,7 @@ Forbidden:
 - M231 lane-A A006 declaration grammar expansion and normalization edge-case expansion and robustness anchors
   m231_declaration_grammar_expansion_and_normalization_edge_case_expansion_and_robustness_a006_expectations.md
 
+
+- M231 lane-A A007 declaration grammar expansion and normalization diagnostics hardening anchors
+  m231_declaration_grammar_expansion_and_normalization_diagnostics_hardening_a007_expectations.md
+
