@@ -257,3 +257,8 @@ Persist wave evidence under:
 objc3c-object-emission-link-path-reliability-cross-lane-integration-sync/m228-d012-v1
 
 npm run check:objc3c:m228-d012-lane-d-readiness
+
+
+objc3c-object-emission-link-path-reliability-docs-operator-runbook-sync/m228-d013-v1
+
+npm run check:objc3c:m228-d013-lane-d-readiness

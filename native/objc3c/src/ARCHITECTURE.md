@@ -5164,3 +5164,7 @@ Forbidden:
 
 
 M228 lane-D D012 cross-lane integration sync anchors deterministic
+
+M228 lane-D D013 docs and operator runbook synchronization anchors deterministic
+
+(`docs_operator_runbook_sync_*`)
