@@ -1,0 +1,349 @@
+#!/usr/bin/env python3
+"""Fail-closed validator for M228-D013 object emission/link-path performance guardrails."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+MODE = "m228-d013-object-emission-link-path-reliability-docs-operator-runbook-sync-contract-v1"
+
+ARTIFACTS: dict[str, Path] = {
+    "core_surface_header": ROOT
+    / "native"
+    / "objc3c"
+    / "src"
+    / "io"
+    / "objc3_toolchain_runtime_ga_operations_core_feature_surface.h",
+    "architecture_doc": ROOT / "native" / "objc3c" / "src" / "ARCHITECTURE.md",
+    "lowering_spec": ROOT / "spec" / "LOWERING_AND_RUNTIME_CONTRACTS.md",
+    "metadata_spec": ROOT / "spec" / "MODULE_METADATA_AND_ABI_TABLES.md",
+    "runbook_doc": ROOT / "docs" / "runbooks" / "m228_wave_execution_runbook.md",
+    "package_json": ROOT / "package.json",
+    "d012_contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m228_object_emission_link_path_reliability_cross_lane_integration_sync_d012_expectations.md",
+    "d012_checker": ROOT
+    / "scripts"
+    / "check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract.py",
+    "d012_tooling_test": ROOT
+    / "tests"
+    / "tooling"
+    / "test_check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract.py",
+    "d012_packet_doc": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_packet.md",
+    "contract_doc": ROOT
+    / "docs"
+    / "contracts"
+    / "m228_object_emission_link_path_reliability_docs_operator_runbook_sync_d013_expectations.md",
+    "planning_packet": ROOT
+    / "spec"
+    / "planning"
+    / "compiler"
+    / "m228"
+    / "m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_packet.md",
+}
+
+REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "core_surface_header": (
+        (
+            "M228-D013-SUR-01",
+            "bool docs_operator_runbook_sync_consistent = false;",
+        ),
+        ("M228-D013-SUR-02", "bool docs_operator_runbook_sync_ready = false;"),
+        (
+            "M228-D013-SUR-03",
+            "bool docs_operator_runbook_sync_key_ready = false;",
+        ),
+        ("M228-D013-SUR-04", "std::string docs_operator_runbook_sync_key;"),
+        (
+            "M228-D013-SUR-05",
+            "BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey(",
+        ),
+        (
+            "M228-D013-SUR-06",
+            "toolchain-runtime-ga-operations-docs-operator-runbook-sync:v1:",
+        ),
+        (
+            "M228-D013-SUR-07",
+            "surface.docs_operator_runbook_sync_consistent =",
+        ),
+        ("M228-D013-SUR-08", "surface.docs_operator_runbook_sync_ready ="),
+        ("M228-D013-SUR-09", "surface.docs_operator_runbook_sync_key ="),
+        ("M228-D013-SUR-10", "surface.docs_operator_runbook_sync_key_ready ="),
+        (
+            "M228-D013-SUR-11",
+            "surface.core_feature_impl_ready =\n      surface.core_feature_impl_ready && surface.docs_operator_runbook_sync_ready;",
+        ),
+        (
+            "M228-D013-SUR-12",
+            "surface.core_feature_impl_ready =\n      surface.core_feature_impl_ready && surface.docs_operator_runbook_sync_key_ready;",
+        ),
+        ("M228-D013-SUR-13", ";docs_operator_runbook_sync_consistent="),
+        ("M228-D013-SUR-14", ";docs_operator_runbook_sync_ready="),
+        ("M228-D013-SUR-15", ";docs_operator_runbook_sync_key_ready="),
+        (
+            "M228-D013-SUR-16",
+            "toolchain/runtime performance quality guardrails are inconsistent",
+        ),
+        (
+            "M228-D013-SUR-17",
+            "toolchain/runtime performance quality guardrails are not ready",
+        ),
+        (
+            "M228-D013-SUR-18",
+            "toolchain/runtime performance quality guardrails key is not ready",
+        ),
+        (
+            "M228-D013-SUR-19",
+            "inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady(",
+        ),
+        (
+            "M228-D013-SUR-20",
+            "surface.docs_operator_runbook_sync_key.find(\";conformance_corpus_key_ready=true\") !=",
+        ),
+        (
+            "M228-D013-SUR-21",
+            "surface.conformance_corpus_key_ready &&",
+        ),
+    ),
+    "architecture_doc": (
+        (
+            "M228-D013-ARC-01",
+            "M228 lane-D D013 docs and operator runbook synchronization anchors deterministic",
+        ),
+        ("M228-D013-ARC-02", "(`docs_operator_runbook_sync_*`)"),
+    ),
+    "lowering_spec": (
+        (
+            "M228-D013-SPC-01",
+            "toolchain/runtime docs and operator runbook synchronization shall remain",
+        ),
+    ),
+    "metadata_spec": (
+        (
+            "M228-D013-META-01",
+            "deterministic lane-D toolchain/runtime docs and operator runbook synchronization",
+        ),
+    ),
+    "runbook_doc": (
+        (
+            "M228-D013-RUN-01",
+            "objc3c-object-emission-link-path-reliability-docs-operator-runbook-sync/m228-d013-v1",
+        ),
+        ("M228-D013-RUN-02", "npm run check:objc3c:m228-d013-lane-d-readiness"),
+    ),
+    "package_json": (
+        (
+            "M228-D013-CFG-01",
+            '"check:objc3c:m228-d012-object-emission-link-path-reliability-cross-lane-integration-sync-contract"',
+        ),
+        (
+            "M228-D013-CFG-02",
+            '"check:objc3c:m228-d013-object-emission-link-path-reliability-docs-operator-runbook-sync-contract"',
+        ),
+        (
+            "M228-D013-CFG-03",
+            '"test:tooling:m228-d013-object-emission-link-path-reliability-docs-operator-runbook-sync-contract"',
+        ),
+        ("M228-D013-CFG-04", '"check:objc3c:m228-d013-lane-d-readiness"'),
+        (
+            "M228-D013-CFG-05",
+            "npm run check:objc3c:m228-d012-lane-d-readiness && npm run check:objc3c:m228-d013-object-emission-link-path-reliability-docs-operator-runbook-sync-contract",
+        ),
+    ),
+    "d012_contract_doc": (
+        (
+            "M228-D013-DEP-01",
+            "Contract ID: `objc3c-object-emission-link-path-reliability-cross-lane-integration-sync/m228-d012-v1`",
+        ),
+    ),
+    "d012_checker": (
+        (
+            "M228-D013-DEP-02",
+            'MODE = "m228-d012-object-emission-link-path-reliability-cross-lane-integration-sync-contract-v1"',
+        ),
+    ),
+    "d012_tooling_test": (
+        (
+            "M228-D013-DEP-03",
+            "check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract",
+        ),
+    ),
+    "d012_packet_doc": (
+        ("M228-D013-DEP-04", "Packet: `M228-D012`"),
+        ("M228-D013-DEP-05", "Dependencies: `M228-D011`"),
+    ),
+    "contract_doc": (
+        (
+            "M228-D013-DOC-01",
+            "Contract ID: `objc3c-object-emission-link-path-reliability-docs-operator-runbook-sync/m228-d013-v1`",
+        ),
+        ("M228-D013-DOC-02", "Dependencies: `M228-D012`"),
+        ("M228-D013-DOC-03", "docs_operator_runbook_sync_consistent"),
+        ("M228-D013-DOC-04", "docs_operator_runbook_sync_ready"),
+        ("M228-D013-DOC-05", "docs_operator_runbook_sync_key_ready"),
+        (
+            "M228-D013-DOC-06",
+            "BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsKey",
+        ),
+        (
+            "M228-D013-DOC-07",
+            "IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady",
+        ),
+        (
+            "M228-D013-DOC-08",
+            "scripts/check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract.py",
+        ),
+        (
+            "M228-D013-DOC-09",
+            "tests/tooling/test_check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract.py",
+        ),
+        (
+            "M228-D013-DOC-10",
+            "tmp/reports/m228/M228-D013/object_emission_link_path_reliability_docs_operator_runbook_sync_contract_summary.json",
+        ),
+        ("M228-D013-DOC-11", "Shared-file deltas required for full lane-D readiness"),
+        ("M228-D013-DOC-12", "package.json"),
+        ("M228-D013-DOC-13", "docs/runbooks/m228_wave_execution_runbook.md"),
+        ("M228-D013-DOC-14", "native/objc3c/src/ARCHITECTURE.md"),
+        ("M228-D013-DOC-15", "spec/LOWERING_AND_RUNTIME_CONTRACTS.md"),
+        ("M228-D013-DOC-16", "spec/MODULE_METADATA_AND_ABI_TABLES.md"),
+    ),
+    "planning_packet": (
+        (
+            "M228-D013-PKT-01",
+            "# M228-D013 Object Emission and Link Path Reliability Docs and Operator Runbook Synchronization Packet",
+        ),
+        ("M228-D013-PKT-02", "Packet: `M228-D013`"),
+        ("M228-D013-PKT-03", "Milestone: `M228`"),
+        ("M228-D013-PKT-04", "Dependencies: `M228-D012`"),
+        (
+            "M228-D013-PKT-05",
+            "docs/contracts/m228_object_emission_link_path_reliability_docs_operator_runbook_sync_d013_expectations.md",
+        ),
+        (
+            "M228-D013-PKT-06",
+            "scripts/check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract.py",
+        ),
+        (
+            "M228-D013-PKT-07",
+            "tests/tooling/test_check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract.py",
+        ),
+        (
+            "M228-D013-PKT-08",
+            "tmp/reports/m228/M228-D013/object_emission_link_path_reliability_docs_operator_runbook_sync_contract_summary.json",
+        ),
+        ("M228-D013-PKT-09", "docs and operator runbook synchronization"),
+        ("M228-D013-PKT-10", "Shared-file deltas required for full lane-D readiness"),
+        (
+            "M228-D013-PKT-11",
+            "python scripts/check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract.py",
+        ),
+    ),
+}
+
+FORBIDDEN_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
+    "core_surface_header": (
+        (
+            "M228-D013-FORB-01",
+            "surface.docs_operator_runbook_sync_ready = true;",
+        ),
+        (
+            "M228-D013-FORB-02",
+            "surface.docs_operator_runbook_sync_consistent = true;",
+        ),
+    ),
+}
+
+
+@dataclass(frozen=True)
+class Finding:
+    artifact: str
+    check_id: str
+    detail: str
+
+
+def canonical_json(payload: object) -> str:
+    return json.dumps(payload, indent=2) + "\n"
+
+
+def parse_args(argv: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--summary-out",
+        type=Path,
+        default=Path(
+            "tmp/reports/m228/M228-D013/"
+            "object_emission_link_path_reliability_docs_operator_runbook_sync_contract_summary.json"
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def load_text(path: Path, *, artifact: str) -> str:
+    if not path.exists() or not path.is_file():
+        raise ValueError(f"{artifact} missing file: {path.as_posix()}")
+    return path.read_text(encoding="utf-8")
+
+
+def run(argv: Sequence[str]) -> int:
+    args = parse_args(argv)
+
+    findings: list[Finding] = []
+    total_checks = 0
+    passed_checks = 0
+
+    for artifact, path in ARTIFACTS.items():
+        text = load_text(path, artifact=artifact)
+
+        for check_id, snippet in REQUIRED_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                passed_checks += 1
+            else:
+                findings.append(Finding(artifact, check_id, f"expected snippet missing: {snippet}"))
+
+        for check_id, snippet in FORBIDDEN_SNIPPETS.get(artifact, ()):
+            total_checks += 1
+            if snippet in text:
+                findings.append(Finding(artifact, check_id, f"forbidden snippet present: {snippet}"))
+            else:
+                passed_checks += 1
+
+    ok = not findings
+    summary = {
+        "mode": MODE,
+        "ok": ok,
+        "checks_total": total_checks,
+        "checks_passed": passed_checks,
+        "failures": [
+            {"artifact": finding.artifact, "check_id": finding.check_id, "detail": finding.detail}
+            for finding in findings
+        ],
+    }
+
+    args.summary_out.parent.mkdir(parents=True, exist_ok=True)
+    args.summary_out.write_text(canonical_json(summary), encoding="utf-8")
+
+    if ok:
+        return 0
+    for finding in findings:
+        print(f"[{finding.check_id}] {finding.artifact}: {finding.detail}", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(run(sys.argv[1:]))
+
+

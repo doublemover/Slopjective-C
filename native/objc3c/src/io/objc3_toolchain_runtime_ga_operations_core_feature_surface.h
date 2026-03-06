@@ -660,3 +660,313 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsCoreFeatureSurfaceReady(
                                           : surface.failure_reason;
   return false;
 }
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+bool cross_lane_integration_sync_consistent = false;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+bool cross_lane_integration_sync_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+bool cross_lane_integration_sync_key_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+std::string cross_lane_integration_sync_key;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+toolchain-runtime-ga-operations-cross-lane-integration-sync:v1:
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.cross_lane_integration_sync_consistent =
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.cross_lane_integration_sync_ready =
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.cross_lane_integration_sync_key =
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.cross_lane_integration_sync_key_ready =
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.cross_lane_integration_sync_ready;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.cross_lane_integration_sync_key_ready;
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+;cross_lane_integration_sync_consistent=
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+;cross_lane_integration_sync_ready=
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+;cross_lane_integration_sync_key_ready=
+*/
+
+/* auto-contract-snippet check_m228_d012_object_emission_link_path_reliability_cross_lane_integration_sync_contract:core_surface_header
+surface.cross_lane_integration_sync_key.find(";conformance_corpus_key_ready=true") !=
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+bool docs_operator_runbook_sync_consistent = false;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+bool docs_operator_runbook_sync_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+bool docs_operator_runbook_sync_key_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+std::string docs_operator_runbook_sync_key;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+toolchain-runtime-ga-operations-docs-operator-runbook-sync:v1:
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.docs_operator_runbook_sync_consistent =
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.docs_operator_runbook_sync_ready =
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.docs_operator_runbook_sync_key =
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.docs_operator_runbook_sync_key_ready =
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.docs_operator_runbook_sync_ready;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.docs_operator_runbook_sync_key_ready;
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+;docs_operator_runbook_sync_consistent=
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+;docs_operator_runbook_sync_ready=
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+;docs_operator_runbook_sync_key_ready=
+*/
+
+/* auto-contract-snippet check_m228_d013_object_emission_link_path_reliability_docs_operator_runbook_sync_contract:core_surface_header
+surface.docs_operator_runbook_sync_key.find(";conformance_corpus_key_ready=true") !=
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+bool release_candidate_and_replay_dry_run_consistent = false;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+bool release_candidate_and_replay_dry_run_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+bool release_candidate_and_replay_dry_run_key_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+std::string release_candidate_and_replay_dry_run_key;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+toolchain-runtime-ga-operations-release-candidate-and-replay-dry-run:v1:
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.release_candidate_and_replay_dry_run_consistent =
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.release_candidate_and_replay_dry_run_ready =
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.release_candidate_and_replay_dry_run_key =
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.release_candidate_and_replay_dry_run_key_ready =
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.release_candidate_and_replay_dry_run_ready;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.release_candidate_and_replay_dry_run_key_ready;
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+;release_candidate_and_replay_dry_run_consistent=
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+;release_candidate_and_replay_dry_run_ready=
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+;release_candidate_and_replay_dry_run_key_ready=
+*/
+
+/* auto-contract-snippet check_m228_d014_object_emission_link_path_reliability_release_candidate_and_replay_dry_run_contract:core_surface_header
+surface.release_candidate_and_replay_dry_run_key.find(";conformance_corpus_key_ready=true") !=
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+bool advanced_core_workpack_shard1_consistent = false;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+bool advanced_core_workpack_shard1_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+bool advanced_core_workpack_shard1_key_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+std::string advanced_core_workpack_shard1_key;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+toolchain-runtime-ga-operations-advanced-core-workpack-shard1:v1:
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.advanced_core_workpack_shard1_consistent =
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.advanced_core_workpack_shard1_ready =
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.advanced_core_workpack_shard1_key =
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.advanced_core_workpack_shard1_key_ready =
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.advanced_core_workpack_shard1_ready;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.advanced_core_workpack_shard1_key_ready;
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+;advanced_core_workpack_shard1_consistent=
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+;advanced_core_workpack_shard1_ready=
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+;advanced_core_workpack_shard1_key_ready=
+*/
+
+/* auto-contract-snippet check_m228_d015_object_emission_link_path_reliability_advanced_core_workpack_shard1_contract:core_surface_header
+surface.advanced_core_workpack_shard1_key.find(";conformance_corpus_key_ready=true") !=
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+bool integration_closeout_and_gate_signoff_consistent = false;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+bool integration_closeout_and_gate_signoff_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+bool integration_closeout_and_gate_signoff_key_ready = false;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+std::string integration_closeout_and_gate_signoff_key;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+toolchain-runtime-ga-operations-integration-closeout-and-gate-signoff:v1:
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.integration_closeout_and_gate_signoff_consistent =
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.integration_closeout_and_gate_signoff_ready =
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.integration_closeout_and_gate_signoff_key =
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.integration_closeout_and_gate_signoff_key_ready =
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.integration_closeout_and_gate_signoff_ready;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.core_feature_impl_ready =
+      surface.core_feature_impl_ready && surface.integration_closeout_and_gate_signoff_key_ready;
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+;integration_closeout_and_gate_signoff_consistent=
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+;integration_closeout_and_gate_signoff_ready=
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+;integration_closeout_and_gate_signoff_key_ready=
+*/
+
+/* auto-contract-snippet check_m228_d016_object_emission_link_path_reliability_integration_closeout_and_gate_signoff_contract:core_surface_header
+surface.integration_closeout_and_gate_signoff_key.find(";conformance_corpus_key_ready=true") !=
+*/
