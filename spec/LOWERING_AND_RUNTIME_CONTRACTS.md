@@ -3207,3 +3207,6 @@ lane-B deterministic boundary anchors (`M230-B004`) and fail closed on contract-
 
 lane-B deterministic boundary anchors (`M230-B005`) and fail closed on contract-freeze evidence drift
 
+
+lane-B deterministic boundary anchors (`M230-B006`) and fail closed on contract-freeze evidence drift
+
