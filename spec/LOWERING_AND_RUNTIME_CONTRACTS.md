@@ -2172,3 +2172,5 @@ class/protocol/category metadata generation contract freeze shall preserve deter
 class/protocol/category metadata generation modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on scaffolding evidence drift before lane-A core feature implementation workpacks advance.
 
 class/protocol/category metadata generation core feature implementation governance shall preserve explicit lane-A dependency anchors (`M229-A002`) and fail closed on core-feature evidence drift before lane-A core-feature expansion workpacks advance.
+
+class/protocol/category metadata generation core feature expansion governance shall preserve explicit lane-A dependency anchors (`M229-A003`) and fail closed on core-feature-expansion evidence drift before lane-A edge-case and compatibility workpacks advance.

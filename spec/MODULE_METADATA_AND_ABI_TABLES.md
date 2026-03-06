@@ -1915,3 +1915,5 @@ deterministic lane-A class/protocol/category metadata generation metadata anchor
 deterministic lane-A class/protocol/category metadata generation modular split anchors for `M229-A002` must preserve explicit `M229-A001` dependency continuity so class/protocol/category metadata scaffolding drift fails closed.
 
 deterministic lane-A class/protocol/category metadata generation core feature anchors for `M229-A003` must preserve explicit `M229-A002` dependency continuity so class/protocol/category metadata core-feature drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation core feature expansion anchors for `M229-A004` must preserve explicit `M229-A003` dependency continuity so class/protocol/category metadata core-feature-expansion drift fails closed.
