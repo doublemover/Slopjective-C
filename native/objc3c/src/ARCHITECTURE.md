@@ -5244,3 +5244,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M229 lane-A A009 class/protocol/category metadata generation conformance matrix implementation anchors
   m229_class_protocol_category_metadata_generation_conformance_matrix_implementation_a009_expectations.md
 
+
+- M229 lane-A A010 class/protocol/category metadata generation conformance corpus expansion anchors
+  m229_class_protocol_category_metadata_generation_conformance_corpus_expansion_a010_expectations.md
+

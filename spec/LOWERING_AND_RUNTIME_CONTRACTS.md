@@ -2927,3 +2927,7 @@ lane-A dependency anchors (`M229-A007`) and fail closed on recovery-and-determin
 class/protocol/category metadata generation conformance matrix implementation governance shall preserve explicit
 lane-A dependency anchors (`M229-A008`) and fail closed on conformance-matrix-implementation evidence drift
 
+
+class/protocol/category metadata generation conformance corpus expansion governance shall preserve explicit
+lane-A dependency anchors (`M229-A009`) and fail closed on conformance-corpus-expansion evidence drift
+
