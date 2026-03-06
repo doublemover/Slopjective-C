@@ -5138,3 +5138,6 @@ Forbidden:
 
 - M228 lane-C C030 IR-emission advanced conformance workpack (shard 3) anchors
 
+
+- M228 lane-C C031 IR-emission advanced integration workpack (shard 3) anchors
+
