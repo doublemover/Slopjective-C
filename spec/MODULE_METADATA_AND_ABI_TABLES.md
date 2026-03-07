@@ -3381,3 +3381,7 @@ explicit lane-E contract-freeze metadata continuity so Program control and relea
 deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B001`
 explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
 
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B002`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
