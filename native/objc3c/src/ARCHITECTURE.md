@@ -7740,3 +7740,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m242_expanded_source_lowering_traceability_conformance_matrix_implementation_c009_expectations.md
 
+
+- M242 lane-C C010 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m242_expanded_source_lowering_traceability_conformance_corpus_expansion_c010_expectations.md
+
