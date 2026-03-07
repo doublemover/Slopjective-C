@@ -3691,3 +3691,8 @@ qualified type lowering and ABI representation integration closeout and gate sig
 
 lane-C dependency anchors (`M235-C019`) and fail closed on integration closeout and gate sign-off evidence drift
 
+
+interop behavior for qualified generic APIs edge-case and compatibility completion governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D004`) and fail closed on edge-case and compatibility completion interop evidence drift
+

@@ -5934,3 +5934,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m235_qualified_type_lowering_and_abi_representation_integration_closeout_and_gate_sign_off_c020_expectations.md
 
+
+- M235 lane-D D005 interop behavior for qualified generic APIs edge-case and compatibility completion anchors explicit
+
+  docs/contracts/m235_interop_behavior_for_qualified_generic_apis_edge_case_and_compatibility_completion_d005_expectations.md
+
