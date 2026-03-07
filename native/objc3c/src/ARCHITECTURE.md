@@ -7164,3 +7164,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M240 lane-B B004 qualifier/generic semantic inference anchors
   docs/contracts/m240_metadata_semantic_consistency_and_validation_core_feature_expansion_b004_expectations.md
 
+
+- M240 lane-B B005 qualifier/generic semantic inference anchors
+  docs/contracts/m240_metadata_semantic_consistency_and_validation_edge_case_and_compatibility_completion_b005_expectations.md
+
