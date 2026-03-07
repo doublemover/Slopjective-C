@@ -6785,3 +6785,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_advanced_edge_compatibility_workpack_shard_1_c016_expectations.md
 
+
+- M238 lane-C C017 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_advanced_diagnostics_workpack_shard_1_c017_expectations.md
+
