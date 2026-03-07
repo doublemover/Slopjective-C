@@ -7955,3 +7955,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   `M244-C020` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
 
+
+- M244 lane-C C022 interop lowering/ABI conformance advanced edge compatibility workpack (shard 2) anchors
+
+  `M244-C021` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
+
