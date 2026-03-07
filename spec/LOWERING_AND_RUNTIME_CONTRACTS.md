@@ -3768,3 +3768,6 @@ CLI/reporting and output advanced core workpack (shard 1) governance shall prese
 
 CLI/reporting and output advanced edge compatibility workpack (shard 1) governance shall preserve
 
+
+CLI/reporting and output advanced diagnostics workpack (shard 1) governance shall preserve
+
