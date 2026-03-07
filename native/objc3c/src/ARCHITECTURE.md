@@ -7965,3 +7965,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   `M244-C022` dependency continuity and release-candidate/replay dry-run evidence remain fail-closed.
 
+
+- M244 lane-D D009 runtime/link bridge-path conformance matrix implementation anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_conformance_matrix_implementation_d009_expectations.md
+
+  and fail-closed against `M244-D008` dependency drift.
+

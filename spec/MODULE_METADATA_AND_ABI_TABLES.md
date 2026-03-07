@@ -5253,3 +5253,8 @@ deterministic lane-C interop lowering/ABI conformance release-candidate/replay d
 
 with explicit `M244-C022` dependency continuity and fail-closed evidence
 
+
+deterministic lane-D runtime/link bridge-path conformance matrix implementation metadata anchors for `M244-D009`
+
+explicit `M244-D008` dependency continuity and fail-closed evidence continuity
+

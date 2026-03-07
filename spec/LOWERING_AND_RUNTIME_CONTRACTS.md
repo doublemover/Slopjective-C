@@ -3946,3 +3946,8 @@ interop lowering and ABI conformance integration closeout and gate sign-off gove
 
 lane-C dependency anchor (`M244-C022`)
 
+
+runtime/link bridge-path conformance matrix implementation governance shall preserve explicit lane-D dependency anchors (`M244-D008`)
+
+conformance matrix implementation evidence drift before downstream runtime projection and metadata integration advances.
+
