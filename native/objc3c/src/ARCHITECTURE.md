@@ -6307,3 +6307,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M237 lane-A A001 qualifier/generic grammar normalization anchors
   docs/contracts/m237_block_syntax_and_capture_declarations_contract_and_architecture_freeze_a001_expectations.md
 
+
+- M237 lane-A A002 qualifier/generic grammar normalization anchors
+  docs/contracts/m237_block_syntax_and_capture_declarations_modular_split_and_scaffolding_a002_expectations.md
+
