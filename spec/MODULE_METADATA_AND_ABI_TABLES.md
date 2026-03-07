@@ -3754,3 +3754,7 @@ with explicit `M235-D008` dependency continuity so integration closeout and gate
 deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A001`
 nullability/generics/qualifier semantics evidence and parser replay-budget continuity
 
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
