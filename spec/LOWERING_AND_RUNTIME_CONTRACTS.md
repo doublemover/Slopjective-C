@@ -3621,3 +3621,8 @@ qualified type lowering and ABI representation Edge-case expansion and robustnes
 
 lane-C dependency anchors (`M235-C005`) and fail closed on Edge-case expansion and robustness evidence drift
 
+
+qualified type lowering and ABI representation diagnostics hardening governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C006`) and fail closed on diagnostics hardening evidence drift
+

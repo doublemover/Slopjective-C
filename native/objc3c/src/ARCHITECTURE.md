@@ -5864,3 +5864,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 - M235 lane-C C006 qualified type lowering and ABI representation Edge-case expansion and robustness anchors
 
+
+- M235 lane-C C007 qualified type lowering and ABI representation diagnostics hardening anchors
+
+  docs/contracts/m235_qualified_type_lowering_and_abi_representation_diagnostics_hardening_c007_expectations.md
+
