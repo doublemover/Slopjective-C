@@ -7900,3 +7900,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   (`M243-E030`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`)
 
+
+- M244 lane-B B016 interop semantic/type mediation advanced edge compatibility workpack (shard 1) anchors
+
+  `M244-B015` dependency continuity and advanced edge compatibility workpack (shard 1) evidence remain fail-closed.
+
