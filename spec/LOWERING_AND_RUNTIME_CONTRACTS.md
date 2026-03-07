@@ -3661,3 +3661,8 @@ qualified type lowering and ABI representation release-candidate and replay dry-
 
 lane-C dependency anchors (`M235-C013`) and fail closed on release-candidate and replay dry-run evidence drift
 
+
+qualified type lowering and ABI representation advanced core workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
+
