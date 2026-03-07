@@ -3996,3 +3996,8 @@ runtime/link bridge-path advanced conformance workpack (shard 1) governance shal
 
 advanced conformance workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path advanced integration workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D018`)
+
+advanced integration workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
