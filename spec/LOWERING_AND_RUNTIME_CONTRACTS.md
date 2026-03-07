@@ -4034,3 +4034,12 @@ preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D p
 
 or lane-E performance and quality guardrails readiness hooks drift.
 
+
+interop conformance gate and operations cross-lane integration sync wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E011`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D cross-lane integration sync readiness hooks
+
+or lane-E cross-lane integration sync readiness hooks drift.
+
