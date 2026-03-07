@@ -4011,3 +4011,8 @@ runtime/link bridge-path advanced core workpack (shard 2) governance shall prese
 
 advanced core workpack (shard 2) evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path integration closeout and gate sign-off governance shall preserve explicit lane-D dependency anchors (`M244-D021`)
+
+integration closeout and gate sign-off evidence drift before downstream runtime projection and metadata integration advances.
+

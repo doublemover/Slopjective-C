@@ -8056,3 +8056,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D020` dependency drift.
 
+
+- M244 lane-D D022 runtime/link bridge-path integration closeout and gate sign-off anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_integration_closeout_and_gate_sign_off_d022_expectations.md
+
+  and fail-closed against `M244-D021` dependency drift.
+

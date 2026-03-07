@@ -5318,3 +5318,8 @@ deterministic lane-D runtime/link bridge-path advanced core workpack (shard 2) m
 
 explicit `M244-D020` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path integration closeout and gate sign-off metadata anchors for `M244-D022`
+
+explicit `M244-D021` dependency continuity and fail-closed evidence continuity
+
