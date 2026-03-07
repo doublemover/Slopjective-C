@@ -5824,3 +5824,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M234 lane-B B009 property semantic rules and synthesis analysis anchors
   docs/contracts/m234_property_semantic_rules_and_synthesis_analysis_conformance_matrix_implementation_b009_expectations.md
 
+
+- M234 lane-B B010 property semantic rules and synthesis analysis anchors
+  docs/contracts/m234_property_semantic_rules_and_synthesis_analysis_conformance_corpus_expansion_b010_expectations.md
+
