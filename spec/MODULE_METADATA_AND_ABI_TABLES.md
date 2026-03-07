@@ -3786,3 +3786,7 @@ nullability/generics/qualifier semantics evidence and parser replay-budget conti
 deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A009`
 nullability/generics/qualifier semantics evidence and parser replay-budget continuity
 
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
