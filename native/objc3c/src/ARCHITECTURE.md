@@ -6295,3 +6295,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_conformance_corpus_expansion_c001_expectations.md
 
+  docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_performance_and_quality_guardrails_c001_expectations.md
+
