@@ -6626,3 +6626,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M238 lane-A A008 qualifier/generic grammar normalization anchors
   docs/contracts/m238_exception_syntax_and_parse_recovery_recovery_and_determinism_hardening_a008_expectations.md
 
+
+- M238 lane-A A009 qualifier/generic grammar normalization anchors
+  docs/contracts/m238_exception_syntax_and_parse_recovery_conformance_matrix_implementation_a009_expectations.md
+
