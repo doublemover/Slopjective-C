@@ -3533,3 +3533,7 @@ explicit lane-D contract-freeze metadata continuity so declaration grammar expan
 deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D008`
 explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
 
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E001`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+

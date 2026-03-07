@@ -3573,3 +3573,7 @@ lane-D deterministic boundary anchors (`M231-D007`) and fail closed on contract-
 
 lane-D deterministic boundary anchors (`M231-D008`) and fail closed on contract-freeze evidence drift
 
+
+Declaration coverage gate and docs contract-freeze governance shall preserve explicit
+lane-E deterministic boundary anchors (`M231-E001`) and fail closed on contract-freeze evidence drift
+
