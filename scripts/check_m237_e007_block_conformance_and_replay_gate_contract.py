@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m237-e001-block-conformance-and-replay-gate-contract-architecture-freeze-v1"
+MODE = "m237-e007-block-conformance-and-replay-gate-diagnostics-hardening-v1"
 
 DEFAULT_EXPECTATIONS_DOC = (
     ROOT
@@ -103,13 +103,13 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M237-E007-DOC-EXP-01",
-        "# M237 Block conformance and replay gate Diagnostics Hardening Expectations (E001)",
+        "# M237 Block conformance and replay gate Diagnostics Hardening Expectations (E007)",
     ),
     SnippetCheck(
         "M237-E007-DOC-EXP-02",
-        "Contract ID: `objc3c-block-conformance-and-replay-gate-contract-architecture-freeze/m237-e001-v1`",
+        "Contract ID: `objc3c-block-conformance-and-replay-gate-diagnostics-hardening/m237-e007-v1`",
     ),
-    SnippetCheck("M237-E007-DOC-EXP-03", "Issue: `#5840`"),
+    SnippetCheck("M237-E007-DOC-EXP-03", "Issue: `#6038`"),
     SnippetCheck(
         "M237-E007-DOC-EXP-04",
         "Dependencies: `M237-A001`, `M237-B001`, `M237-C001`",
@@ -141,7 +141,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "# M237-E007 Block conformance and replay gate Diagnostics Hardening Packet",
     ),
     SnippetCheck("M237-E007-DOC-PKT-02", "Packet: `M237-E007`"),
-    SnippetCheck("M237-E007-DOC-PKT-03", "Issue: `#5840`"),
+    SnippetCheck("M237-E007-DOC-PKT-03", "Issue: `#6038`"),
     SnippetCheck(
         "M237-E007-DOC-PKT-04",
         "Dependencies: `M237-A001`, `M237-B001`, `M237-C001`",
@@ -304,6 +304,8 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
+
 
 
 

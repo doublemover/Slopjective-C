@@ -1,8 +1,8 @@
-# M237 Block conformance and replay gate Core Feature Expansion Expectations (E001)
+# M237 Block conformance and replay gate Core Feature Expansion Expectations (E004)
 
-Contract ID: `objc3c-block-conformance-and-replay-gate-contract-architecture-freeze/m237-e001-v1`
+Contract ID: `objc3c-block-conformance-and-replay-gate-core-feature-expansion/m237-e004-v1`
 Status: Accepted
-Issue: `#5840`
+Issue: `#6035`
 Dependencies: `M237-A001`, `M237-B001`, `M237-C001`
 Scope: M237 lane-E block conformance and replay gate core feature expansion bound to currently-closed early lane steps.
 
@@ -39,6 +39,8 @@ lane steps before E002+ workpacks consume lane-E readiness.
 ## Evidence Path
 
 - `tmp/reports/m237/M237-E004/local_check_summary.json`
+
+
 
 
 

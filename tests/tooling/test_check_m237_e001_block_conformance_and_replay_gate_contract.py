@@ -35,7 +35,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
 
     assert exit_code == 0
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["mode"] == "m237-e001-block-conformance-and-replay-gate-contract-architecture-freeze-v1"
+    assert payload["mode"] == "m237-e001-block-conformance-and-replay-gate-contract-and-architecture-freeze-v1"
     assert payload["ok"] is True
     assert payload["checks_total"] >= 30
     assert payload["checks_passed"] == payload["checks_total"]
@@ -76,7 +76,7 @@ def test_contract_fails_closed_when_expectations_issue_anchor_drifts(tmp_path: P
     drift_doc.write_text(
         replace_once(
             contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
-            "Issue: `#5840`",
+            "Issue: `#6032`",
             "Issue: `#5999`",
         ),
         encoding="utf-8",
@@ -112,5 +112,8 @@ def test_contract_fails_closed_when_packet_drops_c001_dependency(tmp_path: Path)
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M237-E001-DOC-PKT-04" for failure in payload["failures"])
+
+
+
 
 

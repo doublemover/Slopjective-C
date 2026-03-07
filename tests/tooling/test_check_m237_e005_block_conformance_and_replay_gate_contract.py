@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "scripts" / "check_m237_e005_block_conformance_and_replay_gate_contract.py"
 SPEC = importlib.util.spec_from_file_location(
-    "check_m237_e001_block_conformance_and_replay_gate_contract",
+    "check_m237_e005_block_conformance_and_replay_gate_contract",
     SCRIPT_PATH,
 )
 if SPEC is None or SPEC.loader is None:
@@ -35,14 +35,14 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
 
     assert exit_code == 0
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
-    assert payload["mode"] == "m237-e001-block-conformance-and-replay-gate-contract-architecture-freeze-v1"
+    assert payload["mode"] == "m237-e005-block-conformance-and-replay-gate-edge-case-and-compatibility-completion-v1"
     assert payload["ok"] is True
     assert payload["checks_total"] >= 30
     assert payload["checks_passed"] == payload["checks_total"]
     assert payload["failures"] == []
 
 
-def test_contract_default_summary_out_is_under_tmp_reports_m237_e001() -> None:
+def test_contract_default_summary_out_is_under_tmp_reports_m237_e005() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m237/M237-E005/")
@@ -76,7 +76,7 @@ def test_contract_fails_closed_when_expectations_issue_anchor_drifts(tmp_path: P
     drift_doc.write_text(
         replace_once(
             contract.DEFAULT_EXPECTATIONS_DOC.read_text(encoding="utf-8"),
-            "Issue: `#5840`",
+            "Issue: `#6036`",
             "Issue: `#5999`",
         ),
         encoding="utf-8",
@@ -112,6 +112,8 @@ def test_contract_fails_closed_when_packet_drops_c001_dependency(tmp_path: Path)
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M237-E005-DOC-PKT-04" for failure in payload["failures"])
+
+
 
 
 

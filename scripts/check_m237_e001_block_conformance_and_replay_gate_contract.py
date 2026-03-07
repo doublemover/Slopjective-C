@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m237-e001-block-conformance-and-replay-gate-contract-architecture-freeze-v1"
+MODE = "m237-e001-block-conformance-and-replay-gate-contract-and-architecture-freeze-v1"
 
 DEFAULT_EXPECTATIONS_DOC = (
     ROOT
@@ -107,9 +107,9 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M237-E001-DOC-EXP-02",
-        "Contract ID: `objc3c-block-conformance-and-replay-gate-contract-architecture-freeze/m237-e001-v1`",
+        "Contract ID: `objc3c-block-conformance-and-replay-gate-contract-and-architecture-freeze/m237-e001-v1`",
     ),
-    SnippetCheck("M237-E001-DOC-EXP-03", "Issue: `#5840`"),
+    SnippetCheck("M237-E001-DOC-EXP-03", "Issue: `#6032`"),
     SnippetCheck(
         "M237-E001-DOC-EXP-04",
         "Dependencies: `M237-A001`, `M237-B001`, `M237-C001`",
@@ -141,7 +141,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "# M237-E001 Block conformance and replay gate Contract and Architecture Freeze Packet",
     ),
     SnippetCheck("M237-E001-DOC-PKT-02", "Packet: `M237-E001`"),
-    SnippetCheck("M237-E001-DOC-PKT-03", "Issue: `#5840`"),
+    SnippetCheck("M237-E001-DOC-PKT-03", "Issue: `#6032`"),
     SnippetCheck(
         "M237-E001-DOC-PKT-04",
         "Dependencies: `M237-A001`, `M237-B001`, `M237-C001`",
@@ -304,5 +304,8 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
+
+
 
 
