@@ -7451,3 +7451,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M241 lane-B B011 qualifier/generic semantic inference anchors
   docs/contracts/m241_module_semantic_resolution_and_caching_performance_and_quality_guardrails_b011_expectations.md
 
+
+- M241 lane-B B012 qualifier/generic semantic inference anchors
+  docs/contracts/m241_module_semantic_resolution_and_caching_cross_lane_integration_sync_b012_expectations.md
+
