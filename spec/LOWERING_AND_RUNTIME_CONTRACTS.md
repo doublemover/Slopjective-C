@@ -3453,3 +3453,7 @@ lane-E deterministic boundary anchors (`M230-E030`) and fail closed on contract-
 
 lane-E deterministic boundary anchors (`M230-E031`) and fail closed on contract-freeze evidence drift
 
+
+Declaration semantic validation rules contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M231-B001`) and fail closed on contract-freeze evidence drift
+
