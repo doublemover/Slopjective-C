@@ -1,6 +1,6 @@
-# M241 Module gate and reproducibility evidence Advanced Integration Workpack (shard 1) Expectations (E018)
+# M241 Module gate and reproducibility evidence Advanced Integration Workpack (shard 1) Expectations (E019)
 
-Contract ID: `objc3c-module-gate-and-reproducibility-evidence-advanced-conformance-workpack-shard-1/m241-e018-v1`
+Contract ID: `objc3c-module-gate-and-reproducibility-evidence-advanced-integration-workpack-shard-1/m241-e019-v1`
 Status: Accepted
 Issue: `#6316`
 Dependencies: `M241-A001`, `M241-B001`, `M241-C001`
@@ -39,6 +39,7 @@ lane steps before E002+ workpacks consume lane-E readiness.
 ## Evidence Path
 
 - `tmp/reports/m241/M241-E019/local_check_summary.json`
+
 
 
 
