@@ -3690,3 +3690,8 @@ deterministic lane-C qualified type lowering and ABI representation docs and ope
 
 with explicit `M235-C012` dependency continuity so docs and operator runbook synchronization lowering and ABI drift fails closed.
 
+
+deterministic lane-C qualified type lowering and ABI representation release-candidate and replay dry-run metadata anchors for `M235-C014`
+
+with explicit `M235-C013` dependency continuity so release-candidate and replay dry-run lowering and ABI drift fails closed.
+

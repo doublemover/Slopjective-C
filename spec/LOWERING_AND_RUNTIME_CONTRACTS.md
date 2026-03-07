@@ -3656,3 +3656,8 @@ qualified type lowering and ABI representation docs and operator runbook synchro
 
 lane-C dependency anchors (`M235-C012`) and fail closed on docs and operator runbook synchronization evidence drift
 
+
+qualified type lowering and ABI representation release-candidate and replay dry-run governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C013`) and fail closed on release-candidate and replay dry-run evidence drift
+
