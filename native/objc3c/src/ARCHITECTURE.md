@@ -6702,3 +6702,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M238 lane-B B015 qualifier/generic semantic inference anchors
   docs/contracts/m238_exception_semantic_legality_and_typing_advanced_core_workpack_shard_1_b015_expectations.md
 
+
+- M238 lane-B B016 qualifier/generic semantic inference anchors
+  docs/contracts/m238_exception_semantic_legality_and_typing_integration_closeout_and_gate_sign_off_b016_expectations.md
+
