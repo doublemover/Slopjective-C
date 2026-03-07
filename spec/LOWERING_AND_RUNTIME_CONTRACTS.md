@@ -3636,3 +3636,8 @@ qualified type lowering and ABI representation conformance matrix implementation
 
 lane-C dependency anchors (`M235-C008`) and fail closed on conformance matrix implementation evidence drift
 
+
+qualified type lowering and ABI representation conformance corpus expansion governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C009`) and fail closed on conformance corpus expansion evidence drift
+

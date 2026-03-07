@@ -3670,3 +3670,8 @@ deterministic lane-C qualified type lowering and ABI representation conformance 
 
 with explicit `M235-C008` dependency continuity so conformance matrix implementation lowering and ABI drift fails closed.
 
+
+deterministic lane-C qualified type lowering and ABI representation conformance corpus expansion metadata anchors for `M235-C010`
+
+with explicit `M235-C009` dependency continuity so conformance corpus expansion lowering and ABI drift fails closed.
+
