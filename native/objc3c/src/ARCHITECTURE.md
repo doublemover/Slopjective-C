@@ -8042,3 +8042,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D018` dependency drift.
 
+
+- M244 lane-D D020 runtime/link bridge-path advanced performance workpack (shard 1) anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_advanced_performance_workpack_shard1_d020_expectations.md
+
+  and fail-closed against `M244-D019` dependency drift.
+
