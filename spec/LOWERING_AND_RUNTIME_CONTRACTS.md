@@ -3716,3 +3716,6 @@ interop behavior for qualified generic APIs integration closeout and gate sign-o
 
 lane-D dependency anchors (`M235-D008`) and fail closed on integration closeout and gate sign-off interop evidence drift
 
+
+lane-B deterministic boundary anchors (`M242-B009`) and fail closed on contract-freeze evidence drift
+
