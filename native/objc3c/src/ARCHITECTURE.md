@@ -6944,3 +6944,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m239_cfg_ssa_lowering_and_phi_construction_core_feature_expansion_c004_expectations.md
 
+
+- M239 lane-C C005 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m239_cfg_ssa_lowering_and_phi_construction_edge_case_and_compatibility_completion_c005_expectations.md
+
