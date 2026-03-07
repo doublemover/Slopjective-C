@@ -5113,3 +5113,8 @@ deterministic lane-E diagnostics quality gate and replay policy advanced edge co
 
 `M243-E015`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
 
+
+deterministic lane-E diagnostics quality gate and replay policy advanced diagnostics workpack (shard 1) dependency anchors for
+
+`M243-E016`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
