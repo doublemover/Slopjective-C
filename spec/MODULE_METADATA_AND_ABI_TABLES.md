@@ -3730,3 +3730,8 @@ deterministic lane-D interop behavior for qualified generic APIs edge-case and c
 
 with explicit `M235-D004` dependency continuity so edge-case and compatibility completion interop drift fails closed.
 
+
+deterministic lane-D interop behavior for qualified generic APIs edge-case expansion and robustness metadata anchors for `M235-D006`
+
+with explicit `M235-D005` dependency continuity so edge-case expansion and robustness interop drift fails closed.
+

@@ -3696,3 +3696,8 @@ interop behavior for qualified generic APIs edge-case and compatibility completi
 
 lane-D dependency anchors (`M235-D004`) and fail closed on edge-case and compatibility completion interop evidence drift
 
+
+interop behavior for qualified generic APIs edge-case expansion and robustness governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D005`) and fail closed on edge-case expansion and robustness interop evidence drift
+
