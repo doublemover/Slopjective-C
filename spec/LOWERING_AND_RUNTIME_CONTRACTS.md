@@ -3956,3 +3956,8 @@ runtime/link bridge-path conformance corpus expansion governance shall preserve 
 
 conformance corpus expansion evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path performance and quality guardrails governance shall preserve explicit lane-D dependency anchors (`M244-D010`)
+
+performance and quality guardrails evidence drift before downstream runtime projection and metadata integration advances.
+

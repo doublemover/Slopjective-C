@@ -7979,3 +7979,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D009` dependency drift.
 
+
+- M244 lane-D D011 runtime/link bridge-path performance and quality guardrails anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_performance_and_quality_guardrails_d011_expectations.md
+
+  and fail-closed against `M244-D010` dependency drift.
+

@@ -5263,3 +5263,8 @@ deterministic lane-D runtime/link bridge-path conformance corpus expansion metad
 
 explicit `M244-D009` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path performance and quality guardrails metadata anchors for `M244-D011`
+
+explicit `M244-D010` dependency continuity and fail-closed evidence continuity
+
