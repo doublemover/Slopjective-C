@@ -3292,3 +3292,7 @@ lane-C deterministic boundary anchors (`M230-C017`) and fail closed on contract-
 
 lane-C deterministic boundary anchors (`M230-C018`) and fail closed on contract-freeze evidence drift
 
+
+Developer CLI and diagnostics ergonomics contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M230-D001`) and fail closed on contract-freeze evidence drift
+
