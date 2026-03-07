@@ -3497,3 +3497,7 @@ explicit lane-C contract-freeze metadata continuity so declaration grammar expan
 deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C013`
 explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
 
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C014`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
