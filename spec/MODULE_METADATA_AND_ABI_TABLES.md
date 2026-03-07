@@ -5353,3 +5353,8 @@ deterministic lane-E interop conformance gate and operations advanced core workp
 
 `M244-E014`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
 
+
+deterministic lane-E interop conformance gate and operations advanced edge compatibility workpack (shard 1) dependency anchors for
+
+`M244-E015`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+

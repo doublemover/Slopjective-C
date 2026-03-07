@@ -4070,3 +4070,12 @@ preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D a
 
 or lane-E advanced core workpack (shard 1) readiness hooks drift.
 
+
+interop conformance gate and operations advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E015`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D advanced edge compatibility workpack (shard 1) readiness hooks
+
+or lane-E advanced edge compatibility workpack (shard 1) readiness hooks drift.
+
