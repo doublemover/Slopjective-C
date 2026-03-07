@@ -6537,3 +6537,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m237_block_lowering_and_invoke_emission_advanced_diagnostics_workpack_shard_2_c023_expectations.md
 
+
+- M237 lane-C C024 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m237_block_lowering_and_invoke_emission_advanced_conformance_workpack_shard_2_c024_expectations.md
+
