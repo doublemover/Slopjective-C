@@ -4205,3 +4205,24 @@ that parse successfully but still cannot participate in runtime export.
   declaration-specific explanation is available.
 
 B003 shall keep the B002 fail-closed blocker code stable while making incomplete runtime export messages precise so class and category interface declarations that parse successfully but still cannot participate in runtime export fail closed with deterministic explanations.
+
+## M251 runtime metadata section ABI and symbol policy freeze (C001)
+
+Lane-C shall freeze the canonical runtime metadata section ABI and symbol policy
+before LLVM global reservation and physical object-section emission begin.
+
+`M251-C001` requires:
+
+- `Objc3RuntimeMetadataSectionAbiFreezeSummary` to remain the single lane-C
+  freeze packet for runtime metadata section inventory and symbol policy,
+- the logical section inventory to remain frozen for image info, class,
+  protocol, category, property, and ivar metadata descriptors,
+- descriptor and aggregate symbol prefixes, linkage policy, visibility policy,
+  and retention-root policy to remain deterministic and published through
+  manifest/IR surfaces,
+- the boundary to remain fail-closed until the runtime metadata source
+  ownership, legality, and enforcement packets are all ready.
+
+Runtime metadata section ABI and symbol policy governance must therefore remain
+deterministic and fail closed before `M251-C002` starts reserving LLVM globals
+and physical object sections.

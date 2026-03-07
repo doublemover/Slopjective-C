@@ -141,6 +141,37 @@ Objc3PropertySynthesisIvarBindingContract BuildPropertySynthesisIvarBindingContr
       summary.deterministic_property_attribute_handoff);
 }
 
+Objc3RuntimeMetadataSectionAbiFreezeSummary
+BuildRuntimeMetadataSectionAbiFreezeSummary(
+    const Objc3RuntimeMetadataSourceOwnershipBoundary
+        &runtime_metadata_source_ownership,
+    const Objc3RuntimeExportLegalityBoundary &runtime_export_legality,
+    const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement) {
+  Objc3RuntimeMetadataSectionAbiFreezeSummary summary;
+  summary.boundary_frozen = true;
+  summary.fail_closed = true;
+  summary.object_file_section_inventory_frozen = true;
+  summary.symbol_policy_frozen = true;
+  summary.visibility_model_frozen = true;
+  summary.retention_policy_frozen = true;
+  summary.runtime_metadata_source_boundary_ready =
+      IsReadyObjc3RuntimeMetadataSourceOwnershipBoundary(
+          runtime_metadata_source_ownership);
+  summary.runtime_export_legality_boundary_ready =
+      IsReadyObjc3RuntimeExportLegalityBoundary(runtime_export_legality);
+  summary.runtime_export_enforcement_ready =
+      IsReadyObjc3RuntimeExportEnforcementSummary(runtime_export_enforcement);
+  summary.ready_for_section_scaffold =
+      summary.runtime_metadata_source_boundary_ready &&
+      summary.runtime_export_legality_boundary_ready &&
+      summary.runtime_export_enforcement_ready;
+  if (!summary.ready_for_section_scaffold) {
+    summary.failure_reason =
+        "runtime metadata section ABI freeze prerequisites are not ready";
+  }
+  return summary;
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -1782,6 +1813,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.runtime_export_legality_boundary;
   const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement =
       pipeline_result.runtime_export_enforcement_summary;
+  const Objc3RuntimeMetadataSectionAbiFreezeSummary runtime_metadata_section_abi =
+      BuildRuntimeMetadataSectionAbiFreezeSummary(
+          runtime_metadata_source_ownership,
+          runtime_export_legality,
+          runtime_export_enforcement);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -2934,6 +2970,57 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_export_enforcement.metadata_shape_drift_sites
            << ",\"runtime_export_enforcement_failure_reason\":\""
            << runtime_export_enforcement.failure_reason
+           << "\""
+           << ",\"runtime_metadata_section_abi_contract_id\":\""
+           << runtime_metadata_section_abi.contract_id
+           << "\",\"runtime_metadata_section_boundary_frozen\":"
+           << (runtime_metadata_section_abi.boundary_frozen ? "true" : "false")
+           << ",\"runtime_metadata_section_fail_closed\":"
+           << (runtime_metadata_section_abi.fail_closed ? "true" : "false")
+           << ",\"runtime_metadata_section_object_file_inventory_frozen\":"
+           << (runtime_metadata_section_abi.object_file_section_inventory_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_metadata_section_symbol_policy_frozen\":"
+           << (runtime_metadata_section_abi.symbol_policy_frozen ? "true"
+                                                                : "false")
+           << ",\"runtime_metadata_section_visibility_model_frozen\":"
+           << (runtime_metadata_section_abi.visibility_model_frozen ? "true"
+                                                                    : "false")
+           << ",\"runtime_metadata_section_retention_policy_frozen\":"
+           << (runtime_metadata_section_abi.retention_policy_frozen ? "true"
+                                                                    : "false")
+           << ",\"runtime_metadata_section_ready_for_scaffold\":"
+           << (runtime_metadata_section_abi.ready_for_section_scaffold ? "true"
+                                                                       : "false")
+           << ",\"runtime_metadata_section_logical_image_info_section\":\""
+           << runtime_metadata_section_abi.logical_image_info_section
+           << "\",\"runtime_metadata_section_logical_class_descriptor_section\":\""
+           << runtime_metadata_section_abi.logical_class_descriptor_section
+           << "\",\"runtime_metadata_section_logical_protocol_descriptor_section\":\""
+           << runtime_metadata_section_abi.logical_protocol_descriptor_section
+           << "\",\"runtime_metadata_section_logical_category_descriptor_section\":\""
+           << runtime_metadata_section_abi.logical_category_descriptor_section
+           << "\",\"runtime_metadata_section_logical_property_descriptor_section\":\""
+           << runtime_metadata_section_abi.logical_property_descriptor_section
+           << "\",\"runtime_metadata_section_logical_ivar_descriptor_section\":\""
+           << runtime_metadata_section_abi.logical_ivar_descriptor_section
+           << "\",\"runtime_metadata_section_descriptor_symbol_prefix\":\""
+           << runtime_metadata_section_abi.descriptor_symbol_prefix
+           << "\",\"runtime_metadata_section_aggregate_symbol_prefix\":\""
+           << runtime_metadata_section_abi.aggregate_symbol_prefix
+           << "\",\"runtime_metadata_section_image_info_symbol\":\""
+           << runtime_metadata_section_abi.image_info_symbol
+           << "\",\"runtime_metadata_section_descriptor_linkage\":\""
+           << runtime_metadata_section_abi.descriptor_linkage
+           << "\",\"runtime_metadata_section_aggregate_linkage\":\""
+           << runtime_metadata_section_abi.aggregate_linkage
+           << "\",\"runtime_metadata_section_visibility\":\""
+           << runtime_metadata_section_abi.metadata_visibility
+           << "\",\"runtime_metadata_section_retention_root\":\""
+           << runtime_metadata_section_abi.retention_root
+           << "\",\"runtime_metadata_section_failure_reason\":\""
+           << runtime_metadata_section_abi.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
@@ -5484,6 +5571,52 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_export_enforcement.illegal_redeclaration_mix_sites;
   ir_frontend_metadata.runtime_export_metadata_shape_drift_sites =
       runtime_export_enforcement.metadata_shape_drift_sites;
+  ir_frontend_metadata.runtime_metadata_section_abi_contract_id =
+      runtime_metadata_section_abi.contract_id;
+  ir_frontend_metadata.runtime_metadata_section_boundary_frozen =
+      runtime_metadata_section_abi.boundary_frozen;
+  ir_frontend_metadata.runtime_metadata_section_fail_closed =
+      runtime_metadata_section_abi.fail_closed;
+  ir_frontend_metadata.runtime_metadata_section_object_file_inventory_frozen =
+      runtime_metadata_section_abi.object_file_section_inventory_frozen;
+  ir_frontend_metadata.runtime_metadata_section_symbol_policy_frozen =
+      runtime_metadata_section_abi.symbol_policy_frozen;
+  ir_frontend_metadata.runtime_metadata_section_visibility_model_frozen =
+      runtime_metadata_section_abi.visibility_model_frozen;
+  ir_frontend_metadata.runtime_metadata_section_retention_policy_frozen =
+      runtime_metadata_section_abi.retention_policy_frozen;
+  ir_frontend_metadata.runtime_metadata_section_ready_for_scaffold =
+      runtime_metadata_section_abi.ready_for_section_scaffold;
+  ir_frontend_metadata.runtime_metadata_section_logical_image_info_section =
+      runtime_metadata_section_abi.logical_image_info_section;
+  ir_frontend_metadata
+      .runtime_metadata_section_logical_class_descriptor_section =
+      runtime_metadata_section_abi.logical_class_descriptor_section;
+  ir_frontend_metadata
+      .runtime_metadata_section_logical_protocol_descriptor_section =
+      runtime_metadata_section_abi.logical_protocol_descriptor_section;
+  ir_frontend_metadata
+      .runtime_metadata_section_logical_category_descriptor_section =
+      runtime_metadata_section_abi.logical_category_descriptor_section;
+  ir_frontend_metadata
+      .runtime_metadata_section_logical_property_descriptor_section =
+      runtime_metadata_section_abi.logical_property_descriptor_section;
+  ir_frontend_metadata.runtime_metadata_section_logical_ivar_descriptor_section =
+      runtime_metadata_section_abi.logical_ivar_descriptor_section;
+  ir_frontend_metadata.runtime_metadata_section_descriptor_symbol_prefix =
+      runtime_metadata_section_abi.descriptor_symbol_prefix;
+  ir_frontend_metadata.runtime_metadata_section_aggregate_symbol_prefix =
+      runtime_metadata_section_abi.aggregate_symbol_prefix;
+  ir_frontend_metadata.runtime_metadata_section_image_info_symbol =
+      runtime_metadata_section_abi.image_info_symbol;
+  ir_frontend_metadata.runtime_metadata_section_descriptor_linkage =
+      runtime_metadata_section_abi.descriptor_linkage;
+  ir_frontend_metadata.runtime_metadata_section_aggregate_linkage =
+      runtime_metadata_section_abi.aggregate_linkage;
+  ir_frontend_metadata.runtime_metadata_section_visibility =
+      runtime_metadata_section_abi.metadata_visibility;
+  ir_frontend_metadata.runtime_metadata_section_retention_root =
+      runtime_metadata_section_abi.retention_root;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

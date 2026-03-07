@@ -147,6 +147,11 @@ class Objc3IREmitter {
       out << "; runtime_export_enforcement = "
           << frontend_metadata_.runtime_export_enforcement_contract_id << "\n";
     }
+    if (!frontend_metadata_.runtime_metadata_section_abi_contract_id.empty()) {
+      out << "; runtime_metadata_section_abi = "
+          << frontend_metadata_.runtime_metadata_section_abi_contract_id
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1700,6 +1705,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_source_ownership = !{!45}\n";
     out << "!objc3.objc_runtime_export_legality = !{!46}\n";
     out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
+    out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -1845,6 +1851,81 @@ class Objc3IREmitter {
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.runtime_export_metadata_shape_drift_sites)
         << "}\n";
+    out << "!48 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_abi_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_section_boundary_frozen ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_fail_closed ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_metadata_section_object_file_inventory_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_symbol_policy_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_visibility_model_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_retention_policy_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_ready_for_scaffold ? 1
+                                                                           : 0)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_image_info_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_class_descriptor_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_protocol_descriptor_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_category_descriptor_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_property_descriptor_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_logical_ivar_descriptor_section)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_descriptor_symbol_prefix)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_aggregate_symbol_prefix)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_image_info_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_descriptor_linkage)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_aggregate_linkage)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_visibility)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_retention_root)
+        << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "

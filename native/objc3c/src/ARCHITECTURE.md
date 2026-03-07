@@ -8149,5 +8149,19 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   source-anchored, deterministic diagnostics without perturbing the B002
   enforcement packet or manifest/driver emission path.
   This explicitly covers class and category declarations that parse successfully but still cannot participate in runtime export.
+
+- M251 lane-C C001 runtime metadata section ABI and symbol policy freeze
+  anchors explicit lane-C contract-freeze artifacts in
+  `docs/contracts/m251_runtime_metadata_section_abi_and_symbol_policy_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m251/m251_c001_runtime_metadata_section_abi_and_symbol_policy_contract_and_architecture_freeze_packet.md`,
+  `ast/objc3_ast.h`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
+  runtime metadata section inventory, symbol naming policy, visibility model,
+  and retention-root policy remain frozen, fail-closed, and published through
+  manifest/IR surfaces before `M251-C002` begins reserving LLVM globals and
+  physical object sections.
+  This freeze is in place before `M251-C002` begins reserving LLVM globals and physical object sections.
   This lane specifically covers class and category declarations that parse
   successfully but still cannot participate in runtime export.

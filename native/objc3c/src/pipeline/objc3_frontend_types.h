@@ -1469,6 +1469,73 @@ inline bool IsReadyObjc3RuntimeExportEnforcementSummary(
          summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeMetadataSectionAbiFreezeSummary {
+  std::string contract_id = kObjc3RuntimeMetadataSectionAbiContractId;
+  bool boundary_frozen = false;
+  bool fail_closed = false;
+  bool object_file_section_inventory_frozen = false;
+  bool symbol_policy_frozen = false;
+  bool visibility_model_frozen = false;
+  bool retention_policy_frozen = false;
+  bool runtime_metadata_source_boundary_ready = false;
+  bool runtime_export_legality_boundary_ready = false;
+  bool runtime_export_enforcement_ready = false;
+  bool ready_for_section_scaffold = false;
+  std::string logical_image_info_section =
+      kObjc3RuntimeMetadataLogicalImageInfoSection;
+  std::string logical_class_descriptor_section =
+      kObjc3RuntimeMetadataLogicalClassDescriptorSection;
+  std::string logical_protocol_descriptor_section =
+      kObjc3RuntimeMetadataLogicalProtocolDescriptorSection;
+  std::string logical_category_descriptor_section =
+      kObjc3RuntimeMetadataLogicalCategoryDescriptorSection;
+  std::string logical_property_descriptor_section =
+      kObjc3RuntimeMetadataLogicalPropertyDescriptorSection;
+  std::string logical_ivar_descriptor_section =
+      kObjc3RuntimeMetadataLogicalIvarDescriptorSection;
+  std::string descriptor_symbol_prefix =
+      kObjc3RuntimeMetadataDescriptorSymbolPrefix;
+  std::string aggregate_symbol_prefix =
+      kObjc3RuntimeMetadataAggregateSymbolPrefix;
+  std::string image_info_symbol = kObjc3RuntimeMetadataImageInfoSymbol;
+  std::string descriptor_linkage =
+      kObjc3RuntimeMetadataDescriptorLinkagePolicy;
+  std::string aggregate_linkage =
+      kObjc3RuntimeMetadataAggregateLinkagePolicy;
+  std::string metadata_visibility = kObjc3RuntimeMetadataVisibilityPolicy;
+  std::string retention_root = kObjc3RuntimeMetadataRetentionPolicyRoot;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
+    const Objc3RuntimeMetadataSectionAbiFreezeSummary &summary) {
+  return !summary.contract_id.empty() &&
+         summary.boundary_frozen &&
+         summary.fail_closed &&
+         summary.object_file_section_inventory_frozen &&
+         summary.symbol_policy_frozen &&
+         summary.visibility_model_frozen &&
+         summary.retention_policy_frozen &&
+         summary.runtime_metadata_source_boundary_ready &&
+         summary.runtime_export_legality_boundary_ready &&
+         summary.runtime_export_enforcement_ready &&
+         summary.ready_for_section_scaffold &&
+         !summary.logical_image_info_section.empty() &&
+         !summary.logical_class_descriptor_section.empty() &&
+         !summary.logical_protocol_descriptor_section.empty() &&
+         !summary.logical_category_descriptor_section.empty() &&
+         !summary.logical_property_descriptor_section.empty() &&
+         !summary.logical_ivar_descriptor_section.empty() &&
+         !summary.descriptor_symbol_prefix.empty() &&
+         !summary.aggregate_symbol_prefix.empty() &&
+         !summary.image_info_symbol.empty() &&
+         !summary.descriptor_linkage.empty() &&
+         !summary.aggregate_linkage.empty() &&
+         !summary.metadata_visibility.empty() &&
+         !summary.retention_root.empty() &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

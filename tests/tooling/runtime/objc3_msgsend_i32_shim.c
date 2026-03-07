@@ -6,6 +6,8 @@ Deterministic Objective-C 3 runtime shim for test harness calls.
 All arithmetic is reduced modulo kModulus to avoid signed overflow UB.
 M251-A001 freeze: this shim remains test-only evidence and is not the native
 runtime library, metadata registration path, or executable object model.
+M251-C001 freeze: this shim does not define metadata section inventory,
+symbol retention roots, or native object-file symbol policy.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

@@ -26,6 +26,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                               artifacts.stage_diagnostics,
                               artifacts.post_pipeline_diagnostics);
     if (!artifacts.manifest_json.empty()) {
+      // M251-C001 freeze: manifest emission remains the authoritative published
+      // metadata-section ABI surface until later object-section emission lands.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

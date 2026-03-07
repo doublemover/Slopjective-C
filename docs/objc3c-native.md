@@ -198,6 +198,33 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
 
+## Runtime metadata section ABI and symbol policy freeze (M251-C001)
+
+- Lane-C now freezes a canonical metadata section ABI packet:
+  `Objc3RuntimeMetadataSectionAbiFreezeSummary`.
+- The logical runtime metadata section inventory is frozen as:
+  - `objc3.runtime.image_info`
+  - `objc3.runtime.class_descriptors`
+  - `objc3.runtime.protocol_descriptors`
+  - `objc3.runtime.category_descriptors`
+  - `objc3.runtime.property_descriptors`
+  - `objc3.runtime.ivar_descriptors`
+- The symbol policy is frozen as:
+  - descriptor prefix `__objc3_meta_`
+  - aggregate prefix `__objc3_sec_`
+  - image info symbol `__objc3_image_info`
+- The initial linkage/visibility/retention policy is frozen as:
+  - descriptor linkage `private`
+  - aggregate linkage `internal`
+  - metadata visibility `hidden`
+  - retention root `llvm.used`
+- The contract is published through manifest JSON and emitted LLVM IR metadata as
+  `!objc3.objc_runtime_metadata_section_abi`.
+- C001 does not emit physical object-file sections yet; it freezes the boundary
+  that `M251-C002` must preserve when LLVM globals and section scaffolds land.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-C001/runtime_metadata_section_abi_and_symbol_policy_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

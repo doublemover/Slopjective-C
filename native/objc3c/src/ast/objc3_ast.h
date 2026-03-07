@@ -336,6 +336,34 @@ inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =
     "Objc3PropertyDecl.ivar_binding_symbol";
 inline constexpr const char *kObjc3RuntimeMetadataIvarSourceModel =
     "property-synthesis-ivar-binding-symbols";
+inline constexpr const char *kObjc3RuntimeMetadataSectionAbiContractId =
+    "objc3c-runtime-metadata-section-abi-symbol-policy-freeze/m251-c001-v1";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalImageInfoSection =
+    "objc3.runtime.image_info";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalClassDescriptorSection =
+    "objc3.runtime.class_descriptors";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalProtocolDescriptorSection =
+    "objc3.runtime.protocol_descriptors";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalCategoryDescriptorSection =
+    "objc3.runtime.category_descriptors";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalPropertyDescriptorSection =
+    "objc3.runtime.property_descriptors";
+inline constexpr const char *kObjc3RuntimeMetadataLogicalIvarDescriptorSection =
+    "objc3.runtime.ivar_descriptors";
+inline constexpr const char *kObjc3RuntimeMetadataDescriptorSymbolPrefix =
+    "__objc3_meta_";
+inline constexpr const char *kObjc3RuntimeMetadataAggregateSymbolPrefix =
+    "__objc3_sec_";
+inline constexpr const char *kObjc3RuntimeMetadataImageInfoSymbol =
+    "__objc3_image_info";
+inline constexpr const char *kObjc3RuntimeMetadataDescriptorLinkagePolicy =
+    "private";
+inline constexpr const char *kObjc3RuntimeMetadataAggregateLinkagePolicy =
+    "internal";
+inline constexpr const char *kObjc3RuntimeMetadataVisibilityPolicy =
+    "hidden";
+inline constexpr const char *kObjc3RuntimeMetadataRetentionPolicyRoot =
+    "llvm.used";
 
 struct Objc3MethodDecl {
   struct SelectorPiece {

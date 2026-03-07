@@ -5455,6 +5455,27 @@ Runtime export enforcement anchors must remain deterministic before native
 metadata section emission, runtime registration, and executable object-model
 enforcement land.
 
+## M251 runtime metadata section ABI and symbol policy metadata anchors (C001)
+
+Deterministic lane-C runtime metadata section ABI and symbol policy anchors for
+`M251-C001` shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-section-abi-symbol-policy-freeze/m251-c001-v1`,
+- logical section inventory entries for `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`, `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and `objc3.runtime.ivar_descriptors`,
+- descriptor prefix `__objc3_meta_`, aggregate prefix `__objc3_sec_`, and
+  image info symbol `__objc3_image_info`,
+- descriptor linkage `private`, aggregate linkage `internal`, metadata
+  visibility `hidden`, and retention root `llvm.used`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_section_abi`.
+
+Runtime metadata section ABI and symbol policy anchors must remain
+deterministic and fail closed before native metadata section emission and
+runtime registration land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
