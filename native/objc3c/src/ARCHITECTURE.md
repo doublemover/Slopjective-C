@@ -5716,3 +5716,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_semantic_validation_rules_integration_closeout_and_gate_sign_off_b017_expectations.md
 
+
+- M231 lane-C A001 Declaration lowering contract updates contract-freeze anchors
+  m231_declaration_lowering_contract_updates_contract_and_architecture_freeze_c001_expectations.md
+
