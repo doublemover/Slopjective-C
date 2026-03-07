@@ -5228,3 +5228,8 @@ deterministic lane-C interop lowering/ABI conformance release-candidate/replay d
 
 with explicit `M244-C017` dependency continuity and fail-closed evidence
 
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C019`
+
+with explicit `M244-C018` dependency continuity and fail-closed evidence
+
