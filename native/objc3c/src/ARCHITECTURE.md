@@ -7668,3 +7668,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M242 lane-B B006 qualifier/generic semantic inference anchors
   docs/contracts/m242_preprocessor_semantic_model_and_expansion_rules_edge_case_expansion_and_robustness_b006_expectations.md
 
+
+- M242 lane-B B007 qualifier/generic semantic inference anchors
+  docs/contracts/m242_preprocessor_semantic_model_and_expansion_rules_diagnostics_hardening_b007_expectations.md
+
