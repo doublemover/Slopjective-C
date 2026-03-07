@@ -7096,3 +7096,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m239_cfg_ssa_lowering_and_phi_construction_diagnostics_hardening_c001_expectations.md
 
+  docs/contracts/m239_cfg_ssa_lowering_and_phi_construction_recovery_and_determinism_hardening_c001_expectations.md
+
