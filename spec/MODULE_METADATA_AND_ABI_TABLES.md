@@ -4526,3 +4526,6 @@ deterministic lane-C qualified type lowering and ABI representation metadata anc
 
 deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C019`
 
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C020`
+
