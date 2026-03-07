@@ -3774,3 +3774,6 @@ CLI/reporting and output advanced diagnostics workpack (shard 1) governance shal
 
 CLI/reporting and output advanced conformance workpack (shard 1) governance shall preserve
 
+
+CLI/reporting and output advanced integration workpack (shard 1) governance shall preserve
+
