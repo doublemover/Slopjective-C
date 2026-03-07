@@ -4676,3 +4676,6 @@ qualified-type lowering and ABI representation evidence and lowering replay-budg
 
 deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C002`
 
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C003`
+
