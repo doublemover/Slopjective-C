@@ -140,6 +140,7 @@ target_include_directories(objc3_runtime PUBLIC
 set_target_properties(objc3_runtime PROPERTIES
   OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}
 )
+add_library(objc3c::runtime ALIAS objc3_runtime)
 add_library(objc3c_runtime_abi STATIC
   src/io/objc3_process.cpp
 )

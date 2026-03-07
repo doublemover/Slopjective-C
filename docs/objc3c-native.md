@@ -317,6 +317,27 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-D002/runtime_support_library_core_feature_summary.json`
 
+## Native runtime-library link wiring (M251-D003)
+
+- Lane-D now publishes the runtime-consumption packet:
+  `Objc3RuntimeSupportLibraryLinkWiringSummary`.
+- Manifest JSON and emitted LLVM IR publish the same D003 contract through
+  `runtime_support_library_link_wiring_contract_id` and
+  `!objc3.objc_runtime_support_library_link_wiring`.
+- Emitted-object runtime link mode is now
+  `emitted-object-links-against-objc3_runtime-lib`.
+- `scripts/check_objc3c_native_execution_smoke.ps1` resolves the runtime
+  archive from emitted manifest data and links runtime-requiring fixtures
+  against `artifacts/lib/objc3_runtime.lib`.
+- `native/objc3c/src/runtime/objc3_runtime.cpp` exports
+  `objc3_msgsend_i32` as a compatibility bridge to
+  `objc3_runtime_dispatch_i32`, so existing emitted objects link without
+  lowering-surface drift.
+- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
+  evidence for negative unresolved-symbol coverage and formula parity.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

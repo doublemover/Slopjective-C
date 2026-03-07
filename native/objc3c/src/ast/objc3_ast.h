@@ -421,6 +421,16 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryResetForTestingSymbol =
     "objc3_runtime_reset_for_testing";
 inline constexpr const char *kObjc3RuntimeSupportLibraryDriverLinkMode =
     "not-linked-until-m251-d003";
+inline constexpr const char *kObjc3RuntimeSupportLibraryLinkWiringContractId =
+    "objc3c-runtime-support-library-link-wiring/m251-d003-v1";
+inline constexpr const char
+    *kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol =
+        "objc3_msgsend_i32";
+inline constexpr const char
+    *kObjc3RuntimeSupportLibraryExecutionSmokeScriptPath =
+        "scripts/check_objc3c_native_execution_smoke.ps1";
+inline constexpr const char *kObjc3RuntimeSupportLibraryLinkWiringMode =
+    "emitted-object-links-against-objc3_runtime-lib";
 inline constexpr const char
     *kObjc3RuntimeSupportLibraryCompilerOwnershipBoundary =
         "compiler-emits-metadata-runtime-does-not-own-source-records";

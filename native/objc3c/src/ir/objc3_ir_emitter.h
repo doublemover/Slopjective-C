@@ -212,6 +212,24 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_support_library_core_feature_dispatch_i32_symbol;
   std::string runtime_support_library_core_feature_reset_for_testing_symbol;
   std::string runtime_support_library_core_feature_driver_link_mode;
+  std::string runtime_support_library_link_wiring_contract_id;
+  std::string runtime_support_library_link_wiring_core_feature_contract_id;
+  bool runtime_support_library_link_wiring_fail_closed = false;
+  bool runtime_support_library_link_wiring_archive_available = false;
+  bool runtime_support_library_link_wiring_compatibility_dispatch_alias_exported =
+      false;
+  bool runtime_support_library_link_wiring_driver_emits_runtime_link_contract =
+      false;
+  bool runtime_support_library_link_wiring_execution_smoke_consumes_runtime_library =
+      false;
+  bool runtime_support_library_link_wiring_shim_remains_test_only = false;
+  bool runtime_support_library_link_wiring_ready_for_runtime_library_consumption =
+      false;
+  std::string runtime_support_library_link_wiring_archive_relative_path;
+  std::string runtime_support_library_link_wiring_compatibility_dispatch_symbol;
+  std::string runtime_support_library_link_wiring_runtime_dispatch_symbol;
+  std::string runtime_support_library_link_wiring_execution_smoke_script_path;
+  std::string runtime_support_library_link_wiring_driver_link_mode;
   std::string lowering_property_synthesis_ivar_binding_replay_key;
   std::string lowering_id_class_sel_object_pointer_typecheck_replay_key;
   std::size_t id_typecheck_sites = 0;

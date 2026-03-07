@@ -42,6 +42,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // native runtime-library skeleton/build contract so the real in-tree
       // archive/header/source/probe surface stays synchronized with emitted IR
       // evidence while driver link wiring remains deferred to M251-D003.
+      // M251-D003 link wiring: manifest emission remains the canonical
+      // runtime-archive handoff for external executable link steps, even while
+      // this driver tranche still stops at deterministic object emission.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

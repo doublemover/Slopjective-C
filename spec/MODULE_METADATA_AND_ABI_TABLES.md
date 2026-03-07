@@ -5561,6 +5561,26 @@ Native runtime-library core feature anchors must remain deterministic and fail
 closed while the real archive exists but before driver-link integration claims
 are made.
 
+## M251 native runtime-library link wiring metadata anchors (D003)
+
+Deterministic lane-D native runtime-library link wiring anchors for
+`M251-D003` shall preserve:
+
+- contract id `objc3c-runtime-support-library-link-wiring/m251-d003-v1`,
+- named LLVM IR metadata `!objc3.objc_runtime_support_library_link_wiring`,
+- manifest keys `runtime_support_library_link_wiring_contract_id`,
+  `runtime_support_library_link_wiring_archive_relative_path`,
+  `runtime_support_library_link_wiring_compatibility_dispatch_symbol`, and
+  `runtime_support_library_link_wiring_driver_link_mode`,
+- archive relative path `artifacts/lib/objc3_runtime.lib`,
+- compatibility dispatch symbol `objc3_msgsend_i32`,
+- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`,
+- execution smoke script path `scripts/check_objc3c_native_execution_smoke.ps1`,
+- driver link mode `emitted-object-links-against-objc3_runtime-lib`.
+
+Native runtime-library link wiring anchors must remain deterministic and fail
+closed before metadata registration/startup claims are made.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

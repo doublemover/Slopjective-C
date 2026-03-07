@@ -121,6 +121,14 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }
 
+extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
+                                 int a1, int a2, int a3) {
+  // D003 compatibility bridge: existing emitted objects still default to the
+  // legacy lowering symbol while the canonical runtime API remains
+  // objc3_runtime_dispatch_i32.
+  return objc3_runtime_dispatch_i32(receiver, selector, a0, a1, a2, a3);
+}
+
 void objc3_runtime_reset_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);

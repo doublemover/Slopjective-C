@@ -30,3 +30,13 @@ Ownership boundary:
 - `artifacts/lib/objc3_runtime.lib` via `npm run build:objc3c-native`
 
 `M251-D003` must preserve this surface while wiring the native driver/link path.
+
+`M251-D003` now wires emitted-object consumers to the real archive without
+changing the canonical runtime API surface:
+
+- driver/manifest publication continues to expose the runtime archive path
+- `scripts/check_objc3c_native_execution_smoke.ps1` links emitted objects
+  against `artifacts/lib/objc3_runtime.lib`
+- `native/objc3c/src/runtime/objc3_runtime.cpp` exports the compatibility
+  bridge symbol `objc3_msgsend_i32`, which forwards to
+  `objc3_runtime_dispatch_i32`

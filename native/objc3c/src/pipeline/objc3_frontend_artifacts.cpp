@@ -267,6 +267,27 @@ BuildRuntimeSupportLibraryCoreFeatureSummary(
   return summary;
 }
 
+Objc3RuntimeSupportLibraryLinkWiringSummary
+BuildRuntimeSupportLibraryLinkWiringSummary(
+    const Objc3RuntimeSupportLibraryCoreFeatureSummary
+        &runtime_support_library_core_feature) {
+  Objc3RuntimeSupportLibraryLinkWiringSummary summary;
+  summary.support_library_core_feature_contract_id =
+      runtime_support_library_core_feature.contract_id;
+  summary.fail_closed = true;
+  summary.runtime_library_archive_available =
+      runtime_support_library_core_feature
+          .native_runtime_library_archive_build_enabled;
+  summary.compatibility_dispatch_alias_exported = true;
+  summary.driver_emits_runtime_link_contract = true;
+  summary.execution_smoke_consumes_runtime_library = true;
+  summary.shim_remains_test_only = true;
+  summary.ready_for_runtime_library_consumption =
+      IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
+          runtime_support_library_core_feature);
+  return summary;
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -1929,6 +1950,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3RuntimeSupportLibraryCoreFeatureSummary
       runtime_support_library_core_feature =
           BuildRuntimeSupportLibraryCoreFeatureSummary(runtime_support_library);
+  const Objc3RuntimeSupportLibraryLinkWiringSummary
+      runtime_support_library_link_wiring =
+          BuildRuntimeSupportLibraryLinkWiringSummary(
+              runtime_support_library_core_feature);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -3348,6 +3373,55 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_support_library_core_feature.reset_for_testing_symbol
            << "\",\"runtime_support_library_core_feature_driver_link_mode\":\""
            << runtime_support_library_core_feature.driver_link_mode
+           << "\",\"runtime_support_library_link_wiring_contract_id\":\""
+           << runtime_support_library_link_wiring.contract_id
+           << "\",\"runtime_support_library_link_wiring_core_feature_contract_id\":\""
+           << runtime_support_library_link_wiring
+                  .support_library_core_feature_contract_id
+           << "\",\"runtime_support_library_link_wiring_fail_closed\":"
+           << (runtime_support_library_link_wiring.fail_closed ? "true"
+                                                               : "false")
+           << ",\"runtime_support_library_link_wiring_archive_available\":"
+           << (runtime_support_library_link_wiring
+                       .runtime_library_archive_available
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_compatibility_dispatch_alias_exported\":"
+           << (runtime_support_library_link_wiring
+                       .compatibility_dispatch_alias_exported
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_driver_emits_runtime_link_contract\":"
+           << (runtime_support_library_link_wiring
+                       .driver_emits_runtime_link_contract
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_execution_smoke_consumes_runtime_library\":"
+           << (runtime_support_library_link_wiring
+                       .execution_smoke_consumes_runtime_library
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_shim_remains_test_only\":"
+           << (runtime_support_library_link_wiring.shim_remains_test_only
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_ready_for_runtime_library_consumption\":"
+           << (runtime_support_library_link_wiring
+                       .ready_for_runtime_library_consumption
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_link_wiring_archive_relative_path\":\""
+           << runtime_support_library_link_wiring.archive_relative_path
+           << "\",\"runtime_support_library_link_wiring_compatibility_dispatch_symbol\":\""
+           << runtime_support_library_link_wiring.compatibility_dispatch_symbol
+           << "\",\"runtime_support_library_link_wiring_runtime_dispatch_symbol\":\""
+           << runtime_support_library_link_wiring.runtime_dispatch_symbol
+           << "\",\"runtime_support_library_link_wiring_execution_smoke_script_path\":\""
+           << runtime_support_library_link_wiring.execution_smoke_script_path
+           << "\",\"runtime_support_library_link_wiring_driver_link_mode\":\""
+           << runtime_support_library_link_wiring.driver_link_mode
+           << "\",\"runtime_support_library_link_wiring_failure_reason\":\""
+           << runtime_support_library_link_wiring.failure_reason
            << "\",\"runtime_support_library_core_feature_failure_reason\":\""
            << runtime_support_library_core_feature.failure_reason
            << "\""
@@ -6138,6 +6212,45 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_support_library_core_feature.reset_for_testing_symbol;
   ir_frontend_metadata.runtime_support_library_core_feature_driver_link_mode =
       runtime_support_library_core_feature.driver_link_mode;
+  ir_frontend_metadata.runtime_support_library_link_wiring_contract_id =
+      runtime_support_library_link_wiring.contract_id;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_core_feature_contract_id =
+      runtime_support_library_link_wiring
+          .support_library_core_feature_contract_id;
+  ir_frontend_metadata.runtime_support_library_link_wiring_fail_closed =
+      runtime_support_library_link_wiring.fail_closed;
+  ir_frontend_metadata.runtime_support_library_link_wiring_archive_available =
+      runtime_support_library_link_wiring.runtime_library_archive_available;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_compatibility_dispatch_alias_exported =
+      runtime_support_library_link_wiring
+          .compatibility_dispatch_alias_exported;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_driver_emits_runtime_link_contract =
+      runtime_support_library_link_wiring.driver_emits_runtime_link_contract;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_execution_smoke_consumes_runtime_library =
+      runtime_support_library_link_wiring
+          .execution_smoke_consumes_runtime_library;
+  ir_frontend_metadata.runtime_support_library_link_wiring_shim_remains_test_only =
+      runtime_support_library_link_wiring.shim_remains_test_only;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_ready_for_runtime_library_consumption =
+      runtime_support_library_link_wiring
+          .ready_for_runtime_library_consumption;
+  ir_frontend_metadata.runtime_support_library_link_wiring_archive_relative_path =
+      runtime_support_library_link_wiring.archive_relative_path;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_compatibility_dispatch_symbol =
+      runtime_support_library_link_wiring.compatibility_dispatch_symbol;
+  ir_frontend_metadata.runtime_support_library_link_wiring_runtime_dispatch_symbol =
+      runtime_support_library_link_wiring.runtime_dispatch_symbol;
+  ir_frontend_metadata
+      .runtime_support_library_link_wiring_execution_smoke_script_path =
+      runtime_support_library_link_wiring.execution_smoke_script_path;
+  ir_frontend_metadata.runtime_support_library_link_wiring_driver_link_mode =
+      runtime_support_library_link_wiring.driver_link_mode;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

@@ -20,6 +20,10 @@ M251-D002 core feature: the in-tree native runtime library now exists and the
 native `objc3_runtime_dispatch_i32` entrypoint intentionally mirrors this
 deterministic formula, but the driver/link path still targets this shim until
 M251-D003 wires the real library into executable builds.
+M251-D003 link wiring: emitted objects now link against
+`artifacts/lib/objc3_runtime.lib`, and this shim remains explicit test-only
+compatibility evidence for negative unresolved-symbol coverage and formula
+parity documentation.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

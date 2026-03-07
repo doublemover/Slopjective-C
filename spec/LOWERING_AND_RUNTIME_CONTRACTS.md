@@ -4330,3 +4330,31 @@ runtime library artifact before D003 links the driver against it.
 D002 therefore proves the native runtime library exists as an executable
 artifact without claiming driver-link integration or full object-model runtime
 registration have landed yet.
+
+## M251 native runtime-library link wiring (D003)
+
+Lane-D shall wire emitted-object execution consumers to the real native runtime
+library without mutating the frozen D001 surface or the D002 implementation
+packet.
+
+`M251-D003` requires:
+
+- `Objc3RuntimeSupportLibraryLinkWiringSummary` to publish the canonical
+  emitted-object runtime-consumption contract,
+- manifest JSON and emitted LLVM IR metadata to publish the same D003 contract
+  through `runtime_support_library_link_wiring_contract_id` and
+  `!objc3.objc_runtime_support_library_link_wiring`,
+- emitted-object runtime link mode to become
+  `emitted-object-links-against-objc3_runtime-lib`,
+- `native/objc3c/src/runtime/objc3_runtime.cpp` to export the compatibility
+  bridge symbol `objc3_msgsend_i32` while keeping
+  `objc3_runtime_dispatch_i32` canonical,
+- `scripts/check_objc3c_native_execution_smoke.ps1` to consume the emitted
+  manifest/runtime archive contract and link runtime-requiring fixtures against
+  `artifacts/lib/objc3_runtime.lib`,
+- negative unresolved-symbol coverage to remain fail closed by omitting the
+  runtime library on link-failure fixtures.
+
+D003 therefore proves emitted objects can consume the real runtime archive in
+deterministic smoke/checker paths without yet claiming metadata registration,
+class realization, or property/category runtime execution are complete.

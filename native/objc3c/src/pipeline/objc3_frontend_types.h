@@ -1765,6 +1765,48 @@ inline bool IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
          summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeSupportLibraryLinkWiringSummary {
+  std::string contract_id = kObjc3RuntimeSupportLibraryLinkWiringContractId;
+  std::string support_library_core_feature_contract_id =
+      kObjc3RuntimeSupportLibraryCoreFeatureContractId;
+  bool fail_closed = false;
+  bool runtime_library_archive_available = false;
+  bool compatibility_dispatch_alias_exported = false;
+  bool driver_emits_runtime_link_contract = false;
+  bool execution_smoke_consumes_runtime_library = false;
+  bool shim_remains_test_only = false;
+  bool ready_for_runtime_library_consumption = false;
+  std::string archive_relative_path =
+      kObjc3RuntimeSupportLibraryArchiveRelativePath;
+  std::string compatibility_dispatch_symbol =
+      kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol;
+  std::string runtime_dispatch_symbol =
+      kObjc3RuntimeSupportLibraryDispatchI32Symbol;
+  std::string execution_smoke_script_path =
+      kObjc3RuntimeSupportLibraryExecutionSmokeScriptPath;
+  std::string driver_link_mode = kObjc3RuntimeSupportLibraryLinkWiringMode;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
+    const Objc3RuntimeSupportLibraryLinkWiringSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.support_library_core_feature_contract_id.empty() &&
+         summary.fail_closed &&
+         summary.runtime_library_archive_available &&
+         summary.compatibility_dispatch_alias_exported &&
+         summary.driver_emits_runtime_link_contract &&
+         summary.execution_smoke_consumes_runtime_library &&
+         summary.shim_remains_test_only &&
+         summary.ready_for_runtime_library_consumption &&
+         !summary.archive_relative_path.empty() &&
+         !summary.compatibility_dispatch_symbol.empty() &&
+         !summary.runtime_dispatch_symbol.empty() &&
+         !summary.execution_smoke_script_path.empty() &&
+         !summary.driver_link_mode.empty() &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

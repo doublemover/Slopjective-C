@@ -8219,3 +8219,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   registration/lookup/dispatch/reset entrypoints, and deterministic probe
   coverage remain synchronized with manifest/IR publication while D003
   preserves deferred driver-link wiring.
+
+- M251 lane-D D003 native runtime-library link wiring anchors explicit
+  runtime-consumption artifacts in
+  `docs/contracts/m251_native_runtime_library_link_wiring_d003_expectations.md`,
+  `spec/planning/compiler/m251/m251_d003_driver_cmake_and_link_wiring_for_runtime_library_consumption_packet.md`,
+  `runtime/objc3_runtime.cpp`, `../CMakeLists.txt`,
+  `pipeline/objc3_frontend_types.h`, `pipeline/objc3_frontend_artifacts.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `driver/objc3_objc3_path.cpp`,
+  `../../scripts/check_objc3c_native_execution_smoke.ps1`,
+  `tests/tooling/runtime/README.md`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so
+  emitted-object runtime consumers link against `artifacts/lib/objc3_runtime.lib`
+  via manifest-published archive data while the shim remains explicit test-only
+  evidence.

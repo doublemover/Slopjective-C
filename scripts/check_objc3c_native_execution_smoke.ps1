@@ -8,6 +8,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $positiveFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/positive"
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/negative"
 $runtimeShimSource = Join-Path $repoRoot "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
+$defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
@@ -293,6 +294,56 @@ function Resolve-NativeObjectPath {
   throw "execution smoke FAIL: missing native object artifact (.obj/.o) for $fixtureRel in $CompileDir"
 }
 
+function Resolve-RuntimeLibraryForLink {
+  param(
+    [Parameter(Mandatory = $true)][string]$CompileDir,
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$DefaultRuntimeLibrary
+  )
+
+  $manifestPath = Join-Path $CompileDir "module.manifest.json"
+  $runtimeLibraryPath = $DefaultRuntimeLibrary
+  $runtimeLibrarySource = "default"
+  if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+    $manifest = $null
+    try {
+      $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    }
+    catch {
+      throw "execution smoke FAIL: invalid manifest json in $manifestPath"
+    }
+
+    $archiveRelativePath = ""
+    if ($manifest.PSObject.Properties.Name -contains "runtime_support_library_link_wiring_archive_relative_path") {
+      $archiveRelativePath = "$($manifest.runtime_support_library_link_wiring_archive_relative_path)".Trim()
+      if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
+        $runtimeLibrarySource = "manifest.runtime_support_library_link_wiring_archive_relative_path"
+      }
+    }
+    if ([string]::IsNullOrWhiteSpace($archiveRelativePath) -and $manifest.PSObject.Properties.Name -contains "runtime_support_library_core_feature_archive_relative_path") {
+      $archiveRelativePath = "$($manifest.runtime_support_library_core_feature_archive_relative_path)".Trim()
+      if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
+        $runtimeLibrarySource = "manifest.runtime_support_library_core_feature_archive_relative_path"
+      }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
+      $normalizedRelativePath = $archiveRelativePath.Replace('/', '\')
+      $runtimeLibraryPath = Join-Path $RepoRoot $normalizedRelativePath
+    }
+  }
+
+  if (!(Test-Path -LiteralPath $runtimeLibraryPath -PathType Leaf)) {
+    throw "execution smoke FAIL: runtime library missing at $runtimeLibraryPath"
+  }
+
+  return [pscustomobject]@{
+    path = $runtimeLibraryPath
+    relative_path = Get-RepoRelativePath -Path $runtimeLibraryPath -Root $RepoRoot
+    source = $runtimeLibrarySource
+  }
+}
+
 function Get-CanonicalLinkDiagnosticsText {
   param(
     [Parameter(Mandatory = $true)][string]$RawText,
@@ -381,9 +432,6 @@ try {
   if (!(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
     throw "execution smoke FAIL: native compiler executable missing at $nativeExe"
   }
-  if (!(Test-Path -LiteralPath $runtimeShimSource -PathType Leaf)) {
-    throw "execution smoke FAIL: runtime shim source missing at $runtimeShimSource"
-  }
 
   $clangCheckExit = Invoke-LoggedCommand -Command $clangCommand -Arguments @("--version") -LogPath (Join-Path $runDir "clang-version.log")
   if ($clangCheckExit -ne 0) {
@@ -427,8 +475,10 @@ try {
     $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
 
     $linkArgs = @($objPath)
+    $runtimeLibrary = $null
     if ($expectation.requires_runtime_shim) {
-      $linkArgs += $runtimeShimSource
+      $runtimeLibrary = Resolve-RuntimeLibraryForLink -CompileDir $compileDir -RepoRoot $repoRoot -DefaultRuntimeLibrary $defaultRuntimeLibrary
+      $linkArgs += $runtimeLibrary.path
     }
     $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
     $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
@@ -456,6 +506,8 @@ try {
       requires_runtime_shim = $expectation.requires_runtime_shim
       requires_runtime_shim_explicit = $expectation.requires_runtime_shim_explicit
       runtime_dispatch_symbol = $expectation.runtime_dispatch_symbol
+      runtime_library = if ($null -ne $runtimeLibrary) { $runtimeLibrary.relative_path } else { "" }
+      runtime_library_source = if ($null -ne $runtimeLibrary) { $runtimeLibrary.source } else { "" }
       compile_exit = $compileExit
       link_exit = $linkExit
       run_exit = $runExit
@@ -567,8 +619,10 @@ try {
     }
 
     if ($spec.stage -eq "run") {
+      $runtimeLibrary = $null
       if ($spec.requires_runtime_shim) {
-        $linkArgs = @($objPath, $runtimeShimSource, "-o", $exePath, "-fno-color-diagnostics")
+        $runtimeLibrary = Resolve-RuntimeLibraryForLink -CompileDir $compileDir -RepoRoot $repoRoot -DefaultRuntimeLibrary $defaultRuntimeLibrary
+        $linkArgs = @($objPath, $runtimeLibrary.path, "-o", $exePath, "-fno-color-diagnostics")
       }
       $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
       if ($linkExit -ne 0) {
@@ -592,6 +646,8 @@ try {
         stage = $spec.stage
         requires_runtime_shim = $spec.requires_runtime_shim
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
+        runtime_library = if ($null -ne $runtimeLibrary) { $runtimeLibrary.relative_path } else { "" }
+        runtime_library_source = if ($null -ne $runtimeLibrary) { $runtimeLibrary.source } else { "" }
         compile_exit = $compileExit
         link_exit = $linkExit
         run_exit = $runExit
@@ -613,7 +669,8 @@ try {
   $summary = [ordered]@{
     run_dir = Get-RepoRelativePath -Path $runDir -Root $repoRoot
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
-    runtime_shim = Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot
+    runtime_library = if (Test-Path -LiteralPath $defaultRuntimeLibrary -PathType Leaf) { Get-RepoRelativePath -Path $defaultRuntimeLibrary -Root $repoRoot } else { "" }
+    runtime_shim = if (Test-Path -LiteralPath $runtimeShimSource -PathType Leaf) { Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot } else { "" }
     clang = $clangCommand
     llc = $llcCommand
     llc_source = $llcSourcePath
