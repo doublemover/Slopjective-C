@@ -5069,3 +5069,6 @@ deterministic lane-C lowering/runtime diagnostics surfacing integration closeout
 
 deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D014`
 
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D015`
+
