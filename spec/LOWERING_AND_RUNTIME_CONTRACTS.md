@@ -3701,3 +3701,8 @@ interop behavior for qualified generic APIs edge-case expansion and robustness g
 
 lane-D dependency anchors (`M235-D005`) and fail closed on edge-case expansion and robustness interop evidence drift
 
+
+interop behavior for qualified generic APIs diagnostics hardening governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D006`) and fail closed on diagnostics hardening interop evidence drift
+
