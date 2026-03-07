@@ -5959,3 +5959,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m235_interop_behavior_for_qualified_generic_apis_integration_closeout_and_gate_sign_off_d009_expectations.md
 
+
+- M236 lane-A A001 qualifier/generic grammar normalization anchors
+  docs/contracts/m236_ownership_syntax_and_annotation_ingestion_contract_and_architecture_freeze_a001_expectations.md
+

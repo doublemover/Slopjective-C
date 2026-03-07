@@ -3750,3 +3750,7 @@ deterministic lane-D interop behavior for qualified generic APIs integration clo
 
 with explicit `M235-D008` dependency continuity so integration closeout and gate sign-off interop drift fails closed.
 
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
