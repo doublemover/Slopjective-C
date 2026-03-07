@@ -4565,3 +4565,7 @@ deterministic lane-C qualified type lowering and ABI representation metadata anc
 
 deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C032`
 
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
