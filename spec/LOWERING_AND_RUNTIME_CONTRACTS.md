@@ -3749,3 +3749,8 @@ lowering/runtime diagnostics surfacing advanced core workpack (shard 1) shall pr
 
 lane-C dependency anchors (`M243-C014`)
 
+
+lowering/runtime diagnostics surfacing advanced edge compatibility workpack (shard 1) shall preserve
+
+lane-C dependency anchors (`M243-C015`)
+

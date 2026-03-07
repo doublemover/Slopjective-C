@@ -7829,3 +7829,6 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 - M243 lane-C C015 advanced core workpack (shard 1) anchors lowering/runtime diagnostics surfacing
 
+
+- M243 lane-C C016 advanced edge compatibility workpack (shard 1) anchors lowering/runtime diagnostics surfacing
+
