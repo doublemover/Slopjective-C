@@ -3780,3 +3780,6 @@ CLI/reporting and output advanced integration workpack (shard 1) governance shal
 
 CLI/reporting and output advanced performance workpack (shard 1) governance shall preserve
 
+
+CLI/reporting and output advanced core workpack (shard 2) governance shall preserve
+
