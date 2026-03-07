@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S206.
+module runtimeExportIllegalPropertySignature;
+
+@interface Widget
+@property (readonly) id value;
+@end
+
+@implementation Widget
+@property (readonly) i32 value;
+@end
+
+fn main() -> i32 { return 0; }

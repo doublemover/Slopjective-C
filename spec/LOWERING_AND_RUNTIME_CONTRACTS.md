@@ -4164,3 +4164,25 @@ section emission and runtime registration work begin.
   provided it stays fail-closed and carries the pending enforcement bits for
   duplicate identities, incomplete declarations, and illegal redeclaration
   mixes.
+
+## M251 runtime export enforcement semantics (B002)
+
+Lane-B shall promote the frozen runtime-export legality packet into a real
+fail-closed semantic barrier before metadata section emission and runtime
+registration work begin.
+
+`M251-B002` requires:
+
+- `Objc3RuntimeExportEnforcementSummary` to remain the single semantic
+  enforcement packet for runtime-exported declarations,
+- the enforcement packet to be synthesized from deterministic runtime metadata
+  source records plus the B001 legality packet,
+- duplicate runtime identities, incomplete export units, illegal redeclaration
+  mixes, and metadata-shape drift to block lowering when present,
+- forward protocol declarations to remain legal dependency hints rather than
+  incomplete export candidates.
+
+Duplicate runtime identities, incomplete export units, illegal redeclaration
+mixes, and metadata-shape drift must therefore fail closed before lowering
+begins. Forward protocol declarations must remain legal dependency hints rather
+than incomplete export candidates.

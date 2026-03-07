@@ -1780,6 +1780,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
       pipeline_result.runtime_export_legality_boundary;
+  const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement =
+      pipeline_result.runtime_export_enforcement_summary;
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -2896,6 +2898,42 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_export_legality.method_resolution_misses
            << ",\"runtime_export_failure_reason\":\""
            << runtime_export_legality.failure_reason
+           << "\""
+           << ",\"runtime_export_enforcement_contract_id\":\""
+           << runtime_export_enforcement.contract_id
+           << "\",\"runtime_export_metadata_completeness_enforced\":"
+           << (runtime_export_enforcement.metadata_completeness_enforced ? "true"
+                                                                        : "false")
+           << ",\"runtime_export_duplicate_runtime_identity_suppression_enforced\":"
+           << (runtime_export_enforcement
+                           .duplicate_runtime_identity_suppression_enforced
+                   ? "true"
+                   : "false")
+           << ",\"runtime_export_illegal_redeclaration_mix_blocking_enforced\":"
+           << (runtime_export_enforcement
+                           .illegal_redeclaration_mix_blocking_enforced
+                   ? "true"
+                   : "false")
+           << ",\"runtime_export_metadata_shape_drift_blocking_enforced\":"
+           << (runtime_export_enforcement
+                           .metadata_shape_drift_blocking_enforced
+                   ? "true"
+                   : "false")
+           << ",\"runtime_export_enforcement_fail_closed\":"
+           << (runtime_export_enforcement.fail_closed ? "true" : "false")
+           << ",\"runtime_export_ready_for_runtime_export\":"
+           << (runtime_export_enforcement.ready_for_runtime_export ? "true"
+                                                                  : "false")
+           << ",\"runtime_export_duplicate_runtime_identity_sites\":"
+           << runtime_export_enforcement.duplicate_runtime_identity_sites
+           << ",\"runtime_export_incomplete_declaration_sites\":"
+           << runtime_export_enforcement.incomplete_declaration_sites
+           << ",\"runtime_export_illegal_redeclaration_mix_sites\":"
+           << runtime_export_enforcement.illegal_redeclaration_mix_sites
+           << ",\"runtime_export_metadata_shape_drift_sites\":"
+           << runtime_export_enforcement.metadata_shape_drift_sites
+           << ",\"runtime_export_enforcement_failure_reason\":\""
+           << runtime_export_enforcement.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
@@ -5420,6 +5458,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_export_legality.method_resolution_misses;
   ir_frontend_metadata.runtime_export_boundary_ready =
       IsReadyObjc3RuntimeExportLegalityBoundary(runtime_export_legality);
+  ir_frontend_metadata.runtime_export_enforcement_contract_id =
+      runtime_export_enforcement.contract_id;
+  ir_frontend_metadata.runtime_export_metadata_completeness_enforced =
+      runtime_export_enforcement.metadata_completeness_enforced;
+  ir_frontend_metadata
+      .runtime_export_duplicate_runtime_identity_suppression_enforced =
+      runtime_export_enforcement
+          .duplicate_runtime_identity_suppression_enforced;
+  ir_frontend_metadata
+      .runtime_export_illegal_redeclaration_mix_blocking_enforced =
+      runtime_export_enforcement
+          .illegal_redeclaration_mix_blocking_enforced;
+  ir_frontend_metadata.runtime_export_metadata_shape_drift_blocking_enforced =
+      runtime_export_enforcement.metadata_shape_drift_blocking_enforced;
+  ir_frontend_metadata.runtime_export_enforcement_fail_closed =
+      runtime_export_enforcement.fail_closed;
+  ir_frontend_metadata.runtime_export_ready_for_runtime_export =
+      runtime_export_enforcement.ready_for_runtime_export;
+  ir_frontend_metadata.runtime_export_duplicate_runtime_identity_sites =
+      runtime_export_enforcement.duplicate_runtime_identity_sites;
+  ir_frontend_metadata.runtime_export_incomplete_declaration_sites =
+      runtime_export_enforcement.incomplete_declaration_sites;
+  ir_frontend_metadata.runtime_export_illegal_redeclaration_mix_sites =
+      runtime_export_enforcement.illegal_redeclaration_mix_sites;
+  ir_frontend_metadata.runtime_export_metadata_shape_drift_sites =
+      runtime_export_enforcement.metadata_shape_drift_sites;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

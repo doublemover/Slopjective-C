@@ -1,0 +1,16 @@
+// Expected diagnostic code(s): O3S200.
+module runtimeExportDuplicateInterface;
+
+@interface Widget
+- (id) ping;
+@end
+
+@interface Widget
+- (id) ping;
+@end
+
+@implementation Widget
+- (id) ping { return 1; }
+@end
+
+fn main() -> i32 { return 0; }

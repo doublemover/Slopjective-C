@@ -1304,6 +1304,8 @@ struct Objc3RuntimeMetadataIvarSourceRecord {
 
 inline constexpr const char *kObjc3RuntimeExportLegalityContractId =
     "objc3c-runtime-export-legality-freeze/m251-b001-v1";
+inline constexpr const char *kObjc3RuntimeExportEnforcementContractId =
+    "objc3c-runtime-export-enforcement/m251-b002-v1";
 
 struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataClassSourceRecord> classes_lexicographic;
@@ -1434,6 +1436,39 @@ inline bool IsReadyObjc3RuntimeExportLegalityBoundary(
          boundary.failure_reason.empty();
 }
 
+struct Objc3RuntimeExportEnforcementSummary {
+  std::string contract_id = kObjc3RuntimeExportEnforcementContractId;
+  bool metadata_completeness_enforced = false;
+  bool duplicate_runtime_identity_suppression_enforced = false;
+  bool illegal_redeclaration_mix_blocking_enforced = false;
+  bool metadata_shape_drift_blocking_enforced = false;
+  bool fail_closed = false;
+  bool ready_for_runtime_export = false;
+  std::size_t duplicate_runtime_identity_sites = 0;
+  std::size_t incomplete_declaration_sites = 0;
+  std::size_t illegal_redeclaration_mix_sites = 0;
+  std::size_t metadata_shape_drift_sites = 0;
+  unsigned first_failure_line = 1;
+  unsigned first_failure_column = 1;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeExportEnforcementSummary(
+    const Objc3RuntimeExportEnforcementSummary &summary) {
+  return !summary.contract_id.empty() &&
+         summary.metadata_completeness_enforced &&
+         summary.duplicate_runtime_identity_suppression_enforced &&
+         summary.illegal_redeclaration_mix_blocking_enforced &&
+         summary.metadata_shape_drift_blocking_enforced &&
+         summary.fail_closed &&
+         summary.ready_for_runtime_export &&
+         summary.duplicate_runtime_identity_sites == 0 &&
+         summary.incomplete_declaration_sites == 0 &&
+         summary.illegal_redeclaration_mix_sites == 0 &&
+         summary.metadata_shape_drift_sites == 0 &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;
@@ -1498,6 +1533,7 @@ struct Objc3FrontendPipelineResult {
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
+  Objc3RuntimeExportEnforcementSummary runtime_export_enforcement_summary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;

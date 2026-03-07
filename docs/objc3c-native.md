@@ -157,6 +157,30 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-B001/object_model_abi_invariants_and_legality_contract_summary.json`
 
+## Runtime export enforcement semantics (M251-B002)
+
+- Lane-B now promotes the frozen legality boundary into a real fail-closed
+  enforcement packet: `Objc3RuntimeExportEnforcementSummary`.
+- Manifest-only happy-path runtime metadata probes now report:
+  - `runtime_export_metadata_completeness_enforced=true`
+  - `runtime_export_duplicate_runtime_identity_suppression_enforced=true`
+  - `runtime_export_illegal_redeclaration_mix_blocking_enforced=true`
+  - `runtime_export_metadata_shape_drift_blocking_enforced=true`
+  - `runtime_export_ready_for_runtime_export=true`
+- Forward `@protocol` declarations remain legal dependency hints and do not
+  block export readiness on their own; forward `@protocol` declarations remain
+  legal dependency hints and do not block export readiness.
+- Interface-only runtime export units now fail closed before lowering with
+  `O3S260`.
+- Duplicate runtime identities continue to fail closed with existing semantic
+  diagnostics such as `O3S200`.
+- Illegal runtime-visible redeclaration drift, including incompatible
+  interface/implementation property signatures, continues to fail closed with
+  semantic diagnostics such as `O3S206`.
+- Emitted LLVM IR now carries `!objc3.objc_runtime_export_enforcement`.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-B002/metadata_completeness_and_duplicate_suppression_semantics_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

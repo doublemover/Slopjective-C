@@ -5433,3 +5433,24 @@ Deterministic lane-B runtime export legality for `M251-B001` shall preserve:
 Runtime export legality anchors must remain deterministic before native
 metadata section emission, runtime registration, and executable object-model
 enforcement land.
+
+## M251 runtime export enforcement metadata anchors (B002)
+
+Deterministic lane-B runtime export enforcement for `M251-B002` shall preserve:
+
+- `!objc3.objc_runtime_export_enforcement` in emitted LLVM IR frontend
+  metadata,
+- an enforcement packet that preserves duplicate, incomplete,
+  illegal-redeclaration, and metadata-shape-drift counters,
+- a fail-closed ready bit that only becomes `true` when those counters remain
+  zero,
+- forward protocol declarations being excluded from incomplete export
+  accounting when they are only dependency hints.
+
+The enforcement packet must preserve duplicate, incomplete,
+illegal-redeclaration, and metadata-shape-drift counters while remaining
+deterministic.
+
+Runtime export enforcement anchors must remain deterministic before native
+metadata section emission, runtime registration, and executable object-model
+enforcement land.

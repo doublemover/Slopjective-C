@@ -8117,3 +8117,21 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `tests/tooling/test_check_m251_b001_object_model_abi_invariants_and_legality_contract.py`,
   and `package.json` so runtime export legality remains frozen, fail-closed,
   and explicitly marked with metadata export enforcement still pending for B002.
+
+- M251 lane-B B002 runtime export enforcement anchors explicit
+  lane-B enforcement artifacts in
+  `docs/contracts/m251_metadata_completeness_and_duplicate_suppression_semantics_core_feature_implementation_b002_expectations.md`,
+  `spec/planning/compiler/m251/m251_b002_metadata_completeness_and_duplicate_suppression_semantics_core_feature_implementation_packet.md`,
+  `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`,
+  `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`,
+  `scripts/check_m251_b002_metadata_completeness_and_duplicate_suppression_semantics.py`,
+  `tests/tooling/test_check_m251_b002_metadata_completeness_and_duplicate_suppression_semantics.py`,
+  and `package.json` so runtime export enforcement remains fail-closed for
+  duplicate, incomplete, redeclaration, and shape-drift hazards while forward
+  protocol declarations remain legal dependency hints. In other words, runtime
+  export enforcement remains fail-closed for duplicate, incomplete,
+  redeclaration, and shape-drift hazards without misclassifying forward
+  protocols as incomplete export units.

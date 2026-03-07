@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3S260.
+module runtimeExportIncompleteInterface;
+
+@interface Widget
+- (id) ping;
+@end
+
+fn main() -> i32 { return 0; }

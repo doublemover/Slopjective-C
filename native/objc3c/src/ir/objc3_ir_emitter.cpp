@@ -143,6 +143,10 @@ class Objc3IREmitter {
       out << "; runtime_export_legality = "
           << frontend_metadata_.runtime_export_legality_contract_id << "\n";
     }
+    if (!frontend_metadata_.runtime_export_enforcement_contract_id.empty()) {
+      out << "; runtime_export_enforcement = "
+          << frontend_metadata_.runtime_export_enforcement_contract_id << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1695,6 +1699,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_property_attribute = !{!4}\n";
     out << "!objc3.objc_runtime_metadata_source_ownership = !{!45}\n";
     out << "!objc3.objc_runtime_export_legality = !{!46}\n";
+    out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -1820,6 +1825,26 @@ class Objc3IREmitter {
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.runtime_export_method_resolution_misses)
         << ", i1 " << (frontend_metadata_.runtime_export_boundary_ready ? 1 : 0) << "}\n";
+    out << "!47 = !{!\"" << EscapeCStringLiteral(frontend_metadata_.runtime_export_enforcement_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_export_metadata_completeness_enforced ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_export_duplicate_runtime_identity_suppression_enforced ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_export_illegal_redeclaration_mix_blocking_enforced ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_export_metadata_shape_drift_blocking_enforced ? 1 : 0)
+        << ", i1 " << (frontend_metadata_.runtime_export_enforcement_fail_closed ? 1 : 0)
+        << ", i1 " << (frontend_metadata_.runtime_export_ready_for_runtime_export ? 1 : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_export_duplicate_runtime_identity_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_export_incomplete_declaration_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_export_illegal_redeclaration_mix_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_export_metadata_shape_drift_sites)
+        << "}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "

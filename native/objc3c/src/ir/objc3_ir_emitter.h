@@ -95,6 +95,17 @@ struct Objc3IRFrontendMetadata {
   std::size_t runtime_export_implementation_resolution_misses = 0;
   std::size_t runtime_export_method_resolution_misses = 0;
   bool runtime_export_boundary_ready = false;
+  std::string runtime_export_enforcement_contract_id;
+  bool runtime_export_metadata_completeness_enforced = false;
+  bool runtime_export_duplicate_runtime_identity_suppression_enforced = false;
+  bool runtime_export_illegal_redeclaration_mix_blocking_enforced = false;
+  bool runtime_export_metadata_shape_drift_blocking_enforced = false;
+  bool runtime_export_enforcement_fail_closed = false;
+  bool runtime_export_ready_for_runtime_export = false;
+  std::size_t runtime_export_duplicate_runtime_identity_sites = 0;
+  std::size_t runtime_export_incomplete_declaration_sites = 0;
+  std::size_t runtime_export_illegal_redeclaration_mix_sites = 0;
+  std::size_t runtime_export_metadata_shape_drift_sites = 0;
   std::string lowering_property_synthesis_ivar_binding_replay_key;
   std::string lowering_id_class_sel_object_pointer_typecheck_replay_key;
   std::size_t id_typecheck_sites = 0;
