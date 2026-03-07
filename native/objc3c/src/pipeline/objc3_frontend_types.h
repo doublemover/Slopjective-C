@@ -1231,6 +1231,89 @@ struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   }
 };
 
+struct Objc3RuntimeMetadataClassSourceRecord {
+  std::string record_kind;
+  std::string name;
+  std::string super_name;
+  bool has_super = false;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataProtocolSourceRecord {
+  std::string name;
+  std::vector<std::string> inherited_protocols_lexicographic;
+  bool is_forward_declaration = false;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataCategorySourceRecord {
+  std::string record_kind;
+  std::string class_name;
+  std::string category_name;
+  std::vector<std::string> adopted_protocols_lexicographic;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataPropertySourceRecord {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string property_name;
+  std::string type_name;
+  bool has_getter = false;
+  std::string getter_selector;
+  bool has_setter = false;
+  std::string setter_selector;
+  std::string ivar_binding_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataMethodSourceRecord {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string selector;
+  bool is_class_method = false;
+  bool has_body = false;
+  std::size_t parameter_count = 0;
+  std::string return_type_name;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataIvarSourceRecord {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string property_name;
+  std::string ivar_binding_symbol;
+  std::string source_model = kObjc3RuntimeMetadataIvarSourceModel;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3RuntimeMetadataSourceRecordSet {
+  std::vector<Objc3RuntimeMetadataClassSourceRecord> classes_lexicographic;
+  std::vector<Objc3RuntimeMetadataProtocolSourceRecord> protocols_lexicographic;
+  std::vector<Objc3RuntimeMetadataCategorySourceRecord> categories_lexicographic;
+  std::vector<Objc3RuntimeMetadataPropertySourceRecord> properties_lexicographic;
+  std::vector<Objc3RuntimeMetadataMethodSourceRecord> methods_lexicographic;
+  std::vector<Objc3RuntimeMetadataIvarSourceRecord> ivars_lexicographic;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  return records.deterministic;
+}
+
 struct Objc3RuntimeMetadataSourceOwnershipBoundary {
   std::string contract_id = kObjc3RuntimeMetadataSourceOwnershipContractId;
   std::string canonical_source_schema = kObjc3RuntimeMetadataCanonicalSourceSchema;
@@ -1343,6 +1426,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaPassFlowSummary sema_pass_flow_summary;

@@ -8074,3 +8074,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
   runtime metadata source ownership boundary remains deterministic and
   fail-closed before `M251-A002` extraction work begins.
+
+- M251 lane-A A002 runtime metadata source record extraction anchors explicit
+  lane-A extraction artifacts in
+  `docs/contracts/m251_class_protocol_category_property_ivar_source_record_extraction_core_feature_implementation_a002_expectations.md`,
+  `spec/planning/compiler/m251/m251_a002_class_protocol_category_property_ivar_source_record_extraction_core_feature_implementation_packet.md`,
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`,
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+  `pipeline/objc3_frontend_types.h`, `pipeline/objc3_frontend_pipeline.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`,
+  `scripts/check_m251_a002_class_protocol_category_property_ivar_source_record_extraction_contract.py`,
+  `tests/tooling/test_check_m251_a002_class_protocol_category_property_ivar_source_record_extraction_contract.py`,
+  and `package.json` so canonical runtime metadata source records remain
+  deterministic and frontend C API runner fixture probes fail closed if
+  parse/sema acceptance regresses or runtime record projection drifts before
+  `M251-A003` manifest-only emission work lands.

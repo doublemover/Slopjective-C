@@ -207,7 +207,7 @@ FRONTEND_PIPELINE_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M251-A001-PIP-05",
-        "BuildRuntimeMetadataSourceOwnershipBoundary(Objc3ParsedProgramAst(result.program),",
+        "BuildRuntimeMetadataSourceOwnershipBoundary(result.runtime_metadata_source_records,",
     ),
 )
 

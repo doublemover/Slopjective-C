@@ -78,6 +78,37 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-A001/runtime_metadata_source_ownership_contract_summary.json`
 
+## Runtime metadata source-record extraction (M251-A002)
+
+- Canonical packet:
+  `Objc3RuntimeMetadataSourceRecordSet`
+- The frontend now extracts deterministic runtime metadata source records for:
+  - class interfaces and implementations,
+  - protocols,
+  - categories,
+  - properties,
+  - methods,
+  - ivar-binding source packets.
+- Category owner names are normalized as `Class(Category)`.
+- Manifest projection now sources runtime metadata inventories from the
+  extracted record set rather than count-only sema/type summaries:
+  - `interfaces`
+  - `implementations`
+  - `protocols`
+  - `categories`
+  - `runtime_metadata_source_records.properties`
+  - `runtime_metadata_source_records.methods`
+  - `runtime_metadata_source_records.ivars`
+- Current fixture proof uses `objc3c-frontend-c-api-runner.exe` on:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+- The A002 frontend contract requires lex/parse/sema clean acceptance for those
+  fixtures. Current emit-only downstream `O3L300` remains acceptable until
+  `M251-A003` decouples manifest-oriented runtime record projection from later
+  lowering readiness gates.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-A002/runtime_metadata_source_record_extraction_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

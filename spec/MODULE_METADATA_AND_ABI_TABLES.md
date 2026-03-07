@@ -5377,3 +5377,27 @@ Deterministic lane-A runtime metadata ownership metadata anchors for
 
 Runtime metadata ownership evidence and parser/sema source-boundary continuity
 must remain deterministic before metadata section ABI work begins.
+
+## M251 runtime metadata source record set metadata anchors (A002)
+
+Deterministic lane-A runtime metadata source record extraction for `M251-A002`
+shall preserve:
+
+- `interfaces` / `implementations` manifest arrays derived from
+  `classes_lexicographic` filtered by `record_kind`,
+- `protocols` manifest arrays derived from `protocols_lexicographic`,
+- `categories` manifest arrays derived from `categories_lexicographic`,
+- `runtime_metadata_source_records` object payloads carrying:
+  - `deterministic`,
+  - `properties`,
+  - `methods`,
+  - `ivars`,
+- property records carrying owner kind/name, property name, type, getter,
+  setter, and `ivar_binding_symbol`,
+- method records carrying owner kind/name, selector, class-method bit,
+  body-presence bit, parameter count, and return-type name,
+- ivar records carrying owner kind/name, property name, ivar binding symbol,
+  and source model `property-synthesis-ivar-binding-symbols`.
+
+Runtime metadata source-record extraction and manifest projection continuity
+must remain deterministic before native metadata section/object emission begins.

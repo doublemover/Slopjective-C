@@ -1,0 +1,28 @@
+module runtimeMetadataClassRecords;
+
+@protocol Base;
+
+@protocol Worker<Base>
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Widget<Worker>
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) currentValue;
++ (id) shared;
+@end
+
+@implementation Widget
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) currentValue {
+  return 1;
+}
++ (id) shared {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

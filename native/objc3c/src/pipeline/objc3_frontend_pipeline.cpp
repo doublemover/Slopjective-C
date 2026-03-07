@@ -1,6 +1,8 @@
 #include "pipeline/objc3_frontend_pipeline.h"
 
+#include <algorithm>
 #include <sstream>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -194,70 +196,245 @@ std::size_t CountLinkedCategorySymbolsFromTypeMetadata(const Handoff &handoff) {
   return 0;
 }
 
-std::size_t CountCategoryInterfaceSourceRecords(const Objc3Program &program) {
-  return static_cast<std::size_t>(std::count_if(program.interfaces.begin(),
-                                                program.interfaces.end(),
-                                                [](const Objc3InterfaceDecl &decl) { return decl.has_category; }));
+const char *RuntimeMetadataTypeName(ValueType type) {
+  switch (type) {
+    case ValueType::I32:
+      return "i32";
+    case ValueType::Bool:
+      return "bool";
+    case ValueType::Void:
+      return "void";
+    case ValueType::ObjCId:
+      return "id";
+    case ValueType::ObjCClass:
+      return "Class";
+    case ValueType::ObjCSel:
+      return "SEL";
+    case ValueType::ObjCProtocol:
+      return "Protocol";
+    case ValueType::ObjCInstancetype:
+      return "instancetype";
+    case ValueType::ObjCObjectPtr:
+      return "object-pointer";
+    default:
+      return "unknown";
+  }
 }
 
-std::size_t CountCategoryImplementationSourceRecords(const Objc3Program &program) {
-  return static_cast<std::size_t>(std::count_if(program.implementations.begin(),
-                                                program.implementations.end(),
-                                                [](const Objc3ImplementationDecl &decl) { return decl.has_category; }));
+std::string BuildCategoryOwnerName(const std::string &class_name,
+                                   const std::string &category_name) {
+  return class_name + "(" + category_name + ")";
 }
 
-std::size_t CountPropertySourceRecords(const Objc3Program &program) {
-  std::size_t total = 0;
+bool IsClassSourceRecordLess(const Objc3RuntimeMetadataClassSourceRecord &lhs,
+                             const Objc3RuntimeMetadataClassSourceRecord &rhs) {
+  return std::tie(lhs.name, lhs.record_kind, lhs.line, lhs.column) <
+         std::tie(rhs.name, rhs.record_kind, rhs.line, rhs.column);
+}
+
+bool IsProtocolSourceRecordLess(const Objc3RuntimeMetadataProtocolSourceRecord &lhs,
+                                const Objc3RuntimeMetadataProtocolSourceRecord &rhs) {
+  return std::tie(lhs.name, lhs.line, lhs.column) <
+         std::tie(rhs.name, rhs.line, rhs.column);
+}
+
+bool IsCategorySourceRecordLess(const Objc3RuntimeMetadataCategorySourceRecord &lhs,
+                                const Objc3RuntimeMetadataCategorySourceRecord &rhs) {
+  return std::tie(lhs.class_name, lhs.category_name, lhs.record_kind, lhs.line, lhs.column) <
+         std::tie(rhs.class_name, rhs.category_name, rhs.record_kind, rhs.line, rhs.column);
+}
+
+bool IsPropertySourceRecordLess(const Objc3RuntimeMetadataPropertySourceRecord &lhs,
+                                const Objc3RuntimeMetadataPropertySourceRecord &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.property_name, lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name, rhs.line, rhs.column);
+}
+
+bool IsMethodSourceRecordLess(const Objc3RuntimeMetadataMethodSourceRecord &lhs,
+                              const Objc3RuntimeMetadataMethodSourceRecord &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.selector, lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.selector, rhs.line, rhs.column);
+}
+
+bool IsIvarSourceRecordLess(const Objc3RuntimeMetadataIvarSourceRecord &lhs,
+                            const Objc3RuntimeMetadataIvarSourceRecord &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.property_name, lhs.ivar_binding_symbol, lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name, rhs.ivar_binding_symbol, rhs.line, rhs.column);
+}
+
+Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
+    const Objc3Program &program) {
+  Objc3RuntimeMetadataSourceRecordSet records;
+
+  const auto append_property_records =
+      [&records](const auto &properties, const std::string &owner_kind, const std::string &owner_name) {
+        for (const auto &property : properties) {
+          Objc3RuntimeMetadataPropertySourceRecord property_record;
+          property_record.owner_kind = owner_kind;
+          property_record.owner_name = owner_name;
+          property_record.property_name = property.name;
+          property_record.type_name = RuntimeMetadataTypeName(property.type);
+          property_record.has_getter = property.has_getter;
+          property_record.getter_selector = property.getter_selector;
+          property_record.has_setter = property.has_setter;
+          property_record.setter_selector = property.setter_selector;
+          property_record.ivar_binding_symbol = property.ivar_binding_symbol;
+          property_record.line = property.line;
+          property_record.column = property.column;
+          records.properties_lexicographic.push_back(std::move(property_record));
+
+          if (!property.ivar_binding_symbol.empty()) {
+            Objc3RuntimeMetadataIvarSourceRecord ivar_record;
+            ivar_record.owner_kind = owner_kind;
+            ivar_record.owner_name = owner_name;
+            ivar_record.property_name = property.name;
+            ivar_record.ivar_binding_symbol = property.ivar_binding_symbol;
+            ivar_record.line = property.line;
+            ivar_record.column = property.column;
+            records.ivars_lexicographic.push_back(std::move(ivar_record));
+          }
+        }
+      };
+
+  const auto append_method_records =
+      [&records](const auto &methods, const std::string &owner_kind, const std::string &owner_name) {
+        for (const auto &method : methods) {
+          Objc3RuntimeMetadataMethodSourceRecord method_record;
+          method_record.owner_kind = owner_kind;
+          method_record.owner_name = owner_name;
+          method_record.selector = method.selector;
+          method_record.is_class_method = method.is_class_method;
+          method_record.has_body = method.has_body;
+          method_record.parameter_count = method.params.size();
+          method_record.return_type_name = RuntimeMetadataTypeName(method.return_type);
+          method_record.line = method.line;
+          method_record.column = method.column;
+          records.methods_lexicographic.push_back(std::move(method_record));
+        }
+      };
+
   for (const auto &protocol : program.protocols) {
-    total += protocol.properties.size();
+    Objc3RuntimeMetadataProtocolSourceRecord record;
+    record.name = protocol.name;
+    record.inherited_protocols_lexicographic = protocol.inherited_protocols_lexicographic;
+    record.is_forward_declaration = protocol.is_forward_declaration;
+    record.property_count = protocol.properties.size();
+    record.method_count = protocol.methods.size();
+    record.line = protocol.line;
+    record.column = protocol.column;
+    records.protocols_lexicographic.push_back(record);
+    append_property_records(protocol.properties, "protocol", protocol.name);
+    append_method_records(protocol.methods, "protocol", protocol.name);
   }
-  for (const auto &interface_decl : program.interfaces) {
-    total += interface_decl.properties.size();
-  }
-  for (const auto &implementation : program.implementations) {
-    total += implementation.properties.size();
-  }
-  return total;
-}
 
-std::size_t CountMethodSourceRecords(const Objc3Program &program) {
-  std::size_t total = 0;
-  for (const auto &protocol : program.protocols) {
-    total += protocol.methods.size();
-  }
   for (const auto &interface_decl : program.interfaces) {
-    total += interface_decl.methods.size();
-  }
-  for (const auto &implementation : program.implementations) {
-    total += implementation.methods.size();
-  }
-  return total;
-}
-
-std::size_t CountIvarSourceRecords(const Objc3Program &program) {
-  std::size_t total = 0;
-  const auto accumulate_properties = [&total](const auto &properties) {
-    for (const auto &property : properties) {
-      if (!property.ivar_binding_symbol.empty()) {
-        ++total;
-      }
+    if (interface_decl.has_category) {
+      Objc3RuntimeMetadataCategorySourceRecord record;
+      record.record_kind = "interface";
+      record.class_name = interface_decl.name;
+      record.category_name = interface_decl.category_name;
+      record.adopted_protocols_lexicographic =
+          interface_decl.adopted_protocols_lexicographic;
+      record.property_count = interface_decl.properties.size();
+      record.method_count = interface_decl.methods.size();
+      record.line = interface_decl.line;
+      record.column = interface_decl.column;
+      records.categories_lexicographic.push_back(record);
+      const std::string owner_name =
+          BuildCategoryOwnerName(interface_decl.name, interface_decl.category_name);
+      append_property_records(interface_decl.properties, "category-interface", owner_name);
+      append_method_records(interface_decl.methods, "category-interface", owner_name);
+      continue;
     }
-  };
-  for (const auto &interface_decl : program.interfaces) {
-    accumulate_properties(interface_decl.properties);
+
+    Objc3RuntimeMetadataClassSourceRecord record;
+    record.record_kind = "interface";
+    record.name = interface_decl.name;
+    record.super_name = interface_decl.super_name;
+    record.has_super = !interface_decl.super_name.empty();
+    record.property_count = interface_decl.properties.size();
+    record.method_count = interface_decl.methods.size();
+    record.line = interface_decl.line;
+    record.column = interface_decl.column;
+    records.classes_lexicographic.push_back(record);
+    append_property_records(interface_decl.properties, "class-interface", interface_decl.name);
+    append_method_records(interface_decl.methods, "class-interface", interface_decl.name);
   }
+
   for (const auto &implementation : program.implementations) {
-    accumulate_properties(implementation.properties);
+    if (implementation.has_category) {
+      Objc3RuntimeMetadataCategorySourceRecord record;
+      record.record_kind = "implementation";
+      record.class_name = implementation.name;
+      record.category_name = implementation.category_name;
+      record.property_count = implementation.properties.size();
+      record.method_count = implementation.methods.size();
+      record.line = implementation.line;
+      record.column = implementation.column;
+      records.categories_lexicographic.push_back(record);
+      const std::string owner_name =
+          BuildCategoryOwnerName(implementation.name, implementation.category_name);
+      append_property_records(implementation.properties, "category-implementation", owner_name);
+      append_method_records(implementation.methods, "category-implementation", owner_name);
+      continue;
+    }
+
+    Objc3RuntimeMetadataClassSourceRecord record;
+    record.record_kind = "implementation";
+    record.name = implementation.name;
+    record.property_count = implementation.properties.size();
+    record.method_count = implementation.methods.size();
+    record.line = implementation.line;
+    record.column = implementation.column;
+    records.classes_lexicographic.push_back(record);
+    append_property_records(implementation.properties, "class-implementation", implementation.name);
+    append_method_records(implementation.methods, "class-implementation", implementation.name);
   }
-  return total;
+
+  std::sort(records.classes_lexicographic.begin(),
+            records.classes_lexicographic.end(),
+            IsClassSourceRecordLess);
+  std::sort(records.protocols_lexicographic.begin(),
+            records.protocols_lexicographic.end(),
+            IsProtocolSourceRecordLess);
+  std::sort(records.categories_lexicographic.begin(),
+            records.categories_lexicographic.end(),
+            IsCategorySourceRecordLess);
+  std::sort(records.properties_lexicographic.begin(),
+            records.properties_lexicographic.end(),
+            IsPropertySourceRecordLess);
+  std::sort(records.methods_lexicographic.begin(),
+            records.methods_lexicographic.end(),
+            IsMethodSourceRecordLess);
+  std::sort(records.ivars_lexicographic.begin(),
+            records.ivars_lexicographic.end(),
+            IsIvarSourceRecordLess);
+
+  records.deterministic = std::is_sorted(records.classes_lexicographic.begin(),
+                                         records.classes_lexicographic.end(),
+                                         IsClassSourceRecordLess) &&
+                          std::is_sorted(records.protocols_lexicographic.begin(),
+                                         records.protocols_lexicographic.end(),
+                                         IsProtocolSourceRecordLess) &&
+                          std::is_sorted(records.categories_lexicographic.begin(),
+                                         records.categories_lexicographic.end(),
+                                         IsCategorySourceRecordLess) &&
+                          std::is_sorted(records.properties_lexicographic.begin(),
+                                         records.properties_lexicographic.end(),
+                                         IsPropertySourceRecordLess) &&
+                          std::is_sorted(records.methods_lexicographic.begin(),
+                                         records.methods_lexicographic.end(),
+                                         IsMethodSourceRecordLess) &&
+                          std::is_sorted(records.ivars_lexicographic.begin(),
+                                         records.ivars_lexicographic.end(),
+                                         IsIvarSourceRecordLess);
+  return records;
 }
 
 Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipBoundary(
-    const Objc3Program &program,
+    const Objc3RuntimeMetadataSourceRecordSet &records,
     const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff) {
   Objc3RuntimeMetadataSourceOwnershipBoundary boundary;
-  const std::size_t ast_class_record_count =
-      program.interfaces.size() + program.implementations.size();
   const std::size_t sema_class_record_count =
       type_metadata_handoff.interfaces_lexicographic.size() +
       type_metadata_handoff.implementations_lexicographic.size();
@@ -270,18 +447,28 @@ Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipB
   boundary.runtime_metadata_source_records_ready_for_lowering = false;
   boundary.native_runtime_library_present = false;
   boundary.runtime_shim_test_only = true;
-  boundary.class_record_count = ast_class_record_count;
-  boundary.protocol_record_count = program.protocols.size();
-  boundary.category_interface_record_count = CountCategoryInterfaceSourceRecords(program);
+  boundary.class_record_count = records.classes_lexicographic.size();
+  boundary.protocol_record_count = records.protocols_lexicographic.size();
+  boundary.category_interface_record_count =
+      static_cast<std::size_t>(std::count_if(records.categories_lexicographic.begin(),
+                                             records.categories_lexicographic.end(),
+                                             [](const Objc3RuntimeMetadataCategorySourceRecord &record) {
+                                               return record.record_kind == "interface";
+                                             }));
   boundary.category_implementation_record_count =
-      CountCategoryImplementationSourceRecords(program);
-  boundary.property_record_count = CountPropertySourceRecords(program);
-  boundary.method_record_count = CountMethodSourceRecords(program);
-  boundary.ivar_record_count = CountIvarSourceRecords(program);
+      static_cast<std::size_t>(std::count_if(records.categories_lexicographic.begin(),
+                                             records.categories_lexicographic.end(),
+                                             [](const Objc3RuntimeMetadataCategorySourceRecord &record) {
+                                               return record.record_kind == "implementation";
+                                             }));
+  boundary.property_record_count = records.properties_lexicographic.size();
+  boundary.method_record_count = records.methods_lexicographic.size();
+  boundary.ivar_record_count = records.ivars_lexicographic.size();
 
   const bool class_alignment_consistent =
-      !sema_class_record_count_present || sema_class_record_count == ast_class_record_count;
+      !sema_class_record_count_present || sema_class_record_count == boundary.class_record_count;
   boundary.deterministic_source_schema =
+      IsReadyObjc3RuntimeMetadataSourceRecordSet(records) &&
       class_alignment_consistent &&
       boundary.ivar_record_count <= boundary.property_record_count &&
       !boundary.contract_id.empty() &&
@@ -904,8 +1091,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     }
   }
 
+  result.runtime_metadata_source_records =
+      BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.runtime_metadata_source_ownership_boundary =
-      BuildRuntimeMetadataSourceOwnershipBoundary(Objc3ParsedProgramAst(result.program),
+      BuildRuntimeMetadataSourceOwnershipBoundary(result.runtime_metadata_source_records,
                                                  result.sema_type_metadata_handoff);
   result.typed_sema_to_lowering_contract_surface =
       BuildObjc3TypedSemaToLoweringContractSurface(result, options);

@@ -1,0 +1,24 @@
+module runtimeMetadataCategoryRecords;
+
+@protocol Base;
+
+@protocol Worker<Base>
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Widget (Debug)<Worker>
+@property (readonly) id shadow;
+- (id) debugName;
+@end
+
+@implementation Widget (Debug)
+@property (readonly) id shadow;
+- (id) debugName {
+  return 3;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

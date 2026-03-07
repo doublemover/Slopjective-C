@@ -4111,3 +4111,23 @@ The canonical freeze for `M251-A001` is:
 For `M251-A001`, lowering/runtime must treat the emitted boundary as authoritative
 ownership evidence while runtime metadata source records remain not yet ready
 for lowering and the test shim topology remains explicitly non-production.
+
+## M251 runtime metadata source record extraction (A002)
+
+Lane-A runtime metadata extraction shall preserve
+`Objc3RuntimeMetadataSourceRecordSet` as the canonical frontend handoff for
+runtime-owned declaration packets.
+
+`M251-A002` requires:
+
+- deterministic lexicographic vectors for class, protocol, category, property,
+  method, and ivar source records,
+- category owner-name normalization as `Class(Category)`,
+- manifest projection sourced from the extracted record set rather than
+  count-only sema/type summaries,
+- frontend C API runner proof that declaration fixtures stay lex/parse/sema
+  clean before any downstream emit gate is considered.
+
+Current emit-only downstream `O3L300` remains acceptable during `M251-A002`
+because `M251-A003` is responsible for carrying runtime record projection
+through manifest-oriented lowering/emit boundaries.

@@ -1974,6 +1974,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.object_pointer_nullability_generics_summary;
   const Objc3FrontendSymbolGraphScopeResolutionSummary &symbol_graph_scope_resolution_summary =
       pipeline_result.symbol_graph_scope_resolution_summary;
+  const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records =
+      pipeline_result.runtime_metadata_source_records;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
@@ -4920,51 +4922,135 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   manifest << "  ],\n";
   manifest << "  \"interfaces\": [\n";
-  for (std::size_t i = 0; i < type_metadata_handoff.interfaces_lexicographic.size(); ++i) {
-    const auto &interface_metadata = type_metadata_handoff.interfaces_lexicographic[i];
-    manifest << "    {\"name\":\"" << interface_metadata.name << "\",\"super\":\"" << interface_metadata.super_name
-             << "\",\"method_count\":" << interface_metadata.methods_lexicographic.size() << ",\"selectors\":[";
-    for (std::size_t s = 0; s < interface_metadata.methods_lexicographic.size(); ++s) {
-      const auto &method_metadata = interface_metadata.methods_lexicographic[s];
-      manifest << "\"" << method_metadata.selector << "\"";
-      if (s + 1 != interface_metadata.methods_lexicographic.size()) {
-        manifest << ",";
-      }
+  bool first_interface_record = true;
+  for (const auto &class_record : runtime_metadata_source_records.classes_lexicographic) {
+    if (class_record.record_kind != "interface") {
+      continue;
     }
-    manifest << "]}";
-    if (i + 1 != type_metadata_handoff.interfaces_lexicographic.size()) {
-      manifest << ",";
+    if (!first_interface_record) {
+      manifest << ",\n";
     }
+    first_interface_record = false;
+    manifest << "    {\"name\":\"" << class_record.name << "\",\"super\":\"" << class_record.super_name
+             << "\",\"has_super\":" << (class_record.has_super ? "true" : "false")
+             << ",\"property_count\":" << class_record.property_count
+             << ",\"method_count\":" << class_record.method_count
+             << ",\"line\":" << class_record.line << ",\"column\":" << class_record.column << "}";
+  }
+  if (!first_interface_record) {
     manifest << "\n";
   }
   manifest << "  ],\n";
   manifest << "  \"implementations\": [\n";
-  for (std::size_t i = 0; i < type_metadata_handoff.implementations_lexicographic.size(); ++i) {
-    const auto &implementation_metadata = type_metadata_handoff.implementations_lexicographic[i];
-    manifest << "    {\"name\":\"" << implementation_metadata.name << "\",\"has_matching_interface\":"
-             << (implementation_metadata.has_matching_interface ? "true" : "false")
-             << ",\"method_count\":" << implementation_metadata.methods_lexicographic.size()
-             << ",\"selectors\":[";
-    for (std::size_t s = 0; s < implementation_metadata.methods_lexicographic.size(); ++s) {
-      const auto &method_metadata = implementation_metadata.methods_lexicographic[s];
-      manifest << "{\"selector\":\"" << method_metadata.selector << "\",\"is_class_method\":"
-               << (method_metadata.is_class_method ? "true" : "false")
-               << ",\"has_body\":" << (method_metadata.has_definition ? "true" : "false") << "}";
-      if (s + 1 != implementation_metadata.methods_lexicographic.size()) {
+  bool first_implementation_record = true;
+  for (const auto &class_record : runtime_metadata_source_records.classes_lexicographic) {
+    if (class_record.record_kind != "implementation") {
+      continue;
+    }
+    if (!first_implementation_record) {
+      manifest << ",\n";
+    }
+    first_implementation_record = false;
+    manifest << "    {\"name\":\"" << class_record.name << "\",\"property_count\":"
+             << class_record.property_count << ",\"method_count\":" << class_record.method_count
+             << ",\"line\":" << class_record.line << ",\"column\":" << class_record.column << "}";
+  }
+  if (!first_implementation_record) {
+    manifest << "\n";
+  }
+  manifest << "  ],\n";
+  manifest << "  \"protocols\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.protocols_lexicographic.size(); ++i) {
+    const auto &protocol_record = runtime_metadata_source_records.protocols_lexicographic[i];
+    manifest << "    {\"name\":\"" << protocol_record.name << "\",\"forward_declaration\":"
+             << (protocol_record.is_forward_declaration ? "true" : "false")
+             << ",\"property_count\":" << protocol_record.property_count
+             << ",\"method_count\":" << protocol_record.method_count << ",\"inherited_protocols\":[";
+    for (std::size_t j = 0; j < protocol_record.inherited_protocols_lexicographic.size(); ++j) {
+      manifest << "\"" << protocol_record.inherited_protocols_lexicographic[j] << "\"";
+      if (j + 1 != protocol_record.inherited_protocols_lexicographic.size()) {
         manifest << ",";
       }
     }
-    manifest << "]}";
-    if (i + 1 != type_metadata_handoff.implementations_lexicographic.size()) {
+    manifest << "],\"line\":" << protocol_record.line << ",\"column\":" << protocol_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.protocols_lexicographic.size()) {
       manifest << ",";
     }
     manifest << "\n";
   }
   manifest << "  ],\n";
-  manifest << "  \"protocols\": [\n";
-  manifest << "  ],\n";
   manifest << "  \"categories\": [\n";
-  manifest << "  ]\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.categories_lexicographic.size(); ++i) {
+    const auto &category_record = runtime_metadata_source_records.categories_lexicographic[i];
+    manifest << "    {\"record_kind\":\"" << category_record.record_kind << "\",\"class_name\":\""
+             << category_record.class_name << "\",\"category_name\":\"" << category_record.category_name
+             << "\",\"property_count\":" << category_record.property_count
+             << ",\"method_count\":" << category_record.method_count << ",\"adopted_protocols\":[";
+    for (std::size_t j = 0; j < category_record.adopted_protocols_lexicographic.size(); ++j) {
+      manifest << "\"" << category_record.adopted_protocols_lexicographic[j] << "\"";
+      if (j + 1 != category_record.adopted_protocols_lexicographic.size()) {
+        manifest << ",";
+      }
+    }
+    manifest << "],\"line\":" << category_record.line << ",\"column\":" << category_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.categories_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
+  manifest << "  ],\n";
+  manifest << "  \"runtime_metadata_source_records\": {\n";
+  manifest << "    \"deterministic\": "
+           << (runtime_metadata_source_records.deterministic ? "true" : "false") << ",\n";
+  manifest << "    \"properties\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.properties_lexicographic.size(); ++i) {
+    const auto &property_record = runtime_metadata_source_records.properties_lexicographic[i];
+    manifest << "      {\"owner_kind\":\"" << property_record.owner_kind << "\",\"owner_name\":\""
+             << property_record.owner_name << "\",\"property_name\":\"" << property_record.property_name
+             << "\",\"type\":\"" << property_record.type_name << "\",\"has_getter\":"
+             << (property_record.has_getter ? "true" : "false") << ",\"getter_selector\":\""
+             << property_record.getter_selector << "\",\"has_setter\":"
+             << (property_record.has_setter ? "true" : "false") << ",\"setter_selector\":\""
+             << property_record.setter_selector << "\",\"ivar_binding_symbol\":\""
+             << property_record.ivar_binding_symbol << "\",\"line\":" << property_record.line
+             << ",\"column\":" << property_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
+  manifest << "    ],\n";
+  manifest << "    \"methods\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.methods_lexicographic.size(); ++i) {
+    const auto &method_record = runtime_metadata_source_records.methods_lexicographic[i];
+    manifest << "      {\"owner_kind\":\"" << method_record.owner_kind << "\",\"owner_name\":\""
+             << method_record.owner_name << "\",\"selector\":\"" << method_record.selector
+             << "\",\"is_class_method\":" << (method_record.is_class_method ? "true" : "false")
+             << ",\"has_body\":" << (method_record.has_body ? "true" : "false")
+             << ",\"parameter_count\":" << method_record.parameter_count << ",\"return_type\":\""
+             << method_record.return_type_name << "\",\"line\":" << method_record.line
+             << ",\"column\":" << method_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.methods_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
+  manifest << "    ],\n";
+  manifest << "    \"ivars\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.ivars_lexicographic.size(); ++i) {
+    const auto &ivar_record = runtime_metadata_source_records.ivars_lexicographic[i];
+    manifest << "      {\"owner_kind\":\"" << ivar_record.owner_kind << "\",\"owner_name\":\""
+             << ivar_record.owner_name << "\",\"property_name\":\"" << ivar_record.property_name
+             << "\",\"ivar_binding_symbol\":\"" << ivar_record.ivar_binding_symbol
+             << "\",\"source_model\":\"" << ivar_record.source_model << "\",\"line\":"
+             << ivar_record.line << ",\"column\":" << ivar_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {
+      manifest << ",";
+    }
+    manifest << "\n";
+  }
+  manifest << "    ]\n";
+  manifest << "  }\n";
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
 
