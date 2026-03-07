@@ -6859,3 +6859,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_recovery_and_determinism_hardening_c001_expectations.md
 
+  docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_conformance_matrix_implementation_c001_expectations.md
+
