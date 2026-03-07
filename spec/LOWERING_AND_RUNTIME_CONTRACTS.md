@@ -4016,3 +4016,12 @@ runtime/link bridge-path integration closeout and gate sign-off governance shall
 
 integration closeout and gate sign-off evidence drift before downstream runtime projection and metadata integration advances.
 
+
+interop conformance gate and operations conformance corpus expansion wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E009`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D conformance corpus expansion readiness hooks
+
+or lane-E conformance corpus expansion readiness hooks drift.
+
