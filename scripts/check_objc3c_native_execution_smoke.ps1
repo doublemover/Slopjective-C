@@ -71,6 +71,37 @@ function Get-ShortHash {
   }
 }
 
+function Get-CaseDirectoryName {
+  param(
+    [Parameter(Mandatory = $true)][string]$RunDir,
+    [Parameter(Mandatory = $true)][string]$Kind,
+    [Parameter(Mandatory = $true)][string]$FixtureRelativePath,
+    [Parameter(Mandatory = $true)][string]$FixtureBaseName
+  )
+
+  $prefix = "${Kind}_$(Get-ShortHash -Value $FixtureRelativePath)"
+  $sanitizedBase = [regex]::Replace($FixtureBaseName.ToLowerInvariant(), '[^a-z0-9]+', '_').Trim('_')
+  if ([string]::IsNullOrWhiteSpace($sanitizedBase)) {
+    return $prefix
+  }
+
+  $reservedLeaf = "\compile\module.object-backend.txt"
+  $maxPathLength = 220
+  $available = $maxPathLength - ((Join-Path $RunDir $prefix).Length + $reservedLeaf.Length + 1)
+  if ($available -le 0) {
+    return $prefix
+  }
+
+  if ($sanitizedBase.Length -gt $available) {
+    $sanitizedBase = $sanitizedBase.Substring(0, $available).TrimEnd('_')
+  }
+  if ([string]::IsNullOrWhiteSpace($sanitizedBase)) {
+    return $prefix
+  }
+
+  return "${prefix}_$sanitizedBase"
+}
+
 function Invoke-LoggedCommand {
   param(
     [Parameter(Mandatory = $true)][string]$Command,
@@ -446,8 +477,12 @@ try {
   foreach ($fixture in $positiveFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
     $expectation = Get-PositiveExpectation -FixturePath $fixture.FullName
-    $caseHash = Get-ShortHash -Value $fixtureRel
-    $caseDir = Join-Path $runDir "positive_${caseHash}_$($fixture.BaseName)"
+    $caseDirName = Get-CaseDirectoryName `
+      -RunDir $runDir `
+      -Kind "positive" `
+      -FixtureRelativePath $fixtureRel `
+      -FixtureBaseName $fixture.BaseName
+    $caseDir = Join-Path $runDir $caseDirName
     $compileDir = Join-Path $caseDir "compile"
     $exePath = Join-Path $caseDir "module.exe"
     $compileLog = Join-Path $caseDir "compile.log"
@@ -521,8 +556,12 @@ try {
   foreach ($fixture in $negativeFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
     $spec = Get-NegativeExpectation -FixturePath $fixture.FullName
-    $caseHash = Get-ShortHash -Value $fixtureRel
-    $caseDir = Join-Path $runDir "negative_${caseHash}_$($fixture.BaseName)"
+    $caseDirName = Get-CaseDirectoryName `
+      -RunDir $runDir `
+      -Kind "negative" `
+      -FixtureRelativePath $fixtureRel `
+      -FixtureBaseName $fixture.BaseName
+    $caseDir = Join-Path $runDir $caseDirName
     $compileDir = Join-Path $caseDir "compile"
     $exePath = Join-Path $caseDir "module.exe"
     $compileLog = Join-Path $caseDir "compile.log"

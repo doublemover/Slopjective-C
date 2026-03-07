@@ -361,6 +361,26 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-E001/runnable_runtime_foundation_gate_contract_summary.json`
 
+## Cross-lane runtime-foundation gate and bootstrap proof (M251-E002)
+
+- Lane-E now publishes the first real integrated runtime-foundation gate over
+  `M251-A003`, `M251-B003`, `M251-C003`, `M251-D003`, and `M251-E001`.
+- The gate exercises real `objc3c-native` commands rather than mock-only
+  summary inputs:
+  - a metadata-rich native compile that preserves `module.manifest.json` and
+    `runtime_metadata_source_records`
+  - a fail-closed native compile that emits the precise `O3S260` incomplete
+    runtime-export diagnostic
+  - a native object-emission probe whose object is inspected with
+    `llvm-readobj --sections` and `llvm-objdump --syms`
+  - a fresh execution-smoke run proving the runtime-linked path still targets
+    `artifacts/lib/objc3_runtime.lib`
+- The gate remains fail closed unless source-record handoff, semantic
+  diagnostics, object-section scaffolds, and runtime-library execution all
+  align on the same native toolchain path.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

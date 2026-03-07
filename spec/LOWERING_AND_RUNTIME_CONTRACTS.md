@@ -4385,3 +4385,28 @@ runtime-foundation tranche.
 E001 therefore freezes the aggregate foundation proof that `M252+` must
 preserve without claiming startup registration, class realization, property
 execution, blocks, ARC, or cross-module runtime support are complete.
+
+## M251 cross-lane runtime-foundation gate and bootstrap proof (E002)
+
+Lane-E shall add the first integrated runtime-foundation gate over the finished
+M251 lane outputs.
+
+`M251-E002` requires:
+
+- `M251-E001` to remain the canonical aggregate dependency contract,
+- the gate to exercise the real native toolchain path through
+  `artifacts/bin/objc3c-native.exe`,
+- a metadata-rich native compile probe to preserve `module.manifest.json` and
+  `runtime_metadata_source_records` on the integrated path,
+- an incomplete runtime-export probe to fail closed with the precise `O3S260`
+  diagnostic,
+- a zero-descriptor object-emission probe to succeed and prove the runtime
+  metadata sections/symbols through `llvm-readobj --sections` and
+  `llvm-objdump --syms`,
+- a fresh execution-smoke run to report `status = PASS` and
+  `runtime_library = artifacts/lib/objc3_runtime.lib` under run id
+  `m251_e002_cross_lane_runtime_foundation_gate`.
+
+E002 therefore proves the source-record, semantic-diagnostic,
+metadata-section-scaffold, and runtime-library execution layers line up on the
+same native toolchain path before M251 publishes operator runbooks in E003.

@@ -5602,6 +5602,25 @@ shall preserve:
 Runnable-runtime foundation gate anchors must remain deterministic and fail
 closed before M252 metadata semantic-closure work begins.
 
+## M251 cross-lane runtime-foundation gate metadata anchors (E002)
+
+Deterministic lane-E cross-lane runtime-foundation gate anchors for `M251-E002`
+shall preserve:
+
+- contract id `objc3c-cross-lane-runtime-foundation-gate-bootstrap-proof/m251-e002-v1`,
+- dependency summary path
+  `tmp/reports/m251/M251-E001/runnable_runtime_foundation_gate_contract_summary.json`,
+- probe root `tmp/artifacts/compilation/objc3c-native/m251/cross-lane-runtime-foundation-gate`,
+- smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m251_e002_cross_lane_runtime_foundation_gate/summary.json`,
+- canonical runtime archive path `artifacts/lib/objc3_runtime.lib`,
+- dependency issue anchors `M251-A003`, `M251-B003`, `M251-C003`, `M251-D003`,
+  and `M251-E001`.
+
+Cross-lane runtime-foundation gate anchors must remain deterministic and fail
+closed before M251-E003 publishes operator runbooks and before M252 begins
+registration work.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

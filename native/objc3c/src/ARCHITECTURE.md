@@ -8245,3 +8245,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   synchronized with the D003 execution-smoke summary and the canonical runtime
   archive path `artifacts/lib/objc3_runtime.lib` before `M252` registration and
   metadata-closure work begins.
+
+- M251 lane-E E002 cross-lane runtime-foundation gate anchors explicit
+  integrated gate artifacts in
+  `docs/contracts/m251_cross_lane_runtime_foundation_gate_and_bootstrap_proof_e002_expectations.md`,
+  `spec/planning/compiler/m251/m251_e002_cross_lane_runtime_foundation_gate_and_bootstrap_proof_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so direct
+  `objc3c-native` probes for manifest preservation, precise export diagnostics,
+  object inspection, and execution smoke remain synchronized with the E001
+  aggregate gate before operator runbooks land in E003.
