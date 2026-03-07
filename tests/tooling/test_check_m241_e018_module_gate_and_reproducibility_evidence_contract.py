@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "scripts" / "check_m241_e018_module_gate_and_reproducibility_evidence_contract.py"
 SPEC = importlib.util.spec_from_file_location(
-    "check_m241_e017_module_gate_and_reproducibility_evidence_contract",
+    "check_m241_e018_module_gate_and_reproducibility_evidence_contract",
     SCRIPT_PATH,
 )
 if SPEC is None or SPEC.loader is None:
@@ -42,7 +42,7 @@ def test_contract_passes_on_repository_sources(tmp_path: Path) -> None:
     assert payload["failures"] == []
 
 
-def test_contract_default_summary_out_is_under_tmp_reports_m241_e017() -> None:
+def test_contract_default_summary_out_is_under_tmp_reports_m241_e018() -> None:
     args = contract.parse_args([])
     normalized = str(args.summary_out).replace("\\", "/")
     assert normalized.startswith("tmp/reports/m241/M241-E018/")
@@ -112,6 +112,7 @@ def test_contract_fails_closed_when_packet_drops_c001_dependency(tmp_path: Path)
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any(failure["check_id"] == "M241-E018-DOC-PKT-04" for failure in payload["failures"])
+
 
 
 
