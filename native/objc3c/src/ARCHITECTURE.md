@@ -7546,3 +7546,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m241_incremental_lowering_and_artifact_reuse_advanced_edge_compatibility_workpack_shard_1_c016_expectations.md
 
+
+- M241 lane-C C017 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m241_incremental_lowering_and_artifact_reuse_advanced_diagnostics_workpack_shard_1_c017_expectations.md
+
