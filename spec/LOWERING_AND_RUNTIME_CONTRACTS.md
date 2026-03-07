@@ -3666,3 +3666,8 @@ qualified type lowering and ABI representation advanced core workpack (shard 1) 
 
 lane-C dependency anchors (`M235-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
 
+
+qualified type lowering and ABI representation advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+
