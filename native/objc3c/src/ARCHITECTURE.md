@@ -6371,3 +6371,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M237 lane-B B005 qualifier/generic semantic inference anchors
   docs/contracts/m237_block_semantic_capture_and_lifetime_rules_edge_case_and_compatibility_completion_b005_expectations.md
 
+
+- M237 lane-B B006 qualifier/generic semantic inference anchors
+  docs/contracts/m237_block_semantic_capture_and_lifetime_rules_edge_case_expansion_and_robustness_b006_expectations.md
+
