@@ -5786,3 +5786,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_coverage_gate_and_docs_conformance_corpus_expansion_e010_expectations.md
 
+  m231_declaration_coverage_gate_and_docs_integration_closeout_and_gate_sign_off_e011_expectations.md
+
