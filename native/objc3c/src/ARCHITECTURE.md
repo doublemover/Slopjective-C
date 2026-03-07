@@ -5758,3 +5758,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_frontend_runtime_declaration_metadata_linkage_edge_case_and_compatibility_completion_d005_expectations.md
 
+  m231_frontend_runtime_declaration_metadata_linkage_edge_case_expansion_and_robustness_d006_expectations.md
+
