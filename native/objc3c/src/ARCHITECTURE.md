@@ -7556,3 +7556,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m241_incremental_lowering_and_artifact_reuse_integration_closeout_and_gate_sign_off_c018_expectations.md
 
+  docs/contracts/m241_incremental_lowering_and_artifact_reuse_modular_split_and_scaffolding_c001_expectations.md
+
