@@ -6157,3 +6157,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_performance_and_quality_guardrails_c011_expectations.md
 
+
+- M236 lane-C C012 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_cross_lane_integration_sync_c012_expectations.md
+
