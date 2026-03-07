@@ -5856,3 +5856,11 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M234 lane-B B017 property semantic rules and synthesis analysis anchors
   docs/contracts/m234_property_semantic_rules_and_synthesis_analysis_integration_closeout_and_gate_sign_off_b017_expectations.md
 
+
+- M235 lane-C C006 qualified type lowering and ABI representation edge-case expansion and robustness anchors
+
+  docs/contracts/m235_qualified_type_lowering_and_abi_representation_edge_case_expansion_and_robustness_c006_expectations.md
+
+
+- M235 lane-C C006 qualified type lowering and ABI representation Edge-case expansion and robustness anchors
+

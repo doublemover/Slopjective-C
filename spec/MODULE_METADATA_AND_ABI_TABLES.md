@@ -3645,3 +3645,13 @@ property/ivar semantics evidence and parser replay-budget continuity
 deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B017`
 property/ivar semantics evidence and parser replay-budget continuity
 
+
+deterministic lane-C qualified type lowering and ABI representation edge-case expansion and robustness metadata anchors for `M235-C006`
+
+with explicit `M235-C005` dependency continuity so edge-case expansion and robustness lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation Edge-case expansion and robustness metadata anchors for `M235-C006`
+
+with explicit `M235-C005` dependency continuity so Edge-case expansion and robustness lowering and ABI drift fails closed.
+

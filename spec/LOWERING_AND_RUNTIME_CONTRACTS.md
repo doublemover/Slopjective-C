@@ -3611,3 +3611,13 @@ lane-E deterministic boundary anchors (`M231-E011`) and fail closed on contract-
 property semantic rules and synthesis analysis governance shall preserve
 deterministic lane-B boundary anchors and fail closed on property/ivar semantics drift
 
+
+qualified type lowering and ABI representation edge-case expansion and robustness governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C005`) and fail closed on edge-case expansion and robustness evidence drift
+
+
+qualified type lowering and ABI representation Edge-case expansion and robustness governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C005`) and fail closed on Edge-case expansion and robustness evidence drift
+
