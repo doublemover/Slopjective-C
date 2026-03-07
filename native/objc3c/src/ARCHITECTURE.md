@@ -7395,3 +7395,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M241 lane-A A009 qualifier/generic grammar normalization anchors
   docs/contracts/m241_import_module_grammar_and_source_model_conformance_matrix_implementation_a009_expectations.md
 
+
+- M241 lane-A A010 qualifier/generic grammar normalization anchors
+  docs/contracts/m241_import_module_grammar_and_source_model_conformance_corpus_expansion_a010_expectations.md
+
