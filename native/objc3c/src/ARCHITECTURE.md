@@ -7859,3 +7859,6 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 - M243 lane-D D021 advanced core workpack (shard 2) anchors CLI/reporting output contract integration
 
+
+- M243 lane-D D022 integration closeout and gate sign-off anchors CLI/reporting output contract integration
+
