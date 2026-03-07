@@ -132,6 +132,31 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
 
+## Runtime export legality freeze (M251-B001)
+
+- Lane-B now freezes a canonical semantic legality packet:
+  `Objc3RuntimeExportLegalityBoundary`.
+- The legality packet is synthesized from the existing runtime metadata source
+  ownership boundary plus deterministic sema/linking surfaces for:
+  - protocol/category export
+  - class/protocol/category linking
+  - selector normalization
+  - property attributes
+  - object-pointer/nullability/generics spelling
+  - symbol-graph/scope resolution
+  - property synthesis and ivar binding
+- Manifest-only runtime-record probes now report the legality packet as:
+  - `runtime_export_semantic_boundary_frozen=true`
+  - `runtime_export_fail_closed=true`
+  - `runtime_export_boundary_ready=true`
+- The packet is also forwarded into emitted LLVM IR as
+  `!objc3.objc_runtime_export_legality`.
+- Duplicate-runtime-identity, incomplete-declaration, and illegal-redeclaration
+  blocking remain pending for `M251-B002`; `M251-B001` freezes that boundary
+  without pretending enforcement is implemented.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-B001/object_model_abi_invariants_and_legality_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

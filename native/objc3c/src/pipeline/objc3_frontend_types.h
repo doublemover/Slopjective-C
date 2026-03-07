@@ -1302,6 +1302,9 @@ struct Objc3RuntimeMetadataIvarSourceRecord {
   unsigned column = 1;
 };
 
+inline constexpr const char *kObjc3RuntimeExportLegalityContractId =
+    "objc3c-runtime-export-legality-freeze/m251-b001-v1";
+
 struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataClassSourceRecord> classes_lexicographic;
   std::vector<Objc3RuntimeMetadataProtocolSourceRecord> protocols_lexicographic;
@@ -1364,6 +1367,69 @@ inline bool IsReadyObjc3RuntimeMetadataSourceOwnershipBoundary(
          !boundary.method_record_ast_anchor.empty() &&
          !boundary.ivar_record_ast_anchor.empty() &&
          !boundary.ivar_record_source_model.empty() &&
+         boundary.ivar_record_count <= boundary.property_record_count &&
+         boundary.failure_reason.empty();
+}
+
+struct Objc3RuntimeExportLegalityBoundary {
+  std::string contract_id = kObjc3RuntimeExportLegalityContractId;
+  bool semantic_boundary_frozen = false;
+  bool metadata_export_enforcement_ready = false;
+  bool fail_closed = false;
+  bool semantic_integration_surface_built = false;
+  bool sema_type_metadata_handoff_deterministic = false;
+  bool typed_sema_surface_ready = false;
+  bool typed_sema_surface_deterministic = false;
+  bool runtime_metadata_source_boundary_ready = false;
+  bool protocol_category_deterministic = false;
+  bool class_protocol_category_linking_deterministic = false;
+  bool selector_normalization_deterministic = false;
+  bool property_attribute_deterministic = false;
+  bool object_pointer_surface_deterministic = false;
+  bool symbol_graph_scope_resolution_deterministic = false;
+  bool property_synthesis_ivar_binding_deterministic = false;
+  bool duplicate_runtime_identity_enforcement_pending = true;
+  bool incomplete_declaration_export_blocking_pending = true;
+  bool illegal_redeclaration_mix_export_blocking_pending = true;
+  std::size_t class_record_count = 0;
+  std::size_t protocol_record_count = 0;
+  std::size_t category_record_count = 0;
+  std::size_t property_record_count = 0;
+  std::size_t method_record_count = 0;
+  std::size_t ivar_record_count = 0;
+  std::size_t invalid_protocol_composition_sites = 0;
+  std::size_t property_attribute_invalid_entries = 0;
+  std::size_t property_attribute_contract_violations = 0;
+  std::size_t invalid_type_annotation_sites = 0;
+  std::size_t property_ivar_binding_missing = 0;
+  std::size_t property_ivar_binding_conflicts = 0;
+  std::size_t implementation_resolution_misses = 0;
+  std::size_t method_resolution_misses = 0;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeExportLegalityBoundary(
+    const Objc3RuntimeExportLegalityBoundary &boundary) {
+  return !boundary.contract_id.empty() &&
+         boundary.semantic_boundary_frozen &&
+         !boundary.metadata_export_enforcement_ready &&
+         boundary.fail_closed &&
+         boundary.sema_type_metadata_handoff_deterministic &&
+         boundary.typed_sema_surface_ready &&
+         boundary.typed_sema_surface_deterministic &&
+         boundary.runtime_metadata_source_boundary_ready &&
+         boundary.protocol_category_deterministic &&
+         boundary.class_protocol_category_linking_deterministic &&
+         boundary.selector_normalization_deterministic &&
+         boundary.property_attribute_deterministic &&
+         boundary.object_pointer_surface_deterministic &&
+         boundary.symbol_graph_scope_resolution_deterministic &&
+         boundary.property_synthesis_ivar_binding_deterministic &&
+         boundary.duplicate_runtime_identity_enforcement_pending &&
+         boundary.incomplete_declaration_export_blocking_pending &&
+         boundary.illegal_redeclaration_mix_export_blocking_pending &&
+         boundary.invalid_protocol_composition_sites <=
+             boundary.protocol_record_count + boundary.category_record_count &&
          boundary.ivar_record_count <= boundary.property_record_count &&
          boundary.failure_reason.empty();
 }
@@ -1431,6 +1497,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
+  Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;

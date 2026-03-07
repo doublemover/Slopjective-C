@@ -5417,3 +5417,19 @@ preserve:
 
 Runtime-record manifest handoff continuity must remain deterministic before
 native metadata section/object emission and runtime registration work begins.
+
+## M251 runtime export legality metadata anchors (B001)
+
+Deterministic lane-B runtime export legality for `M251-B001` shall preserve:
+
+- `!objc3.objc_runtime_export_legality` in emitted LLVM IR frontend metadata,
+- class, protocol, category, property, method, and ivar record inventory
+  together with invalid-composition and legality-drift counters,
+- explicit pending enforcement flags for duplicate-runtime-identity,
+  incomplete-declaration, and illegal-redeclaration blocking,
+- a fail-closed legality packet that can be `ready=true` without claiming that
+  metadata export enforcement already exists.
+
+Runtime export legality anchors must remain deterministic before native
+metadata section emission, runtime registration, and executable object-model
+enforcement land.

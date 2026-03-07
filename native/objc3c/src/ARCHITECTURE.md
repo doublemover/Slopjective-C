@@ -8103,3 +8103,17 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   full CLI fail-closed runs preserve the manifest handoff artifact, and emit
   stage summaries do not regress before later runtime metadata section work
   begins.
+
+- M251 lane-B B001 runtime export legality freeze anchors explicit
+  lane-B legality-freeze artifacts in
+  `docs/contracts/m251_object_model_abi_invariants_and_legality_contract_and_architecture_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m251/m251_b001_object_model_abi_invariants_and_legality_contract_and_architecture_freeze_packet.md`,
+  `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`,
+  `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`,
+  `scripts/check_m251_b001_object_model_abi_invariants_and_legality_contract.py`,
+  `tests/tooling/test_check_m251_b001_object_model_abi_invariants_and_legality_contract.py`,
+  and `package.json` so runtime export legality remains frozen, fail-closed,
+  and explicitly marked with metadata export enforcement still pending for B002.

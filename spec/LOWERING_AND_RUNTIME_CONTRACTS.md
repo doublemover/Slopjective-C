@@ -4146,3 +4146,21 @@ before later LLVM IR/object fail-closed diagnostics are surfaced.
   failure,
 - full compile/emit workflows to remain fail-closed while still preserving the
   manifest handoff artifact for downstream consumers.
+
+## M251 runtime export legality freeze (B001)
+
+Lane-B shall freeze a canonical runtime-export legality packet before metadata
+section emission and runtime registration work begin.
+
+`M251-B001` requires:
+
+- `Objc3RuntimeExportLegalityBoundary` to remain the single semantic legality
+  freeze packet for runtime-exported declarations,
+- the packet to be synthesized from deterministic runtime metadata ownership,
+  protocol/category linking, selector normalization, property attribute,
+  object-pointer spelling, symbol-graph, and property-synthesis/ivar-binding
+  surfaces,
+- the packet to be ready while metadata export enforcement remains pending,
+  provided it stays fail-closed and carries the pending enforcement bits for
+  duplicate identities, incomplete declarations, and illegal redeclaration
+  mixes.
