@@ -7692,3 +7692,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M242 lane-B B013 preprocessor semantic model and expansion rules contract-freeze anchors
   m242_preprocessor_semantic_model_and_expansion_rules_docs_and_operator_runbook_synchronization_b013_expectations.md
 
+
+- M242 lane-B B014 preprocessor semantic model and expansion rules contract-freeze anchors
+  m242_preprocessor_semantic_model_and_expansion_rules_integration_closeout_and_gate_sign_off_b014_expectations.md
+
