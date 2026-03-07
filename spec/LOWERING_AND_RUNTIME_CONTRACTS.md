@@ -3739,3 +3739,8 @@ lowering/runtime diagnostics surfacing docs and operator runbook synchronization
 
 lane-C dependency anchors (`M243-C012`)
 
+
+lowering/runtime diagnostics surfacing release-candidate and replay dry-run shall preserve
+
+lane-C dependency anchors (`M243-C013`)
+

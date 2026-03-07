@@ -5046,3 +5046,8 @@ deterministic lane-C lowering/runtime diagnostics surfacing docs and operator ru
 
 `M243-C012` dependency continuity
 
+
+deterministic lane-C lowering/runtime diagnostics surfacing release-candidate and replay dry-run metadata anchors for `M243-C014` with explicit
+
+`M243-C013` dependency continuity
+
