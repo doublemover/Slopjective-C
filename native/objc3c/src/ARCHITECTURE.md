@@ -5694,3 +5694,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_semantic_validation_rules_edge_case_expansion_and_robustness_b006_expectations.md
 
+  m231_declaration_semantic_validation_rules_diagnostics_hardening_b007_expectations.md
+
