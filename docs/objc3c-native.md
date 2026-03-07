@@ -225,6 +225,27 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-C001/runtime_metadata_section_abi_and_symbol_policy_contract_summary.json`
 
+## LLVM global and section scaffold for runtime metadata payloads (M251-C002)
+
+- Lane-C now emits a canonical runtime metadata scaffold packet:
+  `Objc3RuntimeMetadataSectionScaffoldSummary`.
+- The native IR path emits retained placeholder globals directly into the
+  logical runtime metadata sections frozen by `M251-C001`.
+- The scaffold always emits `@__objc3_image_info` and retained aggregate symbols:
+  - `@__objc3_sec_class_descriptors`
+  - `@__objc3_sec_protocol_descriptors`
+  - `@__objc3_sec_category_descriptors`
+  - `@__objc3_sec_property_descriptors`
+  - `@__objc3_sec_ivar_descriptors`
+- Per-record descriptor placeholders use the canonical descriptor prefix
+  `@__objc3_meta_...` and remain retained through `@llvm.used`.
+- The scaffold contract is published through manifest JSON and emitted LLVM IR
+  metadata as `!objc3.objc_runtime_metadata_section_scaffold`.
+- Object emission now carries real runtime metadata scaffold sections even though
+  the full executable object-model payload layouts have not landed yet.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-C002/runtime_metadata_section_scaffold_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

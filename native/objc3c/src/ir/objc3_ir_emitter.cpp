@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <iomanip>
 #include <map>
 #include <sstream>
 #include <string>
@@ -103,6 +104,8 @@ class Objc3IREmitter {
       body << "\n";
     }
 
+    EmitRuntimeMetadataSectionScaffold(body);
+
     EmitSelectorConstants(body);
 
     EmitPrototypeDeclarations(body);
@@ -150,6 +153,11 @@ class Objc3IREmitter {
     if (!frontend_metadata_.runtime_metadata_section_abi_contract_id.empty()) {
       out << "; runtime_metadata_section_abi = "
           << frontend_metadata_.runtime_metadata_section_abi_contract_id
+          << "\n";
+    }
+    if (!frontend_metadata_.runtime_metadata_section_scaffold_contract_id.empty()) {
+      out << "; runtime_metadata_section_scaffold = "
+          << frontend_metadata_.runtime_metadata_section_scaffold_contract_id
           << "\n";
     }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
@@ -1706,6 +1714,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_export_legality = !{!46}\n";
     out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
+    out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -1925,6 +1934,82 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_.runtime_metadata_section_retention_root)
+        << "\"}\n";
+    out << "!49 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_section_scaffold_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_abi_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_section_scaffold_emitted ? 1
+                                                                         : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_scaffold_fail_closed
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_metadata_section_scaffold_image_info_emitted
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_class_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_protocol_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_category_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_property_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_ivar_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_total_descriptor_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_total_retained_global_count)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_image_info_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_class_aggregate_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_protocol_aggregate_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_category_aggregate_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_property_aggregate_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_section_scaffold_ivar_aggregate_symbol)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -3563,6 +3648,143 @@ class Objc3IREmitter {
       return declared_pure_functions_.find(name) == declared_pure_functions_.end();
     }
     return impure_functions_.find(name) != impure_functions_.end();
+  }
+
+  bool ShouldEmitRuntimeMetadataSectionScaffold() const {
+    return frontend_metadata_.runtime_metadata_section_ready_for_scaffold &&
+           frontend_metadata_.runtime_export_ready_for_runtime_export &&
+           frontend_metadata_.runtime_metadata_section_scaffold_emitted &&
+           frontend_metadata_.runtime_metadata_section_scaffold_fail_closed &&
+           frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used &&
+           frontend_metadata_.runtime_metadata_section_scaffold_image_info_emitted;
+  }
+
+  static std::string FormatRuntimeMetadataDescriptorOrdinal(std::size_t ordinal) {
+    std::ostringstream formatted;
+    formatted << std::setw(4) << std::setfill('0') << ordinal;
+    return formatted.str();
+  }
+
+  std::string BuildRuntimeMetadataDescriptorSymbol(
+      const std::string &kind,
+      std::size_t ordinal) const {
+    return "@" + frontend_metadata_.runtime_metadata_section_descriptor_symbol_prefix +
+           kind + "_" + FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+  }
+
+  void EmitRuntimeMetadataSectionScaffold(std::ostringstream &out) const {
+    if (!ShouldEmitRuntimeMetadataSectionScaffold()) {
+      return;
+    }
+
+    out << "; runtime metadata section scaffold globals\n";
+
+    std::vector<std::string> retained_globals;
+    retained_globals.reserve(
+        frontend_metadata_.runtime_metadata_section_scaffold_total_retained_global_count);
+
+    const auto emit_retained = [&](const std::string &symbol) {
+      retained_globals.push_back(symbol);
+    };
+
+    const std::string image_info_symbol =
+        "@" +
+        frontend_metadata_.runtime_metadata_section_scaffold_image_info_symbol;
+    out << image_info_symbol << " = "
+        << frontend_metadata_.runtime_metadata_section_aggregate_linkage
+        << " global { i32, i32 } zeroinitializer, section \""
+        << frontend_metadata_.runtime_metadata_section_logical_image_info_section
+        << "\", align 4\n";
+    emit_retained(image_info_symbol);
+
+    const auto emit_descriptor_section =
+        [&](const std::string &kind,
+            const std::string &section_name,
+            const std::string &aggregate_symbol_name,
+            std::size_t descriptor_count) {
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(descriptor_count);
+          for (std::size_t i = 0; i < descriptor_count; ++i) {
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(kind, i);
+            descriptor_symbols.push_back(descriptor_symbol);
+            out << descriptor_symbol << " = "
+                << frontend_metadata_.runtime_metadata_section_descriptor_linkage
+                << " global [1 x i8] zeroinitializer, section \""
+                << section_name << "\", align 1\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + aggregate_symbol_name;
+          out << aggregate_symbol << " = "
+              << frontend_metadata_.runtime_metadata_section_aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << section_name << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
+    emit_descriptor_section(
+        "class",
+        frontend_metadata_.runtime_metadata_section_logical_class_descriptor_section,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_class_aggregate_symbol,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_class_descriptor_count);
+    emit_descriptor_section(
+        "protocol",
+        frontend_metadata_
+            .runtime_metadata_section_logical_protocol_descriptor_section,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_protocol_aggregate_symbol,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_protocol_descriptor_count);
+    emit_descriptor_section(
+        "category",
+        frontend_metadata_
+            .runtime_metadata_section_logical_category_descriptor_section,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_category_aggregate_symbol,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_category_descriptor_count);
+    emit_descriptor_section(
+        "property",
+        frontend_metadata_
+            .runtime_metadata_section_logical_property_descriptor_section,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_property_aggregate_symbol,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_property_descriptor_count);
+    emit_descriptor_section(
+        "ivar",
+        frontend_metadata_.runtime_metadata_section_logical_ivar_descriptor_section,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_ivar_aggregate_symbol,
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_ivar_descriptor_count);
+
+    out << "@llvm.used = appending global [" << retained_globals.size()
+        << " x ptr] [";
+    for (std::size_t i = 0; i < retained_globals.size(); ++i) {
+      if (i != 0) {
+        out << ", ";
+      }
+      out << "ptr " << retained_globals[i];
+    }
+    out << "], section \"llvm.metadata\"\n\n";
   }
 
   void EmitSelectorConstants(std::ostringstream &out) const {

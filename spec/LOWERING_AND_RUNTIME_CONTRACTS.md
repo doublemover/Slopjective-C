@@ -4226,3 +4226,27 @@ before LLVM global reservation and physical object-section emission begin.
 Runtime metadata section ABI and symbol policy governance must therefore remain
 deterministic and fail closed before `M251-C002` starts reserving LLVM globals
 and physical object sections.
+
+## M251 runtime metadata section scaffold emission (C002)
+
+Lane-C shall emit retained placeholder runtime metadata globals and aggregates
+into the canonical logical metadata sections before executable runtime payload
+layouts land.
+
+`M251-C002` requires:
+
+- `Objc3RuntimeMetadataSectionScaffoldSummary` to remain the single lane-C
+  emitted scaffold packet,
+- image info, aggregate section symbols, and per-record descriptor placeholders
+  to be emitted as real LLVM globals rather than manifest-only accounting,
+- `@llvm.used` to retain the scaffolded metadata globals so later object
+  inspection and runtime registration work can observe them,
+- manifest JSON and LLVM IR metadata to publish the same scaffold contract
+  through `runtime_metadata_section_scaffold_contract_id` and
+  `!objc3.objc_runtime_metadata_section_scaffold`,
+- emission to remain fail-closed until the `M251-C001` section ABI and
+  `M251-B002` runtime export enforcement packets are both ready.
+
+Runtime metadata section scaffold governance must therefore remain deterministic
+and fail closed before runtime registration, live lookup, and executable
+object-model payload lowering land.

@@ -5476,6 +5476,24 @@ Runtime metadata section ABI and symbol policy anchors must remain
 deterministic and fail closed before native metadata section emission and
 runtime registration land.
 
+## M251 runtime metadata section scaffold metadata anchors (C002)
+
+Deterministic lane-C runtime metadata section scaffold anchors for `M251-C002`
+shall preserve:
+
+- contract id `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- image info symbol `__objc3_image_info`,
+- aggregate symbols `__objc3_sec_class_descriptors`,
+  `__objc3_sec_protocol_descriptors`, `__objc3_sec_category_descriptors`,
+  `__objc3_sec_property_descriptors`, and `__objc3_sec_ivar_descriptors`,
+- descriptor placeholder globals using the canonical prefix `__objc3_meta_`,
+- retention through `@llvm.used`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_section_scaffold`.
+
+Runtime metadata section scaffold anchors must remain deterministic and fail
+closed before runtime registration, live lookup, and executable object-model
+payload lowering land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

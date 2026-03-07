@@ -28,6 +28,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     if (!artifacts.manifest_json.empty()) {
       // M251-C001 freeze: manifest emission remains the authoritative published
       // metadata-section ABI surface until later object-section emission lands.
+      // M251-C002 scaffold: manifest emission mirrors the live runtime-metadata
+      // section scaffold inventory so tooling can diff JSON against emitted
+      // LLVM IR/object evidence without treating the manifest as the only source.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

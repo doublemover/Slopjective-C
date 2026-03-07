@@ -172,6 +172,41 @@ BuildRuntimeMetadataSectionAbiFreezeSummary(
   return summary;
 }
 
+Objc3RuntimeMetadataSectionScaffoldSummary
+BuildRuntimeMetadataSectionScaffoldSummary(
+    const Objc3RuntimeMetadataSectionAbiFreezeSummary &runtime_metadata_section_abi,
+    const Objc3RuntimeExportLegalityBoundary &runtime_export_legality,
+    const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement) {
+  Objc3RuntimeMetadataSectionScaffoldSummary summary;
+  summary.fail_closed = true;
+  if (!IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
+          runtime_metadata_section_abi) ||
+      !IsReadyObjc3RuntimeExportEnforcementSummary(
+          runtime_export_enforcement)) {
+    summary.failure_reason =
+        "runtime metadata section scaffold prerequisites are not ready";
+    return summary;
+  }
+
+  summary.scaffold_emitted = true;
+  summary.uses_llvm_used = true;
+  summary.image_info_emitted = true;
+  summary.class_descriptor_count = runtime_export_legality.class_record_count;
+  summary.protocol_descriptor_count =
+      runtime_export_legality.protocol_record_count;
+  summary.category_descriptor_count =
+      runtime_export_legality.category_record_count;
+  summary.property_descriptor_count =
+      runtime_export_legality.property_record_count;
+  summary.ivar_descriptor_count = runtime_export_legality.ivar_record_count;
+  summary.total_descriptor_count =
+      summary.class_descriptor_count + summary.protocol_descriptor_count +
+      summary.category_descriptor_count + summary.property_descriptor_count +
+      summary.ivar_descriptor_count;
+  summary.total_retained_global_count = summary.total_descriptor_count + 6u;
+  return summary;
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -1818,6 +1853,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           runtime_metadata_source_ownership,
           runtime_export_legality,
           runtime_export_enforcement);
+  const Objc3RuntimeMetadataSectionScaffoldSummary
+      runtime_metadata_section_scaffold =
+          BuildRuntimeMetadataSectionScaffoldSummary(
+              runtime_metadata_section_abi,
+              runtime_export_legality,
+              runtime_export_enforcement);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -3021,6 +3062,50 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_metadata_section_abi.retention_root
            << "\",\"runtime_metadata_section_failure_reason\":\""
            << runtime_metadata_section_abi.failure_reason
+           << "\""
+           << ",\"runtime_metadata_section_scaffold_contract_id\":\""
+           << runtime_metadata_section_scaffold.contract_id
+           << "\",\"runtime_metadata_section_scaffold_abi_contract_id\":\""
+           << runtime_metadata_section_scaffold.abi_contract_id
+           << "\",\"runtime_metadata_section_scaffold_emitted\":"
+           << (runtime_metadata_section_scaffold.scaffold_emitted ? "true"
+                                                                  : "false")
+           << ",\"runtime_metadata_section_scaffold_fail_closed\":"
+           << (runtime_metadata_section_scaffold.fail_closed ? "true" : "false")
+           << ",\"runtime_metadata_section_scaffold_uses_llvm_used\":"
+           << (runtime_metadata_section_scaffold.uses_llvm_used ? "true"
+                                                                : "false")
+           << ",\"runtime_metadata_section_scaffold_image_info_emitted\":"
+           << (runtime_metadata_section_scaffold.image_info_emitted ? "true"
+                                                                    : "false")
+           << ",\"runtime_metadata_section_scaffold_class_descriptor_count\":"
+           << runtime_metadata_section_scaffold.class_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_protocol_descriptor_count\":"
+           << runtime_metadata_section_scaffold.protocol_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_category_descriptor_count\":"
+           << runtime_metadata_section_scaffold.category_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_property_descriptor_count\":"
+           << runtime_metadata_section_scaffold.property_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_ivar_descriptor_count\":"
+           << runtime_metadata_section_scaffold.ivar_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_total_descriptor_count\":"
+           << runtime_metadata_section_scaffold.total_descriptor_count
+           << ",\"runtime_metadata_section_scaffold_total_retained_global_count\":"
+           << runtime_metadata_section_scaffold.total_retained_global_count
+           << ",\"runtime_metadata_section_scaffold_image_info_symbol\":\""
+           << runtime_metadata_section_scaffold.image_info_symbol
+           << "\",\"runtime_metadata_section_scaffold_class_aggregate_symbol\":\""
+           << runtime_metadata_section_scaffold.class_aggregate_symbol
+           << "\",\"runtime_metadata_section_scaffold_protocol_aggregate_symbol\":\""
+           << runtime_metadata_section_scaffold.protocol_aggregate_symbol
+           << "\",\"runtime_metadata_section_scaffold_category_aggregate_symbol\":\""
+           << runtime_metadata_section_scaffold.category_aggregate_symbol
+           << "\",\"runtime_metadata_section_scaffold_property_aggregate_symbol\":\""
+           << runtime_metadata_section_scaffold.property_aggregate_symbol
+           << "\",\"runtime_metadata_section_scaffold_ivar_aggregate_symbol\":\""
+           << runtime_metadata_section_scaffold.ivar_aggregate_symbol
+           << "\",\"runtime_metadata_section_scaffold_failure_reason\":\""
+           << runtime_metadata_section_scaffold.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
@@ -5617,6 +5702,51 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_section_abi.metadata_visibility;
   ir_frontend_metadata.runtime_metadata_section_retention_root =
       runtime_metadata_section_abi.retention_root;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_contract_id =
+      runtime_metadata_section_scaffold.contract_id;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_abi_contract_id =
+      runtime_metadata_section_scaffold.abi_contract_id;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_emitted =
+      runtime_metadata_section_scaffold.scaffold_emitted;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_fail_closed =
+      runtime_metadata_section_scaffold.fail_closed;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_uses_llvm_used =
+      runtime_metadata_section_scaffold.uses_llvm_used;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_image_info_emitted =
+      runtime_metadata_section_scaffold.image_info_emitted;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_class_descriptor_count =
+      runtime_metadata_section_scaffold.class_descriptor_count;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_protocol_descriptor_count =
+      runtime_metadata_section_scaffold.protocol_descriptor_count;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_category_descriptor_count =
+      runtime_metadata_section_scaffold.category_descriptor_count;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_property_descriptor_count =
+      runtime_metadata_section_scaffold.property_descriptor_count;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_descriptor_count =
+      runtime_metadata_section_scaffold.ivar_descriptor_count;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_total_descriptor_count =
+      runtime_metadata_section_scaffold.total_descriptor_count;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_total_retained_global_count =
+      runtime_metadata_section_scaffold.total_retained_global_count;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_image_info_symbol =
+      runtime_metadata_section_scaffold.image_info_symbol;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_class_aggregate_symbol =
+      runtime_metadata_section_scaffold.class_aggregate_symbol;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_protocol_aggregate_symbol =
+      runtime_metadata_section_scaffold.protocol_aggregate_symbol;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_category_aggregate_symbol =
+      runtime_metadata_section_scaffold.category_aggregate_symbol;
+  ir_frontend_metadata
+      .runtime_metadata_section_scaffold_property_aggregate_symbol =
+      runtime_metadata_section_scaffold.property_aggregate_symbol;
+  ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_aggregate_symbol =
+      runtime_metadata_section_scaffold.ivar_aggregate_symbol;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

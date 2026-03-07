@@ -8165,3 +8165,16 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   This freeze is in place before `M251-C002` begins reserving LLVM globals and physical object sections.
   This lane specifically covers class and category declarations that parse
   successfully but still cannot participate in runtime export.
+
+- M251 lane-C C002 LLVM global and section scaffold for runtime metadata payloads
+  anchors explicit emitted-scaffold artifacts in
+  `docs/contracts/m251_llvm_global_and_section_scaffold_for_runtime_metadata_payloads_c002_expectations.md`,
+  `spec/planning/compiler/m251/m251_c002_llvm_global_and_section_scaffold_for_runtime_metadata_payloads_packet.md`,
+  `ast/objc3_ast.h`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
+  native IR path emits retained image-info globals, aggregate section symbols,
+  per-record descriptor placeholders, and `@llvm.used` retention in the
+  canonical runtime metadata sections before executable runtime payload layouts
+  and runtime registration land.

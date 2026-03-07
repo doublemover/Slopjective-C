@@ -1536,6 +1536,59 @@ inline bool IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
          summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeMetadataSectionScaffoldSummary {
+  std::string contract_id = kObjc3RuntimeMetadataSectionScaffoldContractId;
+  std::string abi_contract_id = kObjc3RuntimeMetadataSectionAbiContractId;
+  bool scaffold_emitted = false;
+  bool fail_closed = false;
+  bool uses_llvm_used = false;
+  bool image_info_emitted = false;
+  std::size_t class_descriptor_count = 0;
+  std::size_t protocol_descriptor_count = 0;
+  std::size_t category_descriptor_count = 0;
+  std::size_t property_descriptor_count = 0;
+  std::size_t ivar_descriptor_count = 0;
+  std::size_t total_descriptor_count = 0;
+  std::size_t total_retained_global_count = 0;
+  std::string image_info_symbol = kObjc3RuntimeMetadataImageInfoSymbol;
+  std::string class_aggregate_symbol =
+      kObjc3RuntimeMetadataClassDescriptorAggregateSymbol;
+  std::string protocol_aggregate_symbol =
+      kObjc3RuntimeMetadataProtocolDescriptorAggregateSymbol;
+  std::string category_aggregate_symbol =
+      kObjc3RuntimeMetadataCategoryDescriptorAggregateSymbol;
+  std::string property_aggregate_symbol =
+      kObjc3RuntimeMetadataPropertyDescriptorAggregateSymbol;
+  std::string ivar_aggregate_symbol =
+      kObjc3RuntimeMetadataIvarDescriptorAggregateSymbol;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
+    const Objc3RuntimeMetadataSectionScaffoldSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.abi_contract_id.empty() &&
+         summary.scaffold_emitted &&
+         summary.fail_closed &&
+         summary.uses_llvm_used &&
+         summary.image_info_emitted &&
+         summary.total_descriptor_count ==
+             summary.class_descriptor_count +
+                 summary.protocol_descriptor_count +
+                 summary.category_descriptor_count +
+                 summary.property_descriptor_count +
+                 summary.ivar_descriptor_count &&
+         summary.total_retained_global_count ==
+             summary.total_descriptor_count + 6u &&
+         !summary.image_info_symbol.empty() &&
+         !summary.class_aggregate_symbol.empty() &&
+         !summary.protocol_aggregate_symbol.empty() &&
+         !summary.category_aggregate_symbol.empty() &&
+         !summary.property_aggregate_symbol.empty() &&
+         !summary.ivar_aggregate_symbol.empty() &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

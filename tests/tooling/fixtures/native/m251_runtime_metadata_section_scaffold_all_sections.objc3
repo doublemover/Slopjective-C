@@ -1,0 +1,22 @@
+module runtimeMetadataSectionScaffoldCategory;
+
+@protocol Worker
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Widget (Tracing)<Worker>
+@property (readonly) id shadow;
+- (id) traceIdentifier;
+@end
+
+@implementation Widget (Tracing)
+@property (readonly) id shadow;
+- (id) traceIdentifier {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}
