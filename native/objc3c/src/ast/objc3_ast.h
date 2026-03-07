@@ -340,6 +340,8 @@ inline constexpr const char *kObjc3RuntimeMetadataSectionAbiContractId =
     "objc3c-runtime-metadata-section-abi-symbol-policy-freeze/m251-c001-v1";
 inline constexpr const char *kObjc3RuntimeMetadataSectionScaffoldContractId =
     "objc3c-runtime-metadata-section-scaffold/m251-c002-v1";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
+    "objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1";
 inline constexpr const char *kObjc3RuntimeMetadataLogicalImageInfoSection =
     "objc3.runtime.image_info";
 inline constexpr const char *kObjc3RuntimeMetadataLogicalClassDescriptorSection =
@@ -376,6 +378,20 @@ inline constexpr const char *kObjc3RuntimeMetadataVisibilityPolicy =
     "hidden";
 inline constexpr const char *kObjc3RuntimeMetadataRetentionPolicyRoot =
     "llvm.used";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionFixturePath =
+    "tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionEmitPrefix =
+    "module";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionObjectRelativePath =
+    "module.obj";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionInventoryRowKey =
+    "zero-descriptor-section-inventory";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolInventoryRowKey =
+    "zero-descriptor-symbol-inventory";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionCommand =
+    "llvm-readobj --sections module.obj";
+inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolCommand =
+    "llvm-objdump --syms module.obj";
 
 struct Objc3MethodDecl {
   struct SelectorPiece {

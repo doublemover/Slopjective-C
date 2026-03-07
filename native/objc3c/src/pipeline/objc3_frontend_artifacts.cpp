@@ -207,6 +207,28 @@ BuildRuntimeMetadataSectionScaffoldSummary(
   return summary;
 }
 
+Objc3RuntimeMetadataObjectInspectionHarnessSummary
+BuildRuntimeMetadataObjectInspectionHarnessSummary(
+    const Objc3RuntimeMetadataSectionAbiFreezeSummary &runtime_metadata_section_abi,
+    const Objc3RuntimeMetadataSectionScaffoldSummary &runtime_metadata_section_scaffold) {
+  Objc3RuntimeMetadataObjectInspectionHarnessSummary summary;
+  summary.fail_closed = true;
+  if (!IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
+          runtime_metadata_section_abi) ||
+      !IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
+          runtime_metadata_section_scaffold)) {
+    summary.failure_reason =
+        "runtime metadata object inspection harness prerequisites are not ready";
+    return summary;
+  }
+
+  summary.matrix_published = true;
+  summary.uses_llvm_readobj = true;
+  summary.uses_llvm_objdump = true;
+  summary.matrix_row_count = 2u;
+  return summary;
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -1859,6 +1881,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               runtime_metadata_section_abi,
               runtime_export_legality,
               runtime_export_enforcement);
+  const Objc3RuntimeMetadataObjectInspectionHarnessSummary
+      runtime_metadata_object_inspection =
+          BuildRuntimeMetadataObjectInspectionHarnessSummary(
+              runtime_metadata_section_abi,
+              runtime_metadata_section_scaffold);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -3106,6 +3133,40 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_metadata_section_scaffold.ivar_aggregate_symbol
            << "\",\"runtime_metadata_section_scaffold_failure_reason\":\""
            << runtime_metadata_section_scaffold.failure_reason
+           << "\",\"runtime_metadata_object_inspection_contract_id\":\""
+           << runtime_metadata_object_inspection.contract_id
+           << "\",\"runtime_metadata_object_inspection_scaffold_contract_id\":\""
+           << runtime_metadata_object_inspection.scaffold_contract_id
+           << "\",\"runtime_metadata_object_inspection_matrix_published\":"
+           << (runtime_metadata_object_inspection.matrix_published ? "true"
+                                                                   : "false")
+           << ",\"runtime_metadata_object_inspection_fail_closed\":"
+           << (runtime_metadata_object_inspection.fail_closed ? "true"
+                                                              : "false")
+           << ",\"runtime_metadata_object_inspection_uses_llvm_readobj\":"
+           << (runtime_metadata_object_inspection.uses_llvm_readobj ? "true"
+                                                                    : "false")
+           << ",\"runtime_metadata_object_inspection_uses_llvm_objdump\":"
+           << (runtime_metadata_object_inspection.uses_llvm_objdump ? "true"
+                                                                    : "false")
+           << ",\"runtime_metadata_object_inspection_matrix_row_count\":"
+           << runtime_metadata_object_inspection.matrix_row_count
+           << ",\"runtime_metadata_object_inspection_fixture_path\":\""
+           << runtime_metadata_object_inspection.fixture_path
+           << "\",\"runtime_metadata_object_inspection_emit_prefix\":\""
+           << runtime_metadata_object_inspection.emit_prefix
+           << "\",\"runtime_metadata_object_inspection_object_relative_path\":\""
+           << runtime_metadata_object_inspection.object_relative_path
+           << "\",\"runtime_metadata_object_inspection_section_inventory_row_key\":\""
+           << runtime_metadata_object_inspection.section_inventory_row_key
+           << "\",\"runtime_metadata_object_inspection_section_inventory_command\":\""
+           << runtime_metadata_object_inspection.section_inventory_command
+           << "\",\"runtime_metadata_object_inspection_symbol_inventory_row_key\":\""
+           << runtime_metadata_object_inspection.symbol_inventory_row_key
+           << "\",\"runtime_metadata_object_inspection_symbol_inventory_command\":\""
+           << runtime_metadata_object_inspection.symbol_inventory_command
+           << "\",\"runtime_metadata_object_inspection_failure_reason\":\""
+           << runtime_metadata_object_inspection.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
@@ -5747,6 +5808,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_section_scaffold.property_aggregate_symbol;
   ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_aggregate_symbol =
       runtime_metadata_section_scaffold.ivar_aggregate_symbol;
+  ir_frontend_metadata.runtime_metadata_object_inspection_contract_id =
+      runtime_metadata_object_inspection.contract_id;
+  ir_frontend_metadata.runtime_metadata_object_inspection_scaffold_contract_id =
+      runtime_metadata_object_inspection.scaffold_contract_id;
+  ir_frontend_metadata.runtime_metadata_object_inspection_matrix_published =
+      runtime_metadata_object_inspection.matrix_published;
+  ir_frontend_metadata.runtime_metadata_object_inspection_fail_closed =
+      runtime_metadata_object_inspection.fail_closed;
+  ir_frontend_metadata.runtime_metadata_object_inspection_uses_llvm_readobj =
+      runtime_metadata_object_inspection.uses_llvm_readobj;
+  ir_frontend_metadata.runtime_metadata_object_inspection_uses_llvm_objdump =
+      runtime_metadata_object_inspection.uses_llvm_objdump;
+  ir_frontend_metadata.runtime_metadata_object_inspection_matrix_row_count =
+      runtime_metadata_object_inspection.matrix_row_count;
+  ir_frontend_metadata.runtime_metadata_object_inspection_fixture_path =
+      runtime_metadata_object_inspection.fixture_path;
+  ir_frontend_metadata.runtime_metadata_object_inspection_emit_prefix =
+      runtime_metadata_object_inspection.emit_prefix;
+  ir_frontend_metadata.runtime_metadata_object_inspection_object_relative_path =
+      runtime_metadata_object_inspection.object_relative_path;
+  ir_frontend_metadata.runtime_metadata_object_inspection_section_inventory_row_key =
+      runtime_metadata_object_inspection.section_inventory_row_key;
+  ir_frontend_metadata.runtime_metadata_object_inspection_section_inventory_command =
+      runtime_metadata_object_inspection.section_inventory_command;
+  ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_row_key =
+      runtime_metadata_object_inspection.symbol_inventory_row_key;
+  ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_command =
+      runtime_metadata_object_inspection.symbol_inventory_command;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

@@ -10,6 +10,8 @@ M251-C001 freeze: this shim does not define metadata section inventory,
 symbol retention roots, or native object-file symbol policy.
 M251-C002 scaffold: the native driver now emits retained metadata placeholder
 globals, but this shim still is not the runtime registration, lookup, or executable object-model implementation.
+M251-C003 object inspection harness: emitted objects are now inspected with
+llvm-readobj/llvm-objdump evidence, but that harness still validates compiler layout and retention rather than pretending the shim is a native runtime.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

@@ -4250,3 +4250,27 @@ layouts land.
 Runtime metadata section scaffold governance must therefore remain deterministic
 and fail closed before runtime registration, live lookup, and executable
 object-model payload lowering land.
+
+## M251 runtime metadata object inspection harness (C003)
+
+Lane-C shall publish a deterministic object inspection matrix for emitted
+runtime metadata scaffold objects.
+
+`M251-C003` requires:
+
+- `Objc3RuntimeMetadataObjectInspectionHarnessSummary` to remain the single lane-C inspection matrix packet,
+- manifest JSON and LLVM IR metadata to publish the same inspection contract
+  through `runtime_metadata_object_inspection_contract_id` and
+  `!objc3.objc_runtime_metadata_object_inspection`,
+- the zero-descriptor fixture and emitted object relative path to remain frozen
+  as `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
+  and `module.obj`,
+- matrix rows `zero-descriptor-section-inventory` and
+  `zero-descriptor-symbol-inventory` to remain concrete `llvm-readobj` and
+  `llvm-objdump` commands rather than ad hoc operator guidance,
+- the inspection harness to remain fail-closed until the `M251-C002` scaffold
+  packet is ready.
+
+Runtime metadata object inspection governance must therefore remain
+deterministic and fail closed before runtime registration, live lookup, and
+executable object-model payload lowering land.

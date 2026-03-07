@@ -246,6 +246,25 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-C002/runtime_metadata_section_scaffold_summary.json`
 
+## Metadata object inspection harness (M251-C003)
+
+- Lane-C now publishes a canonical object inspection matrix packet:
+  `Objc3RuntimeMetadataObjectInspectionHarnessSummary`.
+- Manifest JSON and emitted LLVM IR now publish the same inspection contract
+  through `runtime_metadata_object_inspection_contract_id` and
+  `!objc3.objc_runtime_metadata_object_inspection`.
+- The canonical zero-descriptor fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`.
+- The inspection matrix currently publishes two operator rows:
+  - `zero-descriptor-section-inventory` -> `llvm-readobj --sections module.obj`
+  - `zero-descriptor-symbol-inventory` -> `llvm-objdump --syms module.obj`
+- The harness proves emitted objects carry the six scaffold metadata sections
+  and the six retained scaffold symbols preserved by `M251-C002`.
+- C003 is structural object inspection only; it does not claim runtime
+  registration, live lookup, or executable object-model payload lowering yet.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

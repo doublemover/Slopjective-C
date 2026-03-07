@@ -31,6 +31,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // M251-C002 scaffold: manifest emission mirrors the live runtime-metadata
       // section scaffold inventory so tooling can diff JSON against emitted
       // LLVM IR/object evidence without treating the manifest as the only source.
+      // M251-C003 object inspection harness: manifest emission also publishes
+      // the llvm-readobj/llvm-objdump matrix so object inspection remains tied
+      // to canonical emitted artifacts instead of ad hoc operator commands.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

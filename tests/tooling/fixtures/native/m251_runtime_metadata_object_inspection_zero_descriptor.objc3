@@ -1,0 +1,11 @@
+module runtimeMetadataObjectInspectionZeroDescriptor;
+
+let seed = 7;
+
+fn addOne(value: i32) {
+  return value + 1;
+}
+
+fn main() {
+  return addOne(seed);
+}

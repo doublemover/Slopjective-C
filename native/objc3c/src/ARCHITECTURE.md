@@ -8178,3 +8178,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   per-record descriptor placeholders, and `@llvm.used` retention in the
   canonical runtime metadata sections before executable runtime payload layouts
   and runtime registration land.
+
+- M251 lane-C C003 metadata object inspection harness conformance matrix implementation
+  anchors explicit object-inspection artifacts in
+  `docs/contracts/m251_metadata_object_inspection_harness_conformance_matrix_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m251/m251_c003_metadata_object_inspection_harness_conformance_matrix_implementation_packet.md`,
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+  `ast/objc3_ast.h`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
+  canonical zero-descriptor object inspection matrix stays published through manifest/IR surfaces and backed by real llvm-readobj/llvm-objdump evidence on emitted objects before native runtime library wiring replaces the shim.

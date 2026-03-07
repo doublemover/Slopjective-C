@@ -3690,6 +3690,9 @@
     "check:objc3c:m251-c002-llvm-global-and-section-scaffold-for-runtime-metadata-payloads": "python scripts/check_m251_c002_llvm_global_and_section_scaffold_for_runtime_metadata_payloads.py",
     "test:tooling:m251-c002-llvm-global-and-section-scaffold-for-runtime-metadata-payloads": "python -m pytest tests/tooling/test_check_m251_c002_llvm_global_and_section_scaffold_for_runtime_metadata_payloads.py -q",
     "check:objc3c:m251-c002-lane-c-readiness": "npm run check:objc3c:m251-c001-lane-c-readiness && npm run build:objc3c-native && npm run check:objc3c:m251-c002-llvm-global-and-section-scaffold-for-runtime-metadata-payloads && npm run test:tooling:m251-c002-llvm-global-and-section-scaffold-for-runtime-metadata-payloads",
+    "check:objc3c:m251-c003-metadata-object-inspection-harness-conformance-matrix-implementation-contract": "python scripts/check_m251_c003_metadata_object_inspection_harness_conformance_matrix_implementation_contract.py",
+    "test:tooling:m251-c003-metadata-object-inspection-harness-conformance-matrix-implementation-contract": "python -m pytest tests/tooling/test_check_m251_c003_metadata_object_inspection_harness_conformance_matrix_implementation_contract.py -q",
+    "check:objc3c:m251-c003-lane-c-readiness": "npm run check:objc3c:m251-c002-lane-c-readiness && npm run build:objc3c-native && npm run check:objc3c:m251-c003-metadata-object-inspection-harness-conformance-matrix-implementation-contract && npm run test:tooling:m251-c003-metadata-object-inspection-harness-conformance-matrix-implementation-contract",
     "check:objc3c:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract": "python scripts/check_m249_a002_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_contract.py",
     "test:tooling:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m249_a002_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_contract.py -q",
     "check:objc3c:m249-a002-lane-a-readiness": "npm run check:objc3c:m249-a001-lane-a-readiness && npm run check:objc3c:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract && npm run test:tooling:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract",
@@ -6753,4 +6756,3 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py"
   }
 }
-

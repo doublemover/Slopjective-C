@@ -1589,6 +1589,48 @@ inline bool IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
          summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeMetadataObjectInspectionHarnessSummary {
+  std::string contract_id = kObjc3RuntimeMetadataObjectInspectionContractId;
+  std::string scaffold_contract_id = kObjc3RuntimeMetadataSectionScaffoldContractId;
+  bool matrix_published = false;
+  bool fail_closed = false;
+  bool uses_llvm_readobj = false;
+  bool uses_llvm_objdump = false;
+  std::size_t matrix_row_count = 0;
+  std::string fixture_path = kObjc3RuntimeMetadataObjectInspectionFixturePath;
+  std::string emit_prefix = kObjc3RuntimeMetadataObjectInspectionEmitPrefix;
+  std::string object_relative_path =
+      kObjc3RuntimeMetadataObjectInspectionObjectRelativePath;
+  std::string section_inventory_row_key =
+      kObjc3RuntimeMetadataObjectInspectionSectionInventoryRowKey;
+  std::string section_inventory_command =
+      kObjc3RuntimeMetadataObjectInspectionSectionCommand;
+  std::string symbol_inventory_row_key =
+      kObjc3RuntimeMetadataObjectInspectionSymbolInventoryRowKey;
+  std::string symbol_inventory_command =
+      kObjc3RuntimeMetadataObjectInspectionSymbolCommand;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeMetadataObjectInspectionHarnessSummary(
+    const Objc3RuntimeMetadataObjectInspectionHarnessSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.scaffold_contract_id.empty() &&
+         summary.matrix_published &&
+         summary.fail_closed &&
+         summary.uses_llvm_readobj &&
+         summary.uses_llvm_objdump &&
+         summary.matrix_row_count == 2u &&
+         !summary.fixture_path.empty() &&
+         !summary.emit_prefix.empty() &&
+         !summary.object_relative_path.empty() &&
+         !summary.section_inventory_row_key.empty() &&
+         !summary.section_inventory_command.empty() &&
+         !summary.symbol_inventory_row_key.empty() &&
+         !summary.symbol_inventory_command.empty() &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

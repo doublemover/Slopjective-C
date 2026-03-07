@@ -160,6 +160,11 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_section_scaffold_contract_id
           << "\n";
     }
+    if (!frontend_metadata_.runtime_metadata_object_inspection_contract_id.empty()) {
+      out << "; runtime_metadata_object_inspection = "
+          << frontend_metadata_.runtime_metadata_object_inspection_contract_id
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1715,6 +1720,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
+    out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -2010,6 +2016,60 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_section_scaffold_ivar_aggregate_symbol)
+        << "\"}\n";
+    out << "!50 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_object_inspection_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_scaffold_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_object_inspection_matrix_published
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_object_inspection_fail_closed
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_object_inspection_uses_llvm_readobj
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_object_inspection_uses_llvm_objdump
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_matrix_row_count)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_object_inspection_fixture_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_object_inspection_emit_prefix)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_object_relative_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_section_inventory_row_key)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_section_inventory_command)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_symbol_inventory_row_key)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_object_inspection_symbol_inventory_command)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

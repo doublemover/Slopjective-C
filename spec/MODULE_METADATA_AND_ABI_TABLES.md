@@ -5494,6 +5494,25 @@ Runtime metadata section scaffold anchors must remain deterministic and fail
 closed before runtime registration, live lookup, and executable object-model
 payload lowering land.
 
+## M251 runtime metadata object inspection harness metadata anchors (C003)
+
+Deterministic lane-C runtime metadata object inspection harness anchors for
+`M251-C003` shall preserve:
+
+- contract id `objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1`,
+- scaffold contract id `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- fixture path
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+- emitted object relative path `module.obj`,
+- row keys `zero-descriptor-section-inventory` and `zero-descriptor-symbol-inventory`,
+- commands `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_object_inspection`.
+
+Runtime metadata object inspection anchors must remain deterministic and fail
+closed before runtime registration, live lookup, and executable object-model
+payload lowering land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
