@@ -6027,3 +6027,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M236 lane-B B002 qualifier/generic semantic inference anchors
   docs/contracts/m236_ownership_semantic_modeling_and_checks_modular_split_and_scaffolding_b002_expectations.md
 
+
+- M236 lane-B B003 qualifier/generic semantic inference anchors
+  docs/contracts/m236_ownership_semantic_modeling_and_checks_core_feature_implementation_b003_expectations.md
+
