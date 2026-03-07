@@ -5258,3 +5258,8 @@ deterministic lane-D runtime/link bridge-path conformance matrix implementation 
 
 explicit `M244-D008` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path conformance corpus expansion metadata anchors for `M244-D010`
+
+explicit `M244-D009` dependency continuity and fail-closed evidence continuity
+

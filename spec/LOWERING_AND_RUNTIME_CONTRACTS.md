@@ -3951,3 +3951,8 @@ runtime/link bridge-path conformance matrix implementation governance shall pres
 
 conformance matrix implementation evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path conformance corpus expansion governance shall preserve explicit lane-D dependency anchors (`M244-D009`)
+
+conformance corpus expansion evidence drift before downstream runtime projection and metadata integration advances.
+

@@ -7972,3 +7972,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D008` dependency drift.
 
+
+- M244 lane-D D010 runtime/link bridge-path conformance corpus expansion anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_conformance_corpus_expansion_d010_expectations.md
+
+  and fail-closed against `M244-D009` dependency drift.
+
