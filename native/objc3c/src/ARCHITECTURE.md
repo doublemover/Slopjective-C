@@ -5770,3 +5770,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_coverage_gate_and_docs_modular_split_and_scaffolding_e002_expectations.md
 
+  m231_declaration_coverage_gate_and_docs_core_feature_implementation_e003_expectations.md
+
