@@ -4186,3 +4186,22 @@ Duplicate runtime identities, incomplete export units, illegal redeclaration
 mixes, and metadata-shape drift must therefore fail closed before lowering
 begins. Forward protocol declarations must remain legal dependency hints rather
 than incomplete export candidates.
+
+## M251 runtime export diagnostic precision (B003)
+
+Lane-B shall preserve the B002 fail-closed blocker code while making incomplete
+runtime export messages precise for class and category interface declarations
+that parse successfully but still cannot participate in runtime export.
+
+`M251-B003` requires:
+
+- deterministic synthesis of source-anchored runtime export blocker diagnostics
+  from runtime metadata source records,
+- interface-only runtime export units to name the missing class
+  `@implementation`,
+- category-interface-only runtime export units to name the missing category
+  `@implementation`,
+- the generic B002 blocker to remain as the fallback when no more precise
+  declaration-specific explanation is available.
+
+B003 shall keep the B002 fail-closed blocker code stable while making incomplete runtime export messages precise so class and category interface declarations that parse successfully but still cannot participate in runtime export fail closed with deterministic explanations.

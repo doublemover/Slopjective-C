@@ -5454,3 +5454,18 @@ deterministic.
 Runtime export enforcement anchors must remain deterministic before native
 metadata section emission, runtime registration, and executable object-model
 enforcement land.
+
+## M251 runtime export diagnostic precision metadata anchors (B003)
+
+Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
+preserve:
+
+- the existing B002 runtime export enforcement packet and metadata anchors
+  without introducing a second export-enforcement summary node,
+- source-anchored deterministic diagnostics for interface-only and
+  category-interface-only runtime export units,
+- fallback continuity with the generic B002 runtime export blocker when a
+  declaration-specific explanation is not available.
+
+No new metadata node is introduced for B003; the precision change is diagnostic-surface only.
+This means runtime export diagnostic precision must remain source-anchored and deterministic before native metadata section emission, runtime registration, and executable object-model enforcement land.

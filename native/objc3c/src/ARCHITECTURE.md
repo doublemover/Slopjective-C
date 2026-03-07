@@ -8135,3 +8135,19 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   export enforcement remains fail-closed for duplicate, incomplete,
   redeclaration, and shape-drift hazards without misclassifying forward
   protocols as incomplete export units.
+
+- M251 lane-B B003 runtime export diagnostic precision anchors explicit
+  lane-B expansion artifacts in
+  `docs/contracts/m251_illegal_runtime_exposed_declaration_diagnostics_core_feature_expansion_b003_expectations.md`,
+  `spec/planning/compiler/m251/m251_b003_illegal_runtime_exposed_declaration_diagnostics_core_feature_expansion_packet.md`,
+  `pipeline/objc3_frontend_pipeline.cpp`,
+  `driver/objc3_objc3_path.cpp`,
+  `scripts/check_m251_b003_illegal_runtime_exposed_declaration_diagnostics.py`,
+  `tests/tooling/test_check_m251_b003_illegal_runtime_exposed_declaration_diagnostics.py`,
+  and `package.json` so class and category declarations that parse successfully
+  but still cannot participate in runtime export fail closed with
+  source-anchored, deterministic diagnostics without perturbing the B002
+  enforcement packet or manifest/driver emission path.
+  This explicitly covers class and category declarations that parse successfully but still cannot participate in runtime export.
+  This lane specifically covers class and category declarations that parse
+  successfully but still cannot participate in runtime export.

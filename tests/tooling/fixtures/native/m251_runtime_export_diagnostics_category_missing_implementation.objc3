@@ -1,0 +1,8 @@
+// Expected diagnostic code(s): O3S260.
+module runtimeExportDiagnosticsCategoryMissingImplementation;
+
+@interface Widget (Tracing)
+- (id) traceToken;
+@end
+
+fn main() -> i32 { return 0; }

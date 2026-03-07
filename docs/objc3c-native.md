@@ -181,6 +181,23 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-B002/metadata_completeness_and_duplicate_suppression_semantics_summary.json`
 
+## Runtime export diagnostic precision (M251-B003)
+
+- Lane-B now preserves the B002 fail-closed export gate while making the
+  incomplete-declaration diagnostics precise and source-anchored for runtime
+  export units that parse successfully.
+- Interface-only runtime export units now fail closed with
+  `O3S260: runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'Widget' is missing a matching @implementation`.
+- Category-interface-only runtime export units now fail closed with
+  `O3S260: runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: category 'Widget(Tracing)' is missing a matching @implementation`.
+- Existing duplicate and incompatible redeclaration diagnostics remain
+  authoritative; B003 only sharpens the broad B002 blocker when class/category
+  source records are sufficient to explain the exact missing declaration.
+- No new runtime metadata packet is introduced for B003; the change is confined
+  to deterministic diagnostic synthesis in the frontend pipeline.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

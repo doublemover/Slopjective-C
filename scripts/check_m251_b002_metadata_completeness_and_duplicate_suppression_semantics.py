@@ -127,7 +127,7 @@ FRONTEND_PIPELINE_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck("M251-B002-PIPE-02", "Forward protocol declarations are dependency hints for later complete"),
     SnippetCheck("M251-B002-PIPE-03", "AreCompatibleRuntimePropertyRedeclarations("),
     SnippetCheck("M251-B002-PIPE-04", "AreCompatibleRuntimeMethodRedeclarations("),
-    SnippetCheck("M251-B002-PIPE-05", '"O3S260"'),
+    SnippetCheck("M251-B002-PIPE-05", '"runtime metadata export blocked: " +'),
 )
 
 FRONTEND_ARTIFACTS_SNIPPETS: tuple[SnippetCheck, ...] = (

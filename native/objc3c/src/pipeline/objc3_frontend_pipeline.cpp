@@ -700,6 +700,13 @@ struct Objc3RuntimeExportPairPresence {
   bool has_location = false;
 };
 
+struct Objc3RuntimeExportBlockingDiagnostic {
+  unsigned line = 1;
+  unsigned column = 1;
+  std::string code;
+  std::string message;
+};
+
 bool IsInterfaceRuntimePropertyOwnerKind(const std::string &owner_kind) {
   return owner_kind == "class-interface" || owner_kind == "category-interface";
 }
@@ -734,6 +741,99 @@ bool AreCompatibleRuntimeMethodRedeclarations(
          interface_record.parameter_count == implementation_record.parameter_count &&
          interface_record.return_type_name == implementation_record.return_type_name &&
          !interface_record.has_body && implementation_record.has_body;
+}
+
+std::vector<Objc3RuntimeExportBlockingDiagnostic>
+BuildRuntimeExportBlockingDiagnostics(
+    const Objc3RuntimeMetadataSourceRecordSet &records,
+    const Objc3RuntimeExportEnforcementSummary &summary) {
+  std::vector<Objc3RuntimeExportBlockingDiagnostic> diagnostics;
+  if (summary.incomplete_declaration_sites == 0u) {
+    return diagnostics;
+  }
+
+  {
+    std::unordered_map<std::string, Objc3RuntimeExportPairPresence> class_presence;
+    class_presence.reserve(records.classes_lexicographic.size());
+    for (const auto &record : records.classes_lexicographic) {
+      Objc3RuntimeExportPairPresence &presence = class_presence[record.name];
+      if (!presence.has_location) {
+        presence.line = record.line;
+        presence.column = record.column;
+        presence.has_location = true;
+      }
+      if (record.record_kind == "interface") {
+        ++presence.interface_records;
+      } else if (record.record_kind == "implementation") {
+        ++presence.implementation_records;
+      }
+    }
+    for (const auto &[name, presence] : class_presence) {
+      if (presence.interface_records > 0u && presence.implementation_records == 0u) {
+        diagnostics.push_back(
+            {presence.line,
+             presence.column,
+             "O3S260",
+             "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface '" +
+                 name + "' is missing a matching @implementation"});
+      } else if (presence.interface_records == 0u &&
+                 presence.implementation_records > 0u) {
+        diagnostics.push_back(
+            {presence.line,
+             presence.column,
+             "O3S260",
+             "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: implementation '" +
+                 name + "' is missing a matching @interface"});
+      }
+    }
+  }
+
+  {
+    std::unordered_map<std::string, Objc3RuntimeExportPairPresence>
+        category_presence;
+    category_presence.reserve(records.categories_lexicographic.size());
+    for (const auto &record : records.categories_lexicographic) {
+      const std::string owner_name =
+          BuildCategoryOwnerName(record.class_name, record.category_name);
+      Objc3RuntimeExportPairPresence &presence = category_presence[owner_name];
+      if (!presence.has_location) {
+        presence.line = record.line;
+        presence.column = record.column;
+        presence.has_location = true;
+      }
+      if (record.record_kind == "interface") {
+        ++presence.interface_records;
+      } else if (record.record_kind == "implementation") {
+        ++presence.implementation_records;
+      }
+    }
+    for (const auto &[owner_name, presence] : category_presence) {
+      if (presence.interface_records > 0u && presence.implementation_records == 0u) {
+        diagnostics.push_back(
+            {presence.line,
+             presence.column,
+             "O3S260",
+             "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: category '" +
+                 owner_name + "' is missing a matching @implementation"});
+      } else if (presence.interface_records == 0u &&
+                 presence.implementation_records > 0u) {
+        diagnostics.push_back(
+            {presence.line,
+             presence.column,
+             "O3S260",
+             "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: category '" +
+                 owner_name + "' is missing a matching @interface"});
+      }
+    }
+  }
+
+  std::sort(diagnostics.begin(), diagnostics.end(),
+            [](const Objc3RuntimeExportBlockingDiagnostic &lhs,
+               const Objc3RuntimeExportBlockingDiagnostic &rhs) {
+              return std::tie(lhs.line, lhs.column, lhs.code, lhs.message) <
+                     std::tie(rhs.line, rhs.column, rhs.code, rhs.message);
+            });
+  return diagnostics;
 }
 
 bool HasRuntimeMetadataSourceRecords(const Objc3RuntimeMetadataSourceRecordSet &records) {
@@ -1613,12 +1713,25 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       HasRuntimeMetadataSourceRecords(result.runtime_metadata_source_records) &&
       !IsReadyObjc3RuntimeExportEnforcementSummary(
           result.runtime_export_enforcement_summary)) {
-    result.stage_diagnostics.semantic.push_back(MakeDiag(
-        result.runtime_export_enforcement_summary.first_failure_line,
-        result.runtime_export_enforcement_summary.first_failure_column,
-        "O3S260",
-        "runtime metadata export blocked: " +
-            result.runtime_export_enforcement_summary.failure_reason));
+    const std::vector<Objc3RuntimeExportBlockingDiagnostic>
+        runtime_export_blocking_diagnostics =
+            BuildRuntimeExportBlockingDiagnostics(
+                result.runtime_metadata_source_records,
+                result.runtime_export_enforcement_summary);
+    if (!runtime_export_blocking_diagnostics.empty()) {
+      for (const auto &diagnostic : runtime_export_blocking_diagnostics) {
+        result.stage_diagnostics.semantic.push_back(
+            MakeDiag(diagnostic.line, diagnostic.column, diagnostic.code,
+                     diagnostic.message));
+      }
+    } else {
+      result.stage_diagnostics.semantic.push_back(MakeDiag(
+          result.runtime_export_enforcement_summary.first_failure_line,
+          result.runtime_export_enforcement_summary.first_failure_column,
+          "O3S260",
+          "runtime metadata export blocked: " +
+              result.runtime_export_enforcement_summary.failure_reason));
+    }
   }
   result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =
       BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisScaffold(
